@@ -22,6 +22,8 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          05/27/2021 mem - Specify @samplePrepRequest, @experimentID, @campaignID, and @addingItem when calling ValidateEUSUsage
 **          06/01/2021 mem - Add newly created requested run fractions to the parent request's batch (which will be 0 if not in a batch)
 **                         - Raise an error if @mode is invalid
+**          10/13/2021 mem - Append EUS User ID list to warning message
+**                         - Do not call PostLogEntry where @mode is 'preview'
 **
 *****************************************************/
 (
@@ -456,7 +458,8 @@ As
     Declare @commaPosition Int = CharIndex(',', @eusUserID)
     If @commaPosition > 1
     Begin
-        Set @message = dbo.AppendToText('Requested runs can only have a single EUS user associated with them', @message, 0, '; ', 1024)
+        Set @msg = 'Requested runs can only have a single EUS user associated with them; current list: ' + @eusUserID
+        Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
 
         If @raiseErrorOnMultipleEUSUsers > 0
             RAISERROR ('ValidateEUSUsage: %s', 11, 1, @message)
@@ -556,8 +559,11 @@ As
         End
     End
 
-    -- Validation checks are complete; now enable @logErrors
-    Set @logErrors = 1
+    If @mode <> 'preview'
+    Begin
+        -- Validation checks are complete; now enable @logErrors
+        Set @logErrors = 1
+    End
 
     If @logDebugMessages > 0
     Begin

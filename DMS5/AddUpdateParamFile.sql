@@ -7,8 +7,11 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 /****************************************************
 **
-**  Adds new or updates existing parameter file in database
-**  When updating an existing parameter file, the name and type can be changed only if the file is not used with any analysis jobs
+**  Desc:
+**      Adds new or updates existing parameter file in database
+**
+**      When updating an existing parameter file, the name and type can be changed
+**      only if the file is not used with any analysis jobs
 **
 **  Auth:   kja
 **  Date:   07/22/2004 kja - Initial version
@@ -26,7 +29,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 *****************************************************/
 (
     @paramFileID int output,
-    @paramFileName varchar(255), 
+    @paramFileName varchar(255),
     @paramFileDesc varchar(1024),
     @paramFileType varchar(50),
     @paramfileValid tinyint = 1,                -- Forced to 1 if @mode is 'add'
@@ -41,38 +44,38 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @msg varchar(256)
     Declare @updateMassMods tinyint = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateParamFile', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
 
     Set @mode = IsNull(@mode, 'add')
-    
+
     If @paramFileID Is Null And Not @mode like '%add%'
     Begin
         Set @myError = 51010
         RAISERROR ('ParamFileID was null', 11, 1)
         Goto Done
     End
-    
+
     Set @paramFileName = LTrim(RTrim(IsNull(@paramFileName, '')))
     If @paramFileName = ''
     Begin
@@ -88,7 +91,7 @@ As
         RAISERROR ('ParamFileDesc was blank', 11, 1)
         Goto Done
     End
-    
+
     Set @paramFileType = LTrim(RTrim(IsNull(@paramFileType, '')))
     If @paramFileType = ''
     Begin
@@ -96,18 +99,18 @@ As
         RAISERROR ('ParamFileType was null', 11, 1)
         Goto Done
     End
-    
+
     Set @paramfileValid = IsNull(@paramfileValid, 1)
-    
+
     Set @paramfileMassMods = IsNull(@paramfileMassMods, '')
-    
+
     -- Assure that @paramfileMassMods does not have any tabs
-    Set @paramfileMassMods = Replace(@paramfileMassMods, CHAR(9), ' ')    
-    
+    Set @paramfileMassMods = Replace(@paramfileMassMods, CHAR(9), ' ')
+
     Set @replaceExistingMassMods = IsNull(@replaceExistingMassMods, 0)
-    
+
     Set @validateUnimod = IsNull(@validateUnimod, 1)
-    
+
     If @myError <> 0
         return @myError
 
@@ -115,13 +118,13 @@ As
     -- Validate @paramFileType
     ---------------------------------------------------
     --
-    
+
     Declare @paramFileTypeID int = 0
-    
+
     SELECT @paramFileTypeID = Param_File_Type_ID
-    FROM T_Param_File_Types 
+    FROM T_Param_File_Types
     WHERE Param_File_Type = @paramFileType
-    
+
     If @paramFileTypeID = 0
     Begin
         Set @myError = 51003
@@ -129,7 +132,7 @@ As
         RAISERROR (@msg, 11, 1)
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -164,29 +167,29 @@ As
     Begin
         Declare @currentName varchar(255) = ''
         Declare @currentTypeID int = 0
-        
+
         SELECT @currentName = Param_File_Name,
                @currentTypeID = Param_File_Type_ID
         FROM T_Param_Files
         WHERE Param_File_ID = @paramFileID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @paramFileName <> @currentName Or @paramFileTypeID <> @currentTypeID
         Begin
             Declare @action varchar(12) = 'rename'
-            
+
             If @paramFileName = @currentName
             Begin
                 Set @action = 'change param file type'
             End
-            
+
             If Exists (SELECT * FROM T_Analysis_Job WHERE AJ_parmFileName = @currentName)
             Begin
                 Set @msg = 'Cannot ' + @action + ': Param File "' + @currentName + '" is used by an analysis job'
                 RAISERROR (@msg, 11, 1)
             End
-            
+
             If Exists (SELECT * FROM T_Analysis_Job_Request WHERE AJR_parmFileName = @currentName)
             Begin
                 Set @msg = 'Cannot ' + @action + ': Param File "' + @currentName + '" is used by a job request'
@@ -208,7 +211,7 @@ As
             Set @Delimiter = CHAR(10)
         Else
             Set @Delimiter = CHAR(13)
-        
+
         CREATE TABLE #Tmp_Mods_Precheck (
             EntryID int NOT NULL,
             Value varchar(2048) null
@@ -220,27 +223,27 @@ As
 
         DELETE FROM #Tmp_Mods_Precheck
         WHERE Value Is Null Or Value Like '#%' or LTrim(RTrim(Value)) = ''
-        
-        If Not Exists (SELECT * FROM #Tmp_Mods_Precheck) 
+
+        If Not Exists (SELECT * FROM #Tmp_Mods_Precheck)
             Set @paramfileMassMods = ''
-        
+
         If @paramfileMassMods <> '' And (
-            @Mode = 'add' OR 
+            @Mode = 'add' OR
             @Mode = 'update' And @replaceExistingMassMods = 1 OR
             @Mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID))
         Begin -- <b>
-        
+
             ---------------------------------------------------
             -- Validate the mods
             ---------------------------------------------------
-            
+
             -- Store the param file mass mods in T_Param_File_Mass_Mods
             exec @myError = StoreParamFileMassMods
-                 @paramFileID=0, 
+                 @paramFileID=0,
                  @mods=@paramfileMassMods,
-                 @infoOnly=0, 
-                 @replaceExisting=1, 
-                 @validateUnimod=@validateUnimod, 
+                 @infoOnly=0,
+                 @replaceExisting=1,
+                 @validateUnimod=@validateUnimod,
                  @paramFileType=@paramFileType,
                  @message=@message output
 
@@ -250,33 +253,33 @@ As
                     Set @msg = 'StoreParamFileMassMods returned error code ' + cast(@myError as varchar(9)) + '; unknown error'
                 Else
                     Set @msg = 'StoreParamFileMassMods: "' + @message + '"'
-                
+
                 RAISERROR (@msg, 11, 1)
             End
 
         End -- </b>
-        
+
     End -- </a>
-    
+
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
-    
+
     If @Mode = 'add'
     Begin -- <add>
 
         INSERT INTO T_Param_Files (
-            Param_File_Name, 
-            Param_File_Description, 
-            Param_File_Type_ID, 
-            Date_Created, 
-            Date_Modified, 
+            Param_File_Name,
+            Param_File_Description,
+            Param_File_Type_ID,
+            Date_Created,
+            Date_Modified,
             Valid
         ) VALUES (
-            @ParamFileName, 
-            @ParamFileDesc, 
-            @ParamFileTypeID, 
-            GETDATE(),  
+            @ParamFileName,
+            @ParamFileDesc,
+            @ParamFileTypeID,
+            GETDATE(),
             GETDATE(),
             1        -- Valid
         )
@@ -288,20 +291,20 @@ As
             Set @msg = 'Insert operation failed: "' + @ParamFileName + '"'
             RAISERROR (@msg, 11, 1)
         End
-        
+
         Set @paramFileID = SCOPE_IDENTITY()
-        
+
         Set @updateMassMods = 1
-        
+
     End -- </add>
 
     ---------------------------------------------------
     -- action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin -- <update>
-    
+
         UPDATE T_Param_Files
         SET Param_File_Name = @paramFileName,
             Param_File_Description = @ParamFileDesc,
@@ -317,9 +320,9 @@ As
             Set @msg = 'Update operation failed: "' + @ParamFileName + '"'
             RAISERROR (@msg, 11, 1)
         End
-        
+
         Set @updateMassMods = 1
-        
+
     End -- </update>
 
     If @paramFileID > 0 And @paramfileMassMods <> '' And @updateMassMods = 1
@@ -329,46 +332,46 @@ As
             Set @updateMassMods = 0
             Set @message = 'Warning: existing mass mods were not updated because @updateMassMods was 0'
         End
-        
+
         If @updateMassMods = 1
         Begin
             -- Store the param file mass mods in T_Param_File_Mass_Mods
-            exec @myError = StoreParamFileMassMods 
-                @paramFileID, 
-                @mods=@paramfileMassMods, 
-                @InfoOnly=0, 
-                @ReplaceExisting=@ReplaceExistingMassMods, 
-                @ValidateUnimod=@validateUnimod, 
+            exec @myError = StoreParamFileMassMods
+                @paramFileID,
+                @mods=@paramfileMassMods,
+                @InfoOnly=0,
+                @ReplaceExisting=@ReplaceExistingMassMods,
+                @ValidateUnimod=@validateUnimod,
                 @message=@message output
-                        
+
             If @myError <> 0
             Begin
                 Set @msg = 'StoreParamFileMassMods: "' + @message + '"'
                 RAISERROR (@msg, 11, 1)
             End
-        End        
+        End
     End
 
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        If Not @message Like '%already exists%' And 
-           Not @message Like '%was blank%' And 
+        If Not @message Like '%already exists%' And
+           Not @message Like '%was blank%' And
            Not @message Like '%is used by%' And
            Not @message Like '%%'
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Param file ' + @paramFileName        
+            Declare @logMessage varchar(1024) = @message + '; Param file ' + @paramFileName
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateParamFile'
         End
-        
+
     END CATCH
-    
+
 Done:
     return @myError
 

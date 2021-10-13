@@ -7,19 +7,19 @@ GO
 CREATE PROCEDURE [dbo].[AddNewInstrument]
 /****************************************************
 **
-**  Desc:   Adds new instrument to database
-**          and new storage paths to storage table
+**  Desc:
+**      Adds new instrument to database and new storage paths to storage table
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   01/26/2001
 **          07/24/2001 grk - Added Archive Path setup
-**          03/12/2003 grk - Modified to call AddUpdateStorage: 
+**          03/12/2003 grk - Modified to call AddUpdateStorage:
 **          11/06/2003 grk - Modified to handle new ID for archive path independent of instrument id
 **          01/30/2004 grk - Modified to return message (grk)
 **          02/24/2004 grk - Fixed problem inserting first entry into empty tables
-**          07/01/2004 grk - Modified the function to add records to T_Archive_Path table 
+**          07/01/2004 grk - Modified the function to add records to T_Archive_Path table
 **          12/14/2005 grk - Added check for existing instrument
 **          04/07/2006 grk - Got rid of CDBurn stuff
 **          06/28/2006 grk - Added support for Usage and Operations Role fields
@@ -41,7 +41,7 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
 **          05/03/2019 mem - Add the source machine to T_Storage_Path_Hosts
 **          10/27/2020 mem - Populate Auto_SP_URL_Domain and store https:// in T_Storage_Path_Hosts.URL_Prefix
 **                           Pass @urlDomain to AddUpdateStorage
-**    
+**
 *****************************************************/
 (
     @iName varchar(24),                 -- name of new instrument
@@ -52,26 +52,26 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
 
     @sourceMachineName varchar(128),    -- Source Machine to capture data from
     @sourcePath varchar(255),           -- transfer directory on source machine
-    
+
     @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @autoDefineStoragePath is yes (e.g. Lumos01\)
     @spVolClient  varchar(128),         -- Storage server name, e.g. \\proto-8\
     @spVolServer  varchar(128),         -- Drive letter on storage server (local to server itself), e.g. F:\
-    
-    @archivePath varchar(128),          -- storage path on EMSL archive, e.g. 
+
+    @archivePath varchar(128),          -- storage path on EMSL archive, e.g.
     @archiveServer varchar(64),         -- archive server name
-    @archiveNote varchar(128),          -- note describing archive path 
+    @archiveNote varchar(128),          -- note describing archive path
     @Usage varchar(50),                 -- optional description of instrument usage
     @OperationsRole varchar(50),        -- Production, QC, Research, or Unused
     @InstrumentGroup varchar(64),       -- Item in T_Instrument_Group
     @PercentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
-    
+
     @autoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
     @message varchar(512) output
 )
 As
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
 
     Declare @result int
@@ -92,10 +92,10 @@ As
 
     Declare @PercentEMSLOwnedVal int
     Set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
-    
+
     If @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
         RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
-        
+
     ---------------------------------------------------
     -- Make sure instrument is not already in instrument table
     ---------------------------------------------------
@@ -103,8 +103,8 @@ As
     Declare @hit int
     Set @hit = -1
     --
-    SELECT @hit = Instrument_ID 
-    FROM T_Instrument_Name 
+    SELECT @hit = Instrument_ID
+    FROM T_Instrument_Name
     WHERE IN_name = @iName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -143,7 +143,7 @@ As
     -- Define the @autoSP variables
     -- Auto-populate if @valAutoDefineStoragePath is non-zero
     ---------------------------------------------------
-    --    
+    --
     Declare @autoSPVolNameClient varchar(128)
     Declare @autoSPVolNameServer varchar(128)
     Declare @autoSPPathRoot varchar(128)
@@ -151,7 +151,7 @@ As
     Declare @autoSPArchiveServerName varchar(64)
     Declare @autoSPArchivePathRoot varchar(128)
     Declare @autoSPArchiveSharePathRoot varchar(128)
-    
+
     If @valAutoDefineStoragePath <> 0
     Begin
         Set @autoSPVolNameClient = @spVolClient
@@ -159,7 +159,7 @@ As
         Set @autoSPPathRoot = @spPath
         Set @autoSPArchiveServerName = @archiveServer
         Set @autoSPArchivePathRoot = @archivePath
-        Set @autoSPArchiveSharePathRoot = @archiveNetworkSharePath    
+        Set @autoSPArchiveSharePathRoot = @archiveNetworkSharePath
 
         If IsNull(@autoSPVolNameClient, '') <> '' AND @autoSPVolNameClient NOT LIKE '%\'
             -- Auto-add a slash
@@ -168,17 +168,17 @@ As
         If IsNull(@autoSPVolNameServer, '') <> '' AND @autoSPVolNameServer NOT LIKE '%\'
             -- Auto-add a slash
             Set @autoSPVolNameServer = @autoSPVolNameServer + '\'
-                
+
         ---------------------------------------------------
         -- Validate the @autoSP parameteres
         ---------------------------------------------------
 
         exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
-                                                       @autoSPPathRoot, @autoSPArchiveServerName, 
+                                                       @autoSPPathRoot, @autoSPArchiveServerName,
                                                        @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
 
     End
-    
+
     ---------------------------------------------------
     -- Start transaction
     ---------------------------------------------------
@@ -199,18 +199,18 @@ As
     -- make entry into instrument table
     --
     INSERT INTO T_Instrument_Name(
-        IN_name, 
-        Instrument_ID, 
-        IN_class, 
+        IN_name,
+        Instrument_ID,
+        IN_class,
         IN_Group,
-        IN_source_path_ID, 
-        IN_storage_path_ID, 
-        IN_capture_method, 
-        IN_Room_Number, 
+        IN_source_path_ID,
+        IN_storage_path_ID,
+        IN_capture_method,
+        IN_Room_Number,
         IN_Description,
-        IN_usage, 
-        IN_operations_role,    
-        Percent_EMSL_Owned,    
+        IN_usage,
+        IN_operations_role,
+        Percent_EMSL_Owned,
         Auto_Define_Storage_Path,
         Auto_SP_Vol_Name_Client,
         Auto_SP_Vol_Name_Server,
@@ -220,14 +220,14 @@ As
         Auto_SP_Archive_Path_Root,
         Auto_SP_Archive_Share_Path_Root
     ) VALUES (
-        @iName, 
-        @iID, 
-        @iClass, 
+        @iName,
+        @iID,
+        @iClass,
         @InstrumentGroup,
-        @spSourcePathID, 
-        @spStoragePathID, 
-        @iMethod, 
-        @iRoomNum, 
+        @spSourcePathID,
+        @spStoragePathID,
+        @iMethod,
+        @iRoomNum,
         @iDescription,
         IsNull(@Usage, ''),
         @OperationsRole,
@@ -243,7 +243,7 @@ As
     )
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
@@ -251,7 +251,7 @@ As
             10, 1)
         return 51131
     end
-        
+
     ---------------------------------------------------
     -- Make sure the source machine exists in T_Storage_Path_Hosts
     ---------------------------------------------------
@@ -295,7 +295,7 @@ As
         ---------------------------------------------------
         --
         exec @result = AddUpdateStorage
-                @spPath, 
+                @spPath,
                 @spVolClient,
                 @spVolServer,
                 'raw-storage',
@@ -306,7 +306,7 @@ As
                 'add',
                 @message output
     End
-    
+
     --
     If @result <> 0
     begin
@@ -321,7 +321,7 @@ As
     ---------------------------------------------------
     --
     exec @result = AddUpdateStorage
-            @sourcePath, 
+            @sourcePath,
             '(na)',
             @sourceMachineName,     -- Note that AddUpdateStorage will remove '\' characters from @sourceMachineName since @storFunction = 'inbox'
             'inbox',
@@ -340,7 +340,7 @@ As
             10, 1)
         return 51133
     end
-    
+
     If @valAutoDefineStoragePath = 0
     Begin -- <a>
         ---------------------------------------------------
@@ -370,14 +370,14 @@ As
         )
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-        
+
         If @myError = 0
         Begin
             Set @aID = SCOPE_IDENTITY()
             --
             SELECT @myRowCount = @@rowcount, @myError = @@error
         End
-        
+
         If @myError <> 0
         begin
             rollback transaction @transName
@@ -392,7 +392,7 @@ As
     ---------------------------------------------------
     --
     commit transaction @transName
-    
+
     return 0
 
 GO

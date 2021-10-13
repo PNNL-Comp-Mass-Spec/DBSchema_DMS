@@ -7,10 +7,11 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateDataset]
 /****************************************************
 **
-**  Desc:   Adds new dataset entry to DMS database
+**  Desc:
+**      Adds new dataset entry to DMS database
 **
-**          This is called from the Dataset Entry page (https://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
-**          It is also called from the Spreadsheet Loader with @mode as 'add, 'check_update', or 'check_add'
+**      This is called from the Dataset Entry page (https://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
+**      It is also called from the Spreadsheet Loader with @mode as 'add, 'check_update', or 'check_add'
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -1029,7 +1030,7 @@ As
             ---------------------------------------------------
 
             Declare @eusUsageTypeID Int
-           
+
             exec @myError = ValidateEUSUsage
                             @eusUsageType output,
                             @eusProposalID output,
@@ -1038,8 +1039,8 @@ As
                             @msg output,
                             @AutoPopulateUserListIfBlank = 0,
                             @samplePrepRequest = 0,
-                            @experimentID = @experimentID, 
-                            @campaignID = 0, 
+                            @experimentID = @experimentID,
+                            @campaignID = 0,
                             @addingItem = @addingDataset
 
             If @myError <> 0
@@ -1048,7 +1049,7 @@ As
             If IsNull(@msg, '') <> ''
             Begin
                 Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
-            End            
+            End
 
         End -- </b1>
         else

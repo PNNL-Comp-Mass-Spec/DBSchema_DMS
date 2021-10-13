@@ -3,337 +3,337 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.StoreDTARefMassErrorStats
+
+CREATE PROCEDURE [dbo].[StoreDTARefMassErrorStats]
 /****************************************************
-** 
-**	Desc:	Updates the mass error stats specified by @DatasetID
-**			If @DatasetID is 0, then will use the dataset name defined in @ResultsXML
-**			If @DatasetID is non-zero, then will validate that the Dataset Name in the XML corresponds
-**			to the dataset ID specified by @DatasetID
 **
-**			Typical XML file contents
+**  Desc:
+**      Updates the mass error stats specified by @DatasetID
+**      If @DatasetID is 0, then will use the dataset name defined in @ResultsXML
+**      If @DatasetID is non-zero, then will validate that the Dataset Name in the XML corresponds
+**      to the dataset ID specified by @DatasetID
 **
-**			 <DTARef_MassErrorStats>
-**			   <Dataset>TCGA_24-1467_29-2432_25-1321_117C_W_PNNL_B1S2_f23</Dataset>
-**			   <PSM_Source_Job>927729</PSM_Source_Job>
-**			   <Measurements>
-**			      <Measurement Name="MassErrorPPM">-2.58</Measurement>
-**			      <Measurement Name="MassErrorPPM_Refined">0.01</Measurement>
-**			   </Measurements>
-**			 </DTARef_MassErrorStats>
+**      Typical XML file contents:
 **
-**	Return values: 0: success, otherwise, error code
-** 
-**	Parameters:
+**      <DTARef_MassErrorStats>
+**        <Dataset>TCGA_24-1467_29-2432_25-1321_117C_W_PNNL_B1S2_f23</Dataset>
+**        <PSM_Source_Job>927729</PSM_Source_Job>
+**        <Measurements>
+**           <Measurement Name="MassErrorPPM">-2.58</Measurement>
+**           <Measurement Name="MassErrorPPM_Refined">0.01</Measurement>
+**        </Measurements>
+**      </DTARef_MassErrorStats>
 **
-**	Auth:	mem
-**	Date:	08/08/2013 mem - Initial version (modelled after StoreSMAQCResults)
-**			04/06/2016 mem - Now using Try_Convert to convert from text to int
-**    
+**  Return values: 0: success, otherwise, error code
+**
+**  Auth:   mem
+**  Date:    08/08/2013 mem - Initial version (modelled after StoreSMAQCResults)
+**          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**
 *****************************************************/
 (
-	@DatasetID int = 0,				-- If this value is 0, then will determine the dataset name using the contents of @ResultsXML
-	@ResultsXML xml,				-- XML holding the Mass Error results for a single dataset
-	@message varchar(255) = '' output,
-	@infoOnly tinyint = 0
+    @DatasetID int = 0,                -- If this value is 0, then will determine the dataset name using the contents of @ResultsXML
+    @ResultsXML xml,                -- XML holding the Mass Error results for a single dataset
+    @message varchar(255) = '' output,
+    @infoOnly tinyint = 0
 )
 As
-	set nocount on
-	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    set nocount on
 
-	Declare @DatasetName varchar(128)
-	Declare @DatasetIDCheck int
+    declare @myError int
+    declare @myRowCount int
+    set @myError = 0
+    set @myRowCount = 0
 
-	-----------------------------------------------------------
-	-- Create the table to hold the data
-	-----------------------------------------------------------
+    Declare @DatasetName varchar(128)
+    Declare @DatasetIDCheck int
 
-	Declare @DatasetInfoTable table (
-		Dataset_ID int NULL ,
-		Dataset_Name varchar (128) NOT NULL ,
-		PSM_Source_Job int NULL				-- Analysis job used by DTA_Refinery
-	)
+    -----------------------------------------------------------
+    -- Create the table to hold the data
+    -----------------------------------------------------------
 
-
-	Declare @MeasurementsTable table (
-		[Name] varchar(64) NOT NULL,
-		ValueText varchar(64) NULL,
-		Value float NULL
-	)
-
-	Declare @KnownMetricsTable table (
-		Dataset_ID int NOT NULL,
-		MassErrorPPM float NULL,
-		MassErrorPPM_Refined float NULL
-	)
-	
-	---------------------------------------------------
-	-- Validate the inputs
-	---------------------------------------------------
-	
-	Set @DatasetID = IsNull(@DatasetID, 0)
-	Set @message = ''
-	Set @infoOnly = IsNull(@infoOnly, 0)
-	
-	
-	---------------------------------------------------
-	-- Parse out the dataset name from @ResultsXML
-	-- If this parse fails, there is no point in continuing
-	---------------------------------------------------
-	
-	SELECT @DatasetName = DSName
-	FROM (SELECT @ResultsXML.value('(/DTARef_MassErrorStats/Dataset)[1]', 'varchar(128)') AS DSName
-	     ) LookupQ
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error extracting the dataset name from @ResultsXML'
-		goto Done
-	end
-		
-	If @myRowCount = 0 or IsNull(@DatasetName, '') = ''
-	Begin
-		set @message = 'XML in @ResultsXML is not in the expected form; Could not match /DTARef_MassErrorStats/Dataset'
-		Set @myError = 50000
-		goto Done
-	End
-	
-	---------------------------------------------------
-	-- Parse the contents of @ResultsXML to populate @DatasetInfoTable
-	---------------------------------------------------
-	--
-	INSERT INTO @DatasetInfoTable (
-		Dataset_ID,
-		Dataset_Name,
-		PSM_Source_Job
-	)
-	SELECT	@DatasetID AS DatasetID,
-			@DatasetName AS Dataset,
-			@ResultsXML.value('(/DTARef_MassErrorStats/PSM_Source_Job)[1]', 'int') AS PSM_Source_Job			
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error extracting data from @ResultsXML'
-		goto Done
-	end
-
-	
-	---------------------------------------------------
-	-- Now extract out the Measurement information
-	---------------------------------------------------
-	--
-	INSERT INTO @MeasurementsTable ([Name], ValueText)
-	SELECT [Name], ValueText
-	FROM (	SELECT  xmlNode.value('.', 'varchar(64)') AS ValueText,
-				xmlNode.value('@Name', 'varchar(64)') AS [Name]
-		FROM   @ResultsXML.nodes('/DTARef_MassErrorStats/Measurements/Measurement') AS R(xmlNode)
-	) LookupQ
-	WHERE NOT ValueText IS NULL	
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error parsing Measurement nodes in @ResultsXML'
-		goto Done
-	end
-	
-	---------------------------------------------------
-	-- Update or Validate Dataset_ID in @DatasetInfoTable
-	---------------------------------------------------
-	--
-	If @DatasetID = 0
-	Begin
-		UPDATE @DatasetInfoTable
-		SET Dataset_ID = DS.Dataset_ID
-		FROM @DatasetInfoTable Target
-		     INNER JOIN T_Dataset DS
-		       ON Target.Dataset_Name = DS.Dataset_Num
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		
-		If @myRowCount = 0
-		Begin
-			Set @message = 'Warning: dataset not found in table T_Dataset: ' + @DatasetName
-			Set @myError = 50001
-			Goto Done
-		End
-		
-		-- Update @DatasetID
-		SELECT @DatasetID = Dataset_ID
-		FROM @DatasetInfoTable
-		
-	End
-	Else
-	Begin
-	
-		-- @DatasetID was non-zero
-		-- Validate the dataset name in @DatasetInfoTable against T_Dataset
-	
-		SELECT @DatasetIDCheck = DS.Dataset_ID
-		FROM @DatasetInfoTable Target
-		     INNER JOIN T_Dataset DS
-		     ON Target.Dataset_Name = DS.Dataset_Num
-		       
-		If @DatasetIDCheck <> @DatasetID
-		Begin
-			Set @message = 'Error: dataset ID values for ' + @DatasetName + ' do not match; expecting ' + Convert(varchar(12), @DatasetIDCheck) + ' but stored procedure param @DatasetID is ' + Convert(varchar(12), @DatasetID)
-			Set @myError = 50002
-			Goto Done
-		End
-	End
-		
-	-----------------------------------------------
-	-- Populate the Value column in @MeasurementsTable
-	-- If any of the metrics has a non-numeric value, then the Value column will remain Null
-	-----------------------------------------------
-	
-	UPDATE @MeasurementsTable
-	SET Value = Convert(float, FilterQ.ValueText)
-	FROM @MeasurementsTable Target
-	     INNER JOIN ( SELECT Name,
-	                         ValueText
-	                  FROM @MeasurementsTable
-	                  WHERE Not Try_Convert(float, ValueText) Is Null
-	                ) FilterQ
-	       ON Target.Name = FilterQ.Name
+    Declare @DatasetInfoTable table (
+        Dataset_ID int NULL ,
+        Dataset_Name varchar (128) NOT NULL ,
+        PSM_Source_Job int NULL                -- Analysis job used by DTA_Refinery
+    )
 
 
-	-- Do not allow values to be larger than 1E+38 or smaller than -1E+38
-	UPDATE @MeasurementsTable
-	SET Value = 1E+38
-	WHERE Value > 1E+38
+    Declare @MeasurementsTable table (
+        [Name] varchar(64) NOT NULL,
+        ValueText varchar(64) NULL,
+        Value float NULL
+    )
 
-	UPDATE @MeasurementsTable
-	SET Value = -1E+38
-	WHERE Value < -1E+38
+    Declare @KnownMetricsTable table (
+        Dataset_ID int NOT NULL,
+        MassErrorPPM float NULL,
+        MassErrorPPM_Refined float NULL
+    )
 
-	
-	-----------------------------------------------
-	-- Populate @KnownMetricsTable using data in @MeasurementsTable
-	-- Use a Pivot to extract out the known columns
-	-----------------------------------------------
-	
-	INSERT INTO @KnownMetricsTable (Dataset_ID,
+    ---------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------
+
+    Set @DatasetID = IsNull(@DatasetID, 0)
+    Set @message = ''
+    Set @infoOnly = IsNull(@infoOnly, 0)
+
+
+    ---------------------------------------------------
+    -- Parse out the dataset name from @ResultsXML
+    -- If this parse fails, there is no point in continuing
+    ---------------------------------------------------
+
+    SELECT @DatasetName = DSName
+    FROM (SELECT @ResultsXML.value('(/DTARef_MassErrorStats/Dataset)[1]', 'varchar(128)') AS DSName
+         ) LookupQ
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error extracting the dataset name from @ResultsXML'
+        goto Done
+    end
+
+    If @myRowCount = 0 or IsNull(@DatasetName, '') = ''
+    Begin
+        set @message = 'XML in @ResultsXML is not in the expected form; Could not match /DTARef_MassErrorStats/Dataset'
+        Set @myError = 50000
+        goto Done
+    End
+
+    ---------------------------------------------------
+    -- Parse the contents of @ResultsXML to populate @DatasetInfoTable
+    ---------------------------------------------------
+    --
+    INSERT INTO @DatasetInfoTable (
+        Dataset_ID,
+        Dataset_Name,
+        PSM_Source_Job
+    )
+    SELECT    @DatasetID AS DatasetID,
+            @DatasetName AS Dataset,
+            @ResultsXML.value('(/DTARef_MassErrorStats/PSM_Source_Job)[1]', 'int') AS PSM_Source_Job
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error extracting data from @ResultsXML'
+        goto Done
+    end
+
+
+    ---------------------------------------------------
+    -- Now extract out the Measurement information
+    ---------------------------------------------------
+    --
+    INSERT INTO @MeasurementsTable ([Name], ValueText)
+    SELECT [Name], ValueText
+    FROM (    SELECT  xmlNode.value('.', 'varchar(64)') AS ValueText,
+                xmlNode.value('@Name', 'varchar(64)') AS [Name]
+        FROM   @ResultsXML.nodes('/DTARef_MassErrorStats/Measurements/Measurement') AS R(xmlNode)
+    ) LookupQ
+    WHERE NOT ValueText IS NULL
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error parsing Measurement nodes in @ResultsXML'
+        goto Done
+    end
+
+    ---------------------------------------------------
+    -- Update or Validate Dataset_ID in @DatasetInfoTable
+    ---------------------------------------------------
+    --
+    If @DatasetID = 0
+    Begin
+        UPDATE @DatasetInfoTable
+        SET Dataset_ID = DS.Dataset_ID
+        FROM @DatasetInfoTable Target
+             INNER JOIN T_Dataset DS
+               ON Target.Dataset_Name = DS.Dataset_Num
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Warning: dataset not found in table T_Dataset: ' + @DatasetName
+            Set @myError = 50001
+            Goto Done
+        End
+
+        -- Update @DatasetID
+        SELECT @DatasetID = Dataset_ID
+        FROM @DatasetInfoTable
+
+    End
+    Else
+    Begin
+
+        -- @DatasetID was non-zero
+        -- Validate the dataset name in @DatasetInfoTable against T_Dataset
+
+        SELECT @DatasetIDCheck = DS.Dataset_ID
+        FROM @DatasetInfoTable Target
+             INNER JOIN T_Dataset DS
+             ON Target.Dataset_Name = DS.Dataset_Num
+
+        If @DatasetIDCheck <> @DatasetID
+        Begin
+            Set @message = 'Error: dataset ID values for ' + @DatasetName + ' do not match; expecting ' + Convert(varchar(12), @DatasetIDCheck) + ' but stored procedure param @DatasetID is ' + Convert(varchar(12), @DatasetID)
+            Set @myError = 50002
+            Goto Done
+        End
+    End
+
+    -----------------------------------------------
+    -- Populate the Value column in @MeasurementsTable
+    -- If any of the metrics has a non-numeric value, then the Value column will remain Null
+    -----------------------------------------------
+
+    UPDATE @MeasurementsTable
+    SET Value = Convert(float, FilterQ.ValueText)
+    FROM @MeasurementsTable Target
+         INNER JOIN ( SELECT Name,
+                             ValueText
+                      FROM @MeasurementsTable
+                      WHERE Not Try_Convert(float, ValueText) Is Null
+                    ) FilterQ
+           ON Target.Name = FilterQ.Name
+
+
+    -- Do not allow values to be larger than 1E+38 or smaller than -1E+38
+    UPDATE @MeasurementsTable
+    SET Value = 1E+38
+    WHERE Value > 1E+38
+
+    UPDATE @MeasurementsTable
+    SET Value = -1E+38
+    WHERE Value < -1E+38
+
+
+    -----------------------------------------------
+    -- Populate @KnownMetricsTable using data in @MeasurementsTable
+    -- Use a Pivot to extract out the known columns
+    -----------------------------------------------
+
+    INSERT INTO @KnownMetricsTable (Dataset_ID,
                                     MassErrorPPM,
                                     MassErrorPPM_Refined
                                   )
-	SELECT @DatasetID,
+    SELECT @DatasetID,
             MassErrorPPM,
             MassErrorPPM_Refined
-	FROM ( SELECT [Name],
-	              [Value]
-	       FROM @MeasurementsTable ) AS SourceTable
-	     PIVOT ( MAX([Value])
-	             FOR Name
-	             IN ( [MassErrorPPM], [MassErrorPPM_Refined] ) 
-	            ) AS PivotData
+    FROM ( SELECT [Name],
+                  [Value]
+           FROM @MeasurementsTable ) AS SourceTable
+         PIVOT ( MAX([Value])
+                 FOR Name
+                 IN ( [MassErrorPPM], [MassErrorPPM_Refined] )
+                ) AS PivotData
 
 
-	If @infoOnly <> 0
-	Begin
-		-----------------------------------------------
-		-- Preview the data, then exit
-		-----------------------------------------------
-		
-		SELECT *
-		FROM @DatasetInfoTable
+    If @infoOnly <> 0
+    Begin
+        -----------------------------------------------
+        -- Preview the data, then exit
+        -----------------------------------------------
 
-		SELECT *
-		FROM @MeasurementsTable
-		
-		SELECT *
-		FROM @KnownMetricsTable
-		
-		Goto Done
-	End
+        SELECT *
+        FROM @DatasetInfoTable
 
-	-----------------------------------------------
-	-- Add/Update T_Dataset_QC using a MERGE statement
-	-----------------------------------------------
-	--
-	MERGE T_Dataset_QC AS target
-	USING 
-		(SELECT	DI.Dataset_ID, 
+        SELECT *
+        FROM @MeasurementsTable
+
+        SELECT *
+        FROM @KnownMetricsTable
+
+        Goto Done
+    End
+
+    -----------------------------------------------
+    -- Add/Update T_Dataset_QC using a MERGE statement
+    -----------------------------------------------
+    --
+    MERGE T_Dataset_QC AS target
+    USING
+        (SELECT    DI.Dataset_ID,
                 DI.PSM_Source_Job,
                 M.MassErrorPPM,
                 M.MassErrorPPM_Refined
-		 FROM @KnownMetricsTable M INNER JOIN 
-		      @DatasetInfoTable DI ON M.Dataset_ID = DI.Dataset_ID
-		) AS Source (Dataset_ID, 
+         FROM @KnownMetricsTable M INNER JOIN
+              @DatasetInfoTable DI ON M.Dataset_ID = DI.Dataset_ID
+        ) AS Source (Dataset_ID,
                      PSM_Source_Job,
                      MassErrorPPM,
                      MassErrorPPM_Refined)
-	    ON (target.Dataset_ID = Source.Dataset_ID)
-	
-	WHEN Matched 
-		THEN UPDATE 
-			Set MassErrorPPM = Source.MassErrorPPM,
-				MassErrorPPM_Refined = Source.MassErrorPPM_Refined,
-				PSM_Source_Job = IsNull(target.PSM_Source_Job, Source.PSM_Source_Job)
-	WHEN Not Matched THEN
-		INSERT (Dataset_ID, 
-		        PSM_Source_Job,
-		        MassErrorPPM,
-				MassErrorPPM_Refined
-			   )
-		VALUES ( Source.Dataset_ID, 
-		         Source.PSM_Source_Job,
-		         Source.MassErrorPPM,
-				 Source.MassErrorPPM_Refined
-			   )
+        ON (target.Dataset_ID = Source.Dataset_ID)
 
-	;
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error updating T_Dataset_QC'
-		goto Done
-	end	
+    WHEN Matched
+        THEN UPDATE
+            Set MassErrorPPM = Source.MassErrorPPM,
+                MassErrorPPM_Refined = Source.MassErrorPPM_Refined,
+                PSM_Source_Job = IsNull(target.PSM_Source_Job, Source.PSM_Source_Job)
+    WHEN Not Matched THEN
+        INSERT (Dataset_ID,
+                PSM_Source_Job,
+                MassErrorPPM,
+                MassErrorPPM_Refined
+               )
+        VALUES ( Source.Dataset_ID,
+                 Source.PSM_Source_Job,
+                 Source.MassErrorPPM,
+                 Source.MassErrorPPM_Refined
+               )
 
-		
-	Set @message = 'DTARefinery Mass Error stats successfully stored'
-	
+    ;
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error updating T_Dataset_QC'
+        goto Done
+    end
+
+
+    Set @message = 'DTARefinery Mass Error stats successfully stored'
+
 Done:
 
-	If @myError <> 0
-	Begin
-		If @message = ''
-			Set @message = 'Error in StoreDTARefMassErrorStats'
-		
-		Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
-		
-		If @InfoOnly = 0
-			Exec PostLogEntry 'Error', @message, 'StoreDTARefMassErrorStats'
-	End
-	
-	If Len(@message) > 0 AND @InfoOnly <> 0
-		Print @message
+    If @myError <> 0
+    Begin
+        If @message = ''
+            Set @message = 'Error in StoreDTARefMassErrorStats'
 
-	---------------------------------------------------
-	-- Log SP usage
-	---------------------------------------------------
+        Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-	Declare @UsageMessage varchar(512)
-	If IsNull(@DatasetName, '') = ''
-		Set @UsageMessage = 'Dataset ID: ' + Convert(varchar(12), @DatasetID)
-	Else
-		Set @UsageMessage = 'Dataset: ' + @DatasetName
+        If @InfoOnly = 0
+            Exec PostLogEntry 'Error', @message, 'StoreDTARefMassErrorStats'
+    End
 
-	If @InfoOnly = 0
-		Exec PostUsageLogEntry 'StoreDTARefMassErrorStats', @UsageMessage
+    If Len(@message) > 0 AND @InfoOnly <> 0
+        Print @message
 
-	Return @myError
+    ---------------------------------------------------
+    -- Log SP usage
+    ---------------------------------------------------
+
+    Declare @UsageMessage varchar(512)
+    If IsNull(@DatasetName, '') = ''
+        Set @UsageMessage = 'Dataset ID: ' + Convert(varchar(12), @DatasetID)
+    Else
+        Set @UsageMessage = 'Dataset: ' + @DatasetName
+
+    If @InfoOnly = 0
+        Exec PostUsageLogEntry 'StoreDTARefMassErrorStats', @UsageMessage
+
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreDTARefMassErrorStats] TO [DDL_Viewer] AS [dbo]

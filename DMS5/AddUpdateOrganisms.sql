@@ -7,11 +7,10 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 /****************************************************
 **
-**  Desc: Adds new or edits existing Organisms
+**  Desc:
+**      Adds new or edits existing Organisms
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   grk
 **  Date:   03/07/2006

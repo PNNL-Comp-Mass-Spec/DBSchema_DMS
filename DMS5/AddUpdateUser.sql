@@ -7,7 +7,8 @@ GO
 CREATE Procedure [dbo].[AddUpdateUser]
 /****************************************************
 **
-**  Desc: Adds new or updates existing User in database
+**  Desc:
+**      Adds new or updates existing User in database
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -39,7 +40,7 @@ CREATE Procedure [dbo].[AddUpdateUser]
     @Email varchar(64),                 -- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
     @UserStatus varchar(24),            -- Active or Inactive (whether or not user is Active in DMS)
     @UserUpdate varchar(1),             -- Y or N  (whether or not to auto-update using UpdateUsersFromWarehouse)
-    @OperationsList varchar(1024),      -- List of access permissions for user 
+    @OperationsList varchar(1024),      -- List of access permissions for user
     @Comment varchar(512) = '',
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
@@ -49,9 +50,9 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @msg varchar(256)
     Declare @logErrors tinyint = 0
     Declare @charIndex int = 0
@@ -59,15 +60,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateUser', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
+    BEGIN TRY
 
         ---------------------------------------------------
         -- Validate input fields
@@ -85,7 +86,7 @@ As
             RAISERROR ('Username was blank',
                 11, 1)
         End
-        Else 
+        Else
         Begin
             Set @charIndex = CharIndex('\', @Username)
             If @charIndex > 0
@@ -149,7 +150,7 @@ As
         ---------------------------------------------------
         -- action for add mode
         ---------------------------------------------------
-        
+
         If @Mode = 'add'
         Begin
             -- Add an H to @HanfordIDNum if it starts with a number
@@ -157,14 +158,14 @@ As
             Begin
                 Set @HanfordIDNum = 'H' + @HanfordIDNum
             End
-            
+
             INSERT INTO T_Users (
-                U_PRN, 
-                U_Name, 
-                U_HID, 
+                U_PRN,
+                U_Name,
+                U_HID,
                 U_Payroll,
                 U_Email,
-                U_Status, 
+                U_Status,
                 U_update,
                 U_comment
             ) VALUES (
@@ -173,10 +174,10 @@ As
                 @HanfordIDNum,
                 @Payroll,
                 @Email,
-                @UserStatus, 
+                @UserStatus,
                 @UserUpdate,
                 ISNULL(@Comment, '')
-            )    
+            )
             -- Obtain User ID of newly created User
             --
             Set @UserID = SCOPE_IDENTITY()
@@ -197,16 +198,16 @@ As
         -- action for update mode
         ---------------------------------------------------
         --
-        If @Mode = 'update' 
+        If @Mode = 'update'
         Begin
             If @UserStatus = 'Inactive'
             Begin
                 Set @myError = 0
                 --
                 UPDATE T_Users
-                SET 
-                    U_Name = @LastNameFirstName, 
-                    U_HID = @HanfordIDNum, 
+                SET
+                    U_Name = @LastNameFirstName,
+                    U_HID = @HanfordIDNum,
                     U_Payroll = @Payroll,
                     U_Email = @Email,
                     U_Status = @UserStatus,
@@ -229,9 +230,9 @@ As
                 Set @myError = 0
                 --
                 UPDATE T_Users
-                SET 
-                    U_Name = @LastNameFirstName, 
-                    U_HID = @HanfordIDNum, 
+                SET
+                    U_Name = @LastNameFirstName,
+                    U_HID = @HanfordIDNum,
                     U_Payroll = @Payroll,
                     U_Email = @Email,
                     U_Status = @UserStatus,
@@ -257,21 +258,21 @@ As
         exec @myError = AddUpdateUserOperations @UserID, @OperationsList, @message output
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Username ' + @Username        
+            Declare @logMessage varchar(1024) = @message + '; Username ' + @Username
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateUser'
         End
 
     END CATCH
-    
+
     Return 0
 
 GO

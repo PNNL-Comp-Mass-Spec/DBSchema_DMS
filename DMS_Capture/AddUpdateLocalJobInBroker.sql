@@ -6,155 +6,154 @@ GO
 CREATE PROCEDURE AddUpdateLocalJobInBroker
 /****************************************************
 **
-**  Desc: 
-**  Create or edit analysis job directly in broker database 
-**	
+**  Desc:
+**      Create or edit analysis job directly in broker database
+**
 **  Return values: 0: success, otherwise, error code
 **
-**
-**  Auth: grk
-**	Date:	11/16/2010 grk - Initial release
-**			03/15/2011 dac - Modified to allow updating in HOLD mode
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/08/2016 mem - Include job number in errors raised by RAISERROR
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW instead of RAISERROR
+**  Auth:   grk
+**  Date:   11/16/2010 grk - Initial release
+**          03/15/2011 dac - Modified to allow updating in HOLD mode
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/08/2016 mem - Include job number in errors raised by RAISERROR
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW instead of RAISERROR
 **
 *****************************************************/
 (
-	@job int OUTPUT,
-	@scriptName varchar(64),
-	@priority int,
-	@jobParam varchar(8000),
-	@comment varchar(512),
-	@resultsFolderName varchar(128) OUTPUT,
-	@mode varchar(12) = 'add', -- or 'update' or 'reset'
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @job int OUTPUT,
+    @scriptName varchar(64),
+    @priority int,
+    @jobParam varchar(8000),
+    @comment varchar(512),
+    @resultsFolderName varchar(128) OUTPUT,
+    @mode varchar(12) = 'add', -- or 'update' or 'reset'
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
 AS
-	Set XACT_ABORT, nocount on
-	
-	Declare @myError int = 0
-	Declare @myRowCount int = 0
-	
-	Declare @DebugMode TINYINT = 0
-	Declare @errorMsg varchar(128)
-	
-	Declare @reset CHAR(1) = 'N'
-	If @mode = 'reset'
-	Begin 
-		SET @mode = 'update'
-		SET @reset = 'Y'
-	End 
+    Set XACT_ABORT, nocount on
 
-	BEGIN TRY
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1;
-		If @authorized = 0
-		Begin
-			THROW 51000, 'Access denied', 1;
-		End
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-		---------------------------------------------------
-		-- does job exist
-		---------------------------------------------------
-		
-		DECLARE 
-			@id INT = 0,
-			@state int = 0
-		--
-		SELECT
-			@id = Job ,
-			@state = State
-		FROM dbo.T_Jobs
-		WHERE Job = @job
-		
-		IF @mode = 'update' AND @id = 0
-		Begin
-			Set @errorMsg = 'Cannot update nonexistent job ' + Cast(@job as varchar(9));
-			THROW 51001, @errorMsg, 1;
-		End
-		
-		IF @mode = 'update' AND NOT @state IN (1, 4, 5, 100) -- new, complete, failed, hold
-		Begin
-		Set @errorMsg = 'Cannot update job ' + Cast(@job as varchar(9)) + 
-		                ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 4, 5, or 100';
-			THROW 51002, @errorMsg, 1;
-		End
-		
-		---------------------------------------------------
-		-- verify parameters
-		---------------------------------------------------
+    Declare @DebugMode TINYINT = 0
+    Declare @errorMsg varchar(128)
 
-		---------------------------------------------------
-		-- update mode 
-		-- restricted to certain job states and limited to certain fields
-		-- force reset of job?
-		---------------------------------------------------
-		
-		IF @mode = 'update'
-		BEGIN --<update>
-			BEGIN TRANSACTION
+    Declare @reset CHAR(1) = 'N'
+    If @mode = 'reset'
+    Begin
+        SET @mode = 'update'
+        SET @reset = 'Y'
+    End
 
-			-- update job and params
-			--
-			UPDATE   dbo.T_Jobs
-			SET      Priority = @priority ,
-					Comment = @comment ,
-					State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (UpdateJobState will handle final job state update)
-			WHERE    Job = @job
-			
-			UPDATE   dbo.T_Job_Parameters
-			SET      Parameters = CONVERT(XML, @jobParam)
-			WHERE    job = @job
-			COMMIT
+    BEGIN TRY
+        ---------------------------------------------------
+        -- Verify that the user can execute this procedure from the given client host
+        ---------------------------------------------------
 
-		END --<update>
-		
+        Declare @authorized tinyint = 0
+        Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1;
+        If @authorized = 0
+        Begin
+            THROW 51000, 'Access denied', 1;
+        End
 
-		---------------------------------------------------
-		-- add mode
-		---------------------------------------------------
+        ---------------------------------------------------
+        -- does job exist
+        ---------------------------------------------------
 
-		IF @mode = 'add'
-		BEGIN --<add>
+        DECLARE
+            @id INT = 0,
+            @state int = 0
+        --
+        SELECT
+            @id = Job ,
+            @state = State
+        FROM dbo.T_Jobs
+        WHERE Job = @job
 
-			set @message = 'Add mode is not implemented; cannot add job ' + 
-			               Cast(@job as varchar(9)) + ' with state ' + Cast(@state as varchar(9));
-			THROW 51003, @message, 1;
+        IF @mode = 'update' AND @id = 0
+        Begin
+            Set @errorMsg = 'Cannot update nonexistent job ' + Cast(@job as varchar(9));
+            THROW 51001, @errorMsg, 1;
+        End
 
-			DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
-/*			
-			exec MakeLocalJobInBroker
-					@scriptName,
-					@priority,
-					@jobParamXML,
-					@comment,
-					@DebugMode,
-					@job OUTPUT,
-					@resultsFolderName OUTPUT,
-					@message OUTPUT
-*/	
-		END --<add>
+        IF @mode = 'update' AND NOT @state IN (1, 4, 5, 100) -- new, complete, failed, hold
+        Begin
+        Set @errorMsg = 'Cannot update job ' + Cast(@job as varchar(9)) +
+                        ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 4, 5, or 100';
+            THROW 51002, @errorMsg, 1;
+        End
 
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
+        ---------------------------------------------------
+        -- verify parameters
+        ---------------------------------------------------
 
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
+        ---------------------------------------------------
+        -- update mode
+        -- restricted to certain job states and limited to certain fields
+        -- force reset of job?
+        ---------------------------------------------------
 
-		Exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
-	END CATCH
+        IF @mode = 'update'
+        BEGIN --<update>
+            BEGIN TRANSACTION
 
-	return @myError
+            -- update job and params
+            --
+            UPDATE   dbo.T_Jobs
+            SET      Priority = @priority ,
+                    Comment = @comment ,
+                    State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (UpdateJobState will handle final job state update)
+            WHERE    Job = @job
+
+            UPDATE   dbo.T_Job_Parameters
+            SET      Parameters = CONVERT(XML, @jobParam)
+            WHERE    job = @job
+            COMMIT
+
+        END --<update>
+
+
+        ---------------------------------------------------
+        -- add mode
+        ---------------------------------------------------
+
+        IF @mode = 'add'
+        BEGIN --<add>
+
+            set @message = 'Add mode is not implemented; cannot add job ' +
+                           Cast(@job as varchar(9)) + ' with state ' + Cast(@state as varchar(9));
+            THROW 51003, @message, 1;
+
+            DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
+/*
+            exec MakeLocalJobInBroker
+                    @scriptName,
+                    @priority,
+                    @jobParamXML,
+                    @comment,
+                    @DebugMode,
+                    @job OUTPUT,
+                    @resultsFolderName OUTPUT,
+                    @message OUTPUT
+*/
+        END --<add>
+
+    END TRY
+    BEGIN CATCH
+        EXEC FormatErrorMessage @message output, @myError output
+
+        -- rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+
+        Exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
+    END CATCH
+
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [DDL_Viewer] AS [dbo]

@@ -7,10 +7,11 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 /****************************************************
 **
-**  Desc:   Adds a new experiment to DB
+**  Desc:
+**      Adds a new experiment to DB
 **
-**          Note that the Experiment Detail Report web page
-**          uses DoMaterialItemOperation to retire an experiment
+**      Note that the Experiment Detail Report web page
+**      uses DoMaterialItemOperation to retire an experiment
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -184,7 +185,7 @@ As
 
     -- Replace instances of CRLF (or LF) with semicolons
     Set @comment = dbo.RemoveCrLf(@comment)
-    
+
     -- Auto change empty internal standards to "none" since now rarely used
     If @internalStandard = ''
         Set @internalStandard = 'none'
@@ -232,7 +233,7 @@ As
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
-    
+
     If @mode In ('update', 'check_update') And @experimentID > 0
     Begin
         Select
@@ -255,7 +256,7 @@ As
         If @existingExperimentName <> @experimentName
         Begin
             -- Allow renaming if the experiment is not associated with a dataset or requested run, and if the new name is unique
-          
+
             If Exists (Select * From T_Experiments Where Experiment_Num = @experimentName)
             Begin
                 SELECT
@@ -265,7 +266,7 @@ As
                 --
                 RAISERROR ('Cannot rename: Experiment "%s" already exists, with ID %d', 11, 40, @experimentName, @existingExperimentID)
             End
-                        
+
             If Exists (Select * From T_Dataset Where Exp_ID = @experimentID)
             Begin
                 SELECT @existingDataset = Dataset_Num
@@ -274,7 +275,7 @@ As
                 --
                 RAISERROR ('Cannot rename: Experiment ID %d is associated with dataset "%s"', 11, 40, @experimentID, @existingDataset)
             End
-            
+
             If Exists (Select * From T_Requested_Run Where Exp_ID = @experimentID)
             Begin
                 SELECT @existingRequestedRun = RDS_Name
@@ -340,7 +341,7 @@ As
         --
         SELECT @researcherPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -900,7 +901,7 @@ As
                 @callingUser,
                 'Experiment updated'
         End
-                
+
         If Len(@existingExperimentName) > 0 And @existingExperimentName <> @experimentName
         Begin
             Set @message = 'Renamed experiment from "' + @existingExperimentName + '" to "' + @experimentName + '"'

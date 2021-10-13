@@ -7,7 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
-**  Desc:   Adds a new entry to the requested dataset table
+**  Desc:
+**      Adds a new entry to the requested dataset table
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -151,7 +152,7 @@ As
 
     -- default priority at which new requests will be created
     Declare @defaultPriority int = 0
-    
+
     Declare @currentBatch int = 0
 
     Declare @debugMsg varchar(512)
@@ -640,8 +641,8 @@ As
                         @msg output,
                         @autoPopulateUserListIfBlank,
                         @samplePrepRequest = 0,
-                        @experimentID = @experimentID, 
-                        @campaignID = 0, 
+                        @experimentID = @experimentID,
+                        @campaignID = 0,
                         @addingItem = @addingItem
 
 
@@ -993,7 +994,7 @@ As
         If @batch = 0 And @currentBatch <> 0
         Begin
             Set @msg = 'Removed request ' + Cast(@request As Varchar(12)) + ' from batch ' + Cast(@currentBatch As Varchar(12))
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)            
+            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
         End
     End -- </update>
 

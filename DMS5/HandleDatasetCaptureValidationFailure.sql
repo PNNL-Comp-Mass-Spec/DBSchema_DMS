@@ -7,13 +7,14 @@ GO
 CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 /****************************************************
 **
-**  Desc:   This procedure can be used with datasets that
-**          are successfully captured but fail the dataset integrity check
-**          (.Raw file too small, expected files missing, etc).
+**  Desc:
+**      This procedure can be used with datasets that
+**      are successfully captured but fail the dataset integrity check
+**      (.Raw file too small, expected files missing, etc).
 **
-**          The procedure marks the dataset state as Inactive, 
-**          changes the rating to -1 = No Data (Blank/bad),
-**          and makes sure a dataset archive entry exists
+**      The procedure marks the dataset state as Inactive,
+**      changes the rating to -1 = No Data (Blank/bad),
+**      and makes sure a dataset archive entry exists
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -40,15 +41,15 @@ As
     Declare @myRowCount int
     Set @myError = 0
     Set @myRowCount = 0
-    
+
     Declare @datasetID int
     Declare @datasetName varchar(255)
     Declare @existingComment varchar(512)
-    
+
     Set @datasetName = ''
     Set @datasetID = 0
     Set @existingComment = ''
-    
+
     ----------------------------------------
     -- Validate the inputs
     ----------------------------------------
@@ -56,28 +57,28 @@ As
     Set @datasetNameOrID = IsNull(@datasetNameOrID, '')
     Set @comment = IsNull(@comment, '')
     Set @message = ''
-    
+
     If @comment = ''
         Set @comment = 'Bad dataset'
-    
+
     -- Treat the following characters as meaning "do not update the comment"
     If @comment in (' ', '.', ';', ',', '!', '^')
         Set @comment = ''
-    
+
     Set @datasetID = IsNull(Try_Convert(int, @datasetNameOrID), 0)
     If @datasetID <> 0
     Begin
         ----------------------------------------
         -- Lookup the Dataset Name
         ----------------------------------------
-        
+
         Set @datasetID = Convert(int, @datasetNameOrID)
-        
-        SELECT @datasetName = Dataset_Num, 
+
+        SELECT @datasetName = Dataset_Num,
                @existingComment = DS_Comment
         FROM T_Dataset
         WHERE (Dataset_ID = @datasetID)
-        
+
         If @datasetName = ''
         Begin
             Set @message = 'Dataset ID not found: ' + @datasetNameOrID
@@ -87,18 +88,18 @@ As
 
     End
     Else
-    Begin    
+    Begin
         ----------------------------------------
         -- Lookup the dataset ID
         ----------------------------------------
-    
+
         Set @datasetName = @datasetNameOrID
-                
+
         SELECT @datasetID = Dataset_ID,
                @existingComment = DS_Comment
         FROM T_Dataset
         WHERE (Dataset_Num = @datasetName)
-        
+
         If @datasetName = ''
         Begin
             Set @message = 'Dataset not found: ' + @datasetName
@@ -106,12 +107,12 @@ As
             Print @message
         End
     End
-    
+
     If @myError = 0
     Begin
         If @comment = 'Bad .raw file' AND @existingComment LIKE '%Cannot convert .D to .UIMF%'
             Set @comment = ''
-        
+
         If @infoOnly <> 0
         Begin
             SELECT 'Mark dataset as bad: ' + @comment as Message, *
@@ -120,7 +121,7 @@ As
         End
         Else
         Begin
-                
+
             UPDATE T_Dataset
             SET DS_comment = dbo.AppendToText(DS_Comment, @comment, 0, '; ', 512),
                 DS_state_ID = 4,
@@ -139,13 +140,13 @@ As
             Begin
                 -- Also update T_Dataset_Archive
                 Exec AddArchiveDataset @datasetID
-                
+
                 Set @message = 'Marked dataset as bad: ' + @datasetName
                 Print @message
-                
+
             End
         End
-    
+
     End
 
     return @myError

@@ -4,12 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[HandleDatasetCaptureValidationFailure]
+CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 /****************************************************
 **
-**  Desc:   This procedure can be used with datasets that
-**          are successfully captured but fail the dataset integrity check
-**          (.Raw file too small, expected files missing, etc).
+**  Desc:
+**      This procedure can be used with datasets that
+**      are successfully captured but fail the dataset integrity check
+**      (.Raw file too small, expected files missing, etc).
 **
 **          The procedure changes the capture job state to 101
 **          then calls HandleDatasetCaptureValidationFailure in DMS5
@@ -36,7 +37,7 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @datasetID int
     Declare @datasetName varchar(255)
     Declare @captureJob int
@@ -52,24 +53,24 @@ As
     Set @datasetNameOrID = IsNull(@datasetNameOrID, '')
     Set @comment = IsNull(@comment, '')
     Set @message = ''
-    
+
     If @comment = ''
         Set @comment = 'Bad dataset'
-        
+
     Set @datasetID = IsNull(Try_Convert(int, @datasetNameOrID), 0)
     If @datasetID <> 0
     Begin
         ----------------------------------------
         -- Lookup the Dataset Name
         ----------------------------------------
-        
+
         Set @datasetID = Convert(int, @datasetNameOrID)
-        
+
         SELECT @datasetName = Dataset
         FROM T_Jobs
-        WHERE Dataset_ID = @datasetID AND 
+        WHERE Dataset_ID = @datasetID AND
               Script IN ('DatasetCapture', 'IMSDatasetCapture')
-        
+
         If @datasetName = ''
         Begin
             set @message = 'Dataset ID not found: ' + @datasetNameOrID
@@ -79,18 +80,18 @@ As
 
     End
     Else
-    Begin    
+    Begin
         ----------------------------------------
         -- Lookup the dataset ID
         ----------------------------------------
-    
+
         Set @datasetName = @datasetNameOrID
-                
+
         SELECT @datasetID = Dataset_ID
         FROM T_Jobs
-        WHERE Dataset = @datasetName AND 
+        WHERE Dataset = @datasetName AND
               Script IN ('DatasetCapture', 'IMSDatasetCapture')
-        
+
         If @datasetID = 0
         Begin
             set @message = 'Dataset not found: ' + @datasetName
@@ -98,9 +99,9 @@ As
             Print @message
         End
     End
-    
+
     If @myError = 0
-    Begin    
+    Begin
         -- Make sure the DatasetCapture job has failed
         SELECT @captureJob = Job
         FROM T_Jobs
@@ -117,17 +118,17 @@ As
             Print @message
         End
     End
-    
+
     If @myError = 0
     Begin -- <a>
         If @infoOnly <> 0
         Begin
             SELECT 'Mark dataset as bad: ' + @comment as Message, *
             FROM T_Jobs
-            WHERE Dataset_ID = @datasetID AND 
-                  Script IN ('DatasetCapture', 'IMSDatasetCapture') AND 
+            WHERE Dataset_ID = @datasetID AND
+                  Script IN ('DatasetCapture', 'IMSDatasetCapture') AND
                   State = 5
-    
+
         End
         Else
         Begin -- <b>
@@ -140,7 +141,7 @@ As
             Begin
                 -- Use special completion code of 101
                 EXEC @myError = S_SetCaptureTaskComplete @datasetName, 101, @message OUTPUT, @failureMessage = @message
-                
+
                 -- Fail out the job with state 14 (Failed, Ignore Job Step States)
                 UPDATE T_Jobs
                 SET State = 14
@@ -150,7 +151,7 @@ As
 
                 Goto Done
             End
-            
+
             UPDATE T_Jobs
             SET State = 101
             WHERE Job = @captureJob
@@ -167,13 +168,13 @@ As
             Begin
                 -- Mark the dataset as bad in DMS5
                 Exec DMS5.dbo.HandleDatasetCaptureValidationFailure @datasetID, @comment, @infoOnly, ''
-                
+
                 Set @message = 'Marked dataset as bad: ' + @datasetName
                 Print @message
-                
+
             End
         End -- </b>
-    
+
     End -- </a>
 
 Done:

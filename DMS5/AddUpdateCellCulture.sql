@@ -7,7 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateCellCulture]
 /****************************************************
 **
-**  Desc: Adds new or updates existing cell culture in database
+**  Desc:
+**      Adds new or updates existing cell culture in database
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -277,7 +278,7 @@ As
         --
         SELECT @contactPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -306,7 +307,7 @@ As
         --
         SELECT @piPRN = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin

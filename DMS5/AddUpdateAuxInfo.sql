@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateAuxInfo]
+CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 /****************************************************
 **
 **  Adds new or updates existing auxiliary information in database
@@ -23,13 +23,13 @@ CREATE Procedure [dbo].[AddUpdateAuxInfo]
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/10/2018 mem - Remove invalid check of @mode against check_add or check_update
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
-**    
+**
 *****************************************************/
 (
     @targetName varchar(128) = '',          -- Experiment, Cell Culture, Dataset, or SamplePrepRequest
     @targetEntityName varchar(128) = '',    -- Target entity ID or name
     @categoryName varchar(128) = '',
-    @subCategoryName varchar(128) = '', 
+    @subCategoryName varchar(128) = '',
     @itemNameList varchar(4000) = '',       -- AuxInfo names to update; delimiter is !
     @itemValueList varchar(3000) = '',      -- AuxInfo values; delimiter is !
     @mode varchar(12) = 'add',              -- add, update, check_add, check_update, or check_only
@@ -40,28 +40,28 @@ As
 
     Declare @myError int= 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @msg varchar(256)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfo', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    Begin TRY 
+
+    Begin TRY
 
     ---------------------------------------------------
     -- What mode are we in
     ---------------------------------------------------
-    
+
     If @mode In ('check_update', 'check_add')
     Begin
         Set @mode = 'check_only'
@@ -79,7 +79,7 @@ As
 
     Set @itemNameList = IsNull(@itemNameList, '')
     Set @itemValueList = IsNull(@itemValueList, '')
-    
+
     ---------------------------------------------------
     -- Has ID been supplied as target name?
     ---------------------------------------------------
@@ -97,9 +97,9 @@ As
         Declare @tgtTableNameCol varchar(128)
         Declare @tgtTableIDCol varchar(128)
 
-        SELECT 
-            @tgtTableName = Target_Table, 
-            @tgtTableIDCol = Target_ID_Col, 
+        SELECT
+            @tgtTableName = Target_Table,
+            @tgtTableIDCol = Target_ID_Col,
             @tgtTableNameCol = Target_Name_Col
         FROM T_AuxInfo_Target
         WHERE (Name = @targetName)
@@ -117,14 +117,14 @@ As
             ---------------------------------------------------
             -- Resolve target name and entity name to entity ID
             ---------------------------------------------------
-            
+
             Declare @sql nvarchar(1024)
-            
+
             Set @sql = N' SELECT @targetID = ' + @tgtTableIDCol +
                         ' FROM ' + @tgtTableName +
                         ' WHERE ' + @tgtTableNameCol +
                           ' = ''' + @targetEntityName + ''''
-            
+
             exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
             --
             If @targetID = 0
@@ -141,11 +141,11 @@ As
 
     If LEN(@itemNameList) = 0
         return 0
-    
+
     ---------------------------------------------------
     -- Populate temorary tables using @itemNameList and @itemValueList
     ---------------------------------------------------
-    
+
     Declare @tblAuxInfoNames Table
     (
         EntryID int,
@@ -157,12 +157,12 @@ As
         EntryID int,
         ItemValue varchar(256)
     )
-    
+
     INSERT INTO @tblAuxInfoNames (EntryID, ItemName)
     SELECT EntryID, Value
     FROM dbo.udfParseDelimitedListOrdered(@itemNameList, '!', 0)
     ORDER BY EntryID
-    
+
 
     INSERT INTO @tblAuxInfoValues (EntryID, ItemValue)
     SELECT EntryID, Value
@@ -173,20 +173,20 @@ As
     Declare @done int = 0
     Declare @count int = 0
     Declare @EntryID int = -1
-        
+
     Declare @itemID int
-    
+
     Declare @inFld varchar(128)
     Declare @vFld varchar(128)
     Declare @tVal varchar(128)
-    
+
     ---------------------------------------------------
     -- Process @tblAuxInfoNames
     ---------------------------------------------------
 
     While @done = 0
     Begin -- <a2>
-    
+
         SELECT TOP 1 @EntryID = EntryID,
                      @inFld = ItemName
         FROM @tblAuxInfoNames
@@ -197,14 +197,14 @@ As
 
         If @myRowCount = 0
             Set @Done = 1
-        
-        If @myRowCount = 1 And Len(IsNull(@inFld, '')) > 0 
+
+        If @myRowCount = 1 And Len(IsNull(@inFld, '')) > 0
         Begin -- <b2>
-            
+
             Set @count = @count + 1
-            
+
             -- Lookup the value for this aux info entry
-            --        
+            --
             Set @vFld = ''
             --
             SELECT @vFld = ItemValue
@@ -241,7 +241,7 @@ As
                 End
                 Else
                 Begin -- <d>
-                
+
                     -- Does entry exist in value table?
                     --
                     SELECT @tVal = [Value]
@@ -259,7 +259,7 @@ As
                     -- If entry exists in value table, update it
                     -- otherwise insert it
                     --
-                    If @myRowCount > 0 
+                    If @myRowCount > 0
                     Begin
                         If @tVal <> @vFld
                         Begin
@@ -275,23 +275,23 @@ As
                                                      [Value] )
                         VALUES(@targetID, @itemID, @vFld)
                     End
-                    
+
                 End -- </d>
-                
+
             End -- </c>
-        
+
         End -- </b2>
     End -- </a2>
 
     End TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
     End CATCH
-    
+
     return @myError
 
 

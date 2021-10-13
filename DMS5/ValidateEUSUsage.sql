@@ -39,12 +39,14 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          05/26/2021 mem - Capitalize @eusUsageType
 **          05/27/2021 mem - Add parameters @experimentID, @campaignID, and @addingItem
 **          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
+**          10/13/2021 mem - Use Like when extracting integers
+**                         - Add additional debug messages
 **
 *****************************************************/
 (
     @eusUsageType varchar(50) output,
     @eusProposalID varchar(10) output,
-    @eusUsersList varchar(1024) output,         -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"
+    @eusUsersList varchar(1024) output,         -- Comma separated list of EUS user IDs (integers); also supports the form "Baker, Erin (41136)"; does not support "Baker, Erin"
     @eusUsageTypeID int output,
     @message varchar(1024) output,
     @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
@@ -61,9 +63,9 @@ As
     Declare @myRowCount int = 0
 
     Declare @n int
-    Declare @UserCount int
-    Declare @PersonID int
-    Declare @NewUserList varchar(1024)
+    Declare @userCount int
+    Declare @personID int
+    Declare @newUserList varchar(1024)
     Declare @enabledForPrepRequests tinyint = 0
     Declare @eusUsageTypeName varchar(50)
 
@@ -378,17 +380,17 @@ As
 
             -- Auto-populate @eusUsersList with the first user associated with the given user proposal
             --
-            Set @PersonID = 0
+            Set @personID = 0
 
-            SELECT @PersonID = MIN(EUSU.Person_ID)
+            SELECT @personID = MIN(EUSU.Person_ID)
             FROM T_EUS_Proposals EUSP
                 INNER JOIN T_EUS_Proposal_Users EUSU
                 ON EUSP.Proposal_ID = EUSU.Proposal_ID
             WHERE EUSP.Proposal_ID = @eusProposalID
 
-            If IsNull(@PersonID, 0) > 0
+            If IsNull(@personID, 0) > 0
             Begin
-                Set @eusUsersList = Convert(varchar(12), @PersonID)
+                Set @eusUsersList = Convert(varchar(12), @personID)
                 Set @message = dbo.AppendToText(
                                 @message,
                                 'Warning: EUS User list was empty; auto-selected user "' + @eusUsersList + '"',
@@ -406,33 +408,50 @@ As
 
             If @eusUsersList Like '%[A-Z]%' And @eusUsersList Like '%([0-9]%' And @eusUsersList Like '%[0-9])%'
             Begin
+                If @infoOnly > 0
+                    Print 'Parsing ' + @eusUsersList
+
                 -- @eusUsersList has entries of the form "Baker, Erin (41136)"
                 -- Parse @eusUsersList to only keep the integers and commas
                 --
-                Declare @StringLength int = Len(@eusUsersList)
-                Declare @CharNum int = 1
-                Declare @IntegerList varchar(1024) = ''
+                Declare @stringLength int = Len(@eusUsersList)
+                Declare @charNum int = 1
+                Declare @integerList varchar(1024) = ''
 
-                While @CharNum <= @StringLength
+                While @charNum <= @stringLength
                 Begin
-                    Declare @CurrentChar char = Substring(@eusUsersList, @CharNum, 1)
+                    Declare @currentChar char = Substring(@eusUsersList, @charNum, 1)
 
-                    If @CurrentChar = ',' Or Not Try_Convert(int, @CurrentChar) Is Null
+                    If @currentChar = ',' Or @currentChar Like '[0-9]'
                     Begin
-                        Set @IntegerList = @IntegerList + @CurrentChar
+                        Set @integerList = @integerList + @currentChar
                     End
 
-                    Set @CharNum = @CharNum + 1
+                    Set @charNum = @charNum + 1
                 End
 
-                Set @eusUsersList = @IntegerList
+                Set @eusUsersList = @integerList
+            End
+            
+            If @eusUsersList Like ',%'
+            Begin
+                -- Trim the leading comma
+                Set @eusUsersList = Substring(@eusUsersList, 2, Len(@eusUsersList))
             End
 
+            If @eusUsersList Like '%,'
+            Begin
+                -- Trim the trailing comma
+                Set @eusUsersList = Substring(@eusUsersList, 1, Len(@eusUsersList) - 1)
+            End
 
             Declare @tmpUsers TABLE
             (
                 Item varchar(256)
             )
+
+            If @infoOnly > 0
+                Print 'Splitting: "' + @eusUsersList + '"'
 
             -- Split items in @eusUsersList on commas
             --
@@ -446,6 +465,11 @@ As
             Begin
                 INSERT INTO @tmpUsers (Item)
                 VALUES (@eusUsersList)
+            End
+
+            If @infoOnly > 0
+            Begin
+                Select Item As EUS_UserID From @tmpUsers
             End
 
             -- Look for entries that are not integers
@@ -514,40 +538,40 @@ As
                         WHERE Proposal_ID = @eusProposalID
                     )
 
-                Set @UserCount = 0
-                SELECT @UserCount = COUNT(*)
+                Set @userCount = 0
+                SELECT @userCount = COUNT(*)
                 FROM @tmpUsers
 
-                Set @NewUserList = ''
+                Set @newUserList = ''
 
-                If @UserCount >= 1
+                If @userCount >= 1
                 Begin
                     -- Reconstruct the users list
-                    Set @NewUserList = ''
-                    SELECT @NewUserList = @NewUserList + ', ' + Item
+                    Set @newUserList = ''
+                    SELECT @newUserList = @newUserList + ', ' + Item
                     FROM @tmpUsers
 
                     -- Remove the first two characters
-                    If IsNull(@NewUserList, '') <> ''
-                        Set @NewUserList = SubString(@NewUserList, 3, Len(@NewUserList))
+                    If IsNull(@newUserList, '') <> ''
+                        Set @newUserList = SubString(@newUserList, 3, Len(@newUserList))
                 End
 
-                If IsNull(@NewUserList, '') = ''
+                If IsNull(@newUserList, '') = ''
                 Begin
                     -- Auto-populate @eusUsersList with the first user associated with the given user proposal
-                    Set @PersonID = 0
+                    Set @personID = 0
 
-                    SELECT @PersonID = MIN(EUSU.Person_ID)
+                    SELECT @personID = MIN(EUSU.Person_ID)
                     FROM T_EUS_Proposals EUSP
                         INNER JOIN T_EUS_Proposal_Users EUSU
                         ON EUSP.Proposal_ID = EUSU.Proposal_ID
                     WHERE EUSP.Proposal_ID = @eusProposalID
 
-                    If IsNull(@PersonID, 0) > 0
-                        Set @NewUserList = Convert(varchar(12), @PersonID)
+                    If IsNull(@personID, 0) > 0
+                        Set @newUserList = Convert(varchar(12), @personID)
                 End
 
-                Set @eusUsersList = IsNull(@NewUserList, '')
+                Set @eusUsersList = IsNull(@newUserList, '')
                 Set @message = dbo.AppendToText(
                         @message,
                         'Warning: Removed users from EUS User list that are not associated with proposal "' + @eusProposalID + '"',

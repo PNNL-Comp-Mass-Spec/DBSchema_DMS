@@ -7,7 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 /****************************************************
 **
-**  Desc:   Adds new or edits existing SamplePrepRequest
+**  Desc:
+**      Adds new or edits existing SamplePrepRequest
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -159,7 +160,7 @@ As
 
     If IsNull(@eusUserID, 0) <= 0
         Set @eusUserID = Null
-   
+
     Set @estimatedPrepTimeDays = IsNull(@estimatedPrepTimeDays, 1)
 
     Set @requestedPersonnel = Ltrim(Rtrim(IsNull(@requestedPersonnel, '')))
@@ -200,7 +201,7 @@ As
 
     If Len(IsNull(@reason, '')) < 1
         RAISERROR ('The reason field is required', 11, 116)
-    
+
     If @state = 'Closed'
     Begin
         -- Always clear State Comment when the state is closed
@@ -216,7 +217,7 @@ As
                      INNER JOIN dbo.T_User_Operations UO
                        ON UOP.Op_ID = UO.ID
                 WHERE U.U_Status = 'Active' AND
-                      UO.Operation = 'DMS_Sample_Preparation' AND 
+                      UO.Operation = 'DMS_Sample_Preparation' AND
                       U_PRN = @callingUser)
     Begin
           Set @allowUpdateEstimatedPrepTime = 1
@@ -399,7 +400,7 @@ As
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
             SELECT Value
-	        FROM dbo.udfParseDelimitedList(@requestedPersonnel, ';', 'AddUpdateSamplePrepRequest')
+            FROM dbo.udfParseDelimitedList(@requestedPersonnel, ';', 'AddUpdateSamplePrepRequest')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -409,7 +410,7 @@ As
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
             SELECT Value
-	        FROM dbo.udfParseDelimitedList(@assignedPersonnel, ';', 'AddUpdateSamplePrepRequest')
+            FROM dbo.udfParseDelimitedList(@assignedPersonnel, ';', 'AddUpdateSamplePrepRequest')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -496,7 +497,7 @@ As
             -- Auto-remove the 'na' user since an actual person is defined
             DELETE FROM #Tmp_UserInfo WHERE Name_and_PRN = 'na'
         End
-        
+
         -- Make sure names are capitalized properly
         --
         UPDATE #Tmp_UserInfo

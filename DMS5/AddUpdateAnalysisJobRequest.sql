@@ -7,7 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 /****************************************************
 **
-**  Desc:   Adds new analysis job request to request queue
+**  Desc:
+**      Adds new analysis job request to request queue
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -128,23 +129,23 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobRequest', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @requestName = IsNull(@requestName, '')
     Set @comment = IsNull(@comment, '')
-    
+
     Set @message = ''
 
     Declare @msg varchar(512)
@@ -156,7 +157,7 @@ As
 
     If @requestorPRN = 'H09090911' Or @requestorPRN = 'Autouser'
         RAISERROR ('Cannot add: the "Requested by" PRN cannot be the Autouser', 11, 4)
-    
+
     Set @dataPackageID = IsNull(@dataPackageID, 0)
     If @dataPackageID < 0
         Set @dataPackageID = 0
@@ -164,7 +165,7 @@ As
     Set @datasets = LTrim(RTrim(IsNull(@datasets, '')))
 
     ---------------------------------------------------
-    -- Resolve mode against presence or absence 
+    -- Resolve mode against presence or absence
     -- of request in database, and its current state
     ---------------------------------------------------
 
@@ -192,37 +193,37 @@ As
         --
         If @hit = 0
             RAISERROR ('Cannot update: entry is not in database', 11, 5)
-        
+
         If Exists (Select * From T_Analysis_Job Where AJ_RequestID = @requestID)
         Begin
             -- The request has jobs associated with it
-            
+
             Declare @currentName varchar(128)
             Declare @currentComment varchar(512)
-            
+
             SELECT @currentName = AJR_requestName,
                    @currentComment = AJR_comment
             FROM T_Analysis_Job_Request
             WHERE (AJR_requestID = @requestID)
-            
+
             If @currentName <> @requestName OR @currentComment <> @comment
             Begin
                 UPDATE T_Analysis_Job_Request
-                SET AJR_requestName = @requestName,                
+                SET AJR_requestName = @requestName,
                     AJR_comment = @comment
                 WHERE (AJR_requestID = @requestID)
-                
+
                 If @currentName <> @requestName AND @currentComment <> @comment
                     Set @message = 'Updated the request name and comment'
                 Else
                 Begin
                     If @currentName <> @requestName
                         Set @message = 'Updated the request name'
-                
+
                     If @currentComment <> @comment
                         Set @message = 'Updated the request comment'
                 End
-                                
+
                 Goto Done
             End
             Else
@@ -238,7 +239,7 @@ As
 
     If @dataPackageID > 0 And @datasets <> ''
         RAISERROR ('Dataset list must be empty when a Data Package ID is defined', 11, 1)
-        
+
     If @dataPackageID = 0 And @datasets = ''
         RAISERROR ('Dataset list is empty', 11, 1)
 
@@ -251,8 +252,8 @@ As
     CREATE TABLE #TD (
         Dataset_Num varchar(128),
         Dataset_ID int NULL,
-        IN_class varchar(64) NULL, 
-        DS_state_ID int NULL, 
+        IN_class varchar(64) NULL,
+        DS_state_ID int NULL,
         AS_state_ID int NULL,
         Dataset_Type varchar(64) NULL,
         DS_rating smallint NULL
@@ -319,7 +320,7 @@ As
     If @myRowCount = 1
     Begin
         SELECT @datasetMin = Min(Dataset_Num)
-        FROM #TD   
+        FROM #TD
     End
 
     If @myRowCount > 1
@@ -345,10 +346,10 @@ As
         RAISERROR (@msg, 11, 1)
         return 51007
     End
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_TmpDatasets ON #TmpDatasets
     (
-	    Dataset_Num
+        Dataset_Num
     )
 
     INSERT INTO #TmpDatasets( Dataset_Num )
@@ -367,20 +368,20 @@ As
     Declare @collectionCountAdded int
     Declare @result int
     Set @result = 0
-    
+
     Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
     If Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList, 1) <> 'na'
     Begin
-        exec @result = ValidateProteinCollectionListForDatasetTable 
-                            @protCollNameList=@protCollNameList output, 
-                            @collectionCountAdded=@collectionCountAdded output, 
-                            @showMessages=1, 
+        exec @result = ValidateProteinCollectionListForDatasetTable
+                            @protCollNameList=@protCollNameList output,
+                            @collectionCountAdded=@collectionCountAdded output,
+                            @showMessages=1,
                             @message=@message output
 
         If @result <> 0
             return @result
     End
-    
+
     ---------------------------------------------------
     -- Validate job parameters
     -- Note that ValidateAnalysisJobParameters calls ValidateAnalysisJobRequestDatasets
@@ -404,7 +405,7 @@ As
                             @ownerPRN = @requestorPRN output,
                             @mode = '', -- blank validation mode to suppress dataset state checking
                             @userID = @userID output,
-                            @analysisToolID = @analysisToolID output, 
+                            @analysisToolID = @analysisToolID output,
                             @organismID = @organismID output,
                             @message = @msg output,
                             @autoRemoveNotReleasedDatasets = @autoRemoveNotReleasedDatasets,
@@ -419,8 +420,8 @@ As
     -- Assure that @toolName is properly capitalized
     ---------------------------------------------------
     --
-    SELECT @toolName = AJT_toolName 
-    FROM T_Analysis_Tool 
+    SELECT @toolName = AJT_toolName
+    FROM T_Analysis_Tool
     WHERE AJT_toolName = @toolName
 
     ---------------------------------------------------
@@ -437,7 +438,7 @@ As
 
         If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
             Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
-            
+
         If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
     End
@@ -447,7 +448,7 @@ As
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MODa%' Or @toolName LIKE 'MSFragger%') And @protCollOptionsList Not Like '%decoy%' 
+    If (@toolName LIKE 'MODa%' Or @toolName LIKE 'MSFragger%') And @protCollOptionsList Not Like '%decoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
         If IsNull(@message, '') = ''
@@ -465,28 +466,28 @@ As
     IF EXISTS (SELECT * FROM #TD WHERE Dataset_Type LIKE 'hms%' OR Dataset_Type LIKE 'ims-hms%')
     Begin
         -- Possibly auto-update the settings file
-        
+
         SELECT @AutoSupersedeName = HMS_AutoSupersede
         FROM T_Settings_Files
         WHERE [File_Name] = @settingsFileName AND
                Analysis_Tool = @toolName
-        
+
         If IsNull(@AutoSupersedeName, '') <> ''
         Begin
             Set @settingsFileName = @AutoSupersedeName
-            
-            Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'            
+
+            Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'
             Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';', 512)
         End
     End
     */
-    
+
     -- Declare @QExactiveDSCount int = 0
     Declare @ProfileModeMSnDatasets int = 0
-    
+
     /*
      * Disabled in March 2016 because not always required
-     *    
+     *
     -- Count the number of QExactive datasets
     --
     SELECT @QExactiveDSCount = COUNT(*)
@@ -496,7 +497,7 @@ As
             INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
     WHERE InstGroup.IN_Group = 'QExactive'
     */
-    
+
     -- Count the number of datasets with profile mode MS/MS
     --
     SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
@@ -504,26 +505,26 @@ As
             INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
             INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
     WHERE DI.ProfileScanCount_MSn > 0
-    
+
     If @ProfileModeMSnDatasets > 0
     Begin
         -- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
         Set @AutoSupersedeName = dbo.AutoUpdateSettingsFileToCentroid(@settingsFileName, @toolName)
-        
+
         If IsNull(@AutoSupersedeName, '') <> @settingsFileName
         Begin
             Set @settingsFileName = @AutoSupersedeName
             Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName
-            
+
             If @ProfileModeMSnDatasets > 0
                 Set @MsgToAppend = @MsgToAppend + ' because one or more datasets in this job request has profile-mode MSn spectra'
             Else
-                Set @MsgToAppend = @MsgToAppend + ' because one or more QExactive datasets are included in this job request'            
-                
+                Set @MsgToAppend = @MsgToAppend + ' because one or more QExactive datasets are included in this job request'
+
             Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';', 512)
         End
     End
-    
+
     ---------------------------------------------------
     -- Auto-change the settings file if TMTpro samples
     ---------------------------------------------------
@@ -572,16 +573,16 @@ As
     SELECT @stateID = ID
     FROM T_Analysis_Job_Request_State
     WHERE StateName = @state
-    
+
     If @stateID = -1
         RAISERROR ('Could not resolve state name to ID', 11, 221)
 
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
-    
+
     If @mode = 'add'
     Begin
         Declare @newRequestNum int
@@ -591,17 +592,17 @@ As
         INSERT INTO T_Analysis_Job_Request
         (
             AJR_requestName,
-            AJR_created, 
-            AJR_analysisToolName, 
-            AJR_parmFileName, 
+            AJR_created,
+            AJR_analysisToolName,
+            AJR_parmFileName,
             AJR_settingsFileName,
-            AJR_organismDBName, 
-            AJR_organism_ID, 
-            AJR_proteinCollectionList, 
+            AJR_organismDBName,
+            AJR_organism_ID,
+            AJR_proteinCollectionList,
             AJR_proteinOptionsList,
-            AJR_comment, 
+            AJR_comment,
             AJR_specialProcessing,
-            AJR_state, 
+            AJR_state,
             AJR_requestor,
             Dataset_Min,
             Dataset_Max,
@@ -609,23 +610,23 @@ As
         )
         VALUES
         (
-            @requestName, 
-            getdate(), 
-            @toolName, 
-            @parmFileName, 
-            @settingsFileName, 
-            @organismDBName, 
-            @organismID, 
-            @protCollNameList, 
+            @requestName,
+            getdate(),
+            @toolName,
+            @parmFileName,
+            @settingsFileName,
+            @organismDBName,
+            @organismID,
+            @protCollNameList,
             @protCollOptionsList,
-            @comment, 
+            @comment,
             @specialProcessing,
             @stateID,
             @userID,
             @datasetMin,
             @datasetMax,
             Case When @dataPackageId > 0 Then @dataPackageId Else Null End
-        )        
+        )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -669,7 +670,7 @@ As
     Begin
         Set @message = 'Would create request "' + @requestName + '" with parameter file "' + @parmFileName + '" and settings file "' + @settingsFileName + '"'
     End
-    
+
     ---------------------------------------------------
     -- action for update mode
     ---------------------------------------------------
@@ -678,7 +679,7 @@ As
     Begin
         -- Update the request
         Set @myError = 0
-        
+
         Begin Tran
 
         UPDATE T_Analysis_Job_Request
@@ -728,22 +729,22 @@ As
             --
             Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
         End
-        
+
         Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
 
     End -- update mode
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        If @logErrors > 0   
+        If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName        
+            Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJobRequest'
         End
 

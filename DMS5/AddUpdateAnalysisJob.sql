@@ -7,7 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 /****************************************************
 **
-**  Desc:   Adds new analysis job to job table
+**  Desc:
+**      Adds new analysis job to job table
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -108,19 +109,19 @@ As
     Declare @myRowCount int = 0
 
     Declare @AlterEnteredByRequired tinyint = 0
-    
+
     ---------------------------------------------------
-    -- Assure that the comment and associated processor group 
+    -- Assure that the comment and associated processor group
     -- variables are not null
     ---------------------------------------------------
-    
+
     Set @comment = IsNull(@comment, '')
     Set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
     Set @callingUser = IsNull(@callingUser, '')
     Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 0)
     Set @PreventDuplicatesIgnoresNoExport = IsNull(@PreventDuplicatesIgnoresNoExport, 1)
     Set @infoOnly = IsNull(@infoOnly, 0)
-    
+
     Set @message = ''
 
     Declare @msg varchar(256)
@@ -131,15 +132,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJob', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin Try 
+    Begin Try
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates and resets)
@@ -152,14 +153,14 @@ As
     Begin
         -- cannot update a non-existent entry
         --
-        SELECT 
+        SELECT
             @jobID = AJ_jobID,
             @currentStateID = AJ_StateID
         FROM T_Analysis_Job
         WHERE AJ_jobID = Try_Cast(@jobNum AS int)
 
         If @jobID = 0
-        Begin    
+        Begin
             Set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in database'
             If @infoOnly <> 0
                 print @msg
@@ -170,14 +171,14 @@ As
     End
 
     ---------------------------------------------------
-    -- Resolve propagation mode 
+    -- Resolve propagation mode
     ---------------------------------------------------
     Declare @propMode smallint
-    Set @propMode = CASE @propagationMode 
-                        WHEN 'Export' THEN 0 
-                        WHEN 'No Export' THEN 1 
-                        ELSE 0 
-                    End 
+    Set @propMode = CASE @propagationMode
+                        WHEN 'Export' THEN 0
+                        WHEN 'No Export' THEN 1
+                        ELSE 0
+                    End
 
     If @mode = 'update'
     Begin
@@ -187,11 +188,11 @@ As
         If Not @currentStateID IN (1,5,8,19)
         Begin
             -- Allow the job comment and Export Mode to be updated
-            
+
             Declare @currentStateName varchar(32)
             Declare @currentExportMode smallint
             Declare @currentComment varchar(512)
-            
+
             SELECT @currentStateName = ASN.AJS_name,
                    @currentComment = IsNull(J.AJ_comment, ''),
                    @currentExportMode = IsNull(J.AJ_propagationMode, 0)
@@ -199,37 +200,37 @@ As
                  INNER JOIN T_Analysis_State_Name ASN
                    ON J.AJ_StateID = ASN.AJS_stateID
             WHERE J.AJ_jobID = @jobID
-            
-            If @comment <> @currentComment Or 
-               @propMode <> @currentExportMode Or 
+
+            If @comment <> @currentComment Or
+               @propMode <> @currentExportMode Or
                @currentStateName = 'Complete' And @stateName = 'No export'
             Begin
                 If @infoOnly = 0
-                Begin                    
-                    UPDATE T_Analysis_Job 
+                Begin
+                    UPDATE T_Analysis_Job
                     SET AJ_comment = @comment,
                         AJ_propagationMode = @propMode
                     WHERE AJ_jobID = @jobID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
-                End                
-                
-                If @comment <> @currentComment And @propMode <> @currentExportMode 
+                End
+
+                If @comment <> @currentComment And @propMode <> @currentExportMode
                     Set @message = 'Updated job comment and export mode'
-                
+
                 If @message = '' And @comment <> @currentComment
                     Set @message = 'Updated job comment'
 
-                If @message = '' And @propMode <> @currentExportMode 
+                If @message = '' And @propMode <> @currentExportMode
                     Set @message = 'Updated export mode'
-            
+
                 If @stateName <> @currentStateName
                 Begin
                     If @propMode = 1 And @currentStateName = 'Complete' And @stateName = 'No export'
                     Begin
                         If @infoOnly = 0
                         Begin
-                            UPDATE T_Analysis_Job 
+                            UPDATE T_Analysis_Job
                             SET AJ_StateID = 14
                             WHERE AJ_jobID = @jobID
                             --
@@ -242,15 +243,15 @@ As
                     Begin
                         Set @msg = 'job state cannot be changed from ' + @currentStateName + ' to ' + @stateName
                         Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 512)
-                            
+
                         If @propagationMode = 'Export' And @stateName = 'No export'
                         Begin
-                            -- Job propagation mode is Export (0) but user wants to set the state to No export                            
+                            -- Job propagation mode is Export (0) but user wants to set the state to No export
                             Set @message = dbo.AppendToText(@message, 'to make this change, set the Export Mode to "No Export"', 0, '; ', 512)
                         End
                     End
                 End
-                
+
                 If @infoOnly <> 0
                     Set @message = 'Preview: ' + @message
 
@@ -273,7 +274,7 @@ As
             Set @organismDBName = ''
         End
     End
-    
+
     ---------------------------------------------------
     -- Resolve processor group ID
     ---------------------------------------------------
@@ -284,7 +285,7 @@ As
     Begin
         SELECT @gid = ID
         FROM T_Analysis_Job_Processor_Group
-        WHERE (Group_Name = @associatedProcessorGroup)    
+        WHERE (Group_Name = @associatedProcessorGroup)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -300,7 +301,7 @@ As
             RAISERROR (@msg, 11, 9)
         End
     End
-    
+
     ---------------------------------------------------
     -- Create temporary table to hold the dataset details
     -- This table will only have one row
@@ -309,8 +310,8 @@ As
     CREATE TABLE #TD (
         Dataset_Num varchar(128),
         Dataset_ID int NULL,
-        IN_class varchar(64) NULL, 
-        DS_state_ID int NULL, 
+        IN_class varchar(64) NULL,
+        DS_state_ID int NULL,
         AS_state_ID int NULL,
         Dataset_Type varchar(64) NULL,
         DS_rating smallint NULL
@@ -328,7 +329,7 @@ As
     End
 
     ---------------------------------------------------
-    -- Add dataset to table  
+    -- Add dataset to table
     ---------------------------------------------------
     --
     INSERT INTO #TD
@@ -348,18 +349,18 @@ As
     End
 
     ---------------------------------------------------
-    -- handle '(default)' organism  
+    -- handle '(default)' organism
     ---------------------------------------------------
 
     If @organismName = '(default)'
     Begin
-        SELECT 
+        SELECT
             @organismName = T_Organisms.OG_name
         FROM
             T_Experiments INNER JOIN
             T_Dataset ON T_Experiments.Exp_ID = T_Dataset.Exp_ID INNER JOIN
             T_Organisms ON T_Experiments.Ex_organism_ID = T_Organisms.Organism_ID
-        WHERE 
+        WHERE
             (T_Dataset.Dataset_Num = @datasetNum)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -383,7 +384,7 @@ As
     Declare @organismID int
     --
     Declare @result int = 0
-    
+
     Declare @Warning varchar(255) = ''
     set @msg = ''
     --
@@ -396,9 +397,9 @@ As
                             @protCollNameList = @protCollNameList output,
                             @protCollOptionsList = @protCollOptionsList output,
                             @ownerPRN = @ownerPRN output,
-                            @mode = @mode, 
+                            @mode = @mode,
                             @userID = @userID output,
-                            @analysisToolID = @analysisToolID output, 
+                            @analysisToolID = @analysisToolID output,
                             @organismID = @organismID output,
                             @message = @msg output,
                             @AutoRemoveNotReleasedDatasets = 0,
@@ -412,24 +413,24 @@ As
     Begin
         If IsNull(@msg, '') = ''
             Set @msg = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobParameters'
-            
+
         If @infoOnly <> 0
             print @msg
-            
+
         RAISERROR (@msg, 11, 18)
     End
 
     If IsNull(@Warning, '') <> ''
     Begin
         Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ', 512)
-        
+
         If @mode Like 'preview%'
             Set @message = @warning
-        
+
     End
-    
+
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- Lookup the Dataset ID
     ---------------------------------------------------
@@ -458,11 +459,11 @@ As
             -- See if an existing, matching job already exists
             -- If it does, do not add another job
             ---------------------------------------------------
-            
+
             Declare @ExistingJobCount int = 0
             Declare @ExistingMatchingJob int = 0
-            
-            SELECT @ExistingJobCount = COUNT(*), 
+
+            SELECT @ExistingJobCount = COUNT(*),
                    @ExistingMatchingJob = MAX(AJ_JobID)
             FROM
                 T_Dataset DS INNER JOIN
@@ -473,42 +474,42 @@ As
                 #TD ON #TD.Dataset_Num = DS.Dataset_Num
             WHERE
                 ( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 13, 14) OR
-                  @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5 
+                  @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5
                 ) AND
-                AJT.AJT_toolName = @toolName AND 
-                AJ.AJ_parmFileName = @parmFileName AND 
-                AJ.AJ_settingsFileName = @settingsFileName AND 
+                AJT.AJT_toolName = @toolName AND
+                AJ.AJ_parmFileName = @parmFileName AND
+                AJ.AJ_settingsFileName = @settingsFileName AND
                 (
-                  ( @protCollNameList = 'na' AND 
-                    AJ.AJ_organismDBName = @organismDBName AND 
+                  ( @protCollNameList = 'na' AND
+                    AJ.AJ_organismDBName = @organismDBName AND
                     Org.OG_name = IsNull(@organismName, Org.OG_name)
                   ) OR
-                  ( @protCollNameList <> 'na' AND 
-                    AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND 
+                  ( @protCollNameList <> 'na' AND
+                    AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND
                      AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
-                  ) OR 
+                  ) OR
                   ( AJT.AJT_orgDbReqd = 0 )
                 )
-        
+
             If @ExistingJobCount > 0
             Begin
                 set @message = 'Job not created since duplicate job exists: ' + Convert(varchar(12), @ExistingMatchingJob)
 
                 If @infoOnly <> 0
                     print @message
-                
-                -- Do not change this error code since SP CreatePredefinedAnalysesJobs 
+
+                -- Do not change this error code since SP CreatePredefinedAnalysesJobs
                 -- checks for error code 52500
                 return 52500
-            End        
+            End
         End
-        
-        
+
+
         ---------------------------------------------------
         -- Check whether the dataset is unreviewed
         ---------------------------------------------------
         Declare @DatasetUnreviewed tinyint = 0
-        
+
         IF Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @datasetID AND DS_Rating = -10)
             Set @DatasetUnreviewed = 1
 
@@ -527,13 +528,13 @@ As
             RAISERROR (@msg, 11, 15)
         End
         set @jobNum = cast(@jobID as varchar(32))
-    
+
         Declare @newJobNum int
         Declare @newStateID int = 1
-        
+
         If IsNull(@SpecialProcessingWaitUntilReady, 0) > 0 And IsNull(@specialProcessing, '') <> ''
             Set @newStateID = 19
-        
+
         If @stateName Like 'hold%'
             Set @newStateID = 8
 
@@ -571,16 +572,16 @@ As
             --
             INSERT INTO T_Analysis_Job (
                 AJ_jobID,
-                AJ_priority, 
-                AJ_created, 
-                AJ_analysisToolID, 
-                AJ_parmFileName, 
+                AJ_priority,
+                AJ_created,
+                AJ_analysisToolID,
+                AJ_parmFileName,
                 AJ_settingsFileName,
-                AJ_organismDBName, 
-                AJ_proteinCollectionList, 
+                AJ_organismDBName,
+                AJ_proteinCollectionList,
                 AJ_proteinOptionsList,
-                AJ_organismID, 
-                AJ_datasetID, 
+                AJ_organismID,
+                AJ_datasetID,
                 AJ_comment,
                 AJ_specialProcessing,
                 AJ_owner,
@@ -590,16 +591,16 @@ As
                 AJ_DatasetUnreviewed
             ) VALUES (
                 @jobID,
-                @priority, 
-                getdate(), 
-                @analysisToolID, 
-                @parmFileName, 
+                @priority,
+                getdate(),
+                @analysisToolID,
+                @parmFileName,
                 @settingsFileName,
-                @organismDBName, 
+                @organismDBName,
                 @protCollNameList,
                 @protCollOptionsList,
-                @organismID, 
-                @datasetID, 
+                @organismID,
+                @datasetID,
                 REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)),
                 @specialProcessing,
                 @ownerPRN,
@@ -607,7 +608,7 @@ As
                 @newStateID,
                 @propMode,
                 @DatasetUnreviewed
-            )            
+            )
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -642,7 +643,7 @@ As
                     RAISERROR (@msg, 11, 14)
                 End
             End
-            
+
             commit transaction @transName
         End
     End -- add mode
@@ -651,7 +652,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' or @mode = 'reset' 
+    If @mode = 'update' or @mode = 'reset'
     Begin
         set @myError = 0
 
@@ -660,7 +661,7 @@ As
         --
         Declare @updateStateID int = -1
         --
-        If @mode = 'reset' 
+        If @mode = 'reset'
         Begin
             set @updateStateID = 1
         End
@@ -669,7 +670,7 @@ As
             --
             SELECT @updateStateID = AJS_stateID
             FROM T_Analysis_State_Name
-            WHERE (AJS_name = @stateName)        
+            WHERE (AJS_name = @stateName)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -681,7 +682,7 @@ As
 
                 RAISERROR (@msg, 11, 15)
             End
-            
+
             If @updateStateID = -1
             Begin
                 set @msg = 'State name not recognized: ' + @stateName
@@ -690,12 +691,12 @@ As
 
                 RAISERROR (@msg, 11, 15)
             End
-        End        
+        End
 
         ---------------------------------------------------
         -- Associate job with processor group
         ---------------------------------------------------
-        --        
+        --
         -- Is there an existing association between the job
         -- and a processor group?
         --
@@ -732,16 +733,16 @@ As
                    @ownerPRN AS AJ_owner,
                    AJ_batchID,
                    @updateStateID AS AJ_StateID,
-                   CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End AS AJ_start, 
+                   CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End AS AJ_start,
                    CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL End AS AJ_finish,
                    @propMode AS AJ_propagationMode,
                    AJ_DatasetUnreviewed
             FROM T_Analysis_Job
             WHERE (AJ_jobID = @jobID)
-            
+
         End
         Else
-        Begin        
+        Begin
             ---------------------------------------------------
             -- start transaction
             --
@@ -750,22 +751,22 @@ As
             ---------------------------------------------------
             -- make changes to database
             --
-            UPDATE T_Analysis_Job 
-            SET 
-                AJ_priority = @priority, 
-                AJ_analysisToolID = @analysisToolID, 
-                AJ_parmFileName = @parmFileName, 
-                AJ_settingsFileName = @settingsFileName, 
-                AJ_organismDBName = @organismDBName, 
-                AJ_proteinCollectionList = @protCollNameList, 
+            UPDATE T_Analysis_Job
+            SET
+                AJ_priority = @priority,
+                AJ_analysisToolID = @analysisToolID,
+                AJ_parmFileName = @parmFileName,
+                AJ_settingsFileName = @settingsFileName,
+                AJ_organismDBName = @organismDBName,
+                AJ_proteinCollectionList = @protCollNameList,
                 AJ_proteinOptionsList = @protCollOptionsList,
-                AJ_organismID = @organismID, 
-                AJ_datasetID = @datasetID, 
+                AJ_organismID = @organismID,
+                AJ_datasetID = @datasetID,
                 AJ_comment = @comment,
                 AJ_specialProcessing = @specialProcessing,
                 AJ_owner = @ownerPRN,
                 AJ_StateID = @updateStateID,
-                AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End, 
+                AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End,
                 AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL End,
                 AJ_propagationMode = @propMode
             WHERE (AJ_jobID = @jobID)
@@ -783,7 +784,7 @@ As
                 Exec AlterEventLogEntryUser 5, @jobID, @updateStateID, @callingUser
 
             ---------------------------------------------------
-            -- Deal with job association with group, 
+            -- Deal with job association with group,
             ---------------------------------------------------
             --
             -- If no group is given, but existing association
@@ -805,11 +806,11 @@ As
                 INSERT INTO T_Analysis_Job_Processor_Group_Associations
                     (Job_ID, Group_ID)
                 VALUES
-                    (@jobID, @gid)                
+                    (@jobID, @gid)
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
-                
+
                 Set @AlterEnteredByRequired = 1
             End
 
@@ -823,14 +824,14 @@ As
                         Entered = GetDate(),
                         Entered_By = suser_sname()
                 WHERE
-                    Job_ID = @jobID                
+                    Job_ID = @jobID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
-                
+
                 Set @AlterEnteredByRequired = 1
             End
-            
+
             -- Report error, if one occurred
             --
             If @myError <> 0
@@ -840,22 +841,22 @@ As
             End
 
             commit transaction @transName
-            
+
             If Len(@callingUser) > 0 AND @AlterEnteredByRequired <> 0
             Begin
                 -- Call AlterEnteredByUser
                 -- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
-            
+
                 Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @jobID, @CallingUser
             End
         End
-        
+
     End -- update mode
 
     End Try
     Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
@@ -865,7 +866,7 @@ As
             Declare @logMessage varchar(1024) = @message + '; Job ' + @jobNum
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJob'
         End
-        
+
     End Catch
 
 Done:

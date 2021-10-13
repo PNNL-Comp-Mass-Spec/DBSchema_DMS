@@ -7,11 +7,10 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 /****************************************************
 **
-**  Desc: Edits existing Instrument
+**  Desc:
+**      Edits existing Instrument
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   grk
 **  Date:   06/07/2005 grk - Initial release
@@ -32,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 **          12/06/2018 mem - Change variable names to camelCase
 **                         - Use Try_Cast instead of Try_Convert
 **          05/28/2019 mem - Add parameter @trackUsageWhenInactive
-**    
+**
 *****************************************************/
 (
     @instrumentID int Output,
@@ -45,7 +44,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @description varchar(255),
     @usage varchar(50),
     @operationsRole varchar(50),
-    @trackUsageWhenInactive varchar(32) = 'No', 
+    @trackUsageWhenInactive varchar(32) = 'No',
     @scanSourceDir varchar(32) = 'Yes',         -- Set to No to skip this instrument when the DMS_InstDirScanner looks for files and directories on the instrument's source share
     @percentEMSLOwned varchar(24),              -- % of instrument owned by EMSL; number between 0 and 100
     @autoDefineStoragePath varchar(32) = 'No',  -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
@@ -55,7 +54,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @autoSPUrlDomain varchar(64),               -- Example: pnl.gov
     @autoSPArchiveServerName varchar(64),
     @autoSPArchivePathRoot varchar(128),
-    @autoSPArchiveSharePathRoot varchar(128),    
+    @autoSPArchiveSharePathRoot varchar(128),
     @mode varchar(12) = 'update',               -- Note that 'add' is not allowed in this procedure; instead use https://dms2.pnl.gov/new_instrument/create (which in turn calls AddNewInstrument)
     @message varchar(512) = '' output
 )
@@ -64,33 +63,33 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @logErrors tinyint = 0
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateInstrument', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
-    
+
     If @usage is null
         Set @usage = ''
 
     Declare @percentEMSLOwnedVal int = Try_Cast(@percentEMSLOwned As int);
-    
+
     If @percentEMSLOwnedVal Is Null Or @percentEMSLOwnedVal < 0 Or @percentEMSLOwnedVal > 100
     Begin;
         THROW 51001, 'Percent EMSL Owned should be a number between 0 and 100', 1
@@ -120,7 +119,7 @@ As
     End
 
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- Resolve Yes/No parameters to 0 or 1
     ---------------------------------------------------
@@ -128,18 +127,18 @@ As
     Declare @valTrackUsageWhenInactive tinyint = dbo.BooleanTextToTinyint(@trackUsageWhenInactive)
     Declare @valScanSourceDir tinyint = dbo.BooleanTextToTinyint(@scanSourceDir)
     Declare @valAutoDefineStoragePath tinyint = dbo.BooleanTextToTinyint(@autoDefineStoragePath)
-    
+
     ---------------------------------------------------
     -- Validate the @autoSP parameteres
     ---------------------------------------------------
 
     exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
-                                                   @autoSPPathRoot, @autoSPArchiveServerName, 
+                                                   @autoSPPathRoot, @autoSPArchiveServerName,
                                                    @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
 
     If @myError <> 0
         return @myError;
-    
+
     ---------------------------------------------------
     -- Note: the add mode is not enabled in this stored procedure
     ---------------------------------------------------
@@ -153,9 +152,9 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
-            
+
         UPDATE T_Instrument_Name
         SET IN_name = @instrumentName,
             IN_class = @instrumentClass,
@@ -185,13 +184,13 @@ As
         Begin;
             THROW 51004, 'Update operation failed', 1
         End;
-        
+
     End -- update mode
-    
+
     END Try
     BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError Output
-        
+
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
@@ -203,7 +202,7 @@ As
         End
 
     END Catch
-    
+
     return @myError
 
 GO
