@@ -27,8 +27,9 @@ CREATE PROCEDURE [dbo].[StoreDTARefMassErrorStats]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:    08/08/2013 mem - Initial version (modelled after StoreSMAQCResults)
+**  Date:   08/08/2013 mem - Initial version (modelled after StoreSMAQCResults)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -202,7 +203,7 @@ As
          INNER JOIN ( SELECT Name,
                              ValueText
                       FROM @MeasurementsTable
-                      WHERE Not Try_Convert(float, ValueText) Is Null
+                      WHERE Not Try_Parse(ValueText as float) Is Null
                     ) FilterQ
            ON Target.Name = FilterQ.Name
 
@@ -334,6 +335,7 @@ Done:
         Exec PostUsageLogEntry 'StoreDTARefMassErrorStats', @UsageMessage
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreDTARefMassErrorStats] TO [DDL_Viewer] AS [dbo]

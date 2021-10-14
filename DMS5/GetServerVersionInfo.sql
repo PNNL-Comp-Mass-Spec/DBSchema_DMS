@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[GetServerVersionInfo]
 **  Auth:   mem
 **  Date:   07/15/2006 mem - Initial version
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -89,9 +90,9 @@ As
             Set @VersionMajorText = @VersionText
         End
 
-        Set @VersionMajor = IsNull(Try_Convert(float, @VersionMajorText), 0)
-        Set @VersionMinor = IsNull(Try_Convert(float, @VersionMinorText), 0)
-        Set @VersionBuild = IsNull(Try_Convert(float, @VersionBuildText), 0)
+        Set @VersionMajor = IsNull(Try_Parse(@VersionMajorText as float), 0)
+        Set @VersionMinor = IsNull(Try_Parse(@VersionMinorText as float), 0)
+        Set @VersionBuild = IsNull(Try_Parse(@VersionBuildText as float), 0)
 
         Set @ServicePack = Convert(varchar(24), SERVERPROPERTY('ProductLevel'))
 
@@ -100,6 +101,7 @@ As
 
 Done:
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [DDL_Viewer] AS [dbo]

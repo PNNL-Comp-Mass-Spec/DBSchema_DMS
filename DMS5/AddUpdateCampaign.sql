@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **          05/26/2021 mem - Add @eusUsageType
 **          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -175,7 +176,7 @@ As
     Set @fractionEMSLFunded = IsNull(@fractionEMSLFunded, '')
     If Len(@fractionEMSLFunded) > 0
     Begin
-        Set @fractionEMSLFundedValue = Try_Convert(real, @fractionEMSLFunded)
+        Set @fractionEMSLFundedValue = Try_Parse(@fractionEMSLFunded as real)
         If @fractionEMSLFundedValue Is Null
         Begin
             RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
@@ -500,6 +501,7 @@ As
     END CATCH
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateCampaign] TO [DDL_Viewer] AS [dbo]

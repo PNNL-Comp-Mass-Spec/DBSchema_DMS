@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[UpdateJobStepMemoryUsage]
 **  Auth:   mem
 **  Date:   10/17/2011 mem - Initial release
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -105,7 +106,7 @@ As
                 Set @Continue = 0
             Else
             Begin -- <c>
-                Set @ValMemoryRequiredMB = Try_Convert(int, @MemoryRequiredMB)
+                Set @ValMemoryRequiredMB = Try_Parse(@MemoryRequiredMB as int)
 
                 If IsNull(@MemoryRequiredMB, '') <> '' And Not @ValMemoryRequiredMB Is Null
                 Begin -- <d>
@@ -126,6 +127,7 @@ As
     --
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateJobStepMemoryUsage] TO [DDL_Viewer] AS [dbo]

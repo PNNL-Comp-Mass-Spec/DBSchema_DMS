@@ -17,7 +17,8 @@ CREATE PROCEDURE [dbo].[FindLogEntry]
 **          12/20/2006 mem - Now querying V_Log_Report using dynamic SQL (Ticket #349)
 **          01/24/2008 mem - Switched the @i_ variables to use the datetime data type (Ticket #225)
 **          03/23/2017 mem - Use Try_Convert instead of Convert
-**                           - Use sp_executesql
+**                         - Use sp_executesql
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -48,12 +49,12 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    DECLARE @entryID int = TRY_CONVERT(int, @Entry)
+    DECLARE @entryID int = Try_Parse(@Entry as int)
     --
     DECLARE @postedByWildcard varchar(64) = '%' + @PostedBy + '%'
     --
-    DECLARE @earlistPostingTime datetime = TRY_CONVERT(datetime, @PostingTime_After)
-    DECLARE @latestPostingTime datetime = TRY_CONVERT(datetime, @PostingTime_Before)
+    DECLARE @earlistPostingTime datetime = Try_Parse(@PostingTime_After as datetime)
+    DECLARE @latestPostingTime datetime = Try_Parse(@PostingTime_Before as datetime)
     --
     DECLARE @typeWildcard varchar(32) = '%' + @EntryType + '%'
     --

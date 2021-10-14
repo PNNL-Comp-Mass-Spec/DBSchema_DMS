@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
 **          05/03/2019 mem - Add the source machine to T_Storage_Path_Hosts
 **          10/27/2020 mem - Populate Auto_SP_URL_Domain and store https:// in T_Storage_Path_Hosts.URL_Prefix
 **                           Pass @urlDomain to AddUpdateStorage
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ As
     ---------------------------------------------------
     Set @autoDefineStoragePath = IsNull(@autoDefineStoragePath, 'No')
 
-    Declare @Value int = Try_Convert(Int, @PercentEMSLOwned)
+    Declare @Value int = Try_Parse(@PercentEMSLOwned as int)
     If @Value Is Null
         RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
 
@@ -394,6 +395,7 @@ As
     commit transaction @transName
 
     return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewInstrument] TO [DDL_Viewer] AS [dbo]

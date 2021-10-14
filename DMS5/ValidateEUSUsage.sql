@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
 **          10/13/2021 mem - Use Like when extracting integers
 **                         - Add additional debug messages
+**                         - Use Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -159,7 +160,7 @@ As
 
     Set @eusUsageTypeID = 0
     --
-    SELECT @eusUsageTypeID = ID, 
+    SELECT @eusUsageTypeID = ID,
            @eusUsageTypeName = Name,
            @enabledForPrepRequests = Enabled_Prep_Request
     FROM T_EUS_UsageType
@@ -183,7 +184,7 @@ As
     Begin
         If @eusUsageType = 'USER'
         Begin
-            Set @message = 'Please choose usage type USER_ONSITE if processing a sample from an onsite user or a sample for a Resource Owner project; ' + 
+            Set @message = 'Please choose usage type USER_ONSITE if processing a sample from an onsite user or a sample for a Resource Owner project; ' +
                            'choose USER_REMOTE if processing a sample for an EMSL user'
         End
         Else
@@ -432,7 +433,7 @@ As
 
                 Set @eusUsersList = @integerList
             End
-            
+
             If @eusUsersList Like ',%'
             Begin
                 -- Trim the leading comma
@@ -477,7 +478,7 @@ As
             Set @n = 0
             SELECT @n = Count(*)
             FROM @tmpUsers
-            WHERE Try_Convert(INT, item) IS NULL
+            WHERE Try_Parse(item as INT) IS NULL
 
             If @n > 0
             Begin
@@ -662,6 +663,7 @@ As
     End
 
     return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [DDL_Viewer] AS [dbo]

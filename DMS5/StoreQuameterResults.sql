@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[StoreQuameterResults]
 **  Auth:   mem
 **  Date:   09/17/2012 mem - Initial version (modelled after StoreSMAQCResults)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -248,7 +249,7 @@ As
          INNER JOIN ( SELECT Name,
                              ValueText
                       FROM @MeasurementsTable
-                      WHERE Not Try_Convert(float, ValueText) Is Null
+                      WHERE Not Try_Parse(ValueText as float) Is Null
                     ) FilterQ
            ON Target.Name = FilterQ.Name
 
@@ -342,7 +343,7 @@ As
                 RT_MSMS_Q1, RT_MSMS_Q2, RT_MSMS_Q3, RT_MSMS_Q4,
                 MS1_TIC_Change_Q2, MS1_TIC_Change_Q3, MS1_TIC_Change_Q4,
                 MS1_TIC_Q2, MS1_TIC_Q3, MS1_TIC_Q4,
-MS1_Count, MS1_Freq_Max, MS1_Density_Q1, MS1_Density_Q2, MS1_Density_Q3,
+                MS1_Count, MS1_Freq_Max, MS1_Density_Q1, MS1_Density_Q2, MS1_Density_Q3,
                 MS2_Count, MS2_Freq_Max, MS2_Density_Q1, MS2_Density_Q2, MS2_Density_Q3,
                 MS2_PrecZ_1, MS2_PrecZ_2, MS2_PrecZ_3, MS2_PrecZ_4, MS2_PrecZ_5, MS2_PrecZ_more,
                 MS2_PrecZ_likely_1, MS2_PrecZ_likely_multi
@@ -393,7 +394,7 @@ MS1_Count, MS1_Freq_Max, MS1_Density_Q1, MS1_Density_Q2, MS1_Density_Q3,
                )
         VALUES ( Source.Dataset_ID,
                  Source.Quameter_Job,
-            XIC_WideFrac, XIC_FWHM_Q1, XIC_FWHM_Q2, XIC_FWHM_Q3, XIC_Height_Q2, XIC_Height_Q3, XIC_Height_Q4,
+                 XIC_WideFrac, XIC_FWHM_Q1, XIC_FWHM_Q2, XIC_FWHM_Q3, XIC_Height_Q2, XIC_Height_Q3, XIC_Height_Q4,
                  RT_Duration, RT_TIC_Q1, RT_TIC_Q2, RT_TIC_Q3, RT_TIC_Q4,
                  RT_MS_Q1, RT_MS_Q2, RT_MS_Q3, RT_MS_Q4,
                  RT_MSMS_Q1, RT_MSMS_Q2, RT_MSMS_Q3, RT_MSMS_Q4,
@@ -405,7 +406,6 @@ MS1_Count, MS1_Freq_Max, MS1_Density_Q1, MS1_Density_Q2, MS1_Density_Q3,
                  MS2_PrecZ_likely_1, MS2_PrecZ_likely_multi,
                  GetDate()
                )
-
     ;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -418,7 +418,6 @@ MS1_Count, MS1_Freq_Max, MS1_Density_Q1, MS1_Density_Q2, MS1_Density_Q3,
 
 
     Set @message = 'Quameter measurement storage successful'
-
 
 Done:
 
@@ -450,6 +449,7 @@ Done:
         Exec PostUsageLogEntry 'StoreQuameterResults', @UsageMessage
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreQuameterResults] TO [DDL_Viewer] AS [dbo]

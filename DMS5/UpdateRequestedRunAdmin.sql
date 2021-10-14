@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAdmin]
 **          10/20/2020 mem - Add mode 'UnassignInstrument'
 **          10/21/2020 mem - Set Queue_Instrument_ID to null when unassigning
 **          10/23/2020 mem - Allow updating 'fraction' based requests
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -159,7 +160,7 @@ As
     -----------------------------------------------------------
     --
     UPDATE #TMP
-    SET ItemID = Try_Convert(int, Item)
+    SET ItemID = Try_Parse(Item as int)
 
     -----------------------------------------------------------
     -- Populate a temporary table with the list of Requested Run IDs to be updated or deleted
@@ -316,6 +317,7 @@ Done:
 
 DoneNoLog:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [DDL_Viewer] AS [dbo]

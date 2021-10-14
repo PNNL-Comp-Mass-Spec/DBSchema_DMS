@@ -47,6 +47,7 @@ CREATE FUNCTION [dbo].[GetFileAttachmentPath]
 **          11/15/2011 grk - added sample_submission
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          02/24/2017 mem - Update capitalization and add comments
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -54,18 +55,16 @@ CREATE FUNCTION [dbo].[GetFileAttachmentPath]
     @entityID varchar(256)            -- Entity ID, though for Campaign, Dataset, Experiment, and Sample Prep Request supports both entity ID or entity name
 )
 Returns varchar(256)
-AS
+As
 Begin
-
     Declare @spreadFolder varchar(24) = 'spread'
     Declare @created DateTime = '1/1/1900'
 
-    -------------------------------------------------------
-    IF @entityType = 'campaign'
+    If @entityType = 'campaign'
     Begin
-        Declare @campaignID int = Try_Convert(int, @entityID)
+        Declare @campaignID int = Try_Parse(@entityID as int)
 
-        IF @campaignID Is Null
+        If @campaignID Is Null
         Begin
             SELECT @entityID = CONVERT(varchar(24), Campaign_ID),
                    @created = CM_created
@@ -83,12 +82,12 @@ Begin
             SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created)) + '_' + CONVERT(varchar(12), DATEPART(month, @created))
         End
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'experiment'
-    Begin
-        Declare @experimentID int = Try_Convert(int, @entityID)
 
-        IF @experimentID Is Null
+    If @entityType = 'experiment'
+    Begin
+        Declare @experimentID int = Try_Parse(@entityID as int)
+
+        If @experimentID Is Null
         Begin
             SELECT @entityID = CONVERT(varchar(24), Exp_ID),
                    @created = EX_created
@@ -106,12 +105,12 @@ Begin
             SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created)) + '_' + CONVERT(varchar(12), DATEPART(month, @created))
         End
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'dataset'
-    Begin
-        Declare @datasetID int = Try_Convert(int, @entityID)
 
-        IF @datasetID Is Null
+    If @entityType = 'dataset'
+    Begin
+        Declare @datasetID int = Try_Parse(@entityID as int)
+
+        If @datasetID Is Null
         Begin
             SELECT @entityID = CONVERT(varchar(24), Dataset_ID),
                    @created = DS_created
@@ -129,12 +128,12 @@ Begin
             SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created)) + '_' + CONVERT(varchar(12), DATEPART(month, @created))
         End
     End
-    -------------------------------------------------------
-    IF @entityType = 'sample_prep_request'
-    Begin
-        Declare @samplePrepID int = Try_Convert(int, @entityID)
 
-        IF @samplePrepID Is Null
+    If @entityType = 'sample_prep_request'
+    Begin
+        Declare @samplePrepID int = Try_Parse(@entityID as int)
+
+        If @samplePrepID Is Null
         Begin
             SELECT @entityID = CONVERT(varchar(24), ID),
                    @created = Created
@@ -152,8 +151,8 @@ Begin
             SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created)) + '_' + CONVERT(varchar(12), DATEPART(month, @created))
         End
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'instrument_operation_history'
+
+    If @entityType = 'instrument_operation_history'
     Begin
         SET @entityType = 'instrument_operation'
         SELECT @created = Entered
@@ -161,8 +160,8 @@ Begin
         WHERE ID = @entityID
         SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created))
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'instrument_config_history'
+
+    If @entityType = 'instrument_config_history'
     Begin
         SET @entityType = 'instrument_config'
         SELECT @created = Entered
@@ -170,8 +169,8 @@ Begin
         WHERE ID = @entityID
         SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created))
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'lc_cart_config_history'
+
+    If @entityType = 'lc_cart_config_history'
     Begin
         SET @entityType = 'lc_cart_config'
         SELECT @created = Entered
@@ -179,8 +178,8 @@ Begin
         WHERE ID = @entityID
         SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created))
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'experiment_group'
+
+    If @entityType = 'experiment_group'
     Begin
         SET @entityType = 'experiment_group'
         SELECT @created = EG_Created
@@ -188,8 +187,8 @@ Begin
         WHERE Group_ID = @entityID
         SET @spreadFolder = CONVERT(varchar(12), DATEPART(year, @created))
     End
-    -------------------------------------------------------
-    Else IF @entityType = 'sample_submission'
+
+    If @entityType = 'sample_submission'
     Begin
         SELECT  @created = Created
         FROM    dbo.T_Sample_Submission

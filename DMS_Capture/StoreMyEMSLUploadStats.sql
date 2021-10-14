@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[StoreMyEMSLUploadStats]
 **                         - Removed parameter @ContentURI
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          06/15/2017 mem - Add support for status URLs of the form https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1305088
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -146,7 +147,7 @@ As
                     If @CharLoc <= 0
                     Begin
                         -- Match not found; @SubString is simply an integer
-                        Set @StatusNum = Try_Convert(int, @SubString)
+                        Set @StatusNum = Try_Parse(@SubString as int)
                         If Not @StatusNum Is Null
                         Begin
                             Set @InvalidFormat = 0
@@ -184,7 +185,7 @@ As
             If @CharLoc <= 0
             Begin
                 -- Match not found; @SubString is simply an integer
-                Set @StatusNum = Try_Convert(int, @SubString)
+                Set @StatusNum = Try_Parse(@SubString as int)
                 If IsNull(@SubString, '') <> '' And Not @StatusNum Is Null
                 Begin
                     Set @InvalidFormat = 0

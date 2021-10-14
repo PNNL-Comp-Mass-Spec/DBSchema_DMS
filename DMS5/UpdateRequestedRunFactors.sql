@@ -63,6 +63,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -91,9 +92,9 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunFactors', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     -----------------------------------------------------------
     -- Validate the inputs
@@ -250,7 +251,7 @@ As
 
         SELECT @Msg2 = @Msg2 + Identifier + ','
         FROM #Tmp
-        WHERE Try_Convert(int, Identifier) Is Null
+        WHERE Try_Parse(Identifier as int) Is Null
         --
         If IsNull(@Msg2, '') <> ''
         Begin
@@ -595,6 +596,7 @@ As
     Exec PostUsageLogEntry 'UpdateRequestedRunFactors', @UsageMessage
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [DDL_Viewer] AS [dbo]

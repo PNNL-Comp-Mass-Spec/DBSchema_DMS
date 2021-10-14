@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/10/2018 mem - Remove invalid check of @mode against check_add or check_update
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ As
 
     Declare @targetID int = 0
 
-    Set @targetID = Try_Convert(Int, @targetEntityName)
+    Set @targetID = Try_Parse(@targetEntityName as int)
     If @targetID IS NULL
     Begin -- <a1>
         ---------------------------------------------------

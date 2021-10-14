@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsFromHistoryWork]
 **  Date:   07/31/2013 mem - Ported from GetJobStepParamsWork
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          06/20/2016 mem - Update procedure name shown when using @DebugMode
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -200,7 +201,7 @@ AS
     FROM ( SELECT Section,
                   Name,
                   [Value],
-                  IsNull(Try_Convert(int, Step), 0) AS StepNumber
+                  IsNull(Try_Parse(Step as int), 0) AS StepNumber
            FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
                          xmlNode.value('@Name', 'nvarchar(256)') AS Name,
                          xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
@@ -223,8 +224,8 @@ AS
     end
 
 Done:
-
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsFromHistoryWork] TO [DDL_Viewer] AS [dbo]

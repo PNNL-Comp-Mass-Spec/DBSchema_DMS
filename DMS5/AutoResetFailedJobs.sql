@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[AutoResetFailedJobs]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          04/21/2017 mem - Add check for "An unexpected network error occurred"
 **          09/05/2017 mem - Check for Mz_Refinery reporting Not enough free memory
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -277,7 +278,7 @@ As
                                 If @MatchIndex - @PoundIndex - 1 > 0
                                 Begin
                                     Set @RetryCountText = SubString(@RetryText, @PoundIndex+1, @MatchIndex - @PoundIndex - 1)
-                                    Set @RetryCount = IsNull(Try_Convert(Int, @RetryCountText), @retryCount)
+                                    Set @RetryCount = IsNull(Try_Parse(@RetryCountText as int), @retryCount)
                                 End
                             End
                         End
@@ -512,6 +513,7 @@ As
 
         Exec PostLogEntry 'Error', @message, 'AutoResetFailedJobs'
     END CATCH
+
     return @myError
 
 

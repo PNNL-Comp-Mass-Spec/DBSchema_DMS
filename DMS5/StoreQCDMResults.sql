@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[StoreQCDMResults]
 **  Auth:   mem
 **  Date:   06/04/2013 mem - Initial version (modelled after StoreSMAQCResults)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -205,7 +206,7 @@ As
          INNER JOIN ( SELECT Name,
                              ValueText
                       FROM @MeasurementsTable
-                      WHERE Not Try_Convert(float, ValueText) Is Null
+                      WHERE Not Try_Parse(ValueText as float) Is Null
                     ) FilterQ
            ON Target.Name = FilterQ.Name
 
@@ -332,6 +333,7 @@ Done:
         Exec PostUsageLogEntry 'StoreQCDMResults', @UsageMessage
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreQCDMResults] TO [DDL_Viewer] AS [dbo]

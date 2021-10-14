@@ -20,6 +20,7 @@ CREATE FUNCTION [dbo].[udfParseDelimitedIntegerList]
 **          04/02/2012 mem - Now removing Tab characters
 **          03/27/2013 mem - Now replacing carriage return and line feed characters with @Delimiter
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 ****************************************************/
 (
@@ -73,7 +74,7 @@ BEGIN
 
                 If Len(@valueAsText) > 0
                 Begin
-                    Set @Value = Try_Convert(Int, @ValueAsText)
+                    Set @Value = Try_Parse(@ValueAsText as int)
                     If @Value IS NOT NULL
                     Begin
                         INSERT INTO @tmpValues (Value)
@@ -89,6 +90,7 @@ BEGIN
 
     RETURN
 END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedIntegerList] TO [DDL_Viewer] AS [dbo]

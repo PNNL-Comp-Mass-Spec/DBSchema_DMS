@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
 **                         - Allow @description to be empty
 **                         - Properly handle float-based dates (resulting from Excel copy / paste-value issues)
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -66,9 +67,9 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateReferenceCompound', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY
 
@@ -139,7 +140,7 @@ As
         Set @pubChemIdValue = null
     Else
     Begin
-        Set @pubChemIdValue = Try_Convert(int, @pubChemID)
+        Set @pubChemIdValue = Try_Parse(@pubChemID as int)
         If @pubChemIdValue Is Null
             RAISERROR ('Error, PubChemID is not an integer: %s', 11, 9, @pubChemID)
     End
@@ -148,7 +149,7 @@ As
         Set @massValue = 0
     Else
     Begin
-        Set @massValue = Try_Convert(float, @mass)
+        Set @massValue = Try_Parse(@mass as float)
         If @massValue Is Null
             RAISERROR ('Error, non-numeric mass: %s', 11, 9, @mass)
     End
@@ -481,6 +482,7 @@ As
     End CATCH
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateReferenceCompound] TO [DDL_Viewer] AS [dbo]

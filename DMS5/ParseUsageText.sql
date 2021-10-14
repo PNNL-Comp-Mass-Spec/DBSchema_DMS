@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[ParseUsageText]
 **                         - Additional comment cleanup logic
 **          08/29/2017 mem - Direct users to http://prismwiki.pnl.gov/wiki/Long_Interval_Notes
 **          05/25/2021 mem - Add support for usage types UserOnsite and UserRemote
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -212,7 +213,7 @@ AS
                     Set @val = REPLACE(@val, '%', '')
                     Set @val = REPLACE(@val, ',', '')
 
-                    If Try_Convert(int, @val) Is Null
+                    If Try_Parse(@val as int) Is Null
                     Begin
                         Set @logErrors = 0
                         Set @invalidUsage = 1
@@ -252,7 +253,7 @@ AS
 
         Declare @total INT = 0
         SELECT @total = @total + CASE WHEN NOT UsageKey IN ( SELECT UsageKey FROM #TmpNonPercentageKeys )
-                                      THEN COALESCE(Try_Convert(int, UsageValue), 0)
+                                      THEN COALESCE(Try_Parse(UsageValue as int), 0)
                                       ELSE 0
                                  END
         FROM #TmpUsageInfo
@@ -332,6 +333,7 @@ AS
     END CATCH
 
     RETURN @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [DDL_Viewer] AS [dbo]

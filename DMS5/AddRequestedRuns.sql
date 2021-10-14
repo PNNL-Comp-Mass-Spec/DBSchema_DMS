@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          07/01/2021 mem - Rename instrument parameter to be @instrumentGroup
 **                         - Add parameters @batchPriorityJustification and @batchComment
 **          07/09/2021 mem - Fix bug handling instrument group name when @batchName is blank
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -73,7 +74,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
     @batchName varchar(50) = '',                -- If defined, create a new batch for the newly created requested runs
     @batchDescription Varchar(256) = '',
     @batchCompletionDate varchar(32) = '',
-    @batchPriority varchar(24) = '',    
+    @batchPriority varchar(24) = '',
     @batchPriorityJustification varchar(512),
     @batchComment varchar(512),
     @callingUser varchar(128) = ''
@@ -117,7 +118,7 @@ As
     Declare @experimentGroupIDVal int
     If Len(@experimentGroupID) > 0
     Begin
-        Set @experimentGroupIDVal = Try_Convert(Int, @experimentGroupID)
+        Set @experimentGroupIDVal = Try_Parse(@experimentGroupID as int)
         If @experimentGroupIDVal Is Null
         Begin
             Set @myError = 51132
@@ -249,7 +250,7 @@ As
     --
     Declare @wellplateNum varchar(64) = '(lookup)'
     Declare @wellNum varchar(24) = '(lookup)'
-    
+
     Declare @instrumentGroupToUse varchar(64)
     Declare @userID int
 
@@ -336,7 +337,7 @@ As
         Begin
             Set @message = ''
             Set @reqName = @experimentName + @suffix
-            
+
             If @count = 0
                 Set @reqNameFirst = @reqName
             Else
@@ -379,13 +380,13 @@ As
 
                 Set @requestedRunList = @requestedRunList + Cast(@request as varchar(12)) + ', '
             End
-            
+
             If @resolvedInstrumentInfo = '' And @resolvedInstrumentInfoCurrent <> ''
             Begin
                 Set @resolvedInstrumentInfo = @resolvedInstrumentInfoCurrent
             End
 
-            If @myError <> 0 
+            If @myError <> 0
             Begin
                 Set @logErrors = 0
                 RAISERROR (@message, 11, 1)
@@ -399,7 +400,7 @@ As
     If @mode = 'PreviewAdd'
     Begin
         Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs (' + @reqNameFirst + ' to ' + @reqNameLast + ')'
-        
+
         If @resolvedInstrumentInfo = ''
             Set @message = @message + ' with instrument group ' + @instrumentGroupToUse + ', run type ' + @msType + ', and separation group ' + @separationGroup
         Else
@@ -434,7 +435,7 @@ As
                                            ,@mode = @mode
                                            ,@message = @msg output
                                            ,@useRaiseError = 0
-            
+
             If @myError > 0
             Begin
                 If IsNull(@msg, '') = ''
@@ -447,7 +448,7 @@ As
                 If @mode = 'PreviewAdd'
                     Set @msg = 'Would create a batch named "' + @batchName + '"'
                 Else
-                    Set @msg = 'Created batch ' + Cast(@batchID As Varchar(12))                
+                    Set @msg = 'Created batch ' + Cast(@batchID As Varchar(12))
             End
 
             Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)

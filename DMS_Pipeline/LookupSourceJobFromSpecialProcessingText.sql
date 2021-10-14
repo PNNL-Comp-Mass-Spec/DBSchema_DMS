@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[LookupSourceJobFromSpecialProcessingText]
 **          03/11/2013 mem - Added output parameter @AutoQuerySql
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -89,7 +90,7 @@ As
         Set @SourceJobText = dbo.ExtractTaggedName(@TagName, @SpecialProcessingText)
 
         If IsNull(@SourceJobText, '') <> ''
-            Set @SourceJob = Try_Convert(int, @SourceJobText)
+            Set @SourceJob = Try_Parse(@SourceJobText as int)
 
         If @SourceJob Is Null
         Begin -- <d>
@@ -301,6 +302,7 @@ As
     End Catch
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[LookupSourceJobFromSpecialProcessingText] TO [DDL_Viewer] AS [dbo]

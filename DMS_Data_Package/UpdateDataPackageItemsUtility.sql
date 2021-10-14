@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          07/02/2021 mem - Update the package comment for any existing items when @mode is 'add' and @comment is not an empty string
 **          07/02/2021 mem - Change the default value for @mode from undefined mode 'update' to 'add'
 **          07/06/2021 mem - Add support for dataset IDs when @mode is 'comment' or 'delete'
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -95,7 +96,7 @@ As
         If Exists ( SELECT * FROM #TPI WHERE [Type] = 'Job' )
         Begin
             DELETE #TPI
-            WHERE IsNull(Identifier, '') = '' OR Try_Convert(int, Identifier) Is Null
+            WHERE IsNull(Identifier, '') = '' OR Try_Parse(Identifier as int) Is Null
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -108,7 +109,7 @@ As
             SELECT DataPackageID,
                    Job
             FROM ( SELECT DataPackageID,
-                          Try_Convert(int, Identifier) as Job
+                          Try_Parse(Identifier as int) as Job
                    FROM #TPI
                    WHERE [Type] = 'Job' AND
                          Not DataPackageID Is Null) SourceQ
@@ -132,7 +133,7 @@ As
             SELECT DataPackageID,
                    DatasetID
             FROM ( SELECT DataPackageID,
-                          Try_Convert(INT, Identifier) AS DatasetID
+                          Try_Parse(Identifier as int) AS DatasetID
                    FROM #TPI
                    WHERE [Type] = 'Dataset' AND
                          NOT DataPackageID IS NULL ) SourceQ

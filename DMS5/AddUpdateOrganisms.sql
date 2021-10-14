@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          04/15/2020 mem - Populate OG_Storage_URL using @orgStorageLocation
 **          09/14/2020 mem - Expand the description field to 512 characters
 **          12/11/2020 mem - Allow duplicate metagenome organisms
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -194,7 +195,7 @@ As
     End
 
     Set @orgActive = IsNull(@orgActive, '')
-    If Len(@orgActive) = 0 Or Try_Convert(Int, @orgActive) Is Null
+    If Len(@orgActive) = 0 Or Try_Parse(@orgActive as int) Is Null
     Begin
         RAISERROR ('Organism active state must be 0 or 1', 11, 1)
     End
@@ -222,7 +223,7 @@ As
         WHERE IsNull(Value, '') <> ''
 
         -- Look for non-numeric values
-        IF Exists (Select * from #NEWTIDs Where Try_Convert(int, NEWT_ID_Text) IS NULL)
+        IF Exists (SELECT * FROM #NEWTIDs WHERE Try_Parse(NEWT_ID_Text as int) IS NULL)
         Begin
             Set @msg = 'Non-numeric NEWT ID values found in the NEWT_ID List: "' + Convert(varchar(32), @newtIDList) + '"; see http://dms2.pnl.gov/ontology/report/NEWT'
             RAISERROR (@msg, 11, 3)
@@ -230,7 +231,7 @@ As
 
         -- Make sure all of the NEWT IDs are Valid
         UPDATE #NEWTIDs
-        Set NEWT_ID = Try_Convert(int, NEWT_ID_Text)
+        Set NEWT_ID = Try_Parse(NEWT_ID_Text as int)
 
         Declare @invalidNEWTIDs varchar(255) = null
 

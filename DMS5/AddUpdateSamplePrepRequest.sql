@@ -92,6 +92,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          06/11/2021 mem - Auto-remove 'na' from @assignedPersonnel
 **          10/11/2021 mem - Clear @stateComment when @state is 'Closed'
 **                         - Only allow sample prep staff to update estimated prep time
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -242,7 +243,7 @@ As
         If @instrumentGroup IN ('none', 'na')
             RAISERROR ('Estimated runs must be 0 or "none" when instrument group is: %s', 11, 1, @instrumentGroup)
 
-        If Try_Convert(int, @estimatedMSRuns) Is Null
+        If Try_Parse(@estimatedMSRuns as int) Is Null
             RAISERROR ('Estimated runs must be an integer or "none"', 11, 116)
 
         If IsNull(@instrumentGroup, '') = ''

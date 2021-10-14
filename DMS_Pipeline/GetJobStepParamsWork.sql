@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsWork]
 **          05/13/2017 mem - Include info from T_Remote_Info if Remote_Info_ID is not 1
 **          05/16/2017 mem - Include RemoteTimestamp if defined
 **          03/12/2021 mem - Add ToolName (which tracks the pipeline script name) if not present in T_Job_Parameters
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -256,7 +257,7 @@ AS
     FROM ( SELECT [Section],
                   [Name],
                   [Value],
-                  IsNull(Try_Convert(int, Step), 0) AS StepNumber
+                  IsNull(Try_Parse(Step as int), 0) AS StepNumber
            FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS [Section],
                          xmlNode.value('@Name', 'nvarchar(256)') AS [Name],
                          xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
@@ -280,6 +281,7 @@ AS
 Done:
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsWork] TO [DDL_Viewer] AS [dbo]

@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocations]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -71,9 +72,9 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageAllocations', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY
 
@@ -193,7 +194,7 @@ As
         )
 
 
-        Set @fy = Try_Convert(int, @FiscalYear)
+        Set @fy = Try_Parse(@FiscalYear as int)
         If @fy Is Null Or @fy = 0
         Begin
             Set @Msg2 = 'Fiscal year is not numeric: ' + @FiscalYear
@@ -202,7 +203,7 @@ As
 
         If @FT <> ''
         Begin
-            Declare @FThours float = Try_Convert(float, @FT)
+            Declare @FThours float = Try_Parse(@FT as float)
             If @FThours Is Null
             Begin
                 Set @Msg2 = 'FT hours is not numeric: ' + @FT
@@ -215,7 +216,7 @@ As
 
         If @IMS <> ''
         Begin
-            Declare @IMShours float = Try_Convert(float, @IMS)
+            Declare @IMShours float = Try_Parse(@IMS as float)
             If @IMShours Is Null
             Begin
                 Set @Msg2 = 'IMS hours is not numeric: ' + @IMS
@@ -228,7 +229,7 @@ As
 
         If @ORB <> ''
         Begin
-            Declare @ORBhours float = Try_Convert(float, @ORB)
+            Declare @ORBhours float = Try_Parse(@ORB as float)
             If @ORBhours Is Null
             Begin
                 Set @Msg2 = 'Orbitrap hours is not numeric: ' + @ORB
@@ -241,7 +242,7 @@ As
 
         If @EXA <> ''
         Begin
-            Declare @EXAhours float = Try_Convert(float, @EXA)
+            Declare @EXAhours float = Try_Parse(@EXA as float)
             If @EXAhours Is Null
             Begin
                 Set @Msg2 = 'Exactive hours is not numeric: ' + @EXA
@@ -254,7 +255,7 @@ As
 
         If @LTQ <> ''
         Begin
-            Declare @LTQhours float = Try_Convert(float, @LTQ)
+            Declare @LTQhours float = Try_Parse(@LTQ as float)
             If @LTQhours Is Null
             Begin
                 Set @Msg2 = 'LTQ hours is not numeric: ' + @LTQ
@@ -266,7 +267,7 @@ As
 
         If @GC <> ''
         Begin
-            Declare @GChours float = Try_Convert(float, @GC)
+            Declare @GChours float = Try_Parse(@GC as float)
             If @GChours Is Null
             Begin
                 Set @Msg2 = 'GC hours is not numeric: ' + @GC
@@ -278,7 +279,7 @@ As
 
         If @QQQ <> ''
         Begin
-            Declare @QQQhours float = Try_Convert(float, @QQQ)
+            Declare @QQQhours float = Try_Parse(@QQQ as float)
             If @QQQhours Is Null
             Begin
                 Set @Msg2 = 'QQQ hours is not numeric: ' + @QQQ
@@ -304,7 +305,9 @@ As
 
         Exec PostLogEntry 'Error', @message, 'UpdateInstrumentUsageAllocations'
     END CATCH
+
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageAllocations] TO [DDL_Viewer] AS [dbo]

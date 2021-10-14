@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[PopulateParamFileInfoTableSequest]
 **
 **  Date:   12/08/2006 mem - Initial version (Ticket #342)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -137,7 +138,7 @@ As
     FROM #TmpParamFileInfo PFI
          INNER JOIN ( SELECT Param_File_ID
                       FROM #TmpParamFileInfo
-                      WHERE NOT Try_Convert(int, IsNull(Enzyme, '')) IS NULL
+                      WHERE NOT Try_Parse(IsNull(Enzyme, '') as int) IS NULL
                     ) UpdateListQ
            ON PFI.Param_File_ID = UpdateListQ.Param_File_ID
          LEFT OUTER JOIN T_Enzymes Enz
@@ -172,6 +173,7 @@ As
     -----------------------------------------------------------
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[PopulateParamFileInfoTableSequest] TO [DDL_Viewer] AS [dbo]

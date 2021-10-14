@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[StoreSMAQCResults]
 **          02/03/2016 mem - Added Trypsin_2A and Trypsin_2C
 **          02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -277,7 +278,7 @@ As
          INNER JOIN ( SELECT Name,
                              ValueText
                       FROM @MeasurementsTable
-                      WHERE Not Try_Convert(float, ValueText) Is Null
+                      WHERE Not Try_Parse(ValueText as float) Is Null
                     ) FilterQ
            ON Target.Name = FilterQ.Name
 
@@ -475,6 +476,7 @@ Done:
         Exec PostUsageLogEntry 'StoreSMAQCResults', @UsageMessage
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreSMAQCResults] TO [DDL_Viewer] AS [dbo]

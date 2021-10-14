@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          05/22/2017 mem - Change @comment to '' if 'Bad .raw file' yet the dataset comment contains 'Cannot convert .D to .UIMF'
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -65,7 +66,7 @@ As
     If @comment in (' ', '.', ';', ',', '!', '^')
         Set @comment = ''
 
-    Set @datasetID = IsNull(Try_Convert(int, @datasetNameOrID), 0)
+    Set @datasetID = IsNull(Try_Parse(@datasetNameOrID as int), 0)
     If @datasetID <> 0
     Begin
         ----------------------------------------
@@ -150,6 +151,7 @@ As
     End
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[HandleDatasetCaptureValidationFailure] TO [DDL_Viewer] AS [dbo]

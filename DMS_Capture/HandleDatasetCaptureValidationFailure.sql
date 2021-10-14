@@ -12,8 +12,8 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 **      are successfully captured but fail the dataset integrity check
 **      (.Raw file too small, expected files missing, etc).
 **
-**          The procedure changes the capture job state to 101
-**          then calls HandleDatasetCaptureValidationFailure in DMS5
+**      The procedure changes the capture job state to 101
+**      then calls HandleDatasetCaptureValidationFailure in DMS5
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          08/10/2018 mem - Call UpdateDMSFileInfoXML to push the dataset info into DMS5.T_Dataset_Info
 **          11/02/2020 mem - Fix bug validating the dataset name
+**          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **
 *****************************************************/
 (
@@ -57,7 +58,7 @@ As
     If @comment = ''
         Set @comment = 'Bad dataset'
 
-    Set @datasetID = IsNull(Try_Convert(int, @datasetNameOrID), 0)
+    Set @datasetID = IsNull(Try_Parse(@datasetNameOrID as int), 0)
     If @datasetID <> 0
     Begin
         ----------------------------------------
@@ -179,6 +180,7 @@ As
 
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[HandleDatasetCaptureValidationFailure] TO [DDL_Viewer] AS [dbo]
