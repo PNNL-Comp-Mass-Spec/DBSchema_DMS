@@ -275,6 +275,7 @@ As
 
     Return 0
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [DDL_Viewer] AS [dbo]
 GO

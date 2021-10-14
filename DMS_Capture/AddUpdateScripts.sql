@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE AddUpdateScripts
 /****************************************************
 **
@@ -49,9 +50,9 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     ---------------------------------------------------
     -- Validate input fields
@@ -198,6 +199,7 @@ As
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateScripts] TO [DDL_Viewer] AS [dbo]

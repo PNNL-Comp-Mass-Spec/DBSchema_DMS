@@ -493,6 +493,7 @@ As
 
     return @myError
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [DDL_Viewer] AS [dbo]
 GO

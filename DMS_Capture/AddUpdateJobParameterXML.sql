@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE AddUpdateJobParameterXML
 /****************************************************
 **
@@ -142,6 +143,7 @@ As
     --
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameterXML] TO [DDL_Viewer] AS [dbo]
