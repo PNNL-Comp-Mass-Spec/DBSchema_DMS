@@ -87,7 +87,8 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          05/28/2020 mem - Auto-update the settings file if the samples used TMTpro
 **          03/10/2021 mem - Add @dataPackageID and remove @adminReviewReqd
 **          05/28/2021 mem - Add @mode 'append', which can be be used to add additional datasets to an existing analysis job request, regardless of state
-                           - When using append mode, optionally Set @state to 'new' to also reset the state
+**                         - When using append mode, optionally Set @state to 'new' to also reset the state
+**          10/15/2021 mem - Require that @dataPackageID be defined when using a match between runs parameter file for MaxQuant and MSFragger
 **
 *****************************************************/
 (
@@ -552,6 +553,20 @@ As
         End
     End
 
+    ---------------------------------------------------
+    -- If adding/updating a match-between-runs job, require that a data package is defined
+    ---------------------------------------------------
+
+    If @toolName Like 'MSFragger%' And @dataPackageID = 0 And (@settingsFileName Like '%MatchBetweenRun%' Or @settingsFileName Like '%MBR%')
+    Begin
+        RAISERROR ('Use a data package to define datasets when performing a match-between-runs search with MSFragger', 11, 4)
+    End
+
+    If @toolName Like 'MaxQuant%'And @dataPackageID = 0 And (@parmFileName Like '%MatchBetweenRun%' Or @parmFileName Like '%MBR%')
+    Begin
+        RAISERROR ('Use a data package to define datasets when performing a match-between-runs search with MaxQuant', 11, 4)
+    End
+    
     ---------------------------------------------------
     -- If mode is add, force @state to 'new'
     ---------------------------------------------------
