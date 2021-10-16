@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 **			04/10/2013 mem - Now calling AlterEnteredByUser to update T_Job_Events
 **			09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          03/10/2021 mem - Do not call S_GetNewJobID when @debugMode is non-zero
+**          10/15/2021 mem - Capitalize keywords and update whitespace
 **
 *****************************************************/
 (
@@ -56,6 +57,9 @@ AS
 	Set @dataPackageID = IsNull(@dataPackageID, 0)
 	Set @scriptName = LTrim(RTrim(IsNull(@scriptName, '')))
 	Set @debugMode = IsNull(@debugMode, 0)
+
+    If @dataPackageID < 0
+        Set @dataPackageID = 0
 
 	---------------------------------------------------
 	-- Create temporary tables to accumulate job steps,
@@ -151,14 +155,14 @@ AS
     Begin
 	    exec @job = S_GetNewJobID 'Created in broker'
 	    --
-	    if @job = 0
-	    begin
+	    If @job = 0
+	    Begin
 		    Set @myError = 50010
 		    Set @msg = 'Could not get a valid job number from DMS'
 		    RAISERROR (@msg, 15, 1)
 		    return @myError
-	    end
-    END
+	    End
+    End
 
 	---------------------------------------------------
 	-- Note: @datasetID needs to be 0
@@ -176,13 +180,12 @@ AS
 	INSERT INTO #Jobs (Job, Priority,  Script,  State,  Dataset,  Dataset_ID, Results_Folder_Name)
 	VALUES (@job, @priority,  @scriptName,  1,  @datasetNum,  @datasetID, NULL)
 
-
 	---------------------------------------------------
 	-- Get results folder name (and store in #Jobs)
 	---------------------------------------------------
 	-- 
 	exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
-	if @myError <> 0
+	If @myError <> 0
 	Begin
 		Set @msg = 'Error returned by CreateResultsFolderName: ' + Convert(varchar(12), @myError)
 		goto Done
@@ -194,14 +197,13 @@ AS
 	---------------------------------------------------
 	-- 
 	exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
-	if @myError <> 0
+	If @myError <> 0
 	Begin
 		Set @msg = 'Error returned by CreateStepsForJob: ' + Convert(varchar(12), @myError)
 		If IsNull(@message, '') <> ''
 			Set @msg = @msg + '; ' + @message
 		goto Done
 	End
-
 	
 	---------------------------------------------------
 	-- Do special needs for local jobs that target other jobs
@@ -219,7 +221,7 @@ AS
 	---------------------------------------------------
 	--
 	exec @myError = CreateSignaturesForJobSteps @job, @jobParamXML, @datasetID, @message output, @debugMode = @debugMode
-	if @myError <> 0
+	If @myError <> 0
 	Begin
 		Set @msg = 'Error returned by CreateSignaturesForJobSteps: ' + Convert(varchar(12), @myError)
 		goto Done
@@ -231,67 +233,59 @@ AS
 	-- FUTURE: need to get set of parameters normally provided by GetJobParamTable, 
 	-- except for the job specifc ones which need to be provided as initial content of @jobParamXML
 	--
-	INSERT INTO #Job_Parameters
-	(Job, Parameters)
+	INSERT INTO #Job_Parameters (Job, Parameters)
 	VALUES (@job, @jobParamXML)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		Set @myError = 50012
 		Set @msg = 'Error copying job param scratch to temp'
 		RAISERROR (@msg, 15, 1)
 		return @myError
-	end
+	End
 			
 	---------------------------------------------------
 	-- Handle any step cloning
 	---------------------------------------------------
 	--
 	exec @myError = CloneJobStep @job, @jobParamXML, @message output
-	if @myError <> 0
+	If @myError <> 0
 	Begin
 		Set @msg = 'Error returned by CloneJobStep: ' + Convert(varchar(12), @myError)
 		goto Done
 	End
-
 
 	---------------------------------------------------
 	-- Update step dependency count (code taken from SP FinishJobCreation)
 	---------------------------------------------------
 	--
 	UPDATE #Job_Steps
-	SET
-		Dependencies = T.dependencies
-	FROM   
-		#Job_Steps INNER JOIN
-		(
-			SELECT   
-			  Step_Number,
-			  COUNT(*) AS dependencies
-			FROM     
-			  #Job_Step_Dependencies
-			WHERE    (Job = @job)
-			GROUP BY Step_Number
-		) AS T
-		ON T.Step_Number = #Job_Steps.Step_Number
+	SET Dependencies = T.dependencies
+	FROM #Job_Steps
+	     INNER JOIN ( SELECT Step_Number,
+	                         COUNT(*) AS dependencies
+	                  FROM #Job_Step_Dependencies
+	                  WHERE (Job = @job)
+	                  GROUP BY Step_Number ) AS T
+	       ON T.Step_Number = #Job_Steps.Step_Number
 	WHERE #Job_Steps.Job = @job
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
-	if @myError <> 0
-	begin
+	If @myError <> 0
+	Begin
 		set @message = 'Error updating job step dependency count: ' + Convert(varchar(12), @myError)
 		goto Done
-	end
+	End
 	
 	---------------------------------------------------
 	-- Move temp tables to main tables
 	---------------------------------------------------
 	
 	If @debugMode = 0
-	begin	
+	Begin	
 		-- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
 		--	
 		INSERT INTO T_Jobs( Job,
@@ -312,10 +306,8 @@ AS
 
 		exec @myError = MoveJobsToMainTables @message output
 		
-		exec AlterEnteredByUser 'T_Job_Events', 'Job', @job, @callingUser
-		
-	end
-
+		exec AlterEnteredByUser 'T_Job_Events', 'Job', @job, @callingUser		
+	End
 
 	If @debugMode = 0
 	Begin	
@@ -344,8 +336,7 @@ AS
 		If @dataPackageID > 0
 		Begin
 			Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
-		End
-		
+		End		
 	End
 	
 	---------------------------------------------------
@@ -354,14 +345,13 @@ AS
 	--
 Done:
 
-	if @myError <> 0 and @msg <> ''
+	If @myError <> 0 and @msg <> ''
 	Begin
 		RAISERROR (@msg, 15, 1)
 	End
 
-
 	If @debugMode <> 0
-	begin
+	Begin
 		SELECT * FROM #Jobs
 		SELECT * FROM #Job_Steps
 		SELECT * FROM #Job_Step_Dependencies
@@ -373,7 +363,7 @@ Done:
         Begin
             EXEC PostLogEntry 'Debug', @jobParams, 'MakeLocalJobInBroker'
         End
-	end
+	End
 
 	return @myError
 
