@@ -54,7 +54,8 @@ FROM S_DMS_T_Dataset AS DS
 	   ON DS.DS_Oper_PRN = EUSUser.Username
      LEFT OUTER JOIN S_DMS_V_EUS_Proposal_User_Lookup EUSProposalUser
        ON EUSProposalUser.Proposal_ID = RR.RDS_EUS_Proposal_ID And
-          DS.DS_Oper_PRN = EUSProposalUser.User_PRN
+          DS.DS_Oper_PRN = EUSProposalUser.User_PRN And 
+          EUSProposalUser.Valid_EUS_ID > 0
 
 
 GO

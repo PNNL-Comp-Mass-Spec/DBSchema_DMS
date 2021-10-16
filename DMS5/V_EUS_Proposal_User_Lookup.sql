@@ -11,7 +11,8 @@ SELECT EU.PERSON_ID AS EUS_User_ID,
        P.Proposal_ID,
        P.Proposal_Start_Date,
        P.Proposal_End_Date,
-       U.U_PRN As User_PRN
+       U.U_PRN As User_PRN,
+       EU.Valid As Valid_EUS_ID
 FROM T_EUS_Proposal_Users PU
      INNER JOIN T_EUS_Users EU
        ON PU.Person_ID = EU.Person_ID
