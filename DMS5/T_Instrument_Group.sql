@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_Instrument_Group](
 	[Allocation_Tag] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Sample_Prep_Visible] [tinyint] NOT NULL,
 	[Requested_Run_Visible] [tinyint] NOT NULL,
+	[Target_Instrument_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Instrument_Group] PRIMARY KEY CLUSTERED 
 (
 	[IN_Group] ASC
@@ -40,4 +41,9 @@ ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrum
 REFERENCES [dbo].[T_Instrument_Group_Allocation_Tag] ([Allocation_Tag])
 GO
 ALTER TABLE [dbo].[T_Instrument_Group] CHECK CONSTRAINT [FK_T_Instrument_Group_T_Instrument_Group_Allocation_Tag]
+GO
+ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Target_Instrument_Group] FOREIGN KEY([Target_Instrument_Group])
+REFERENCES [dbo].[T_Instrument_Group] ([IN_Group])
+GO
+ALTER TABLE [dbo].[T_Instrument_Group] CHECK CONSTRAINT [FK_T_Instrument_Group_Target_Instrument_Group]
 GO

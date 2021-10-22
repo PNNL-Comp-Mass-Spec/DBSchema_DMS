@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **                         - Raise an error if @mode is invalid
 **          10/13/2021 mem - Append EUS User ID list to warning message
 **                         - Do not call PostLogEntry where @mode is 'preview'
+**          10/22/2021 mem - Use a new instrument group for the new requested runs
 **
 *****************************************************/
 (
@@ -69,6 +70,7 @@ As
     Declare @sourceRequestName varchar(128) = ''
     Declare @sourceRequestBatchID int = 0
     Declare @instrumentGroup varchar(64)
+    Declare @targetInstrumentGroup varchar(64)
     Declare @msType varchar(20)
     Declare @experimentID int
     Declare @sourceSeparationGroup varchar(64)
@@ -298,6 +300,28 @@ As
     End
 
     ---------------------------------------------------
+    -- Determine the instrument group to use for the new requested runs
+    ---------------------------------------------------
+
+    SELECT @targetInstrumentGroup = Target_Instrument_Group
+    FROM T_Instrument_Group
+    WHERE IN_Group = @instrumentGroup
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount = 0
+    Begin
+        RAISERROR ('Could not find entry in database for instrument group "%s"', 11, 19, @instrumentGroup)
+        return 51020
+    End
+
+    If IsNull(@targetInstrumentGroup, '') = ''
+    Begin
+        RAISERROR ('Instrument group "%s" does not have a valid target instrument group defined; contact a DMS admin', 11, 19, @instrumentGroup)
+        return 51021
+    End
+
+    ---------------------------------------------------
     -- Validate instrument group and dataset type
     ---------------------------------------------------
 
@@ -311,7 +335,7 @@ As
     --
     exec @myError = ValidateInstrumentGroupAndDatasetType
                             @msType,
-                            @instrumentGroup output,
+                            @targetInstrumentGroup output,
                             @datasetTypeID output,
                             @msg output
     If @myError <> 0
@@ -340,11 +364,12 @@ As
 
     If @fractionCount = 0
     Begin
-        RAISERROR ('Source request separation group should be fraction-based (LC-NanoHpH Or LC-NanoSCX); %s is invalid', 11, 99, @sourceSeparationGroup)
+        RAISERROR ('Source request separation group should be fraction-based (LC-NanoHpH, LC-NanoSCX, etc.); %s is invalid', 11, 99, @sourceSeparationGroup)
     End
 
     ---------------------------------------------------
     -- Examine the fraction count of the separation group for the new requested runs
+    -- The target group should not be fraction based
     ---------------------------------------------------
     --
     SELECT @targetGroupFractionCount = Fraction_Count
@@ -360,7 +385,7 @@ As
 
     If @targetGroupFractionCount > 0
     Begin
-        RAISERROR ('Separation group for the new requested runs has a non-zero fraction count value: %s', 11, 99, @separationGroup)
+        RAISERROR ('Separation group for the new requested runs (%s) has a non-zero fraction count value (%d); this is not allowed', 11, 99, @separationGroup, @targetGroupFractionCount)
     End
 
     ---------------------------------------------------
@@ -629,7 +654,8 @@ As
         FROM #Tmp_NewRequests
         ORDER BY Fraction_Number DESC
 
-        Set @msg = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest
+        Set @msg = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest + 
+                   ' with instrument group ' + @targetInstrumentGroup + ' and separation group ' + @separationGroup
         Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
     End
 
@@ -688,7 +714,7 @@ As
                 @requestorPRN,
                 @comment,
                 GETDATE(),
-                @instrumentGroup,
+                @targetInstrumentGroup,
                 @datasetTypeID,
                 @instrumentSettings,
                 @defaultPriority,
