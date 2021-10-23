@@ -1,5 +1,5 @@
 /****** Object:  Table [T_User_Operations_Permissions] ******/
-/****** RowCount: 354 ******/
+/****** RowCount: 355 ******/
 /****** Columns: U_ID, Op_ID ******/
 INSERT INTO [T_User_Operations_Permissions] VALUES (4,17)
 INSERT INTO [T_User_Operations_Permissions] VALUES (6,17)
@@ -328,6 +328,7 @@ INSERT INTO [T_User_Operations_Permissions] VALUES (3398,25)
 INSERT INTO [T_User_Operations_Permissions] VALUES (3401,25)
 INSERT INTO [T_User_Operations_Permissions] VALUES (3409,25)
 INSERT INTO [T_User_Operations_Permissions] VALUES (3414,32)
+INSERT INTO [T_User_Operations_Permissions] VALUES (3416,17)
 INSERT INTO [T_User_Operations_Permissions] VALUES (3416,32)
 INSERT INTO [T_User_Operations_Permissions] VALUES (3417,25)
 INSERT INTO [T_User_Operations_Permissions] VALUES (3419,25)
