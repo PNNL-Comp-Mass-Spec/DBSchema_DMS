@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure UpdateDatasetDispositions
+
+CREATE Procedure [dbo].[UpdateDatasetDispositions]
 /****************************************************
 **
 **	Desc:
@@ -31,6 +32,7 @@ CREATE Procedure UpdateDatasetDispositions
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          10/23/2021 mem - Use a semicolon when appending to an existing dataset comment
 **
 *****************************************************/
 (
@@ -45,28 +47,28 @@ CREATE Procedure UpdateDatasetDispositions
 As
 	Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	set @message = ''
 
-	declare @msg varchar(512)
-	declare @list varchar(1024)
+	Declare @msg varchar(512)
+	Declare @list varchar(1024)
 
 	Declare @datasetCount int = 0
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
+
+	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'UpdateDatasetDispositions', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
-	BEGIN TRY 
+	BEGIN TRY
 
 	---------------------------------------------------
 	-- Validate the inputs
@@ -81,12 +83,12 @@ As
 	---------------------------------------------------
 	-- Resolve rating name
 	---------------------------------------------------
-	declare @ratingID int
+	Declare @ratingID int
 	set @ratingID = 0
 	--
 	SELECT @ratingID = DRN_state_ID
 	FROM  T_DatasetRatingName
-	WHERE (DRN_name = @rating)	
+	WHERE (DRN_name = @rating)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
@@ -105,7 +107,7 @@ As
 	---------------------------------------------------
 	--  Create temporary table to hold list of datasets
 	---------------------------------------------------
- 
+
  	CREATE TABLE #TDS (
 		DatasetID int,
 		DatasetName varchar(128) NULL,
@@ -123,11 +125,10 @@ As
 	end
 
  	---------------------------------------------------
-	-- Populate table from dataset list  
+	-- Populate table from dataset list
 	---------------------------------------------------
 
-	INSERT INTO #TDS
-	(DatasetID)
+	INSERT INTO #TDS (DatasetID)
 	SELECT CAST(Item as int)
 	FROM MakeTableFromList(@datasetIDList)
 	--
@@ -141,19 +142,19 @@ As
 
 
  	---------------------------------------------------
-	-- Verify that all datasets exist 
+	-- Verify that all datasets exist
 	---------------------------------------------------
 	--
 	set @list = ''
 	--
-	SELECT 
-		@list = @list + CASE 
+	SELECT
+		@list = @list + CASE
 		WHEN @list = '' THEN cast(DatasetID as varchar(12))
 		ELSE ', ' + cast(DatasetID as varchar(12))
 		END
 	FROM
 		#TDS
-	WHERE 
+	WHERE
 		NOT DatasetID IN (SELECT Dataset_ID FROM T_Dataset)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -173,21 +174,21 @@ As
 
 		return 51007
 	end
-	
+
 	SELECT @datasetCount = count(*) FROM #TDS
 	set @message = 'Number of affected datasets:' + cast(@datasetCount as varchar(12))
-	
+
  	---------------------------------------------------
 	-- Get information for datasets in list
 	---------------------------------------------------
 
 	UPDATE M
-	SET 
+	SET
 		M.RatingID = T.DS_rating,
 		M.DatasetName = T.Dataset_Num,
 		M.State =  DS_state_ID,
 		M.Comment = DS_comment
-	FROM #TDS M INNER JOIN 
+	FROM #TDS M INNER JOIN
 	T_Dataset T ON T.Dataset_ID = M.DatasetID
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -197,42 +198,25 @@ As
 		set @message = 'Error updating dataset rating'
 		return 51022
 	end
-	
+
  	---------------------------------------------------
 	-- Update datasets from temporary table
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
+	if @Mode = 'update'
 	begin
 		set @myError = 0
-		--
-		declare @prevDatasetID int
-		set @prevDatasetID = 0
-		--
-		declare @curDatasetID int
-		set @curDatasetID = 0
-		--
-		declare @curDatasetName varchar(128)
-		set @curDatasetName = ''
-		--
-		declare @curRatingID int
-		set @curRatingID = 0
-		--
-		declare @curDatasetState int
-		set @curDatasetState = 0
-		--
-		declare @curDatasetStateName varchar(64)
-		set @curDatasetStateName = ''
-		--
-		declare @curComment varchar(512)
-		set @curComment = ''
-		--
-		declare @done int
-		set @done = 0
-		--
-		declare @transName varchar(32)
-		set @transName = 'UpdateDatasetDispositions'
-		
+
+		Declare @prevDatasetID int = 0
+		Declare @curDatasetID int = 0
+		Declare @curDatasetName varchar(128) = ''
+		Declare @curRatingID int = 0
+		Declare @curDatasetState int = 0
+		Declare @curDatasetStateName varchar(64) = ''
+		Declare @curComment varchar(512) = ''
+		Declare @done int = 0
+		Declare @transName varchar(32) = 'UpdateDatasetDispositions'
+
 		---------------------------------------------------
 		while @done = 0
 		begin
@@ -268,9 +252,9 @@ As
 							RAISERROR (@msg, 11, 6)
 						End
 					End
-					
+
 					begin transaction @transName
-					
+
 					-----------------------------------------------
 					-- update dataset
 					--
@@ -278,7 +262,7 @@ As
 					Begin
 						-- Append the new comment only if it is not already present
 						If CharIndex(@comment, @curComment) <= 0
-							set @curComment = @curComment + ' ' + @comment
+							set @curComment = @curComment + '; ' + @comment
 					End
 					else
 					Begin
@@ -287,8 +271,8 @@ As
 					End
 					--
 					UPDATE T_Dataset
-					SET 
-						DS_comment = @curComment, 
+					SET
+						DS_comment = @curComment,
 						DS_rating = @ratingID
 					WHERE (Dataset_ID = @curDatasetID)
 					--
@@ -299,7 +283,7 @@ As
 						set @msg = 'Update operation failed for dataset ' + @curDatasetName
 						RAISERROR (@msg, 11, 7)
 					end
-					
+
 					-----------------------------------------------
 					-- recycle request?
 					--
@@ -330,31 +314,31 @@ As
 							rollback transaction @transName
 							return @myError
 						end
-					
+
 					end
-					
+
 					-----------------------------------------------
-					-- 
+					--
 					commit transaction @transName
 
 					-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 					If Len(@callingUser) > 0
 						Exec AlterEventLogEntryUser 8, @curDatasetID, @ratingID, @callingUser
 
-					set @prevDatasetID = @curDatasetID 
+					set @prevDatasetID = @curDatasetID
 				end
 
 		end -- while
 	end -- update mode
 
 	END TRY
-	BEGIN CATCH 
+	BEGIN CATCH
 		EXEC FormatErrorMessage @message output, @myError output
-		
+
 		-- rollback any open transactions
 		IF (XACT_STATE()) <> 0
 			ROLLBACK TRANSACTION;
-			
+
 		Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositions'
 	END CATCH
 
