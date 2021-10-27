@@ -10,8 +10,8 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 	[Monoisotopic_Mass] [float] NOT NULL,
 	[Average_Mass] [float] NULL,
 	[Affected_Atom] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Original_Source] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Original_Source_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Original_Source] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Original_Source_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Alternative_Name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Empirical_Formula] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Mass_Correction_Factors] PRIMARY KEY NONCLUSTERED 
@@ -70,7 +70,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Mass_Correction_Factors] on [dbo].[T_Mass_Correction_Factors]
 For Insert
 /****************************************************
@@ -110,7 +109,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Mass_Correction_Factors] on [dbo].[T_Mass_Correction_Factors]
 For Update
 /****************************************************
