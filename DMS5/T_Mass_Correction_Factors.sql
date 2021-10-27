@@ -61,6 +61,10 @@ ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correct
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors] ADD  CONSTRAINT [DF_T_Mass_Correction_Factors_Original_Source_Name]  DEFAULT ('') FOR [Original_Source_Name]
 GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Original_Source] CHECK  (([Original_Source]='UniMod' OR [Original_Source]='PNNL' OR [Original_Source]=''))
+GO
+ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Original_Source]
+GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors]  WITH CHECK ADD  CONSTRAINT [CK_T_Mass_Correction_Factors_Tag] CHECK  ((NOT [Mass_Correction_Tag] like '%:%' AND NOT [Mass_Correction_Tag] like '%,%'))
 GO
 ALTER TABLE [dbo].[T_Mass_Correction_Factors] CHECK CONSTRAINT [CK_T_Mass_Correction_Factors_Tag]
