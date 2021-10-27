@@ -17,7 +17,8 @@ SELECT PF.Param_File_Name,
        MCF.Description,
        MCF.Monoisotopic_Mass,
        ISNULL(MCF.Empirical_Formula, '') AS Empirical_Formula,
-       MQM.Mod_Title As MaxQuant_Mod_Name
+       ISNULL(MQM.Mod_Title, '') As MaxQuant_Mod_Name,
+       Case When MCF.Original_Source = 'UniMod' Then MCF.Original_Source_Name Else '' End As UniMod_Mod_Name
 FROM dbo.T_Mass_Correction_Factors MCF
      INNER JOIN dbo.T_Param_File_Mass_Mods PFMM
        ON MCF.Mass_Correction_ID = PFMM.Mass_Correction_ID
