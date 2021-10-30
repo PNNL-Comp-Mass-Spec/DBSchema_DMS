@@ -182,4 +182,4 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',3878,3951,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. 8890 GC coupled to a 5977 Inert Plus MSD, with a 7693A Autosampler','7/29/2021 5:51:13 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01',182,'BrukerFT_BAF',3881,3922,'secfso',null,'EMSL 1649','Bruker scimaX with ESI/MALDI source','8/25/2021 1:21:50 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01_Imaging',183,'BrukerMALDI_Imaging_V2',3881,3906,'secfso',null,'EMSL 1649','Bruker scimaX with MALDI Imaging datasets','8/25/2021 1:23:06 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Broad_Exploris01',184,'LTQ_FT',3987,3988,'fso',null,'MIT - Broad (Massachusetts)','Broad Institute Exploris','10/22/2021 9:24:08 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Broad_Exploris01',184,'LTQ_FT',3987,3989,'fso',null,'MIT - Broad (Massachusetts)','Broad Institute Exploris','10/22/2021 9:24:08 AM')

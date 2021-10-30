@@ -4,16 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
+
 CREATE VIEW [dbo].[V_Requested_Run_Batch_Export_RFID]
 AS
 SELECT RRB.ID,
        RRB.Batch As Name,
-       RRB.Created As Created,
+	   T_Users.U_Name AS Owner,
 	   RRB.Description,
-	   Replace(T_Users.U_Name, ',', '') AS Owner,    -- The RFID reader demo app cannot handle commas in names
        RequestedRunStats.Requests,              -- Total requested runs in batch
        RequestedRunStats.Active_Requests,       -- Active requested runs in batch (no dataset yet)       
 	   RRB.Requested_Instrument AS Inst_Group,
+       RRB.Created As Created,
 	   HexID
 FROM T_Requested_Run_Batches AS RRB
      INNER JOIN T_Users
