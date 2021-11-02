@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[DeleteDataset]
 /****************************************************
 **
@@ -39,6 +38,7 @@ CREATE Procedure [dbo].[DeleteDataset]
 **                           Change the default for @infoOnly to 1
 **                           Rename the first parameter
 **          04/17/2019 mem - Delete rows in T_Cached_Dataset_Instruments
+**          11/02/2021 mem - Show the full path to the dataset directory at the console
 **    
 *****************************************************/
 (
@@ -186,6 +186,8 @@ As
         SELECT 'To be deleted' AS [Action], *
         FROM T_Dataset
         WHERE Dataset_ID = @datasetID
+
+        Print 'Directory to remove: ' + @datasetDirectoryPath
 
         Goto Done
     End
@@ -397,6 +399,8 @@ As
     SELECT 'Deleted dataset' AS [Action],
            @datasetID AS Dataset_ID,
            @datasetDirectoryPath AS Dataset_Directory_Path
+
+    Print 'ToDo: delete ' + @datasetDirectoryPath
 
 Done:
     return 0
