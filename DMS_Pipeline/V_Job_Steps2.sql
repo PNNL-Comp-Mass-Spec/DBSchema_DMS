@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Job_Steps2] 
 AS
 SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
@@ -30,6 +29,7 @@ SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Se
        DataQ.Remote_Finish,
        DataQ.Remote_Progress,
        DataQ.Dataset_ID,
+       DataQ.DataPkgID,
        DataQ.Machine,
        DataQ.WorkDirPath,
        DataQ.Transfer_Folder_Path, 
@@ -88,6 +88,7 @@ FROM ( SELECT JS.Job,
               JS.Remote_Finish,
               JS.Remote_Progress,
               JS.Dataset_ID,
+              JS.DataPkgID,
               LP.Machine,
               LP.WorkDir_AdminShare AS WorkDirPath,
               JS.Transfer_Folder_Path,

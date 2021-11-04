@@ -59,6 +59,7 @@ SELECT  JS.Job,
         JS.Remote_Finish,
         JS.Remote_Progress,
         JS.Dataset_ID,
+        JS.DataPkgID,
         JS.Transfer_Folder_Path,
         '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
             CASE WHEN JS.Processor LIKE '%-[1-9]' 
@@ -69,6 +70,7 @@ FROM (
     SELECT JS.Job,
            J.Dataset,
            J.Dataset_ID,
+           J.DataPkgID,
            JS.Step_Number AS Step,
            S.Script,
            JS.Step_Tool AS Tool,
