@@ -29,6 +29,8 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **                         - Add commands for updating the DatasetInfo.xml file with sed
 **                         - Switch from Folder to Directory when calling AddUpdateJobParameter
 **          02/19/2021 mem - Validate the characters in the new dataset name
+**          11/04/2021 mem - Add more MASIC file names and use sed to edit MASIC's index.html file
+**          11/05/2021 mem - Add more MASIC file names and rename files in any MzRefinery directories
 **    
 *****************************************************/
 (
@@ -60,6 +62,7 @@ AS
     
     Declare @toolBaseName varchar(64)
     Declare @resultsFolder varchar(128)
+    Declare @mzRefineryOutputFolder varchar(128)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -409,7 +412,8 @@ AS
     Declare @jobFileUpdateCount int = 0
     
     While @continue > 0
-    Begin
+    Begin -- <jobLoop>
+
         SELECT TOP 1 @job = Job
         FROM @jobsToUpdate
         WHERE Job > @job
@@ -437,10 +441,10 @@ AS
         Else
         Begin
             SELECT @toolBaseName = Tool.AJT_toolBasename,
-                    @resultsFolder = ResultsFolder
+                   @resultsFolder = ResultsFolder
             FROM V_Analysis_Job_Export AJE
-                    INNER JOIN T_Analysis_Tool Tool
-                    ON AJE.AnalysisTool = Tool.AJT_toolName
+                 INNER JOIN T_Analysis_Tool Tool
+                   ON AJE.AnalysisTool = Tool.AJT_toolName
             WHERE Job = @job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -461,7 +465,12 @@ AS
                     Insert Into #Tmp_Extensions (FileSuffix) Values 
                         ('_MS_scans.csv'), ('_MSMS_scans.csv'),('_MSMethod.txt'), 
                         ('_ScanStats.txt'), ('_ScanStatsConstant.txt'), ('_ScanStatsEx.txt'), 
-                        ('_SICstats.txt'),('_DatasetInfo.xml'),('_SICs.zip')
+                        ('_SICstats.txt'),('_DatasetInfo.xml'),('_SICs.zip'),
+                        ('_PeakAreaHistogram.png'),('_PeakWidthHistogram.png'),
+                        ('_RepIonObsRate.png'),
+                        ('_RepIonObsRateHighAbundance.png'),
+                        ('_RepIonStatsHighAbundance.png'),
+                        ('_RepIonObsRate.txt'),('_RepIonStats.txt'),('_ReporterIons.txt')
                 End
 
                 If @toolBaseName Like 'MSGFPlus%'
@@ -516,7 +525,7 @@ AS
         If @resultsFolder = 'QC'
         Begin
             Print ''
-            print 'rem Use sed to change the dataset names in index.html'
+            Print 'rem Use sed to change the dataset names in index.html'
             Print 'cat index.html | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > index_new.html'
             Print 'move index.html index_old.html'
             Print 'move index_new.html index.html'
@@ -524,15 +533,53 @@ AS
             Declare @datasetInfoFile Varchar(250) = @datasetNameNew + '_DatasetInfo.xml'
 
             Print ''
-            Print 'rem Use sed to change the dataset names in DatsetName_DatasetInfo.xml'
+            Print 'rem Use sed to change the dataset names in DatasetName_DatasetInfo.xml'
             Print 'cat ' + @datasetInfoFile + ' | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > DatasetInfo_new.xml'
             Print 'move ' + @datasetInfoFile + ' DatasetInfo_old.xml'
             Print 'move DatasetInfo_new.xml ' + @datasetInfoFile
         End
 
-        Print 'cd ..'
+        If @resultsFolder Like 'SIC%'
+        Begin
+            Print ''
+            Print 'rem Use sed to change the dataset names in index.html'
+            Print 'cat index.html | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > index_new.html'
+            Print 'move index.html index_old.html'
+            Print 'move index_new.html index.html'
+        End
+
+        Print 'cd ..'        
         
-    End
+        -- Look for a MzRefinery directory for this dataset
+        Set @mzRefineryOutputFolder = ''
+
+        SELECT @mzRefineryOutputFolder = Output_Folder_Name
+        FROM DMS_Pipeline.dbo.T_Job_Steps
+        WHERE Job = @job AND
+              State <> 3 AND
+              Step_Tool = 'Mz_Refinery'
+
+        If IsNull(@mzRefineryOutputFolder, '') <> ''
+        Begin
+            Print ''
+            Print 'cd ' + @mzRefineryOutputFolder
+            Print 'move ' + @datasetNameOld + '_msgfplus.mzid.gz             ' + @datasetNameNew + '_msgfplus.mzid.gz'
+            Print 'move ' + @datasetNameOld + '_MZRefinery_Histograms.png    ' + @datasetNameNew + '_MZRefinery_Histograms.png'
+            Print 'move ' + @datasetNameOld + '_MZRefinery_MassErrors.png    ' + @datasetNameNew + '_MZRefinery_MassErrors.png'
+            Print 'move ' + @datasetNameOld + '_msgfplus.mzRefinement.tsv    ' + @datasetNameNew + '_msgfplus.mzRefinement.tsv'
+            Print 'move ' + @datasetNameOld + '.mzML.gz_CacheInfo.txt        ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
+            Print 'cd ..'        
+            Print ''
+            Print 'rem Use sed to change the dataset name in the _CacheInfo.txt file'
+            Print 'cat ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > _CacheInfo.txt.new'
+            Print 'move ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt ' + @datasetNameNew + '.mzML.gz_OldCacheInfo.txt'
+            Print 'move _CacheInfo.txt.new ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
+
+            Print 'ToDo: rename the .mzML.gz file at:'
+            Print 'cat ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
+        End
+
+    End -- </jobLoop>
 
     Print 'popd'
     Print ''
