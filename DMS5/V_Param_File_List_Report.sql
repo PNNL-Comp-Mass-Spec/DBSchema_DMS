@@ -15,7 +15,8 @@ SELECT PF.Param_File_ID,
        PF.Date_Modified,
        PF.Job_Usage_Count,
        PF.Job_Usage_Last_Year,
-       PF.Valid
+       PF.Valid,
+       PF.Mod_List
 FROM T_Param_Files PF
      INNER JOIN T_Param_File_Types PFT
        ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID

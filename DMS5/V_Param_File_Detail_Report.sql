@@ -19,7 +19,9 @@ SELECT PF.Param_File_ID AS ID,
        dbo.udfCombinePaths(Tool.AJT_parmFileStoragePath, PF.Param_File_Name) AS File_Path,
        PF.Valid,
        dbo.GetParamFileMassModsTableCode(PF.Param_File_ID) AS Mass_Mods,
-       dbo.GetMaxQuantMassModsList(PF.Param_File_ID) AS MaxQuant_Mods
+       dbo.GetMaxQuantMassModsList(PF.Param_File_ID) AS MaxQuant_Mods,
+       PF.Mod_List As [Mod Code List],
+       dbo.GetParamFileMassModCodeList(PF.Param_File_ID, 1) As [Mod Codes With Symbols]
 FROM T_Param_Files PF
      INNER JOIN T_Param_File_Types PFT
        ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID
