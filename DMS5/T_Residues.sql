@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Residues](
 	[Residue_ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Residue_Symbol] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Abbreviation] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Average_Mass] [float] NOT NULL,
 	[Monoisotopic_Mass] [float] NOT NULL,
 	[Num_C] [smallint] NOT NULL,
@@ -34,12 +35,13 @@ CREATE CLUSTERED INDEX [IX_T_Residues_Symbol] ON [dbo].[T_Residues]
 	[Residue_Symbol] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Residues] ADD  CONSTRAINT [DF_T_Residues_Abbreviation]  DEFAULT ('') FOR [Abbreviation]
+GO
 /****** Object:  Trigger [dbo].[trig_i_Residues] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger trig_i_Residues on dbo.T_Residues
 For Insert
 AS
@@ -57,7 +59,6 @@ AS
 			GetDate(), SYSTEM_USER
 	FROM inserted
 
-
 GO
 ALTER TABLE [dbo].[T_Residues] ENABLE TRIGGER [trig_i_Residues]
 GO
@@ -66,7 +67,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger trig_u_Residues on dbo.T_Residues
 For Update
 AS
@@ -93,7 +93,6 @@ AS
 				ROUND(inserted.Average_Mass - deleted.Average_Mass, 10),
 				GetDate(), SYSTEM_USER
 		FROM deleted INNER JOIN inserted ON deleted.Residue_ID = inserted.Residue_ID
-
 
 GO
 ALTER TABLE [dbo].[T_Residues] ENABLE TRIGGER [trig_u_Residues]
