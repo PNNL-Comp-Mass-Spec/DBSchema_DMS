@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 **          08/17/2018 mem - Pass @paramFileType to StoreParamFileMassMods
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          11/30/2018 mem - Make @paramFileID an input/output parameter
+**          11/04/2021 mem - Populate the Mod_List field using GetParamFileMassModCodeList
 **
 *****************************************************/
 (
@@ -228,9 +229,9 @@ As
             Set @paramfileMassMods = ''
 
         If @paramfileMassMods <> '' And (
-            @Mode = 'add' OR
-            @Mode = 'update' And @replaceExistingMassMods = 1 OR
-            @Mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID))
+            @mode = 'add' OR
+            @mode = 'update' And @replaceExistingMassMods = 1 OR
+            @mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID))
         Begin -- <b>
 
             ---------------------------------------------------
@@ -265,7 +266,7 @@ As
     -- Action for add mode
     ---------------------------------------------------
 
-    If @Mode = 'add'
+    If @mode = 'add'
     Begin -- <add>
 
         INSERT INTO T_Param_Files (
@@ -302,7 +303,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update'
+    If @mode = 'update'
     Begin -- <update>
 
         UPDATE T_Param_Files
@@ -352,6 +353,16 @@ As
         End
     End
 
+    If @mode In ('add', 'update')
+    Begin
+        -- Update the Mod_List field
+        Update T_Param_Files
+        Set Mod_List = dbo.GetParamFileMassModCodeList(Param_File_ID, 0)
+        Where Param_File_ID = @paramFileID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    End
 
     END TRY
     BEGIN CATCH

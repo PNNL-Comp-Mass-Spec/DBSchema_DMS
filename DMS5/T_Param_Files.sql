@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Param_Files](
 	[Valid] [smallint] NOT NULL,
 	[Job_Usage_Count] [int] NULL,
 	[Job_Usage_Last_Year] [int] NULL,
+	[Mod_List] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_Param_Files] PRIMARY KEY CLUSTERED 
 (
 	[Param_File_ID] ASC
@@ -48,6 +49,8 @@ GO
 ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Valid]  DEFAULT ((1)) FOR [Valid]
 GO
 ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Job_Usage_Count]  DEFAULT ((0)) FOR [Job_Usage_Count]
+GO
+ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Mod_List]  DEFAULT ('') FOR [Mod_List]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Files_T_Param_File_Types] FOREIGN KEY([Param_File_Type_ID])
 REFERENCES [dbo].[T_Param_File_Types] ([Param_File_Type_ID])
