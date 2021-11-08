@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MaxQuant_Mods] ******/
-/****** RowCount: 585 ******/
+/****** RowCount: 586 ******/
 SET IDENTITY_INSERT [T_MaxQuant_Mods] ON
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (1,'Acetyl (K)','notCterm',1120,'C(2) H(2) O',0)
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (2,'Acetyl (Protein N-term)','proteinNterm',1120,'C(2) H(2) O',0)
@@ -586,4 +586,5 @@ INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (583,'N-Ethylmaleimide (C)','anywhere',1251,'H(7) C(6) N O(2)',0)
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (584,'GlyGly (KST)','anywhere',1021,'H(6) C(4) N(2) O(2)',0)
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (585,'2-monomethylsuccinyl (C)','anywhere',1542,'H(6) C(5) O(4)',0)
+INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (586,'Dithiodipyridine (C)','anywhere',1543,'H(3) C(5) S N',0)
 SET IDENTITY_INSERT [T_MaxQuant_Mods] OFF
