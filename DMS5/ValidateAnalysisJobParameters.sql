@@ -84,6 +84,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          05/26/2021 mem - Use @allowNonReleasedDatasets when calling ValidateAnalysisJobRequestDatasets
 **          08/26/2021 mem - Add logic for MSFragger
 **          10/05/2021 mem - Show custom message if @toolName contains an inactive _dta.txt based MS-GF+ tool
+**          11/08/2021 mem - Allow instrument class 'Data_Folders' and dataset type 'DataFiles' (both used by instrument 'DMS_Pipeline_Data') to apply to all analysis tools
 **
 *****************************************************/
 (
@@ -285,7 +286,8 @@ As
                                ELSE ', ' + Dataset_Num
                           END
     FROM #TD
-    WHERE IN_class NOT IN ( SELECT AIC.Instrument_Class
+    WHERE IN_class <> 'Data_Folders' And
+          IN_class NOT IN ( SELECT AIC.Instrument_Class
                             FROM T_Analysis_Tool AnTool
                                  INNER JOIN T_Analysis_Tool_Allowed_Instrument_Class AIC
                                    ON AnTool.AJT_toolID = AIC.Analysis_Tool_ID
@@ -325,7 +327,8 @@ As
                                ELSE ', ' + Dataset_Num
                           END
     FROM #TD
-    WHERE Dataset_Type NOT IN ( SELECT ADT.Dataset_Type
+    WHERE Dataset_Type <> 'DataFiles' And
+          Dataset_Type NOT IN ( SELECT ADT.Dataset_Type
                                 FROM T_Analysis_Tool_Allowed_Dataset_Type ADT
                                      INNER JOIN T_Analysis_Tool Tool
                                        ON ADT.Analysis_Tool_ID = Tool.AJT_toolID
