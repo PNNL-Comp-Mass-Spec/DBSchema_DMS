@@ -68,7 +68,8 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          09/04/2019 mem - If the plex experiment is a parent experiment of an experiment group, copy plex info to the members (fractions) of the experiment group
 **          09/06/2019 mem - When updating a plex experiment that is a parent experiment of an experiment group, also update the members (fractions) of the experiment group
 **          03/02/2020 mem - Update to support TMT 16 by adding channels 12-16
-**          08/04/2021 mem - Rename @plexExperimentId to @plexExperimentIdOrName 
+**          08/04/2021 mem - Rename @plexExperimentId to @plexExperimentIdOrName
+**          11/09/2021 mem - Update @mode to support 'preview'
 **    
 *****************************************************/
 (
@@ -122,7 +123,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @comment14 varchar(512)='',
     @comment15 varchar(512)='',
     @comment16 varchar(512)='',
-	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update'
+	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update', or 'preview'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''		
 )
@@ -150,9 +151,16 @@ As
 	
     Declare @charIndex int
     
-    Declare @plexExperimentName Varchar(128) = ''
+    Declare @plexExperimentName varchar(128) = ''
 
     Declare @currentPlexExperimentId Int
+    Declare @targetPlexExperimentCount int = 0
+    Declare @targetAddCount int = 0
+    Declare @targetUpdateCount int = 0
+
+    Declare @updatedRows int
+    Declare @actionMessage varchar(128)
+    Declare @expIdList Varchar(512) = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -247,9 +255,16 @@ As
 	    [Channel_Type_ID] [tinyint] NOT NULL,
 	    [Comment] [varchar](512) Null,
         [ValidExperiment] tinyint Not Null
-     )
+    )
     
     Create Unique Clustered Index #IX_TmpExperiment_Plex_Members On #TmpExperiment_Plex_Members ([Channel])
+
+    CREATE TABLE #TmpDatabaseUpdates (
+        ID int IDENTITY (1,1) NOT NULL,
+        Message varchar(128) NOT NULL
+    )
+            
+    Create Unique Clustered Index #IX_TmpDatabaseUpdates On #TmpDatabaseUpdates (ID)
 
 	---------------------------------------------------
 	-- Parse @plexMembers
@@ -689,6 +704,13 @@ As
     End
 
     ---------------------------------------------------
+    -- Update the cached actual chanel count
+    ---------------------------------------------------
+
+    SELECT @actualChannelCount = Count(*)
+    FROM #TmpExperiment_Plex_Members
+
+    ---------------------------------------------------
     -- Validate experiment IDs in #TmpExperiment_Plex_Members
     ---------------------------------------------------
 
@@ -701,6 +723,7 @@ As
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     Declare @invalidExperimentCount int = 0
+
     SELECT @invalidExperimentCount = Count(*)
     FROM #TmpExperiment_Plex_Members 
     WHERE ValidExperiment = 0
@@ -730,17 +753,17 @@ As
 	Set @logErrors = 1
 	
 	---------------------------------------------------
-	-- Action for add mode or update mode
+	-- Action for add, update, or preview mode
 	---------------------------------------------------
 	
-	If @mode IN ('add', 'update')
+	If @mode IN ('add', 'update', 'preview')
 	Begin -- <AddOrUpdate>
     
         ---------------------------------------------------
         -- Create a temporary table to hold the experiment IDs that will be updated with the plex info in #TmpExperiment_Plex_Members
         ---------------------------------------------------
 
-        CREATE TABLE #Tmp_ExperimentsToUpdate (plexExperimentId Int Not Null)
+        CREATE TABLE #Tmp_ExperimentsToUpdate (plexExperimentId int Not Null)
 
         CREATE INDEX #IX_Tmp_ExperimentsToUpdate On #Tmp_ExperimentsToUpdate (plexExperimentId)
 
@@ -807,44 +830,152 @@ As
                 Set @continue = 0                
             End
             Else
-            Begin -- <CopyPlexInfo>
-
-                MERGE [dbo].[T_Experiment_Plex_Members] AS t
-                USING (SELECT Channel, Exp_ID, Channel_Type_ID, [Comment] 
-                       FROM #TmpExperiment_Plex_Members) as s
-                ON ( t.[Channel] = s.[Channel] AND t.[Plex_Exp_ID] = @currentPlexExperimentId)
-                WHEN MATCHED AND (
-                    t.[Exp_ID] <> s.[Exp_ID] OR
-                    t.[Channel_Type_ID] <> s.[Channel_Type_ID] OR
-                    ISNULL( NULLIF(t.[Comment], s.[Comment]),
-                            NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
-                    )
-                THEN UPDATE SET 
-                    [Exp_ID] = s.[Exp_ID],
-                    [Channel_Type_ID] = s.[Channel_Type_ID],
-                    [Comment] = s.[Comment]
-                WHEN NOT MATCHED BY TARGET THEN
-                    INSERT([Plex_Exp_ID], [Channel], [Exp_ID], [Channel_Type_ID], [Comment])
-                    VALUES(@currentPlexExperimentId, s.[Channel], s.[Exp_ID], s.[Channel_Type_ID], s.[Comment])
-                WHEN NOT MATCHED BY SOURCE And T.Plex_exp_id = @currentPlexExperimentId THEN DELETE;
-		        --
-                SELECT @myError = @@error, @myRowCount = @@rowcount
-                --
-		        If @myError <> 0
-		        Begin
-			        Set @msg = 'Update operation failed: "' + @currentPlexExperimentId + '"'
-			        RAISERROR (@msg, 11, 18)
-		        End
-
-                If Len(@callingUser) > 0
+            Begin
+                If @expIdList = ''
                 Begin
-                    -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
-                    --            
-                    Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @currentPlexExperimentId, @CallingUser
+                    Set @expIdList = Cast(@currentPlexExperimentId As varchar(12))
                 End
-            End -- </CopyPlexInfo>
+                Else
+                Begin
+                    Set @expIdList = @expIdList + ', ' + Cast(@currentPlexExperimentId As varchar(12))
+                End
+
+                If @mode = 'preview'
+                Begin -- <PreviewAddUpdate>
+                    Set @updatedRows = 0
+
+                    SELECT @updatedRows = Count(*)
+                    FROM T_Experiment_Plex_Members t
+                         INNER JOIN #TmpExperiment_Plex_Members s
+                           ON t.[Channel] = s.[Channel]
+                    WHERE t.[Plex_Exp_ID] = @currentPlexExperimentId
+
+                    If @updatedRows = @actualChannelCount
+                    Begin
+                        Set @actionMessage = 'Would update ' + Cast(@updatedRows As varchar(12)) + ' channels for Exp_ID ' + Cast(@currentPlexExperimentId As varchar(12))
+                    End
+                    Else If @updatedRows = 0
+                    Begin
+                        Set @actionMessage = 'Would add ' + Cast(@actualChannelCount As varchar(12)) + ' channels for Exp_ID ' + Cast(@currentPlexExperimentId As varchar(12))
+                    End
+                    Else
+                    Begin
+                        Set @actionMessage = 'Would add/update ' + Cast(@actualChannelCount As varchar(12)) + ' channels for Exp_ID ' + Cast(@currentPlexExperimentId As varchar(12))
+                    End
+
+                    Insert Into #TmpDatabaseUpdates (Message) Values (@actionMessage)
+
+                End -- </PreviewAddUpdate>
+                Else
+                Begin  -- <AddUpdatePlexInfo>
+                    MERGE [dbo].[T_Experiment_Plex_Members] AS t
+                    USING (SELECT Channel, Exp_ID, Channel_Type_ID, [Comment] 
+                           FROM #TmpExperiment_Plex_Members) as s
+                    ON ( t.[Channel] = s.[Channel] AND t.[Plex_Exp_ID] = @currentPlexExperimentId)
+                    WHEN MATCHED AND (
+                        t.[Exp_ID] <> s.[Exp_ID] OR
+                        t.[Channel_Type_ID] <> s.[Channel_Type_ID] OR
+                        ISNULL( NULLIF(t.[Comment], s.[Comment]),
+                                NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
+                        )
+                    THEN UPDATE SET 
+                        [Exp_ID] = s.[Exp_ID],
+                        [Channel_Type_ID] = s.[Channel_Type_ID],
+                        [Comment] = s.[Comment]
+                    WHEN NOT MATCHED BY TARGET THEN
+                        INSERT([Plex_Exp_ID], [Channel], [Exp_ID], [Channel_Type_ID], [Comment])
+                        VALUES(@currentPlexExperimentId, s.[Channel], s.[Exp_ID], s.[Channel_Type_ID], s.[Comment])
+                    WHEN NOT MATCHED BY SOURCE And T.Plex_exp_id = @currentPlexExperimentId THEN DELETE;
+		            --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+                    --
+		            If @myError <> 0
+		            Begin
+			            Set @msg = 'Update operation failed: "' + @currentPlexExperimentId + '"'
+			            RAISERROR (@msg, 11, 18)
+		            End
+
+                    If Len(@callingUser) > 0
+                    Begin
+                        -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
+                        --            
+                        Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @currentPlexExperimentId, @CallingUser
+                    End
+                End  -- </AddUpdatePlexInfo>
+            End
 
         End -- </WhileLoop>
+
+        If @mode = 'add'
+        Begin
+            If @expIdList Like '%,%'
+            Begin
+                Set @message = 'Defined experiment plex members for Exp_IDs: ' + @expIdList
+            End
+            Else
+            Begin
+                Set @message = 'Defined experiment plex members for Plex Exp ID ' + @plexExperimentIdOrName
+            End
+        End
+        Else If @mode = 'preview'
+        Begin
+            SELECT @targetPlexExperimentCount = Count(*)
+            FROM #TmpDatabaseUpdates            
+
+            SELECT @targetAddCount = Count(*)
+            FROM #TmpDatabaseUpdates
+            WHERE Message Like 'Would add %'
+            
+            SELECT @targetUpdateCount = Count(*)
+            FROM #TmpDatabaseUpdates
+            WHERE Message like 'Would update %'
+
+            SELECT TOP 1 @message = Message
+            FROM #TmpDatabaseUpdates
+            ORDER BY ID
+
+            If @targetPlexExperimentCount > 1
+            Begin
+            
+                If @targetAddCount = @targetPlexExperimentCount
+                Begin
+                    -- Adding plex members for all of the target experiments
+                    Set @message = 'Would add ' + Cast(@actualChannelCount As varchar(12)) + ' channels for Exp_IDs: ' + @expIdList
+                End
+                Else If @targetUpdateCount = @targetPlexExperimentCount
+                Begin
+                    -- Updating plex members for all of the target experiments
+                    Set @message = 'Would update ' + Cast(@updatedRows As varchar(12)) + ' channels for Exp_IDs: ' + @expIdList
+                End
+                Else
+                Begin
+                    -- Mix of adding and updating plex members
+
+                    -- Append the message for the next 6 experiments
+
+                    Set @entryId = 2
+                    While @entryID <= @targetPlexExperimentCount And @entryID <= 7
+                    Begin                
+                        SELECT @msg = Message
+                        FROM #TmpDatabaseUpdates
+                        WHERE ID = @entryID
+
+                        Set @message = @message + ', ' + Replace(@msg, 'Would', 'would')
+
+                        Set @entryID = @entryID + 1
+                    End
+
+                    If @targetPlexExperimentCount > 7
+                    Begin
+                        SELECT TOP 1 @msg = Message
+                        FROM #TmpDatabaseUpdates
+                        ORDER BY ID DESC
+
+                        Set @message = @message + ' ... ' + Replace(@msg, 'Would', 'would')
+                    End
+                End
+            End
+        End
 
 	End -- </AddOrUpdate>
 
