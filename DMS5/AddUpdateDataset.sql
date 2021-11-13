@@ -109,6 +109,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **                         - Expand @message to varchar(1024)
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **          10/01/2021 mem - Also check for a period when verifying that the dataset name does not end with .raw or .wiff
+**          11/12/2021 mem - When @mode is update, pass @batch, @block, and @runOrder to AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -161,6 +162,10 @@ As
     Declare @reqRunInternalStandard varchar(50)
     Declare @mrmAttachmentID int
     Declare @reqRunStatus varchar(24)
+
+    Declare @batch int
+    Declare @block int
+    Declare @runOrder Int
 
     Set @message = ''
     Set @warning = ''
@@ -1508,6 +1513,18 @@ As
 
         If @requestID > 0 And @eusUsageType <> ''
         Begin -- <b4>
+            -- Lookup @batch, @block, and @runOrder
+
+            SELECT @batch = RDS_BatchID,
+                   @block = RDS_Block,
+                   @runOrder = RDS_Run_Order
+            FROM t_requested_run
+            WHERE ID = @requestID
+
+            Set @batch = IsNull(@batch, 0)
+            Set @block = IsNull(@block, 0)
+            Set @runOrder = IsNull(@runOrder, 0)
+
             EXEC @result = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentNum,
@@ -1520,6 +1537,9 @@ As
                                     @wellNum = @wellNum,
                                     @internalStandard = @reqRunInternalStandard,
                                     @comment = @reqRunComment,
+                                    @batch = @batch,
+                                    @block = @block,
+                                    @runOrder = @runOrder,
                                     @eusProposalID = @eusProposalID,
                                     @eusUsageType = @eusUsageType,
                                     @eusUsersList = @eusUsersList,
