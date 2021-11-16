@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 /****************************************************
 **
-**  Desc:   Adds requested runs based on a parent requested run that has separation group LC-NanoHpH-6, LC-NanoSCX-6 , or similar
+**  Desc:   Adds requested runs based on a parent requested run that has separation group LC-NanoHpH-6, LC-NanoSCX-6, or similar
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          10/13/2021 mem - Append EUS User ID list to warning message
 **                         - Do not call PostLogEntry where @mode is 'preview'
 **          10/22/2021 mem - Use a new instrument group for the new requested runs
+**          11/15/2021 mem - If the the instrument group for the source request is the target instrument group instead of a fraction based group, auto update the source instrument group
 **
 *****************************************************/
 (
@@ -69,8 +70,11 @@ As
 
     Declare @sourceRequestName varchar(128) = ''
     Declare @sourceRequestBatchID int = 0
+    
     Declare @instrumentGroup varchar(64)
     Declare @targetInstrumentGroup varchar(64)
+    Declare @fractionBasedInstrumentGroup varchar(64) = ''
+
     Declare @msType varchar(20)
     Declare @experimentID int
     Declare @sourceSeparationGroup varchar(64)
@@ -93,7 +97,7 @@ As
     Declare @lastRequest varchar(128)
 
     Declare @continue tinyint = 0
-
+    
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 
     ---------------------------------------------------
@@ -313,6 +317,25 @@ As
     Begin
         RAISERROR ('Could not find entry in database for instrument group "%s"', 11, 19, @instrumentGroup)
         return 51020
+    End
+    
+    If IsNull(@targetInstrumentGroup, '') = ''
+    Begin
+        -- If the user specified the target group instead of the instrument group that ends with _Frac, auto change things
+        SELECT @fractionBasedInstrumentGroup = IN_Group
+        FROM T_Instrument_Group
+        WHERE Target_Instrument_Group = @instrumentGroup
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 1
+        Begin
+            Set @instrumentGroup = @fractionBasedInstrumentGroup
+
+            SELECT @targetInstrumentGroup = Target_Instrument_Group
+            FROM T_Instrument_Group
+            WHERE IN_Group = @instrumentGroup
+        End
     End
 
     If IsNull(@targetInstrumentGroup, '') = ''
@@ -675,6 +698,16 @@ As
         -- Start transaction
         --
         Begin transaction
+
+        If Len(IsNull(@fractionBasedInstrumentGroup, '')) > 0
+        Begin
+            -- Fix the instrument group name in the source requested run
+            UPDATE T_Requested_Run
+            SET RDS_instrument_group = @fractionBasedInstrumentGroup
+            WHERE ID = @sourceRequestID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
 
         Set @fractionNumber = 1
 
