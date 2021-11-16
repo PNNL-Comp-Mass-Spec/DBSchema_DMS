@@ -72,6 +72,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          03/16/2021 mem - Add check for MSXMLGenerator being 'skip'
 **          06/01/2021 mem - Raise an error if @mode is invalid
 **          08/26/2021 mem - Add support for data package based MSFragger jobs
+**          11/15/2021 mem - Use custom messages when creating a single job
 **
 *****************************************************/
 (
@@ -91,7 +92,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
     @dataPackageID int = 0,
     @associatedProcessorGroup varchar(64) = '',     -- Processor group; deprecated in May 2015
     @propagationMode varchar(24) = 'Export',        -- 'Export', 'No Export'
-    @removeDatasetsWithJobs VARCHAR(12) = 'Y',
+    @removeDatasetsWithJobs varchar(12) = 'Y',
     @mode varchar(12),                              -- 'add' or 'preview'
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
@@ -322,7 +323,7 @@ As
     --
     Declare @datasetCountToRemove INT = 0
     
-    Declare @removedDatasets VARCHAR(4096) = ''
+    Declare @removedDatasets varchar(4096) = ''
     --
     If @dataPackageID = 0 And @removeDatasetsWithJobs <> 'N'
     Begin --<remove>
@@ -380,10 +381,16 @@ As
             
             -- make list of removed datasets
             --
-            Declare @threshold SMALLINT
-            Set @threshold = 5
-            Set @removedDatasets = CONVERT(varchar(12), @datasetCountToRemove) + ' skipped datasets that had existing jobs:'
-            SELECT TOP(@threshold) @removedDatasets =  @removedDatasets + Dataset + ', ' FROM @matchingJobDatasets
+            Declare @threshold Smallint = 5
+
+            If @datasetCountToRemove = 1
+                Set @removedDatasets = '1 skipped dataset that has an existing job: '
+            Else
+                Set @removedDatasets = CONVERT(varchar(12), @datasetCountToRemove) + ' skipped datasets that have existing jobs: '
+
+            SELECT TOP(@threshold) @removedDatasets = @removedDatasets + Dataset + ', ' 
+            FROM @matchingJobDatasets
+
             If @datasetCountToRemove > @threshold
             Begin
                 Set @removedDatasets = @removedDatasets + ' (more datasets not shown)'
@@ -1002,19 +1009,30 @@ As
     -- build message
     ---------------------------------------------------
 Explain:
-    If @mode = 'add'
-        Set @message = ' There were '
+    If @jobCountToBeCreated = 1
+    Begin
+        If @mode = 'add'
+            Set @message = ' There was 1 job created.'
+        Else
+            Set @message = ' There would be 1 job created.'
+    End
     Else
-        Set @message = ' There would be '
+    Begin
+        If @mode = 'add'
+            Set @message = ' There were '
+        Else
+            Set @message = ' There would be '
 
-    Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' jobs created. '
-    --
+        Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' jobs created.'
+    End
+
     If @datasetCountToRemove > 0
     Begin
         If @mode = 'add'
             Set @removedDatasets = ' Jobs were not made for ' + @removedDatasets
         Else
             Set @removedDatasets = ' Jobs would not be made for ' + @removedDatasets
+
         Set @message = @message + @removedDatasets
     End
 
@@ -1030,6 +1048,7 @@ Explain:
         
         Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
     End Catch
+
     return @myError
 
 
