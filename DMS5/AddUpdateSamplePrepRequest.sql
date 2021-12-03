@@ -93,6 +93,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          10/11/2021 mem - Clear @stateComment when @state is 'Closed'
 **                         - Only allow sample prep staff to update estimated prep time
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          12/03/2021 mem - Clear @stateComment when creating a new prep request
 **
 *****************************************************/
 (
@@ -122,7 +123,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @comment varchar(2048),
     @priority varchar(12),
     @state varchar(32),                         -- New, On Hold, Prep in Progress, Prep Complete, or Closed
-    @stateComment Varchar(512),
+    @stateComment varchar(512),
     @id int output,                             -- input/ouptut: Sample prep request ID
     @separationGroup varchar(256),              -- Separation group
     @blockAndRandomizeSamples char(3),          -- 'Yes', 'No', or 'na'
@@ -145,7 +146,7 @@ As
 
     Declare @currentStateID int
 
-    IF IsNull(@state, '') = 'Closed (containers and material)'
+    If IsNull(@state, '') = 'Closed (containers and material)'
     Begin
         -- Prior to September 2018, we would also look for biomaterial (cell cultures)
         -- and would close them if @state was 'Closed (containers and material)'
@@ -203,9 +204,9 @@ As
     If Len(IsNull(@reason, '')) < 1
         RAISERROR ('The reason field is required', 11, 116)
 
-    If @state = 'Closed'
+    If @state In ('New', 'Closed')
     Begin
-        -- Always clear State Comment when the state is closed
+        -- Always clear State Comment when the state is new or closed
         Set @stateComment = ''
     End
 
