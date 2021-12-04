@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Organism_DB_File] ******/
-/****** RowCount: 7028 ******/
+/****** RowCount: 7055 ******/
 SET IDENTITY_INSERT [T_Organism_DB_File] ON
 INSERT INTO [T_Organism_DB_File] (ID, FileName, Organism_ID, Description, Active, NumProteins, NumResidues, Valid, OrgFile_RowVersion, File_Size_KB, Created) VALUES (100,'Zebrafish_2002-03-29.fasta',18,'',0,586,254576,1,0xC40403,299,'3/29/2002 12:00:00 AM')
 INSERT INTO [T_Organism_DB_File] (ID, FileName, Organism_ID, Description, Active, NumProteins, NumResidues, Valid, OrgFile_RowVersion, File_Size_KB, Created) VALUES (101,'Zebrafish_2002-04-03.fasta',18,'',0,3010,1139405,1,0xC40402,1343,'4/3/2002 12:00:00 AM')
