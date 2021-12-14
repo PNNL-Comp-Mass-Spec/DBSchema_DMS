@@ -8,6 +8,7 @@ CREATE VIEW [dbo].[V_Requested_Run_Helper_List_Report]
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
+       RR.RDS_BatchID As Batch,
        E.Experiment_Num AS Experiment,
        RR.RDS_instrument_group AS Instrument,
        U.U_Name AS Requestor,
@@ -24,8 +25,7 @@ FROM T_DatasetTypeName DTN
        ON RR.RDS_Requestor_PRN = U.U_PRN
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID
-WHERE (RR.RDS_BatchID = 0) AND
-      (RR.DatasetID IS NULL)
+WHERE RR.DatasetID Is Null
 
 
 GO
