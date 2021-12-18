@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 370 ******/
+/****** RowCount: 382 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -371,4 +371,16 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1368,'A2CPS Initial Test Plate','Initial prep plate of A2CPS/Pain samples (23 samples). 5 ul plasma processed (non-depleted)','10/6/2021 7:39:55 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1369,'MNST-2A_DSC_P1','Moonshot-2A Discovery Plate 1','12/1/2021 7:32:13 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1370,'MNST-2A_DSC_P2','Moonshot-2A Discovery Plate 2','12/1/2021 7:32:20 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1371,'TB3_CURED1_TF00065439','TBSmart; Cured_01 (Visit 00) - Plate Barcode TF00065439 - digests for SRM','12/11/2021 3:13:23 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1372,'TB3_CURED2_TF00065434','TBSmart; Cured_02 (Visit 02) - Plate Barcode TF00065434 - digests for SRM','12/11/2021 3:14:08 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1373,'TB3_CURED3_TF00061356','TBSmart; Cured_03 (Visit 03) - Plate Barcode TF00061356 - digests for SRM','12/11/2021 3:14:42 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1374,'TB3_CURED4_TF00061349','TBSmart; Cured_04 (Visit 08) - Plate Barcode TF00061349 - digests for SRM','12/11/2021 3:15:16 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1375,'TB3_CURED5_TF00040666','TBSmart; Cured_05 (Visit 17) - Plate Barcode TF00040666 - digests for SRM','12/11/2021 3:15:53 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1376,'TB3_CURED6_TF00040734','TBSmart; Cured_06 (Visit 26) - Plate Barcode TF00040734 - digests for SRM','12/11/2021 3:16:29 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1377,'TB3_CURED7_TF00040810','TBSmart; Cured_07 (Visit 52) - Plate Barcode TF00040810 - digests for SRM','12/11/2021 3:17:08 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1378,'TB3_REMOX1_TS01244530','TBSmart; REMOX_01 (relapsed, all data points) - Plate Barcode TS01244530, contains two samples from TS01244555 - digests for SRM','12/11/2021 3:21:13 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1379,'TB3_NTP1_TS01244547','TBSmart; NTP_01 (relapsed, 00,02,04 data points) - Plate Barcode TS01244547 - digests for SRM','12/11/2021 3:22:22 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1380,'TB3_NTP2_TS01244533','TBSmart; NTP_02 (relapsed, 04,08,17 data points) - Plate Barcode TS01244533 - digests for SRM','12/11/2021 3:23:15 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1381,'TB3_NTP3_TS01244541','TBSmart; NTP_03 (relapsed, 17,26,52 data points) - Plate Barcode TS01244541 - digests for SRM','12/11/2021 3:24:08 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1382,'TB3_NTP4_TS01244544','TBSmart; NTP_04 (relapsed, 52 data points and WD) - Plate Barcode TS01244544 - digests for SRM','12/11/2021 3:24:52 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
