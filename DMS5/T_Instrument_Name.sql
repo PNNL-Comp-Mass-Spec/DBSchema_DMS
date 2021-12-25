@@ -33,6 +33,8 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[Perform_Calibration] [tinyint] NOT NULL,
 	[Scan_SourceDir] [tinyint] NOT NULL,
 	[Building]  AS (case when charindex(' ',[IN_Room_Number])>(1) then substring([IN_Room_Number],(1),charindex(' ',[IN_Room_Number])-(1)) else [IN_Room_Number] end) PERSISTED,
+	[Default_Purge_Priority] [tinyint] NOT NULL,
+	[Storage_Purge_Holdoff_Months] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Instrument_Name] PRIMARY KEY CLUSTERED 
 (
 	[Instrument_ID] ASC
@@ -89,6 +91,10 @@ GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Perform_Calibration]  DEFAULT ((0)) FOR [Perform_Calibration]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Scan_SourceDir]  DEFAULT ((1)) FOR [Scan_SourceDir]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Default_Purge_Priority]  DEFAULT ((3)) FOR [Default_Purge_Priority]
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_Storage_Purge_Holdoff_Months]  DEFAULT ((1)) FOR [Storage_Purge_Holdoff_Months]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Class] FOREIGN KEY([IN_class])
 REFERENCES [dbo].[T_Instrument_Class] ([IN_class])

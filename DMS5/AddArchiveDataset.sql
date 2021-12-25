@@ -21,6 +21,7 @@ CREATE Procedure [dbo].[AddArchiveDataset]
 **          06/01/2012 mem - Bumped up @holdOffHours to 2 weeks
 **          06/12/2012 mem - Now looking up the Purge_Policy in T_Instrument_Name
 **          08/10/2018 mem - Do not create an archive task for datasets with state 14
+**          12/20/2021 bcg - Look up Purge_Priority and AS_purge_holdoff_date offset in T_Instrument_Name
 **
 *****************************************************/
 (
@@ -31,8 +32,6 @@ As
     
     Declare @myError int = 0
     Declare @myRowCount int = 0
-
-    Declare @holdOffHours int = 336            -- 2 weeks
 
     Declare @message varchar(512) = ''
     
@@ -102,13 +101,19 @@ As
     -- Lookup the purge policy for this instrument
     ---------------------------------------------------
     --
-    Declare @PurgePolicy tinyint = 0
+    Declare @purgePolicy tinyint = 0
+    Declare @purgePriority tinyint = 0
+    Declare @purgeHoldoffMonths tinyint = 0
     
-    SELECT @PurgePolicy = Default_Purge_Policy
+    SELECT @purgePolicy = Default_Purge_Policy,
+           @purgePriority = Default_Purge_Priority,
+           @purgeHoldoffMonths = Storage_Purge_Holdoff_Months
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentID
     
-    Set @PurgePolicy = IsNull(@PurgePolicy, 0)
+    Set @purgePolicy = IsNull(@purgePolicy, 0)
+    Set @purgePriority = IsNull(@purgePriority, 3)
+    Set @purgeHoldoffMonths = IsNull(@purgeHoldoffMonths, 1)
         
     ---------------------------------------------------
     -- Make entry into archive table
@@ -121,7 +126,8 @@ As
           AS_storage_path_ID,
           AS_datetime,
           AS_purge_holdoff_date,
-          Purge_Policy
+          Purge_Policy,
+          Purge_Priority
         )
     VALUES
         ( @datasetID,
@@ -129,8 +135,9 @@ As
           1,
           @archivePathID,
           GETDATE(),
-          DATEADD(Hour, @holdOffHours, GETDATE()),
-          @PurgePolicy
+          DATEADD(MONTH, @purgeHoldoffMonths, GETDATE()),
+          @purgePolicy,
+          @purgePriority
         )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

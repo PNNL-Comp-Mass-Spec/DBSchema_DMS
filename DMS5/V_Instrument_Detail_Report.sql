@@ -22,7 +22,7 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.IN_operations_role AS [Ops Role],
        TrackingYesNo.Description As [Track Usage When Inactive],
        Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS [Scan Source],
-       InstGroup.Allocation_Tag AS Allocation_Tag,
+       InstGroup.Allocation_Tag AS [Allocation Tag],
        InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
        dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS [Allowed Dataset Types],
        InstName.IN_Created AS Created,
@@ -32,17 +32,20 @@ SELECT InstName.Instrument_ID AS ID,
        InstName.Auto_SP_URL_Domain AS [Auto Defined URL Domain],
        InstName.Auto_SP_Archive_Server_Name + InstName.Auto_SP_Archive_Path_Root AS [Auto Defined Archive Path Root],
        InstName.Auto_SP_Archive_Share_Path_Root AS [Auto Defined Archive Share Path Root],
-       EUSMapping.EUS_Instrument_ID,
-       EUSMapping.EUS_Display_Name,
-       EUSMapping.EUS_Instrument_Name,
-       EUSMapping.Local_Instrument_Name,
+       EUSMapping.EUS_Instrument_ID AS [EUS Instrument ID],
+       EUSMapping.EUS_Display_Name AS [EUS Display Name],
+       EUSMapping.EUS_Instrument_Name AS [EUS Instrument Name],
+       EUSMapping.Local_Instrument_Name AS [Local Instrument Name],
        Case When InstTracking.Reporting Like '%E%' Then 'EUS Primary Instrument'
             When InstTracking.Reporting Like '%P%' Then 'Production operations role'
             When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'
             Else ''
-       End As [Usage Tracking Status]
+       End As [Usage Tracking Status],
+       InstName.Default_Purge_Policy AS [Default Purge Policy],
+       InstName.Default_Purge_Priority AS [Default Purge Priority],
+       InstName.Storage_Purge_Holdoff_Months AS [Storage Purge Holdoff Months]
 FROM T_Instrument_Name InstName
-     INNER JOIN T_Storage_Path SPath
+     LEFT OUTER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
      INNER JOIN ( SELECT SP_path_ID,
                          SP_vol_name_server + SP_path AS Source
