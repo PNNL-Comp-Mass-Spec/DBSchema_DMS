@@ -9,7 +9,7 @@ AS
 SELECT 
     Org.Organism_ID AS ID, 
 	Org.Name AS Short_Name, 
-	ISNULL(Org.Short_Name, Org.Name) + COALESCE(' - ' + Org.Description, '') AS Display_Name, 
+	Org.Name + COALESCE(' - ' + Org.Description, '') AS Display_Name, 
 	REPLACE(Org.OrganismDBPath, '\Fasta', '') AS Storage_Location, 
 	RTRIM(CASE WHEN (Org.Genus IS NOT NULL AND Org.Genus <> 'na') 
 		  THEN COALESCE (Org.Genus, '') + ' ' + COALESCE (Org.Species, '') + ' ' + COALESCE (Org.Strain, '') 
