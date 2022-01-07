@@ -8,7 +8,7 @@ CREATE TABLE [dbo].[T_NCBI_Taxonomy_Citations](
 	[Citation_Key] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[PubMed_ID] [int] NOT NULL,
 	[MedLine_ID] [int] NOT NULL,
-	[URL] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[URL] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Article_Text] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[TaxID_List] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_NCBI_Taxonomy_Citations] PRIMARY KEY CLUSTERED 
