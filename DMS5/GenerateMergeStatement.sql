@@ -18,6 +18,7 @@ CREATE Procedure [dbo].[GenerateMergeStatement]
 **          10/27/2015 mem - Add @includeCreateTableSql
 **          11/30/2018 mem - Use DELETE FROM instead of Truncate
 **          11/06/2019 mem - Add an additional test to the WHEN NOT MATCHED BY SOURCE clause
+**          01/06/2022 mem - Fix bug showing target table name in the action table
 **    
 *****************************************************/
 (
@@ -353,7 +354,7 @@ As
         -- SQL to populate the action summary table
         ---------------------------------------------------
         --
-        PRINT 'OUTPUT @tableName, $action,'
+        PRINT 'OUTPUT ''' + @tableName + ''', $action,'
         
         Declare @continue tinyint = 1
         Declare @CurrentColumn varchar(128) = ''
