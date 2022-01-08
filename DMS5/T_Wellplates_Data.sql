@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 383 ******/
+/****** RowCount: 384 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -384,4 +384,5 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1381,'TB3_NTP3_TS01244541','TBSmart; NTP_03 (relapsed, 17,26,52 data points) - Plate Barcode TS01244541 - digests for SRM','12/11/2021 3:24:08 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1382,'TB3_NTP4_TS01244544','TBSmart; NTP_04 (relapsed, 52 data points and WD) - Plate Barcode TS01244544 - digests for SRM','12/11/2021 3:24:52 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1383,'MNST-3_DSC','Moonshot-3 Discovery Digested Peptides','12/27/2021 11:15:57 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1384,'Tafesse_Peptides','Digested peptides from Tafesse prep','1/7/2022 7:48:42 AM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
