@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **                         - Do not call PostLogEntry where @mode is 'preview'
 **          10/22/2021 mem - Use a new instrument group for the new requested runs
 **          11/15/2021 mem - If the the instrument group for the source request is the target instrument group instead of a fraction based group, auto update the source instrument group
+**          01/15/2022 mem - Copy date created from the parent requested run to new requested runs, allowing Days in Queue on the list report to be based on the parent requested run's creation date
 **
 *****************************************************/
 (
@@ -79,6 +80,7 @@ As
     Declare @experimentID int
     Declare @sourceSeparationGroup varchar(64)
     Declare @sourceStatus varchar(24)
+    Declare @sourceCreated datetime
 
     Declare @status varchar(24) = 'Active'
     Declare @experimentName varchar(128)
@@ -176,7 +178,8 @@ As
            @experimentID = RR.Exp_ID,
            @sourceSeparationGroup = RR.RDS_Sec_Sep,
            @sourceStatus = RR.RDS_Status,
-           @sourceRequestBatchID = IsNull(RR.RDS_BatchID, 0)
+           @sourceRequestBatchID = IsNull(RR.RDS_BatchID, 0),
+           @sourceCreated = RR.RDS_created
     FROM T_Requested_Run RR INNER JOIN T_DatasetTypeName
            ON RR.RDS_type_ID = T_DatasetTypeName.DST_Type_ID
     WHERE RR.ID = @sourceRequestID
@@ -746,7 +749,7 @@ As
                 @requestName,
                 @requestorPRN,
                 @comment,
-                GETDATE(),
+                @sourceCreated,
                 @targetInstrumentGroup,
                 @datasetTypeID,
                 @instrumentSettings,
