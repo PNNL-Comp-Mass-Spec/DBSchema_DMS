@@ -39,13 +39,14 @@ SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Se
          ELSE ''
          END + 
          'AnalysisMgr_' + 
+         DataQ.TheYear + '-' +
          CASE WHEN LEN(DataQ.TheMonth) = 1 THEN '0' + TheMonth
          ELSE DataQ.TheMonth
          END + '-' + 
          CASE WHEN LEN(DataQ.TheDay) = 1 THEN '0' + TheDay
          ELSE DataQ.TheDay
-         END + '-' + 
-         DataQ.TheYear + '.txt' AS LogFilePath
+         END +
+         '.txt' AS LogFilePath
 FROM ( SELECT JS.Job,
               JS.Dataset,
               JS.Step,
@@ -93,9 +94,9 @@ FROM ( SELECT JS.Job,
               LP.WorkDir_AdminShare AS WorkDirPath,
               JS.Transfer_Folder_Path,
               JS.LogFilePath,
+              CONVERT(varchar(4), YEAR(JS.Start)) AS TheYear,
               CONVERT(varchar(2), MONTH(JS.Start)) AS TheMonth,
-              CONVERT(varchar(2), DAY(JS.Start)) AS TheDay,
-              CONVERT(varchar(4), YEAR(JS.Start)) AS TheYear
+              CONVERT(varchar(2), DAY(JS.Start)) AS TheDay
        FROM V_Job_Steps JS
             LEFT OUTER JOIN dbo.T_Local_Processors LP
               ON JS.Processor = LP.Processor_Name

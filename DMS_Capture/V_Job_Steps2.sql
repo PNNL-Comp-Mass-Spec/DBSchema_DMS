@@ -14,10 +14,19 @@ SELECT Job, Dataset, Dataset_ID, Step, Script,
        Evaluation_Message, Holdoff_Interval_Minutes, Next_Try, Retry_Count, 
        Instrument, InstrumentSourceFiles, Storage_Server, Transfer_Folder_Path, Capture_Subfolder,
        Dataset_Folder_Path, Server_Folder_Path, Job_State, 
-       LogFilePath + CASE WHEN YEAR(GetDate()) <> YEAR(Start) THEN TheYear + '\' ELSE ''END 
-                + 'CapTaskMan_' + CASE WHEN LEN(TheMonth) = 1 THEN '0' + TheMonth ELSE TheMonth END 
-                + '-' + CASE WHEN LEN(TheDay) = 1 THEN '0' + TheDay ELSE TheDay END 
-                + '-' + TheYear + '.txt' AS LogFilePath
+       LogFilePath + 
+         CASE WHEN YEAR(GetDate()) <> YEAR(Start) THEN TheYear + '\'
+         ELSE ''
+         END + 
+         'CapTaskMan_' + 
+         TheYear + '-' +
+         CASE WHEN LEN(TheMonth) = 1 THEN '0' + TheMonth
+         ELSE TheMonth
+         END + '-' + 
+         CASE WHEN LEN(TheDay) = 1 THEN '0' + TheDay
+         ELSE TheDay
+         END +
+         '.txt' AS LogFilePath
 FROM (
 	SELECT JS.Job,
 		   JS.Dataset,
@@ -62,9 +71,9 @@ FROM (
 				 WHEN JS.Processor LIKE '%[-_][1-9]' THEN RIGHT(JS.Processor, 2)
 				 ELSE ''
 			 END + '\Logs\' AS LogFilePath,
-		   CONVERT(varchar(2), MONTH(JS.Start)) AS TheMonth,
-		   CONVERT(varchar(2), DAY(JS.Start)) AS TheDay,
-		   CONVERT(varchar(4), YEAR(JS.Start)) AS TheYear
+           CONVERT(varchar(4), YEAR(JS.Start)) AS TheYear,
+           CONVERT(varchar(2), MONTH(JS.Start)) AS TheMonth,
+           CONVERT(varchar(2), DAY(JS.Start)) AS TheDay
 	FROM V_Job_Steps JS
 		 LEFT OUTER JOIN T_Local_Processors LP
 		   ON JS.Processor = LP.Processor_Name
