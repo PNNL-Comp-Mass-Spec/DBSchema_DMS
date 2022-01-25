@@ -24,6 +24,8 @@ CREATE TABLE [dbo].[T_Reporter_Ion_Observation_Rates](
 	[Channel14] [real] NULL,
 	[Channel15] [real] NULL,
 	[Channel16] [real] NULL,
+	[Channel17] [real] NULL,
+	[Channel18] [real] NULL,
 	[Channel1_All] [real] NULL,
 	[Channel2_All] [real] NULL,
 	[Channel3_All] [real] NULL,
@@ -40,6 +42,8 @@ CREATE TABLE [dbo].[T_Reporter_Ion_Observation_Rates](
 	[Channel14_All] [real] NULL,
 	[Channel15_All] [real] NULL,
 	[Channel16_All] [real] NULL,
+	[Channel17_All] [real] NULL,
+	[Channel18_All] [real] NULL,
 	[Channel1_Median_Intensity] [int] NULL,
 	[Channel2_Median_Intensity] [int] NULL,
 	[Channel3_Median_Intensity] [int] NULL,
@@ -56,6 +60,8 @@ CREATE TABLE [dbo].[T_Reporter_Ion_Observation_Rates](
 	[Channel14_Median_Intensity] [int] NULL,
 	[Channel15_Median_Intensity] [int] NULL,
 	[Channel16_Median_Intensity] [int] NULL,
+	[Channel17_Median_Intensity] [int] NULL,
+	[Channel18_Median_Intensity] [int] NULL,
 	[Entered] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Reporter_Ion_Observation_Rates] PRIMARY KEY CLUSTERED 
 (
