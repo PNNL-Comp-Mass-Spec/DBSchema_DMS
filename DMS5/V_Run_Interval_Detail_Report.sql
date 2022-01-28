@@ -19,8 +19,11 @@ SELECT R.ID,
        'StaffNotAvailable:' + U.StaffNotAvailable + '%|' +
        'CapDev:' + U.CapDev + '%|' +
        'InstrumentAvailable:' + U.InstrumentAvailable + '%' AS Usage,
-       Entered
-FROM dbo.T_Run_Interval R LEFT OUTER JOIN V_Run_Interval_Usage U ON R.ID = U.ID
+       Entered,
+	   Last_Affected AS [Last Affected]
+FROM dbo.T_Run_Interval R 
+     LEFT OUTER JOIN V_Run_Interval_Usage U 
+       ON R.ID = U.ID
 
 
 GO
