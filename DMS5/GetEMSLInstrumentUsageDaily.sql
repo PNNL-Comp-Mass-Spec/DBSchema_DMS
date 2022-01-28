@@ -13,7 +13,7 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 **      Example URL:
 **      https://prismsupport.pnl.gov/dms2ws/instrument_usage_report/daily/2019/03
 **
-**      See also /file1/www/html/prismsupport/dms2ws/application/controllers/instrument_usage_report.php
+**      See also /files1/www/html/prismsupport/dms2ws/application/controllers/Instrument_usage_report.php
 **
 **  Auth:   grk   
 **  Date:   09/15/2015 grk - initial release
