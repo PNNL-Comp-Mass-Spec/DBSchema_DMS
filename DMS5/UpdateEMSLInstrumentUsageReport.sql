@@ -8,8 +8,8 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 /****************************************************
 **
 **  Desc: 
-**    Add entries to permanent EMSL monthly usage report for given  
-**    Instrument, and date
+**    Add entries to permanent EMSL monthly usage report (T_EMSL_Instrument_Usage_Report)
+**    for given Instrument and month (as dictated via the @endDate parameter)
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -37,6 +37,8 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          01/05/2017 mem - Remove LF and CR from dataset comments
 **          05/03/2019 mem - Add parameter @eusInstrumentId
 **          04/17/2020 mem - Use Dataset_ID instead of ID
+**          01/28/2022 mem - If a long interval has 'Broken' in the comment, store 'Broken' as the comment in T_EMSL_Instrument_Usage_Report
+**                         - Replace SQL server specific syntax with more generic syntax for assigning sequential values to the seq column
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -44,7 +46,7 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 (
     @instrument varchar(64),        -- Instrument name to process; leave this blank if processing by EMSL instrument ID
     @eusInstrumentId Int,           -- EMSL instrument ID to process; use this to process instruments like the 12T or the 15T where there are two instrument entries in DMS, yet they both map to the same EUS_Instrument_ID
-    @endDate datetime,              -- This is used to determine the current year and month; the day of the month does not really matter
+    @endDate datetime,              -- This is used to determine the target year and month; the day of the month does not really matter
     @message varchar(512) output,   -- Optionally specify debug reports to show, for example '1' or '1,2,3'
     @infoonly tinyint = 0
 )
@@ -123,6 +125,7 @@ AS
         ---------------------------------------------------
 
         CREATE TABLE #STAGING (
+            Staging_ID int PRIMARY KEY IDENTITY not null,
             [EMSL_Inst_ID] INT NULL,
             [Instrument] varchar(64),
             [DMS_Inst_ID] int NULL,
@@ -138,13 +141,13 @@ AS
             [Year] INT,
             [Month] INT,
             [Dataset_ID] INT,
-            [Mark] INT NULL,
+            [Mark] INT NULL,         -- 0 if adding a new row to T_EMSL_Instrument_Usage_Report, 1 if matches an existing row that will be updated
             Seq INT NULL
         )
 
         ---------------------------------------------------
-        -- populate staging table with report rows for 
-        -- instrument for current month
+        -- Populate staging table with report rows for 
+        -- instrument for the target month (based on @endDate)
         ---------------------------------------------------
 
         INSERT  INTO #STAGING
@@ -205,24 +208,41 @@ AS
         Begin
             SELECT 'Mark set to 1' as State, * FROM #STAGING WHERE [Mark] = 1
         End
+
         ---------------------------------------------------
-        -- Add unique sequence tag to new report rows
+        -- Add unique sequence value to new report rows
+        -- In addition, set Mark to 0
         ---------------------------------------------------
 
         Declare @seq INT = 0
         SELECT @seq = ISNULL(MAX(Seq), 0) FROM T_EMSL_Instrument_Usage_Report
+                
+        -- The following update query increments @seq after updating each row
+        -- This is a SQL server specific syntax
         --
-        UPDATE #STAGING
+        /* UPDATE #STAGING
         Set @seq = Seq = @seq + 1,
         [Mark] = 0
         FROM #STAGING
         WHERE [Mark] IS NULL
+        */
 
+        UPDATE #STAGING 
+        SET seq = SourceQ.new_seq,
+            Mark = 0
+        FROM (SELECT Staging_ID, 
+                     @seq + row_number() over (order by Dataset_ID, [Type]) AS new_seq 
+              FROM #STAGING
+              WHERE mark Is Null) SourceQ 
+        WHERE #STAGING.Staging_ID = SourceQ.Staging_ID
+        
         If Exists (Select * from #Tmp_DebugReports Where Debug_ID = 3)
             SELECT 'Mark set to 0' as State, * FROM #STAGING WHERE [Mark] = 0
 
         ---------------------------------------------------
-        -- Cleanup: remove usage text from comments
+        -- Cleanup:
+        --  Remove usage text from comments
+        --  However, if the comment starts with 'Broken', keep that word
         ---------------------------------------------------
         
         Set @seq = 0
@@ -243,17 +263,24 @@ AS
             
             IF @cleanedComment <> ''
             BEGIN
-                ---------------------------------------------------
-                -- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
-                --
-                -- If @cleanedComment is initially 'User[100%], Proposal[49361], PropUser[50082] Extra information about interval'
-                -- after calling ParseUsageText, @cleanedComment will be ' Extra information about interval''
-                -- and @xml will be <u User="100" Proposal="49361" PropUser="50082" />
-                --
-                -- If @cleanedComment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to ParseUsageText
-                ---------------------------------------------------
+                If LTrim(@cleanedComment) Like 'Broken%'
+                Begin
+                    Set @cleanedComment = 'Broken'
+                End
+                Else
+                Begin
+                    ---------------------------------------------------
+                    -- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
+                    --
+                    -- If @cleanedComment is initially 'User[100%], Proposal[49361], PropUser[50082] Extra information about interval'
+                    -- after calling ParseUsageText, @cleanedComment will be ' Extra information about interval''
+                    -- and @xml will be <u User="100" Proposal="49361" PropUser="50082" />
+                    --
+                    -- If @cleanedComment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to ParseUsageText
+                    ---------------------------------------------------
             
-                EXEC dbo.ParseUsageText @cleanedComment output, @xml output, @message output, @seq=@seq, @showDebug=@infoOnly, @validateTotal=0
+                    EXEC dbo.ParseUsageText @cleanedComment output, @xml output, @message output, @seq=@seq, @showDebug=@infoOnly, @validateTotal=0
+                End
                 
                 UPDATE #STAGING
                 SET Comment = LTrim(RTrim(@cleanedComment))
