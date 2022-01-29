@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 58 ******/
+/****** RowCount: 59 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
@@ -32,6 +32,7 @@ INSERT INTO [T_Separation_Group] VALUES ('LC-IntactProtein_200min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IonPairing','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_LipidSoluble','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_Oxylipids','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_Sonnenburg','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_WaterSoluble','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-MicroHpH-12','Use for placeholder requested runs that can be converted into requested run fractions',1,0,12)
 INSERT INTO [T_Separation_Group] VALUES ('LC-MicroHpH-24','Use for placeholder requested runs that can be converted into requested run fractions',1,0,24)
