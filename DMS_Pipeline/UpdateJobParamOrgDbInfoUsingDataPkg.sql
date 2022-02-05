@@ -17,12 +17,16 @@ CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
 **          09/11/2012 mem - Updated warning message used when data package does not have any jobs with a protein collection or legacy fasta file
 **          08/14/2013 mem - Now using the job script name which is used to decide whether or not to report a warning via @message
 **          03/09/2021 mem - Add support for MaxQuant
+**          01/31/2022 mem - Add support for MSFragger
+**                         - Add parameters @debugMode and @scriptNameForDebug
 **    
 *****************************************************/
 (
     @job int,
     @dataPackageID int,
     @deleteIfInvalid tinyint = 0,            -- When 1, deletes entries for OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList if @dataPackageID = 0, or @dataPackageID points to a non-existent data package, or if the data package doesn't have any Peptide_Hit jobs (MAC Jobs) or doesn't have any datasets (MaxQuant job)
+    @debugMode tinyint = 0,
+    @scriptNameForDebug varchar(64) = '',
     @message varchar(512)= '' output,
     @callingUser varchar(128) = ''
 )
@@ -34,7 +38,7 @@ As
     
     Declare @messageAddon varchar(256)
 
-    Declare @OrgDBInfo table (
+    Declare @orgDBInfo table (
         EntryID int Identity(1,1) NOT NULL,
         OrganismName varchar(128) NULL,
         LegacyFastaFileName varchar(128) NULL,
@@ -43,7 +47,7 @@ As
         UseCount int NOT NULL
     )
     
-    Declare @scriptName varchar(64)
+    Declare @scriptName varchar(64) = ''
     Declare @organismName varchar(128) = ''
     Declare @legacyFastaFileName varchar(128) = ''
     Declare @proteinCollectionList varchar(2000) = ''
@@ -56,23 +60,34 @@ As
     
     If @job Is Null Or @dataPackageID Is Null
     Begin
-        Set @message = '@Job and @dataPackageID are required'
+        Set @message = '@job and @dataPackageID are required'
         Return 50000
     End
     
     Set @deleteIfInvalid = IsNull(@deleteIfInvalid, 0)
+    Set @debugMode = IsNull(@debugMode, 0)
     Set @message = ''
+    
+    If @debugMode > 0
+    Begin
+        Print ''
+        Print 'Examining parameters for job ' + Cast(@Job As Varchar(12)) + ', script ' + @scriptNameForDebug
 
-    ---------------------------------------------------
-    -- Lookup the name of the job script
-    ---------------------------------------------------
-    --
-    SELECT @scriptName = Script
-    FROM T_Jobs
-    WHERE Job = @Job
+        Set @scriptName = @scriptNameForDebug
+    End
+    Else
+    Begin
+        ---------------------------------------------------
+        -- Lookup the name of the job script
+        ---------------------------------------------------
+        --
+        SELECT @scriptName = Script
+        FROM T_Jobs
+        WHERE Job = @job
     
-    Set @scriptName = IsNull(@scriptName, '??')
-    
+        Set @scriptName = IsNull(@scriptName, '??')
+    End
+
     ---------------------------------------------------
     -- Validate @dataPackageID
     ---------------------------------------------------
@@ -90,15 +105,21 @@ As
     Begin
         Set @message = 'Data package ' + Convert(varchar(12), @dataPackageID) + ' not found in the Data_Package database'
         Set @dataPackageID = -1
+
+        If @debugMode > 0
+            Print 'UpdateJobParamOrgDbInfoUsingDataPkg: ' + @message
     End
 
-    If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%'
-    Begin -- <a>        
+    If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%' AND NOT @scriptName LIKE 'MSFragger%' 
+    Begin -- <a>
+        If @debugMode > 0
+            Print 'UpdateJobParamOrgDbInfoUsingDataPkg: Looking update OrgDB info for jobs associated with data package ' + Cast(@dataPackageID As Varchar(12)) + ' for script ' + @scriptName
+
         ---------------------------------------------------
         -- Lookup the OrgDB info for jobs associated with data package @dataPackageID
         ---------------------------------------------------
         --
-        INSERT INTO @OrgDBInfo( OrganismName,
+        INSERT INTO @orgDBInfo( OrganismName,
                                 LegacyFastaFileName,
                                 ProteinCollectionList,
                                 ProteinOptions,
@@ -154,14 +175,26 @@ As
                        @legacyFastaFileName = LegacyFastaFileName,
                        @proteinCollectionList = ProteinCollectionList,
                        @proteinOptions = ProteinOptions
-                FROM @OrgDBInfo
+                FROM @orgDBInfo
             
             End
             
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'OrganismName',          @value=@organismName,          @DeleteParam=0
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'legacyFastaFileName',   @value=@legacyFastaFileName,   @DeleteParam=0
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value=@proteinCollectionList, @DeleteParam=0
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value=@proteinOptions,        @DeleteParam=0
+            If @debugMode > 0
+            Begin
+                Print ''
+                Print 'UpdateJobParamOrgDbInfoUsingDataPkg would update the following parameters for job ' + Cast (@Job As Varchar(12))
+                Print '  OrganismName=         ' + @organismName
+                Print '  LegacyFastaFileName=  ' + @legacyFastaFileName
+                Print '  ProteinCollectionList=' + @proteinCollectionList
+                Print '  ProteinOptions=       ' + @proteinOptions
+            End
+            Else
+            Begin
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'OrganismName',          @value=@organismName,          @DeleteParam=0
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'LegacyFastaFileName',   @value=@legacyFastaFileName,   @DeleteParam=0
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value=@proteinCollectionList, @DeleteParam=0
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value=@proteinOptions,        @DeleteParam=0
+            End
             
             Set @message = 'Defined OrgDb related parameters for job ' + Convert(varchar(12), @job)
         
@@ -175,16 +208,28 @@ As
         -- One of the following is tue:
         --   Data package ID was invalid
         --   For MAC jobs, the data package does not have any jobs with a protein collection or legacy fasta file 
-        --   For MaxQuant jobs, the data package does not have any datasets
+        --   For MaxQuant or MSFragger jobs, the data package does not have any datasets
         ---------------------------------------------------
         --
         
         If @deleteIfInvalid <> 0
         Begin
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'OrganismName',          @value='',  @DeleteParam=1
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'legacyFastaFileName',   @value='',  @DeleteParam=1
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value='',  @DeleteParam=1
-            Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value='',  @DeleteParam=1
+            If @debugMode > 0
+            Begin
+                Print ''
+                Print 'UpdateJobParamOrgDbInfoUsingDataPkg would delete following parameters for job ' + Cast (@Job As Varchar(12)) + ' since the data package ID is 0'
+                Print '  OrganismName'
+                Print '  LegacyFastaFileName'
+                Print '  ProteinCollectionList'
+                Print '  ProteinOptions'
+            End
+            Else
+            Begin
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'OrganismName',          @value='',  @DeleteParam=1
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'LegacyFastaFileName',   @value='',  @DeleteParam=1
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value='',  @DeleteParam=1
+                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value='',  @DeleteParam=1
+            End
 
             Set @messageAddon = 'Deleted OrgDb related parameters from the PeptideSearch section of the job parameters for job ' + Convert(varchar(12), @job)
             

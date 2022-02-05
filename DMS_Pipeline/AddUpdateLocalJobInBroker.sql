@@ -57,6 +57,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **                         - Send @dataPackageID and @debugMode to VerifyJobParameters
 **          03/15/2021 mem - Fix bug in the Catch block that changed @myError
 **                         - If VerifyJobParameters returns an error, return the error message in @message
+**          01/31/2022 mem - Add more print statements to aid debugging
 **
 *****************************************************/
 (
@@ -99,6 +100,13 @@ AS
     If @mode = 'previewAdd' AND @debugMode= 0
     Begin
         Set @debugMode = 1
+    End
+
+    If @debugMode > 0
+    Begin
+        Print ''    
+        Print '[AddUpdateLocalJobInBroker]' 
+        print @jobParam
     End
 
     ---------------------------------------------------
@@ -312,6 +320,7 @@ AS
             
             If @debugMode <> 0
             Begin
+                Print ''
                 Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
                 If @debugMode > 1
                 Begin

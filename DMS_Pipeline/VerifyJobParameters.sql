@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[VerifyJobParameters]
 **          03/10/2021 mem - Validate protein collection (or FASTA file) options for MaxQuant jobs
 **                         - Rename the XML job parameters argument and make it an input/output argument
 **                         - Add arguments @dataPackageID and @debugMode
+**          01/31/2022 mem - Add support for MSFragger
 **
 *****************************************************/
 (
@@ -48,6 +49,7 @@ AS
     Declare @paramFileValid tinyint
 
     Declare @collectionCountAdded int
+    Declare @scriptBaseName Varchar(24)
 
 	---------------------------------------------------
 	-- Get parameter definition
@@ -139,11 +141,16 @@ AS
 	-- Cross check to make sure required parameters are defined in #TJP (populated using @paramInput)
 	---------------------------------------------------
     --	
-    If @scriptName LIKE 'MaxQuant%'
+    If @scriptName LIKE 'MaxQuant%' Or @scriptName LIKE 'MSFragger%'
     Begin
-        -- Verify the MaxQuant parameter file name
+        -- Verify the MaxQuant or MSFragger parameter file name
         -- Also verify the protein collection (or legacy FASTA file)
         -- For protein collections, will auto-add contaminants if needed
+
+        If @scriptName Like 'MaxQuant%'
+            Set @scriptBaseName = 'MaxQuant'
+        Else
+            Set @scriptBaseName = 'MSFragger'
 
         SELECT @parameterFileName = Value
         FROM #TJP
@@ -171,17 +178,28 @@ AS
         
         If ISNULL(@protCollOptionsList, '') = ''
         Begin
-            Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
+            If @scriptBaseName = 'MaxQuant'
+                Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
+            Else
+                Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
         End
 
-        If @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
+        If @scriptBaseName = 'MaxQuant' And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
         Begin
             Set @message = 'The ProteinOptions parameter must be "seq_direction=forward,filetype=fasta" for MaxQuant jobs'
-		    Set @myError = 50103
+		    Set @myError = 50102
 		    Print @message
 		    return @myError
         End
 
+        If @scriptBaseName = 'MSFragger' And @protCollOptionsList <> 'seq_direction=decoy,filetype=fasta'
+        Begin
+            Set @message = 'The ProteinOptions parameter must be "seq_direction=decoy,filetype=fasta" for MSFragger jobs'
+		    Set @myError = 50103
+		    Print @message
+		    return @myError
+        End
+        
         SELECT @paramFileType = Param_File_Type, @paramFileValid = Valid
         FROM dbo.[S_DMS_V_Param_File_Export]
         WHERE Param_File_Name = @parameterFileName
@@ -204,16 +222,16 @@ AS
 		    return @myError
         End
                 
-        If @paramFileType <> 'MaxQuant'
+        If @paramFileType <> @scriptBaseName
         Begin
-            Set @message = 'Parameter file is for ' + @paramFileType + ', and not MaxQuant: ' + @parameterFileName
+            Set @message = 'Parameter file is for ' + @paramFileType + ', and not ' + @scriptBaseName + ': ' + @parameterFileName
 		    Set @myError = 50106
 		    Print @message
 		    return @myError
         End
 
         exec @myError = dbo.S_ValidateProteinCollectionParams
-                        'MaxQuant',
+                        @scriptBaseName,
                         @organismDBName output,
                         @organismName,
                         @protCollNameList output,
