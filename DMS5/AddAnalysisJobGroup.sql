@@ -73,6 +73,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          06/01/2021 mem - Raise an error if @mode is invalid
 **          08/26/2021 mem - Add support for data package based MSFragger jobs
 **          11/15/2021 mem - Use custom messages when creating a single job
+**          02/02/2022 mem - Include the settings file name in the job parameters when creating a data package based job
 **
 *****************************************************/
 (
@@ -214,7 +215,7 @@ As
     If @dataPackageID > 0
     Begin
         If Not @toolName In ('MaxQuant', 'MSFragger')
-            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tools MaxQuant and MSFragger', 11, 7, @toolName)
+            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tools are MaxQuant and MSFragger', 11, 7, @toolName)
 
         If @requestID <= 0
             RAISERROR ('Data-package based jobs must be associated with an analysis job request', 11, 7)
@@ -570,6 +571,7 @@ As
                 <Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
                 <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
                 <Param Section="JobParameters" Name="CacheFolderRootPath" Value="' + @cacheFolderRootPath + '" />
+                <Param Section="JobParameters" Name="SettingsFileName" Value="' + @settingsFileName + '" />
                 <Param Section="MSXMLGenerator" Name="MSXMLGenerator" Value="' + @msXmlGenerator + '" />
                 <Param Section="MSXMLGenerator" Name="MSXMLOutputType" Value="' + @msXMLOutputType + '" />
                 <Param Section="MSXMLGenerator" Name="CentroidMSXML" Value="' + @centroidMSXML + '" />
