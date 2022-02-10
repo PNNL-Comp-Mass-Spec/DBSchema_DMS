@@ -24,6 +24,7 @@ SELECT  GroupQ.[Inst. Group],
         GroupQ.[Days in Prep Queue],
         GroupQ.[Queue State],
         GroupQ.[Queued Instrument],
+        -- Cast(TAC.Actual_Hours As decimal(10, 0)) As [Actual Hours],
         GroupQ.[Separation Group],
         Case When RequestLookupQ.RDS_BatchID > 0 
              Then GroupQ.Batch_Comment
@@ -170,8 +171,12 @@ FROM    ( SELECT    [Inst. Group],
                     Requested_Batch_Priority,
                     Batch_Comment
         ) AS GroupQ
-        INNER JOIN T_Requested_Run AS RequestLookupQ ON GroupQ.[Min Request] = RequestLookupQ.ID
-        INNER JOIN T_EUS_UsageType AS TEUT ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
+        INNER JOIN T_Requested_Run AS RequestLookupQ 
+            ON GroupQ.[Min Request] = RequestLookupQ.ID
+        INNER JOIN T_EUS_UsageType AS TEUT 
+            ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
+        -- LEFT OUTER JOIN T_Cached_Instrument_Usage_by_Proposal AS TAC 
+        --     ON TAC.IN_Group = GroupQ.[Inst. Group] AND TAC.EUS_Proposal_ID = GroupQ.Proposal
 
 
 GO
