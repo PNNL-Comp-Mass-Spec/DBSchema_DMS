@@ -8,13 +8,16 @@ CREATE VIEW [dbo].[V_Run_Planning_Report]
 AS
 SELECT  GroupQ.[Inst. Group],
         GroupQ.[DS Type],
-        GroupQ.[Run Count],
+        Case When GroupQ.Fraction_Count > 1 
+             Then GroupQ.[Run Count] * GroupQ.Fraction_Count 
+             Else GroupQ.[Run Count] 
+        End AS [Run Count],
         GroupQ.Blocked,
         GroupQ.BlkMissing,
         Case When RequestLookupQ.RDS_BatchID > 0 
              Then GroupQ.Batch_Prefix 
              Else GroupQ.Request_Prefix 
-        End As [Request or Batch Name],
+        End AS [Request or Batch Name],
         RequestLookupQ.RDS_BatchID AS Batch,
         GroupQ.Requester,
         DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) AS [Days in Queue],
