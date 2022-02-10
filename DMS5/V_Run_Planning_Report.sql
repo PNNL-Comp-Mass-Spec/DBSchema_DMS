@@ -46,7 +46,11 @@ SELECT  GroupQ.[Inst. Group],
              ELSE 120                                                            -- Request is over 90 days old
         END AS #DaysInQueue,
         GroupQ.WPActivationState AS #WPActivationState,
-        GroupQ.Requested_Batch_Priority AS #BatchPriority
+        GroupQ.Requested_Batch_Priority AS #BatchPriority,
+        Case When GroupQ.Fraction_Count > 1 Then 1
+             When GroupQ.FractionBasedRequestCount > 1 Then 2
+             Else 0
+        End AS #FractionColorMode
 FROM    ( SELECT    [Inst. Group],
                     MIN(RequestID) AS [Min Request],
                     COUNT(RequestID) AS [Run Count],
@@ -54,6 +58,7 @@ FROM    ( SELECT    [Inst. Group],
                     Requester,
                     MIN(Request_Created) AS [Date Created],
                     [Separation Group],
+                    Fraction_Count,
                     [DS Type],
                     [Work Package],
                     [WP State],
@@ -68,6 +73,7 @@ FROM    ( SELECT    [Inst. Group],
                     [Queue State],
                     [Queued Instrument],
                     [Request Name Code],
+                    Sum(Case When RequestOrigin = 'fraction' Then 1 Else 0 End) As FractionBasedRequestCount,
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue],
                     SUM(BlkMissing) AS BlkMissing,
                     SUM(Blocked) AS Blocked                    
@@ -79,6 +85,7 @@ FROM    ( SELECT    [Inst. Group],
                                                           ELSE ''
                                                      END AS Request_Prefix,
                              RR.RDS_NameCode AS [Request Name Code],
+                             RR.RDS_Origin As RequestOrigin,
                              U.U_Name AS Requester,
                              RR.RDS_created AS Request_Created,
                              RR.RDS_WorkPackage AS [Work Package],
@@ -110,7 +117,8 @@ FROM    ( SELECT    [Inst. Group],
                                  WHEN ISNULL(RR.RDS_Block, '') <> '' AND
                                       ISNULL(RR.RDS_Run_Order, '') <> '' THEN 1
                                  ELSE 0
-                             END AS Blocked
+                             END AS Blocked,
+                             SG.Fraction_Count As Fraction_Count
                       FROM T_DatasetTypeName AS DTN
                            INNER JOIN T_Requested_Run AS RR
                              ON DTN.DST_Type_ID = RR.RDS_type_ID
@@ -126,6 +134,8 @@ FROM    ( SELECT    [Inst. Group],
                              ON RR.RDS_BatchID = RRB.ID
                            INNER JOIN T_Sample_Prep_Request AS SPR
                              ON E.EX_sample_prep_request_ID = SPR.ID
+                           Inner Join T_Separation_Group As SG
+                             On RR.RDS_Sec_Sep = SG.Sep_Group
                            LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
                              ON SPR.ID = QT.Request_ID
                            LEFT OUTER JOIN V_Charge_Code_Status AS CC
@@ -141,6 +151,7 @@ FROM    ( SELECT    [Inst. Group],
                     ) AS RequestQ
           GROUP BY  [Inst. Group],
                     [Separation Group],
+                    Fraction_Count,
                     [DS Type],
                     [Request Name Code],
                     Requester,
