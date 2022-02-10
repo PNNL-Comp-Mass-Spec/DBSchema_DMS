@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedInstrumentUsageByProposal]
 **  Date:   12/02/2013 mem - Initial Version
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          02/10/2022 mem - Add new usage type codes added to T_EUS_UsageType on 2021-05-26
+**                         - Use the last 12 months for determining usage (previously used last two fiscal years)
 **
 *****************************************************/
 (
@@ -49,9 +50,9 @@ AS
                      INNER JOIN T_Instrument_Name AS TIN
                        ON TIN.Instrument_ID = TD.DS_instrument_name_ID
 				WHERE TD.DS_rating > 1
-				      AND TRR.RDS_EUS_UsageType IN (16, 19, 20, 21)        -- User, User_Unknown, User_Onsite, User_Remote
-				      AND TD.DS_state_ID = 3                               -- Complete
-				      AND TD.Acq_Time_Start >= dbo.GetFiscalYearStart(1)   -- The current fiscal year, plus the previous fiscal year
+				      AND TRR.RDS_EUS_UsageType IN (16, 19, 20, 21)           -- User, User_Unknown, User_Onsite, User_Remote
+				      AND TD.DS_state_ID = 3                                  -- Complete
+				      AND TD.Acq_Time_Start >= DateAdd(Month, -12, GetDate()) -- The last 12 months (previously used >= dbo.GetFiscalYearStart(1))
 				      AND NOT TRR.RDS_EUS_Proposal_ID IS NULL
                 GROUP BY TIN.IN_Group, TRR.RDS_EUS_Proposal_ID
             ) AS Source (IN_Group, EUS_Proposal_ID, Actual_Hours)
