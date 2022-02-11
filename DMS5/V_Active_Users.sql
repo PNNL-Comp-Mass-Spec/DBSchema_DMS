@@ -3,11 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Active_Users
+
+CREATE VIEW [dbo].[V_Active_Users]
 AS
-SELECT     U_PRN AS [Payroll Num], U_Name AS Name
-FROM         dbo.T_Users
-WHERE     (U_Status = 'Active')
+SELECT U_PRN AS Username,
+       U_Name AS Name
+FROM dbo.T_Users
+WHERE U_Status = 'Active'
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Active_Users] TO [DDL_Viewer] AS [dbo]

@@ -6,7 +6,9 @@ GO
 
 CREATE VIEW [dbo].[V_Active_Instrument_Operators]
 As
-SELECT [Payroll Num], [Name]
+SELECT Username, 
+       Name, 
+       Username As [Payroll Num]    -- Deprecated name
 FROM dbo.V_Active_Instrument_Users
 
 

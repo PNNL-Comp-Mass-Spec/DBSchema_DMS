@@ -8,8 +8,8 @@ CREATE VIEW [dbo].[V_User_Entry]
 AS
 SELECT U_PRN AS Username,
        U_HID AS HanfordIDNum,
-       'Last Name/First Name, Email, and Payroll are auto-updated when "User Update" = Y' As EntryNote,
-       U_Payroll AS Payroll,
+       'Last Name, First Name, and Email are auto-updated when "User Update" = Y' As EntryNote,
+       -- Obsolete: U_Payroll AS Payroll,
        U_Name AS LastNameFirstName,
        U_email as Email,       
        U_Status AS UserStatus,

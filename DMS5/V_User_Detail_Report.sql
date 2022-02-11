@@ -9,7 +9,7 @@ AS
 SELECT U.U_PRN AS [Username],
        U.U_HID AS [Hanford ID],       
        U.U_Name AS Name,
-       U.U_Payroll AS Payroll,
+       -- Obsolete: U.U_Payroll AS Payroll,
        U.U_email AS Email,
        U.U_Status AS [User Status],
        U.U_update AS [User Update],

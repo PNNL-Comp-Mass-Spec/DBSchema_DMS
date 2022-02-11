@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_User_Picklist]
 AS
-SELECT DISTINCT T_Users.U_PRN AS [Payroll Num],
-                T_Users.U_Name AS [Name]
-FROM T_Users
-     INNER JOIN T_Experiments
-       ON T_Experiments.EX_researcher_PRN = T_Users.U_PRN
-WHERE T_Experiments.EX_created > DateAdd(month, -12, GetDate()) AND
-      T_Users.U_Status = 'Active'
+SELECT DISTINCT U.U_PRN AS Username,
+                U.U_Name AS Name
+FROM T_Users U
+     INNER JOIN T_Experiments E
+       ON E.EX_researcher_PRN = U.U_PRN
+WHERE E.EX_created > DateAdd(month, -12, GetDate()) AND
+      U.U_Status = 'Active'
 
 
 GO

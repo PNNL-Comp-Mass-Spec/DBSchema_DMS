@@ -17,11 +17,11 @@ SELECT U.ID,
        dbo.GetUserOperationsList(U.ID) AS [Operations List],
        U.U_Comment as [Comment],
        U.U_created AS Created_DMS,
-	   U.U_Payroll AS Payroll,	   
+       -- Obsolete: U.U_Payroll AS Payroll,   
        EU.PERSON_ID AS EUS_ID,
        EU.Valid AS Valid_EUS_ID,
        ESS.Name AS EUS_Status,
-	   U.U_email AS EMail
+       U.U_email AS EMail
 FROM T_EUS_Site_Status ESS
      INNER JOIN T_EUS_Users EU
        ON ESS.ID = EU.Site_Status

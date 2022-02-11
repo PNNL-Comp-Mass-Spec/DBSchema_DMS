@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Users_NWFs_Samba]
 AS
-SELECT U_PRN AS [Payroll Num],
+SELECT U_PRN AS [Payroll Num],  -- Deprecated name; leave in place for compatibility in case this view is still used (which is unlikely because Linux server a2.emsl.pnl.gov is retired)
        U_Name AS Name
 FROM dbo.T_Users
-WHERE (U_active = 'Y') AND
-      (U_PRN NOT IN ('svc-dms')) -- Exclude this user to prevent it from being mapped to the dmsarch-ro2 group by a nightly cron job
+WHERE U_active = 'Y' AND
+      U_PRN NOT IN ('svc-dms')  -- Exclude this user to prevent it from being mapped to the dmsarch-ro2 group by a nightly cron job
 
 
 GO
