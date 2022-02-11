@@ -15,33 +15,34 @@ CREATE Procedure [dbo].[AddUpdateUser]
 **  Auth:   grk
 **  Date:   01/27/2004
 **          11/03/2006 JDS - Added support for U_Status field, removed @AccessList varchar(256)
-**          01/23/2008 grk - Added @UserUpdate
-**          10/14/2010 mem - Added @Comment
+**          01/23/2008 grk - Added @userUpdate
+**          10/14/2010 mem - Added @comment
 **          06/01/2012 mem - Added Try/Catch block
 **          06/05/2013 mem - Now calling AddUpdateUserOperations
-**          06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @Username)
+**          06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @username)
 **          02/23/2016 mem - Add Set XACT_ABORT on
-**          08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @HanfordIDNum starts with a number
+**          08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @hanfordIdNum starts with a number
 **          11/18/2016 mem - Log try/catch errors using PostLogEntry
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
-**          07/11/2017 mem - Require @HanfordIDNum to be at least 2 characters long
+**          07/11/2017 mem - Require @hanfordIdNum to be at least 2 characters long
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/16/2018 mem - Remove any text before a backslash in @username (e.g., change from PNL\D3L243 to D3L243)
+**          02/10/2022 mem - Remove obsolete payroll field
+**                         - Always add 'H' to @hanfordIdNum if it starts with a number
 **
 *****************************************************/
 (
-    @Username varchar(50),              -- Network login for the user (was traditionally D+Payroll number, but switched to last name plus 3 digits around 2011)
-    @HanfordIDNum varchar(50),          -- Hanford ID number for user; cannot be blank
-    @LastNameFirstName varchar(128),    -- Cannot be blank (though this field is auto-updated by UpdateUsersFromWarehouse)
-    @Payroll varchar(32),               -- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
-    @Email varchar(64),                 -- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
-    @UserStatus varchar(24),            -- Active or Inactive (whether or not user is Active in DMS)
-    @UserUpdate varchar(1),             -- Y or N  (whether or not to auto-update using UpdateUsersFromWarehouse)
-    @OperationsList varchar(1024),      -- List of access permissions for user
-    @Comment varchar(512) = '',
+    @username varchar(50),              -- Network login for the user (was traditionally D+Payroll number, but switched to last name plus 3 digits around 2011)
+    @hanfordIdNum varchar(50),          -- Hanford ID number for user; cannot be blank
+    @lastNameFirstName varchar(128),    -- Cannot be blank (though this field is auto-updated by UpdateUsersFromWarehouse)
+    @email varchar(64),                 -- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
+    @userStatus varchar(24),            -- Active or Inactive (whether or not user is Active in DMS)
+    @userUpdate varchar(1),             -- Y or N  (whether or not to auto-update using UpdateUsersFromWarehouse)
+    @operationsList varchar(1024),      -- List of access permissions for user
+    @comment varchar(512) = '',
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
@@ -74,13 +75,13 @@ As
         -- Validate input fields
         ---------------------------------------------------
 
-        Set @Username = Ltrim(RTrim(@Username))
-        Set @LastNameFirstName = Ltrim(RTrim(@LastNameFirstName))
-        Set @HanfordIDNum = Ltrim(RTrim(@HanfordIDNum))
-        Set @UserStatus = Ltrim(RTrim(@UserStatus))
+        Set @username = Ltrim(RTrim(@username))
+        Set @lastNameFirstName = Ltrim(RTrim(@lastNameFirstName))
+        Set @hanfordIdNum = Ltrim(RTrim(@hanfordIdNum))
+        Set @userStatus = Ltrim(RTrim(@userStatus))
 
         Set @myError = 0
-        If LEN(@Username) < 1
+        If LEN(@username) < 1
         Begin
             Set @myError = 51000
             RAISERROR ('Username was blank',
@@ -88,32 +89,29 @@ As
         End
         Else
         Begin
-            Set @charIndex = CharIndex('\', @Username)
+            Set @charIndex = CharIndex('\', @username)
             If @charIndex > 0
             Begin
-                Set @Username = Substring(@Username, @charIndex + 1, Len(@Username))
+                Set @username = Substring(@username, @charIndex + 1, Len(@username))
             End
         End
 
-        If LEN(@LastNameFirstName) < 1
+        If LEN(@lastNameFirstName) < 1
         Begin
             Set @myError = 51001
-            RAISERROR ('Last Name, First Name was blank',
-                11, 1)
+            RAISERROR ('Last Name, First Name was blank', 11, 1)
         End
         --
-        If LEN(@HanfordIDNum) <= 1
+        If LEN(@hanfordIdNum) <= 1
         Begin
             Set @myError = 51002
-            RAISERROR ('Hanford ID number cannot be blank or a single character',
-                11, 1)
+            RAISERROR ('Hanford ID number cannot be blank or a single character', 11, 1)
         End
         --
-        If LEN(@UserStatus) < 1
+        If LEN(@userStatus) < 1
         Begin
             Set @myError = 51004
-            RAISERROR ('User status was blank',
-                11, 1)
+            RAISERROR ('User status was blank', 11, 1)
         End
         --
         If @myError <> 0
@@ -123,26 +121,35 @@ As
         -- Is entry already in database?
         ---------------------------------------------------
 
-        Declare @UserID int = 0
+        Declare @userID int = 0
         --
-        execute @UserID = GetUserID @Username
+        execute @userID = GetUserID @username
 
         -- cannot create an entry that already exists
         --
-        If @UserID <> 0 and @mode = 'add'
+        If @userID <> 0 and @mode = 'add'
         Begin
-            Set @msg = 'Cannot add: User "' + @Username + '" already in database '
+            Set @msg = 'Cannot add: User "' + @username + '" already in database '
             RAISERROR (@msg, 11, 1)
             Return 51004
         End
 
         -- cannot update a non-existent entry
         --
-        If @UserID = 0 and @mode = 'update'
+        If @userID = 0 and @mode = 'update'
         Begin
-            Set @msg = 'Cannot update: User "' + @Username + '" is not in database '
+            Set @msg = 'Cannot update: User "' + @username + '" is not in database '
             RAISERROR (@msg, 11, 1)
             Return 51004
+        End
+
+        ---------------------------------------------------
+        -- Add an H to @hanfordIdNum if it starts with a number
+        ---------------------------------------------------
+
+        If @hanfordIdNum Like '[0-9]%'
+        Begin
+            Set @hanfordIdNum = 'H' + @hanfordIdNum
         End
 
         Set @logErrors = 1
@@ -151,43 +158,35 @@ As
         -- action for add mode
         ---------------------------------------------------
 
-        If @Mode = 'add'
+        If @mode = 'add'
         Begin
-            -- Add an H to @HanfordIDNum if it starts with a number
-            If @HanfordIDNum Like '[0-9]%'
-            Begin
-                Set @HanfordIDNum = 'H' + @HanfordIDNum
-            End
-
             INSERT INTO T_Users (
                 U_PRN,
                 U_Name,
                 U_HID,
-                U_Payroll,
                 U_Email,
                 U_Status,
                 U_update,
                 U_comment
             ) VALUES (
-                @Username,
-                @LastNameFirstName,
-                @HanfordIDNum,
-                @Payroll,
-                @Email,
-                @UserStatus,
-                @UserUpdate,
-                ISNULL(@Comment, '')
+                @username,
+                @lastNameFirstName,
+                @hanfordIdNum,
+                @email,
+                @userStatus,
+                @userUpdate,
+                ISNULL(@comment, '')
             )
             -- Obtain User ID of newly created User
             --
-            Set @UserID = SCOPE_IDENTITY()
+            Set @userID = SCOPE_IDENTITY()
 
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
             Begin
-                Set @msg = 'Insert operation failed: "' + @Username + '"'
+                Set @msg = 'Insert operation failed: "' + @username + '"'
                 RAISERROR (@msg, 11, 1)
                 Return 51007
             End
@@ -198,29 +197,28 @@ As
         -- action for update mode
         ---------------------------------------------------
         --
-        If @Mode = 'update'
+        If @mode = 'update'
         Begin
-            If @UserStatus = 'Inactive'
+            If @userStatus = 'Inactive'
             Begin
                 Set @myError = 0
                 --
                 UPDATE T_Users
                 SET
-                    U_Name = @LastNameFirstName,
-                    U_HID = @HanfordIDNum,
-                    U_Payroll = @Payroll,
-                    U_Email = @Email,
-                    U_Status = @UserStatus,
+                    U_Name = @lastNameFirstName,
+                    U_HID = @hanfordIdNum,
+                    U_Email = @email,
+                    U_Status = @userStatus,
                     U_Active = 'N',
                     U_update = 'N',
-                    U_comment = @Comment
-                WHERE (U_PRN = @Username)
+                    U_comment = @comment
+                WHERE (U_PRN = @username)
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
                 If @myError <> 0
                 Begin
-                    Set @msg = 'Update operation failed: "' + @Username + '"'
+                    Set @msg = 'Update operation failed: "' + @username + '"'
                     RAISERROR (@msg, 11, 1)
                     Return 51004
                 End
@@ -231,20 +229,19 @@ As
                 --
                 UPDATE T_Users
                 SET
-                    U_Name = @LastNameFirstName,
-                    U_HID = @HanfordIDNum,
-                    U_Payroll = @Payroll,
-                    U_Email = @Email,
-                    U_Status = @UserStatus,
-                    U_update = @UserUpdate,
-                    U_comment = @Comment
-                WHERE (U_PRN = @Username)
+                    U_Name = @lastNameFirstName,
+                    U_HID = @hanfordIdNum,
+                    U_Email = @email,
+                    U_Status = @userStatus,
+                    U_update = @userUpdate,
+                    U_comment = @comment
+                WHERE (U_PRN = @username)
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
                 If @myError <> 0
                 Begin
-                    Set @msg = 'Update operation failed: "' + @Username + '"'
+                    Set @msg = 'Update operation failed: "' + @username + '"'
                     RAISERROR (@msg, 11, 1)
                     Return 51004
                 End
@@ -255,7 +252,7 @@ As
         -- Add/update operations defined for user
         ---------------------------------------------------
 
-        exec @myError = AddUpdateUserOperations @UserID, @OperationsList, @message output
+        exec @myError = AddUpdateUserOperations @userID, @operationsList, @message output
 
     END TRY
     BEGIN CATCH
@@ -267,7 +264,7 @@ As
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Username ' + @Username
+            Declare @logMessage varchar(1024) = @message + '; Username ' + @username
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateUser'
         End
 
