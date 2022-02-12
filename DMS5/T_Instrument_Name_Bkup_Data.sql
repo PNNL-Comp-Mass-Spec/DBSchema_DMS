@@ -115,7 +115,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('CBSS_Orb1',112,'LTQ_FT',1391,1941,
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Waters_TOF',113,'Waters_TOF',1392,1395,'fso',null,'Offsite','Waters QTof data (LC-MS or LC-MSn)','11/5/2013 3:58:32 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('JCVI_VPro01',114,'LTQ_FT',1394,1471,'fso',null,'JCVI (Rockville, MD)','J. Craig Venter Institute Velos Pro','11/22/2013 12:43:41 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('UNC_VOrbiETD01',115,'LTQ_FT',1444,1445,'fso',null,'UNC (Chapel Hill, NC)','University of North Carolina LTQ-Velos Orbitrap','3/7/2014 3:39:51 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_QExactive',116,'LTQ_FT',1704,4067,'fso',null,'Offsite','QExactive data acquired outside PNNL','4/3/2014 11:04:00 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_QExactive',116,'LTQ_FT',1704,4068,'fso',null,'Offsite','QExactive data acquired outside PNNL','4/3/2014 11:04:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SLIM03_AgTOF06',117,'IMS_Agilent_TOF_UIMF',1467,3869,'secfso',null,'EMSL 1526','IMS with SLIM; AgTOF06 has property tag WD59466','4/7/2014 10:56:27 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS07_AgTOF04',118,'IMS_Agilent_TOF_UIMF',1494,3870,'secfso',null,'EMSL 1430','Excessed in 2020: IMS with 20,000 m/z upper limit; WD56206 for TOF04','5/2/2014 3:13:29 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('5500XL_SOLiD_Dutch',119,'AB_Sequencer',1496,2,'fso',null,'BSF','Applied Biosciences next gen sequencer (Galya Orr)','5/20/2014 5:18:30 PM')
