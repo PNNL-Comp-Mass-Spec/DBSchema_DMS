@@ -64,6 +64,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/12/2022 mem - Trim leading and trailing whitespace when storing factors
 **
 *****************************************************/
 (
@@ -116,12 +117,12 @@ As
     --
     CREATE TABLE #TMP (
         Entry_ID int Identity(1,1),
-        Identifier varchar(128) null,        -- Could be RequestID or DatasetName
+        Identifier varchar(128) null,   -- Could be RequestID or DatasetName
         Factor varchar(128) null,
         Value varchar(128) null,
-        DatasetID INT null,                    -- DatasetID; not always present
+        DatasetID INT null,             -- DatasetID; not always present
         RequestID INT null,
-        UpdateSkipCode tinyint            -- 0 to update, 1 means unchanged, 2 means invalid factor name
+        UpdateSkipCode tinyint          -- 0 to update, 1 means unchanged, 2 means invalid factor name
     )
 
     -----------------------------------------------------------
@@ -163,10 +164,10 @@ As
     INSERT INTO #TMP
         (Identifier, Factor, Value, DatasetID, UpdateSkipCode)
     SELECT
-        xmlNode.value('@i', 'nvarchar(256)') Identifier,
-        xmlNode.value('@f', 'nvarchar(256)') Factor,
-        xmlNode.value('@v', 'nvarchar(256)') Value,
-        xmlNode.value('@d', 'nvarchar(256)') DatasetID,        -- Only sometimes present
+        Ltrim(Rtrim(xmlNode.value('@i', 'nvarchar(256)'))) As Identifier,
+        Ltrim(Rtrim(xmlNode.value('@f', 'nvarchar(256)'))) As Factor,
+        Ltrim(Rtrim(xmlNode.value('@v', 'nvarchar(256)'))) As Value,
+        Ltrim(Rtrim(xmlNode.value('@d', 'nvarchar(256)'))) As DatasetID,        -- Only sometimes present
         0 AS UpdateSkipCode
     FROM @xml.nodes('//r') AS R(xmlNode)
     --
