@@ -4,172 +4,198 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.AddBOMTrackingDataset 
+CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
 /****************************************************
 **
-**  Desc: 
-**    Adds new tracking dataset for the first of the month
-**    for the given year, month, and instrument
+**  Desc:
+**      Adds new tracking dataset for the beginning of the month (BOM)
+**      for the given year, month, and instrument 
 **
-**  Return values: 0: success, otherwise, error code
+**      If @month is 'next', adds a tracking dataset for the beginning of the next month
 **
-**  Parameters:
+**  Auth:   grk
+**  Date:   12/14/2012
+**          12/14/2012 grk - initial release
+**          12/16/2012 grk - added concept of 'next' month
+**          02/01/2013 grk - fixed broken logic for specifying year/month
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/14/2022 mem - Update error messages to show the correct dataset name
+**                         - When @mode is 'debug', update @message to include the run start date and dataset name
 **
-**  Auth:	grk
-**  Date:	12/14/2012 
-**			12/14/2012 grk - initial release
-**			12/16/2012 grk - added concept of 'next' month
-**			02/01/2013 grk - fixed broken logic for specifying year/month
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
-**    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
 *****************************************************/
 (
-	@month VARCHAR(16) = '',
-	@year VARCHAR(16) = '',
-	@instrumentName VARCHAR(64),
-	@mode VARCHAR(12) = 'add',
-	@message VARCHAR(512) OUTPUT,
-   	@callingUser VARCHAR(128)  = 'D3E154'
+    @month varchar(16) = '',
+    @year varchar(16) = '',
+    @instrumentName varchar(64),
+    @mode varchar(12) = 'add',              -- 'add' or 'debug'
+    @message varchar(512) output,
+    @callingUser varchar(128)  = 'D3E154'   -- Ron Moore
 )
 As
-	Set XACT_ABORT, nocount on
+    Set XACT_ABORT, nocount on
 
-	DECLARE @myError INT = 0
-	
-	---------------------------------------------------
-	-- validate input arguments
-	---------------------------------------------------
-	IF ISNULL(@instrumentName, '') = ''
-		RAISERROR ('Instrument name cannot be empty', 11, 10)
+    Declare @myError INT = 0
 
-	---------------------------------------------------
-	-- declare parameters for making BOM tracking dataset
-	---------------------------------------------------
-	
-	DECLARE 
-	@datasetNum VARCHAR(128) ,
-	@runStart VARCHAR(32),
-	@experimentNum VARCHAR(64) = 'Tracking',
-	@operPRN VARCHAR(64) = @callingUser,
-	@runDuration VARCHAR(16) = '10',
-	@comment VARCHAR(512) = '',
-	@eusProposalID VARCHAR(10) = '',
-	@eusUsageType VARCHAR(50) = 'MAINTENANCE',
-	@eusUsersList VARCHAR(1024) = ''
+    ---------------------------------------------------
+    -- validate input arguments
+    ---------------------------------------------------
+    If ISNULL(@instrumentName, '') = ''
+    Begin
+        RAISERROR ('Instrument name cannot be empty', 11, 10)
+    End
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Declare parameters for making BOM tracking dataset
+    ---------------------------------------------------
 
-	BEGIN TRY 
-		set @message = ''
+    Declare @datasetNum varchar(128)
+    Declare @runStart varchar(32)
+    Declare @experimentNum varchar(64) = 'Tracking'
+    Declare @operPRN varchar(64) = @callingUser
+    Declare @runDuration varchar(16) = '10'
+    Declare @comment varchar(512) = ''
+    Declare @eusProposalID varchar(10) = ''
+    Declare @eusUsageType varchar(50) = 'MAINTENANCE'
+    Declare @eusUsersList varchar(1024) = ''
 
-		---------------------------------------------------
-		-- get correct BOM dates
-		---------------------------------------------------
-	
-		DECLARE 
-			@now DATETIME = GETDATE(),
-			@mn VARCHAR(24) = @month,
-			@yr varchar(24) = @year	
+    BEGIN TRY
+        set @message = ''
 
-		IF @month = '' OR @month = 'next'
-			SET @mn = CONVERT(VARCHAR(12), DATEPART(MONTH, @now))
+        ---------------------------------------------------
+        -- Determine the BOM date to use
+        ---------------------------------------------------
 
-		IF @year = '' OR @month = 'next'
-			SET @yr = CONVERT(VARCHAR(12), DATEPART(YEAR, @now))
+        Declare @now datetime = GETDATE()
+        Declare @mn varchar(24) = @month
+        Declare @yr varchar(24) = @year
 
-		declare @bom DATETIME = @mn + '/1/' + @yr + ' 12:00:00:000AM'
-		
-		IF @month = 'next'
-			SET @bom = DATEADD(MONTH, 1, @bom)		-- Beginning of the next month after @bom
+        If @month = '' OR @month = 'next'
+        Begin
+            Set @mn = CONVERT(varchar(12), DATEPART(MONTH, @now))
+        End
 
-		SET @runStart = @bom
+        If @year = '' OR @month = 'next'
+        Begin
+            Set @yr = CONVERT(varchar(12), DATEPART(YEAR, @now))
+        End
 
-		DECLARE @dateLabel VARCHAR(24) = REPLACE(CONVERT(VARCHAR(15), @bom, 6), ' ', '')
-	 
-		SET @datasetNum = @instrumentName + '_' + @dateLabel
+        Declare @bom datetime = @mn + '/1/' + @yr + ' 12:00:00:000AM'
 
-		---------------------------------------------------
-		-- is it OK to make the dataset?
-		---------------------------------------------------
+        If @month = 'next'
+        Begin
+            Set @bom = DATEADD(MONTH, 1, @bom)        -- Beginning of the next month after @bom
+        End
 
-		DECLARE @instID INT = 0
-		SELECT @instID = Instrument_ID FROM dbo.T_Instrument_Name WHERE IN_name	= @instrumentName
-		IF @instID = 0				
-			RAISERROR ('Instrument "%s" cannot be found', 11, 20, @instrumentName)
-		
-		IF EXISTS (SELECT * FROM dbo.T_Dataset WHERE Dataset_Num = @datasetNum)
-			RAISERROR ('Dataset "%s" already exists', 11, 21, @datasetNum)
+        Set @runStart = @bom
 
-		DECLARE @dsm VARCHAR(128) = ''                                               
-		SELECT @dsm = Dataset_Num FROM dbo.T_Dataset WHERE Acq_Time_Start = @bom AND DS_instrument_name_ID = @instID
-		IF(@dsm <> '')							
-			RAISERROR ('Dataset "%s" has same start time', 11, 22, @datasetNum)
+        Declare @dateLabel varchar(24) = REPLACE(CONVERT(varchar(15), @bom, 6), ' ', '')
 
-		SET @dsm = ''
-		SELECT  @dsm =  Dataset_Num
-		FROM    T_Dataset
-		WHERE   ( NOT ( Acq_Time_Start IS NULL ))AND ( NOT ( Acq_Time_End IS NULL ))
-				AND @bom BETWEEN Acq_Time_Start AND Acq_Time_End
-				AND DS_instrument_name_ID = @instID
-		IF(@dsm <> '')							
-			RAISERROR ('Tracking dataset would overlap existing dataset "%s"', 11, 23, @datasetNum)
-				
-				                                             
-		---------------------------------------------------
-		-- 
-		---------------------------------------------------
-		IF @mode = 'debug'
-		BEGIN
-			PRINT 'datasetNum ' + @datasetNum 
-			PRINT 'runStart ' + @runStart 
-			PRINT 'experimentNum ' + @experimentNum 
-			PRINT 'operPRN ' + @operPRN 
-			PRINT 'runDuration ' + @runDuration 
-			PRINT 'comment ' + @comment 
-			PRINT 'eusProposalID ' + @eusProposalID 
-			PRINT 'eusUsageType ' + @eusUsageType 
-			PRINT 'eusUsersList ' + @eusUsersList 
-			PRINT 'mode ' + @mode 		
-		END 
-	
-		---------------------------------------------------
-		-- 
-		---------------------------------------------------
-		IF @mode = 'add'
-		BEGIN
-			EXEC @myError = AddUpdateTrackingDataset
-								@datasetNum  ,
-								@experimentNum  ,
-								@operPRN  ,
-								@instrumentName ,
-								@runStart  ,
-								@runDuration  ,
-								@comment  ,
-								@eusProposalID  ,
-								@eusUsageType  ,
-								@eusUsersList  ,
-								@mode  ,
-								@message  output,
-   								@callingUser		
-		END 
+        Set @datasetNum = @instrumentName + '_' + @dateLabel
+
+        ---------------------------------------------------
+        -- is it OK to make the dataset?
+        ---------------------------------------------------
+
+        Declare @instID INT = 0
+
+        SELECT @instID = Instrument_ID 
+        FROM dbo.T_Instrument_Name 
+        WHERE IN_name = @instrumentName
+
+        If @instID = 0
+        Begin
+            RAISERROR ('Instrument "%s" cannot be found', 11, 20, @instrumentName)
+        End
+
+        If EXISTS (SELECT * FROM dbo.T_Dataset WHERE Dataset_Num = @datasetNum)
+        Begin
+            RAISERROR ('Dataset "%s" already exists', 11, 21, @datasetNum)
+        End
+
+        Declare @conflictingDataset varchar(128) = ''
+        Declare @datasetID Int = 0
+
+        SELECT @conflictingDataset = Dataset_Num 
+        FROM dbo.T_Dataset 
+        WHERE Acq_Time_Start = @bom AND DS_instrument_name_ID = @instID
+
+        If (@conflictingDataset <> '')
+        Begin
+            RAISERROR ('Dataset "%s" has same start time', 11, 22, @conflictingDataset)
+        End
+
+        Set @conflictingDataset = ''
+
+        SELECT @conflictingDataset = Dataset_Num, @datasetID = Dataset_ID
+        FROM T_Dataset
+        WHERE (Not (Acq_Time_Start IS NULL)) AND
+              (Not (Acq_Time_End IS NULL)) AND
+              @bom BETWEEN Acq_Time_Start AND Acq_Time_End AND
+              DS_instrument_name_ID = @instID
+        
+        If (@conflictingDataset <> '')
+        Begin
+            RAISERROR ('Tracking dataset would overlap existing dataset "%s", Dataset ID %d', 11, 23, @conflictingDataset, @datasetID)
+        End
+
+        If @mode = 'debug'
+        Begin
+            ---------------------------------------------------
+            -- Show debug info
+            ---------------------------------------------------
+
+            PRINT 'Dataset:        ' + @datasetNum
+            PRINT 'Run Start:      ' + @runStart
+            PRINT 'Experiment:     ' + @experimentNum
+            PRINT 'Operator PRN:   ' + @operPRN
+            PRINT 'Run Duration:   ' + @runDuration
+            PRINT 'Comment:        ' + @comment
+            PRINT 'EUS Proposal:   ' + @eusProposalID
+            PRINT 'EUS Usage Type: ' + @eusUsageType
+            PRINT 'EUS Users:      ' + @eusUsersList
+            PRINT 'mode:           ' + @mode
+
+            Set @message = 'Would create dataset with run start ' + Cast(@runStart As Varchar(24)) + ', name=' + @datasetNum
+        End
+
+        If @mode = 'add'
+        Begin
+            ---------------------------------------------------
+            -- Add the tracking dataset
+            ---------------------------------------------------
+
+            EXEC @myError = AddUpdateTrackingDataset
+                                @datasetNum,
+                                @experimentNum,
+                                @operPRN,
+                                @instrumentName,
+                                @runStart,
+                                @runDuration,
+                                @comment,
+                                @eusProposalID,
+                                @eusUsageType,
+                                @eusUsersList,
+                                @mode,
+                                @message output,
+                                @callingUser
+        End
 
 
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDataset'
-	END CATCH
-	RETURN @myError
+    END TRY
+    BEGIN CATCH
+        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
+
+        -- rollback any open transactions
+        If (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+
+        Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDataset'
+    END CATCH
+
+    RETURN @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddBOMTrackingDataset] TO [DDL_Viewer] AS [dbo]
