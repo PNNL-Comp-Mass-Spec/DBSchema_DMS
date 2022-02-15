@@ -27,12 +27,13 @@ CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
 **                         - Add parameters @showDebug and @invalidUsage
 **                         - Pass @ID and @invalidUsage to ParseUsageText
 **          05/03/2019 mem - Update comments
+**          02/15/2022 mem - Update error messages and rename variables
 **   
 *****************************************************/
 (
-    @ID int ,
-    @Comment varchar(MAX),              -- Usage comment, e.g. 'User[100%], Proposal[49521], PropUser[50151]'
-    @mode varchar(12) = 'update',       -- 'update'; note that 'add' is not supported
+    @ID int,
+    @comment varchar(MAX),              -- Usage comment, e.g. 'User[100%], Proposal[49521], PropUser[50151]'
+    @mode varchar(12) = 'update',       -- 'update' (note that 'add' is not supported)
     @message varchar(512) output,
     @callingUser varchar(128) = '',
     @showDebug tinyint = 0,
@@ -43,6 +44,8 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
+
+    Declare @existingID Int = 0
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -55,9 +58,9 @@ As
     
     Declare @logErrors tinyint = 0
     
-    Set @CallingUser = IsNull(@CallingUser, '')
-    if @CallingUser = ''
-        Set @CallingUser = suser_sname()
+    Set @callingUser = IsNull(@callingUser, '')
+    if @callingUser = ''
+        Set @callingUser = suser_sname()
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -74,7 +77,7 @@ As
 
     IF @ID < 0
     Begin
-        Set @message = 'Invalid ID: ' + Cast(@id as varchar(9))
+        Set @message = 'Invalid ID: ' + Cast(@ID as varchar(9))
         RAISERROR (@message, 11, 10)
         Goto Done
     End
@@ -119,20 +122,22 @@ As
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
+
     If @mode = 'update'
     Begin
         -- Cannot update a non-existent entry
         --
-        declare @tmp Int = 0
-        --
-        SELECT @tmp = ID
-        FROM  T_Run_Interval 
-        WHERE (ID = @ID)
+        SELECT @existingID = ID
+        FROM T_Run_Interval
+        WHERE ID = @ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0 OR @tmp = 0
-            RAISERROR ('No entry could be found in database for update', 11, 16)
+        If @myError <> 0 OR @existingID = 0
+        Begin
+            Set @message = 'Invalid ID: ' + Cast(@ID as varchar(9)) + '; cannot update'
+            RAISERROR (@message, 11, 16)
+        End
     End
     
     ---------------------------------------------------
@@ -147,18 +152,17 @@ As
     Begin
         set @myError = 0
         --
-        UPDATE T_Run_Interval 
-        SET
-            Comment = @Comment,
-            Usage = @usageXML,
+        UPDATE T_Run_Interval
+        SET [Comment] = @comment,
+            [Usage] = @usageXML,
             Last_Affected = GetDate(),
-            Entered_By = @CallingUser
-        WHERE (ID = @ID)
+            Entered_By = @callingUser
+        WHERE ID = @ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
-            RAISERROR ('Update operation failed: "%s"', 11, 4, @ID)
+            RAISERROR ('Update operation failed for ID "%d"', 11, 4, @ID)
 
     End -- update mode
 
