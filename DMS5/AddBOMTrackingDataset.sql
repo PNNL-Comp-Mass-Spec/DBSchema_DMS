@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/14/2022 mem - Update error messages to show the correct dataset name
 **                         - When @mode is 'debug', update @message to include the run start date and dataset name
+**          02/15/2022 mem - Mention UpdateDatasetInterval and T_Run_Interval in the debug message
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -158,7 +159,8 @@ As
             PRINT 'EUS Users:      ' + @eusUsersList
             PRINT 'mode:           ' + @mode
 
-            Set @message = 'Would create dataset with run start ' + Cast(@runStart As Varchar(24)) + ', name=' + @datasetNum
+            -- Note that AddUpdateTrackingDataset calls UpdateDatasetInterval after creating the dataset
+            Set @message = 'Would create dataset with run start ' + Cast(@runStart As Varchar(24)) + ' and name ''' + @datasetNum + ''', then call UpdateDatasetInterval to update T_Run_Interval'
         End
 
         If @mode = 'add'
