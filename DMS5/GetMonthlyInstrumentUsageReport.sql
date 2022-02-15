@@ -45,7 +45,7 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
     @year varchar(12),
     @month varchar(12),
     @outputFormat varchar(12) = 'details',  -- 'details', 'rollup', 'check', 'report'
-    @message varchar(512) = '' output
+    @message varchar(512) = '' Output
 )
 As
     Set XACT_ABORT, nocount on
