@@ -34,6 +34,8 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/03/2019 mem - Pass @eusInstrumentId to UpdateEMSLInstrumentUsageReport for select instruments
 **          01/28/2022 mem - Call UpdateEMSLInstrumentUsageReport for both the current month, plus also previous months if @daysToProcess is greater than 15
+**          02/15/2022 mem - Fix major bug decrementing @instrumentUsageMonth when processing multiple instruments
+**                         - Add missing Order By clause
 **
 *****************************************************/
 (
@@ -78,6 +80,7 @@ As
 
     Declare @endDate DATETIME = GETDATE()
     Declare @instrumentUsageMonth DATETIME = GETDATE()
+    Declare @currentInstrumentUsageMonth DATETIME
 
     -- Update instrument usage for the current month, plus possibly the last few months, depending on @daysToProcess
     -- For example, if @daysToProcess is 60, will call UpdateEMSLInstrumentUsageReport for this month plus the last two months
@@ -101,7 +104,7 @@ As
     ---------------------------------------------------
 
     CREATE TABLE #Tmp_Instruments (
-        Seq INT IDENTITY(1,1) NOT NULL,
+        Entry_ID INT IDENTITY(1,1) NOT NULL,
         Instrument varchar(65),
         EMSL CHAR(1),
         Tracked tinyint,
@@ -154,7 +157,7 @@ As
             FROM V_Instrument_Tracked InstList
                  INNER JOIN #Tmp_InstrumentFilter InstFilter
                    ON InstList.[Name] = InstFilter.Instrument
-            Order By IsNull(InstList.EUS_Instrument_ID, 0), InstList.[Name]
+            ORDER BY IsNull(InstList.EUS_Instrument_ID, 0), InstList.[Name]
             --
             SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -177,7 +180,7 @@ As
                    EUS_Instrument_ID,
                    0
             FROM V_Instrument_Tracked
-            Order By IsNull(EUS_Instrument_ID, 0), [Name]
+            ORDER BY IsNull(EUS_Instrument_ID, 0), [Name]
             --
             SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -208,6 +211,14 @@ As
                            ) FilterQ
                 ON #Tmp_Instruments.EUS_Instrument_ID = FilterQ.EUS_Instrument_ID
 
+
+        If @infoOnly > 0
+        Begin
+            SELECT *
+            FROM #Tmp_Instruments
+            ORDER By Instrument
+        End
+
         ---------------------------------------------------
         -- Update intervals for each instrument
         ---------------------------------------------------
@@ -218,7 +229,7 @@ As
         Declare @useEUSid tinyint
         Declare @eusInstrumentId Int
 
-        Declare @index int = 0
+        Declare @entryID int = 0
         Declare @continue tinyint = 1
         Declare @skipInstrument tinyint = 0
         Declare @iteration int = 0
@@ -230,11 +241,11 @@ As
                          @emslInstrument = EMSL,
                          @tracked = Tracked,
                          @useEUSid = Use_EUS_ID,
-                         @eusInstrumentId = EUS_Instrument_ID
+                         @eusInstrumentId = EUS_Instrument_ID,
+                         @entryID = Entry_ID
             FROM #Tmp_Instruments
-            WHERE Seq > @index
-
-            Set @index = @index + 1
+            WHERE Entry_ID > @entryID
+            ORDER BY Entry_ID
 
             IF @instrument IS NULL
             BEGIN
@@ -260,7 +271,14 @@ As
                 If @skipInstrument = 0
                 Begin -- <c>
 
-                    EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
+                    If @infoOnly >= 2
+                    Begin
+                        Print 'EXEC UpdateDatasetInterval ' + @instrument + ', ' + Cast(@startDate As Varchar(16)) + ', ' + Cast(@bonm As Varchar(16)) + ', @message output, @infoOnly=@infoOnly'
+                    End
+                    Else
+                    Begin
+                        EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
+                    End
 
                     If @updateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
                     Begin -- <d>
@@ -268,6 +286,8 @@ As
                         -- Call UpdateEMSLInstrumentUsageReport for this month, plus optionally previous months (if @instrumentUsageMonthsToUpdate is greater than 1)
                         --
                         Set @iteration = 0
+                        Set @currentInstrumentUsageMonth = @InstrumentUsageMonth
+
                         While @iteration < @instrumentUsageMonthsToUpdate
                         Begin -- <e>
                             Set @iteration = @iteration + 1
@@ -276,23 +296,26 @@ As
                             Begin
                                 Print 'Call UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument +
                                       ', target month ' + 
-                                      Cast(Year(@instrumentUsageMonth) As varchar(12)) + '-' + 
-                                      Cast(Month(@instrumentUsageMonth) As varchar(12))
+                                      Cast(Year(@currentInstrumentUsageMonth) As varchar(12)) + '-' + 
+                                      Cast(Month(@currentInstrumentUsageMonth) As varchar(12))
                             End
 
-                            If @useEUSid > 0
+                            If @infoOnly <= 1
                             Begin
-                                EXEC UpdateEMSLInstrumentUsageReport '', @eusInstrumentId, @instrumentUsageMonth, @message output, @infoonly=@infoonly
-                            End
-                            Else
-                            Begin
-                                EXEC UpdateEMSLInstrumentUsageReport @instrument, 0, @instrumentUsageMonth, @message output, @infoonly=@infoonly
+                                If @useEUSid > 0
+                                Begin
+                                    EXEC UpdateEMSLInstrumentUsageReport '', @eusInstrumentId, @currentInstrumentUsageMonth, @message output, @infoonly=@infoonly
+                                End
+                                Else
+                                Begin
+                                    EXEC UpdateEMSLInstrumentUsageReport @instrument, 0, @currentInstrumentUsageMonth, @message output, @infoonly=@infoonly
+                                End
                             End
 
                             If @infoOnly > 0
                                 Print ''
 
-                            Set @instrumentUsageMonth = DateAdd(month, -1, @instrumentUsageMonth)
+                            Set @currentInstrumentUsageMonth = DateAdd(month, -1, @currentInstrumentUsageMonth)
                         End -- </e>
                     End -- </d>
                     Else
