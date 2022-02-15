@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          04/17/2020 mem - Use Dataset_ID instead of ID
 **          01/28/2022 mem - If a long interval has 'Broken' in the comment, store 'Broken' as the comment in T_EMSL_Instrument_Usage_Report
 **                         - Replace SQL server specific syntax with more generic syntax for assigning sequential values to the seq column
+**          02/15/2022 mem - Define column names when previewing updates
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -413,15 +414,15 @@ AS
                 SELECT 'Update Row' as [Action], 
                         #STAGING.[Minutes] ,
                         #STAGING.[Start] ,
-                        CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END ,
-                        CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END ,
-                        CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END ,
-                        CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END ,
+                        CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END As Proposal,
+                        CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END As Usage_Type,
+                        CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END As Users,
+                        CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END As Operator,
                         #STAGING.[Year] ,
                         #STAGING.[Month] ,
-                        CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment END,
-                        GETDATE(),
-                        @callingUser                        
+                        CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment End As Comment,
+                        GETDATE() As Updated,
+                        @callingUser As CallingUser                      
                 FROM T_EMSL_Instrument_Usage_Report InstUsage
                         INNER JOIN #STAGING
                         ON InstUsage.Dataset_ID = #STAGING.Dataset_ID AND
