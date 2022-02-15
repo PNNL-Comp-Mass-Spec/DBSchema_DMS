@@ -83,6 +83,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          02/29/2020 mem - Refactor code into GetDatasetDetailsFromDatasetInfoXML
 **          03/01/2020 mem - Add call to UpdateDatasetDeviceInfoXML
 **          10/10/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
+**          02/14/2022 mem - Log an error if the acquisition length is overly long
 **    
 *****************************************************/
 (
@@ -522,6 +523,29 @@ As
     WHERE Acq_Time_End IS NULL AND NOT Acq_Time_Start IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    -----------------------------------------------
+    -- Check for Acq_Time_End being more than 7 days after Acq_Time_Start
+    -----------------------------------------------
+
+    SELECT @acqLengthMinutes = DateDiff(minute, Acq_Time_Start, Acq_Time_End),
+           @acqTimeStart = Acq_Time_Start,
+           @acqTimeEnd = Acq_Time_End
+    FROM @DSInfoTable
+
+    If @acqLengthMinutes > 10080
+    Begin
+        Update @DSInfoTable
+        Set Acq_Time_End = DateAdd(Hour, 1, Acq_Time_Start)
+
+        Set @message = 
+            'Acquisition length for dataset ' + @datasetName + ' is over 7 days; ' + 
+            'the Acq_Time_End value (' + Convert(varchar(24), @acqTimeEnd, 121) + ') is likely invalid, ' + 
+            'relative to Acq_Time_Start (' + Convert(varchar(24), @acqTimeStart, 121) + '); ' +
+            'setting Acq_Time_End to be 60 minutes after Acq_Time_Start'
+
+        exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML'
+    End
 
     -----------------------------------------------
     -- Update T_Dataset with any new or changed values
