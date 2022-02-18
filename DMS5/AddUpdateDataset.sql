@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          01/08/2008 mem - Added check for @eusProposalID, @eusUsageType, or @eusUsersList being blank or 'no update' when @mode = 'add' and @requestID is 0
 **          02/13/2008 mem - Now sending @datasetNum to function ValidateChars and checking for @badCh = '[space]' (Ticket #602)
 **          02/15/2008 mem - Increased size of @folderName to varchar(128) (Ticket #645)
-**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          03/25/2008 mem - Added optional parameter @callingUser; if provided, will call AlterEventLogEntryUser (Ticket #644)
 **          04/09/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
 **          05/23/2008 mem - Now calling SchedulePredefinedAnalyses if the dataset rating is changed from -5 to 5 and no jobs exist yet for this dataset (Ticket #675)
 **          04/08/2009 jds - Added support for the additional parameters @secSep and @MRMAttachment to the AddUpdateRequestedRun stored procedure (Ticket #727)
@@ -110,6 +110,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
 **          10/01/2021 mem - Also check for a period when verifying that the dataset name does not end with .raw or .wiff
 **          11/12/2021 mem - When @mode is update, pass @batch, @block, and @runOrder to AddUpdateRequestedRun
+**          02/17/2022 mem - Rename variables and add missing Else clause
 **
 *****************************************************/
 (
@@ -118,14 +119,14 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @operPRN varchar(64),
     @instrumentName varchar(64),
     @msType varchar(50),                        -- Dataset Type
-    @LCColumnNum varchar(64),
+    @lcColumnNum varchar(64),
     @wellplateNum varchar(64) = 'na',
     @wellNum varchar(64) = 'na',
     @secSep varchar(64) = 'na',
     @internalStandards varchar(64) = 'none',
     @comment varchar(512) = '',
     @rating varchar(32) = 'Unknown',
-    @LCCartName varchar(128),
+    @lcCartName varchar(128),
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50),
     @eusUsersList varchar(1024) = '',
@@ -152,7 +153,7 @@ As
     Declare @result int
     Declare @warning varchar(512)
     Declare @warningAddon varchar(128)
-    Declare @ExperimentCheck varchar(128)
+    Declare @experimentCheck varchar(128)
     Declare @debugMsg varchar(512)
     Declare @logErrors tinyint = 0
 
@@ -189,7 +190,7 @@ As
 
     Set @mode = LTrim(RTrim(IsNull(@mode, '')))
     Set @secSep = LTrim(RTrim(IsNull(@secSep, '')))
-    Set @LCColumnNum = LTrim(RTrim(IsNull(@LCColumnNum, '')))
+    Set @lcColumnNum = LTrim(RTrim(IsNull(@lcColumnNum, '')))
     Set @datasetNum = LTrim(RTrim(IsNull(@datasetNum, '')))
 
     Set @experimentNum = LTrim(RTrim(IsNull(@experimentNum, '')))
@@ -213,7 +214,7 @@ As
         RAISERROR (@msg, 11, 17)
     End
     --
-    If IsNull(@LCColumnNum, '') = ''
+    If IsNull(@lcColumnNum, '') = ''
     Begin
         Set @msg = 'LC Column name was blank'
         RAISERROR (@msg, 11, 16)
@@ -260,7 +261,7 @@ As
         RAISERROR (@msg, 11, 15)
     End
     --
-    If IsNull(@LCCartName, '') = ''
+    If IsNull(@lcCartName, '') = ''
     Begin
         Set @msg = 'LC Cart name was blank'
         RAISERROR (@msg, 11, 15)
@@ -327,26 +328,28 @@ As
     -- Validate dataset name
     ---------------------------------------------------
     --
-    Declare @badCh varchar(128)
-    Set @badCh =  dbo.ValidateChars(@datasetNum, '')
+    Declare @badCh varchar(128) = dbo.ValidateChars(@datasetNum, '')
+
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
+        Begin
             Set @msg = 'Dataset name may not contain spaces'
+        End
         Else
         Begin
             If Len(@badCh) = 1
                 Set @msg = 'Dataset name may not contain the character ' + @badCh
-            else
+            Else
                 Set @msg = 'Dataset name may not contain the characters ' + @badCh
         End
 
         RAISERROR (@msg, 11, 1)
     End
 
-    If @aggregationJobDataset = 0 And (@datasetNum Like '%[.]raw' Or @datasetNum Like '%[.]wiff')
+    If @aggregationJobDataset = 0 And (@datasetNum Like '%[.]raw' Or @datasetNum Like '%[.]wiff' Or @datasetNum Like '%[.]d')
     Begin
-        Set @msg = 'Dataset name may not end in raw or wiff'
+        Set @msg = 'Dataset name may not end in .raw, .wiff, or .d'
         RAISERROR (@msg, 11, 2)
     End
 
@@ -383,7 +386,7 @@ As
         Set @mode = 'add'
         Set @addingDataset = 1
     End
-    else
+    Else
     Begin
         execute @ratingID = GetDatasetRatingID @rating
         If @ratingID = 0
@@ -418,7 +421,7 @@ As
 
     If @datasetID = 0
     Begin
-        -- cannot update a non-existent entry
+        -- Cannot update a non-existent entry
         --
         If @mode IN ('update', 'check_update')
         Begin
@@ -426,9 +429,9 @@ As
             RAISERROR (@msg, 11, 4)
         End
     End
-    else
+    Else
     Begin
-        -- cannot create an entry that already exists
+        -- Cannot create an entry that already exists
         --
         If @addingDataset = 1
         Begin
@@ -436,7 +439,7 @@ As
             RAISERROR (@msg, 11, 5)
         End
 
-        -- do not allow a rating change from 'Unreviewed' to any other rating within this procedure
+        -- Do not allow a rating change from 'Unreviewed' to any other rating within this procedure
         --
         If @curDSRatingID = -10 And @rating <> 'Unreviewed'
         Begin
@@ -453,7 +456,7 @@ As
     --
     SELECT @columnID = ID
     FROM T_LC_Column
-    WHERE SC_Column_Number = @LCColumnNum
+    WHERE SC_Column_Number = @lcColumnNum
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -465,7 +468,7 @@ As
 
     If @columnID = -1
     Begin
-        Set @msg = 'Unknown LC column name: ' + @LCColumnNum
+        Set @msg = 'Unknown LC column name: ' + @lcColumnNum
         RAISERROR (@msg, 11, 94)
     End
 
@@ -596,8 +599,8 @@ As
     ---------------------------------------------------
 
     Declare @instrumentID int
-    Declare @InstrumentGroup varchar(64) = ''
-    Declare @DefaultDatasetTypeID int
+    Declare @instrumentGroup varchar(64) = ''
+    Declare @defaultDatasetTypeID int
     Declare @msTypeOld varchar(50)
 
     execute @instrumentID = GetinstrumentID @instrumentName
@@ -611,11 +614,11 @@ As
     -- Lookup the Instrument Group
     ---------------------------------------------------
 
-    SELECT @InstrumentGroup = IN_Group
+    SELECT @instrumentGroup = IN_Group
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentID
 
-    If @InstrumentGroup = ''
+    If @instrumentGroup = ''
     Begin
         Set @msg = 'Instrument group not defined for instrument ' + @instrumentName
         RAISERROR (@msg, 11, 14)
@@ -625,9 +628,9 @@ As
     -- Lookup the default dataset type ID (could be null)
     ---------------------------------------------------
 
-    SELECT @DefaultDatasetTypeID = Default_Dataset_Type
+    SELECT @defaultDatasetTypeID = Default_Dataset_Type
     FROM T_Instrument_Group
-    WHERE IN_Group = @InstrumentGroup
+    WHERE IN_Group = @instrumentGroup
 
 
     ---------------------------------------------------
@@ -642,10 +645,10 @@ As
         -- Could not resolve @msType to a dataset type
         -- If @mode is Add, we will auto-update @msType to the default
         --
-        If @addingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
+        If @addingDataset = 1 And IsNull(@defaultDatasetTypeID, 0) > 0
         Begin
             -- Use the default dataset type
-            Set @datasetTypeID = @DefaultDatasetTypeID
+            Set @datasetTypeID = @defaultDatasetTypeID
 
             Set @msTypeOld = @msType
 
@@ -670,13 +673,13 @@ As
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call ValidateInstrumentGroupAndDatasetType with type = ' + @msType + ' and group = ' + @InstrumentGroup
+        Set @debugMsg = 'Call ValidateInstrumentGroupAndDatasetType with type = ' + @msType + ' and group = ' + @instrumentGroup
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
     End
 
-    exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
+    exec @result = ValidateInstrumentGroupAndDatasetType @msType, @instrumentGroup, @datasetTypeID output, @msg output
 
-    If @result <> 0 And @addingDataset = 1 And IsNull(@DefaultDatasetTypeID, 0) > 0
+    If @result <> 0 And @addingDataset = 1 And IsNull(@defaultDatasetTypeID, 0) > 0
     Begin
         If @logDebugMessages > 0
         Begin
@@ -709,7 +712,7 @@ As
 
         If @datasetTypeID = 0
         Begin
-            Set @datasetTypeID = @DefaultDatasetTypeID
+            Set @datasetTypeID = @defaultDatasetTypeID
 
             Set @msTypeOld = @msType
 
@@ -726,7 +729,7 @@ As
         End
 
         -- Validate the new dataset type name (in case the default dataset type is invalid for this instrument group, which would indicate invalid data in table T_Instrument_Group)
-        exec @result = ValidateInstrumentGroupAndDatasetType @msType, @InstrumentGroup, @datasetTypeID output, @msg output
+        exec @result = ValidateInstrumentGroupAndDatasetType @msType, @instrumentGroup, @datasetTypeID output, @msg output
 
         If @result <> 0
         Begin
@@ -754,7 +757,7 @@ As
     End
 
     ---------------------------------------------------
-    -- Resolve user ID for operator PRN
+    -- Resolve user ID for operator username
     ---------------------------------------------------
 
     If @logDebugMessages > 0
@@ -780,8 +783,8 @@ As
         -- Could not find entry in database for PRN @operPRN
         -- Try to auto-resolve the name
 
-        Declare @MatchCount int
-        Declare @NewPRN varchar(64)
+        Declare @matchCount int
+        Declare @newPRN varchar(64)
 
         If @logDebugMessages > 0
         Begin
@@ -789,16 +792,16 @@ As
             exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
         End
 
-        exec AutoResolveNameToPRN @operPRN, @MatchCount output, @NewPRN output, @userID output
+        exec AutoResolveNameToPRN @operPRN, @matchCount output, @newPRN output, @userID output
 
-        If @MatchCount = 1
+        If @matchCount = 1
         Begin
             -- Single match found; update @operPRN
-            Set @operPRN = @NewPRN
+            Set @operPRN = @newPRN
         End
         Else
         Begin
-            Set @msg = 'Could not find entry in database for operator PRN ' + @operPRN
+            Set @msg = 'Could not find entry in database for operator username ' + @operPRN
             RAISERROR (@msg, 11, 19)
         End
     End
@@ -844,15 +847,15 @@ As
         If @datasetNum Like 'Blank%'
         Begin
             -- See if the experiment matches for this request; if it doesn't, change @requestID to 0
-            Set @ExperimentCheck = ''
+            Set @experimentCheck = ''
 
-            SELECT @ExperimentCheck = E.Experiment_Num
+            SELECT @experimentCheck = E.Experiment_Num
             FROM T_Experiments E INNER JOIN
                 T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID
             WHERE RR.ID = @requestID
 
-            If @ExperimentCheck <> @experimentNum
-                Set @RequestID = 0
+            If @experimentCheck <> @experimentNum
+                Set @requestID = 0
         End
     End
 
@@ -893,11 +896,11 @@ As
         If @requestID > 0
         Begin
             -- Match found; check for an instrument group mismatch
-            If @requestInstGroup <> @InstrumentGroup
+            If @requestInstGroup <> @instrumentGroup
             Begin
                 Set @warning = dbo.AppendToText(@warning,
                     'Instrument group for requested run (' + @requestInstGroup + ') ' +
-                    'does not match instrument group for ' + @instrumentName + ' (' + @InstrumentGroup + ')', 0, '; ', 512)
+                    'does not match instrument group for ' + @instrumentName + ' (' + @instrumentGroup + ')', 0, '; ', 512)
             End
         End
     End
@@ -936,7 +939,7 @@ As
     Set @logErrors = 1
 
     ---------------------------------------------------
-    -- action for add trigger mode
+    -- Action for add trigger mode
     ---------------------------------------------------
 
     If @mode = 'add_trigger'
@@ -949,10 +952,10 @@ As
             -- Validate that experiments match
             ---------------------------------------------------
 
-            -- get experiment ID from dataset
+            -- Get experiment ID from dataset;
             -- this was already done above
 
-            -- get experiment ID from scheduled run
+            -- Get experiment ID from scheduled run
             --
             Declare @reqExperimentID int = 0
             --
@@ -986,7 +989,7 @@ As
         --
         SELECT @cartID = ID
         FROM T_LC_Cart
-        WHERE Cart_Name = @LCCartName
+        WHERE Cart_Name = @lcCartName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -995,10 +998,10 @@ As
             Set @msg = 'Error trying to look up cart ID'
             RAISERROR (@msg, 11, 33)
         End
-        else
+
         If @cartID = 0
         Begin
-            Set @msg = 'Unknown LC Cart name: ' + @LCCartName
+            Set @msg = 'Unknown LC Cart name: ' + @lcCartName
             RAISERROR (@msg, 11, 35)
         End
 
@@ -1057,11 +1060,11 @@ As
             End
 
         End -- </b1>
-        else
+        Else
         Begin -- <b2>
 
             ---------------------------------------------------
-            -- verify that request ID is correct
+            -- Verify that request ID is correct
             ---------------------------------------------------
 
             If NOT EXISTS (SELECT * FROM T_Requested_Run WHERE ID = @requestID)
@@ -1072,11 +1075,11 @@ As
 
         End -- </b2>
 
-        Declare @DSCreatorPRN varchar(256) = suser_sname()
+        Declare @dsCreatorPRN varchar(256) = suser_sname()
 
         Declare @rslt int
-        Declare @Run_Start varchar(10) = ''
-        Declare @Run_Finish varchar(10) = ''
+        Declare @run_Start varchar(10) = ''
+        Declare @run_Finish varchar(10) = ''
 
         If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
             Set @warning = @message
@@ -1092,13 +1095,13 @@ As
             @experimentNum,
             @instrumentName,
             @secSep,
-            @LCCartName,
-            @LCColumnNum,
+            @lcCartName,
+            @lcColumnNum,
             @wellplateNum,
             @wellNum,
             @msType,
             @operPRN,
-            @DSCreatorPRN,
+            @dsCreatorPRN,
             @comment,
             @rating,
             @requestID,
@@ -1106,8 +1109,8 @@ As
             @eusUsageType,
             @eusProposalID,
             @eusUsersList,
-            @Run_Start,
-            @Run_Finish,
+            @run_Start,
+            @run_Finish,
             @captureSubfolder,
             @lcCartConfig,
             @message output
@@ -1134,7 +1137,7 @@ As
         ---------------------------------------------------
         --
         Declare @storagePathID int = 0
-        Declare @RefDate datetime = GetDate()
+        Declare @refDate datetime = GetDate()
 
         If @logDebugMessages > 0
         Begin
@@ -1142,7 +1145,7 @@ As
             exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
         End
 
-        Exec @storagePathID = GetInstrumentStoragePathForNewDatasets @instrumentID, @RefDate, @AutoSwitchActiveStorage=1, @infoOnly=0
+        Exec @storagePathID = GetInstrumentStoragePathForNewDatasets @instrumentID, @refDate, @AutoSwitchActiveStorage=1, @infoOnly=0
         --
         If @storagePathID = 0
         Begin
@@ -1174,7 +1177,7 @@ As
             Print 'Insert into T_Dataset'
         End
 
-        -- insert values into a new row
+        -- Insert values into a new row
         --
         INSERT INTO T_Dataset (
             Dataset_Num,
@@ -1199,7 +1202,7 @@ As
             @datasetNum,
             @operPRN,
             @comment,
-            @RefDate,
+            @refDate,
             @instrumentID,
             @datasetTypeID,
             @wellNum,
@@ -1230,24 +1233,26 @@ As
         End
 
         -- Get the ID of newly created dataset
+        --
         Set @datasetID = SCOPE_IDENTITY()
 
         -- As a precaution, query T_Dataset using Dataset name to make sure we have the correct Dataset_ID
-        Declare @DatasetIDConfirm int = 0
+        Declare @datasetIDConfirm int = 0
 
-        SELECT @DatasetIDConfirm = Dataset_ID
+        SELECT @datasetIDConfirm = Dataset_ID
         FROM T_Dataset
         WHERE Dataset_Num = @datasetNum
 
-        If @datasetID <> IsNull(@DatasetIDConfirm, @datasetID)
+        If @datasetID <> IsNull(@datasetIDConfirm, @datasetID)
         Begin
-            Set @DebugMsg = 'Warning: Inconsistent identity values when adding dataset ' + @datasetnum + ': Found ID ' +
-                            Cast(@DatasetIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
+            Set @debugMsg = 
+                'Warning: Inconsistent identity values when adding dataset ' + @datasetnum + ': Found ID ' +
+                Cast(@datasetIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                 Cast(@datasetID as varchar(12))
 
-            exec PostLogEntry 'Error', @DebugMsg, 'AddUpdateDataset'
+            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateDataset'
 
-            Set @datasetID = @DatasetIDConfirm
+            Set @datasetID = @datasetIDConfirm
         End
 
         -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
@@ -1338,7 +1343,7 @@ As
         -- requested run
         ---------------------------------------------------
         --
-        If @LCCartName NOT IN ('', 'no update') And @requestID > 0
+        If @lcCartName NOT IN ('', 'no update') And @requestID > 0
         Begin
 
             If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
@@ -1352,7 +1357,7 @@ As
             exec @result = UpdateCartParameters
                                 'CartName',
                                 @requestID,
-                                @LCCartName output,
+                                @lcCartName output,
                                 @message output
             --
             Set @myError = @result
@@ -1429,8 +1434,7 @@ As
         Set @myError = 0
         --
         UPDATE T_Dataset
-        Set
-                DS_Oper_PRN = @operPRN,
+        Set     DS_Oper_PRN = @operPRN,
                 DS_comment = @comment,
                 DS_type_ID = @datasetTypeID,
                 DS_well_num = @wellNum,
@@ -1484,7 +1488,7 @@ As
         -- requested run
         ---------------------------------------------------
         --
-        If @LCCartName NOT IN ('', 'no update')
+        If @lcCartName NOT IN ('', 'no update')
         Begin
 
             If IsNull(@requestID, 0) = 0
@@ -1492,12 +1496,13 @@ As
                 Set @warningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
                 Set @warning = dbo.AppendToText(@warning, @warningAddon, 0, '; ', 512)
             End
+            Else
             Begin
                 Set @warningAddon = ''
                 exec @result = UpdateCartParameters
                                     'CartName',
                                     @requestID,
-                                    @LCCartName output,
+                                    @lcCartName output,
                                     @warningAddon output
                 --
                 Set @myError = @result
@@ -1580,8 +1585,8 @@ As
                 --  T_Event_Log for any newly created jobs for this dataset
                 If Len(@callingUser) > 0
                 Begin
-                    Declare @JobStateID int
-                    Set @JobStateID = 1
+                    Declare @jobStateID int
+                    Set @jobStateID = 1
 
                     CREATE TABLE #TmpIDUpdateList (
                         TargetID int NOT NULL
@@ -1594,7 +1599,7 @@ As
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                    Exec AlterEventLogEntryUserMultiID 5, @JobStateID, @callingUser
+                    Exec AlterEventLogEntryUserMultiID 5, @jobStateID, @callingUser
                 End
 
             End
