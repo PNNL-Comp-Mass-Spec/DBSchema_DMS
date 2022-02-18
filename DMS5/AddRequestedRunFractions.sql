@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          10/22/2021 mem - Use a new instrument group for the new requested runs
 **          11/15/2021 mem - If the the instrument group for the source request is the target instrument group instead of a fraction based group, auto update the source instrument group
 **          01/15/2022 mem - Copy date created from the parent requested run to new requested runs, allowing Days in Queue on the list report to be based on the parent requested run's creation date
+**          02/17/2022 mem - Update requestor username warning
 **
 *****************************************************/
 (
@@ -129,7 +130,7 @@ As
         RAISERROR ('Source request ID not provided', 11, 110)
     --
     If IsNull(@requestorPRN, '') = ''
-        RAISERROR ('Requestor payroll number/HID was blank', 11, 113)
+        RAISERROR ('Requestor username was blank', 11, 113)
     --
     If IsNull(@separationGroup, '') = ''
         RAISERROR ('Separation group was blank', 11, 114)

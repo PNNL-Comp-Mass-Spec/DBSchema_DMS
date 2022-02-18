@@ -48,6 +48,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **                         - Add parameters @batchPriorityJustification and @batchComment
 **          07/09/2021 mem - Fix bug handling instrument group name when @batchName is blank
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/17/2022 mem - Update operator username warning
 **
 *****************************************************/
 (
@@ -130,7 +131,7 @@ As
     If LEN(@operPRN) < 1
     Begin
         Set @myError = 51113
-        RAISERROR ('Operator payroll number/HID was blank', 11, 22)
+        RAISERROR ('Operator username was blank', 11, 22)
     End
     --
     If LEN(@instrumentGroup) < 1

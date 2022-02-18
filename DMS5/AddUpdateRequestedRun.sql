@@ -101,6 +101,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          05/31/2021 mem - Add output parameter @resolvedInstrumentInfo
 **          06/01/2021 mem - Update the message stored in @resolvedInstrumentInfo
 **          10/06/2021 mem - Add @batch, @block, and @runOrder
+**          02/17/2022 mem - Update requestor username warning
 **
 *****************************************************/
 (
@@ -203,7 +204,7 @@ As
         RAISERROR ('Experiment number was blank', 11, 111)
     --
     If IsNull(@requestorPRN, '') = ''
-        RAISERROR ('Requestor payroll number/HID was blank', 11, 113)
+        RAISERROR ('Requestor username was blank', 11, 113)
     --
     Declare @instrumentGroup varchar(64) = @instrumentName
     If IsNull(@instrumentGroup, '') = ''
