@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 120 ******/
+/****** RowCount: 121 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -110,6 +110,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-GlcNAc',95,'GlcNAc separations 
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-HC-Lipids_35min',99,'Waters constant flow,optimized for lipids, 35 minute separation',1,'LC-Metabolomics_LipidSoluble',4,'8/30/2016 9:26:58 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-IntactProtein_200min',41,'Waters constant flow, 200 minute separation, high molecular weight analytes',1,'LC-IntactProtein_200min',2,'11/30/2010 9:25:31 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics_LipidSoluble',43,'Waters system, mobile phase optimized for lipid soluble metabolites',1,'LC-Metabolomics_LipidSoluble',4,'1/12/2011 11:16:13 AM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics_Sonnenburg',122,'Waters system, gradient optimized for mammalian polar metabolites',1,'LC-Metabolomics_Sonnenburg',4,'2/16/2022 11:09:19 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics_WaterSoluble',42,'Waters system, mobile phase optimized for water soluble metabolites',1,'LC-Metabolomics_WaterSoluble',3,'1/21/2013 8:58:06 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-NH4HCO2_100min',71,'Waters constant flow, 10 mM ammonium bicarbonate, 100 minute separation',1,'LC-Waters-NH4HCO2',0,'6/15/2016 2:32:59 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Oxylipids_30min ',112,'',1,'LC-Metabolomics_Oxylipids',0,'11/14/2019 8:23:43 AM')
