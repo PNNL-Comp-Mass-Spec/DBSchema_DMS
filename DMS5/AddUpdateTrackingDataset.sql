@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
 **          02/17/2022 mem - Rename variables, adjust formatting, convert tabs to spaces
+**          02/18/2022 mem - Call AddUpdateRequestedRun if the EUS usage info is updated
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -37,7 +38,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
     @comment varchar(512) = 'na',
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50) = 'CAP_DEV',
-    @eusUsersList varchar(1024) = '',
+    @eusUsersList varchar(1024) = '',         -- EUS User ID (only a single person is allowed, though long ago multiple people could be listed)
     @mode varchar(12) = 'add',                -- Can be 'add', 'update', 'bad', 'check_update', 'check_add'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -62,6 +63,10 @@ As
     Declare @wellNum varchar(64) = NULL
     Declare @secSep varchar(64) = 'none'
     Declare @rating varchar(32) = 'Unknown'
+
+    Declare @existingEusProposal varchar(24)
+    Declare @existingEusUsageType varchar(50)
+    Declare @existingEusUser varchar(1024)
 
     Declare @columnID INT = 0
     Declare @intStdID INT = 0
@@ -503,6 +508,72 @@ As
         -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
             Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+
+
+        -- Call AddUpdateRequestedRun if the EUS info has changed
+        SELECT TOP 1 @reqName = RR.RDS_Name,
+                     @existingEusProposal = RR.RDS_EUS_Proposal_ID,
+                     @existingEusUsageType = RR.RDS_EUS_UsageType,
+                     @existingEusUser = U.EUS_Person_ID
+        FROM T_Dataset AS DS
+             INNER JOIN T_Requested_Run AS RR
+               ON DS.Dataset_ID = RR.DatasetID
+             LEFT OUTER JOIN T_Requested_Run_EUS_Users U
+               ON RR.ID = U.Request_ID
+        WHERE (DS.Dataset_Num = 'LTQ_2_01Nov15')
+
+        SELECT @reqName = RR.RDS_Name,
+               @existingEusProposal = RR.RDS_EUS_Proposal_ID,
+               @existingEusUsageType = RR.RDS_EUS_UsageType,
+               @existingEusUser = RRD.[EUS User]
+        FROM T_Dataset AS DS
+             INNER JOIN T_Requested_Run AS RR
+               ON DS.Dataset_ID = RR.DatasetID
+             INNER JOIN V_Requested_Run_Detail_Report AS RRD
+               ON RR.ID = RRD.Request
+        WHERE DS.Dataset_Num = @datasetNum
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount > 0 And (
+          Coalesce(@existingEusProposal, '') <> @eusProposalID OR
+          Coalesce(@existingEusUsageType, '') <> @eusUsageType OR
+          Coalesce(@existingEusUser, '') <> @eusUsersList)
+        Begin
+
+            EXEC @result = dbo.AddUpdateRequestedRun
+                                    @reqName = @reqName,
+                                    @experimentNum = @experimentNum,
+                                    @requestorPRN = @operPRN,
+                                    @instrumentName = @instrumentName,
+                                    @workPackage = 'none',
+                                    @msType = @msType,
+                                    @instrumentSettings = 'na',
+                                    @wellplateNum = NULL,
+                                    @wellNum = NULL,
+                                    @internalStandard = 'na',
+                                    @comment = 'Automatically created by Dataset entry',
+                                    @eusProposalID = @eusProposalID,
+                                    @eusUsageType = @eusUsageType,
+                                    @eusUsersList = @eusUsersList,
+                                    @mode = 'update',
+                                    @request = @requestID output,
+                                    @message = @message output,
+                                    @secSep = @secSep,
+                                    @MRMAttachment = '',
+                                    @status = 'Completed',
+                                    @SkipTransactionRollback = 1,
+                                    @AutoPopulateUserListIfBlank = 1,        -- Auto populate @eusUsersList if blank since this is an Auto-Request
+                                    @callingUser = @callingUser
+            --
+            Set @myError = @result
+
+            If @myError <> 0
+            Begin
+                Set @msg = 'Call to AddUpdateRequestedRun failed: dataset ' + @datasetNum + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+                RAISERROR (@msg, 11, 24)
+            End
+        End
 
     End -- </UpdateMode>
 
