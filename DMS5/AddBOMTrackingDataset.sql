@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
 **          02/14/2022 mem - Update error messages to show the correct dataset name
 **                         - When @mode is 'debug', update @message to include the run start date and dataset name
 **          02/15/2022 mem - Mention UpdateDatasetInterval and T_Run_Interval in the debug message
+**          02/22/2022 mem - When @mode is 'debug', do not log an error if the dataset already exists
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -38,7 +39,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
 As
     Set XACT_ABORT, nocount on
 
-    Declare @myError INT = 0
+    Declare @myError int = 0
 
     ---------------------------------------------------
     -- validate input arguments
@@ -113,7 +114,16 @@ As
 
         If EXISTS (SELECT * FROM dbo.T_Dataset WHERE Dataset_Num = @datasetNum)
         Begin
-            RAISERROR ('Dataset "%s" already exists', 11, 21, @datasetNum)
+            If @mode = 'debug'
+            Begin
+                Set @message = 'Dataset already exists: ' + @datasetNum
+                Print @message
+                Goto Done
+            End
+            Else
+            Begin
+                RAISERROR ('Dataset "%s" already exists', 11, 21, @datasetNum)
+            End
         End
 
         Declare @conflictingDataset varchar(128) = ''
@@ -197,6 +207,7 @@ As
         Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDataset'
     END CATCH
 
+Done:
     RETURN @myError
 
 GO
