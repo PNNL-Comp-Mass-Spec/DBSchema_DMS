@@ -32,6 +32,8 @@ SELECT LookupQ.ID,
            WHEN IntStandardOrContaminant > 0 THEN NULL
            ELSE SUBSTRING(CONVERT(varchar(32), dbo.GetDateWithoutTime(PCU.Most_Recently_Used), 120), 1, 10)
        END AS [Most Recent Usage],
+       LookupQ.Includes_Contaminants As [Includes Contaminants],
+       LookupQ.FileSizeMB As [FileSize (MB)],
        LookupQ.[Type],
        LookupQ.[Source]
 FROM ( SELECT [Name],
@@ -46,18 +48,24 @@ FROM ( SELECT [Name],
                   WHEN IntStandardOrContaminant > 0 THEN ''
                   ELSE Organism_Name
               END AS [Organism Name],
-              [State]
+              [State],
+              Includes_Contaminants,
+              FileSizeMB
        FROM ( SELECT [Filename] As [Name],
                      [Type],
                      [Description],
                      [Source],
                      NumProteins As Entries,
                      NumResidues As Residues,
-              CASE
-                  WHEN [Type] IN ('Internal_Standard', 'contaminant', 'old_contaminant') THEN 1 ELSE 0 END AS IntStandardOrContaminant,
+                     CASE WHEN [Type] IN ('Internal_Standard', 'contaminant', 'old_contaminant') 
+                          THEN 1 
+                          ELSE 0 
+                     END AS IntStandardOrContaminant,
                      Organism_Name,
                      Protein_Collection_ID As ID,
-                     State_Name As [State]
+                     State_Name As [State],
+                     Includes_Contaminants,
+                     Cast(FileSize / 1024.0 / 1024 As Decimal(9,2)) As FileSizeMB
               FROM S_V_Protein_Collections_by_Organism 
             ) AS CP 
      ) AS LookupQ
@@ -68,7 +76,8 @@ FROM ( SELECT [Name],
 GROUP BY LookupQ.ID, LookupQ.[Name], LookupQ.[Description], LookupQ.[Organism Name], 
          LookupQ.[State], LookupQ.Entries, LookupQ.Residues,
          PCU.Job_Usage_Count_Last12Months, PCU.Job_Usage_Count,
-         PCU.Most_Recently_Used, LookupQ.[Type], LookupQ.[Source], 
+         PCU.Most_Recently_Used, LookupQ.Includes_Contaminants, 
+         LookupQ.FileSizeMB, LookupQ.[Type], LookupQ.[Source], 
          LookupQ.IntStandardOrContaminant, Org.OG_organismDBName
 
 
