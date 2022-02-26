@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 182 ******/
+/****** RowCount: 183 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -180,6 +180,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Eclipse02',178,'LTQ_FT',3789,4002,
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Exploris',179,'LTQ_FT',3791,3792,'fso',null,'Offsite','Data acquired offsite using a Thermo Exploris mass','5/5/2021 3:31:49 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05_Imaging',180,'LTQ_FT',1706,3996,'secfso',null,'EMSL 1621','Has HMR/UHMR configuration (boards swapped), can s','6/24/2021 4:09:22 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_03',181,'Agilent_Ion_Trap',3878,4005,'secfso',null,'EMSL 1401','Agilent single quadrupole GC-MS for metabolomics. 8890 GC coupled to a 5977 Inert Plus MSD, with a 7693A Autosampler','7/29/2021 5:51:13 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01',182,'BrukerFT_BAF',3881,4071,'secfso',null,'EMSL 1649','Bruker scimaX with ESI/MALDI source','8/25/2021 1:21:50 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01',182,'BrukerFT_BAF',3881,4072,'secfso',null,'EMSL 1649','Bruker scimaX with ESI/MALDI source','8/25/2021 1:21:50 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01_Imaging',183,'BrukerMALDI_Imaging_V2',3881,4069,'secfso',null,'EMSL 1649','Bruker scimaX with MALDI Imaging datasets','8/25/2021 1:23:06 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Broad_Exploris01',184,'LTQ_FT',3987,3989,'fso',null,'MIT - Broad (Massachusetts)','Broad Institute Exploris','10/22/2021 9:24:08 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Agilent_QTOF',185,'Agilent_TOF_V2',2,2,'fso',null,'Offsite','Agilent Q-TOF data acquired offsite (including the','2/25/2022 8:31:43 AM')
