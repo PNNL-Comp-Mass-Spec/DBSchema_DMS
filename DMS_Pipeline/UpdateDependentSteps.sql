@@ -24,8 +24,8 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
 **                           that specifies the order to process the job steps (http://prismtrac.pnl.gov/trac/ticket/713)
 **          01/30/2009 grk - Modified output folder name initiation (http://prismtrac.pnl.gov/trac/ticket/719)
 **          03/18/2009 mem - Now checking T_Job_Steps_History for completed shared result steps if no match is found in T_Job_Steps
-**          06/01/2009 mem - Added parameter @MaxJobsToProcess (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
-**          06/03/2009 mem - Added parameter @LoopingUpdateInterval
+**          06/01/2009 mem - Added parameter @maxJobsToProcess (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
+**          06/03/2009 mem - Added parameter @loopingUpdateInterval
 **          10/30/2009 grk - Modified skip logic to not pass through folder for DTARefinery tool (temporary ugly hack)
 **          02/15/2010 mem - added some additional debug statements to be shown when @infoOnly is non-zero
 **          07/01/2010 mem - Updated DTARefinery skip logic to name the tool DTA_Refinery
@@ -36,14 +36,15 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
 **          12/01/2016 mem - Use Disable_Output_Folder_Name_Override_on_Skip when finding shared result step tools for which we should not override Output_Folder_Name when the step is skipped
 **          05/13/2017 mem - Add check for state 9=Running_Remote
 **          03/30/2018 mem - Rename variables, move Declare statements, reformat queries
+**          03/02/2022 mem - For data package based jobs, skip checks for existing shared results
 **    
 *****************************************************/
 (
     @message varchar(512) = '' output,
     @numStepsSkipped int = 0 output,
     @infoOnly tinyint = 0,
-    @MaxJobsToProcess int = 0,
-    @LoopingUpdateInterval int = 5        -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @loopingUpdateInterval int = 5        -- Seconds between detailed logging while looping through the dependencies
 )
 As
     set nocount on
@@ -58,18 +59,18 @@ As
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     Declare @msg varchar(128)
-    Declare @StatusMessage varchar(512)    
+    Declare @statusMessage varchar(512)    
     
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
     set @message = ''
-    Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
+    Set @maxJobsToProcess = IsNull(@maxJobsToProcess, 0)
 
-    Declare @StartTime datetime = GetDate()
-    Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
-    If @LoopingUpdateInterval < 2
-        Set @LoopingUpdateInterval = 2
+    Declare @startTime datetime = GetDate()
+    Set @loopingUpdateInterval = IsNull(@loopingUpdateInterval, 5)
+    If @loopingUpdateInterval < 2
+        Set @loopingUpdateInterval = 2
     
     ---------------------------------------------------
     -- Temp table to hold scratch list of step dependencies
@@ -155,7 +156,9 @@ As
         goto Done
     End
     
-    Declare @CandidateStepCount int = @myRowCount
+    Select * From #T_Tmp_Steplist
+
+    Declare @candidateStepCount int = @myRowCount
 
     ---------------------------------------------------
     -- Add waiting steps that have no dependencies
@@ -187,9 +190,9 @@ As
         goto Done
     End
 
-    Set @CandidateStepCount = @CandidateStepCount + @myRowCount
+    Set @candidateStepCount = @candidateStepCount + @myRowCount
     
-    If @CandidateStepCount = 0
+    If @candidateStepCount = 0
         Goto Done                    -- Nothing to do; jump to the end
         
     ---------------------------------------------------
@@ -219,34 +222,34 @@ As
     -- and update their state, as appropriate
     ---------------------------------------------------
 
-    Declare @RowCountToProcess int
+    Declare @rowCountToProcess int
 
-    SELECT @RowCountToProcess = COUNT(*)
+    SELECT @rowCountToProcess = COUNT(*)
     FROM #T_Tmp_Steplist
     --
-    Set @RowCountToProcess = IsNull(@RowCountToProcess, 0)
+    Set @rowCountToProcess = IsNull(@rowCountToProcess, 0)
 
     Declare @continue tinyint = 1
-    Declare @RowsProcessed int = 0
-    Declare @LastLogTime datetime = GetDate()
+    Declare @rowsProcessed int = 0
+    Declare @lastLogTime datetime = GetDate()
 
-    Declare @Job int
-    Declare @Step int
-    Declare @Tool varchar(64)
-    Declare @Total int
-    Declare @Evaluated int
-    Declare @Triggered int
-    Declare @Shared int
-    Declare @Signature int
+    Declare @job int
+    Declare @step int
+    Declare @tool varchar(64)
+    Declare @total int
+    Declare @evaluated int
+    Declare @triggered int
+    Declare @shared int
+    Declare @signature int
     Declare @outputFolderName varchar(128)
-    Declare @ProcessingOrder int = -1
+    Declare @processingOrder int = -1
 
     Declare @newState tinyint
     Declare @numCompleted int
     Declare @numPending int
 
-    Declare @Dataset varchar(128)
-    Declare @DatasetID int
+    Declare @dataset varchar(128)
+    Declare @datasetID int
 
     Declare @numStepsUpdated int = 0
 
@@ -258,18 +261,18 @@ As
         --
         SELECT TOP 1
             @job = Job,
-            @Step = Step,
-            @Tool = Tool,
-            @Total = Total,
-            @Evaluated = Evaluated,
-            @Triggered = Triggered,
-            @Shared = Shared,
-            @Signature = Signature,
+            @step = Step,
+            @tool = Tool,
+            @total = Total,
+            @evaluated = Evaluated,
+            @triggered = Triggered,
+            @shared = Shared,
+            @signature = Signature,
             @outputFolderName = Output_Folder_Name,
-            @ProcessingOrder = ProcessingOrder
+            @processingOrder = ProcessingOrder
         FROM
             #T_Tmp_Steplist
-        WHERE ProcessingOrder > @ProcessingOrder
+        WHERE ProcessingOrder > @processingOrder
         ORDER BY ProcessingOrder
         -- 
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -284,7 +287,9 @@ As
         -- No more rows were returned; we are done
         ---------------------------------------------------
         If @myRowCount = 0
+        Begin
             Set @continue = 0
+        End
         Else
         Begin -- <b>
             ---------------------------------------------------
@@ -294,15 +299,15 @@ As
             -- the step's state may be changed
             ---------------------------------------------------
             --
-            If @Evaluated = @total
+            If @evaluated = @total
             Begin -- <c>
                 --
                 ---------------------------------------------------
                 -- get information from parent job 
                 ---------------------------------------------------
                 --
-                SELECT @Dataset = Dataset,
-                       @DatasetID = Dataset_ID
+                SELECT @dataset = Dataset,
+                       @datasetID = Dataset_ID
                 FROM T_Jobs
                 WHERE Job = @job
 
@@ -312,7 +317,7 @@ As
                 -- otherwise, new state will be "Enabled"
                 ---------------------------------------------------
                 --
-                If @Triggered = 0
+                If @triggered = 0
                     Set @newState = 2 -- "Enabled"
                 Else
                     Set @newState = 3 -- "Skipped
@@ -322,8 +327,9 @@ As
 
                 ---------------------------------------------------
                 -- If step has shared results, state change may be affected
+                -- Data packaged based jobs cannot have shared results (and will have @datasetID = 0)
                 ---------------------------------------------------
-                If @Shared <> 0
+                If @shared <> 0 And @datasetID > 0
                 Begin -- <d>
                     --
                     -- Any standing shared results that match?
@@ -365,7 +371,7 @@ As
                                 Print 'Insert "' + @outputFolderName + '" into T_Shared_Results'
                             Else
                                 INSERT INTO T_Shared_Results( Results_Name )
-                                VALUES(@outputFolderName)
+                                VALUES (@outputFolderName)
                         End
                     End -- </h>
 
@@ -385,7 +391,7 @@ As
 
                 If @infoOnly <> 0
                 Begin
-                    Set @msg = 'Job ' + Convert(varchar(12), @job) + ', step ' + Convert(varchar(12), @Step) + ', @outputFolderName ' + @outputFolderName
+                    Set @msg = 'Job ' + Convert(varchar(12), @job) + ', step ' + Convert(varchar(12), @step) + ', @outputFolderName ' + @outputFolderName
                     
                     Set @msg = @msg + ', @numCompleted ' + Convert(varchar(12), @numCompleted) + ', @numPending ' + Convert(varchar(12), @numPending) + ', @newState ' + Convert(varchar(12), @newState)
                     Print @msg
@@ -406,7 +412,7 @@ As
                     ---------------------------------------------------
                     --
                     If @infoOnly <> 0
-                        Print 'Update State in T_Job_Steps for job ' + Convert(varchar(12), @Job) + ', step ' + convert(varchar(12), @Step) + ' from 1 to ' + Convert(varchar(12), @newState)
+                        Print 'Update State in T_Job_Steps for job ' + Convert(varchar(12), @job) + ', step ' + convert(varchar(12), @step) + ' from 1 to ' + Convert(varchar(12), @newState)
                     Else
                     Begin
                         -- This query updates the state to @newState
@@ -430,8 +436,8 @@ As
                                         ) THEN Input_Folder_Name
                                    ELSE Output_Folder_Name
                               END
-                        WHERE Job = @Job AND
-                              Step_Number = @Step AND
+                        WHERE Job = @job AND
+                              Step_Number = @step AND
                               State = 1       -- Assure that we only update steps in state 1=waiting
                         -- 
                         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -452,23 +458,23 @@ As
     
             End -- </c>
         
-            Set @RowsProcessed = @RowsProcessed + 1
+            Set @rowsProcessed = @rowsProcessed + 1
         End -- </b>
         
-        If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
+        If DateDiff(second, @lastLogTime, GetDate()) >= @loopingUpdateInterval
         Begin
-            Set @StatusMessage = '... Updating dependent steps: ' + Convert(varchar(12), @RowsProcessed) + ' / ' + Convert(varchar(12), @RowCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'UpdateDependentSteps'
-            Set @LastLogTime = GetDate()
+            Set @statusMessage = '... Updating dependent steps: ' + Convert(varchar(12), @rowsProcessed) + ' / ' + Convert(varchar(12), @rowCountToProcess)
+            exec PostLogEntry 'Progress', @statusMessage, 'UpdateDependentSteps'
+            Set @lastLogTime = GetDate()
         End
 
-        If @MaxJobsToProcess > 0
+        If @maxJobsToProcess > 0
         Begin
             SELECT @myRowCount = COUNT(DISTINCT Job)
             FROM #T_Tmp_Steplist
-            WHERE ProcessingOrder <= @ProcessingOrder
+            WHERE ProcessingOrder <= @processingOrder
             
-            If IsNull(@myRowCount, 0) >= @MaxJobsToProcess
+            If IsNull(@myRowCount, 0) >= @maxJobsToProcess
                 Set @continue = 0
         End
         
@@ -487,7 +493,7 @@ As
 Done:
     DROP TABLE #T_Tmp_Steplist
     
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDependentSteps] TO [DDL_Viewer] AS [dbo]
