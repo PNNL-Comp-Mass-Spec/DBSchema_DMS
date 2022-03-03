@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainer]
 **  Auth:   mem
 **  Date:   12/19/2018 mem - Initial release
 **          12/20/2018 mem - Include container name in warnings
+**          03/02/2022 mem - Compare current container location to @newLocation before validating @oldLocation
 **    
 *****************************************************/
 (
@@ -125,18 +126,18 @@ As
         return 51009
     End
 
-    If Len(@oldLocation) > 0 And @oldLocation <> @curLocation
-    Begin
-        Set @message = 'Current container location does not match the expected location: ' + @curLocation + ' vs. expected ' + @oldLocation + ' for ' + @container
-        Select @message As Warning
-        Return 51010
-    End
-
     If @newLocation = @curLocation And (Len(@newResearcher) = 0 Or @researcher = @newResearcher)
     Begin
         Set @message = 'Container is already at ' + @newLocation + ' (and not changing the researcher name): ' + @container
         Select @message As Warning
         Return 51011
+    End
+
+    If Len(@oldLocation) > 0 And @oldLocation <> @curLocation
+    Begin
+        Set @message = 'Current container location does not match the expected location: ' + @curLocation + ' vs. expected ' + @oldLocation + ' for ' + @container
+        Select @message As Warning
+        Return 51010
     End
 
     If Len(@newResearcher) > 0
@@ -146,7 +147,7 @@ As
 
     If @infoOnly <> 0
     Begin
-    	Set @mode= 'Preview'
+        Set @mode= 'Preview'
     End
     Else
     Begin
