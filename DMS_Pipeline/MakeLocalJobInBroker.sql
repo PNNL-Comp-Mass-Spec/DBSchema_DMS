@@ -7,8 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 /****************************************************
 **
-**  Desc: 
-**      Create analysis job directly in broker database 
+**  Desc:   Create analysis job directly in broker database 
 **    
 **  Return values: 0: success, otherwise, error code
 **
@@ -29,6 +28,8 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          03/10/2021 mem - Do not call S_GetNewJobID when @debugMode is non-zero
 **          10/15/2021 mem - Capitalize keywords and update whitespace
+**          03/02/2022 mem - Require that data package ID is non-zero for MaxQuant and MSFragger jobs
+**                         - Pass data package ID to CreateSignaturesForJobSteps
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ AS
     Declare @myRowCount int = 0
 
     Declare @msg varchar(255) = ''
-    
+
     Set @dataPackageID = IsNull(@dataPackageID, 0)
     Set @scriptName = LTrim(RTrim(IsNull(@scriptName, '')))
     Set @debugMode = IsNull(@debugMode, 0)
@@ -138,7 +139,7 @@ AS
         return @myError
     End
 
-    If @scriptName IN ('MultiAlign_Aggregator') And @dataPackageID = 0
+    If @scriptName IN ('MultiAlign_Aggregator', 'MaxQuant_DataPkg', 'MSFragger_DataPkg') And @dataPackageID = 0
     Begin
         Set @myError = 50015
         Set @msg = '"Data Package ID" must be positive when using script ' + @scriptName
@@ -165,7 +166,7 @@ AS
 
     ---------------------------------------------------
     -- Note: @datasetID needs to be 0
-    -- If it is non-zero, then the newly created job will get deleted from
+    -- If it is non-zero, the newly created job will get deleted from
     --  this DB the next time UpdateContext runs, since the system will think
     --  the job no-longer exists in DMS5 and thus should be deleted
     ---------------------------------------------------
@@ -176,8 +177,8 @@ AS
     -- Add job to temp table
     ---------------------------------------------------
     --
-    INSERT INTO #Jobs (Job, Priority,  Script,  State,  Dataset,  Dataset_ID, Results_Folder_Name)
-    VALUES (@job, @priority,  @scriptName,  1,  @datasetNum,  @datasetID, NULL)
+    INSERT INTO #Jobs (Job, Priority, Script, State, Dataset, Dataset_ID, Results_Folder_Name)
+    VALUES (@job, @priority, @scriptName, 1, @datasetNum, @datasetID, NULL)
 
     ---------------------------------------------------
     -- Get results folder name (and store in #Jobs)
@@ -225,7 +226,7 @@ AS
     -- Details are stored in #Job_Steps
     ---------------------------------------------------
     --
-    exec @myError = CreateSignaturesForJobSteps @job, @jobParamXML, @datasetID, @message output, @debugMode = @debugMode
+    exec @myError = CreateSignaturesForJobSteps @job, @jobParamXML, @dataPackageID, @message output, @debugMode = @debugMode
     If @myError <> 0
     Begin
         Set @msg = 'Error returned by CreateSignaturesForJobSteps: ' + Convert(varchar(12), @myError)
@@ -320,17 +321,17 @@ AS
         -- Populate column Transfer_Folder_Path in T_Jobs
         ---------------------------------------------------
         --
-        Declare @TransferFolderPath varchar(512) = ''
+        Declare @transferFolderPath varchar(512) = ''
         
-        SELECT @TransferFolderPath = [Value]
-        FROM dbo.GetJobParamTableLocal ( @Job )
+        SELECT @transferFolderPath = [Value]
+        FROM dbo.GetJobParamTableLocal ( @job )
         WHERE [Name] = 'transferFolderPath'
         
-        If IsNull(@TransferFolderPath, '') <> ''
+        If IsNull(@transferFolderPath, '') <> ''
         Begin
             UPDATE T_Jobs
-            SET Transfer_Folder_Path = @TransferFolderPath
-            WHERE Job = @Job
+            SET Transfer_Folder_Path = @transferFolderPath
+            WHERE Job = @job
         End
         
         ---------------------------------------------------
@@ -340,7 +341,7 @@ AS
         --
         If @dataPackageID > 0
         Begin
-            Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
+            Exec UpdateJobParamOrgDbInfoUsingDataPkg @job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
         End        
     End
     
@@ -349,7 +350,7 @@ AS
         -----------------------------------------------
         -- Call UpdateJobParamOrgDbInfoUsingDataPkg with debug mode enabled
         ---------------------------------------------------
-        Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @debugMode=1, @scriptNameForDebug=@scriptName, @message=@message output, @callingUser=@callingUser
+        Exec UpdateJobParamOrgDbInfoUsingDataPkg @job, @dataPackageID, @deleteIfInvalid=0, @debugMode=1, @scriptNameForDebug=@scriptName, @message=@message output, @callingUser=@callingUser
     End
 
     ---------------------------------------------------
