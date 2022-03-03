@@ -76,6 +76,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          02/02/2022 mem - Include the settings file name in the job parameters when creating a data package based job
 **          02/12/2022 mem - Add MSFragger job parameters to the settings for data package based MSFragger jobs
 **          02/18/2022 mem - Add MSFragger DatabaseSplitCount to the settings for data package based MSFragger jobs
+**          03/03/2022 mem - Add support for MSFragger options AutoDefineExperimentGroupWithDatasetName and AutoDefineExperimentGroupWithExperimentName
 **
 *****************************************************/
 (
@@ -535,6 +536,8 @@ As
             Declare @msFraggerJavaMemorySize varchar(24) = ''
             Declare @databaseSplitCount varchar(24) = ''
             Declare @matchBetweenRuns varchar(24) = ''
+            Declare @autoDefineExperimentGroupWithDatasetName varchar(24) = ''
+            Declare @autoDefineExperimentGroupWithExperimentName varchar(24) = ''
             Declare @runPeptideProphet varchar(24) = ''
             Declare @runProteinProphet varchar(24) = ''
             Declare @runPercolator varchar(24) = ''
@@ -587,6 +590,14 @@ As
                 SELECT @matchBetweenRuns = Value
                 FROM #Tmp_SettingsFile_Values_DataPkgJob
                 WHERE KeyName = 'MatchBetweenRuns'
+
+                SELECT @autoDefineExperimentGroupWithDatasetName = Value
+                FROM #Tmp_SettingsFile_Values_DataPkgJob
+                WHERE KeyName = 'AutoDefineExperimentGroupWithDatasetName'
+
+                SELECT @autoDefineExperimentGroupWithExperimentName = Value
+                FROM #Tmp_SettingsFile_Values_DataPkgJob
+                WHERE KeyName = 'AutoDefineExperimentGroupWithExperimentName'
 
                 SELECT @runPeptideProphet = Value
                 FROM #Tmp_SettingsFile_Values_DataPkgJob
@@ -677,8 +688,8 @@ As
             --
             Declare @pipelineJob int = 0
             Declare @resultsFolderName varchar(128)
-            Declare @jobParam varchar(8000) = '
-                <Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
+            Declare @jobParam varchar(8000) =
+               '<Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
                 <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
                 <Param Section="JobParameters" Name="CacheFolderRootPath" Value="' + @cacheFolderRootPath + '" />
                 <Param Section="JobParameters" Name="SettingsFileName" Value="' + @settingsFileName + '" />
@@ -697,128 +708,140 @@ As
             Begin
                 If Coalesce(@msFraggerJavaMemorySize, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="MSFragger" Name="MSFraggerJavaMemorySize" Value="' + @msFraggerJavaMemorySize + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="MSFragger" Name="MSFraggerJavaMemorySize" Value="' + @msFraggerJavaMemorySize + '" />'
                 End
 
                 If Coalesce(@databaseSplitCount, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="MSFragger" Name="DatabaseSplitCount" Value="' + @databaseSplitCount + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="MSFragger" Name="DatabaseSplitCount" Value="' + @databaseSplitCount + '" />'
                 End
 
                 If Coalesce(@matchBetweenRuns, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="MatchBetweenRuns" Value="' + @matchBetweenRuns + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="MatchBetweenRuns" Value="' + @matchBetweenRuns + '" />'
+                End
+
+                If Coalesce(@autoDefineExperimentGroupWithDatasetName, '') <> ''
+                Begin
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="AutoDefineExperimentGroupWithDatasetName" Value="' + @autoDefineExperimentGroupWithDatasetName + '" />'
+                End
+                
+                If Coalesce(@autoDefineExperimentGroupWithExperimentName, '') <> ''
+                Begin
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="AutoDefineExperimentGroupWithExperimentName" Value="' + @autoDefineExperimentGroupWithExperimentName + '" />'
                 End
 
                 If Coalesce(@runPeptideProphet, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="RunPeptideProphet" Value="' + @runPeptideProphet + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="RunPeptideProphet" Value="' + @runPeptideProphet + '" />'
                 End
 
                 If Coalesce(@runProteinProphet, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="RunProteinProphet" Value="' + @runProteinProphet + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="RunProteinProphet" Value="' + @runProteinProphet + '" />'
                 End
 
                 If Coalesce(@runPercolator, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="RunPercolator" Value="' + @runPercolator + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="RunPercolator" Value="' + @runPercolator + '" />'
                 End
 
                 If Coalesce(@generatePeptideLevelSummary, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="GeneratePeptideLevelSummary" Value="' + @generatePeptideLevelSummary + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="GeneratePeptideLevelSummary" Value="' + @generatePeptideLevelSummary + '" />'
                 End
 
                 If Coalesce(@generateProteinLevelSummary, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="GenerateProteinLevelSummary" Value="' + @generateProteinLevelSummary + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="GenerateProteinLevelSummary" Value="' + @generateProteinLevelSummary + '" />'
                 End
 
                 If Coalesce(@ms1QuantDisabled, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="MS1QuantDisabled" Value="' + @ms1QuantDisabled + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="MS1QuantDisabled" Value="' + @ms1QuantDisabled + '" />'
                 End
 
                 If Coalesce(@runFreeQuant, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="RunFreeQuant" Value="' + @runFreeQuant + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="RunFreeQuant" Value="' + @runFreeQuant + '" />'
                 End
 
                 If Coalesce(@runIonQuant, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="RunIonQuant" Value="' + @runIonQuant + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="RunIonQuant" Value="' + @runIonQuant + '" />'
                 End
 
                 If Coalesce(@reporterIonMode, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="Philosopher" Name="ReporterIonMode" Value="' + @reporterIonMode + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="Philosopher" Name="ReporterIonMode" Value="' + @reporterIonMode + '" />'
                 End
 
                 If Coalesce(@featureDetectionMZTolerance, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="FeatureDetectionMZTolerance" Value="' + @featureDetectionMZTolerance + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="FeatureDetectionMZTolerance" Value="' + @featureDetectionMZTolerance + '" />'
                 End
 
                 If Coalesce(@featureDetectionRTTolerance, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="FeatureDetectionRTTolerance" Value="' + @featureDetectionRTTolerance + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="FeatureDetectionRTTolerance" Value="' + @featureDetectionRTTolerance + '" />'
                 End
 
                 If Coalesce(@mbrMinimumCorrelation, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="MbrMinimumCorrelation" Value="' + @mbrMinimumCorrelation + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="MbrMinimumCorrelation" Value="' + @mbrMinimumCorrelation + '" />'
                 End
 
                 If Coalesce(@mbrRTTolerance, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="MbrRTTolerance" Value="' + @mbrRTTolerance + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="MbrRTTolerance" Value="' + @mbrRTTolerance + '" />'
                 End
 
                 If Coalesce(@mbrIonFdr, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="MbrIonFdr" Value="' + @mbrIonFdr + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="MbrIonFdr" Value="' + @mbrIonFdr + '" />'
                 End
 
                 If Coalesce(@mbrPeptideFdr, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="MbrPeptideFdr" Value="' + @mbrPeptideFdr + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="MbrPeptideFdr" Value="' + @mbrPeptideFdr + '" />'
                 End
 
                 If Coalesce(@mbrProteinFdr, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="MbrProteinFdr" Value="' + @mbrProteinFdr + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="MbrProteinFdr" Value="' + @mbrProteinFdr + '" />'
                 End
 
                 If Coalesce(@normalizeIonIntensities, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="NormalizeIonIntensities" Value="' + @normalizeIonIntensities + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="NormalizeIonIntensities" Value="' + @normalizeIonIntensities + '" />'
                 End
 
                 If Coalesce(@minIonsForProteinQuant, '') <> ''
                 Begin
-                    Set @jobParam = @jobParam + '
-                    <Param Section="IonQuant" Name="MinIonsForProteinQuant" Value="' + @minIonsForProteinQuant + '" />'
+                    Set @jobParam = @jobParam +
+                    '<Param Section="IonQuant" Name="MinIonsForProteinQuant" Value="' + @minIonsForProteinQuant + '" />'
                 End
             End
 
