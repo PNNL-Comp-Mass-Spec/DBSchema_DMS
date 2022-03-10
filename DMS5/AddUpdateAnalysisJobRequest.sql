@@ -89,6 +89,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          05/28/2021 mem - Add @mode 'append', which can be be used to add additional datasets to an existing analysis job request, regardless of state
 **                         - When using append mode, optionally Set @state to 'new' to also reset the state
 **          10/15/2021 mem - Require that @dataPackageID be defined when using a match between runs parameter file for MaxQuant and MSFragger
+**          03/10/2022 mem - Replace spaces and tabs in the dataset list with commas
 **
 *****************************************************/
 (
@@ -164,6 +165,7 @@ As
         Set @dataPackageID = 0
 
     Set @datasets = LTrim(RTrim(IsNull(@datasets, '')))
+    Set @datasets = Replace(Replace(@datasets, ' ', ','), Char(9), ',')
 
     ---------------------------------------------------
     -- Resolve mode against presence or absence
@@ -293,9 +295,9 @@ As
         -- Remove any duplicates that may be present
         ---------------------------------------------------
         --
-        INSERT INTO #TD ( Dataset_Num )
+        INSERT INTO #TD (Dataset_Num)
         SELECT DISTINCT Item
-        FROM MakeTableFromList ( @datasets )
+        FROM MakeTableFromList (@datasets)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         Set @datasetCount = @myRowCount
@@ -766,7 +768,6 @@ As
     END CATCH
 
 Done:
-
     return @myError
 
 
