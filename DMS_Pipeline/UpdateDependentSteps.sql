@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
 **          05/13/2017 mem - Add check for state 9=Running_Remote
 **          03/30/2018 mem - Rename variables, move Declare statements, reformat queries
 **          03/02/2022 mem - For data package based jobs, skip checks for existing shared results
+**          03/10/2022 mem - Clear the completion code and completion message when skipping a job step
 **    
 *****************************************************/
 (
@@ -49,16 +50,14 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
 As
     set nocount on
     
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
     
     Set @message = ''
     Set @numStepsSkipped = 0
     Set @infoOnly = IsNull(@infoOnly, 0)
 
-    Declare @msg varchar(128)
+    Declare @msg varchar(256)
     Declare @statusMessage varchar(512)    
     
     ---------------------------------------------------
@@ -87,6 +86,10 @@ As
         Signature int,
         EntryID int identity(1,1) NOT NULL,
         Output_Folder_Name varchar(128) NULL,
+        Completion_Code int NULL,
+        Completion_Message varchar(512) NULL,
+        Evaluation_Code int NULL,
+        Evaluation_Message varchar(512) NULL,
         ProcessingOrder int NULL                    -- We will populate this column after the #T_Tmp_Steplist table gets populated
     )
 
@@ -125,7 +128,8 @@ As
     -- in "Waiting" state and add to scratch list
     ---------------------------------------------------
     --
-    INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name)
+    INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name, 
+                                 Completion_Code, Completion_Message, Evaluation_Code, Evaluation_Message)
     SELECT JSD.Job AS Job,
            JSD.Step_Number AS Step,
            JS.Step_Tool AS Tool,
@@ -135,7 +139,11 @@ As
            SUM(JSD.Triggered) AS Triggered,
            JS.Shared_Result_Version AS Shared,
            JS.Signature AS Signature,
-           JS.Output_Folder_Name
+           JS.Output_Folder_Name,
+           JS.Completion_Code,
+           JS.Completion_Message,
+           JS.Evaluation_Code,
+           JS.Evaluation_Message
     FROM T_Job_Steps JS
          INNER JOIN T_Job_Step_Dependencies JSD
            ON JSD.Job = JS.Job AND
@@ -145,7 +153,9 @@ As
     WHERE JS.State = 1
     GROUP BY JSD.Job, JSD.Step_Number, JS.Dependencies, 
              JS.Shared_Result_Version, JS.Signature, 
-             J.Priority, JS.Step_Tool, JS.Output_Folder_Name
+             J.Priority, JS.Step_Tool, JS.Output_Folder_Name,
+             JS.Completion_Code, JS.Completion_Message,
+             JS.Evaluation_Code, JS.Evaluation_Message
     HAVING JS.Dependencies = SUM(JSD.Evaluated)
     -- 
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -165,7 +175,8 @@ As
     -- to scratch list
     ---------------------------------------------------
     --
-    INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name)
+    INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name,
+                                Completion_Code, Completion_Message, Evaluation_Code, Evaluation_Message)
     SELECT JS.Job,
            JS.Step_Number AS Step,
            JS.Step_Tool AS Tool,
@@ -175,7 +186,11 @@ As
            0 AS Triggered,
            JS.Shared_Result_Version AS Shared,
            JS.Signature AS Signature,
-           JS.Output_Folder_Name
+           JS.Output_Folder_Name,
+           JS.Completion_Code,
+           JS.Completion_Message,
+           JS.Evaluation_Code,
+           JS.Evaluation_Message
     FROM T_Job_Steps JS
          INNER JOIN T_Jobs J
            ON JS.Job = J.Job
@@ -242,9 +257,15 @@ As
     Declare @shared int
     Declare @signature int
     Declare @outputFolderName varchar(128)
+    Declare @completionCode int
+    Declare @completionMessage varchar(512)
+    Declare @evaluationCode int
+    Declare @evaluationMessage varchar(512)
+
     Declare @processingOrder int = -1
 
     Declare @newState tinyint
+    Declare @newEvaluationMessage varchar(512)
     Declare @numCompleted int
     Declare @numPending int
 
@@ -269,7 +290,11 @@ As
             @shared = Shared,
             @signature = Signature,
             @outputFolderName = Output_Folder_Name,
-            @processingOrder = ProcessingOrder
+            @processingOrder = ProcessingOrder,
+            @completionCode = Completion_Code, 
+            @completionMessage = Completion_Message, 
+            @evaluationCode = Evaluation_Code, 
+            @evaluationMessage = Evaluation_Message
         FROM
             #T_Tmp_Steplist
         WHERE ProcessingOrder > @processingOrder
@@ -405,16 +430,43 @@ As
                 Begin -- <e>
                 
                     ---------------------------------------------------
-                    -- update step state and output folder name
+                    -- Update step state and output folder name
                     -- (input folder name is passed through if step is skipped, 
                     --  unless the tool is DTA_Refinery or Mz_Refinery or ProMex, then the folder name is
                     --  NOT passed through if the tool is skipped)
                     ---------------------------------------------------
                     --
                     If @infoOnly <> 0
+                    Begin
                         Print 'Update State in T_Job_Steps for job ' + Convert(varchar(12), @job) + ', step ' + convert(varchar(12), @step) + ' from 1 to ' + Convert(varchar(12), @newState)
+                    End
                     Else
                     Begin
+                        -- The update query below sets Completion_Code to 0 and clears Completion_Message
+                        -- If the job step currently has a completion code and/or message, store it in the evaluation message
+
+                        -- This could arise if a job step with shared results was skipped  (e.g. step 2), 
+                        -- then a subsequent job step could not find the shared results (e.g. step 3)
+                        -- and the analysis manager updates the shared result step's state to 2 (enabled), 
+                        -- then step 2 runs, but fails and has its state set back to 1 (waiting),
+                        -- then it is skipped again (via update logic defined earlier in this stored procedure), 
+                        -- then the subsequent step (step 3) runs again, and this time the shared results were able to be found and it thus succeeds.
+
+                        -- In this scenario (which happened with job 2010021), we do not want the completion message to have any text,
+                        -- since we don't want that text to end up in the job comment in the primary job table (T_Analysis_Job).
+
+                        Set @newEvaluationMessage = IsNull(@evaluationMessage, '')
+
+                        If @completionCode > 0
+                        Begin
+                            Set @newEvaluationMessage = dbo.AppendToText(@newEvaluationMessage, 'Original completion code: ' + Cast(@completionCode As varchar(12)), 0, '; ', 512)
+                        End  
+
+                        If IsNull(@completionMessage, '') <> ''
+                        Begin
+                            Set @newEvaluationMessage = dbo.AppendToText(@newEvaluationMessage, 'Original completion msg: ' + @completionMessage, 0, '; ', 512)
+                        End  
+            
                         -- This query updates the state to @newState
                         -- It may also update Output_Folder_Name; here's the logic:
                             -- If the new state is not 3 (skipped), will leave Output_Folder_Name unchanged
@@ -423,7 +475,7 @@ As
                             --  b. the Input_Folder_Name is not blank (this check is needed when the first step of a job 
                             --     is skipped; that step will always have a blank Input_Folder_Name, and we don't want
                             --     the Output_Folder_Name to get blank'd out)
-                        --
+                        
                         UPDATE T_Job_Steps
                         SET State = @newState,
                             Output_Folder_Name = 
@@ -435,7 +487,10 @@ As
                                                                  Disable_Output_Folder_Name_Override_on_Skip > 0 )
                                         ) THEN Input_Folder_Name
                                    ELSE Output_Folder_Name
-                              END
+                              End,
+                              Completion_Code = 0,
+                              Completion_Message = '',
+                              Evaluation_Message = @newEvaluationMessage
                         WHERE Job = @job AND
                               Step_Number = @step AND
                               State = 1       -- Assure that we only update steps in state 1=waiting
@@ -451,9 +506,11 @@ As
 
                     Set @numStepsUpdated = @numStepsUpdated + 1
                     
-                    -- bump @numStepsSkipped for each step skipped
+                    -- Bump @numStepsSkipped for each skipped step
                     If @newState = 3
+                    Begin
                         Set @numStepsSkipped = @numStepsSkipped + 1
+                    End
                 End -- </e>
     
             End -- </c>
