@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
 **          03/30/2018 mem - Rename variables, move Declare statements, reformat queries
 **          03/02/2022 mem - For data package based jobs, skip checks for existing shared results
 **          03/10/2022 mem - Clear the completion code and completion message when skipping a job step
+**                         - Check for a job step with shared results being repeatedly skipped, then reset, then skipped again
 **    
 *****************************************************/
 (
@@ -59,7 +60,8 @@ As
 
     Declare @msg varchar(256)
     Declare @statusMessage varchar(512)    
-    
+    Declare @stepSkipCount int = 0
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -405,11 +407,43 @@ As
                     --  (the other step will either succeed or fail, and then this step's action will be re-evaluated)
                     --
                     If @numCompleted > 0
-                        Set @newState = 3       -- "Skipped"
+                    Begin
+                        -- Check for whether this step has been skipped numerous times in the last 12 hours
+                        -- If it has, this indicates that the database metadata for this dataset's other jobs indicates that the step can be skipped, 
+                        -- but a subsequent step is not finding the shared results and they need to be re-generated
+
+                        SELECT @stepSkipCount = Count(*)
+                        FROM T_Job_Step_Events
+                        WHERE Job = @job AND
+                              Step = @step AND
+                              Prev_Target_State = 1 AND
+                              Target_State = 3 AND
+                              Entered >= DateAdd(hour, -12, GetDate())
+
+                        If @stepSkipCount >= 15
+                        Begin
+                            Set @msg = 'Job ' + Cast(@job As varchar(12)) + ', step ' + Cast(@step As varchar(12)) + 
+                                       ' has been skipped ' + Cast(@stepSkipCount As varchar(12)) + ' times in the last 12 hours;' + 
+                                       ' setting the step state to 2 to allow results to be regenerated'
+
+                            If @infoOnly <> 0
+                                Print @msg
+                            Else
+                                Exec PostLogEntry 'Warning', @msg, 'UpdateDependentSteps'
+
+                            Set @newState = 2       -- "Enabled"
+                        End
+                        Else
+                        Begin
+                            Set @newState = 3       -- "Skipped"
+                        End
+                    End
                     Else 
                     Begin
                         If @numPending > 0
+                        Begin
                             Set @newState = 1   -- "Waiting"
+                        End
                     End
                     
                 End -- </d>
