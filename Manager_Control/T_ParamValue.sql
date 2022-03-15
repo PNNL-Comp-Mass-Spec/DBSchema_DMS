@@ -139,6 +139,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE TRIGGER [dbo].[trig_u_T_ParamValue] ON [dbo].[T_ParamValue] 
 FOR UPDATE
 AS
@@ -156,6 +157,7 @@ AS
 **	Auth:	mem
 **	Date:	04/11/2008
 **			04/23/2008 mem - Now adds an entry to T_Event_Log if the value for TypeID 17 (mgractive) changes
+**          03/14/2022 mem - Only append to T_Event_Log if the value changes
 **    
 *****************************************************/
 	
@@ -194,7 +196,8 @@ AS
 		     INNER JOIN inserted
 		       ON deleted.MgrID = inserted.MgrID AND
 		          deleted.TypeID = inserted.TypeID
-		WHERE inserted.TypeID = 17
+		WHERE inserted.TypeID = 17 AND 
+              inserted.[Value] <> deleted.[Value]
 
 	End
 
