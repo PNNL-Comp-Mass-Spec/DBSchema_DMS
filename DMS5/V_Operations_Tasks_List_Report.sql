@@ -9,6 +9,7 @@ AS
 SELECT  OpsTask.ID,
         OpsTask.Tab,
         OpsTask.Description,
+        IsNull(U.Name_with_PRN, OpsTask.Requester) As Requester,
         OpsTask.Assigned_Personnel AS [Assigned Personnel],
         OpsTask.Comments,
         OpsTask.Status,
@@ -29,6 +30,9 @@ SELECT  OpsTask.ID,
         End
         AS #Age_Bracket    
 FROM T_Operations_Tasks OpsTask
+     LEFT OUTER JOIN T_Users U
+       ON OpsTask.Requester = U.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Operations_Tasks_List_Report] TO [DDL_Viewer] AS [dbo]
