@@ -6,9 +6,9 @@ GO
 CREATE TABLE [dbo].[T_Operations_Tasks](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[Tab] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Requestor] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Requested_Personal] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Assigned_Personal] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Requester] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Requested_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Assigned_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Description] [varchar](5132) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Comments] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Status] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
