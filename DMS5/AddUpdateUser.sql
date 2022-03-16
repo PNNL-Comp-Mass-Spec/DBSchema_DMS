@@ -32,6 +32,7 @@ CREATE Procedure [dbo].[AddUpdateUser]
 **          08/16/2018 mem - Remove any text before a backslash in @username (e.g., change from PNL\D3L243 to D3L243)
 **          02/10/2022 mem - Remove obsolete payroll field
 **                         - Always add 'H' to @hanfordIdNum if it starts with a number
+**          03/16/2022 mem - Replace tab characters with spaces
 **
 *****************************************************/
 (
@@ -75,17 +76,16 @@ As
         -- Validate input fields
         ---------------------------------------------------
 
-        Set @username = Ltrim(RTrim(@username))
-        Set @lastNameFirstName = Ltrim(RTrim(@lastNameFirstName))
-        Set @hanfordIdNum = Ltrim(RTrim(@hanfordIdNum))
+        Set @username = Ltrim(RTrim(Replace(@username, Char(9), ' ')))
+        Set @lastNameFirstName = Ltrim(RTrim(Replace(@lastNameFirstName, Char(9), ' ')))
+        Set @hanfordIdNum = Ltrim(RTrim(Replace(@hanfordIdNum, Char(9), ' ')))
         Set @userStatus = Ltrim(RTrim(@userStatus))
 
         Set @myError = 0
         If LEN(@username) < 1
         Begin
             Set @myError = 51000
-            RAISERROR ('Username was blank',
-                11, 1)
+            RAISERROR ('Username was blank', 11, 1)
         End
         Else
         Begin
