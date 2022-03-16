@@ -7,8 +7,8 @@ GO
 CREATE VIEW [dbo].[V_Tracking_Dataset_List_Report] AS 
 SELECT DS.Dataset_Num AS Dataset,
        InstName.IN_name AS Instrument,
-       DATEPART(MONTH, DS.Acq_Time_Start) AS MONTH,
-       DATEPART(DAY, DS.Acq_Time_Start) AS DAY,
+       DATEPART(month, DS.Acq_Time_Start) AS [Month],
+       DATEPART(day, DS.Acq_Time_Start) AS [Day],
        DS.Acq_Time_Start AS Start,
        DS.Acq_Length_Minutes AS Duration,
        E.Experiment_Num AS Experiment,
