@@ -7,11 +7,11 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 /****************************************************
 **
-**  Desc:
-**      Adds new or edits existing item in T_Operations_Tasks
+**  Desc: 
+**      Adds new or edits existing item in T_Operations_Tasks 
 **
 **  Auth:   grk
-**  Date:   09/01/2012
+**  Date:   09/01/2012 
 **          11/19/2012 grk - Added work package and closed date
 **          11/04/2013 grk - Added @hoursSpent
 **          02/23/2016 mem - Add set XACT_ABORT on
@@ -20,7 +20,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/16/2022 mem - Rename parameters
-**
+**    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
@@ -47,31 +47,31 @@ As
     Declare @myRowCount int = 0
 
     SET @message = ''
-
+    
     Declare @closed datetime = null
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-
-    Declare @authorized tinyint = 0
+        
+    Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'AddUpdateOperationsTasks', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin TRY
+    Begin TRY 
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
 
     If @status IN ('Completed', 'Not Implemented')
-    Begin
-        SET @closed = GETDATE()
-    End
-
+    Begin 
+        SET @closed = GETDATE() 
+    End 
+    
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
@@ -94,12 +94,12 @@ As
         --
         If @myError <> 0 OR @tmp = 0
             RAISERROR ('No entry could be found in database for update', 11, 16)
-
+            
         If @curStatus IN ('Completed', 'Not Implemented')
-        Begin
+        Begin 
             SET @closed = @curClosed
-        End
-
+        End 
+        
     End
 
     ---------------------------------------------------
@@ -119,14 +119,14 @@ As
             Priority,
             Work_Package,
             Closed,
-            Hours_Spent
+            Hours_Spent 
         ) VALUES(
-            @tab,
-            @requester,
-            @requestedPersonnel,
-            @assignedPersonnel,
-            @description,
-            @comments,
+            @tab, 
+            @requester, 
+            @requestedPersonnel, 
+            @assignedPersonnel, 
+            @description, 
+            @comments, 
             @status,
             @priority,
             @workPackage,
@@ -149,7 +149,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update'
+    If @mode = 'update' 
     Begin
         Set @myError = 0
         --
@@ -177,16 +177,16 @@ As
     ---------------------------------------------------
     ---------------------------------------------------
     End TRY
-    Begin CATCH
+    Begin CATCH 
         EXEC FormatErrorMessage @message output, @myError output
-
+        
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-
+            
         Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
     End CATCH
-
+    
     return @myError
 
 GO
