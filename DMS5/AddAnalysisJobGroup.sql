@@ -77,6 +77,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          02/12/2022 mem - Add MSFragger job parameters to the settings for data package based MSFragger jobs
 **          02/18/2022 mem - Add MSFragger DatabaseSplitCount to the settings for data package based MSFragger jobs
 **          03/03/2022 mem - Add support for MSFragger options AutoDefineExperimentGroupWithDatasetName and AutoDefineExperimentGroupWithExperimentName
+**          03/17/2022 mem - Log errors only after parameters have been validated
 **
 *****************************************************/
 (
@@ -121,6 +122,7 @@ As
     Declare @jobCountToBeCreated int = 0
     Declare @msgForLog varchar(2000)
     Declare @backfillError int
+    Declare @logErrors tinyint = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -501,6 +503,8 @@ As
                 RAISERROR ('Request is not in state New; cannot create an aggregation job for request %d', 11, 9, @requestID)
             End
         End
+
+        Set @logErrors = 1
 
         If @toolName In ('MaxQuant', 'MSFragger')
         Begin -- <MaxQuant_MSFragger>
@@ -1316,7 +1320,10 @@ Explain:
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+        End
     End Catch
 
     return @myError
