@@ -7,7 +7,7 @@ GO
 CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 /****************************************************
 **  Desc: 
-**      Outputs contents of EMSL instrument usage report table as rollup
+**      Outputs contents of EMSL instrument usage report table as a daily rollup
 **      This UDF is used by the CodeIgniter instance at http://prismsupport.pnl.gov/dms2ws/
 **
 **      Example URL:
@@ -22,6 +22,7 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/09/2020 mem - Truncate the concatenated comment if over 4090 characters long
 **          04/17/2020 mem - Use Dataset_ID instead of ID
+**          03/17/2022 mem - Only return rows where Dataset_ID_Acq_Overlap is Null
 **    
 *****************************************************/ 
 (
@@ -128,8 +129,9 @@ AS
                        ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
                      LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
                        ON InstUsage.Usage_Type = InstUsageType.ID
-                WHERE (InstUsage.[Year] = @Year) AND
-                      (InstUsage.[Month] = @Month)
+                WHERE InstUsage.[Year] = @Year AND
+                      InstUsage.[Month] = @Month AND
+                      InstUsage.Dataset_ID_Acq_Overlap Is Null
 
 
         -- Repetitive process to pull records out of working table

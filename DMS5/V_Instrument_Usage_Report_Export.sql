@@ -32,6 +32,6 @@ FROM T_EMSL_Instrument_Usage_Report InstUsage
        ON InstUsage.Operator = EU.PERSON_ID
      LEFT OUTER JOIN T_Users U
        ON EU.HID = U.U_HID
-
+WHERE InstUsage.Dataset_ID_Acq_Overlap Is Null
 
 GO
