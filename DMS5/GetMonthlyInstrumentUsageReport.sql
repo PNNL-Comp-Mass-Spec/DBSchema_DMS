@@ -13,8 +13,6 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   grk
 **  Date:   03/06/2012
 **          03/06/2012 grk - Rename @mode to @outputFormat
@@ -37,6 +35,7 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **                         - Make several columns in the output table nullable
 **          05/26/2021 mem - Add support for usage types UserRemote and UserOnsite
 **                         - Use REMOTE when the usage has UserRemote
+**          03/17/2022 mem - Update comments and whitespace
 **
 *****************************************************/
 (
@@ -58,7 +57,7 @@ As
 
     Set @message = ''
 
-    Declare @processByEUS Tinyint = 0
+    Declare @processByEUS tinyint = 0
 
     If @eusInstrumentId > 0
     Begin
@@ -72,6 +71,7 @@ As
         If @processByEUS = 0
         Begin
             -- Auto switch to @eusInstrumentId if needed
+            -- Look for EUS Instruments mapped to two or more DMS instruments
 
             SELECT @eusInstrumentId = InstMapping.EUS_Instrument_ID
             FROM T_Instrument_Name InstName
@@ -94,7 +94,7 @@ As
         End
 
         ---------------------------------------------------
-        -- get maximum time available in month
+        -- Get maximum time available in month
         ---------------------------------------------------
 
         Declare @date DATETIME = CONVERT(DATE, @month + '/1/' + @year, 101)
@@ -103,7 +103,7 @@ As
         Declare @minutesInMonth INT = @daysInMonth * 1440
 
         ---------------------------------------------------
-        -- create temporary table to contain report data
+        -- Create temporary table to contain report data
         -- and populate with datasets in for the specified
         -- instrument and reporting month
         -- (the UDF returns intervals adjusted to monthly boundaries)
@@ -127,12 +127,12 @@ As
         If @instrument = '' AND @eusInstrumentId = 0
         Begin
             INSERT INTO #TR (
-                Dataset_ID ,
+                Dataset_ID,
                 [Type],
                 Start,
-                Duration ,
-                [Interval] ,
-                Proposal ,
+                Duration,
+                [Interval],
+                Proposal,
                 [UsageID],
                 [Usage],
                 [Normal],
@@ -147,12 +147,12 @@ As
         If @processByEUS > 0
         Begin;
             INSERT INTO #TR (
-                Dataset_ID ,
+                Dataset_ID,
                 [Type],
                 Start,
-                Duration ,
-                [Interval] ,
-                Proposal ,
+                Duration,
+                [Interval],
+                Proposal,
                 [UsageID],
                 [Usage],
                 [Normal]
@@ -180,9 +180,9 @@ As
                 Dataset_ID,
                 [Type],
                 Start,
-                Duration ,
-                [Interval] ,
-                Proposal ,
+                Duration,
+                [Interval],
+                Proposal,
                 [UsageID],
                 [Usage],
                 [Normal]
@@ -242,7 +242,7 @@ As
         ---------------------------------------------------
 
         CREATE TABLE #TI (
-              Dataset_ID INT ,
+              Dataset_ID INT,
               Start DATETIME,
               Breakdown XML NULL,
               Comment VARCHAR(4096) NULL
@@ -272,7 +272,7 @@ As
         WHERE #TR.Dataset_ID IN (SELECT Dataset_ID FROM #TI)
 
         ---------------------------------------------------
-        -- make temp table to hold apportioned long interval values
+        -- Make temp table to hold apportioned long interval values
         ---------------------------------------------------
 
         CREATE TABLE #TQ (
@@ -287,11 +287,11 @@ As
         )
 
         ---------------------------------------------------
-        -- extract long interval apportionments from XML
+        -- Extract long interval apportionments from XML
         -- and use to save apportioned intervals to the temp table
         ---------------------------------------------------
 
-        INSERT INTO #TQ (Dataset_ID , Start , [Interval] , Proposal , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
@@ -303,8 +303,7 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-
-        INSERT INTO #TQ (Dataset_ID , Start , [Interval] , Proposal , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
@@ -316,7 +315,7 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-        INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
@@ -328,7 +327,7 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-        INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
@@ -340,7 +339,7 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-        INSERT INTO #TQ (Dataset_ID , Start, [Interval], Operator , Proposal , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Operator, Proposal, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
@@ -353,7 +352,7 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-        INSERT INTO #TQ (Dataset_ID , Start, [Interval] , Proposal , [Usage], Comment)
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, [Usage], Comment)
         SELECT
             #TI.Dataset_ID,
             #TI.Start,
@@ -385,17 +384,12 @@ As
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
 
-
         ---------------------------------------------------
         -- Get rid of meaningless apportioned long intervals
         ---------------------------------------------------
 
         DELETE FROM #TQ WHERE [Interval] = 0
-
-
-        ---------------------------------------------------
-        -- debug 1
-        ---------------------------------------------------
+        
         IF @outputFormat = 'debug1'
         BEGIN
             SELECT * FROM #TQ
@@ -410,44 +404,41 @@ As
         WHERE Usage In ('CAP_DEV', 'ONSITE', 'REMOTE')
 
         ---------------------------------------------------
-        -- add apportioned long intervals to report table
+        -- Add apportioned long intervals to report table
         ---------------------------------------------------
 
         INSERT INTO #TR (
-            Dataset_ID ,
+            Dataset_ID,
             [Type],
             Start,
-            Duration ,
-            [Interval] ,
-            Proposal ,
+            Duration,
+            [Interval],
+            Proposal,
             [Usage],
             Comment,
             Users,
             Operator
         )
         SELECT
-            Dataset_ID ,
-            'Interval' AS [Type] ,
-            Start ,
-            0 AS Duration ,
-            Interval ,
-            Proposal ,
+            Dataset_ID,
+            'Interval' AS [Type],
+            Start,
+            0 AS Duration,
+            Interval,
+            Proposal,
             Usage,
             Comment,
             Users,
             Operator
-        FROM      #TQ
+        FROM #TQ
 
-        ---------------------------------------------------
-        -- debug 2
-        ---------------------------------------------------
         IF @outputFormat = 'debug2'
         BEGIN
             SELECT * FROM #TR
         END
 
         ---------------------------------------------------
-        -- zero interval values for datasets with long intervals
+        -- Zero interval values for datasets with long intervals
         ---------------------------------------------------
 
         UPDATE #TR
@@ -474,7 +465,7 @@ As
         DELETE FROM #TR WHERE Duration = 0 AND [Interval] = 0
 
         ---------------------------------------------------
-        -- add interval to duration for normal datasets
+        -- Add interval to duration for normal datasets
         ---------------------------------------------------
 
         UPDATE #TR
@@ -483,14 +474,14 @@ As
         WHERE [Type] = 'Dataset' AND [Normal] > 0
 
         ---------------------------------------------------
-        -- debug
-        --SELECT * FROM #TR ORDER BY Start
-        --SELECT * FROM #TQ ORDER BY Start
-        --SELECT * FROM #TI
-        --SELECT * FROM #TF
+        -- Uncomment to debug
+        --
+        -- SELECT * FROM #TR ORDER BY Start
+        -- SELECT * FROM #TQ ORDER BY Start
+        -- SELECT * FROM #TI
+        -- SELECT * FROM #TF
         ---------------------------------------------------
-        -- debug 3
-        ---------------------------------------------------
+
         IF @outputFormat = 'debug3'
         BEGIN
             SELECT * FROM #TR
@@ -564,15 +555,15 @@ As
             WHERE #TR.[Type] = 'Interval' AND
                   #TR.[Usage] In ('ONSITE', 'REMOTE')
 
-            -- output report rows
+            -- Output report rows
             SELECT
                 @instrument AS Instrument,
                 @eusInstrumentId AS EMSL_Inst_ID,
                 CONVERT(VARCHAR(32), [Start], 100) AS [Start],
                 [Type],
                 CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [Minutes],
-                Proposal ,
-                [Usage] ,
+                Proposal,
+                [Usage],
                 Users,
                 Operator,
                 ISNULL(Comment, '') AS Comment,
@@ -593,8 +584,8 @@ As
                 CONVERT(VARCHAR(32), [Start], 100) AS [Start],
                 [Type],
                 CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [Minutes],
-                Proposal ,
-                [Usage] ,
+                Proposal,
+                [Usage],
                 ISNULL(Comment, '') AS Comment,
                 Dataset_ID
              FROM #TR ORDER BY Start
@@ -646,7 +637,7 @@ As
     BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
-        -- rollback any open transactions
+        -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
