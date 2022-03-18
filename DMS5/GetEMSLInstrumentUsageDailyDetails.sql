@@ -7,15 +7,15 @@ GO
 CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 /****************************************************
 **  Desc: 
-**      Outputs contents of EMSL instrument usage report table as a rollup
+**      Outputs contents of EMSL instrument usage report table as a daily rollup, including rows with Dataset_ID_Acq_Overlap
 **      This UDF is used by the CodeIgniter instance at http://prismsupport.pnl.gov/dms2ws/
 **
 **      Example URL:
-**      https://prismsupport.pnl.gov/dms2ws/instrument_usage_report/daily/2020/03
+**      https://prismsupport.pnl.gov/dms2ws/instrument_usage_report/dailydetails/2020/03
 **
 **      See also /file1/www/html/prismsupport/dms2ws/application/controllers/instrument_usage_report.php
 **
-**  Auth:   grk   
+**  Auth:   grk
 **  Date:   09/15/2015 grk - initial release, modeled after GetEMSLInstrumentUsageDaily
 **          10/20/2015 grk - added users to output
 **          02/10/2016 grk - added rollup of comments and operators
@@ -24,6 +24,7 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 **          04/18/2020 mem - Update to show dataset details for all datasets that are not Maintenance runs
 **                         - Saved as new UDF named GetEMSLInstrumentUsageDailyDetails
 **          04/27/2020 mem - Populate the Seq column using Seq values in T_EMSL_Instrument_Usage_Report
+**          03/17/2022 mem - Add ID_Acq_Overlap (from Dataset_ID_Acq_Overlap) to the output
 **    
 *****************************************************/ 
 (
@@ -44,7 +45,8 @@ RETURNS @T_Report_Output TABLE
       [Comment] [varchar](4096) NULL,
       [Year] [int],
       [Month] [int],
-      [ID] [int] NULL,              -- Dataset_ID
+      [ID] [int] NULL,                  -- Dataset_ID
+      [ID_Acq_Overlap] [int] Null,      -- Dataset_ID_Acq_Overlap
       [Seq] [int] NULL,
       [Updated] [datetime] NULL,
       [UpdatedBy] [varchar](32) NULL
@@ -73,6 +75,7 @@ AS
               [DurationSeconds] INT NULL,
               [DurationSecondsInCurrentDay] INT NULL,
               [RemainingDurationSeconds] INT NULL,
+              [Dataset_ID_Acq_Overlap] INT NULL,
               Comment VARCHAR(MAX) NULL,
               [Operator] [varchar](64) NULL,
               [Seq] INT NULL
@@ -95,6 +98,7 @@ AS
               [Type] [varchar](128),
               [Users] [varchar](1024) NULL,
               [Operator] [varchar](64) NULL,
+              [Dataset_ID_Acq_Overlap] INT NULL,
               [Comment] [varchar](4096) NULL,
               [Seq] INT NULL
             )
@@ -114,6 +118,7 @@ AS
                   DurationSeconds,
                   Year,
                   Month,
+                  Dataset_ID_Acq_Overlap,
                   Comment,
                   Operator,
                   [Seq]
@@ -129,6 +134,7 @@ AS
                        InstUsage.[Minutes] * 60 AS [DurationSeconds],
                        InstUsage.[Year],
                        InstUsage.[Month],
+                       InstUsage.Dataset_ID_Acq_Overlap,
                        InstUsage.[Comment],
                        InstUsage.Operator,
                        InstUsage.Seq
@@ -137,8 +143,8 @@ AS
                        ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
                      LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
                        ON InstUsage.Usage_Type = InstUsageType.ID
-                WHERE (InstUsage.[Year] = @Year) AND
-                      (InstUsage.[Month] = @Month)
+                WHERE InstUsage.[Year] = @Year AND
+                      InstUsage.[Month] = @Month
 
 
         -- Repetitive process to pull records out of working table
@@ -154,6 +160,7 @@ AS
         --  b. starting at 12:00 am on April 18 and lasting 10 minutes
 
         Declare @done INT = 0
+
         WHILE @done = 0 
         BEGIN -- <loop>
 
@@ -186,6 +193,7 @@ AS
                       [Day],
                       [Dataset_ID],
                       [Type],
+                      Dataset_ID_Acq_Overlap,
                       Comment,
                       Operator,
                       [Seq]
@@ -202,6 +210,7 @@ AS
                             [Day],
                             Dataset_ID,
                             [Type],
+                            Dataset_ID_Acq_Overlap,
                             Comment,
                             Operator,
                             [Seq]
@@ -236,6 +245,7 @@ AS
                         [Day],
                         [Dataset_ID],
                         [Type],
+                        Dataset_ID_Acq_Overlap,
                         Comment,
                         Operator,
                         [Seq]
@@ -252,6 +262,7 @@ AS
                             [Day],
                             [Dataset_ID],
                             [Type],
+                            Dataset_ID_Acq_Overlap,
                             Comment,
                             Operator,
                             [Seq]
@@ -401,7 +412,8 @@ AS
                   [Comment],
                   [Year],
                   [Month],
-                  [ID],         -- Dataset_ID
+                  [ID],                 -- Dataset_ID
+                  [ID_Acq_Overlap],     -- Dataset_ID_Acq_Overlap
                   [Seq],
                   [Updated],
                   [UpdatedBy] 
@@ -419,6 +431,7 @@ AS
                         Year,
                         Month,
                         Dataset_ID,
+                        Dataset_ID_Acq_Overlap,
                         MIN([Seq]),
                         NULL AS Updated,
                         NULL AS UpdatedBy
@@ -435,12 +448,13 @@ AS
                         [Year],
                         [Month],
                         [Day],
-                        Dataset_ID
+                        Dataset_ID,
+                        Dataset_ID_Acq_Overlap
                 ORDER BY EMSL_Inst_ID DESC,
-                        DMS_Instrument DESC,
-                        [Month] DESC,
-                        [Day] ASC,
-                        [Start] ASC
+                         DMS_Instrument DESC,
+                         [Month] DESC,
+                         [Day] ASC,
+                         [Start] ASC
 
 
         -- Next, add maintenance datasets, where we report one entry per day
@@ -458,7 +472,8 @@ AS
                   [Comment],
                   [Year],
                   [Month],
-                  [ID],
+                  [ID],                 -- Dataset_ID
+                  [ID_Acq_Overlap],     -- Dataset_ID_Acq_Overlap
                   [Seq],
                   [Updated],
                   [UpdatedBy] 
@@ -475,7 +490,8 @@ AS
                         Comment,
                         Year,
                         Month,
-                        NULL AS Dataset_ID,   -- Store null since we're rolling up multiple rows
+                        NULL AS Dataset_ID,             -- Store null since we're rolling up multiple rows
+                        NULL As Dataset_ID_Acq_Overlap,
                         MIN([Seq]),
                         NULL AS Updated,
                         NULL AS UpdatedBy
@@ -502,4 +518,6 @@ AS
     END
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageDailyDetails] TO [DDL_Viewer] AS [dbo]
 GO
