@@ -1,5 +1,5 @@
 /****** Object:  Table [T_EMSL_DMS_Instrument_Mapping] ******/
-/****** RowCount: 67 ******/
+/****** RowCount: 69 ******/
 /****** Columns: EUS_Instrument_ID, DMS_Instrument_ID ******/
 INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (1163,10)
 INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (1164,12)
@@ -68,3 +68,5 @@ INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (34298,159)
 INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (34289,165)
 INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (34313,171)
 INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (34314,172)
+INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (34332,182)
+INSERT INTO [T_EMSL_DMS_Instrument_Mapping] VALUES (34332,183)
