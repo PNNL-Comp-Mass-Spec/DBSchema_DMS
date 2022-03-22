@@ -14,38 +14,38 @@ CREATE Procedure [dbo].[AddUpdateLCColumn]
 **  Auth:   grk
 **  Date:   12/09/2003
 **          08/19/2010 grk - try-catch for error handling
-**          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2016 mem - Add Set XACT_ABORT on
 **          07/20/2016 mem - Fix error message entity name
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/30/2018 mem - Make @columnNumber an output parameter
+**          03/21/2022 mem - Fix typo in comment and update capitalization of keywords
 **
 *****************************************************/
 (
-    @columnNumber varchar (128) output,        -- Input/ouptut:Aka column name
-    @packingMfg varchar (64),
-    @packingType varchar (64),
-    @particleSize varchar (64),
-    @particleType varchar (64),
-    @columnInnerDia varchar (64),
-    @columnOuterDia varchar (64),
-    @length varchar (64),
-    @state  varchar (32),
-    @operator_prn varchar (50),
-    @comment varchar (244),
-    --
+    @columnNumber varchar(128) output,        -- Input/output: Aka column name
+    @packingMfg varchar(64),
+    @packingType varchar(64),
+    @particleSize varchar(64),
+    @particleType varchar(64),
+    @columnInnerDia varchar(64),
+    @columnOuterDia varchar(64),
+    @length varchar(64),
+    @state  varchar(32),
+    @operator_prn varchar(50),
+    @comment varchar(244),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
 As
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
-    set @message = ''
+    Set @message = ''
     
     Declare @msg varchar(256)
     Declare @logErrors tinyint = 1
@@ -67,11 +67,11 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    if LEN(IsNull(@columnNumber, '')) < 1
-    begin
-        set @myError = 51110
+    If LEN(IsNull(@columnNumber, '')) < 1
+    Begin
+        Set @myError = 51110
         RAISERROR ('Column name was blank', 11, 1)
-    end
+    End
     
     ---------------------------------------------------
     -- Is entry already in database?
@@ -85,29 +85,29 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @msg = 'Error while trying to find existing entry in database'
+    If @myError <> 0
+    Begin
+        Set @msg = 'Error while trying to find existing entry in database'
         RAISERROR (@msg, 11, 2)
-    end
+    End
 
-    -- cannot create an entry that already exists
+    -- Cannot create an entry that already exists
     --
-    if @columnID <> -1 and @mode = 'add'
-    begin
+    If @columnID <> -1 and @mode = 'add'
+    Begin
         Set @logErrors = 0
-        set @msg = 'Cannot add: Specified LC column already in database'
+        Set @msg = 'Cannot add: Specified LC column already in database'
         RAISERROR (@msg, 11, 3)
-    end
+    End
 
-    -- cannot update a non-existent entry
+    -- Cannot update a non-existent entry
     --
-    if @columnID = -1 and @mode = 'update'
-    begin
+    If @columnID = -1 and @mode = 'update'
+    Begin
         Set @logErrors = 0
-        set @msg = 'Cannot update: Specified LC column is not in database'
+        Set @msg = 'Cannot update: Specified LC column is not in database'
         RAISERROR (@msg, 11, 5)
-    end
+    End
 
     ---------------------------------------------------
     -- Resolve ID for state
@@ -121,24 +121,25 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @msg = 'Error trying to look up state ID'
+    If @myError <> 0
+    Begin
+        Set @msg = 'Error trying to look up state ID'
         RAISERROR (@msg, 11, 6)
-    end
-    if @stateID = -1
-    begin
+    End
+
+    If @stateID = -1
+    Begin
         Set @logErrors = 0
-        set @msg = 'Invalid column state: ' + @state
+        Set @msg = 'Invalid column state: ' + @state
         RAISERROR (@msg, 11, 7)
-    end
-
+    End
 
     ---------------------------------------------------
-    -- action for add mode
+    -- Action for add mode
     ---------------------------------------------------
-    if @Mode = 'add'
-    begin
+
+    If @Mode = 'add'
+    Begin
         INSERT INTO T_LC_Column
         (
             SC_Column_Number,
@@ -170,23 +171,23 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @msg = 'Insert operation failed'
+        If @myError <> 0
+        Begin
+            Set @msg = 'Insert operation failed'
             RAISERROR (@msg, 11, 8)
-        end
-    end -- add mode
+        End
+    End -- add mode
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
-    --
-    if @Mode = 'update' 
-    begin
-        set @myError = 0
+
+    If @Mode = 'update' 
+    Begin
+        Set @myError = 0
         --
         UPDATE T_LC_Column 
-        SET 
+        Set 
             SC_Column_Number = @columnNumber,
             SC_Packing_Mfg = @packingMfg,
             SC_Packing_Type = @packingType,
@@ -202,27 +203,28 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @msg = 'Update operation failed'
+        If @myError <> 0
+        Begin
+            Set @msg = 'Update operation failed'
             RAISERROR (@msg, 11, 9)
-        end
-    end -- update mode
+        End
+    End -- update mode
 
     END TRY
     BEGIN CATCH 
         EXEC FormatErrorMessage @message output, @myError output
         
         -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
         
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'
         End
-    END CATCH
-    return @myError
+    END Catch
+
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [DDL_Viewer] AS [dbo]
