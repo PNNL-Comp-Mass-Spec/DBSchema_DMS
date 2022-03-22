@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 /****************************************************
 **
 **  Desc:
-**      Adds new or edits existing SamplePrepRequest
+**      Adds new or edits existing Sample Prep Request
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -65,8 +65,8 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/12/2017 mem - Remove 9 deprecated parameters:
-**                              @cellCultureList, @numberOfBiomaterialRepsReceived, @replicatesofSamples, @prepByRobot,
-**                              @technicalReplicates, @specialInstructions, @useSingleLCColumn, @projectNumber, and @iOPSPermitsCurrent
+**                             @cellCultureList, @numberOfBiomaterialRepsReceived, @replicatesofSamples, @prepByRobot,
+**                             @technicalReplicates, @specialInstructions, @useSingleLCColumn, @projectNumber, and @iOPSPermitsCurrent
 **                         - Change the default state from 'Pending Approval' to 'New'
 **                         - Validate list of Requested Personnel and Assigned Personnel
 **                         - Expand @comment to varchar(2048)
@@ -94,6 +94,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **                         - Only allow sample prep staff to update estimated prep time
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          12/03/2021 mem - Clear @stateComment when creating a new prep request
+**          03/21/2022 mem - Refactor personnel validation code into ValidateRequestUsers
 **
 *****************************************************/
 (
@@ -124,7 +125,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @priority varchar(12),
     @state varchar(32),                         -- New, On Hold, Prep in Progress, Prep Complete, or Closed
     @stateComment varchar(512),
-    @id int output,                             -- input/ouptut: Sample prep request ID
+    @id int output,                             -- Input/output: Sample prep request ID
     @separationGroup varchar(256),              -- Separation group
     @blockAndRandomizeSamples char(3),          -- 'Yes', 'No', or 'na'
     @blockAndRandomizeRuns char(3),             -- 'Yes' or 'No'
@@ -383,155 +384,24 @@ As
     -- Names should be in the form "Last Name, First Name (PRN)"
     ---------------------------------------------------
 
-    CREATE TABLE #Tmp_UserInfo (
-        EntryID int identity(1,1),
-        [Name_and_PRN] varchar(255) NOT NULL,
-        [User_ID] int NULL
-    )
+    Declare @result Int
 
-    Declare @nameValidationIteration int = 1
-    Declare @userFieldName varchar(32) = ''
-    Declare @cleanNameList varchar(255)
+    Exec @result = ValidateRequestUsers 
+        @requestName, 'AddUpdateSamplePrepRequest', 
+        @requestedPersonnel = @requestedPersonnel Output, 
+        @assignedPersonnel = @assignedPersonnel Output, 
+        @requireValidRequestedPersonnel= 1, 
+        @message = @message Output
 
-    While @nameValidationIteration <= 2
-    Begin -- <a>
-
-        DELETE FROM #Tmp_UserInfo
-
-        If @nameValidationIteration = 1
+    If @result > 0
+    Begin
+        If IsNull(@message, '') = ''
         Begin
-            INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
-            SELECT Value
-            FROM dbo.udfParseDelimitedList(@requestedPersonnel, ';', 'AddUpdateSamplePrepRequest')
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-
-            Set @userFieldName = 'requested personnel'
-        End
-        Else
-        Begin
-            INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
-            SELECT Value
-            FROM dbo.udfParseDelimitedList(@assignedPersonnel, ';', 'AddUpdateSamplePrepRequest')
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-
-            Set @userFieldName = 'assigned personnel'
+            Set @message = 'Error validating the requested and assigned personnel'
         End
 
-        UPDATE #Tmp_UserInfo
-        SET [User_ID] = U.ID
-        FROM #Tmp_UserInfo
-            INNER JOIN T_Users U
-            ON #Tmp_UserInfo.Name_and_PRN = U.Name_with_PRN
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-
-        -- Use User_ID of 0 if the name is 'na'
-        -- Set User_ID to 0
-        UPDATE #Tmp_UserInfo
-        SET [User_ID] = 0
-        WHERE Name_and_PRN IN ('na')
-
-        ---------------------------------------------------
-        -- Look for entries in #Tmp_UserInfo where Name_and_PRN did not resolve to a User_ID
-        -- Try-to auto-resolve using the U_Name and U_PRN columns in T_Users
-        ---------------------------------------------------
-
-        Declare @entryID int = 0
-        Declare @continue tinyint = 1
-        Declare @unknownUser varchar(255)
-        Declare @matchCount tinyint
-        Declare @newPRN varchar(64)
-        Declare @newUserID int
-
-        While @continue = 1
-        Begin -- <b>
-            SELECT TOP 1 @entryID = EntryID,
-                        @unknownUser = Name_and_PRN
-            FROM #Tmp_UserInfo
-            WHERE EntryID > @entryID AND [USER_ID] IS NULL
-            ORDER BY EntryID
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-
-            If @myRowCount = 0
-                Set @continue = 0
-            Else
-            Begin -- <c>
-                Set @matchCount = 0
-
-                exec AutoResolveNameToPRN @unknownUser, @matchCount output, @newPRN output, @newUserID output
-
-                If @matchCount = 1
-                Begin
-                    -- Single match was found; update [User_ID] in #Tmp_UserInfo
-                    UPDATE #Tmp_UserInfo
-                    SET [User_ID] = @newUserID
-                    WHERE EntryID = @entryID
-
-                End
-            End -- </c>
-
-        End -- </b>
-
-        If Exists (SELECT * FROM #Tmp_UserInfo WHERE [User_ID] Is Null)
-        Begin
-            Declare @firstInvalidUser varchar(255) = ''
-
-            SELECT TOP 1 @firstInvalidUser = Name_and_PRN
-            FROM #Tmp_UserInfo
-            WHERE [USER_ID] IS NULL
-
-            RAISERROR ('Invalid username for %s: "%s"', 11, 37, @userFieldName, @firstInvalidUser)
-        End
-
-        If @nameValidationIteration = 1 And Not Exists (SELECT * FROM #Tmp_UserInfo WHERE User_ID > 0)
-        Begin
-            -- Requested personnel person must be a specific person (or list of people)
-            RAISERROR ('The Requested Personnel person must be a specific DMS user; "%s" is invalid', 11, 41, @requestedPersonnel)
-        End
-
-        If @nameValidationIteration = 2
-           And Exists (SELECT * FROM #Tmp_UserInfo WHERE User_ID > 0)
-           And Exists (SELECT * FROM #Tmp_UserInfo WHERE Name_and_PRN = 'na')
-        Begin
-            -- Auto-remove the 'na' user since an actual person is defined
-            DELETE FROM #Tmp_UserInfo WHERE Name_and_PRN = 'na'
-        End
-
-        -- Make sure names are capitalized properly
-        --
-        UPDATE #Tmp_UserInfo
-        SET Name_and_PRN = U.Name_with_PRN
-        FROM #Tmp_UserInfo
-            INNER JOIN T_Users U
-            ON #Tmp_UserInfo.User_ID = U.ID
-        WHERE #Tmp_UserInfo.User_ID <> 0
-
-        -- Regenerate the list of names
-        --
-        Set @cleanNameList = ''
-
-        SELECT @cleanNameList = @cleanNameList + CASE
-                                                     WHEN @cleanNameList = '' THEN ''
-                                                     ELSE '; '
-                                                 END + Name_and_PRN
-        FROM #Tmp_UserInfo
-        ORDER BY EntryID
-
-        If @nameValidationIteration = 1
-        Begin
-            Set @requestedPersonnel = @cleanNameList
-        End
-        Else
-        Begin
-            Set @assignedPersonnel = @cleanNameList
-        End
-
-        Set @nameValidationIteration = @nameValidationIteration + 1
-
-    End -- </a>
+        RAISERROR (@message, 11, 37)
+    End
 
     ---------------------------------------------------
     -- Convert state name to ID
@@ -539,7 +409,7 @@ As
 
     Declare @stateID int = 0
     --
-    SELECT  @stateID = State_ID
+    SELECT @stateID = State_ID
     FROM  T_Sample_Prep_Request_State_Name
     WHERE (State_Name = @state)
     --
@@ -682,8 +552,7 @@ As
         If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE PRN = @callingUser)
             RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
-        -- Don't allow change to "Prep in Progress"
-        -- unless someone has been assigned @assignedPersonnel @currentAssignedPersonnel
+        -- Don't allow change to "Prep in Progress" unless someone has been assigned
         If @state = 'Prep in Progress' AND ((@assignedPersonnel = '') OR (@assignedPersonnel = 'na'))
             RAISERROR ('State cannot be changed to "Prep in Progress" unless someone has been assigned', 11, 84)
 
