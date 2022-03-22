@@ -11,7 +11,7 @@ SELECT Updates.Date_of_Change,
        U.U_Name AS Name,
        BSN.State_Name AS [Beginning State],
        ESN.State_Name AS [End State],
-       Updates.Request_ID AS [#RequestID]
+       Updates.Request_ID
 FROM dbo.T_Sample_Prep_Request_Updates AS Updates
      INNER JOIN dbo.T_Sample_Prep_Request_State_Name AS BSN
        ON Updates.Beginning_State_ID = BSN.State_ID

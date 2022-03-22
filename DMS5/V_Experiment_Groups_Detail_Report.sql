@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- 
 CREATE VIEW  [dbo].[V_Experiment_Groups_Detail_Report] AS 
 SELECT EG.Group_ID AS ID,
        EG.EG_Group_Type AS Group_Type,
@@ -17,12 +16,15 @@ SELECT EG.Group_ID AS ID,
        CASE WHEN EG.Researcher IS NULL THEN ''
             ELSE U.Name_with_PRN
        END AS Researcher,
+       COUNT(DISTINCT DS.Dataset_ID) AS Datasets,
        ISNULL(FA.FileCount, 0) AS [Experiment Group Files]
 FROM dbo.T_Experiment_Groups AS EG
      LEFT OUTER JOIN dbo.T_Experiment_Group_Members AS EGM
        ON EG.Group_ID = EGM.Group_ID
      INNER JOIN dbo.T_Experiments AS E
        ON EG.Parent_Exp_ID = E.Exp_ID
+     LEFT OUTER JOIN dbo.T_Dataset DS
+       ON EGM.Exp_ID = DS.Exp_ID
      LEFT OUTER JOIN dbo.T_Users AS U
        ON EG.Researcher = U.U_PRN
      LEFT OUTER JOIN ( SELECT Entity_ID,
