@@ -12,6 +12,7 @@ SELECT R.ID,
        R.Created,
        R.Estimated_Analysis_Time_Days AS [Est. Analysis Time],
        R.Priority,
+       TA.Attachments AS Files,
        SN.State_Name AS State,
        R.State_Comment AS [State Comment],
        U.Name_with_PRN AS Requester,
@@ -48,6 +49,12 @@ FROM T_Data_Analysis_Request AS R
        ON R.Requester_PRN = U.U_PRN
      LEFT OUTER JOIN V_Data_Analysis_Request_Queue_Times AS QT
        ON R.ID = QT.Request_ID
+     LEFT OUTER JOIN ( SELECT Entity_ID_Value,
+                              COUNT(*) AS Attachments
+                       FROM T_File_Attachment
+                       WHERE Entity_Type = 'data_analysis_request' AND Active > 0
+                       GROUP BY Entity_ID_Value ) AS TA
+       ON R.ID = TA.Entity_ID_Value
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON R.Work_Package = CC.Charge_Code
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
