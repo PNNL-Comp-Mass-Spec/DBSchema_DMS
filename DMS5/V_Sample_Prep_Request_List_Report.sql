@@ -60,12 +60,12 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.Requester_PRN = QP.U_PRN
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
        ON SPR.ID = QT.Request_ID
-     LEFT OUTER JOIN ( SELECT Entity_ID_Value AS [Entity ID],
+     LEFT OUTER JOIN ( SELECT Entity_ID_Value,
                               COUNT(*) AS Attachments
                        FROM T_File_Attachment
                        WHERE Entity_Type = 'sample_prep_request' AND Active > 0
                        GROUP BY Entity_ID_Value ) AS TA
-       ON SPR.ID = TA.[Entity ID]
+       ON SPR.ID = TA.Entity_ID_Value
      LEFT OUTER JOIN T_Experiments E
        ON SPR.ID = E.EX_sample_prep_request_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
