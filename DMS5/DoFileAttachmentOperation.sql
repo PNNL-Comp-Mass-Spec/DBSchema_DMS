@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.DoFileAttachmentOperation 
+
+CREATE PROCEDURE [dbo].[DoFileAttachmentOperation] 
 /****************************************************
 **
 **  Desc: 
@@ -14,76 +15,77 @@ CREATE PROCEDURE dbo.DoFileAttachmentOperation
 **
 **  Parameters:
 **
-**  Auth:	grk
-**  Date:	09/05/2012 
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
+**  Auth:   grk
+**  Date:   09/05/2012 
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int,
-	@mode varchar(12),                  -- Delete
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @ID int,
+    @mode varchar(12),                  -- Delete
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
 As
-	Set XACT_ABORT, nocount on
+    Set XACT_ABORT, nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'DoFileAttachmentOperation', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+        
+    Declare @authorized tinyint = 0    
+    Exec @authorized = VerifySPAuthorized 'DoFileAttachmentOperation', @raiseError = 1
+    If @authorized = 0
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
 
-	set @message = ''
-	BEGIN TRY 
-	
-		---------------------------------------------------
-		-- "Delete" the attachment
-		-- In reality, we change active to 0
-		---------------------------------------------------
-		--
-		if @mode = 'delete'
-		begin
-			UPDATE T_File_Attachment 
-			SET Active = 0
-			WHERE ID = @ID
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-			--
-			if @myError <> 0
-			begin
-				set @message = 'Delete operation failed'
-				RAISERROR (@message, 10, 1)
-				return 51007
-			end
-		end
+    Set @message = ''
 
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
-			
-		Exec PostLogEntry 'Error', @message, 'DoFileAttachmentOperation'
-	END CATCH
-	return @myError
+    BEGIN TRY 
+    
+        ---------------------------------------------------
+        -- "Delete" the attachment
+        -- In reality, we change active to 0
+        ---------------------------------------------------
+        --
+        If @mode = 'delete'
+        Begin
+            UPDATE T_File_Attachment 
+            SET Active = 0
+            WHERE ID = @ID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            --
+            If @myError <> 0
+            Begin
+                Set @message = 'Delete operation failed'
+                RAISERROR (@message, 10, 1)
+                Return 51007
+            End
+        End
+
+    END TRY
+    BEGIN CATCH 
+        EXEC FormatErrorMessage @message output, @myError output
+        
+        -- rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+            
+        Exec PostLogEntry 'Error', @message, 'DoFileAttachmentOperation'
+    END CATCH
+
+    Return @myError
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoFileAttachmentOperation] TO [DDL_Viewer] AS [dbo]
 GO
