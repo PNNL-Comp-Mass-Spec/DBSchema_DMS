@@ -4,9 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
---
 CREATE VIEW [dbo].[V_File_Attachment_Stats_by_ID] AS 
-SELECT Entity_Type, Entity_ID AS ID, COUNT(*) AS Attachments
+SELECT Entity_Type,
+       Entity_ID AS ID,
+       COUNT(*) AS Attachments
 FROM T_File_Attachment
 WHERE Active > 0
 GROUP BY Entity_Type, Entity_ID
