@@ -8,8 +8,9 @@ CREATE TABLE [dbo].[T_Data_Analysis_Request](
 	[Request_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Analysis_Type] [varchar](16) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Requester_PRN] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Description] [varchar](4000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Analysis_Specifications] [varchar](4000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Analysis_Specifications] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Comment] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Representative_Batch_ID] [int] NULL,
 	[Data_Package_ID] [int] NULL,
 	[Exp_Group_ID] [int] NULL,
@@ -73,7 +74,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_Data_Analysis_Request] on [dbo].[T_Data_Analysis_Request]
 For Delete
 /****************************************************
@@ -108,7 +108,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_i_Data_Analysis_Request] on [dbo].[T_Data_Analysis_Request]
 For Insert
 /****************************************************
@@ -145,7 +144,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Data_Analysis_Request] on [dbo].[T_Data_Analysis_Request]
 For Update
 /****************************************************

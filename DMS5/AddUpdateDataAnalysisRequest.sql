@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 **  Auth:   mem
 **  Date:   03/22/2022 mem - Initial version
 **          03/26/2022 mem - Replace parameter @batchID with @batchIDs
+**                         - Add parameter @comment
 **
 *****************************************************/
 (
@@ -29,6 +30,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
     @requesterPRN varchar(32),
     @description varchar(1024),
     @analysisSpecifications varchar(2048),
+    @comment varchar(2048),
     @batchIDs varchar(1024) = '',           -- Comma separated list of Requested Run Batch IDs
     @dataPackageID int = null,              -- Data Package ID; can be null
     @expGroupID int = null,                 -- Experiment Group ID; can be null
@@ -633,6 +635,7 @@ As
             Requester_PRN,
             Description,
             Analysis_Specifications,
+            Comment,
             Representative_Batch_ID,
             Data_Package_ID,
             Exp_Group_ID,
@@ -718,6 +721,7 @@ As
             Requester_PRN = @requesterPRN,
             Description = @description,
             Analysis_Specifications = @analysisSpecifications,
+            Comment = @comment,
             Representative_Batch_ID = Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
             Data_Package_ID = Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
             Exp_Group_ID = Case When @experimentGroupDefined > 0 Then @expGroupID Else Null End,
@@ -793,7 +797,7 @@ As
 
     End Catch
 
-    return @myError
+    Return @myError
 
 
 GO
