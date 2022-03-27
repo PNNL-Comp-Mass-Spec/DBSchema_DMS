@@ -206,9 +206,11 @@ For Update
 **
 **	Desc: 
 **		Makes an entry in T_Entity_Rename_Log if the cell culture is renamed
+**      Also Renames entries in T_File_Attachment
 **
 **	Auth:	mem
 **	Date:	07/19/2010 mem - Initial version
+**			03/27/2022 mem - Now updating T_File_Attachment
 **    
 *****************************************************/
 AS
@@ -223,6 +225,15 @@ AS
 		SELECT 2, inserted.CC_ID, deleted.CC_Name, inserted.CC_Name, GETDATE()
 		FROM deleted INNER JOIN inserted ON deleted.CC_ID = inserted.CC_ID
 		ORDER BY inserted.CC_ID
+
+        UPDATE T_File_Attachment
+		SET Entity_ID = inserted.CC_Name
+		FROM T_File_Attachment FA
+		     INNER JOIN deleted
+		       ON deleted.CC_Name = FA.Entity_ID
+		     INNER JOIN inserted
+		       ON deleted.CC_ID = inserted.CC_ID
+		WHERE (Entity_Type = 'cell_culture')
 	End
 
 
