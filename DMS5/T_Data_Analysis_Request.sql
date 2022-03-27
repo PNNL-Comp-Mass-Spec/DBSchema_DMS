@@ -10,7 +10,7 @@ CREATE TABLE [dbo].[T_Data_Analysis_Request](
 	[Requester_PRN] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Description] [varchar](4000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Analysis_Specifications] [varchar](4000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Batch_ID] [int] NULL,
+	[Representative_Batch_ID] [int] NULL,
 	[Data_Package_ID] [int] NULL,
 	[Exp_Group_ID] [int] NULL,
 	[Work_Package] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -63,10 +63,10 @@ REFERENCES [dbo].[T_Experiment_Groups] ([Group_ID])
 GO
 ALTER TABLE [dbo].[T_Data_Analysis_Request] CHECK CONSTRAINT [FK_T_Data_Analysis_Request_T_Experiment_Groups]
 GO
-ALTER TABLE [dbo].[T_Data_Analysis_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Analysis_Request_T_Requested_Run_Batch] FOREIGN KEY([Batch_ID])
+ALTER TABLE [dbo].[T_Data_Analysis_Request]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Analysis_Request_T_Requested_Run_Batches] FOREIGN KEY([Representative_Batch_ID])
 REFERENCES [dbo].[T_Requested_Run_Batches] ([ID])
 GO
-ALTER TABLE [dbo].[T_Data_Analysis_Request] CHECK CONSTRAINT [FK_T_Data_Analysis_Request_T_Requested_Run_Batch]
+ALTER TABLE [dbo].[T_Data_Analysis_Request] CHECK CONSTRAINT [FK_T_Data_Analysis_Request_T_Requested_Run_Batches]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Data_Analysis_Request] ******/
 SET ANSI_NULLS ON

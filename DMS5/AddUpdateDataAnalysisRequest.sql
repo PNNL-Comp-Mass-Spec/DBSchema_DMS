@@ -10,21 +10,28 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 **  Desc:
 **      Adds new or edits existing Data Analysis Request
 **
+**      The analysis request must be associated with 
+**      at least one of the following data containers:
+**        - One or more requested run batches
+**        - Data package
+**        - Experiment group
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   03/22/2022 mem - Initial version
+**          03/26/2022 mem - Replace parameter @batchID with @batchIDs
 **
 *****************************************************/
 (
     @requestName varchar(128),
     @analysisType varchar(16),
     @requesterPRN varchar(32),
-    @description varchar(4000),
-    @analysisSpecifications varchar(4000),
-    @batchID int,                           -- Requested Run Batch ID; can be null, but the analysis request must have a valid batch, data package, or experiment group
-    @dataPackageID int,                     -- Data Package ID; can be null
-    @expGroupID int,                        -- Experiment Group ID; can be null
+    @description varchar(1024),
+    @analysisSpecifications varchar(2048),
+    @batchIDs varchar(1024) = '',           -- Comma separated list of Requested Run Batch IDs
+    @dataPackageID int = null,              -- Data Package ID; can be null
+    @expGroupID int = null,                 -- Experiment Group ID; can be null
     @workPackage varchar(64),
     @requestedPersonnel varchar(256),
     @assignedPersonnel varchar(256),
@@ -33,7 +40,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
     @estimatedAnalysisTimeDays int,
     @state varchar(32),                     -- New, On Hold, Analysis in Progress, or Closed
     @stateComment varchar(512),
-    @id int output,                         -- input/output: Data Analysis Request ID
+    @id int output,                         -- Input/output: Data Analysis Request ID
     @mode varchar(24) = 'add',              -- 'add', 'update', or 'previewadd', 'previewupdate'
     @message varchar(1024) output,
     @callingUser varchar(128) = ''
@@ -52,6 +59,8 @@ As
 
     Declare @requestType varchar(16) = 'Default'
     Declare @logErrors tinyint = 0
+
+    Declare @batchDescription varchar(64) = ''
 
     Set @estimatedAnalysisTimeDays = IsNull(@estimatedAnalysisTimeDays, 1)
 
@@ -92,10 +101,10 @@ As
     Declare @allowUpdateEstimatedAnalysisTime tinyint = 0
 
     If Exists ( SELECT U.U_PRN
-                FROM dbo.T_Users U
-                     INNER JOIN dbo.T_User_Operations_Permissions UOP
+                FROM T_Users U
+                     INNER JOIN T_User_Operations_Permissions UOP
                        ON U.ID = UOP.U_ID
-                     INNER JOIN dbo.T_User_Operations UO
+                     INNER JOIN T_User_Operations UO
                        ON UOP.Op_ID = UO.ID
                 WHERE U.U_Status = 'Active' AND
                       UO.Operation = 'DMS_Data_Analysis_Request' AND
@@ -124,11 +133,15 @@ As
     End
 
     ---------------------------------------------------
-    -- Resolve batch id, data package id, and experiment group id
+    -- Resolve Batch IDs, Data Package id, and Experiment Group ID
     -- Require that at least one be valid
     ---------------------------------------------------
 
-    Set @batchID = IsNull(@batchID, 0)
+    Create Table #Tmp_BatchIDs (
+        Batch_ID Int Not Null
+    )
+
+    Set @batchIDs = Ltrim(Rtrim(IsNull(@batchIDs, '')))
     Set @dataPackageID = IsNull(@dataPackageID, 0)
     Set @expGroupID = IsNull(@expGroupID, 0)
 
@@ -136,11 +149,31 @@ As
     Declare @dataPackageDefined tinyint = 0
     Declare @experimentGroupDefined tinyint = 0
 
-    If IsNull(@batchID, 0) > 0
+    If Len(@batchIDs) > 0
     Begin
-        If Not Exists (Select * From T_Requested_Run_Batches WHERE ID = @batchID)
+        INSERT INTO #Tmp_BatchIDs( Batch_ID )
+        SELECT VALUE
+        FROM dbo.udfParseDelimitedIntegerList ( @batchIDs, ',' )
+        WHERE VALUE <> 0
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
         Begin
-            RAISERROR('Could not find entry in database for requested run batch "%d"', 11, 14, @batchID)
+            If @batchIDs = '0'
+                RAISERROR('Invalid requested run batch ID; must be a positive integer, not zero', 11, 14)
+            Else
+                RAISERROR('Invalid list of requested run batch IDs; integer not found: "%s"', 11, 14, @batchIDs)
+        End
+
+        If @myRowCount = 1
+            Set @batchDescription = 'batch ' + @batchIDs
+        Else
+            Set @batchDescription = 'batches ' + @batchIDs
+
+        If Not Exists (Select * From T_Requested_Run_Batches WHERE ID In (Select Batch_ID From #Tmp_BatchIDs))
+        Begin
+            RAISERROR('Could not find entry in database for requested run %s', 11, 14, @batchDescription)
         End
         Else
         Begin
@@ -148,7 +181,7 @@ As
         End
     End
 
-    If IsNull(@dataPackageID, 0) > 0
+    If @dataPackageID > 0
     Begin
         If Not Exists (Select * From S_V_Data_Package_Export WHERE ID = @dataPackageID)
         Begin
@@ -160,7 +193,7 @@ As
         End
     End
 
-    If IsNull(@expGroupID, 0) > 0
+    If @expGroupID > 0
     Begin
         If Not Exists (Select * From T_Experiment_Groups WHERE Group_ID = @expGroupID)
         Begin
@@ -235,22 +268,23 @@ As
 
     If @batchDefined > 0 And IsNull(@workPackage, '') In ('', 'na', 'none')
     Begin
-        -- Auto-define using requests in the batch
+        -- Auto-define using requests in the batch(s)
         --
         SELECT TOP 1 @workPackage = Work_Package
         FROM ( SELECT RDS_WorkPackage AS Work_Package,
                       Count(*) AS Requests
-               FROM T_Requested_Run
-               WHERE RDS_BatchID = @batchID AND
-                     IsNull(RDS_WorkPackage, '') NOT IN ('', 'na', 'none')
+               FROM T_Requested_Run RR
+                    INNER JOIN #Tmp_BatchIDs
+                      ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
+               WHERE IsNull(RDS_WorkPackage, '') NOT IN ('', 'na', 'none')
                GROUP BY RDS_WorkPackage ) StatsQ
-        ORDER BY Requests Desc
+        ORDER BY Requests DESC
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0 And @mode Like 'preview%'
         Begin
-            Print 'Set Work Package to ' + @WorkPackage + ' based on requests in batch ' + Cast(@batchID As Varchar(12))
+            Print 'Set Work Package to ' + @WorkPackage + ' based on requests in ' + @batchDescription
         End
     End
 
@@ -283,7 +317,7 @@ As
     WHERE Charge_Code = @workPackage
 
     ---------------------------------------------------
-    -- Determine the number of datasets in the batch, data package, 
+    -- Determine the number of datasets in the batch(s), data package, 
     -- and/or experiment group for this Data Analysis Request
     ---------------------------------------------------
 
@@ -298,13 +332,16 @@ As
     Declare @organism  varchar(128)
     Declare @datasetCount int = 0
     Declare @eusProposalID varchar(10)
+    Declare @containerID int
 
     If @batchDefined > 0
     Begin
         INSERT INTO #Tmp_DatasetCountsByContainerType( ContainerType, ContainerID, SortWeight, DatasetCount )
-        SELECT 'Batch', @batchID, 2 As SortWeight, Count(*) AS DatasetCount
-        FROM T_Requested_Run R
-        WHERE R.RDS_BatchID = @batchID
+        SELECT 'Batch', RR.RDS_BatchID, 2 AS SortWeight, Count(*) AS DatasetCount
+        FROM T_Requested_Run RR
+             INNER JOIN #Tmp_BatchIDs
+               ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
+        GROUP BY RR.RDS_BatchID
     End
     
     If @dataPackageDefined > 0
@@ -329,12 +366,14 @@ As
 
     ---------------------------------------------------
     -- Determine the representative campaign, organism, dataset count, and EUS_Proposal_ID
-    -- Use the container type with the most dataset, sorting by SortWeight if ties
+    -- Use the container type with the most datasets, sorting by SortWeight if ties
     ---------------------------------------------------
 
     Declare @preferredContainer varchar(24) = ''
+    Declare @representativeBatchID Int = null
 
     SELECT TOP 1 @preferredContainer = ContainerType,
+                 @containerID = ContainerID,
                  @datasetCount = DatasetCount
     FROM #Tmp_DatasetCountsByContainerType
     WHERE DatasetCount > 0
@@ -349,6 +388,14 @@ As
 
     If @preferredContainer = 'Batch'
     Begin
+        Set @representativeBatchID = @containerID
+
+        -- Use all batches for the dataset count
+        SELECT @datasetCount = Count(*)
+        FROM T_Requested_Run RR
+             INNER JOIN #Tmp_BatchIDs
+               ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
+
         SELECT TOP 1 @campaign = Campaign
         FROM ( SELECT C.Campaign_Num AS Campaign,
                       Count(*) AS Experiments
@@ -357,7 +404,7 @@ As
                       ON R.Exp_ID = E.Exp_ID
                     INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
-               WHERE R.RDS_BatchID = @batchID
+               WHERE R.RDS_BatchID = @representativeBatchID
                GROUP BY C.Campaign_Num ) StatsQ
         ORDER BY StatsQ.Experiments DESC
 
@@ -369,7 +416,7 @@ As
                       ON R.Exp_ID = E.Exp_ID
                     INNER JOIN T_Organisms Org
                       ON E.EX_organism_ID = Org.Organism_ID
-               WHERE R.RDS_BatchID = @batchID
+               WHERE R.RDS_BatchID = @representativeBatchID
                GROUP BY Org.OG_name ) StatsQ
         ORDER BY StatsQ.Organisms DESC
 
@@ -377,10 +424,9 @@ As
         FROM ( SELECT R.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
                       Count(*) AS Requests
                FROM T_Requested_Run R
-               WHERE R.RDS_BatchID = @batchID
+               WHERE R.RDS_BatchID = @representativeBatchID
                GROUP BY R.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
-
     End
     Else If @preferredContainer = 'Data Package'
     Begin
@@ -465,6 +511,31 @@ As
                GROUP BY R.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
 
+    End
+
+    If @batchDefined > 0 And @representativeBatchID Is Null
+    Begin
+        -- Either @preferredContainer is not 'Batch' or none of the batches has a requested run with a dataset
+        --
+        SELECT TOP 1 @representativeBatchID = Batch_ID
+        FROM ( SELECT RR.RDS_BatchID As Batch_ID,
+                      Count(*) AS Requests
+               FROM T_Requested_Run RR
+                    INNER JOIN #Tmp_BatchIDs
+                      ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
+               GROUP BY RR.RDS_BatchID ) StatsQ
+        ORDER BY Requests Desc
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            -- None of the batches has any requested runs
+            --
+            SELECT TOP 1 @representativeBatchID = Batch_ID
+            FROM #Tmp_BatchIDs
+            ORDER BY Batch_ID
+        End
     End
 
     If @mode Like 'preview%'
@@ -562,7 +633,7 @@ As
             Requester_PRN,
             Description,
             Analysis_Specifications,
-            Batch_ID,
+            Representative_Batch_ID,
             Data_Package_ID,
             Exp_Group_ID,
             Work_Package,
@@ -583,7 +654,8 @@ As
             @requesterPRN,
             @description,
             @analysisSpecifications,
-            Case When @batchDefined > 0 Then @batchID Else Null End,
+            @comment,
+            Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
             Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
             Case When @experimentGroupDefined > 0 Then @expGroupID Else Null End,
             @workPackage,
@@ -617,6 +689,13 @@ As
             Exec AlterEnteredByUser 'T_Data_Analysis_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Entered', @enteredByColumnName='Entered_By'
         End
+
+        If @batchDefined > 0
+        Begin
+            INSERT INTO T_Data_Analysis_Request_Batch_IDs( Request_ID, Batch_ID )
+            SELECT @id, Batch_ID
+            FROM #Tmp_BatchIDs
+        End
     End -- Add mode
 
     ---------------------------------------------------
@@ -639,7 +718,7 @@ As
             Requester_PRN = @requesterPRN,
             Description = @description,
             Analysis_Specifications = @analysisSpecifications,
-            Batch_ID = Case When @batchDefined > 0 Then @batchID Else Null End,
+            Representative_Batch_ID = Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
             Data_Package_ID = Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
             Exp_Group_ID = Case When @experimentGroupDefined > 0 Then @expGroupID Else Null End,
             Work_Package = @workPackage,
@@ -678,6 +757,22 @@ As
         Begin
             Set @msg = 'Not updating estimated analysis time since user does not have permission'
             Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        End
+
+        If @batchDefined > 0
+        Begin
+            MERGE T_Data_Analysis_Request_Batch_IDs AS t
+            USING (SELECT @id As Request_ID, Batch_ID FROM #Tmp_BatchIDs) as s
+            ON ( t.Batch_ID = s.Batch_ID AND t.Request_ID = s.Request_ID)
+            WHEN NOT MATCHED BY TARGET THEN
+                INSERT(Request_ID, Batch_ID)
+                VALUES(s.Request_ID, s.Batch_ID)
+            WHEN NOT MATCHED BY SOURCE And t.Request_ID = @id THEN Delete;
+        End
+        Else
+        Begin
+            DELETE FROM T_Data_Analysis_Request_Batch_IDs
+            WHERE Request_ID = @id;
         End
 
     End -- update mode
