@@ -1,7 +1,7 @@
 /****** Object:  Table [T_Sample_Prep_Request_State_Name] ******/
 /****** RowCount: 7 ******/
 /****** Columns: State_ID, State_Name, Active ******/
-INSERT INTO [T_Sample_Prep_Request_State_Name] VALUES (0,'(not a valid state)',0)
+INSERT INTO [T_Sample_Prep_Request_State_Name] VALUES (0,'(state used for change tracking)',0)
 INSERT INTO [T_Sample_Prep_Request_State_Name] VALUES (1,'New',1)
 INSERT INTO [T_Sample_Prep_Request_State_Name] VALUES (2,'On Hold',1)
 INSERT INTO [T_Sample_Prep_Request_State_Name] VALUES (3,'Prep in Progress',1)
