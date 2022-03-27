@@ -15,14 +15,15 @@ CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
 **
 **  Auth:	grk
 **  Date:	03/30/2011 
-**			03/30/2011 grk - don't allow duplicate entries
+**			03/30/2011 grk - Don't allow duplicate entries
 **			12/16/2011 mem - Convert null descriptions to empty strings
-**			02/23/2016 mem - Add set XACT_ABORT on
+**			02/23/2016 mem - Add Set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/13/2017 mem - Use SCOPE_IDENTITY
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **          06/11/2021 mem - Store integers in Entity_ID_Value
+**          03/27/2022 mem - Assure that Active is 1 when updating an existing file attachment
 **    
 *****************************************************/
 (
@@ -44,7 +45,7 @@ As
 	Declare @myError int = 0
 	Declare @myRowCount int = 0
 
-	set @message = ''
+	Set @message = ''
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -57,17 +58,17 @@ As
 		THROW 51000, 'Access denied', 1;
 	End;
 
-	BEGIN TRY 
+	Begin TRY 
 
 	---------------------------------------------------
 	-- Is entry already in database? (only applies to updates)
 	---------------------------------------------------
 	Declare @tmp int
 
-	if @mode = 'update'
-	begin
-		set @tmp = 0
-		--
+	If @mode = 'update'
+	Begin
+		Set @tmp = 0
+
 		SELECT @tmp = ID
 		FROM  T_File_Attachment		
 		WHERE (ID = @id)
@@ -75,82 +76,85 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		
 		-- cannot update a non-existent entry
-		if @myError <> 0 OR @tmp = 0
+		If @myError <> 0 OR @tmp = 0
 			RAISERROR ('No entry could be found in database for update', 11, 16)
-	end
+	End
 	
-	IF @mode = 'add'
-	BEGIN
-		set @tmp = 0
-		--
+	If @mode = 'add'
+	Begin
+        -- When a file attachment is deleted the database record is not deleted
+        -- Instead, Active is set to 0
+        -- If a user re-attaches a "deleted" file to an entity, we need to use 'update' for the @mode
+		Set @tmp = 0
+
 		SELECT @tmp = ID
-		FROM   T_File_Attachment
-		WHERE  
-			Entity_Type = @entityType 
-			AND Entity_ID = @entityID 
-			AND [File_Name] = @fileName 
+		FROM T_File_Attachment
+		WHERE Entity_Type = @entityType AND
+		      Entity_ID = @entityID AND
+		      [File_Name] = @fileName
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		IF @tmp > 0
-		BEGIN
-			SET @mode = 'update'
-			SET @id = @tmp
-		END
-	END 
+
+		If @tmp > 0
+		Begin
+			Set @mode = 'update'
+			Set @id = @tmp
+		End
+	End 
 
 	---------------------------------------------------
 	-- action for add mode
 	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+	If @mode = 'add'
+	Begin
+	    INSERT INTO T_File_Attachment (
+		    [File_Name],
+		    Description,
+		    Entity_Type,
+		    Entity_ID,
+            Entity_ID_Value,
+		    Owner_PRN,
+		    File_Size_Bytes,
+		    Archive_Folder_Path,
+		    File_Mime_Type,
+            Active) 
+        VALUES (
+		    @fileName, 
+		    IsNull(@description, ''), 
+		    @entityType, 
+		    @entityID, 
+            Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container') 
+                 Then Null 
+                 Else Try_Cast(@entityID As Int) 
+            End,
+		    @callingUser, 
+		    @fileSizeBytes,
+		    @archiveFolderPath, 
+		    @fileMimeType,
+            1
+	    )
+	    --
+	    SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	INSERT INTO T_File_Attachment (
-		[File_Name],
-		Description,
-		Entity_Type,
-		Entity_ID,
-        Entity_ID_Value,
-		Owner_PRN,
-		File_Size_Bytes,
-		Archive_Folder_Path,
-		File_Mime_Type
-	 ) VALUES (
-		@fileName, 
-		IsNull(@description, ''), 
-		@entityType, 
-		@entityID, 
-        Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container') 
-             Then Null 
-             Else Try_Cast(@entityID As Int) 
-        End,
-		@callingUser, 
-		@fileSizeBytes,
-		@archiveFolderPath, 
-		@fileMimeType
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-		RAISERROR ('Insert operation failed', 11, 7)
+	    If @myError <> 0
+		    RAISERROR ('Insert operation failed', 11, 7)
 
-	-- Return ID of newly created entry
-	--
-	set @id = SCOPE_IDENTITY()
+	    -- Return ID of newly created entry
+	    --
+	    Set @id = SCOPE_IDENTITY()
 
-	end -- add mode
+	End -- add mode
 
 	---------------------------------------------------
 	-- action for update mode
 	---------------------------------------------------
 	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
-		--
+	If @mode = 'update' 
+	Begin
+		Set @myError = 0
+
 		UPDATE T_File_Attachment
-		SET Description = IsNull(@description, ''),
+		Set Description = IsNull(@description, ''),
 		    Entity_Type = @entityType,
 		    Entity_ID = @entityID,
             Entity_ID_Value = 
@@ -161,20 +165,19 @@ As
 		    File_Size_Bytes = @fileSizeBytes,
 		    Last_Affected = GETDATE(),
 		    Archive_Folder_Path = @archiveFolderPath,
-		    File_Mime_Type = @fileMimeType
-		WHERE (ID = @id)
+		    File_Mime_Type = @fileMimeType,
+            Active = 1
+		WHERE ID = @id
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 		--
-		if @myError <> 0
+		If @myError <> 0
 			RAISERROR ('Update operation failed: "%s"', 11, 4, @id)
 
-	end -- update mode
+	End -- update mode
 
-	---------------------------------------------------
-	---------------------------------------------------
-	END TRY
-	BEGIN CATCH 
+	End TRY
+	Begin CATCH 
 		EXEC FormatErrorMessage @message output, @myError output
 		
 		-- rollback any open transactions
@@ -182,9 +185,9 @@ As
 			ROLLBACK TRANSACTION;
 			
 		Exec PostLogEntry 'Error', @message, 'AddUpdateFileAttachment'
-	END CATCH
+	End CATCH
 
-	return @myError
+	Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateFileAttachment] TO [DDL_Viewer] AS [dbo]
