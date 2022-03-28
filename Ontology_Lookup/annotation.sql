@@ -19,7 +19,7 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[annotation] TO [DDL_Viewer] AS [dbo]
 GO
 ALTER TABLE [dbo].[annotation]  WITH CHECK ADD  CONSTRAINT [FK_annotation_term] FOREIGN KEY([term_pk])
-REFERENCES [dbo].[term] ([term_pk])
+REFERENCES [dbo].[T_Term] ([term_pk])
 GO
 ALTER TABLE [dbo].[annotation] CHECK CONSTRAINT [FK_annotation_term]
 GO

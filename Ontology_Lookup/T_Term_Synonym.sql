@@ -1,9 +1,9 @@
-/****** Object:  Table [dbo].[term_synonym] ******/
+/****** Object:  Table [dbo].[T_Term_Synonym] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[term_synonym](
+CREATE TABLE [dbo].[T_Term_Synonym](
 	[synonym_pk] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[term_pk] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[synonym_type_pk] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -15,10 +15,10 @@ CREATE TABLE [dbo].[term_synonym](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[term_synonym] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[T_Term_Synonym] TO [DDL_Viewer] AS [dbo]
 GO
-ALTER TABLE [dbo].[term_synonym]  WITH CHECK ADD  CONSTRAINT [FK_term_synonym_term] FOREIGN KEY([term_pk])
-REFERENCES [dbo].[term] ([term_pk])
+ALTER TABLE [dbo].[T_Term_Synonym]  WITH CHECK ADD  CONSTRAINT [FK_term_synonym_term] FOREIGN KEY([term_pk])
+REFERENCES [dbo].[T_Term] ([term_pk])
 GO
-ALTER TABLE [dbo].[term_synonym] CHECK CONSTRAINT [FK_term_synonym_term]
+ALTER TABLE [dbo].[T_Term_Synonym] CHECK CONSTRAINT [FK_term_synonym_term]
 GO
