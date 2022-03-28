@@ -4,11 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Term_Hierarchy_PSI_MI]
 AS
 	-- This view uses a recursive query
-	-- It is elegant, but not efficient since the "term" and "term_relationship" tables are so large
+	-- It is elegant, but not efficient since the "T_Term" and "T_Term_Relationship" tables are so large
 	-- Use view V_CV_PSI_MI instead
 	WITH TermHierarchy
 	AS (
@@ -22,7 +21,7 @@ AS
 			   CAST (null as varchar(255)) AS Parent_Identifier,
 			   cast(NULL AS varchar(255)) AS parent_pk,
 			   0 AS Level
-		FROM term Child
+		FROM T_Term Child
 		WHERE (Child.is_root_term = 1) AND
 			  (Child.namespace = 'PSI-MI')
 			   
@@ -36,12 +35,12 @@ AS
 			   Child.is_leaf,
 			   TermHierarchy.term_name AS Parent_Name,
 			   TermHierarchy.identifier AS Parent_Identifier,
-			   term_relationship.object_term_pk AS parent_pk,
+			   T_Term_Relationship.object_term_pk AS parent_pk,
 			   TermHierarchy.Level + 1 AS Level
-		FROM term Child
-			 INNER JOIN term_relationship
-			   ON Child.term_pk = term_relationship.subject_term_pk
-			 INNER JOIN TermHierarchy on term_relationship.object_term_pk = TermHierarchy.term_pk
+		FROM T_Term Child
+			 INNER JOIN T_Term_relationship
+			   ON Child.term_pk = T_Term_Relationship.subject_term_pk
+			 INNER JOIN TermHierarchy on T_Term_Relationship.object_term_pk = TermHierarchy.term_pk
 		WHERE (Child.namespace = 'PSI-MI')
 
 	)

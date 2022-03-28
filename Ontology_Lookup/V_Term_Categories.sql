@@ -4,21 +4,21 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_term_Categories]
+CREATE VIEW [dbo].[V_Term_Categories]
 AS
-SELECT dbo.term.term_pk,
-       dbo.term.ontology_id,
-       dbo.ontology.shortName,
-       dbo.term.term_name,
-       dbo.term.identifier,
-       dbo.term.definition,
-       dbo.term.namespace,
-       dbo.term.is_obsolete,
-       dbo.term.is_root_term,
-       dbo.term.is_leaf
-FROM dbo.ontology
-     INNER JOIN dbo.term
-       ON dbo.ontology.ontology_id = dbo.term.ontology_id
+SELECT T.term_pk,
+       T.ontology_id,
+       O.shortName,
+       T.term_name,
+       T.identifier,
+       T.definition,
+       T.namespace,
+       T.is_obsolete,
+       T.is_root_term,
+       T.is_leaf
+FROM T_Ontology O
+     INNER JOIN T_Term T
+       ON O.ontology_id = T.ontology_id
 WHERE is_leaf=0
 
 GO

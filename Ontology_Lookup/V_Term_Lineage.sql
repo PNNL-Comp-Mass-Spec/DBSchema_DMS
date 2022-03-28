@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Term_Lineage]
 AS
 SELECT Child.term_pk,
@@ -18,18 +17,18 @@ SELECT Child.term_pk,
        Child.is_obsolete,
        Child.[namespace],
        Child.ontology_id,
-       ontology.shortName AS Ontology,
+       O.shortName AS Ontology,
        ParentChildRelationship.predicate_term_pk,
        Parent.term_pk AS Parent_term_pk,
        Grandparent.term_pk AS Grandparent_term_pk
-FROM ontology
-     INNER JOIN term Child
-       ON ontology.ontology_id = Child.ontology_id
-     LEFT OUTER JOIN term Grandparent
-                     INNER JOIN term_relationship GrandParent_Parent_Relationship
+FROM T_Ontology O
+     INNER JOIN T_Term Child
+       ON O.ontology_id = Child.ontology_id
+     LEFT OUTER JOIN T_Term Grandparent
+                     INNER JOIN T_Term_Relationship GrandParent_Parent_Relationship
                        ON Grandparent.term_pk = GrandParent_Parent_Relationship.object_term_pk
-                     RIGHT OUTER JOIN term Parent
-                                      INNER JOIN term_relationship ParentChildRelationship
+                     RIGHT OUTER JOIN T_Term Parent
+                                      INNER JOIN T_Term_Relationship ParentChildRelationship
                                         ON Parent.term_pk = ParentChildRelationship.object_term_pk
                        ON GrandParent_Parent_Relationship.subject_term_pk = Parent.term_pk
        ON Child.term_pk = ParentChildRelationship.subject_term_pk

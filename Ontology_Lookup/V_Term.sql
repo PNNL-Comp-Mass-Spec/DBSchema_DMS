@@ -6,20 +6,20 @@ GO
 
 CREATE VIEW [dbo].[V_Term]
 AS
-SELECT dbo.term.term_pk,
-       dbo.term.term_name,
-       dbo.term.identifier,
-       dbo.term.definition,
-       dbo.term.namespace,
-       dbo.term.is_obsolete,
-       dbo.term.is_root_term,
-       dbo.term.is_leaf,
-       dbo.term.ontology_id,
-       dbo.ontology.shortName AS Ontology_ShortName,
-       dbo.ontology.fullName AS Ontology_FullName
-FROM dbo.ontology
-     INNER JOIN dbo.term
-       ON dbo.ontology.ontology_id = dbo.term.ontology_id
+SELECT T.term_pk,
+       T.term_name,
+       T.identifier,
+       T.definition,
+       T.namespace,
+       T.is_obsolete,
+       T.is_root_term,
+       T.is_leaf,
+       T.ontology_id,
+       O.shortName AS Ontology_ShortName,
+       O.fullName AS Ontology_FullName
+FROM T_Ontology O
+     INNER JOIN T_Term T
+       ON O.ontology_id = T.ontology_id
 
 
 GO
