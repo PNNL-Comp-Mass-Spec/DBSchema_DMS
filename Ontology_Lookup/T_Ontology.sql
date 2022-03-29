@@ -6,8 +6,8 @@ GO
 CREATE TABLE [dbo].[T_Ontology](
 	[ontology_id] [int] NOT NULL,
 	[shortName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[fully_loaded] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[uses_imports] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[fully_loaded] [smallint] NOT NULL,
+	[uses_imports] [smallint] NOT NULL,
 	[fullName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[query_url] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[source_url] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -32,5 +32,5 @@ CREATE NONCLUSTERED INDEX [IX_T_Ontology_shortName] ON [dbo].[T_Ontology]
 	[shortName] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Ontology] ADD  CONSTRAINT [DF_ontology_fully_loaded]  DEFAULT ('0') FOR [fully_loaded]
+ALTER TABLE [dbo].[T_Ontology] ADD  CONSTRAINT [DF_ontology_fully_loaded]  DEFAULT ((0)) FOR [fully_loaded]
 GO

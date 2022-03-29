@@ -10,9 +10,9 @@ CREATE TABLE [dbo].[T_Term](
 	[identifier] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[definition] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[namespace] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[is_obsolete] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[is_root_term] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[is_leaf] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[is_obsolete] [smallint] NULL,
+	[is_root_term] [smallint] NULL,
+	[is_leaf] [smallint] NULL,
 	[Updated] [smalldatetime] NULL,
  CONSTRAINT [PK_term] PRIMARY KEY CLUSTERED 
 (
