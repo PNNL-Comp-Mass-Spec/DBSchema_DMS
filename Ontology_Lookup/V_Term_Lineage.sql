@@ -25,12 +25,12 @@ FROM T_Ontology O
      INNER JOIN T_Term Child
        ON O.ontology_id = Child.ontology_id
      LEFT OUTER JOIN T_Term Grandparent
-                     INNER JOIN T_Term_Relationship GrandParent_Parent_Relationship
-                       ON Grandparent.term_pk = GrandParent_Parent_Relationship.object_term_pk
+                     INNER JOIN T_Term_Relationship Grandparent_Parent_Relationship
+                       ON Grandparent.term_pk = Grandparent_Parent_Relationship.object_term_pk
                      RIGHT OUTER JOIN T_Term Parent
                                       INNER JOIN T_Term_Relationship ParentChildRelationship
                                         ON Parent.term_pk = ParentChildRelationship.object_term_pk
-                       ON GrandParent_Parent_Relationship.subject_term_pk = Parent.term_pk
+                       ON Grandparent_Parent_Relationship.subject_term_pk = Parent.term_pk
        ON Child.term_pk = ParentChildRelationship.subject_term_pk
 
 

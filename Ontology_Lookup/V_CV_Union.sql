@@ -13,8 +13,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_BTO
     UNION
     SELECT 'ENVO' AS Source,
@@ -24,8 +24,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_ENVO
     UNION
     SELECT 'CL' AS Source,
@@ -35,8 +35,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_CL
     UNION
     SELECT 'GO' AS Source,
@@ -46,8 +46,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_GO
     UNION
     SELECT 'PSI-MI' AS Source,
@@ -57,8 +57,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_MI
     UNION
     SELECT 'PSI-Mod' AS Source,
@@ -68,8 +68,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_MOD
     UNION
     SELECT 'PSI-MS' AS Source,
@@ -79,8 +79,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_MS
     UNION
     SELECT 'NEWT' AS Source,
@@ -90,8 +90,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_NEWT
     UNION
     SELECT 'PRIDE' AS Source,
@@ -101,8 +101,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_PRIDE
     UNION
     SELECT 'DOID' AS Source,
@@ -112,8 +112,8 @@ AS
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
-           GrandParent_term_name,
-           GrandParent_term_ID
+           Grandparent_term_name,
+           Grandparent_term_ID
     FROM T_CV_DOID
 
 
