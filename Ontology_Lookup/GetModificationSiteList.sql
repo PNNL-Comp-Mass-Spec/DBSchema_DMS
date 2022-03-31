@@ -15,7 +15,8 @@ CREATE FUNCTION [dbo].[GetModificationSiteList]
 **	Parameters: 
 **
 **	Auth:	mem
-**	Date:	05/15/2013 - Initial version
+**	Date:	05/15/2013 mem - Initial version
+**          03/29/2022 mem - Add support for returning all modification sites when @Hidden is greater than 1
 **    
 *****************************************************/
 (
@@ -37,7 +38,7 @@ BEGIN
 	FROM (SELECT CASE WHEN Position IN ('Anywhere', 'Any N-Term', 'Any C-term') 
 			  THEN Site WHEN Site LIKE '_-term' THEN Position ELSE Site + ' @ ' + Position END AS Sites
 		  FROM T_Unimod_Specificity
-		  WHERE Unimod_ID = @UnimodID And (Hidden = @Hidden)
+		  WHERE Unimod_ID = @UnimodID And (Hidden = @Hidden Or @Hidden > 1)
 		 ) SourceQ
 	ORDER BY Sites
 	
