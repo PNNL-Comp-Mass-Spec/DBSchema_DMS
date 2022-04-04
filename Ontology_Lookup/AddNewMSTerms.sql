@@ -303,12 +303,12 @@ AS
                CASE WHEN t.Term_Name = s.Term_Name THEN t.Term_Name ELSE t.Term_Name + ' --> ' + s.Term_Name END Term_Name,
                CASE WHEN t.Identifier = s.Identifier THEN t.Identifier ELSE t.Identifier + ' --> ' + s.Identifier END Identifier,
                CASE WHEN t.Is_Leaf = s.Is_Leaf THEN Cast(t.Is_Leaf AS varchar(16)) ELSE Cast(t.Is_Leaf AS varchar(16)) + ' --> ' + Cast(s.Is_Leaf AS varchar(16)) END Is_Leaf,
-               t.Parent_term_ID,
                CASE WHEN t.Parent_term_type = s.Parent_term_type THEN t.Parent_term_type ELSE t.Parent_term_type + ' --> ' + s.Parent_term_type END Parent_term_type,
                CASE WHEN t.Parent_term_name = s.Parent_term_name THEN t.Parent_term_name ELSE t.Parent_term_name + ' --> ' + s.Parent_term_name END Parent_term_name,
-               t.GrandParent_term_ID,
+               t.Parent_term_ID,
                CASE WHEN t.GrandParent_term_type = s.GrandParent_term_type THEN t.GrandParent_term_type ELSE IsNull(t.GrandParent_term_type, 'NULL') + ' --> ' + IsNull(s.GrandParent_term_type, 'NULL') END GrandParent_term_type,
                CASE WHEN t.GrandParent_term_name = s.GrandParent_term_name THEN t.GrandParent_term_name ELSE IsNull(t.GrandParent_term_name, 'NULL') + ' --> ' + IsNull(s.GrandParent_term_name, 'NULL') END GrandParent_term_name,
+               t.GrandParent_term_ID,
                t.Entered,
                t.Updated
         FROM T_CV_MS AS t
@@ -327,15 +327,16 @@ AS
         UNION
         SELECT 'New item to add' as Item_Type,
                0 AS Entry_ID,
-               Term_PK, Term_Name, 
+               Term_PK, 
+               Term_Name, 
                Identifier, 
                Cast(Is_Leaf AS varchar(16)), 
                Parent_term_type,
-               Parent_term_ID, 
                Parent_term_name,
+               Parent_term_ID, 
                GrandParent_term_type,
-               GrandParent_term_ID,
                GrandParent_term_name,
+               GrandParent_term_ID,
                Null AS Entered,
                Null as Updated
         FROM #Tmp_SourceData
