@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[AddNewMSTerms]
 **  Auth:   mem
 **  Date:   06/15/2016 mem - Initial Version
 **          05/16/2018 mem - Add columns Parent_term_type and GrandParent_term_type
+**          04/03/2022 mem - Fix incorrect field name bug
 **
 *****************************************************/
 (
@@ -253,7 +254,7 @@ AS
                              Parent_term_type, Parent_term_name, Parent_term_ID, 
                              GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID)
         SELECT Term_PK, Term_Name, Identifier, Is_Leaf, 
-               Term_PK, Parent_term_name, Parent_term_ID, 
+               Parent_term_type, Parent_term_name, Parent_term_ID, 
                GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID
         FROM #Tmp_SourceData
         WHERE MatchesExisting = 0
