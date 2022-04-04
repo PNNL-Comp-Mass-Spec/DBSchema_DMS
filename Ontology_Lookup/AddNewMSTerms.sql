@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[AddNewMSTerms]
 **  Date:   06/15/2016 mem - Initial Version
 **          05/16/2018 mem - Add columns Parent_term_type and GrandParent_term_type
 **          04/03/2022 mem - Fix incorrect field name bug
+**          04/04/2022 mem - Update the merge query to support Parent_term_type being null
 **
 *****************************************************/
 (
@@ -224,7 +225,8 @@ AS
             t.[Term_Name] <> s.[Term_Name] OR
             t.[Identifier] <> s.[Identifier] OR
             t.[Is_Leaf] <> s.[Is_Leaf] OR
-            t.[Parent_term_type] <> s.[Parent_term_type] OR
+            ISNULL( NULLIF(t.[Parent_term_type], s.[Parent_term_type]),
+                    NULLIF(s.[Parent_term_type], t.[Parent_term_type])) IS NOT NULL OR
             t.[Parent_term_name] <> s.[Parent_term_name] OR
             ISNULL( NULLIF(t.[GrandParent_term_type], s.[GrandParent_term_type]),
                     NULLIF(s.[GrandParent_term_type], t.[GrandParent_term_type])) IS NOT NULL OR
@@ -263,7 +265,18 @@ AS
 
         SELECT 'Added ' + Cast(@myRowCount as varchar(9)) + ' new rows to T_CV_MS using ' + @SourceTableName AS Message
 
-
+        ---------------------------------------------------
+        -- Uncomment to delete extra rows
+        ---------------------------------------------------
+        /*
+        DELETE t_cv_ms 
+        FROM t_cv_ms t
+             LEFT OUTER JOIN T_Tmp_PsiMS_2022Apr s
+               ON t.Term_PK = s.Term_PK AND
+                  t.Parent_term_ID = s.Parent_term_ID AND
+                  ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
+        WHERE s.term_pk IS NULL
+        */
     End
     Else
     Begin
@@ -303,7 +316,7 @@ AS
                CASE WHEN t.Term_Name = s.Term_Name THEN t.Term_Name ELSE t.Term_Name + ' --> ' + s.Term_Name END Term_Name,
                CASE WHEN t.Identifier = s.Identifier THEN t.Identifier ELSE t.Identifier + ' --> ' + s.Identifier END Identifier,
                CASE WHEN t.Is_Leaf = s.Is_Leaf THEN Cast(t.Is_Leaf AS varchar(16)) ELSE Cast(t.Is_Leaf AS varchar(16)) + ' --> ' + Cast(s.Is_Leaf AS varchar(16)) END Is_Leaf,
-               CASE WHEN t.Parent_term_type = s.Parent_term_type THEN t.Parent_term_type ELSE t.Parent_term_type + ' --> ' + s.Parent_term_type END Parent_term_type,
+               CASE WHEN t.Parent_term_type = s.Parent_term_type THEN t.Parent_term_type ELSE IsNull(t.Parent_term_type, 'NULL') + ' --> ' + IsNull(s.Parent_term_type, 'NULL') END Parent_term_type,
                CASE WHEN t.Parent_term_name = s.Parent_term_name THEN t.Parent_term_name ELSE t.Parent_term_name + ' --> ' + s.Parent_term_name END Parent_term_name,
                t.Parent_term_ID,
                CASE WHEN t.GrandParent_term_type = s.GrandParent_term_type THEN t.GrandParent_term_type ELSE IsNull(t.GrandParent_term_type, 'NULL') + ' --> ' + IsNull(s.GrandParent_term_type, 'NULL') END GrandParent_term_type,
