@@ -3,14 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Tuning_IndexUsage]
 AS
 	/*
 	** Types of data returned:
-	** Scans: These occur when the access method never attempts to use the index in a typical B-Tree operation (e.g., a Seek). In other words, it will read all the pages in the order it deems appropriate unless there’s a limiting clause (e.g., TOP, ROWCOUNT). 
+	** Scans: These occur when the access method never attempts to use the index in a typical B-Tree operation (e.g., a Seek). In other words, it will read all the pages in the order it deems appropriate unless there's a limiting clause (e.g., TOP, ROWCOUNT). 
 	** Seeks: These occur when the B-Tree or index is used to fetch one or more rows. This might also include range scans that start their process with a Seek. 
 	** Lookups: These occur when an index or heap is accessed via a non-clustered index to retrieve extra columns not present in the non-clustered index to satisfy the Select list. These are commonly referred to as BookMark Lookup operations. 
-	** Updates: These occur whenever there’s an Insert, Update, or Delete (i.e., not just Updates). 
+	** Updates: These occur whenever there's an Insert, Update, or Delete (i.e., not just Updates). 
 	*/
 	-- Note: Stats from sys.dm_db_index_usage_stats are as-of the last time the Database started up
 	-- Thus, make sure the database has been running for a while before you consider deleting an apparently unused index
