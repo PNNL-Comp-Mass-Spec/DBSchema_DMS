@@ -5,12 +5,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Active_List_Report]
-as
+AS
 SELECT SPR.ID,
        SPR.Request_Name AS RequestName,
        SPR.Created,
        SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],
        SPR.Priority,
+       TA.Attachments AS Files,
        SN.State_Name AS [State],
        SPR.State_Comment AS [State Comment],
        SPR.Reason,
@@ -51,6 +52,12 @@ FROM T_Sample_Prep_Request SPR
        ON SPR.Requester_PRN = QP.U_PRN
      LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
        ON SPR.ID = QT.Request_ID
+     LEFT OUTER JOIN ( SELECT Entity_ID_Value,
+                              COUNT(*) AS Attachments
+                       FROM T_File_Attachment
+                       WHERE Entity_Type = 'sample_prep_request' AND Active > 0
+                       GROUP BY Entity_ID_Value ) AS TA
+       ON SPR.ID = TA.Entity_ID_Value
      LEFT OUTER JOIN V_Charge_Code_Status CC 
        ON SPR.Work_Package_Number = CC.Charge_Code
      LEFT OUTER JOIN T_EUS_Proposals AS EUP 
