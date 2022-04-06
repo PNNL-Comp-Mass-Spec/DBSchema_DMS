@@ -26,16 +26,16 @@ SELECT R.ID,
        R.Campaign,
        R.Organism,
        R.Dataset_Count As [Dataset Count],
-       R.Work_Package AS WP,
+       R.Work_Package AS [Work Package],
        ISNULL(CC.Activation_State_Name, 'Invalid') AS [WP State],
        R.EUS_Proposal_ID AS [EUS Proposal],
        EPT.Proposal_Type_Name AS [EUS Proposal Type],
-       Case 
-           When R.State = 4 Then 0                  -- Request is closed
-           When QT.[Days In Queue] <= 30 Then 30    -- Request is 0 to 30 days old
-           When QT.[Days In Queue] <= 60 Then 60    -- Request is 30 to 60 days old
-           When QT.[Days In Queue] <= 90 Then 90    -- Request is 60 to 90 days old
-           Else 120                                 -- Request is over 90 days old
+       CASE 
+           WHEN R.State = 4 THEN 0                  -- Request is closed
+           WHEN QT.[Days In Queue] <= 30 THEN 30    -- Request is 0 to 30 days old
+           WHEN QT.[Days In Queue] <= 60 THEN 60    -- Request is 30 to 60 days old
+           WHEN QT.[Days In Queue] <= 90 THEN 90    -- Request is 60 to 90 days old
+           ELSE 120                                 -- Request is over 90 days old
        END AS #DaysInQueue,
        CASE
        WHEN R.State <> 4 AND
