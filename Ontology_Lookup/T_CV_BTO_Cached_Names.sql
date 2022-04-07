@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_CV_BTO_Cached_Names](
+	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
 	[Identifier] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Term_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_CV_BTO_Cached_Names] PRIMARY KEY CLUSTERED 
