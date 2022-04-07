@@ -4,13 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.UpdateCachedBTONames
+CREATE Procedure [dbo].[UpdateCachedBTONames]
 /****************************************************
 **
 **	Desc: Updates data in T_CV_BTO_Cached_Names
 **
 **	Auth:	mem
 **	Date:	09/01/2017 mem - Initial version
+**          04/07/2022 mem - Use column names instead of * when previewing updates
 **    
 *****************************************************/
 (
@@ -51,7 +52,7 @@ As
 		---------------------------------------------------
 		
 		SELECT 'Delete from cache' AS [Action],
-		       target.*
+		       target.Identifier, Target.Term_Name
 		FROM T_CV_BTO_Cached_Names target
 		     LEFT OUTER JOIN ( SELECT identifier AS Identifier,
 		                              MIN(Term_Name) AS Term_Name
@@ -62,7 +63,7 @@ As
 		WHERE (Source.Identifier IS NULL)
 		UNION
 		SELECT 'Add to cache' AS [Action],
-		       Source.*
+		       Source.Identifier, Source.Term_Name
 		FROM T_CV_BTO_Cached_Names target
 		     RIGHT OUTER JOIN ( SELECT identifier AS Identifier,
 		                               MIN(Term_Name) AS Term_Name
