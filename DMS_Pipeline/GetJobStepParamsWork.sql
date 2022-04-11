@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsWork]
 **          05/16/2017 mem - Include RemoteTimestamp if defined
 **          03/12/2021 mem - Add ToolName (which tracks the pipeline script name) if not present in T_Job_Parameters
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **
 *****************************************************/
 (
@@ -258,10 +259,10 @@ AS
                   [Name],
                   [Value],
                   IsNull(Try_Parse(Step as int), 0) AS StepNumber
-           FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS [Section],
-                         xmlNode.value('@Name', 'nvarchar(256)') AS [Name],
-                         xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
-         REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'nvarchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
+           FROM ( SELECT xmlNode.value('@Section', 'varchar(128)') AS [Section],
+                         xmlNode.value('@Name', 'varchar(128)') AS [Name],
+                         xmlNode.value('@Value', 'varchar(4000)') AS [Value],
+         REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'varchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
                   FROM T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
                   WHERE T_Job_Parameters.Job = @jobNumber
                 ) LookupQ

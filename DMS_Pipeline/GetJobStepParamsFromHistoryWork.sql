@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsFromHistoryWork]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          06/20/2016 mem - Update procedure name shown when using @DebugMode
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **
 *****************************************************/
 (
@@ -37,14 +38,13 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsFromHistoryWork]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @stepTool varchar(64) = ''
-    declare @inputFolderName varchar(128) = ''
-    declare @outputFolderName varchar(128) = ''
-    declare @DataPackageID int = 0
+    Declare @stepTool varchar(64) = ''
+    Declare @inputFolderName varchar(128) = ''
+    Declare @outputFolderName varchar(128) = ''
+    Declare @DataPackageID int = 0
 
     set @myRowCount = 0
 
@@ -202,10 +202,10 @@ AS
                   Name,
                   [Value],
                   IsNull(Try_Parse(Step as int), 0) AS StepNumber
-           FROM ( SELECT xmlNode.value('@Section', 'nvarchar(256)') AS Section,
-                         xmlNode.value('@Name', 'nvarchar(256)') AS Name,
-                         xmlNode.value('@Value', 'nvarchar(4000)') AS [Value],
-                         REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'nvarchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
+           FROM ( SELECT xmlNode.value('@Section', 'varchar(128)') AS Section,
+                         xmlNode.value('@Name', 'varchar(128)') AS Name,
+                         xmlNode.value('@Value', 'varchar(4000)') AS [Value],
+                         REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'varchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
                   FROM T_Job_Parameters_History cross apply Parameters.nodes('//Param') AS R(xmlNode)
                   WHERE T_Job_Parameters_History.Job = @jobNumber AND
                         T_Job_Parameters_History.Most_Recent_Entry = 1
