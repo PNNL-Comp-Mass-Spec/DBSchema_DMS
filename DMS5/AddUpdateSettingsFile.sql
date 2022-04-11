@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSettingsFile]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/10/2018 mem - Rename parameters and make @settingsFileID an output parameter
+**          04/11/2022 mem - Check for existing settings file (by name) when @mode is 'add'
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -152,13 +153,32 @@ As
         Set @msgfPlusAutoCentroid = null
     End
         
+    If @mode = 'add'
+    Begin
+        ---------------------------------------------------
+        -- Check for an existing settings file
+        ---------------------------------------------------
+
+        SELECT @settingsFileID = ID
+        FROM T_Settings_Files
+        WHERE File_Name = @fileName
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount > 0
+        Begin
+            Set @message = 'Settings file ID ' + Cast(@settingsFileID As varchar(12))+ ' is named "' + @fileName + '"; cannot create a new, duplicate settings file'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        End
+    End
     
-    ---------------------------------------------------
-    -- Is entry already in database? (only applies to updates)
-    ---------------------------------------------------
-    --    
     If @mode = 'update'
     Begin
+        ---------------------------------------------------
+        -- Assure that the settings file exists
+        ---------------------------------------------------
+
         If @settingsFileID Is Null
         Begin
             Set @message = 'Settings file ID is null; cannot udpate'
@@ -168,15 +188,8 @@ As
 
         -- Cannot update a non-existent entry
         --
-        Declare @tmp int = 0
         --
-        SELECT @tmp = ID
-        FROM T_Settings_Files
-        WHERE (ID = @settingsFileID)
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        If @myError <> 0 OR @tmp = 0
+        If Not Exists (SELECT * FROM T_Settings_Files WHERE ID = @settingsFileID)
         Begin
             Set @message = 'Settings file ID ' + Cast(@settingsFileID As varchar(12))+ ' not found in database; cannot update'
             RAISERROR (@message, 10, 1)
@@ -233,7 +246,6 @@ As
     If @mode = 'update' 
     Begin
         Set @myError = 0
-        --
 
         UPDATE T_Settings_Files
         SET Analysis_Tool = @analysisTool,
@@ -244,7 +256,7 @@ As
             HMS_AutoSupersede = @hmsAutoSupersede,
             MSGFPlus_AutoCentroid = @msgfPlusAutoCentroid,
             Last_Updated = GetDate()
-        WHERE (ID = @settingsFileID)
+        WHERE ID = @settingsFileID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
