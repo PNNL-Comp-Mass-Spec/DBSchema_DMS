@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          11/30/2018 mem - Make @paramFileID an input/output parameter
 **          11/04/2021 mem - Populate the Mod_List field using GetParamFileMassModCodeList
+**          04/11/2022 mem - Check for whitespace in @paramFileName
 **
 *****************************************************/
 (
@@ -99,6 +100,13 @@ As
         Set @myError = 51002
         RAISERROR ('ParamFileType was null', 11, 1)
         Goto Done
+
+    If dbo.udfWhitespaceChars(@paramFileName, 0) > 0
+    Begin
+        If CharIndex(Char(9), @paramFileName) > 0
+            RAISERROR ('Parameter file name cannot contain tabs', 11, 116)
+        Else
+            RAISERROR ('Parameter file name cannot contain spaces', 11, 116)
     End
 
     Set @paramfileValid = IsNull(@paramfileValid, 1)

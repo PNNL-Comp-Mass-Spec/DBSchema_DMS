@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSettingsFile]
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/10/2018 mem - Rename parameters and make @settingsFileID an output parameter
 **          04/11/2022 mem - Check for existing settings file (by name) when @mode is 'add'
+**                         - Check for whitespace in @fileName
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -83,6 +84,15 @@ As
     End
     
     
+
+    If dbo.udfWhitespaceChars(@fileName, 0) > 0
+    Begin
+        If CharIndex(Char(9), @fileName) > 0
+            RAISERROR ('Settings file name cannot contain tabs', 11, 116)
+        Else
+            RAISERROR ('Settings file name cannot contain spaces', 11, 116)
+    End
+
     If Len(@hmsAutoSupersede) > 0
     Begin
         If @hmsAutoSupersede = @fileName

@@ -20,7 +20,8 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCart]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/10/2018 mem - Fix bug checking for duplicate carts when adding a new cart
-**    
+**          04/11/2022 mem - Check for whitespace in @CartName
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -40,13 +41,13 @@ As
     Set @myError = 0
     Set @myRowCount = 0
 
-    Set @message = ''    
-    
+    Set @message = ''
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateLCCart', @raiseError = 1
     If @authorized = 0
     Begin
@@ -61,6 +62,14 @@ As
     Set @CartDescription = LTrim(RTrim(IsNull(@CartDescription, '')))
     Set @CartState = LTrim(RTrim(IsNull(@CartState, '')))
     Set @mode = IsNull(@mode, '')
+
+    If dbo.udfWhitespaceChars(@CartName, 0) > 0
+    Begin
+        If CharIndex(Char(9), @CartName) > 0
+            RAISERROR ('LC Cart name cannot contain tabs', 11, 116)
+        Else
+            RAISERROR ('LC Cart name cannot contain spaces', 11, 116)
+    End
 
     ---------------------------------------------------
     -- Resolve cart state name to ID
@@ -115,8 +124,8 @@ As
 
         Declare @currentName varchar(128) = ''
 
-        SELECT @currentName = Cart_Name 
-        FROM T_LC_Cart 
+        SELECT @currentName = Cart_Name
+        FROM T_LC_Cart
         WHERE ID = @ID
 
         If @CartName <> @currentName And Exists (SELECT * FROM T_LC_Cart WHERE Cart_Name = @CartName)
@@ -133,13 +142,13 @@ As
     If @Mode = 'add'
     Begin
 
-        INSERT INTO T_LC_Cart ( 
+        INSERT INTO T_LC_Cart (
             Cart_Name,
             Cart_State_ID,
             Cart_Description
         ) VALUES (
-            @CartName, 
-            @CartStateID, 
+            @CartName,
+            @CartStateID,
             @CartDescription
         )
         --
@@ -162,7 +171,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin
         Set @myError = 0
         --

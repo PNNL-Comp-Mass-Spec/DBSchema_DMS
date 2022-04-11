@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          09/14/2020 mem - Expand the description field to 512 characters
 **          12/11/2020 mem - Allow duplicate metagenome organisms
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          04/11/2022 mem - Check for whitespace in @orgName
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -151,9 +152,12 @@ As
         RAISERROR ('Organism Name cannot be blank', 11, 0)
     End
 
-    If @orgName Like '% %'
+    If dbo.udfWhitespaceChars(@orgName, 0) > 0
     Begin
-        RAISERROR ('Organism Name cannot contain spaces', 11, 0)
+        If CharIndex(Char(9), @orgName) > 0
+            RAISERROR ('Organism name cannot contain tabs', 11, 116)
+        Else
+            RAISERROR ('Organism  name cannot contain spaces', 11, 116)
     End
 
     If @orgName Like '%,%'
