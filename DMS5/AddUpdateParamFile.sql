@@ -75,7 +75,6 @@ As
     Begin
         Set @myError = 51010
         RAISERROR ('ParamFileID was null', 11, 1)
-        Goto Done
     End
 
     Set @paramFileName = LTrim(RTrim(IsNull(@paramFileName, '')))
@@ -83,7 +82,6 @@ As
     Begin
         Set @myError = 51000
         RAISERROR ('ParamFileName was blank', 11, 1)
-        Goto Done
     End
 
     Set @paramFileDesc = LTrim(RTrim(IsNull(@paramFileDesc, '')))
@@ -91,7 +89,6 @@ As
     Begin
         Set @myError = 51001
         RAISERROR ('ParamFileDesc was blank', 11, 1)
-        Goto Done
     End
 
     Set @paramFileType = LTrim(RTrim(IsNull(@paramFileType, '')))
@@ -99,7 +96,7 @@ As
     Begin
         Set @myError = 51002
         RAISERROR ('ParamFileType was null', 11, 1)
-        Goto Done
+    End
 
     If dbo.udfWhitespaceChars(@paramFileName, 0) > 0
     Begin
@@ -139,7 +136,6 @@ As
         Set @myError = 51003
         Set @msg = 'ParamFileType is not valid: ' + @paramFileType
         RAISERROR (@msg, 11, 1)
-        Goto Done
     End
 
     ---------------------------------------------------
@@ -156,7 +152,6 @@ As
     Begin
         Set @msg = 'Cannot add: Param File "' + @ParamFileName + '" already exists'
         RAISERROR (@msg, 11, 1)
-        Goto Done
     End
 
     -- Check for a name conflict when renaming
@@ -165,7 +160,6 @@ As
     Begin
         Set @msg = 'Cannot rename: Param File "' + @ParamFileName + '" already exists'
         RAISERROR (@msg, 11, 1)
-        Goto Done
     End
 
     ---------------------------------------------------
