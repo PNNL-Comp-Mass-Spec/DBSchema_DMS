@@ -46,14 +46,14 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **
 *****************************************************/
 (
-    @campaignNum varchar(64),                -- Campaign name
+    @campaignNum varchar(64),               -- Campaign name
     @projectNum varchar(64),                -- Project name
     @progmgrPRN varchar(64),                -- Project Manager PRN (required)
-    @piPRN varchar(64),                        -- Principal Investigator PRN (required)
+    @piPRN varchar(64),                     -- Principal Investigator PRN (required)
     @technicalLead varchar(256),            -- Technical Lead
-    @samplePreparationStaff varchar(256),    -- Sample Prep Staff
-    @datasetAcquisitionStaff varchar(256),    -- Dataset acquisition staff
-    @informaticsStaff varchar(256),            -- Informatics staff
+    @samplePreparationStaff varchar(256),   -- Sample Prep Staff
+    @datasetAcquisitionStaff varchar(256),  -- Dataset acquisition staff
+    @informaticsStaff varchar(256),         -- Informatics staff
     @collaborators varchar(256),            -- Collaborators
     @comment varchar(500),
     @state varchar(24),

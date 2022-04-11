@@ -33,7 +33,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSettingsFile]
     @active tinyint,
     @contents text,
     @hmsAutoSupersede varchar(255) = '',        -- Settings file name to use instead of this settings file if the dataset comes from a high res MS instrument
-    @msgfPlusAutoCentroid varchar(255) = '',    -- Settings file name to use instead of this settings file if MSGF+ reports that not enough spectra are centroided; see SP AutoResetFailedJobs 
+    @msgfPlusAutoCentroid varchar(255) = '',    -- Settings file name to use instead of this settings file if MSGF+ reports that not enough spectra are centroided; see SP AutoResetFailedJobs
     @mode varchar(12) = 'add',                  -- 'add' or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -52,14 +52,14 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateSettingsFile', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -68,22 +68,20 @@ As
     Set @fileName = LTrim(RTrim(IsNull(@fileName, '')))
     Set @hmsAutoSupersede = LTrim(RTrim(IsNull(@hmsAutoSupersede, '')))
     Set @msgfPlusAutoCentroid = LTrim(RTrim(IsNull(@msgfPlusAutoCentroid, '')))
-    
+
     If @analysisTool = ''
     Begin
         Set @message = 'Analysis Tool cannot be empty'
         RAISERROR (@message, 10, 1)
         return 51006
     End
-    
+
     If @fileName = ''
     Begin
         Set @message = 'Filename cannot be empty'
         RAISERROR (@message, 10, 1)
         return 51006
     End
-    
-    
 
     If dbo.udfWhitespaceChars(@fileName, 0) > 0
     Begin
@@ -101,33 +99,33 @@ As
             RAISERROR (@message, 10, 1)
             return 51006
         End
-    
+
         If Not Exists (SELECT * FROM T_Settings_Files WHERE File_name = @hmsAutoSupersede)
         Begin
             Set @message = 'HMS_AutoSupersede settings file not found in the database: ' + @hmsAutoSupersede
             RAISERROR (@message, 10, 1)
             return 51006
         End
-        
+
         Declare @AnalysisToolForAutoSupersede varchar(64) = ''
-        
+
         SELECT @AnalysisToolForAutoSupersede = Analysis_Tool
         FROM T_Settings_Files
         WHERE File_name = @hmsAutoSupersede
-    
+
         If @AnalysisToolForAutoSupersede <> @analysisTool
         Begin
             Set @message = 'The Analysis Tool for the HMS_AutoSupersede file ("' + @hmsAutoSupersede + '") must match the analysis tool for this settings file: ' + @AnalysisToolForAutoSupersede + ' vs. ' + @analysisTool
             RAISERROR (@message, 10, 1)
             return 51006
         End
-        
+
     End
     Else
     Begin
         Set @hmsAutoSupersede = null
     End
-    
+
     If Len(@msgfPlusAutoCentroid) > 0
     Begin
         If @msgfPlusAutoCentroid = @fileName
@@ -143,26 +141,26 @@ As
             RAISERROR (@message, 10, 1)
             return 51006
         End
-    
+
         Declare @AnalysisToolForAutoCentroid varchar(64) = ''
-        
+
         SELECT @AnalysisToolForAutoCentroid = Analysis_Tool
         FROM T_Settings_Files
         WHERE File_name = @msgfPlusAutoCentroid
-    
+
         If @AnalysisToolForAutoCentroid <> @analysisTool
         Begin
             Set @message = 'The Analysis Tool for the MSGFPlus_AutoCentroid file ("' + @msgfPlusAutoCentroid + '") must match the analysis tool for this settings file: ' + @AnalysisToolForAutoCentroid + ' vs. ' + @analysisTool
             RAISERROR (@message, 10, 1)
             return 51006
         End
-        
+
     End
     Else
     Begin
         Set @msgfPlusAutoCentroid = null
     End
-        
+
     If @mode = 'add'
     Begin
         ---------------------------------------------------
@@ -182,7 +180,7 @@ As
             return 51007
         End
     End
-    
+
     If @mode = 'update'
     Begin
         ---------------------------------------------------
@@ -223,13 +221,13 @@ As
             Active,
             Contents,
             HMS_AutoSupersede,
-            MSGFPlus_AutoCentroid 
+            MSGFPlus_AutoCentroid
         ) VALUES (
-            @analysisTool, 
-            @fileName, 
-            @description, 
-            @active, 
-            @xmlContents, 
+            @analysisTool,
+            @fileName,
+            @description,
+            @active,
+            @xmlContents,
             @hmsAutoSupersede,
             @msgfPlusAutoCentroid
         )
@@ -253,7 +251,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Set @myError = 0
 

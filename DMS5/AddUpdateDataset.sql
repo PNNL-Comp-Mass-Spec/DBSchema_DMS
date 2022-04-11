@@ -135,8 +135,8 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @mode varchar(12) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
     @message varchar(1024) output,
     @callingUser varchar(128) = '',
-    @aggregationJobDataset tinyint = 0,      -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
-    @captureSubfolder varchar(255) = '',     -- Only used when @mode is 'add' or 'bad'
+    @aggregationJobDataset tinyint = 0,         -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
+    @captureSubfolder varchar(255) = '',        -- Only used when @mode is 'add' or 'bad'
     @lcCartConfig varchar(128) = '',
     @logDebugMessages tinyint = 0
 )
@@ -1245,7 +1245,7 @@ As
 
         If @datasetID <> IsNull(@datasetIDConfirm, @datasetID)
         Begin
-            Set @debugMsg = 
+            Set @debugMsg =
                 'Warning: Inconsistent identity values when adding dataset ' + @datasetnum + ': Found ID ' +
                 Cast(@datasetIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                 Cast(@datasetID as varchar(12))

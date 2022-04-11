@@ -25,26 +25,26 @@ CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
 *****************************************************/
 (
     @compoundID int,
-    @compoundName varchar(64),        -- Reference compound name or peptide sequence
+    @compoundName varchar(64),          -- Reference compound name or peptide sequence
     @description varchar(500),
     @compoundTypeName varchar(64),
-    @geneName varchar(128),            -- Gene or Protein name
+    @geneName varchar(128),             -- Gene or Protein name
     @modifications varchar(500),
     @organismName varchar(128),
-    @pubChemID varchar(30),            -- Will be converted to an integer; empty strings are stored as null
+    @pubChemID varchar(30),             -- Will be converted to an integer; empty strings are stored as null
     @campaignName varchar(64),
     @containerName varchar(128) = 'na',
     @wellplateName varchar(64),
     @wellNumber varchar(64),
-    @contactPRN varchar(64),        -- Contact for the Source; typically PNNL staff, but can be offsite person
-    @supplier varchar(64),             -- Source that the material came from; can be a person (onsite or offsite) or a company
+    @contactPRN varchar(64),            -- Contact for the Source; typically PNNL staff, but can be offsite person
+    @supplier varchar(64),              -- Source that the material came from; can be a person (onsite or offsite) or a company
     @productId varchar(128),
-    @purchaseDate varchar(30),        -- Will be converted to a date
+    @purchaseDate varchar(30),          -- Will be converted to a date
     @purity varchar(64),
     @purchaseQuantity varchar(128),
-    @mass varchar(30),                -- Will be converted to a float
-    @active varchar(3),                -- Can be: Yes, No, Y, N, 1, 0
-    @mode varchar(12) = 'add',        -- 'add', 'update', 'check_add', 'check_update'
+    @mass varchar(30),                  -- Will be converted to a float
+    @active varchar(3),                 -- Can be: Yes, No, Y, N, 1, 0
+    @mode varchar(12) = 'add',          -- 'add', 'update', 'check_add', 'check_update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
