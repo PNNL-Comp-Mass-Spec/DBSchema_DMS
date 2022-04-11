@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE Procedure [dbo].[ValidateProteinCollectionParams]
 /****************************************************
 ** 
@@ -18,13 +19,14 @@ CREATE Procedure [dbo].[ValidateProteinCollectionParams]
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			08/19/2013 mem - Auto-clearing @organismDBName if both @organismDBName and @protCollNameList are defined and @organismDBName is the auto-generated FASTA file for the specified protein collection
 **			07/12/2016 mem - Now using a synonym when calling ValidateAnalysisJobProteinParameters in the Protein_Sequences database
+**          04/11/2022 mem - Increase warning threshold for length of @protCollNameList to 4000
 **    
 *****************************************************/
 (
 	@toolName varchar(64),						-- If blank, then will assume @orgDbReqd=1
 	@organismDBName varchar(128) output,
 	@organismName varchar(128),
-	@protCollNameList varchar(4000) output,		-- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
+	@protCollNameList varchar(4000) output,		-- Will raise an error if over 4000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 4000 character limit on analysis job parameter values
 	@protCollOptionsList varchar(256) output,
 	@ownerPRN varchar(64) = '',					-- Only required if the user chooses an "Encrypted" protein collection; as of August 2010 we don't have any encrypted protein collections
 	@message varchar(255) = '' output,
@@ -98,9 +100,9 @@ As
 	-- Validate the protein collection info
 	---------------------------------------------------
 	
-	if Len(@protCollNameList) > 2000
+	if Len(@protCollNameList) > 4000
 	begin
-		set @message = 'Protein collection list is too long; maximum length is 2000 characters'
+		set @message = 'Protein collection list is too long; maximum length is 4000 characters'
 		return 53110
 	end
 	--
