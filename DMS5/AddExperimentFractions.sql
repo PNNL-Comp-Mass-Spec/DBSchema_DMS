@@ -50,6 +50,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          02/15/2021 mem - If the parent experiment has a TissueID defined, use it, even if the Sample Prep Request is not "parent" (for @requestOverride)
 **                         - No longer copy the parent experiment concentration to the fractions
 **          06/01/2021 mem - Raise an error if @mode is invalid
+**          04/12/2022 mem - Do not log data validation errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -122,6 +123,7 @@ AS
     Declare @fractionNamePreviewList varchar(8000) = ''
 
     Declare @wellPlateMode varchar(12)
+    Declare @logErrors tinyint = 0
 
     Begin TRY
 
@@ -169,7 +171,7 @@ AS
     Set @nameReplace = IsNull(@nameReplace, '')
 
     Set @addUnderscore = IsNull(@addUnderscore, 'Yes')
-        
+
     Set @requestOverride = LTrim(RTrim(IsNull(@requestOverride, 'parent')))
     Set @internalStandard = LTrim(RTrim(IsNull(@internalStandard, 'parent')))
     Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, 'parent')))
@@ -295,6 +297,8 @@ AS
         RAISERROR (@message, 11, 8)
     End
 
+    Set @logErrors = 1
+
     ---------------------------------------------------
     -- Assure that wellplate is in wellplate table (if set)
     ---------------------------------------------------
@@ -325,7 +329,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- Possibly override prep request ID 
+    -- Possibly override prep request ID
     ---------------------------------------------------
 
     Declare @prepRequestTissueID varchar(24) = Null
@@ -336,6 +340,7 @@ AS
 
         If @samplePrepRequest Is Null
         Begin
+            Set @logErrors = 0
             Set @message = 'Prep request ID is not an integer: ' + @requestOverride
             RAISERROR (@message, 11, 9)
         End
@@ -348,6 +353,7 @@ AS
         --
         If @myError <> 0 OR @myRowCount <> 1
         Begin
+            Set @logErrors = 0
             Set @message = 'Could not find sample prep request: ' + @requestOverride
             RAISERROR (@message, 11, 10)
         End
@@ -373,6 +379,7 @@ AS
         --
         If @myRowCount = 0
         Begin
+            Set @logErrors = 0
             Set @message = 'Could not find entry in database for internal standard "' + @internalStandard + '"'
             RAISERROR (@message, 11, 11)
         End
@@ -395,6 +402,7 @@ AS
         --
         If @myRowCount = 0
         Begin
+            Set @logErrors = 0
             Set @message = 'Could not find entry in database for postdigestion internal standard "' + @tmpID + '"'
             RAISERROR (@message, 11, 12)
         End
@@ -436,6 +444,7 @@ AS
             End
             Else
             Begin
+                Set @logErrors = 0
                 Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
                 RAISERROR (@message, 11, 13)
             End
@@ -448,6 +457,7 @@ AS
     ---------------------------------------------------
 
     Declare @transName varchar(32) = 'AddBatchExperimentEntry'
+    Set @logErrors = 1
 
     Begin transaction @transName
 
@@ -834,7 +844,10 @@ AS
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddExperimentFractions'
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'AddExperimentFractions'
+        End
     End CATCH
 
     return @myError
