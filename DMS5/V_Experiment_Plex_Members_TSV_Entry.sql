@@ -24,6 +24,8 @@ SELECT ExpIDPivotQ.Plex_Exp_ID As Exp_ID,
        ExpIDPivotQ.Channel14_ExpID,
        ExpIDPivotQ.Channel15_ExpID,
        ExpIDPivotQ.Channel16_ExpID,
+       ExpIDPivotQ.Channel17_ExpID,
+       ExpIDPivotQ.Channel18_ExpID,
        ChannelTypePivotQ.Channel1_Type, 
        ChannelTypePivotQ.Channel2_Type, 
        ChannelTypePivotQ.Channel3_Type, 
@@ -40,6 +42,8 @@ SELECT ExpIDPivotQ.Plex_Exp_ID As Exp_ID,
        ChannelTypePivotQ.Channel14_Type,
        ChannelTypePivotQ.Channel15_Type,
        ChannelTypePivotQ.Channel16_Type,
+       ChannelTypePivotQ.Channel17_Type,
+       ChannelTypePivotQ.Channel18_Type,
        CommentPivotQ.Channel1_Comment, 
        CommentPivotQ.Channel2_Comment, 
        CommentPivotQ.Channel3_Comment, 
@@ -55,7 +59,9 @@ SELECT ExpIDPivotQ.Plex_Exp_ID As Exp_ID,
        CommentPivotQ.Channel13_Comment,
        CommentPivotQ.Channel14_Comment,
        CommentPivotQ.Channel15_Comment,
-       CommentPivotQ.Channel16_Comment
+       CommentPivotQ.Channel16_Comment,
+       CommentPivotQ.Channel17_Comment,
+       CommentPivotQ.Channel18_Comment
 From (
        SELECT Plex_Exp_ID,
               [1] As Channel1_ExpID, 
@@ -73,7 +79,9 @@ From (
               [13] As Channel13_ExpID,
               [14] As Channel14_ExpID,
               [15] As Channel15_ExpID,
-              [16] As Channel16_ExpID
+              [16] As Channel16_ExpID,
+              [17] As Channel17_ExpID,
+              [18] As Channel18_ExpID
        FROM  ( SELECT PlexMembers.Plex_Exp_ID,
                       PlexMembers.Channel,
                       Cast(PlexMembers.Exp_ID As varchar(12)) + ': ' + E.Experiment_Num As ChannelExperiment
@@ -82,7 +90,7 @@ From (
                    On PlexMembers.Exp_ID = E.Exp_ID) AS SourceTable
             PIVOT ( Max(ChannelExperiment)
                     FOR Channel
-                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16] ) ) AS PivotData
+                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18] ) ) AS PivotData
     ) ExpIDPivotQ
     INNER JOIN T_Experiments E 
       On ExpIDPivotQ.Plex_Exp_ID = E.Exp_ID
@@ -104,7 +112,9 @@ From (
               [13] As Channel13_Type,
               [14] As Channel14_Type,
               [15] As Channel15_Type,
-              [16] As Channel16_Type
+              [16] As Channel16_Type,
+              [17] As Channel17_Type,
+              [18] As Channel18_Type
        FROM  ( SELECT PM.Plex_Exp_ID,
                    PM.Channel,
                    ChannelTypeName.Channel_Type_Name
@@ -114,7 +124,7 @@ From (
                ) AS SourceTable
             PIVOT ( Max(Channel_Type_Name)
                     FOR Channel
-                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16] ) ) AS PivotData
+                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18] ) ) AS PivotData
     ) ChannelTypePivotQ 
        On ExpIDPivotQ.Plex_Exp_ID = ChannelTypePivotQ.Plex_Exp_ID
     INNER JOIN
@@ -135,7 +145,9 @@ From (
               [13] As Channel13_Comment,
               [14] As Channel14_Comment,
               [15] As Channel15_Comment,
-              [16] As Channel16_Comment
+              [16] As Channel16_Comment,
+              [17] As Channel17_Comment,
+              [18] As Channel18_Comment
        FROM  ( SELECT PM.Plex_Exp_ID,
                    PM.Channel,
                    PM.Comment
@@ -143,7 +155,7 @@ From (
                ) AS SourceTable
             PIVOT ( Max(Comment)
                     FOR Channel
-                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16] ) ) AS PivotData
+                    IN ( [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18] ) ) AS PivotData
     ) CommentPivotQ 
        On ExpIDPivotQ.Plex_Exp_ID = CommentPivotQ.Plex_Exp_ID
 

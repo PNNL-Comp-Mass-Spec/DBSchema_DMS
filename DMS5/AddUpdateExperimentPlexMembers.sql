@@ -70,6 +70,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          03/02/2020 mem - Update to support TMT 16 by adding channels 12-16
 **          08/04/2021 mem - Rename @plexExperimentId to @plexExperimentIdOrName
 **          11/09/2021 mem - Update @mode to support 'preview'
+**          04/18/2022 mem - Update to support TMT 18 by adding channels 17 and 18
 **    
 *****************************************************/
 (
@@ -91,6 +92,8 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @expIdChannel14 varchar(130)='',
     @expIdChannel15 varchar(130)='',
     @expIdChannel16 varchar(130)='',
+    @expIdChannel17 varchar(130)='',
+    @expIdChannel18 varchar(130)='',
     @channelType1 varchar(64)='',       -- Normal, Reference, or Empty
     @channelType2 varchar(64)='',
     @channelType3 varchar(64)='',
@@ -107,6 +110,8 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @channelType14 varchar(64)='',
     @channelType15 varchar(64)='',
     @channelType16 varchar(64)='',
+    @channelType17 varchar(64)='',
+    @channelType18 varchar(64)='',
     @comment1 varchar(512)='',
     @comment2 varchar(512)='',
     @comment3 varchar(512)='',
@@ -123,6 +128,8 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @comment14 varchar(512)='',
     @comment15 varchar(512)='',
     @comment16 varchar(512)='',
+    @comment17 varchar(512)='',
+    @comment18 varchar(512)='',
 	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update', or 'preview'
 	@message varchar(512) output,
 	@callingUser varchar(128) = ''		
@@ -604,9 +611,11 @@ As
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (14, @expIdChannel14, @channelType14, @comment14)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (15, @expIdChannel15, @channelType15, @comment15)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (16, @expIdChannel16, @channelType16, @comment16)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (17, @expIdChannel17, @channelType17, @comment16)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (18, @expIdChannel18, @channelType18, @comment16)
 
         Set @channelNum = 1
-        While @channelNum <= 16
+        While @channelNum <= 18
         Begin
             If Not Exists (SELECT * FROM #TmpExperiment_Plex_Members WHERE [Channel] = @channelNum)
             Begin -- <ProcessChannelParam>
