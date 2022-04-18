@@ -96,6 +96,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          12/03/2021 mem - Clear @stateComment when creating a new prep request
 **          03/21/2022 mem - Refactor personnel validation code into ValidateRequestUsers
 **          04/11/2022 mem - Check for whitespace in @requestName
+**          04/18/2022 mem - Replace tabs in prep request names with spaces
 **
 *****************************************************/
 (
@@ -206,12 +207,23 @@ As
     If Len(IsNull(@reason, '')) < 1
         RAISERROR ('The reason field is required', 11, 116)
 
-    If dbo.udfWhitespaceChars(@requestName, 0) > 0
+    If dbo.udfWhitespaceChars(@requestName, 1) > 0
     Begin
-        If CharIndex(Char(9), @requestName) > 0
-            RAISERROR ('Sample prep request name cannot contain tabs', 11, 116)
-        Else
-            RAISERROR ('Sample prep request name cannot contain spaces', 11, 116)
+        -- Auto-replace CR, LF, or tabs with spaces
+        If CharIndex(Char(10), @requestName) > 0
+        Begin
+            Set @requestName = Replace(@requestName, Char(10), ' ')
+        End
+
+	    If CharIndex(Char(13), @requestName) > 0
+        Begin
+        Set @requestName = Replace(@requestName, Char(13), ' ')
+        End
+
+	    If CharIndex(Char(9), @requestName) > 0
+        Begin
+            Set @requestName = Replace(@requestName, Char(9), ' ')
+        End
     End
 
     If @state In ('New', 'Closed')
