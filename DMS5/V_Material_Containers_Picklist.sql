@@ -3,12 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Material_Containers_Picklist
+
+CREATE VIEW [dbo].[V_Material_Containers_Picklist]
 AS
-SELECT     dbo.T_Material_Containers.Tag AS Container, dbo.T_Material_Containers.Type, dbo.T_Material_Containers.Status, 
-                      dbo.T_Material_Containers.Comment, dbo.T_Material_Locations.Tag AS Location
-FROM         dbo.T_Material_Containers INNER JOIN
-                      dbo.T_Material_Locations ON dbo.T_Material_Containers.Location_ID = dbo.T_Material_Locations.ID
+SELECT MC.Tag AS Container,
+       MC.[Type],
+       MC.Status,
+       MC.[Comment],
+       L.Tag AS Location,
+       MC.SortKey AS #SortKey
+FROM T_Material_Containers MC
+     INNER JOIN T_Material_Locations L
+       ON MC.Location_ID = L.ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Picklist] TO [DDL_Viewer] AS [dbo]

@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Material_Containers](
 	[Created] [datetime] NOT NULL,
 	[Status] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Researcher] [varchar](129) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[SortKey]  AS (case when [Tag]='Staging' then (2147483645) when [Tag]='Met_Staging' then (2147483644) when [Tag] like '%Staging%' then (2147483500)+len([Tag]) when [Tag]='na' then (2147483500) when [Tag] like 'MC-[0-9]%' then CONVERT([int],substring([Tag],(4),(1000))) when [Tag] like 'Bin%' then len([Tag]) else ascii(substring([Tag],(1),(1)))*(10000000) end) PERSISTED,
  CONSTRAINT [PK_T_Material_Containers] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -37,6 +38,21 @@ CREATE NONCLUSTERED INDEX [IX_T_Material_Containers_LocationID_ID] ON [dbo].[T_M
 	[Location_ID] ASC,
 	[ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+SET ARITHABORT ON
+SET CONCAT_NULL_YIELDS_NULL ON
+SET QUOTED_IDENTIFIER ON
+SET ANSI_NULLS ON
+SET ANSI_PADDING ON
+SET ANSI_WARNINGS ON
+SET NUMERIC_ROUNDABORT OFF
+
+GO
+/****** Object:  Index [IX_T_Material_Containers_SortKey] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Material_Containers_SortKey] ON [dbo].[T_Material_Containers]
+(
+	[SortKey] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
