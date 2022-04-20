@@ -71,6 +71,7 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          08/04/2021 mem - Rename @plexExperimentId to @plexExperimentIdOrName
 **          11/09/2021 mem - Update @mode to support 'preview'
 **          04/18/2022 mem - Update to support TMT 18 by adding channels 17 and 18
+**          04/20/2022 mem - Fix typo in variable names
 **    
 *****************************************************/
 (
@@ -611,8 +612,8 @@ As
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (14, @expIdChannel14, @channelType14, @comment14)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (15, @expIdChannel15, @channelType15, @comment15)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (16, @expIdChannel16, @channelType16, @comment16)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (17, @expIdChannel17, @channelType17, @comment16)
-        Insert Into #TmpExperiment_Plex_Members_From_Params Values (18, @expIdChannel18, @channelType18, @comment16)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (17, @expIdChannel17, @channelType17, @comment17)
+        Insert Into #TmpExperiment_Plex_Members_From_Params Values (18, @expIdChannel18, @channelType18, @comment18)
 
         Set @channelNum = 1
         While @channelNum <= 18
