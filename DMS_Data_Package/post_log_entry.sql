@@ -28,6 +28,7 @@ As
 
     return @returnValue
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[post_log_entry] TO [DDL_Viewer] AS [dbo]
 GO
