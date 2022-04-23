@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group_Allowed_DS_Type] ******/
-/****** RowCount: 235 ******/
+/****** RowCount: 239 ******/
 /****** Columns: IN_Group, Dataset_Type, Comment ******/
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('11T','HMS','Typical mode')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('11T','HMS-HMSn','Rarely used')
@@ -187,6 +187,10 @@ INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QEHFX_Frac','HMS-HMSn'
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive','HMS-HCD-HMSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive','HMS-HMSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive-Imaging','HMS','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive-Imaging','HMS-HCD-HMSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive-Imaging','HMS-HMSn','')
+INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive-Imaging','MALDI-HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive_Frac','HMS','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive_Frac','HMS-HCD-HMSn','')
 INSERT INTO [T_Instrument_Group_Allowed_DS_Type] VALUES ('QExactive_Frac','HMS-HMSn','')

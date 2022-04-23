@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 51 ******/
+/****** RowCount: 52 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag, Sample_Prep_Visible, Requested_Run_Visible, Target_Instrument_Group ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('21T','Research','',1,1,'FT',1,1,null)
@@ -41,6 +41,7 @@ INSERT INTO [T_Instrument_Group] VALUES ('PrepHPLC','Prep HPLC Data folders','',
 INSERT INTO [T_Instrument_Group] VALUES ('QEHFX','LC-HMS with MS/MS; optionally HCD','',1,5,'ORB',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('QEHFX_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,5,'ORB',0,1,'QEHFX')
 INSERT INTO [T_Instrument_Group] VALUES ('QExactive','LC-HMS with MS/MS; optionally HCD','Was originally used by LTQ_Orb_3, but changed LTQ_Orb_3 to the "Orbitrap" group in May 2012.  Renamed this group from Orbitrap-HCD to QExactive in December 2012',1,5,'ORB',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('QExactive-Imaging','QExactive with MALDI source','',1,5,'ORB',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('QExactive_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,5,'ORB',0,1,'QExactive')
 INSERT INTO [T_Instrument_Group] VALUES ('QTrap','Research','MRM',0,3,'QQQ',0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Sciex_TripleTOF','Research','',0,5,null,0,0,null)
