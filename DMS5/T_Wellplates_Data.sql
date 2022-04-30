@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 386 ******/
+/****** RowCount: 392 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -387,4 +387,10 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1384,'Tafesse_Peptides','Digested peptides from Tafesse prep','1/7/2022 7:48:42 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1385,'Smallwood_Plasma_Peptides','Digested peptides from Smallwood lab','3/14/2022 10:42:23 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1386,'Smallwood_NRF_Peptides','Digested peptides from Smallwood lab','3/14/2022 10:42:33 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1387,'Obesity_459Prep_P1','Prep of 459 Obesity samples, Plate 1','4/27/2022 2:20:16 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1388,'Obesity_459Prep_P2','Prep of 459 Obesity samples, Plate 2','4/27/2022 2:20:23 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1389,'Obesity_459Prep_P3','Prep of 459 Obesity samples, Plate 3','4/27/2022 2:20:30 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1390,'Obesity_459Prep_P5','Prep of 459 Obesity samples, Plate 5','4/27/2022 2:20:45 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1391,'Obesity_459Prep_P6','Prep of 459 Obesity samples, Plate 6','4/27/2022 2:20:52 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1392,'Obesity_459Prep_P4','Prep of 459 Obesity samples, Plate 4','4/27/2022 2:21:06 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
