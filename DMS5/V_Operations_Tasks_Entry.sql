@@ -6,19 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_Operations_Tasks_Entry]
 AS
-    SELECT  ID,
-            Tab,
-            Requester,
-            Requested_Personnel AS RequestedPersonnel,
-            Assigned_Personnel AS AssignedPersonnel,
-            Description,
-            Comments,
-            Status,
-            Priority,
-            Work_Package,
-            Created,
-            Hours_Spent AS HoursSpent
-    FROM    T_Operations_Tasks
+SELECT OpsTask.ID,
+       TaskType.Task_Type_Name As TaskTypeName,
+       OpsTask.Tab,
+       OpsTask.Requester,
+       OpsTask.Requested_Personnel AS RequestedPersonnel,
+       OpsTask.Assigned_Personnel AS AssignedPersonnel,
+       OpsTask.Description,
+       OpsTask.Comments,
+       L.Lab_Name As LabName,
+       OpsTask.Status,
+       OpsTask.Priority,
+       OpsTask.Work_Package
+FROM T_Operations_Tasks OpsTask
+     INNER JOIN T_Operations_Task_Type TaskType
+       ON OpsTask.Task_Type_ID = TaskType.Task_Type_ID
+     INNER JOIN T_Lab_Locations L
+       ON OpsTask.Lab_ID = L.Lab_ID
 
 
 GO

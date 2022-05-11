@@ -20,22 +20,25 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/16/2022 mem - Rename parameters
+**          05/10/2022 mem - Add parameters @taskType and @labName
+**                         - Remove parameter @hoursSpent
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @id int output,
+    @taskType varchar(50),
     @tab varchar(64),
     @requester varchar(64),
     @requestedPersonnel varchar(256),
     @assignedPersonnel varchar(256),
     @description varchar(5132),
     @comments varchar(MAX),
-    @workPackage VARCHAR(32),
-    @hoursSpent VARCHAR(12),
+    @labName varchar(64),
     @status varchar(32),
     @priority varchar(32),
+    @workPackage varchar(32),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -49,6 +52,8 @@ As
     SET @message = ''
     
     Declare @closed datetime = null
+    Declare @taskTypeID Int
+    Declare @labID Int
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -67,11 +72,45 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
+    Set @taskType = IsNull(@taskType, 'Generic')
+
+    Set @labName = IsNull(@labName, 'Undefined')
+
     If @status IN ('Completed', 'Not Implemented')
     Begin 
         SET @closed = GETDATE() 
     End 
     
+    ---------------------------------------------------
+    -- Resolve task type name to task type ID
+    ---------------------------------------------------
+
+    SELECT @taskTypeID = Task_Type_ID
+    FROM T_Operations_Task_Type
+    WHERE Task_Type_Name = @taskType
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount = 0
+    Begin
+        RAISERROR ('Unrecognized task type name', 11, 16)
+    End
+        
+    ---------------------------------------------------
+    -- Resolve lab name to ID
+    ---------------------------------------------------
+
+    SELECT @labID = Lab_ID
+    FROM T_Lab_Locations
+    WHERE Lab_Name = @labName
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount = 0
+    Begin
+        RAISERROR ('Unrecognized lab name', 11, 16)
+    End
+
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
@@ -109,29 +148,31 @@ As
     Begin
 
         INSERT INTO T_Operations_Tasks (
+            Task_Type_ID,
             Tab,
             Requester,
             Requested_Personnel,
             Assigned_Personnel,
             Description,
             Comments,
+            Lab_ID,
             Status,
             Priority,
             Work_Package,
-            Closed,
-            Hours_Spent 
+            Closed             
         ) VALUES(
+            @taskTypeID,
             @tab, 
             @requester, 
             @requestedPersonnel, 
             @assignedPersonnel, 
             @description, 
             @comments, 
+            @labID,
             @status,
             @priority,
             @workPackage,
-            @closed,
-            @hoursSpent
+            @closed
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -154,17 +195,18 @@ As
         Set @myError = 0
         --
         UPDATE T_Operations_Tasks
-        SET Tab = @tab,
+        SET Task_Type_ID = @taskTypeID,
+            Tab = @tab,
             Requester = @requester,
             Requested_Personnel = @requestedPersonnel,
             Assigned_Personnel = @assignedPersonnel,
             Description = @description,
             Comments = @comments,
+            Lab_ID = @labID,
             Status = @status,
             Priority = @priority,
             Work_Package = @workPackage,
-            Closed = @closed,
-            Hours_Spent = @hoursSpent
+            Closed = @closed
         WHERE ID = @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
