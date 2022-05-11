@@ -27,7 +27,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Dataset_Storage_Move_Log_DatasetID] ON [dbo].[T_
 	[DatasetID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Dataset_Storage_Move_Log] ADD  DEFAULT (getdate()) FOR [Entered]
+ALTER TABLE [dbo].[T_Dataset_Storage_Move_Log] ADD  CONSTRAINT [DF_T_Dataset_Storage_Move_Log_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Dataset_Storage_Move_Log]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Storage_Move_Log_T_Dataset] FOREIGN KEY([DatasetID])
 REFERENCES [dbo].[T_Dataset] ([Dataset_ID])

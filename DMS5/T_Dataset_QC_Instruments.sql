@@ -16,5 +16,5 @@ CREATE TABLE [dbo].[T_Dataset_QC_Instruments](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Dataset_QC_Instruments] TO [DDL_Viewer] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Dataset_QC_Instruments] ADD  DEFAULT (getdate()) FOR [Last_Updated]
+ALTER TABLE [dbo].[T_Dataset_QC_Instruments] ADD  CONSTRAINT [DF_T_Dataset_QC_Instruments_Last_Updated]  DEFAULT (getdate()) FOR [Last_Updated]
 GO
