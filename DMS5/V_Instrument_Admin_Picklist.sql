@@ -9,7 +9,7 @@ AS
 SELECT IN_name + ' ' + IN_usage AS val,
        IN_name AS ex
 FROM dbo.T_Instrument_Name
-WHERE (IN_status IN ('active', 'offline'))
+WHERE (IN_status IN ('active', 'offline', 'broken'))
 
 
 GO

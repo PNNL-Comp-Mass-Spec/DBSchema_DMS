@@ -128,7 +128,7 @@ REFERENCES [dbo].[T_YesNo] ([Flag])
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_YesNo]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name_Status] CHECK  (([IN_Status]='offline' OR [IN_Status]='inactive' OR [IN_Status]='active'))
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name_Status] CHECK  (([IN_Status]='offline' OR [IN_Status]='inactive' OR [IN_Status]='active' OR [IN_Status]='broken'))
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [CK_T_Instrument_Name_Status]
 GO

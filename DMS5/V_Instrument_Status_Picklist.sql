@@ -3,10 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Instrument_Status_Picklist
+
+CREATE VIEW [dbo].[V_Instrument_Status_Picklist]
 AS
-SELECT DISTINCT IN_status AS val
-FROM         dbo.T_Instrument_Name
+SELECT 'active' AS val
+UNION
+SELECT 'inactive' AS val
+UNION
+SELECT 'offline' AS val
+UNION
+SELECT 'broken' AS val
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Status_Picklist] TO [DDL_Viewer] AS [dbo]
