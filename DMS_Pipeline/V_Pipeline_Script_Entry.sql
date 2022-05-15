@@ -4,16 +4,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Pipeline_Script_Entry] as 
-SELECT ID,
-       Script,
-       Description,
-       Enabled,
-       Results_Tag AS ResultsTag,
-       Case When Backfill_to_DMS = 0 Then 'N' Else 'Y' End AS BackfillToDMS,
-       Contents,
-       Parameters,
-       Fields
+CREATE VIEW [dbo].[V_Pipeline_Script_Entry]
+AS
+SELECT id,
+       script,
+       description,
+       enabled,
+       results_tag,
+       Case When Backfill_to_DMS = 0 Then 'N' Else 'Y' End AS backfill_to_dms,
+       contents,
+       parameters,
+       fields
 FROM dbo.T_Scripts
 
 

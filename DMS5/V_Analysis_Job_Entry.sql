@@ -3,28 +3,30 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Analysis_Job_Entry as 
-SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS Job,
-       AJ.AJ_priority,
-       AnalysisTool.AJT_toolName AS AJ_ToolName,
-       DS.Dataset_Num AS AJ_Dataset,
-       AJ.AJ_parmFileName AS AJ_ParmFile,
-       AJ.AJ_settingsFileName AS AJ_SettingsFile,
-       Org.OG_name AS AJ_Organism,
-       AJ.AJ_organismDBName AS AJ_OrganismDB,
-       AJ.AJ_owner,
-       AJ.AJ_comment,
-       AJ.AJ_specialProcessing,
-       AJ.AJ_batchID,
-       AJ.AJ_assignedProcessorName,
-       AJ.AJ_proteinCollectionList AS protCollNameList,
-       AJ.AJ_proteinOptionsList AS protCollOptionsList,
-       ASN.AJS_name AS stateName,
+
+CREATE VIEW V_Analysis_Job_Entry
+AS
+SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS job,
+       AJ.AJ_priority as priority,
+       AnalysisTool.AJT_toolName AS tool_name,
+       DS.Dataset_Num AS dataset,
+       AJ.AJ_parmFileName AS parm_file,
+       AJ.AJ_settingsFileName AS settings_file,
+       Org.OG_name AS organism,
+       AJ.AJ_organismDBName AS organism_db,
+       AJ.AJ_owner AS owner,
+       AJ.AJ_comment AS comment,
+       AJ.AJ_specialProcessing AS special_processing,
+       AJ.AJ_batchID AS batch_id,
+       AJ.AJ_assignedProcessorName AS assigned_processor_name,
+       AJ.AJ_proteinCollectionList AS prot_coll_name_list,
+       AJ.AJ_proteinOptionsList AS prot_coll_options_list,
+       ASN.AJS_name AS state_name,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
-       END AS propagationMode,
-       AJPG.Group_Name AS associatedProcessorGroup
+       END AS propagation_mode,
+       AJPG.Group_Name AS associated_processor_group
 FROM T_Analysis_Job_Processor_Group AJPG
      INNER JOIN T_Analysis_Job_Processor_Group_Associations AJPGA
        ON AJPG.ID = AJPGA.Group_ID
@@ -38,6 +40,7 @@ FROM T_Analysis_Job_Processor_Group AJPG
                       INNER JOIN T_Analysis_State_Name ASN
                         ON AJ.AJ_StateID = ASN.AJS_stateID
        ON AJPGA.Job_ID = AJ.AJ_jobID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Entry] TO [DDL_Viewer] AS [dbo]

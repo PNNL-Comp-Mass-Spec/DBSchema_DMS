@@ -6,20 +6,20 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Entry]
 AS
-SELECT ID,
-       Name,
-       Package_Type AS PackageType,
-       Description,
-       [Comment],
-       Owner,
-       Requester,
-       State,
-       Path_Team AS Team,
-       Mass_Tag_Database AS MassTagDatabase,
-       Wiki_Page_Link AS PRISMWikiLink,
-       Data_DOI,
-       Manuscript_DOI,
-       '' AS creationParams
+SELECT id,
+       name,
+       package_type,
+       description,
+       [comment],
+       owner,
+       requester,
+       state,
+       Path_Team AS team,
+       Mass_Tag_Database AS mass_tag_database,
+       Wiki_Page_Link AS prismwiki_link,
+       data_doi,
+       manuscript_doi,
+       '' AS creation_params
 FROM dbo.T_Data_Package
 
 GO
