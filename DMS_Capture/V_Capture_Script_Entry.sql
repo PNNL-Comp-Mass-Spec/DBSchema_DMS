@@ -15,6 +15,7 @@ SELECT
     contents
 FROM T_Scripts
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Capture_Script_Entry] TO [DDL_Viewer] AS [dbo]
 GO

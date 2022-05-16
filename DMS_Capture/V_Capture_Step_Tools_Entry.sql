@@ -14,6 +14,7 @@ SELECT id,
        instrument_capacity_limited
 FROM dbo.T_Step_Tools
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Capture_Step_Tools_Entry] TO [DDL_Viewer] AS [dbo]
 GO
