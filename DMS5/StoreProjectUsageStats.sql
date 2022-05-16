@@ -20,11 +20,12 @@ CREATE Procedure [dbo].[StoreProjectUsageStats]
 **          05/06/2016 mem - Now tracking experiments
 **          02/24/2017 mem - Update the Merge logic to join on Proposal_User
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
+**          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
 **    
 *****************************************************/
 (    
-    @WindowDays int = 7,
-    @EndDate smalldatetime = null,            -- End date/time; if null, uses the current date/time
+    @windowDays int = 7,
+    @endDate smalldatetime = null,            -- End date/time; if null, uses the current date/time
     @infoOnly tinyint = 1
 )
 AS
@@ -37,20 +38,20 @@ AS
     -- Validate the input parameters
     -----------------------------------------
     
-    Set @WindowDays = IsNull(@WindowDays, 7)
-    If (@WindowDays < 1)
-        Set @WindowDays = 1
+    Set @windowDays = IsNull(@windowDays, 7)
+    If (@windowDays < 1)
+        Set @windowDays = 1
     
-    Set @EndDate = IsNull(@EndDate, GetDate())
+    Set @endDate = IsNull(@endDate, GetDate())
     Set @infoOnly = IsNull(@infoOnly, 0)
 
-    -- Round @EndDate backward to the nearest hour
-    Set @EndDate = DateAdd(Hour, DatePart(Hour, @EndDate), Cast(Cast(@EndDate as Date) AS smalldatetime))
+    -- Round @endDate backward to the nearest hour
+    Set @endDate = DateAdd(Hour, DatePart(Hour, @endDate), Cast(Cast(@endDate as Date) AS smalldatetime))
 
-    Declare @StartDate smalldatetime = DateAdd(day, -@WindowDays, @EndDate)
+    Declare @StartDate smalldatetime = DateAdd(day, -@windowDays, @endDate)
 
-    Declare @EndDateYear int = DatePart(year, @EndDate)
-    Declare @EndDateWeek tinyint = DatePart(week, @EndDate)
+    Declare @EndDateYear int = DatePart(year, @endDate)
+    Declare @EndDateWeek tinyint = DatePart(week, @endDate)
 
     -----------------------------------------
     -- Create a temporary table
@@ -101,7 +102,7 @@ AS
                                           JobTool_First,
                                           JobTool_Last )
     SELECT @Startdate AS StartDate,
-           @EndDate AS EndDate,
+           @endDate AS EndDate,
            @EndDateYear AS TheYear,
            @EndDateWeek AS WeekOfYear,
            EUSPro.Proposal_ID,
@@ -112,10 +113,10 @@ AS
                ELSE 0
            END AS Proposal_Active,
            CASE
-               WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER') THEN 1                                           -- Resource_Owner
-               WHEN EUSPro.Proposal_Type IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC') THEN 2                        -- Proprietary
-               WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3  -- EMSL_User
-              ELSE 0                                                                                            -- Unknown
+               WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER', 'Resource Owner') THEN 1                           -- Resource Owner
+               WHEN EUSPro.Proposal_Type IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 2    -- Proprietary
+               WHEN EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 3  -- EMSL_User
+              ELSE 0                                                                                              -- Unknown
            END AS Project_Type_ID,
            0 AS Samples,
            COUNT(*) AS Datasets,
@@ -138,7 +139,7 @@ AS
            ON RR.ID = RRUsers.Request_ID
          LEFT OUTER JOIN T_EUS_Proposals EUSPro
            ON RR.RDS_EUS_Proposal_ID = EUSPro.Proposal_ID
-    WHERE DS.DS_created BETWEEN @StartDate AND @EndDate
+    WHERE DS.DS_created BETWEEN @StartDate AND @endDate
     GROUP BY EUSPro.Proposal_ID, RR.RDS_WorkPackage, RR.RDS_EUS_UsageType, EUSPro.Proposal_Type,
              EUSPro.Proposal_Start_Date, EUSPro.Proposal_End_Date
     ORDER BY Count(*) DESC
@@ -151,7 +152,7 @@ AS
     MERGE #Tmp_Project_Usage_Stats AS t
     USING (
         SELECT @Startdate AS StartDate,
-               @EndDate AS EndDate,
+               @endDate AS EndDate,
                @EndDateYear AS TheYear,
                @EndDateWeek AS WeekOfYear,
                EUSPro.Proposal_ID,
@@ -161,12 +162,12 @@ AS
                         GetDate() <= EUSPro.Proposal_End_Date THEN 1
                    ELSE 0
                END AS Proposal_Active,
-          CASE
-              WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER') THEN 1                                            -- Resource_Owner
-              WHEN EUSPro.Proposal_Type IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC') THEN 2                         -- Proprietary
-              WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3   -- EMSL_User
-              ELSE 0                                                                                            -- Unknown
-          END AS Project_Type_ID,
+               CASE
+                   WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER', 'Resource Owner') THEN 1                           -- Resource Owner
+                   WHEN EUSPro.Proposal_Type IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 2    -- Proprietary
+                   WHEN EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 3  -- EMSL_User
+                   ELSE 0                                                                                             -- Unknown
+               END AS Project_Type_ID,
                0 AS Samples,              
                0 AS Datasets,
                Count(*) AS Jobs,
@@ -183,7 +184,7 @@ AS
                           ON DS.Dataset_ID = RR.DatasetID
                         INNER JOIN T_Analysis_Job J
                           ON J.AJ_datasetID = DS.Dataset_ID AND
-                             J.AJ_start BETWEEN @StartDate AND @EndDate
+                             J.AJ_start BETWEEN @StartDate AND @endDate
                         INNER JOIN T_Analysis_Job_Request AJR
                           ON AJR.AJR_requestID = J.AJ_requestID AND
                              AJR.AJR_requestID > 1
@@ -234,7 +235,7 @@ AS
     MERGE #Tmp_Project_Usage_Stats AS t
     USING (
         SELECT @Startdate AS StartDate,
-               @EndDate AS EndDate,
+               @endDate AS EndDate,
                @EndDateYear AS TheYear,
                @EndDateWeek AS WeekOfYear,
                EUSPro.Proposal_ID,
@@ -245,9 +246,9 @@ AS
                    ELSE 0
                END AS Proposal_Active,
                CASE
-                   WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER') THEN 1                                            -- Resource_Owner
-                   WHEN EUSPro.Proposal_Type IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC') THEN 2                         -- Proprietary
-                   WHEN EUSPro.Proposal_Type NOT IN ('PROPRIETARY', 'RESOURCE_OWNER', 'PROPRIETARY_PUBLIC') THEN 3   -- EMSL_User
+                   WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER', 'Resource Owner') THEN 1                           -- Resource Owner
+                   WHEN EUSPro.Proposal_Type IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 2    -- Proprietary
+                   WHEN EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 3  -- EMSL_User
                    ELSE 0                                                                                            -- Unknown
                END AS Project_Type_ID,
                COUNT(DISTINCT Exp_ID) AS Samples,
@@ -269,7 +270,7 @@ AS
                ON SPR.ID = T_Experiments.EX_sample_prep_request_ID          
              LEFT OUTER JOIN T_EUS_Users AS EUSUsers 
                ON SPR.EUS_User_ID = EUSUsers.Person_ID
-        WHERE T_Experiments.EX_created BETWEEN @StartDate and @EndDate
+        WHERE T_Experiments.EX_created BETWEEN @StartDate and @endDate
         GROUP BY EUSPro.Proposal_ID, SPR.Work_Package_Number, EUSPro.Proposal_Start_Date, EUSPro.Proposal_End_Date,
                  EUSPro.Proposal_Type, SPR.EUS_User_ID, UsageType.ID
     ) AS s
@@ -338,7 +339,7 @@ AS
         DELETE FROM T_Project_Usage_Stats
         WHERE TheYear = @EndDateYear AND
               WeekOfYear = @EndDateWeek AND
-              Cast(EndDate AS date) = Cast(@EndDate AS date)
+              Cast(EndDate AS date) = Cast(@endDate AS date)
 
 
         INSERT INTO T_Project_Usage_Stats( StartDate,
@@ -382,7 +383,6 @@ AS
 
     End
 
-    
 Done:
     
     --

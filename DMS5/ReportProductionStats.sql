@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **          04/20/2018 mem - Allow Request_ID to be null
 **          04/27/2018 mem - Add column [% EF Study Specific by AcqTime]
 **          07/22/2019 mem - Refactor code into PopulateCampaignFilterTable, PopulateInstrumentFilterTable, and ResolveStartAndEndDates
+**          05/16/2022 mem - Treat 'Resource Owner' proposals as not EMSL funded
 **
 *****************************************************/
 (
@@ -234,7 +235,7 @@ AS
                RR.ID,
                CASE
                    WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY') 
-                        IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER') THEN 0
+                        IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER', 'Proprietary Public', 'Resource Owner') THEN 0
                    ELSE 1
                END AS EMSL_Funded
         FROM T_Dataset D
@@ -268,7 +269,7 @@ AS
                RR.ID,
                CASE
                    WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY') 
-                        IN ('PROPRIETARY', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER') THEN 0
+                        IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER', 'Proprietary Public', 'Resource Owner') THEN 0
                    ELSE 1
                END AS EMSL_Funded
         FROM T_Dataset D
