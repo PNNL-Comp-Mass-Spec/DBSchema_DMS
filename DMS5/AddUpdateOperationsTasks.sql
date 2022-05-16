@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **          03/16/2022 mem - Rename parameters
 **          05/10/2022 mem - Add parameters @taskType and @labName
 **                         - Remove parameter @hoursSpent
+**          05/16/2022 mem - Do not log data validation errors
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -54,6 +55,7 @@ As
     Declare @closed datetime = null
     Declare @taskTypeID Int
     Declare @labID Int
+    Declare @logErrors tinyint = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -141,6 +143,8 @@ As
         
     End
 
+    Set @logErrors = 1
+
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
@@ -226,7 +230,10 @@ As
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
             
-        Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
+        End
     End CATCH
     
     return @myError
