@@ -6,27 +6,27 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Entry]
 AS
-SELECT R.ID,
-       R.Request_Name,
-       R.Analysis_Type,
-       R.Requester_PRN,
-       R.Description,
-       R.Analysis_Specifications,
-       R.Comment,
-       dbo.GetDataAnalysisRequestBatchList(R.ID) As Batch_IDs,
-       R.Data_Package_ID,
-       R.Exp_Group_ID,
-       R.Work_Package,
-       R.Requested_Personnel,
-       R.Assigned_Personnel,
-       R.Priority,
-       R.Reason_For_High_Priority,
-       R.Estimated_Analysis_Time_Days,
-       T_Data_Analysis_Request_State_Name.State_Name,
-       R.State_Comment
+SELECT R.id,
+       R.request_name,
+       R.analysis_type,
+       R.requester_prn,
+       R.description,
+       R.analysis_specifications,
+       R.comment,
+       dbo.GetDataAnalysisRequestBatchList(R.ID) As batch_ids,
+       R.data_package_id,
+       R.exp_group_id,
+       R.work_package,
+       R.requested_personnel,
+       R.assigned_personnel,
+       R.priority,
+       R.reason_for_high_priority,
+       R.estimated_analysis_time_days,
+       SN.state_name,
+       R.state_comment
 FROM T_Data_Analysis_Request AS R
-     INNER JOIN T_Data_Analysis_Request_State_Name
-       ON R.State = T_Data_Analysis_Request_State_Name.State_ID
+     INNER JOIN T_Data_Analysis_Request_State_Name AS SN
+       ON R.State = SN.State_ID
 
 
 GO

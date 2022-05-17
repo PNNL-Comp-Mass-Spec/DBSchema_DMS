@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Proposals_Entry]
 AS
-SELECT P.Proposal_ID AS ID,
-       P.State_ID AS State,
-       P.Title,
-       P.Import_Date AS ImportDate,
-       P.Proposal_Type,
-       P.Proposal_ID_AutoSupersede As SupersededBy,
-       dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'I', 1000) AS EUSUsers
+SELECT P.Proposal_ID AS id,
+       P.State_ID AS state,
+       P.title,
+       P.import_date,
+       P.proposal_type,
+       P.Proposal_ID_AutoSupersede As superseded_by,
+       dbo.GetProposalEUSUsersList(P.PROPOSAL_ID, 'I', 1000) AS eus_users
 FROM dbo.T_EUS_Proposals P
 
 

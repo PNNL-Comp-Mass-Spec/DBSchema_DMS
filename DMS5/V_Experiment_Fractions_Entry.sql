@@ -3,13 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Experiment_Fractions_Entry
+
+CREATE VIEW V_Experiment_Fractions_Entry
 AS
-SELECT     T_Experiment_Groups.Group_ID AS ID, T_Experiment_Groups.EG_Group_Type AS Group_Type, 
-                      T_Experiments.Experiment_Num AS Parent_Experiment, T_Experiment_Groups.EG_Description AS Description, 
-                      T_Experiment_Groups.EG_Created AS Created, 1 AS Starting_Index, 1 AS Step, 25 AS Total_Count
-FROM         T_Experiment_Groups INNER JOIN
-                      T_Experiments ON T_Experiment_Groups.Parent_Exp_ID = T_Experiments.Exp_ID
+SELECT EG.Group_ID AS id,
+       EG.EG_Group_Type AS group_type,
+       E.Experiment_Num AS parent_experiment,
+       EG.EG_Description AS description,
+       EG.EG_Created AS created,
+       1 AS starting_index,
+       1 AS step,
+       25 AS total_count
+FROM T_Experiment_Groups EG
+     INNER JOIN T_Experiments E
+       ON EG.Parent_Exp_ID = E.Exp_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Fractions_Entry] TO [DDL_Viewer] AS [dbo]

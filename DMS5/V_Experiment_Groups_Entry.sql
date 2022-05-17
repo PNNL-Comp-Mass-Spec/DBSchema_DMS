@@ -3,13 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW dbo.V_Experiment_Groups_Entry
 AS
-SELECT        dbo.T_Experiment_Groups.Group_ID AS ID, dbo.T_Experiment_Groups.EG_Group_Type AS GroupType, dbo.T_Experiment_Groups.Tab, 
-                         dbo.T_Experiment_Groups.EG_Description AS Description, dbo.T_Experiments.Experiment_Num AS ParentExp, 
-                         dbo.GetExpGroupExperimentList(dbo.T_Experiment_Groups.Group_ID) AS ExperimentList, dbo.T_Experiment_Groups.Researcher
-FROM            dbo.T_Experiment_Groups INNER JOIN
-                         dbo.T_Experiments ON dbo.T_Experiment_Groups.Parent_Exp_ID = dbo.T_Experiments.Exp_ID
+SELECT EG.Group_ID AS id,
+       EG.EG_Group_Type AS group_type,
+       EG.Tab As tab,
+       EG.EG_Description AS description,
+       E.Experiment_Num AS parent_exp,
+       dbo.GetExpGroupExperimentList(EG.Group_ID) AS experiment_list,
+       EG.researcher
+FROM T_Experiment_Groups EG
+     INNER JOIN T_Experiments E
+       ON EG.Parent_Exp_ID = E.Exp_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Groups_Entry] TO [DDL_Viewer] AS [dbo]

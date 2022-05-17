@@ -6,25 +6,25 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_Entry]
 AS
-SELECT E.Experiment_Num AS Experiment,
-       E.Exp_ID As ID,
-       C.Campaign_Num AS Campaign,
-       E.EX_researcher_PRN AS researcherPRN,
-       Org.OG_name AS organismName,
+SELECT E.Experiment_Num AS experiment,
+       E.Exp_ID As id,
+       C.Campaign_Num AS campaign,
+       E.EX_researcher_PRN AS researcher_prn,
+       Org.OG_name AS organism_name,
        E.EX_reason AS reason,
-       E.EX_sample_concentration AS sampleConcentration,
-       Enz.Enzyme_Name AS enzymeName,
-       E.EX_lab_notebook_ref AS labNotebookRef,
+       E.EX_sample_concentration AS sample_concentration,
+       Enz.Enzyme_Name AS enzyme_name,
+       E.EX_lab_notebook_ref AS lab_notebook_ref,
        E.EX_comment AS [comment],
-       dbo.GetExpCellCultureList(E.Experiment_Num) AS cellCultureList,
-       dbo.GetExpRefCompoundList(E.Experiment_Num) AS referenceCompoundList,
+       dbo.GetExpCellCultureList(E.Experiment_Num) AS biomaterial_list,
+       dbo.GetExpRefCompoundList(E.Experiment_Num) AS reference_compound_list,
        E.EX_Labelling AS labelling,
-       E.EX_sample_prep_request_ID AS samplePrepRequest,
-       InstStd.Name AS internalStandard,
-       PostDigestIntStd.Name AS postdigestIntStd,
+       E.EX_sample_prep_request_ID AS sample_prep_request,
+       InstStd.Name AS internal_standard,
+       PostDigestIntStd.Name AS postdigest_int_std,
        MC.Tag AS container,
-       E.EX_wellplate_num AS Wellplate,
-       E.EX_well_num AS wellNum,
+       E.EX_wellplate_num AS wellplate,
+       E.EX_well_num AS well,
        E.EX_Alkylation AS alkylation,
        BTO.Tissue AS tissue,
        E.EX_Barcode As barcode
@@ -43,6 +43,7 @@ FROM T_Experiments E
        ON E.EX_Container_ID = MC.ID
 	LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
 	  ON E.EX_Tissue_ID = BTO.Identifier
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Entry] TO [DDL_Viewer] AS [dbo]

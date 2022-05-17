@@ -4,15 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 CREATE VIEW [dbo].[V_EUS_Users_Entry]
 AS
-SELECT PERSON_ID AS ID,
-       NAME_FM AS Name,
-       HID AS Hanford_ID,
-       Site_Status AS SiteStatus
+SELECT PERSON_ID AS id,
+       NAME_FM AS name,
+       HID AS hanford_id,
+       site_status
 FROM T_EUS_Users
 
 

@@ -6,19 +6,19 @@ GO
 
 CREATE VIEW [dbo].[V_Cell_Culture_Entry]
 AS
-SELECT U.CC_Name AS [Name],
-       U.CC_Source_Name,
-       U.CC_Contact_PRN,
-       U.CC_PI_PRN,
-       CTN.Name AS CultureTypeName,
-       U.CC_Reason,
-       U.CC_Comment,
-       C.Campaign_Num,
-       MC.Tag AS Container,
-       dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
-       U.Mutation,
-       U.Plasmid,
-       U.Cell_Line
+SELECT U.CC_Name AS [name],
+       U.CC_Source_Name AS source_name,
+       U.CC_Contact_PRN AS contact_prn,
+       U.CC_PI_PRN AS pi_prn,
+       CTN.Name AS culture_type_name,
+       U.CC_Reason AS reason,
+       U.CC_Comment AS comment,
+       C.Campaign_Num AS campaign,
+       MC.Tag AS container,
+       dbo.GetBiomaterialOrganismList(U.CC_ID) AS organism_list,
+       U.Mutation AS mutation,
+       U.Plasmid AS plasmid,
+       U.cell_line
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID
