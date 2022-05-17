@@ -43,6 +43,7 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **          05/26/2021 mem - Add @eusUsageType
 **          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          05/16/2022 mem - Fix potential arithmetic overflow error when parsing @fractionEMSLFunded
 **
 *****************************************************/
 (
@@ -64,7 +65,7 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
     @organisms varchar(256),
     @experimentPrefixes varchar(256),
     @dataReleaseRestrictions varchar(128),
-    @fractionEMSLFunded varchar(24) = '0',
+    @fractionEMSLFunded varchar(24) = '0',  -- Value between 0 and 1
     @eusUsageType varchar(50) = 'USER_ONSITE',
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
@@ -87,8 +88,8 @@ As
 
     Declare @percentEMSLFunded int
 
-    -- Leave this as Null for now
-    Declare @fractionEMSLFundedValue decimal(3, 2) = 0
+    Declare @fractionEMSLFundedValue real = 0
+    Declare @fractionEMSLFundedToStore decimal(3, 2) = 0
 
     Declare @logErrors tinyint = 0
 
@@ -177,6 +178,7 @@ As
     If Len(@fractionEMSLFunded) > 0
     Begin
         Set @fractionEMSLFundedValue = Try_Parse(@fractionEMSLFunded as real)
+
         If @fractionEMSLFundedValue Is Null
         Begin
             RAISERROR ('Fraction EMSL Funded must be a number between 0 and 1', 11, 4)
@@ -194,12 +196,12 @@ As
             RAISERROR (@msg, 11, 4)
         End
 
-        Set @fractionEMSLFundedValue = Convert(decimal(3, 2), @fractionEMSLFunded)
+        Set @fractionEMSLFundedToStore = Convert(decimal(3, 2), @fractionEMSLFunded)
 
     End
     Else
     Begin
-        Set @fractionEMSLFundedValue = 0
+        Set @fractionEMSLFundedToStore = 0
     End
 
     ---------------------------------------------------
@@ -284,13 +286,13 @@ As
     -- Validate Fraction EMSL Funded
     ---------------------------------------------------
     --
-    If @fractionEMSLFundedValue > 1
+    If @fractionEMSLFundedToStore > 1
     Begin
         Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @fractionEMSLFunded + ' is greater than 1)'
         RAISERROR (@msg, 11, 4)
     End
 
-    If @fractionEMSLFundedValue < 0
+    If @fractionEMSLFundedToStore < 0
     Begin
         Set @msg = 'Fraction EMSL Funded must be a number between 0 and 1 (' + @fractionEMSLFunded + ' is less than 0)'
         RAISERROR (@msg, 11, 4)
@@ -368,7 +370,7 @@ As
             GETDATE(),
             @researchTeamID,
             @dataReleaseRestrictionsID,
-            @fractionEMSLFundedValue,
+            @fractionEMSLFundedToStore,
             @eusUsageTypeID
         )
         --
@@ -402,7 +404,7 @@ As
         commit transaction @transName
 
         Set @stateID = 1
-        Set @percentEMSLFunded = CONVERT(int, @fractionEMSLFundedValue * 100)
+        Set @percentEMSLFunded = CONVERT(int, @fractionEMSLFundedToStore * 100)
 
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
@@ -440,7 +442,7 @@ As
             CM_Organisms = @organisms,
             CM_Experiment_Prefixes = @experimentPrefixes,
             CM_Data_Release_Restrictions = @dataReleaseRestrictionsID,
-            CM_Fraction_EMSL_Funded = @fractionEMSLFundedValue,
+            CM_Fraction_EMSL_Funded = @fractionEMSLFundedToStore,
             CM_EUS_Usage_Type = @eusUsageTypeID
         WHERE Campaign_Num = @campaignNum
         --
@@ -473,7 +475,7 @@ As
 
         commit transaction @transName
 
-        Set @percentEMSLFunded = CONVERT(int, @fractionEMSLFundedValue * 100)
+        Set @percentEMSLFunded = CONVERT(int, @fractionEMSLFundedToStore * 100)
 
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
