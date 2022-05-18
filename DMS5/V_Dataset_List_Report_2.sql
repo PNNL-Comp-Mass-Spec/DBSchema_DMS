@@ -33,7 +33,8 @@ SELECT DS.Dataset_ID AS ID,
        -- Deprecated: RR.RDS_Run_Order AS [Run Order],
        RR.ID AS Request,
        RR.RDS_BatchID AS Batch,
-       RR.RDS_EUS_Proposal_ID AS [EMSL Proposal],
+       EUT.Name AS [Usage],
+       RR.RDS_EUS_Proposal_ID AS [Proposal],
        -- Deprecated to improve performance: EPT.Abbreviation AS [EUS Proposal Type],
        RR.RDS_WorkPackage AS [Work Package],
        RR.RDS_Requestor_PRN AS Requester,
@@ -65,6 +66,8 @@ FROM T_DatasetStateName DSN
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
+     LEFT OUTER JOIN T_EUS_UsageType AS EUT
+       ON RR.RDS_EUS_UsageType = EUT.ID
      /*
       * Deprecated to improve performance: 
      LEFT OUTER JOIN T_EUS_Proposals AS EUP

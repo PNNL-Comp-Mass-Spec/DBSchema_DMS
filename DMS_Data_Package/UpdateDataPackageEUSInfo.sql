@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageEUSInfo]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          07/07/2017 mem - Now updating Instrument and EUS_Instrument_ID
 **          03/07/2018 mem - Properly handle null values for Best_EUS_Proposal_ID, Best_EUS_Instrument_ID, and Best_Instrument_Name
+**          05/18/2022 mem - Use new EUS Proposal column name
 **    
 *****************************************************/
 (
@@ -151,15 +152,15 @@ As
                                     ProposalCount,
                                     Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By ProposalCount DESC ) AS CountRank
                              FROM ( SELECT DPD.Data_Package_ID,
-                                           DR.[EMSL Proposal] AS EUS_Proposal_ID,
+                                           DR.Proposal AS EUS_Proposal_ID,
                                            COUNT(*) AS ProposalCount
                                     FROM T_Data_Package_Datasets DPD
                                          INNER JOIN #TmpDataPackagesToUpdate Src
                                            ON DPD.Data_Package_ID = Src.ID
                                          INNER JOIN S_V_Dataset_List_Report_2 DR
                                            ON DPD.Dataset_ID = DR.ID
-                                    WHERE NOT DR.[EMSL Proposal] IS NULL AND NOT DR.[EMSL Proposal] LIKE 'EPR%'
-                                    GROUP BY DPD.Data_Package_ID, DR.[EMSL Proposal] 
+                                    WHERE NOT DR.Proposal IS NULL AND NOT DR.Proposal LIKE 'EPR%'
+                                    GROUP BY DPD.Data_Package_ID, DR.Proposal
                                   ) SourceQ 
                            ) RankQ
                       WHERE RankQ.CountRank = 1 

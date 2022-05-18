@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          07/02/2021 mem - Change the default value for @mode from undefined mode 'update' to 'add'
 **          07/06/2021 mem - Add support for dataset IDs when @mode is 'comment' or 'delete'
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          05/18/2022 mem - Use new EUS Proposal column name
 **
 *****************************************************/
 (
@@ -212,7 +213,7 @@ As
             SELECT DISTINCT
                 TP.DataPackageID,
                 'EUSProposal',
-                TX.[EMSL Proposal]
+                TX.Proposal
             FROM
                 #TPI TP
                 INNER JOIN S_V_Dataset_List_Report_2 TX
@@ -222,7 +223,7 @@ As
                 AND NOT EXISTS (
                     SELECT *
                     FROM #TPI
-                    WHERE #TPI.[Type] = 'EUSProposal' AND #TPI.Identifier = TX.[EMSL Proposal] AND #TPI.DataPackageID = TP.DataPackageID
+                    WHERE #TPI.[Type] = 'EUSProposal' AND #TPI.Identifier = TX.Proposal AND #TPI.DataPackageID = TP.DataPackageID
                 )
 
             -- Add biomaterial items to list that are associated with experiments in the list
