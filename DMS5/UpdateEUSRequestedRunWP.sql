@@ -20,7 +20,7 @@ CREATE Procedure [dbo].[UpdateEUSRequestedRunWP]
 **  Date:   12/18/2015 mem - Initial version
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
+**          05/18/2022 mem - Add renamed proposal type 'Resource Owner'
 **
 *****************************************************/
 (
@@ -99,7 +99,8 @@ AS
                     INNER JOIN T_EUS_Proposals EUSPro
                       ON RR.RDS_EUS_Proposal_ID = EUSPro.Proposal_ID
                WHERE DS.DS_created BETWEEN DATEADD(DAY, -@searchWindowDays, GETDATE()) AND GETDATE() AND
-                     EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') AND
+                     EUSPro.Proposal_Type NOT IN
+                     ('Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner') AND
                      ISNULL(RR.RDS_WorkPackage, '') NOT IN ('none', 'na', 'n/a', '')
                GROUP BY EUSPro.Proposal_ID, RDS_WorkPackage
                ) LookupQ
@@ -132,7 +133,7 @@ AS
              INNER JOIN #Tmp_WPInfo
                ON EUSPro.Proposal_ID = #Tmp_WPInfo.Proposal_ID And UsageRank = 1
         WHERE DS.DS_created BETWEEN DATEADD(DAY, -@searchWindowDays, GETDATE()) AND GETDATE() AND
-              EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') AND
+              EUSPro.Proposal_Type NOT IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner') AND
               ISNULL(RR.RDS_WorkPackage, '') IN ('none', 'na', 'n/a', '')
         GROUP BY RR.ID,
                EUSPro.Proposal_ID,
