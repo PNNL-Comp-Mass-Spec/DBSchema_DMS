@@ -6,8 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Config_History_Entry]
 AS
-SELECT     ID, Instrument, Description, Note, Entered, EnteredBy AS PostedBy, Cast(Date_Of_Change AS date) AS DateOfChange
-FROM         dbo.T_Instrument_Config_History
+SELECT id,
+       instrument,
+       description,
+       note,
+       entered,
+       EnteredBy AS posted_by,
+       Cast(Date_Of_Change AS date) AS date_of_change
+FROM T_Instrument_Config_History
 
 
 GO

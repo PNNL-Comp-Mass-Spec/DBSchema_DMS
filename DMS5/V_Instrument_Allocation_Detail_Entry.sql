@@ -6,23 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Allocation_Detail_Entry]
 AS
-SELECT PivotQ.FY_Proposal,
-       PivotQ.Fiscal_Year,
-       PivotQ.Proposal_ID,
-       PivotQ.[FT],
-       CommentQ.FT  AS FTComment,
-       PivotQ.[IMS],
-       CommentQ.IMS AS IMSComment,
-       PivotQ.[ORB],
-       CommentQ.ORB AS ORBComment,
-       PivotQ.[EXA],
-       CommentQ.EXA AS EXAComment,
-       PivotQ.[LTQ],
-       CommentQ.LTQ AS LTQComment,
-       PivotQ.[GC],
-       CommentQ.GC  AS GCComment,
-       PivotQ.[QQQ],
-       CommentQ.QQQ AS QQQComment
+SELECT PivotQ.fy_proposal,
+       PivotQ.fiscal_year,
+       PivotQ.proposal_id,
+       PivotQ.[ft],
+       CommentQ.FT  AS ft_comment,
+       PivotQ.[ims],
+       CommentQ.IMS AS ims_comment,
+       PivotQ.[orb],
+       CommentQ.ORB AS orb_comment,
+       PivotQ.[exa],
+       CommentQ.EXA AS exa_comment,
+       PivotQ.[ltq],
+       CommentQ.LTQ AS ltq_comment,
+       PivotQ.[gc],
+       CommentQ.GC  AS gc_comment,
+       PivotQ.[qqq],
+       CommentQ.QQQ AS qqq_comment
 FROM ( SELECT FY_Proposal,
               Fiscal_Year,
               Proposal_ID,
@@ -41,7 +41,7 @@ FROM ( SELECT FY_Proposal,
               FROM T_Instrument_Allocation ) AS SourceTable
             PIVOT ( Sum(Allocated_Hours)
                     FOR Allocation_Tag
-                    IN ( [FT], [IMS], [ORB], [EXA], [LTQ], [GC], [QQQ] ) ) AS PivotData 
+                    IN ( [FT], [IMS], [ORB], [EXA], [LTQ], [GC], [QQQ] ) ) AS PivotData
      ) PivotQ
      LEFT OUTER JOIN
      ( SELECT FY_Proposal,
@@ -60,7 +60,7 @@ FROM ( SELECT FY_Proposal,
               FROM T_Instrument_Allocation ) AS SourceTable
             PIVOT ( MAX(Comment)
                     FOR Allocation_Tag
-                    IN ( [FT], [IMS], [ORB], [EXA], [LTQ], [GC], [QQQ] ) ) AS PivotData 
+                    IN ( [FT], [IMS], [ORB], [EXA], [LTQ], [GC], [QQQ] ) ) AS PivotData
      ) CommentQ
        ON PivotQ.FY_Proposal = CommentQ.FY_Proposal
 

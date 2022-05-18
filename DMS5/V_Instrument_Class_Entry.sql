@@ -4,16 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Instrument_Class_Entry]
 AS
-SELECT IN_class AS InstrumentClass,
-       is_purgable AS IsPurgable,
-       raw_data_type AS RawDataType,
-       requires_preparation AS RequiresPreparation,
-       Comment,
-       Params AS Params
+SELECT IN_class AS instrument_class,
+       is_purgable AS is_purgable,
+       raw_data_type AS raw_data_type,
+       requires_preparation AS requires_preparation,
+       comment,
+       params
 FROM dbo.T_Instrument_Class
 
 

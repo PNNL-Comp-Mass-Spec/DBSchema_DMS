@@ -4,12 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create VIEW V_LC_Cart_Entry
+CREATE VIEW V_LC_Cart_Entry
 AS
-SELECT     T_LC_Cart.ID AS ID, T_LC_Cart.Cart_Name AS CartName, T_LC_Cart_State_Name.Name AS CartState, 
-                      T_LC_Cart.Cart_Description AS CartDescription
-FROM         T_LC_Cart INNER JOIN
-                      T_LC_Cart_State_Name ON T_LC_Cart.Cart_State_ID = T_LC_Cart_State_Name.ID
+SELECT C.id,
+       C.cart_name,
+       SN.Name AS cart_state,
+       C.cart_description
+FROM T_LC_Cart C
+     INNER JOIN T_LC_Cart_State_Name SN
+       ON C.Cart_State_ID = SN.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Entry] TO [DDL_Viewer] AS [dbo]

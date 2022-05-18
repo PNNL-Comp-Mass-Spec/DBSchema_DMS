@@ -6,11 +6,21 @@ GO
 
 CREATE VIEW dbo.V_LC_Column_Entry
 AS
-SELECT     T_LC_Column.SC_Column_Number, T_LC_Column.SC_Packing_Mfg, T_LC_Column.SC_Packing_Type, T_LC_Column.SC_Particle_size, 
-                      T_LC_Column.SC_Particle_type, T_LC_Column.SC_Column_Inner_Dia, T_LC_Column.SC_Column_Outer_Dia, T_LC_Column.SC_Length, 
-                      T_LC_Column.SC_Operator_PRN, T_LC_Column.SC_Comment, T_LC_Column.ID, T_LC_Column_State_Name.LCS_Name
-FROM         T_LC_Column INNER JOIN
-                      T_LC_Column_State_Name ON T_LC_Column.SC_State = T_LC_Column_State_Name.LCS_ID
+SELECT C.SC_Column_Number AS lc_column,
+       C.SC_Packing_Mfg AS packing_mfg,
+       C.SC_Packing_Type AS packing_type,
+       C.SC_Particle_size AS particle_size,
+       C.SC_Particle_type AS _particle_type,
+       C.SC_Column_Inner_Dia AS column_inner_dia,
+       C.SC_Column_Outer_Dia AS column_outer_dia,
+       C.SC_Length AS column_length,
+       C.SC_Operator_PRN AS operator_prn,
+       C.SC_Comment AS comment,
+       C.id,
+       SN.LCS_Name AS column_state
+FROM T_LC_Column C
+     INNER JOIN T_LC_Column_State_Name SN
+       ON C.SC_State = SN.LCS_ID
 
 
 GO

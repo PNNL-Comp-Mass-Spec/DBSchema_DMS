@@ -6,10 +6,10 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Location_Entry]
 AS
-SELECT ML.ID AS ID,
-       ML.Tag AS [Location],
-       ML.[Comment],
-       ML.[Status]       
+SELECT ML.id,
+       ML.Tag AS location,
+       ML.comment,
+       ML.status
 FROM dbo.T_Material_Locations ML
 
 

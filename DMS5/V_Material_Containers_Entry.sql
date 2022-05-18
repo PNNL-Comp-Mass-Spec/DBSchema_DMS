@@ -3,11 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view V_Material_Containers_Entry as
-SELECT        dbo.T_Material_Containers.Tag AS Container, dbo.T_Material_Containers.Type, dbo.T_Material_Locations.Tag AS Location, dbo.T_Material_Containers.Status, 
-                         dbo.T_Material_Containers.Comment, dbo.T_Material_Containers.Barcode, dbo.T_Material_Containers.Researcher
-FROM            dbo.T_Material_Containers INNER JOIN
-                         dbo.T_Material_Locations ON dbo.T_Material_Containers.Location_ID = dbo.T_Material_Locations.ID
+
+CREATE VIEW V_Material_Containers_Entry
+AS
+SELECT MC.Tag AS container,
+       MC.type,
+       ML.Tag AS location,
+       MC.status,
+       MC.comment,
+       MC.barcode,
+       MC.researcher
+FROM dbo.T_Material_Containers MC
+     INNER JOIN dbo.T_Material_Locations ML
+       ON MC.Location_ID = ML.ID
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Entry] TO [DDL_Viewer] AS [dbo]
 GO
