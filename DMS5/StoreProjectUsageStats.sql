@@ -7,23 +7,24 @@ GO
 CREATE Procedure [dbo].[StoreProjectUsageStats]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Stores new stats in T_Project_Usage_Stats,
 **      tracking the number of datasets and user-initiated analysis jobs
 **      run within the specified date range
 **
 **      This procedure is called weekly at 3 am on Friday morning
 **      to auto-update the stats
-**        
+**
 **  Auth:   mem
 **  Date:   12/18/2015 mem - Initial version
 **          05/06/2016 mem - Now tracking experiments
 **          02/24/2017 mem - Update the Merge logic to join on Proposal_User
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
-**    
+**          05/18/2022 mem - Add Capacity, Partner, and Staff Time proposal types
+**
 *****************************************************/
-(    
+(
     @windowDays int = 7,
     @endDate smalldatetime = null,            -- End date/time; if null, uses the current date/time
     @infoOnly tinyint = 1
@@ -33,15 +34,15 @@ AS
 
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+
     -----------------------------------------
     -- Validate the input parameters
     -----------------------------------------
-    
+
     Set @windowDays = IsNull(@windowDays, 7)
     If (@windowDays < 1)
         Set @windowDays = 1
-    
+
     Set @endDate = IsNull(@endDate, GetDate())
     Set @infoOnly = IsNull(@infoOnly, 0)
 
@@ -113,9 +114,12 @@ AS
                ELSE 0
            END AS Proposal_Active,
            CASE
-               WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER', 'Resource Owner') THEN 1                           -- Resource Owner
-               WHEN EUSPro.Proposal_Type IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 2    -- Proprietary
-               WHEN EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 3  -- EMSL_User
+               WHEN EUSPro.Proposal_Type IN ('Resource Owner') THEN 1                                             -- Resource Owner
+               WHEN EUSPro.Proposal_Type IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public') THEN 2    -- Proprietary
+               WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity
+               WHEN EUSPro.Proposal_Type IN ('Partner') THEN 5                                                    -- Partner
+               WHEN EUSPro.Proposal_Type IN ('Staff Time') THEN 6                                                 -- Staff Time
+               WHEN EUSPro.Proposal_Type NOT IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 3  -- EMSL_User
               ELSE 0                                                                                              -- Unknown
            END AS Project_Type_ID,
            0 AS Samples,
@@ -163,12 +167,15 @@ AS
                    ELSE 0
                END AS Proposal_Active,
                CASE
-                   WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER', 'Resource Owner') THEN 1                           -- Resource Owner
-                   WHEN EUSPro.Proposal_Type IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 2    -- Proprietary
-                   WHEN EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 3  -- EMSL_User
+                   WHEN EUSPro.Proposal_Type IN ('Resource Owner') THEN 1                                             -- Resource Owner
+                   WHEN EUSPro.Proposal_Type IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public') THEN 2    -- Proprietary
+                   WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity
+                   WHEN EUSPro.Proposal_Type IN ('Partner') THEN 5                                                    -- Partner
+                   WHEN EUSPro.Proposal_Type IN ('Staff Time') THEN 6                                                 -- Staff Time
+                   WHEN EUSPro.Proposal_Type NOT IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 3  -- EMSL_User
                    ELSE 0                                                                                             -- Unknown
                END AS Project_Type_ID,
-               0 AS Samples,              
+               0 AS Samples,
                0 AS Datasets,
                Count(*) AS Jobs,
                RR.RDS_EUS_UsageType AS EUS_UsageType,
@@ -200,7 +207,7 @@ AS
         GROUP BY EUSPro.Proposal_ID, RR.RDS_WorkPackage, RR.RDS_EUS_UsageType, EUSPro.Proposal_Type,
                  EUSPro.Proposal_Start_Date, EUSPro.Proposal_End_Date
     ) AS s
-    ON ( t.TheYear = s.TheYear AND 
+    ON ( t.TheYear = s.TheYear AND
          t.WeekOfYear = s.WeekOfYear AND
          IsNull(t.Proposal_ID, 0) = IsNull(s.Proposal_ID, 0) AND
          t.RDS_WorkPackage = s.RDS_WorkPackage AND
@@ -210,20 +217,20 @@ AS
         ISNULL( NULLIF(t.Jobs, s.Jobs),
                 NULLIF(s.Jobs, t.Jobs)) IS NOT NULL
         )
-    THEN UPDATE Set 
+    THEN UPDATE Set
         Jobs = s.Jobs,
         JobTool_First = s.JobTool_First,
         JobTool_Last = s.JobTool_Last
     WHEN NOT MATCHED BY TARGET THEN
-        INSERT(StartDate, EndDate, TheYear, WeekOfYear, Proposal_ID, 
-              RDS_WorkPackage, Proposal_Active, Project_Type_ID, 
-              Samples, Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User, 
-              Instrument_First, Instrument_Last, 
+        INSERT(StartDate, EndDate, TheYear, WeekOfYear, Proposal_ID,
+              RDS_WorkPackage, Proposal_Active, Project_Type_ID,
+              Samples, Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User,
+              Instrument_First, Instrument_Last,
               JobTool_First, JobTool_Last)
-        VALUES(s.StartDate, s.EndDate, s.TheYear, s.WeekOfYear, s.Proposal_ID, 
-               s.RDS_WorkPackage, s.Proposal_Active, s.Project_Type_ID, 
-               s.Samples, s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User, 
-               s.Instrument_First, s.Instrument_Last, 
+        VALUES(s.StartDate, s.EndDate, s.TheYear, s.WeekOfYear, s.Proposal_ID,
+               s.RDS_WorkPackage, s.Proposal_Active, s.Project_Type_ID,
+               s.Samples, s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User,
+               s.Instrument_First, s.Instrument_Last,
                s.JobTool_First, s.JobTool_Last) ;
 
 
@@ -246,9 +253,12 @@ AS
                    ELSE 0
                END AS Proposal_Active,
                CASE
-                   WHEN EUSPro.Proposal_Type IN ('RESOURCE_OWNER', 'Resource Owner') THEN 1                           -- Resource Owner
-                   WHEN EUSPro.Proposal_Type IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 2    -- Proprietary
-                   WHEN EUSPro.Proposal_Type NOT IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') THEN 3  -- EMSL_User
+                   WHEN EUSPro.Proposal_Type IN ('Resource Owner') THEN 1                                             -- Resource Owner
+                   WHEN EUSPro.Proposal_Type IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public') THEN 2    -- Proprietary
+                   WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity
+                   WHEN EUSPro.Proposal_Type IN ('Partner') THEN 5                                                    -- Partner
+                   WHEN EUSPro.Proposal_Type IN ('Staff Time') THEN 6                                                 -- Staff Time
+                   WHEN EUSPro.Proposal_Type NOT IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 3  -- EMSL_User
                    ELSE 0                                                                                            -- Unknown
                END AS Project_Type_ID,
                COUNT(DISTINCT Exp_ID) AS Samples,
@@ -267,14 +277,14 @@ AS
              INNER JOIN T_EUS_UsageType UsageType
                ON SPR.EUS_UsageType = UsageType.Name
              LEFT OUTER JOIN T_Experiments
-               ON SPR.ID = T_Experiments.EX_sample_prep_request_ID          
-             LEFT OUTER JOIN T_EUS_Users AS EUSUsers 
+               ON SPR.ID = T_Experiments.EX_sample_prep_request_ID
+             LEFT OUTER JOIN T_EUS_Users AS EUSUsers
                ON SPR.EUS_User_ID = EUSUsers.Person_ID
         WHERE T_Experiments.EX_created BETWEEN @StartDate and @endDate
         GROUP BY EUSPro.Proposal_ID, SPR.Work_Package_Number, EUSPro.Proposal_Start_Date, EUSPro.Proposal_End_Date,
                  EUSPro.Proposal_Type, SPR.EUS_User_ID, UsageType.ID
     ) AS s
-    ON ( t.TheYear = s.TheYear AND 
+    ON ( t.TheYear = s.TheYear AND
          t.WeekOfYear = s.WeekOfYear AND
          IsNull(t.Proposal_ID, 0) = IsNull(s.Proposal_ID, 0) AND
          t.RDS_WorkPackage = s.Work_Package_Number AND
@@ -284,20 +294,19 @@ AS
         ISNULL( NULLIF(t.Samples, s.Samples),
                 NULLIF(s.Samples, t.Samples)) IS NOT NULL
         )
-    THEN UPDATE Set 
+    THEN UPDATE Set
         Samples = s.Samples
     WHEN NOT MATCHED BY TARGET THEN
-        INSERT(StartDate, EndDate, TheYear, WeekOfYear, Proposal_ID, 
-              RDS_WorkPackage, Proposal_Active, Project_Type_ID, 
-              Samples, Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User, 
-              Instrument_First, Instrument_Last, 
+        INSERT(StartDate, EndDate, TheYear, WeekOfYear, Proposal_ID,
+              RDS_WorkPackage, Proposal_Active, Project_Type_ID,
+              Samples, Datasets, Jobs, EUS_UsageType, Proposal_Type, Proposal_User,
+              Instrument_First, Instrument_Last,
               JobTool_First, JobTool_Last)
-        VALUES(s.StartDate, s.EndDate, s.TheYear, s.WeekOfYear, s.Proposal_ID, 
-               s.Work_Package_Number, s.Proposal_Active, s.Project_Type_ID, 
-               s.Samples, s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User, 
-               s.Instrument_First, s.Instrument_Last, 
+        VALUES(s.StartDate, s.EndDate, s.TheYear, s.WeekOfYear, s.Proposal_ID,
+               s.Work_Package_Number, s.Proposal_Active, s.Project_Type_ID,
+               s.Samples, s.Datasets, s.Jobs, s.EUS_UsageType, s.Proposal_Type, s.Proposal_User,
+               s.Instrument_First, s.Instrument_Last,
                s.JobTool_First, s.JobTool_Last) ;
-
 
 
     If @infoOnly <> 0
@@ -384,7 +393,7 @@ AS
     End
 
 Done:
-    
+
     --
     Return @myError
 
