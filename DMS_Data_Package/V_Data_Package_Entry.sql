@@ -22,6 +22,7 @@ SELECT id,
        '' AS creation_params
 FROM dbo.T_Data_Package
 
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Entry] TO [DDL_Viewer] AS [dbo]
 GO

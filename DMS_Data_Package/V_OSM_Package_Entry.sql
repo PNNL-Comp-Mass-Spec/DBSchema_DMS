@@ -18,6 +18,8 @@ SELECT
 	Sample_Prep_Requests AS sample_prep_request_list,
 	user_folder_path
 FROM T_OSM_Package
+
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_OSM_Package_Entry] TO [DDL_Viewer] AS [dbo]
 GO
