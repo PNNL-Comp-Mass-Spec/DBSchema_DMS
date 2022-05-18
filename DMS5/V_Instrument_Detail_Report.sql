@@ -47,7 +47,7 @@ SELECT InstName.Instrument_ID AS ID,
 FROM T_Instrument_Name InstName
      LEFT OUTER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN ( SELECT SP_path_ID,
+     LEFT OUTER JOIN ( SELECT SP_path_ID,
                          SP_vol_name_server + SP_path AS Source
                   FROM T_Storage_Path ) S
        ON S.SP_path_ID = InstName.IN_source_path_ID
