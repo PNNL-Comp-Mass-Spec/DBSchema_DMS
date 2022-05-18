@@ -20,6 +20,7 @@ CREATE FUNCTION [dbo].[GetDatasetInstrumentRuntime]
 **          06/08/2012 grk - added lookup for @maxNormalInterval
 **          04/05/2017 mem - Compute Fraction_EMSL_Funded using EUS usage type (previously computed using CM_Fraction_EMSL_Funded, which is estimated by the user for each campaign)
 **          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
+**          05/18/2022 mem - Treat additional proposal types as not EMSL funded
 **
 *****************************************************/
 (
@@ -117,8 +118,20 @@ AS
         ---------------------------------------------------
 
         IF ISNULL(@startInterval, 0) = 0 OR ISNULL(@endInterval, 0) = 0 OR ISNULL(@instrument, '') = ''
-        BEGIN
-            INSERT INTO @TX (Dataset) VALUES ('Bad arguments')
+        Begin
+            INSERT  INTO @TX
+            (
+                Seq,
+                ID ,
+                Dataset ,
+                Time_Start ,
+                Time_End ,
+                Duration,
+                Instrument,
+                Interval
+            ) VALUES (
+                1, 0, 'Bad arguments: specify start and end date, plus instrument name', GetDate(), GetDate(), 0, '', 0
+            )
             RETURN
         END
 
@@ -292,7 +305,12 @@ AS
                 EUS_Proposal_Type = EUP.Proposal_Type,
                 Campaign_ID  = C.Campaign_ID,
                 -- Fraction_EMSL_Funded = C.CM_Fraction_EMSL_Funded,   -- Campaign based estimation of fraction EMSL funded; this has been replaced by the following case statement
-                Fraction_EMSL_Funded = Case When IsNull(EUP.Proposal_Type, 'PROPRIETARY') IN ('Proprietary', 'RESOURCE_OWNER', 'Resource Owner', 'PROPRIETARY_PUBLIC', 'Proprietary Public') Then 0 Else 1 End,
+                Fraction_EMSL_Funded =
+                   CASE
+                   WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY')
+                        IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 0
+                   ELSE 1
+                   END,
                 Campaign_Proposals = C.CM_EUS_Proposal_List
             FROM @TX T INNER JOIN
                 T_Dataset DS ON T.ID = DS.Dataset_ID INNER JOIN

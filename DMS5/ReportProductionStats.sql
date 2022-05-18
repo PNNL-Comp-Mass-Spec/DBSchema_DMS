@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **          04/27/2018 mem - Add column [% EF Study Specific by AcqTime]
 **          07/22/2019 mem - Refactor code into PopulateCampaignFilterTable, PopulateInstrumentFilterTable, and ResolveStartAndEndDates
 **          05/16/2022 mem - Treat 'Resource Owner' proposals as not EMSL funded
+**          05/18/2022 mem - Treat additional proposal types as not EMSL funded
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
     @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
     @eusUsageFilterList varchar(2000) = '',     -- Comma separate list of EUS usage types, from table T_EUS_UsageType: CAP_DEV, MAINTENANCE, BROKEN, USER
     @instrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed)
-    @message varchar(256) = '' output    
+    @message varchar(256) = '' output
 )
 AS
     Set XACT_ABORT, nocount on
@@ -72,7 +73,7 @@ AS
 
     Declare @eDateAlternate datetime
 
-    BEGIN TRY 
+    BEGIN TRY
 
     --------------------------------------------------------------------
     -- Validate the inputs
@@ -82,7 +83,7 @@ AS
     Set @campaignIDFilterList = LTrim(RTrim(IsNull(@campaignIDFilterList, '')))
     Set @eusUsageFilterList = LTrim(RTrim(IsNull(@eusUsageFilterList, '')))
     Set @instrumentFilterList = LTrim(RTrim(IsNull(@instrumentFilterList, '')))
-    
+
     Set @message = ''
 
     --------------------------------------------------------------------
@@ -93,9 +94,9 @@ AS
         Campaign_ID int NOT NULL,
         Fraction_EMSL_Funded float NULL
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_CampaignFilter ON #Tmp_CampaignFilter (Campaign_ID)
-    
+
     Exec @result = PopulateCampaignFilterTable @campaignIDFilterList, @message=@message output
 
     If @result <> 0
@@ -111,9 +112,9 @@ AS
     CREATE TABLE #Tmp_InstrumentFilter (
         Instrument_ID int NOT NULL
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_InstrumentFilter ON #Tmp_InstrumentFilter (Instrument_ID)
-    
+
     Exec @result = PopulateInstrumentFilterTable @instrumentFilterList, @message=@message output
 
     If @result <> 0
@@ -121,7 +122,7 @@ AS
         print @message
         RAISERROR (@message, 11, 15)
     End
-    
+
     --------------------------------------------------------------------
     -- Populate a temporary table with the EUS Usage types to filter on
     --------------------------------------------------------------------
@@ -130,16 +131,16 @@ AS
         Usage_ID int NOT NULL,
         Usage_Name varchar(64) NOT NULL
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_EUSUsageFilter ON #Tmp_EUSUsageFilter (Usage_ID)
-    
+
     If @eusUsageFilterList <> ''
-    Begin    
+    Begin
         INSERT INTO #Tmp_EUSUsageFilter (Usage_Name, Usage_ID)
         SELECT DISTINCT Value AS Usage_Name, 0 AS ID
         FROM dbo.udfParseDelimitedList(@eusUsageFilterList, ',', 'ReportProductionStats')
         ORDER BY Value
-        
+
         -- Look for invalid Usage_Name values
         Set @msg = ''
         SELECT @msg = Convert(varchar(12), UF.Usage_Name) + ',' + @msg
@@ -149,32 +150,32 @@ AS
         WHERE U.ID IS NULL
         --
         SELECT @myRowCount = @@RowCount
-        
-        If @myRowCount > 0 
+
+        If @myRowCount > 0
         Begin
             -- Remove the trailing comma
             Set @msg = Substring(@msg, 1, Len(@msg)-1)
-            
+
             If @myRowCount = 1
                 set @msg = 'Invalid Usage Type: ' + @msg
             Else
                 set @msg = 'Invalid Usage Type: ' + @msg
-            
+
             Set @msg = @msg + '; known types are: '
-            
+
             SELECT @msg = @msg + Name + ', '
             FROM T_EUS_UsageType
             WHERE (ID <> 1)
-            
+
             -- Remove the trailing comma
             Set @msg = Substring(@msg, 1, Len(@msg)-1)
-            
+
             print @msg
             RAISERROR (@msg, 11, 15)
         End
 
         -- Update column Usage_ID
-        --    
+        --
         UPDATE #Tmp_EUSUsageFilter
         SET Usage_ID = U.ID
         FROM #Tmp_EUSUsageFilter UF
@@ -188,8 +189,8 @@ AS
         SELECT ID, Name
         FROM T_EUS_UsageType
         ORDER BY ID
-    End    
-    
+    End
+
     --------------------------------------------------------------------
     -- Determine the start and end dates
     --------------------------------------------------------------------
@@ -206,7 +207,7 @@ AS
     --------------------------------------------------------------------
     --
     set @daysInRange = DateDiff(dd, @stDate, @eDate)
-    
+
     --------------------------------------------------------------------
     -- Populate a temporary table with the datasets to use
     --------------------------------------------------------------------
@@ -217,11 +218,11 @@ AS
         Request_ID int NULL,            -- Every dataset should have a Request ID, but on rare occasions a dataset gets created without a RequestID; thus, allow this field to have null values
         EMSL_Funded tinyint NOT NULL    -- 0 if not EMSL-funded, 1 if EMSL-funded
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_Datasets ON #Tmp_Datasets (Dataset_ID, Campaign_ID)
-    
+
     CREATE INDEX #IX_Tmp_Datasets_RequestID ON #Tmp_Datasets (Request_ID)
-    
+
     If @eusUsageFilterList <> ''
     Begin
         -- Filter on the EMSL usage types defined in #Tmp_EUSUsageFilter
@@ -234,20 +235,20 @@ AS
                E.EX_campaign_ID,
                RR.ID,
                CASE
-                   WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY') 
-                        IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER', 'Proprietary Public', 'Resource Owner') THEN 0
+                   WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY')
+                        IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 0
                    ELSE 1
                END AS EMSL_Funded
         FROM T_Dataset D
              INNER JOIN T_Experiments E
                ON E.Exp_ID = D.Exp_ID
-             INNER JOIN #Tmp_InstrumentFilter InstFilter 
+             INNER JOIN #Tmp_InstrumentFilter InstFilter
                ON D.DS_Instrument_Name_ID = InstFilter.Instrument_ID
              INNER JOIN T_Requested_Run RR
                ON D.Dataset_ID = RR.DatasetID
              INNER JOIN T_EUS_Proposals EUP
-               ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID             
-        WHERE ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate 
+               ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+        WHERE ISNULL(D.Acq_Time_Start, D.DS_created) BETWEEN @stDate AND @eDate
               AND
               RR.RDS_EUS_UsageType IN ( SELECT Usage_ID
                                         FROM #Tmp_EUSUsageFilter )
@@ -268,14 +269,14 @@ AS
                E.EX_campaign_ID,
                RR.ID,
                CASE
-                   WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY') 
-                        IN ('Proprietary', 'PROPRIETARY_PUBLIC', 'RESOURCE_OWNER', 'Proprietary Public', 'Resource Owner') THEN 0
+                   WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY')
+                        IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 0
                    ELSE 1
                END AS EMSL_Funded
         FROM T_Dataset D
              INNER JOIN T_Experiments E
                ON E.Exp_ID = D.Exp_ID
-             INNER JOIN #Tmp_InstrumentFilter InstFilter 
+             INNER JOIN #Tmp_InstrumentFilter InstFilter
                ON D.DS_Instrument_Name_ID = InstFilter.Instrument_ID
              LEFT OUTER JOIN T_Requested_Run RR
                ON D.Dataset_ID = RR.DatasetID
@@ -285,13 +286,13 @@ AS
         --
         SELECT @myRowCount = @@RowCount
 
-    End    
-    
+    End
+
     ---------------------------------------------------
     -- Examine the work package associated with datasets in #Tmp_Datasets
     -- to find additional datasets that are EMSL-Funded
     ---------------------------------------------------
-    
+
     UPDATE #Tmp_Datasets
     SET EMSL_Funded = 1
     FROM #Tmp_Datasets DS
@@ -307,7 +308,7 @@ AS
     -- Examine the campaign associated with datasets in #Tmp_Datasets
     -- to find additional datasets that are EMSL-Funded
     ---------------------------------------------------
-    
+
     UPDATE #Tmp_Datasets
     SET EMSL_Funded = 1
     FROM #Tmp_Datasets DS
@@ -321,7 +322,7 @@ AS
           C.CM_Fraction_EMSL_Funded > 0.74
     --
     SELECT @myRowCount = @@RowCount
-    
+
     ---------------------------------------------------
     -- Generate report
     ---------------------------------------------------
@@ -345,10 +346,10 @@ AS
         Convert(decimal(5,1), [EF_Total_AcqTimeDays]) AS [EF Total AcqTimeDays],
         Convert(decimal(5,1), [EF_Study_Specific_AcqTimeDays]) AS [EF Study Specific AcqTimeDays],
         Convert(decimal(5,1), [Hours_AcqTime_per_Day]) as [Hours AcqTime per Day],
-        
+
         Instrument AS [Inst.],
         Percent_EMSL_Owned AS [% Inst EMSL Owned],
-        
+
         -- EMSL Funded Counts:
         Convert(float, Convert(decimal(9,2), [EF_Total])) AS [EF Total Datasets],
         Convert(decimal(5,1), [EF_Total]/@daysInRange) AS [EF Datasets per day],
@@ -363,55 +364,55 @@ AS
         Convert(decimal(5,1), ([Study Specific] * 100.0 / [Total])) AS [% Study Specific Datasets],
         CASE WHEN [Total] > 0 THEN Convert(decimal(5,1), [EF Study Specific] * 100.0 / [Total]) ELSE NULL END AS [% EF Study Specific Datasets],
         CASE WHEN [Total_AcqTimeDays] > 0 THEN Convert(decimal(5,1), [EF_Total_AcqTimeDays] * 100.0 / [Total_AcqTimeDays]) ELSE NULL END AS [% EF Study Specific by AcqTime],
-        
+
         Instrument AS [Inst]
     FROM (
-        SELECT Instrument, Percent_EMSL_Owned, 
+        SELECT Instrument, Percent_EMSL_Owned,
             [Total], [Bad], [Blank], [QC],
             [Total] - ([Blank] + [QC] + [Bad]) AS [Study Specific],
             [Total_AcqTimeDays],
             [Total_AcqTimeDays] - [BadBlankQC_AcqTimeDays] AS [Study_Specific_AcqTimeDays],
-            
+
             Case When @daysInRange > 0.5 Then [Total_AcqTimeDays] / @daysInRange * 24 Else Null End AS [Hours_AcqTime_per_Day],
-            
+
             [EF_Total], [EF_Bad], [EF_Blank], [EF_QC],
             [EF_Total] - ([EF_Blank] + [EF_QC] + [EF_Bad]) AS [EF Study Specific],
             [EF_Total_AcqTimeDays],
             [EF_Total_AcqTimeDays] - [EF_BadBlankQC_AcqTimeDays] AS [EF_Study_Specific_AcqTimeDays]
 
         FROM
-            (SELECT Instrument, 
+            (SELECT Instrument,
                     Percent_EMSL_Owned,
                     SUM([Total]) AS [Total],        -- Total (Good + bad)
                     SUM([Bad]) AS [Bad],            -- Bad (not blank)
                     SUM([Blank]) AS [Blank],        -- Blank (Good + bad)
                     SUM([QC]) AS [QC],              -- QC (not bad)
-                    
+
                     Sum([Total_AcqTimeDays]) AS [Total_AcqTimeDays],            -- Total time acquiring data
                     Sum([BadBlankQC_AcqTimeDays]) AS [BadBlankQC_AcqTimeDays],  -- Total time acquiring bad/blank/QC data
-                    
+
                     -- EMSL Funded (EF) Counts:
                     Sum([EF_Total]) AS [EF_Total],        -- EF Total (Good + bad)
                     Sum([EF_Bad]) AS [EF_Bad],            -- EF Bad (not blank)
                     Sum([EF_Blank]) AS [EF_Blank],        -- EF Blank (Good + bad)
                     Sum([EF_QC]) AS [EF_QC],              -- EF QC (not bad)
-                    
+
                     Sum([EF_Total_AcqTimeDays]) AS [EF_Total_AcqTimeDays],                 -- EF Total time acquiring data
                     Sum([EF_BadBlankQC_AcqTimeDays]) AS [EF_BadBlankQC_AcqTimeDays]        -- EF Total time acquiring bad/blank/QC data
-                    
+
             FROM
                 (    -- Select Good datasets (excluded Bad, Not Released, Unreviewed, etc.)
                     SELECT
-                        I.IN_Name as Instrument, 
+                        I.IN_Name as Instrument,
                         I.Percent_EMSL_Owned,
                         COUNT(*) AS [Total],                                                        -- Total
                         0                                                            AS [Bad],      -- Bad
                         SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Blank],    -- Blank
                         SUM(CASE WHEN D.Dataset_Num LIKE 'QC%' THEN 1 ELSE 0 END)    AS [QC],       -- QC
                         SUM(D.Acq_Length_Minutes / 60.0 / 24.0) AS [Total_AcqTimeDays],             -- Total time acquiring data, in days
-                        SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' OR D.Dataset_Num LIKE 'QC%' 
+                        SUM(CASE WHEN D.Dataset_Num LIKE 'Blank%' OR D.Dataset_Num LIKE 'QC%'
                                  THEN D.Acq_Length_Minutes / 60.0 / 24.0 Else 0 End) AS [BadBlankQC_AcqTimeDays],
-                        
+
                         -- EMSL Funded Counts:
                         SUM(DF.EMSL_Funded) AS [EF_Total],                                                          -- EF_Total
                         0 AS [EF_Bad],                                                                              -- EF_Bad
@@ -424,8 +425,8 @@ AS
                     FROM
                         #Tmp_Datasets DF INNER JOIN
                         T_Dataset D ON DF.Dataset_ID = D.Dataset_ID INNER JOIN
-                        T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID INNER JOIN 
-                        #Tmp_CampaignFilter CF ON CF.Campaign_ID = DF.Campaign_ID                        
+                        T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID INNER JOIN
+                        #Tmp_CampaignFilter CF ON CF.Campaign_ID = DF.Campaign_ID
                     WHERE NOT ( D.Dataset_Num LIKE 'Bad%' OR
                                 D.DS_Rating IN (-1,-2,-5) OR
                                 D.DS_State_ID = 4
@@ -435,7 +436,7 @@ AS
                     UNION
                     -- Select Bad or Not Released datasets
                     SELECT
-                        I.IN_Name as Instrument, 
+                        I.IN_Name as Instrument,
                         I.Percent_EMSL_Owned,
                         COUNT(*) AS [Total],                                                            -- Total
                         SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN 1 ELSE 0 END) AS [Bad],      -- Bad (not blank)
@@ -443,7 +444,7 @@ AS
                         0                                                                AS [QC],       -- Bad QC; simply counted as [Bad]
                         SUM(D.Acq_Length_Minutes / 60.0 / 24.0) AS [Total_AcqTimeDays],                 -- Total time acquiring data, in days
                         SUM(D.Acq_Length_Minutes / 60.0 / 24.0) AS [BadBlankQC_AcqTimeDays],
-                                 
+
                         -- EMSL Funded Counts:
                         SUM(DF.EMSL_Funded) AS [EF_Total],                                                          -- EF_Total
                         SUM(CASE WHEN D.Dataset_Num NOT LIKE 'Blank%' THEN DF.EMSL_Funded ELSE 0 END) AS [EF_Bad],  -- EF_Bad (not blank)
@@ -454,32 +455,32 @@ AS
                     FROM
                         #Tmp_Datasets DF INNER JOIN
                         T_Dataset D ON DF.Dataset_ID = D.Dataset_ID INNER JOIN
-                        T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID INNER JOIN 
+                        T_Instrument_Name I ON D.DS_instrument_name_ID = I.Instrument_ID INNER JOIN
                         #Tmp_CampaignFilter CF ON CF.Campaign_ID = DF.Campaign_ID
                     WHERE ( D.Dataset_Num LIKE 'Bad%' OR
                             D.DS_Rating IN (-1,-2,-5) OR
                             D.DS_State_ID = 4
                         ) AND
-                        (I.IN_operations_role = 'Production' OR @productionOnly = 0) 
-                    GROUP BY I.IN_Name, I.Percent_EMSL_Owned                    
+                        (I.IN_operations_role = 'Production' OR @productionOnly = 0)
+                    GROUP BY I.IN_Name, I.Percent_EMSL_Owned
                 ) StatsQ
             GROUP BY Instrument, Percent_EMSL_Owned
-            ) CombinedStatsQ 
+            ) CombinedStatsQ
         ) OuterQ
     ORDER BY Instrument
 
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'ReportProductionStats'
     END CATCH
-    
+
     RETURN @myError
 
 
