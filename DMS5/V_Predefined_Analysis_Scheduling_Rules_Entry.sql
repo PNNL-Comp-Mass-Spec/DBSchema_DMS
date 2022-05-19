@@ -6,18 +6,19 @@ GO
 
 CREATE VIEW dbo.V_Predefined_Analysis_Scheduling_Rules_Entry
 AS
-SELECT PASR.SR_evaluationOrder AS evaluationOrder, 
-    PASR.SR_instrumentClass AS instrumentClass, 
-    PASR.SR_instrument_Name AS instrumentName, 
-    PASR.SR_dataset_Name AS datasetName, 
-    PASR.SR_analysisToolName AS analysisToolName, 
-    PASR.SR_priority AS priority, ISNULL(AJPG.Group_Name, '') 
-    AS processorGroup, PASR.SR_enabled AS enabled, 
-    PASR.SR_Created AS Created, PASR.ID
-FROM dbo.T_Predefined_Analysis_Scheduling_Rules PASR LEFT OUTER
-     JOIN
-    dbo.T_Analysis_Job_Processor_Group AJPG ON 
-    PASR.SR_processorGroupID = AJPG.ID
+SELECT PASR.SR_evaluationOrder AS evaluation_order,
+       PASR.SR_instrumentClass AS instrument_class,
+       PASR.SR_instrument_Name AS instrument_name,
+       PASR.SR_dataset_Name AS dataset_name,
+       PASR.SR_analysisToolName AS analysis_tool_name,
+       PASR.SR_priority AS priority,
+       ISNULL(AJPG.Group_Name, '') AS processor_group,
+       PASR.SR_enabled AS enabled,
+       PASR.SR_Created AS created,
+       PASR.id
+FROM dbo.T_Predefined_Analysis_Scheduling_Rules PASR
+     LEFT OUTER JOIN dbo.T_Analysis_Job_Processor_Group AJPG
+       ON PASR.SR_processorGroupID = AJPG.ID
 
 
 GO

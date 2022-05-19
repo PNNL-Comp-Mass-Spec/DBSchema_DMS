@@ -3,25 +3,28 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Prep_LC_Column_Entry AS 
- SELECT 
-	Column_Name AS ColumnName,
-	Mfg_Name AS MfgName,
-	Mfg_Model AS MfgModel,
-	Mfg_Serial_Number AS MfgSerialNumber,
-	Packing_Mfg AS PackingMfg,
-	Packing_Type AS PackingType,
-	Particle_size AS Particlesize,
-	Particle_type AS Particletype,
-	Column_Inner_Dia AS ColumnInnerDia,
-	Column_Outer_Dia AS ColumnOuterDia,
-	Length AS Length,
-	State AS State,
-	Operator_PRN AS OperatorPRN,
-	Comment AS Comment,
-	Created AS Created,
-	ID AS ID
+
+CREATE VIEW V_Prep_LC_Column_Entry
+AS
+SELECT
+	column_name,
+	mfg_name,
+	mfg_model,
+	mfg_serial_number,
+	packing_mfg,
+	packing_type,
+	particle_size,
+	particle_type,
+	column_inner_dia,
+	column_outer_dia,
+	length,
+	state,
+	operator_prn,
+	comment,
+	created,
+	id
 FROM T_Prep_LC_Column
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Column_Entry] TO [DDL_Viewer] AS [dbo]

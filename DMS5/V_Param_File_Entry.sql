@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Param_File_Entry]
 AS
-SELECT PF.Param_File_ID,
-       PF.Param_File_Name,
-       PFT.Param_File_Type,
-       PF.Param_File_Description,
-       PF.Valid,
+SELECT pf.param_file_id,
+       pf.param_file_name,
+       pft.param_file_type,
+       pf.param_file_description,
+       pf.valid,
 	   '# Paste the static and dynamic mods here from a MSGF+ or MSPathFinder parameter file' + char(10) +
-	   '# Typically used when creating new parameter files' + char(10) + 
-	   '# Can also be used with existing parameter files if mass mods are not yet defined' + Char(10) + 
-	   '# Alternatively, enable "Replace Existing Mass Mods"' AS MassMods
+	   '# Typically used when creating new parameter files' + char(10) +
+	   '# Can also be used with existing parameter files if mass mods are not yet defined' + Char(10) +
+	   '# Alternatively, enable "Replace Existing Mass Mods"' AS mass_mods
 FROM T_Param_Files PF
      INNER JOIN T_Param_File_Types PFT
        ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID

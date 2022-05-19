@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Operations_Tasks_Entry]
 AS
-SELECT OpsTask.ID,
-       TaskType.Task_Type_Name As TaskTypeName,
-       OpsTask.Tab,
-       OpsTask.Requester,
-       OpsTask.Requested_Personnel AS RequestedPersonnel,
-       OpsTask.Assigned_Personnel AS AssignedPersonnel,
-       OpsTask.Description,
-       OpsTask.Comments,
-       L.Lab_Name As LabName,
-       OpsTask.Status,
-       OpsTask.Priority,
-       OpsTask.Work_Package
+SELECT OpsTask.id,
+       TaskType.task_type_name,
+       OpsTask.tab,
+       OpsTask.requester,
+       OpsTask.requested_personnel,
+       OpsTask.assigned_personnel,
+       OpsTask.description,
+       OpsTask.comments,
+       L.lab_name,
+       OpsTask.status,
+       OpsTask.priority,
+       OpsTask.work_package
 FROM T_Operations_Tasks OpsTask
      INNER JOIN T_Operations_Task_Type TaskType
        ON OpsTask.Task_Type_ID = TaskType.Task_Type_ID

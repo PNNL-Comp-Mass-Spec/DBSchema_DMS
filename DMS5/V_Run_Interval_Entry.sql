@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Run_Interval_Entry]
 AS
-SELECT ID,
-       Instrument,
-       Entered,
-       Start,
-       [Interval],
-       [Comment]
+SELECT id,
+       instrument,
+       entered,
+       start,
+       [interval],
+       comment
 FROM dbo.T_Run_Interval
 
 

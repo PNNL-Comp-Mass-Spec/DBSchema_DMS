@@ -4,24 +4,25 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Prep_LC_Run_Entry] as
-SELECT  ID ,
-        Tab ,
-        Instrument ,
-        Type ,
-        LC_Column AS LCColumn ,
-        LC_Column_2 AS LCColumn2 ,
-        Comment ,
-        Guard_Column AS GuardColumn ,
-        Created ,
-        OperatorPRN ,
-        Digestion_Method AS DigestionMethod ,
-        Sample_Type AS SampleType ,
-        Number_Of_Runs AS NumberOfRuns ,
-        Instrument_Pressure AS InstrumentPressure ,
-        SamplePrepRequest ,
-        Quality_Control AS QualityControl,
-        dbo.GetHPLCRunDatasetList(ID, 'name') AS Datasets
+CREATE VIEW [dbo].[V_Prep_LC_Run_Entry]
+AS
+SELECT  id,
+        tab,
+        instrument,
+        type,
+        lc_column,
+        lc_column_2,
+        comment,
+        guard_column,
+        created,
+        OperatorPRN AS operator_prn,
+        digestion_method,
+        sample_type,
+        number_of_runs,
+        instrument_pressure,
+        SamplePrepRequest AS sample_prep_request,
+        quality_control,
+        dbo.GetHPLCRunDatasetList(ID, 'name') AS datasets
 FROM    T_Prep_LC_Run
 
 

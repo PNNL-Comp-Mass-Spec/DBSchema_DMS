@@ -6,31 +6,31 @@ GO
 
 CREATE VIEW [dbo].[V_Reference_Compound_Entry]
 AS
-SELECT RC.Compound_ID,
-       RC.Compound_Name,
-       RC.Description,
-       RCT.Compound_Type_Name,
-       RC.Gene_Name,
-       RC.Modifications,       
-       Org.OG_Name AS Organism_Name,
-       RC.PubChem_CID,
-       RC.Contact_PRN,
-       RC.Created,
-       C.Campaign_Num AS Campaign,
-       MC.Tag AS Container,
-       RC.Wellplate_Name,
-       RC.Well_Number,
-       RC.Supplier,
-	  Product_ID,
-       CONVERT(varchar(32), RC.Purchase_Date, 101) AS [Purchase_Date],
-       RC.Purity,
-       RC.Purchase_Quantity,
-       RC.Mass,
-       YN.Description AS [Active]
+SELECT RC.compound_id,
+       RC.compound_name,
+       RC.description,
+       RCT.compound_type_name,
+       RC.gene_name,
+       RC.modifications,
+       Org.OG_Name AS organism_name,
+       RC.PubChem_CID AS pub_chem_cid,
+       RC.contact_prn,
+       RC.created,
+       C.Campaign_Num AS campaign,
+       MC.Tag AS container,
+       RC.wellplate_name,
+       RC.well_number,
+       RC.supplier,
+	   RC.product_id,
+       CONVERT(varchar(32), RC.Purchase_Date, 101) AS purchase_date,
+       RC.purity,
+       RC.purchase_quantity,
+       RC.mass,
+       YN.Description AS [active]
 FROM dbo.T_Reference_Compound RC
      INNER JOIN dbo.T_Campaign C
        ON RC.Campaign_ID = C.Campaign_ID
-     INNER JOIN dbo.T_Reference_Compound_Type_Name RCT 
+     INNER JOIN dbo.T_Reference_Compound_Type_Name RCT
        ON RC.Compound_Type_ID = RCT.Compound_Type_ID
      INNER JOIN dbo.T_Organisms Org
        ON RC.Organism_ID = Org.Organism_ID
