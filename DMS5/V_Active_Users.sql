@@ -7,7 +7,8 @@ GO
 CREATE VIEW [dbo].[V_Active_Users]
 AS
 SELECT U_PRN AS Username,
-       U_Name AS Name
+       U_Name AS Name,
+       U_Name + ' (' + U_PRN + ')' As Name_with_Username
 FROM dbo.T_Users
 WHERE U_Status = 'Active'
 

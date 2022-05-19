@@ -4,9 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_EUS_Project_Picklist
+CREATE VIEW [dbo].[V_EUS_Project_Picklist]
 AS
-SELECT ID, Name
+SELECT ID, Name, Cast(ID AS Varchar(32)) + ' - ' + Name As ID_with_Name
 FROM dbo.T_EUS_Proposal_State_Name
 
 
