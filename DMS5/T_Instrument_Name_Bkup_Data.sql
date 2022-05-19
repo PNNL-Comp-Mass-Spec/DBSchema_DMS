@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 184 ******/
+/****** RowCount: 185 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -59,7 +59,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_3',56,'Triple_Quad',252,4132,'
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exact03',57,'Thermo_Exactive',255,2848,'secfso',null,'EMSL 1526','Fast scanning high resolution mass spectrometer','6/24/2009 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('VOrbiETD01',58,'LTQ_FT',257,3857,'secfso',null,'EMSL 1444','LTQ Velos Pro with an LTQ Orbitrap Velos Pro (supports ETD)','8/10/2009 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_MS_01',59,'Agilent_Ion_Trap',2627,4130,'secfso',null,'EMSL 1142','Agilent single quadrupole GC-MS for metabolomics. 7890A GC coupled to a 5975C inert XL MSD, with a 7683 series injector (G2614A)','7/30/2010 12:00:00 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('VOrbiETD02',60,'LTQ_FT',261,4093,'secfso',null,'EMSL 1526','LTQ Velos with Orbitrap Elite (upgraded from an Orbitrap in October 2013)','12/10/2009 12:00:00 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('VOrbiETD02',60,'LTQ_FT',261,4093,'secfso',null,'EMSL 1444','LTQ Velos with Orbitrap Elite (upgraded from an Orbitrap in October 2013)','12/10/2009 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('VOrbiETD03',61,'LTQ_FT',263,4133,'secfso',null,'EMSL 1526','LTQ Velos with an LTQ Orbitrap Velos (supports ETD)','1/6/2010 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('VOrbiETD04',62,'LTQ_FT',265,3859,'secfso',null,'EMSL 1526','Velos Pro with an LTQ Orbitrap Velos (supports ETD)','1/16/2010 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Orbi_FB1',63,'LTQ_FT',267,2072,'secfso',null,'331 Building, Rm 315','OBP sponsored Fungal Biotech Workstation','5/1/2010 12:00:00 AM')
@@ -184,4 +184,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01',182,'BrukerFT_BAF',3881,
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01_Imaging',183,'BrukerMALDI_Imaging_V2',3881,4108,'secfso',null,'EMSL 1649','Bruker scimaX with MALDI Imaging datasets','8/25/2021 1:23:06 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Broad_Exploris01',184,'LTQ_FT',3987,3989,'fso',null,'MIT - Broad (Massachusetts)','Broad Institute Exploris','10/22/2021 9:24:08 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Agilent_QTOF',185,'Agilent_TOF_V2',4073,4079,'fso',null,'Offsite','Agilent Q-TOF data acquired offsite (including the','2/25/2022 8:31:43 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P',186,'BrukerFT_BAF',2,2,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T ma','4/21/2022 3:05:49 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P',186,'BrukerFT_BAF',4149,4150,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T ma','4/21/2022 3:05:49 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P_Imaging',187,'BrukerMALDI_Imaging_V2',4149,2,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T ma','4/21/2022 3:08:42 PM')
