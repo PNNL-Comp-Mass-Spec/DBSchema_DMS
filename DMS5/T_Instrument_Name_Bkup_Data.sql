@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 185 ******/
+/****** RowCount: 186 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -185,4 +185,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SciMax01_Imaging',183,'BrukerMALDI
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Broad_Exploris01',184,'LTQ_FT',3987,3989,'fso',null,'MIT - Broad (Massachusetts)','Broad Institute Exploris','10/22/2021 9:24:08 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Agilent_QTOF',185,'Agilent_TOF_V2',4073,4079,'fso',null,'Offsite','Agilent Q-TOF data acquired offsite (including the','2/25/2022 8:31:43 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P',186,'BrukerFT_BAF',4149,4150,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T ma','4/21/2022 3:05:49 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P_Imaging',187,'BrukerMALDI_Imaging_V2',4149,2,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T ma','4/21/2022 3:08:42 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P_Imaging',187,'BrukerMALDI_Imaging_V2',4149,4151,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T ma','4/21/2022 3:08:42 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_IMS_AgQTOF',188,'IMS_Agilent_TOF_DotD',4152,2,'sec',null,'Offsite','IMS .d datasets acquired offsite','5/20/2022 9:15:09 AM')
