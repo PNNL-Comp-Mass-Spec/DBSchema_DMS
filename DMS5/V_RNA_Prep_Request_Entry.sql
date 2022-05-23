@@ -6,30 +6,30 @@ GO
 
 CREATE VIEW [dbo].[V_RNA_Prep_Request_Entry]
 AS
-SELECT SPR.Request_Name AS RequestName,
-       SPR.Requester_PRN AS RequesterPRN,
-       SPR.Reason,
-       SPR.Organism,
-       SPR.Biohazard_Level AS BiohazardLevel,
-       SPR.Campaign,
-       SPR.Number_of_Samples AS NumberofSamples,
-       SPR.Sample_Name_List AS SampleNameList,
-       SPR.Sample_Type AS SampleType,
-       SPR.Prep_Method AS PrepMethod,
-       SPR.Sample_Naming_Convention AS SampleNamingConvention,
-       SPR.Estimated_Completion AS EstimatedCompletion,
-       SPR.Work_Package_Number AS WorkPackageNumber,
-       SPR.Instrument_Name AS InstrumentName,
-       SPR.Dataset_Type AS DatasetType,
-       SPR.Instrument_Analysis_Specifications AS InstrumentAnalysisSpecifications,
-       T_Sample_Prep_Request_State_Name.State_Name AS State,
-       SPR.ID,
-       SPR.EUS_UsageType AS eusUsageType,
-       SPR.EUS_Proposal_ID AS eusProposalID,
-       SPR.EUS_User_ID AS eusUserID
+SELECT SPR.request_name,
+       SPR.requester_prn ,
+       SPR.reason,
+       SPR.organism,
+       SPR.biohazard_level,
+       SPR.campaign,
+       SPR.number_of_samples,
+       SPR.sample_name_list,
+       SPR.sample_type,
+       SPR.prep_method,
+       SPR.sample_naming_convention,
+       SPR.estimated_completion,
+       SPR.work_package_number,
+       SPR.instrument_name,
+       SPR.dataset_type,
+       SPR.instrument_analysis_specifications,
+       SN.State_Name AS state,
+       SPR.id,
+       SPR.EUS_UsageType AS eus_usage_type,
+       SPR.eus_proposal_id,
+       SPR.eus_user_id
 FROM T_Sample_Prep_Request AS SPR
-     INNER JOIN T_Sample_Prep_Request_State_Name
-       ON SPR.State = T_Sample_Prep_Request_State_Name.State_ID
+     INNER JOIN T_Sample_Prep_Request_State_Name SN
+       ON SPR.State = SN.State_ID
 
 
 GO

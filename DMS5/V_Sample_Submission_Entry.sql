@@ -3,13 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW dbo.V_Sample_Submission_Entry
 AS
-SELECT     dbo.T_Sample_Submission.ID, dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Users.U_PRN AS ReceivedBy, 
-                      dbo.T_Sample_Submission.Description, dbo.T_Sample_Submission.Container_List AS ContainerList, '' AS NewContainerComment
-FROM         dbo.T_Sample_Submission INNER JOIN
-                      dbo.T_Campaign ON dbo.T_Sample_Submission.Campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN
-                      dbo.T_Users ON dbo.T_Sample_Submission.Received_By_User_ID = dbo.T_Users.ID
+SELECT SS.id,
+       C.Campaign_Num AS campaign,
+       U.U_PRN AS received_by,
+       SS.description,
+       SS.Container_List AS container_list,
+       '' AS new_container_comment
+FROM T_Sample_Submission SS
+     INNER JOIN T_Campaign C
+       ON SS.Campaign_ID = C.Campaign_ID
+     INNER JOIN T_Users U
+       ON SS.Received_By_User_ID = U.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Submission_Entry] TO [DDL_Viewer] AS [dbo]

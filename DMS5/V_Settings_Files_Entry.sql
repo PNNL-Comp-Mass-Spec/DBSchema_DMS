@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Settings_Files_Entry]
 AS
-SELECT ID,
-       Analysis_Tool AS AnalysisTool,
-       File_Name AS FileName,
-       Description,
-       Active,
-       CONVERT(varchar(MAX), Contents) AS Contents,
-       HMS_AutoSupersede
+SELECT id,
+       analysis_tool,
+       file_name,
+       description,
+       active,
+       CONVERT(varchar(MAX), Contents) AS contents,
+       HMS_AutoSupersede AS hms_auto_supersede,
+       MSGFPlus_AutoCentroid AS auto_centroid
 FROM dbo.T_Settings_Files
-
 
 
 GO
