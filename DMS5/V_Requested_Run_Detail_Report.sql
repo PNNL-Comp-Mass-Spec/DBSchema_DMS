@@ -51,7 +51,7 @@ SELECT RR.ID AS Request,
        CAST(EUP.Proposal_End_Date AS DATE) AS [EUS Proposal End Date],
        PSN.Name AS [EUS Proposal State],
        dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
-       dbo.T_Attachments.Attachment_Name AS [MRM Transistion List],
+       dbo.T_Attachments.Attachment_Name AS [MRM Transition List],
        RR.RDS_note AS Note,
        RR.RDS_special_instructions AS [Special Instructions],
        Case
