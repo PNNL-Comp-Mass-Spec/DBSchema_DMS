@@ -9,7 +9,7 @@ AS
 SELECT AJR.AJR_requestID AS Request,
        AJR.AJR_requestName AS Name,
        AJRS.StateName AS State,
-       U.U_Name AS Requestor,
+       U.U_Name AS Requester,
        AJR.AJR_created AS Created,
        AJR.AJR_analysisToolName AS Tool,
        AJR.AJR_jobCount AS Jobs,

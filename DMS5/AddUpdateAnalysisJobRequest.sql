@@ -90,6 +90,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **                         - When using append mode, optionally Set @state to 'new' to also reset the state
 **          10/15/2021 mem - Require that @dataPackageID be defined when using a match between runs parameter file for MaxQuant and MSFragger
 **          03/10/2022 mem - Replace spaces and tabs in the dataset list with commas
+**          05/23/2022 mem - Rename requester argument
 **
 *****************************************************/
 (
@@ -102,7 +103,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
     @protCollOptionsList varchar(256),
     @organismName varchar(128),
     @organismDBName varchar(128) = 'na',        -- Legacy fasta file; typically 'na'
-    @requestorPRN varchar(32),
+    @requesterPRN varchar(32),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @dataPackageID int = 0,
@@ -155,9 +156,9 @@ As
     If @requestName = ''
         RAISERROR ('Cannot add: request name cannot be blank', 11, 4)
 
-    Set @requestorPRN = Ltrim(Rtrim(IsNull(@requestorPRN, '')))
+    Set @requesterPRN = Ltrim(Rtrim(IsNull(@requesterPRN, '')))
 
-    If @requestorPRN = 'H09090911' Or @requestorPRN = 'Autouser'
+    If @requesterPRN = 'H09090911' Or @requesterPRN = 'Autouser'
         RAISERROR ('Cannot add: the "Requested by" PRN cannot be the Autouser', 11, 4)
 
     Set @dataPackageID = IsNull(@dataPackageID, 0)
@@ -405,7 +406,7 @@ As
                             @organismName = @organismName,
                             @protCollNameList = @protCollNameList output,
                             @protCollOptionsList = @protCollOptionsList output,
-                            @ownerPRN = @requestorPRN output,
+                            @ownerPRN = @requesterPRN output,
                             @mode = '', -- blank validation mode to suppress dataset state checking
                             @userID = @userID output,
                             @analysisToolID = @analysisToolID output,

@@ -21,7 +21,7 @@ SELECT AJR.AJR_requestID AS request_id,
        AJR.AJR_comment AS comment,
        AJR.AJR_specialProcessing AS special_processing,
        ARS.StateName AS state,
-       U.U_PRN AS requestor,
+       U.U_PRN AS requester,
        AJR.AJR_proteinCollectionList AS prot_coll_name_list,
        AJR.AJR_proteinOptionsList AS prot_coll_options_list
 FROM T_Analysis_Job_Request AS AJR

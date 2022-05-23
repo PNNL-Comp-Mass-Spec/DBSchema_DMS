@@ -28,12 +28,13 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          11/15/2021 mem - If the the instrument group for the source request is the target instrument group instead of a fraction based group, auto update the source instrument group
 **          01/15/2022 mem - Copy date created from the parent requested run to new requested runs, allowing Days in Queue on the list report to be based on the parent requested run's creation date
 **          02/17/2022 mem - Update requestor username warning
+**          05/23/2022 mem - Rename requester username argument and update username warning
 **
 *****************************************************/
 (
     @sourceRequestID int,
     @separationGroup varchar(64) = 'LC-Formic_2hr',
-    @requestorPRN varchar(80),                      -- Supports either simply a username, or 'LastName, FirstName (Username)'
+    @requesterPRN varchar(80),                      -- Supports either just the username, or 'LastName, FirstName (Username)'
     @instrumentSettings varchar(512) = 'na',
     @stagingLocation varchar(64) = null,
     @wellplateName varchar(64) = '',                -- If (lookup), will look for a wellplate defined in T_Experiments
@@ -129,8 +130,8 @@ As
     If IsNull(@sourceRequestID, 0) = 0
         RAISERROR ('Source request ID not provided', 11, 110)
     --
-    If IsNull(@requestorPRN, '') = ''
-        RAISERROR ('Requestor username was blank', 11, 113)
+    If IsNull(@requesterPRN, '') = ''
+        RAISERROR ('Requester username was blank', 11, 113)
     --
     If IsNull(@separationGroup, '') = ''
         RAISERROR ('Separation group was blank', 11, 114)
@@ -269,40 +270,40 @@ As
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call GetUserID for ' + @requestorPRN
+        Set @debugMsg = 'Call GetUserID for ' + @requesterPRN
         exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
     End
 
     Declare @userID int
-    execute @userID = GetUserID @requestorPRN
+    execute @userID = GetUserID @requesterPRN
 
     If @userID > 0
     Begin
         -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @requestorPRN contains simply the username
+        -- Assure that @requesterPRN contains simply the username
         --
-        SELECT @requestorPRN = U_PRN
+        SELECT @requesterPRN = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @requestorPRN
+        -- Could not find entry in database for PRN @requesterPRN
         -- Try to auto-resolve the name
 
         Declare @matchCount int
         Declare @newPRN varchar(64)
 
-        exec AutoResolveNameToPRN @requestorPRN, @matchCount output, @newPRN output, @userID output
+        exec AutoResolveNameToPRN @requesterPRN, @matchCount output, @newPRN output, @userID output
 
         If @matchCount = 1
         Begin
-            -- Single match found; update @requestorPRN
-            Set @requestorPRN = @newPRN
+            -- Single match found; update @requesterPRN
+            Set @requesterPRN = @newPRN
         End
         Else
         Begin
-            RAISERROR ('Could not find entry in database for requestor PRN "%s"', 11, 19, @requestorPRN)
+            RAISERROR ('Could not find entry in database for requester username"%s"', 11, 19, @requesterPRN)
             return 51019
         End
     End
@@ -748,7 +749,7 @@ As
                 Location_Id
             ) VALUES (
                 @requestName,
-                @requestorPRN,
+                @requesterPRN,
                 @comment,
                 @sourceCreated,
                 @targetInstrumentGroup,

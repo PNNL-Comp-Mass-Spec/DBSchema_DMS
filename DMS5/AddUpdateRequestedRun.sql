@@ -102,12 +102,13 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          06/01/2021 mem - Update the message stored in @resolvedInstrumentInfo
 **          10/06/2021 mem - Add @batch, @block, and @runOrder
 **          02/17/2022 mem - Update requestor username warning
+**          05/23/2022 mem - Rename requester username argument and update username warning
 **
 *****************************************************/
 (
     @reqName varchar(128),
     @experimentNum varchar(64),
-    @requestorPRN varchar(64),
+    @requesterPRN varchar(64),
     @instrumentName varchar(64),                -- Instrument group; could also contain "(lookup)"
     @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @autoPopulateUserListIfBlank=1)
     @msType varchar(20),
@@ -203,8 +204,8 @@ As
     If IsNull(@experimentNum, '') = ''
         RAISERROR ('Experiment number was blank', 11, 111)
     --
-    If IsNull(@requestorPRN, '') = ''
-        RAISERROR ('Requestor username was blank', 11, 113)
+    If IsNull(@requesterPRN, '') = ''
+        RAISERROR ('Requester username was blank', 11, 113)
     --
     Declare @instrumentGroup varchar(64) = @instrumentName
     If IsNull(@instrumentGroup, '') = ''
@@ -424,40 +425,40 @@ As
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call GetUserID for ' + @requestorPRN
+        Set @debugMsg = 'Call GetUserID for ' + @requesterPRN
         exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
     End
 
     Declare @userID int
-    execute @userID = GetUserID @requestorPRN
+    execute @userID = GetUserID @requesterPRN
 
     If @userID > 0
     Begin
         -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @requestorPRN contains simply the username
+        -- Assure that @requesterPRN contains simply the username
         --
-        SELECT @requestorPRN = U_PRN
+        SELECT @requesterPRN = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @requestorPRN
+        -- Could not find entry in database for PRN @requesterPRN
         -- Try to auto-resolve the name
 
         Declare @matchCount int
         Declare @newPRN varchar(64)
 
-        exec AutoResolveNameToPRN @requestorPRN, @matchCount output, @newPRN output, @userID output
+        exec AutoResolveNameToPRN @requesterPRN, @matchCount output, @newPRN output, @userID output
 
         If @matchCount = 1
         Begin
-            -- Single match found; update @requestorPRN
-            Set @requestorPRN = @newPRN
+            -- Single match found; update @requesterPRN
+            Set @requesterPRN = @newPRN
         End
         Else
         Begin
-            RAISERROR ('Could not find entry in database for requestor PRN "%s"', 11, 19, @requestorPRN)
+            RAISERROR ('Could not find entry in database for requester username "%s"', 11, 19, @requesterPRN)
             return 51019
         End
     End
@@ -832,7 +833,7 @@ As
             Location_Id
         ) VALUES (
             @reqName,
-            @requestorPRN,
+            @requesterPRN,
             @comment,
             GETDATE(),
             @instrumentGroup,
@@ -933,7 +934,7 @@ As
         UPDATE T_Requested_Run
         SET
             RDS_Name = CASE WHEN @requestIDForUpdate > 0 THEN @reqName ELSE RDS_Name END,
-            RDS_Requestor_PRN = @requestorPRN,
+            RDS_Requestor_PRN = @requesterPRN,
             RDS_comment = @comment,
             RDS_instrument_group = @instrumentGroup,
             RDS_type_ID = @datasetTypeID,

@@ -49,6 +49,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          07/09/2021 mem - Fix bug handling instrument group name when @batchName is blank
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/17/2022 mem - Update operator username warning
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -347,7 +348,7 @@ As
             EXEC @myError = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentName,
-                                    @requestorPRN = @operPRN,
+                                    @requesterPRN = @operPRN,
                                     @instrumentName = @instrumentGroupToUse,
                                     @workPackage = @workPackage,
                                     @msType = @msType,
