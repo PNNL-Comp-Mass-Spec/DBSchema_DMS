@@ -8,8 +8,10 @@ CREATE VIEW [dbo].[V_Instrument_Detail_Report]
 AS
 SELECT InstName.Instrument_ID AS ID,
        InstName.IN_name AS Name,
-       SPath.SP_vol_name_client + SPath.SP_path AS [Assigned Storage],
+       InstName.IN_source_path_ID As [Source Path ID],
        S.Source AS [Assigned Source],
+       InstName.IN_storage_path_ID As [Storage Path ID],
+       SPath.SP_vol_name_client + SPath.SP_path AS [Assigned Storage],
        AP.AP_archive_path AS [Assigned Archive Path],
        AP.AP_network_share_path AS [Archive Share Path],
        InstName.IN_Description AS Description,
