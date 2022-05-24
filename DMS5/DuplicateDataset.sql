@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
 **                         - Add call to UpdateCachedDatasetInstruments
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -350,7 +351,7 @@ As
         EXEC @myError = dbo.AddUpdateRequestedRun
                                 @reqName = @reqName,
                                 @experimentNum = @experimentNum,
-                                @requestorPRN = @operPRN,
+                                @requesterPRN = @operPRN,
                                 @instrumentName = @instrumentName,
                                 @workPackage = @workPackage,
                                 @msType = @msType,
@@ -414,5 +415,6 @@ As
 Done:
 
     return @myError
+
 
 GO

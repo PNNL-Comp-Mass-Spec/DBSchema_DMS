@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **                         - Use RemoveCrLf to replace linefeeds with semicolons
 **          02/17/2022 mem - Rename variables, adjust formatting, convert tabs to spaces
 **          02/18/2022 mem - Call AddUpdateRequestedRun if the EUS usage info is updated
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -410,7 +411,7 @@ As
             EXEC @result = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentNum,
-                                    @requestorPRN = @operPRN,
+                                    @requesterPRN = @operPRN,
                                     @instrumentName = @instrumentName,
                                     @workPackage = 'none',
                                     @msType = @msType,
@@ -544,7 +545,7 @@ As
             EXEC @result = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentNum,
-                                    @requestorPRN = @operPRN,
+                                    @requesterPRN = @operPRN,
                                     @instrumentName = @instrumentName,
                                     @workPackage = 'none',
                                     @msType = @msType,
@@ -619,6 +620,7 @@ As
     END CATCH
 
     return @myError
+
 
 
 GO

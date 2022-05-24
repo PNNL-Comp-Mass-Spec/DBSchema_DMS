@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddRequestedRunToExistingDataset]
+CREATE PROCEDURE [dbo].[AddRequestedRunToExistingDataset]
 /****************************************************
 **
 **  Desc:   Creates a requested run and associates it with
@@ -40,6 +40,7 @@ CREATE Procedure [dbo].[AddRequestedRunToExistingDataset]
 **          01/24/2020 mem - Add mode 'preview'
 **          01/31/2020 mem - Display all of the values sent to AddUpdateRequestedRun when mode is 'preview'
 **          02/04/2020 mem - Add mode 'add-debug', which will associate the requested run with the dataset, but will also print out debug statements
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -149,7 +150,7 @@ AS
     Declare @msType varchar(20)
     Declare @comment varchar(1024) = 'Automatically created by Dataset entry'
     Declare @workPackage varchar(50)  = 'none'
-    Declare @requestorPRN varchar(128) = ''
+    Declare @requesterPRN varchar(128) = ''
     Declare @eusProposalID varchar(10) = 'na'
     Declare @eusUsageType varchar(50)
     Declare @eusUsersList varchar(1024) = ''
@@ -193,7 +194,7 @@ AS
             Print 'Querying T_Requested_Run AND T_EUS_UsageType for request ID  ' + Cast(@templateRequestID As Varchar(12))
 
         SELECT @workPackage = RDS_WorkPackage,
-               @requestorPRN = RDS_Requestor_PRN,
+               @requesterPRN = RDS_Requestor_PRN,
                @eusProposalID = RDS_EUS_Proposal_ID,
                @eusUsageType = EUT.Name,
                @eusUsersList = dbo.GetRequestedRunEUSUsersList(RR.ID, 'I')
@@ -239,7 +240,7 @@ AS
         RAISERROR ('For now, a template request is mandatory', 11, 10)
 
     if IsNull(@callingUser, '') <> ''
-        Set @requestorPRN = @callingUser
+        Set @requesterPRN = @callingUser
         
     ---------------------------------------------------
     -- Create requested run and attach it to dataset
@@ -253,7 +254,7 @@ AS
 
         Print 'Request_Name: ' + @reqName
         Print 'Experiment: ' + @experimentNum
-        Print 'RequestorPRN: ' + @requestorPRN
+        Print 'RequesterPRN: ' + @requesterPRN
         Print 'InstrumentName: ' + @instrumentName
         Print 'WorkPackage: ' + @workPackage
         Print 'MsType: ' + @msType
@@ -284,7 +285,7 @@ AS
     EXEC @myError = dbo.AddUpdateRequestedRun 
                             @reqName = @reqName,
                             @experimentNum = @experimentNum,
-                            @requestorPRN = @requestorPRN,
+                            @requesterPRN = @requesterPRN,
                             @instrumentName = @instrumentName,
                             @workPackage = @workPackage,
                             @msType = @msType,
@@ -354,6 +355,7 @@ AS
     End CATCH
     
     return @myError
+
 
 
 GO

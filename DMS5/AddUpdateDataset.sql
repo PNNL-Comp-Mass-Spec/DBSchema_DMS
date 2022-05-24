@@ -111,6 +111,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          10/01/2021 mem - Also check for a period when verifying that the dataset name does not end with .raw or .wiff
 **          11/12/2021 mem - When @mode is update, pass @batch, @block, and @runOrder to AddUpdateRequestedRun
 **          02/17/2022 mem - Rename variables and add missing Else clause
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -1298,7 +1299,7 @@ As
             EXEC @result = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentNum,
-                                    @requestorPRN = @operPRN,
+                                    @requesterPRN = @operPRN,
                                     @instrumentName = @instrumentName,
                                     @workPackage = @workPackage,
                                     @msType = @msType,
@@ -1533,7 +1534,7 @@ As
             EXEC @result = dbo.AddUpdateRequestedRun
                                     @reqName = @reqName,
                                     @experimentNum = @experimentNum,
-                                    @requestorPRN = @operPRN,
+                                    @requesterPRN = @operPRN,
                                     @instrumentName = @instrumentName,
                                     @workPackage = @workPackage,
                                     @msType = @msType,

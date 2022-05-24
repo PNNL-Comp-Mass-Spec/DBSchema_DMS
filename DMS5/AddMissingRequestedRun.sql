@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddMissingRequestedRun]
+CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
 /****************************************************
 **
 **	Desc:	Creates a requested run for the given dataset,
@@ -28,6 +28,7 @@ CREATE Procedure [dbo].[AddMissingRequestedRun]
 **			05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **
 *****************************************************/
 (
@@ -132,7 +133,7 @@ As
 		EXEC @result = dbo.AddUpdateRequestedRun 
 								@reqName = @reqName,
 								@experimentNum = @experimentNum,
-								@requestorPRN = @operPRN,
+								@requesterPRN = @operPRN,
 								@instrumentName = @instrumentName,
 								@workPackage = @workPackage,
 								@msType = @msType,

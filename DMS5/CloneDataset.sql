@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[CloneDataset]
+CREATE PROCEDURE [dbo].[CloneDataset]
 /****************************************************
 **
 **	Desc: 
@@ -21,6 +21,7 @@ CREATE Procedure [dbo].[CloneDataset]
 **			                 Removed the Machine column from T_Job_Steps
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **    
 *****************************************************/
 (
@@ -33,10 +34,8 @@ CREATE Procedure [dbo].[CloneDataset]
 AS
 	Set XACT_ABORT, nocount on
 
-	declare @myRowCount int	
-	declare @myError int
-	set @myRowCount = 0
-	set @myError = 0
+	Declare @myRowCount int	= 0
+	Declare @myError int	= 0
 
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
@@ -252,7 +251,7 @@ AS
 			EXEC @myError = dbo.AddUpdateRequestedRun
 									@reqName = @requestNameNew,
 									@experimentNum = @experimentNum,
-									@requestorPRN = @operPRN,
+									@requesterPRN = @operPRN,
 									@instrumentName = @instrumentName,
 									@workPackage = @workPackage,
 									@msType = @datasetType,
@@ -529,6 +528,7 @@ AS
 Done:
 
 	return @myError
+
 
 
 GO
