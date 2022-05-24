@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Info_List_Report]
 AS
 SELECT DS.Dataset_ID AS ID,
@@ -37,7 +36,7 @@ SELECT DS.Dataset_ID AS ID,
        DS.Acq_Time_End AS [Acquisition End],
        DSN.DSS_name AS State,
        DSRating.DRN_name AS Rating,
-       DS.DS_comment AS [Comment________________],
+       DS.DS_comment AS Comment,
        DS.DS_created AS Created,
        DSInfo.Last_Affected AS [DSInfo Updated]
 FROM T_DatasetStateName DSN
