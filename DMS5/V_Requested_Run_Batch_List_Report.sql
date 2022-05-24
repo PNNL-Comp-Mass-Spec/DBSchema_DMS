@@ -44,7 +44,8 @@ SELECT RRB.ID,
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 60 THEN 60    -- Oldest active request is 30 to 60 days old
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 90 THEN 90    -- Oldest active request is 60 to 90 days old
            ELSE 120                                                                              -- Oldest active request is over 90 days old
-       END AS [#DaysInQueue],
+       END AS [#DaysInQueue]
+       /*
        CASE
            WHEN ActiveReqSepTypes.Requests IS NULL OR
                 CompletedRequests.MinDaysInQueue IS NULL THEN 0   -- No active requested runs for this batch
@@ -53,6 +54,7 @@ SELECT RRB.ID,
            WHEN CompletedRequests.MinDaysInQueue <= 90   THEN 90  -- Oldest request is 60 to 90 days old
            ELSE 120                                               -- Oldest request is over 90 days old
        END AS [#MinDaysInQueue]
+       */
 FROM T_Requested_Run_Batches AS RRB
      INNER JOIN T_Users
        ON RRB.Owner = T_Users.ID
