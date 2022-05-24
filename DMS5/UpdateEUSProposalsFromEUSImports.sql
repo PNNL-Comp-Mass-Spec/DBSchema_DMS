@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 **          05/12/2021 mem - Use new NEXUS-based views
 **          05/14/2021 mem - Handle null values for actual_start_date
 **          05/24/2021 mem - Add new proposal types to T_EUS_Proposal_Type
+**          05/24/2022 mem - Avoid inserting duplicate proposals into T_EUS_Proposals by filtering on IdRank
 **
 *****************************************************/
 (
@@ -73,11 +74,12 @@ As
                       proposal_type_display AS Proposal_Type,
                       actual_start_date AS Proposal_Start_Date,
                       actual_end_date AS Proposal_End_Date,
-                      CASE WHEN Source.actual_start_date > GetDate() THEN 1     -- Proposal start date is later than today; mark it active anyway
-                           WHEN GetDate() BETWEEN IsNull(Source.actual_start_date, GetDate()) AND DateAdd(Day, 1, Source.actual_end_date) THEN 1
+                      CASE WHEN actual_start_date > GetDate() THEN 1     -- Proposal start date is later than today; mark it active anyway
+                           WHEN GetDate() BETWEEN IsNull(actual_start_date, GetDate()) AND DateAdd(Day, 1, actual_end_date) THEN 1
                            ELSE 0
                       END AS Active
-               FROM dbo.V_NEXUS_Import_Proposals Source
+               FROM dbo.V_NEXUS_Import_Proposals
+               WHERE IdRank = 1
             ) AS Source ( Proposal_ID, Title, Proposal_Type, Proposal_Start_Date, Proposal_End_Date, Active)
         ON (target.Proposal_ID = source.Proposal_ID)
         WHEN Matched AND

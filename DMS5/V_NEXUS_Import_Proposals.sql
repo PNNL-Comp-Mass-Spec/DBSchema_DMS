@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_NEXUS_Import_Proposals]
-As
+AS
 (
 SELECT project_id, 
        title, 
@@ -13,7 +13,8 @@ SELECT project_id,
        proposal_type_display,
        actual_start_date, 
        actual_end_date,
-       project_uuid
+       project_uuid,
+       Row_Number() Over (Partition By project_id Order By actual_start_date, actual_end_date) As IdRank
 FROM openquery ( NEXUS, 'SELECT * FROM proteomics_views.vw_proposals' )
 )
 
