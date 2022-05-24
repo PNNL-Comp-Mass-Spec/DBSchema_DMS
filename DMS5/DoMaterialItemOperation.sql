@@ -20,12 +20,13 @@ CREATE Procedure [dbo].[DoMaterialItemOperation]
 **        06/16/2017 mem - Restrict access using VerifySPAuthorized
 **        08/01/2017 mem - Use THROW if not authorized
 **        09/25/2019 mem - Allow @name to be an experiment ID, which happens if "Retire Experiment" is clicked at https://dms2.pnl.gov/experimentid/show/123456
+**        05/24/2022 mem - Validate parameters
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
 (
-    @name varchar(128),                    -- Item name (either biomaterial or an experiment); or experiment ID
+    @name varchar(128),                    -- Item name (biomaterial name, experiment name, or experiment ID)
     @mode varchar(32),                    -- 'retire_biomaterial', 'retire_experiment'
     @message varchar(512) output,
     @callingUser varchar (128) = ''
@@ -36,6 +37,7 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
     
+    Declare @logErrors Tinyint = 0
     Declare @msg varchar(512)
     Declare @experimentID int
 
@@ -55,7 +57,32 @@ As
     Begin TRY 
 
     ---------------------------------------------------
-    -- convert name to ID
+    -- Verify input values
+    ---------------------------------------------------
+
+    Set @name = IsNull(@name, '')
+    Set @mode = IsNull(@mode, '')
+
+    If @mode = ''
+    Begin
+        Set @msg = 'Material item operation mode not defined'
+        RAISERROR (@msg, 11, 1)
+    End
+
+    If Not @mode In ('retire_biomaterial', 'retire_experiment')
+    Begin
+        Set @msg = 'Material item operation mode must be retire_biomaterial or retire_experiment, not ' + @mode
+        RAISERROR (@msg, 11, 1)
+    End
+    
+    If @name = ''
+    Begin
+        Set @msg = 'Material name not defined; cannot retire'
+        RAISERROR (@msg, 11, 1)
+    End
+
+    ---------------------------------------------------
+    -- Convert name to ID
     ---------------------------------------------------
     Declare @tmpID Int = 0
     Declare @type_tag varchar(2) = ''
@@ -91,11 +118,14 @@ As
     
     If @tmpID = 0
     Begin
-        Set @msg = 'Could not find the material item for @mode="' + @mode + '" and @name="' + @name + '"'
+        Set @msg = 'Could not find the material item for mode "' + @mode + '", name "' + @name + '"'
         RAISERROR (@msg, 11, 1)
     End
     Else
     Begin
+
+        Set @logErrors = 1
+
         ---------------------------------------------------
         -- Call the material update function
         ---------------------------------------------------
@@ -135,8 +165,11 @@ As
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
-        Exec PostLogEntry 'Error', @message, 'DoMaterialItemOperation'
+        
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'DoMaterialItemOperation'
+        End
     End Catch
 
     return @myError

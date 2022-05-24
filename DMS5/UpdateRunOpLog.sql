@@ -20,36 +20,37 @@ CREATE PROCEDURE [dbo].[UpdateRunOpLog]
 **
 **  Auth:   grk
 **  Date:   02/21/2013 grk - Initial release
-**          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/02/2017 mem - Pass @invalidUsage to AddUpdateRunInterval; continue updating long intervals if the usage info fails validation for a given entry
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          05/24/2022 mem - Do not call PostlogEntry for errors of the form "Total percentage (0) does not add up to 100 for ID 1017648"
 **
 *****************************************************/
 (
-    @changes TEXT, -- see formating note above
-    @message VARCHAR(512) output,
-    @callingUser VARCHAR(128) = ''
+    @changes text, -- see formating note above
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
 AS
-    SET XACT_ABORT, NOCOUNT ON
+    Set XACT_ABORT, NOCOUNT ON
+    Set CONCAT_NULL_YIELDS_NULL ON
+    Set ANSI_PADDING ON
     
-    DECLARE @myError int = 0
-    DECLARE @myRowCount int = 0
-    SET @message = ''
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+    Set @message = ''
 
-    DECLARE @DebugMode tinyint = 0
+    Declare @logErrors tinyint = 1
 
-    DECLARE @xml XML = CONVERT(XML, @changes)
-    SET CONCAT_NULL_YIELDS_NULL ON
-    SET ANSI_PADDING ON
+    Declare @xml XML = CONVERT(XML, @changes)
 
-    DECLARE @prevID INT = 0
-    DECLARE @curID INT = 0
-    DECLARE @done INT = 0
-    DECLARE @msg VARCHAR(512)
+    Declare @prevID INT = 0
+    Declare @curID INT = 0
+    Declare @done INT = 0
+    Declare @msg VARCHAR(512)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -58,9 +59,9 @@ AS
     Declare @authorized tinyint = 0    
     Exec @authorized = VerifySPAuthorized 'UpdateRunOpLog', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY
 
@@ -89,7 +90,7 @@ AS
         -- Get current status of request (needed for change log updating)
         --
         UPDATE #RRCHG
-        SET statusID = TRSN.State_ID
+        Set statusID = TRSN.State_ID
         FROM #RRCHG
              INNER JOIN T_Requested_Run TRR
                ON #RRCHG.request = TRR.ID
@@ -117,7 +118,7 @@ AS
         -- Loop through requested run changes
         -- and validate and update
         -----------------------------------------------------------
-        DECLARE 
+        Declare 
             @AutoPopulateUserListIfBlank tinyint = 1,
             @eusUsageTypeID INT,
             @eusUsageType varchar(50),
@@ -125,12 +126,12 @@ AS
             @eusUsersList varchar(1024),
             @StatusID int
     
-        SET @prevID = 0
-        SET @curID = 0
-        SET @done = 0
+        Set @prevID = 0
+        Set @curID = 0
+        Set @done = 0
         WHILE @done = 0 
         BEGIN --<a>
-            SET @curID = 0
+            Set @curID = 0
             SELECT TOP 1 
                 @curID = request,
                 @prevID = request,
@@ -144,7 +145,7 @@ AS
             
             IF @curID = 0
             BEGIN 
-                SET @done = 1
+                Set @done = 1
             END
             ELSE 
             BEGIN --<c>
@@ -156,15 +157,17 @@ AS
                             @msg output,
                             @AutoPopulateUserListIfBlank
                 
-                if @myError <> 0
+                If @myError <> 0
+                Begin
                     RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+                End
 
                 -----------------------------------------------------------
                 -- Update the requested run
                 -----------------------------------------------------------
 
                 UPDATE T_Requested_Run 
-                SET 
+                Set 
                     RDS_EUS_Proposal_ID = @eusProposalID,
                     RDS_EUS_UsageType = @eusUsageTypeID
                 WHERE (ID = @curID)
@@ -188,7 +191,9 @@ AS
                                         @eusUsersList,
                                         @msg output
                 if @myError <> 0
+                Begin
                     RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
+                End
             END --<c>
         END --<a>
 
@@ -196,16 +201,16 @@ AS
         -- Loop though long intervals and update 
         ---------------------------------------------------
         --
-        DECLARE @comment varchar(MAX)
-        DECLARE @invalidUsage tinyint = 0
-        DECLARE @invalidEntries int = 0
+        Declare @comment varchar(MAX)
+        Declare @invalidUsage tinyint = 0
+        Declare @invalidEntries int = 0
         
-        SET @prevID = 0
-        SET @curID = 0
-        SET @done = 0
+        Set @prevID = 0
+        Set @curID = 0
+        Set @done = 0
         WHILE @done = 0 
         BEGIN --<x>
-            SET @curID = 0
+            Set @curID = 0
             SELECT TOP 1 
                 @curID = id,
                 @prevID = id,
@@ -216,7 +221,7 @@ AS
             
             IF @curID = 0
             BEGIN 
-                SET @done = 1
+                Set @done = 1
             END
             ELSE 
             BEGIN --<y>
@@ -238,13 +243,20 @@ AS
                     Set @invalidEntries = @invalidEntries + 1
                 End
                 Else If @myError <> 0
+                Begin
                     RAISERROR ('AddUpdateRunInterval: %s', 11, 20, @msg)
+                End
                     
             END --<y>
         END --<x>
 
         If @invalidEntries > 0
         Begin
+            If @message Like '%Total percentage%'
+            Begin
+                Set @logErrors = 0
+            End
+
             -- @msg will be 'Parse error: error details' or 'Parse errors: error details'
             Set @msg = 'Parse ' + dbo.CheckPlural(@invalidEntries, 'error', 'errors') + ': ' + @message
             RAISERROR (@msg, 11, 21)
@@ -258,7 +270,10 @@ AS
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateRunOpLog'
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'UpdateRunOpLog'
+        End
     END CATCH
     
     RETURN @myError
