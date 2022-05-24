@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Data_Package_Analysis_Job_PSM_List_Report] 
+CREATE VIEW [dbo].[V_Data_Package_Analysis_Job_PSM_List_Report]
 AS
 SELECT  DPJ.Data_Package_ID As [Data Pkg],
         AJ.AJ_jobID AS Job,
@@ -19,8 +19,8 @@ SELECT  DPJ.Data_Package_ID As [Data Pkg],
         PSM.Total_PSMs_FDR_Filter AS [Total PSMs FDR],
         PSM.Unique_Peptides_FDR_Filter AS [Unique Peptides FDR],
         PSM.Unique_Proteins_FDR_Filter AS [Unique Proteins FDR],
-        PSM.MSGF_Threshold AS [MSGF Threshold], 
-        Convert(decimal(9,2), PSM.FDR_Threshold * 100.0) AS [FDR Threshold (%)], 
+        PSM.MSGF_Threshold AS [MSGF Threshold],
+        Convert(decimal(9,2), PSM.FDR_Threshold * 100.0) AS [FDR Threshold (%)],
         -- CAST(QCM.P_4A * 100 AS decimal(9,1)) AS PctTryptic,
         -- CAST(QCM.P_4B * 100 AS decimal(9,1)) AS PctMissedClvg,
         -- QCM.P_2A AS TrypticPSMs,
@@ -31,6 +31,9 @@ SELECT  DPJ.Data_Package_ID As [Data Pkg],
         CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS PctMissedClvg,
         PSM.Keratin_Peptides_FDR AS [KeratinPep],
         PSM.Trypsin_Peptides_FDR AS [TrypsinPep],
+        PSM.Acetyl_Peptides_FDR AS [AcetylPep],
+        Convert(decimal(9,2), PSM.Percent_PSMs_Missing_NTermReporterIon) AS [Pct Missing NTermRepIon],
+        Convert(decimal(9,2), PSM.Percent_PSMs_Missing_ReporterIon) AS [Pct Missing RepIon],
         PSM.Last_Affected AS [PSM Stats Date],
         PhosphoPSM.PhosphoPeptides AS PhosphoPep,
         PhosphoPSM.CTermK_Phosphopeptides AS [CTermK PhosphoPep],
@@ -50,9 +53,9 @@ SELECT  DPJ.Data_Package_ID As [Data Pkg],
         AJ.AJ_requestID AS [Job Request],
         ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder],
         CASE WHEN AJ.AJ_Purged = 0
-        THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName 
-        ELSE DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName 
-        END AS [Results Folder Path],        
+        THEN SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName
+        ELSE DAP.Archive_Path + '\' + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '\' + AJ.AJ_resultsFolderName
+        END AS [Results Folder Path],
         DR.DRN_name AS Rating,
         DS.Acq_Length_Minutes AS [Acq Length],
         DS.Dataset_ID,
@@ -89,5 +92,6 @@ WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR
                                       AJT_resultType = 'Gly_ID' )
+
 
 GO
