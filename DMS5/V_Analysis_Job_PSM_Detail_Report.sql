@@ -14,7 +14,6 @@ SELECT AJ.AJ_jobID AS Job,
        THEN DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName 
        ELSE 'Purged: ' + DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName
        END AS [Results Folder Path],
-       DFP.Archive_Folder_Path + '\' + AJ.AJ_resultsFolderName AS [Archive Results Folder Path],
        CASE WHEN AJ.AJ_Purged = 0
        THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
        ELSE DFP.Dataset_URL
