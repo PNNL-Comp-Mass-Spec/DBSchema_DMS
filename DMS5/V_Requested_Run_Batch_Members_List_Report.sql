@@ -18,7 +18,7 @@ SELECT RR.ID AS Request,
        U.U_Name AS Requester,
        RR.RDS_created AS Created,
        RR.RDS_priority AS Pri,
-       RR.RDS_comment AS Comment_____________,
+       RR.RDS_comment AS Comment,
        RR.RDS_Well_Plate_Num AS Wellplate,
        RR.RDS_Well_Num AS Well,
        RR.RDS_BatchID AS [#BatchID]

@@ -62,7 +62,7 @@ SELECT DS.Dataset_Num AS Dataset,
        --DSInfo.BPI_Median_MS,
        --DSInfo.BPI_Median_MSn,
        --DS.DS_sec_sep AS [Separation Type],
-       --DS.DS_comment AS [Comment________________],
+       --DS.DS_comment AS [Comment],
        --DS.DS_created AS Created,
        --DSInfo.Last_Affected AS [DSInfo Updated]
 FROM T_Dataset DS

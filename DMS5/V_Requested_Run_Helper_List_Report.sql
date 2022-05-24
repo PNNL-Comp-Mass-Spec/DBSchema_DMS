@@ -14,7 +14,7 @@ SELECT RR.ID AS Request,
        U.U_Name AS Requester,
        RR.RDS_created AS Created,
        RR.RDS_WorkPackage AS [Work Package],
-       RR.RDS_comment AS Comment_____________,
+       RR.RDS_comment AS Comment,
        DTN.DST_name AS [Type],
        RR.RDS_Well_Plate_Num AS Wellplate,
        RR.RDS_Well_Num AS Well
