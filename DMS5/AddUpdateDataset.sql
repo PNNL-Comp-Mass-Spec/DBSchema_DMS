@@ -112,6 +112,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          11/12/2021 mem - When @mode is update, pass @batch, @block, and @runOrder to AddUpdateRequestedRun
 **          02/17/2022 mem - Rename variables and add missing Else clause
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          05/27/2022 mem - Expand @msg to varchar(1024)
 **
 *****************************************************/
 (
@@ -147,7 +148,7 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @msg varchar(256)
+    Declare @msg varchar(1024)
     Declare @folderName varchar(128)
     Declare @addingDataset tinyint = 0
 
