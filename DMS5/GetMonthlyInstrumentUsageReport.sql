@@ -36,6 +36,8 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **          05/26/2021 mem - Add support for usage types UserRemote and UserOnsite
 **                         - Use REMOTE when the usage has UserRemote
 **          03/17/2022 mem - Update comments and whitespace
+**          05/27/2022 mem - Do not log year or month conversion errors to the database
+**                         - Validate @year, @month, and @outputFormat
 **
 *****************************************************/
 (
@@ -52,8 +54,13 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
+    Declare @logErrors tinyint = 0
+    Declare @monthValue Int
+    Declare @yearValue Int
+
     Set @instrument = IsNull(@instrument, '')
     Set @eusInstrumentId = IsNull(@eusInstrumentId, 0)
+    Set @outputFormat = IsNull(@outputFormat, '')
 
     Set @message = ''
 
@@ -67,6 +74,23 @@ As
     ---------------------------------------------------
     ---------------------------------------------------
     BEGIN TRY
+
+        Set @monthValue = Try_Cast(@month As Int)
+        If @monthValue Is Null Or Not @monthValue Between 1 And 12
+        Begin
+            RAISERROR ('Invalid month, must be an integer between 1 and 12', 11, 7)
+        End
+
+        Set @yearValue = Try_Cast(@year As Int)
+        If @yearValue Is Null Or @yearValue < 1970
+        Begin
+            RAISERROR ('Invalid year, must be an integer', 11, 7)
+        End
+
+        If Not @outputFormat In ('', 'report', 'details', 'rollup', 'check', 'debug1', 'debug2', 'debug3')
+        Begin
+            RAISERROR ('Invalid output format; should be report, details, rollup, or check', 11, 7)
+        End
 
         If @processByEUS = 0
         Begin
@@ -98,9 +122,10 @@ As
         ---------------------------------------------------
 
         Declare @date DATETIME = CONVERT(DATE, @month + '/1/' + @year, 101)
-        Declare @daysInMonth int
-        Set @daysInMonth =  DAY(DATEADD (m, 1, DATEADD (d, 1 - DAY(@date), @date)) - 1)
+        Declare @daysInMonth Int = DAY(DATEADD (m, 1, DATEADD (d, 1 - DAY(@date), @date)) - 1)
         Declare @minutesInMonth INT = @daysInMonth * 1440
+
+        Set @logErrors = 1
 
         ---------------------------------------------------
         -- Create temporary table to contain report data
@@ -641,7 +666,10 @@ As
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'GetMonthlyInstrumentUsageReport'
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'GetMonthlyInstrumentUsageReport'
+        End
     END CATCH
 
     return @myError
