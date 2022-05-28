@@ -89,8 +89,8 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_JobStepNumber] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_JobStepNumber] ON [dbo].[T_Job_Steps]
+/****** Object:  Index [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_Job_Step] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_Job_Step] ON [dbo].[T_Job_Steps]
 (
 	[Step_Tool] ASC,
 	[State] ASC,
