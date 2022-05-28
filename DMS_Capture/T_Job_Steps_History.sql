@@ -20,9 +20,15 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Completion_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluation_Code] [int] NULL,
 	[Evaluation_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Saved] [datetime] NULL,
+	[Saved] [datetime] NOT NULL,
 	[Tool_Version_ID] [int] NULL,
-	[Most_Recent_Entry] [tinyint] NOT NULL
+	[Most_Recent_Entry] [tinyint] NOT NULL,
+ CONSTRAINT [PK_T_Job_Steps_History] PRIMARY KEY NONCLUSTERED 
+(
+	[Job] ASC,
+	[Step_Number] ASC,
+	[Saved] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -64,8 +70,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create Trigger trig_d_T_Job_Steps_History on T_Job_Steps_History
+create Trigger trig_d_T_Job_Steps_History on dbo.T_Job_Steps_History
 For Delete
 /****************************************************
 **
@@ -104,8 +109,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create Trigger trig_iu_T_Job_Steps_History on T_Job_Steps_History
+create Trigger trig_iu_T_Job_Steps_History on dbo.T_Job_Steps_History
 For Insert, Update
 /****************************************************
 **
