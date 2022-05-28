@@ -60,8 +60,8 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Jobs_Script_State_include_DatasetID_ResultsFolder_Finish] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Jobs_Script_State_include_DatasetID_ResultsFolder_Finish] ON [dbo].[T_Jobs]
+/****** Object:  Index [IX_T_Jobs_Script_State_include_Dataset_ID_Results_Finish] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Jobs_Script_State_include_Dataset_ID_Results_Finish] ON [dbo].[T_Jobs]
 (
 	[Script] ASC,
 	[State] ASC
