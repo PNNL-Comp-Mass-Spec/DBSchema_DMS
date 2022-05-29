@@ -20,14 +20,20 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Completion_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluation_Code] [int] NULL,
 	[Evaluation_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Saved] [datetime] NULL,
+	[Saved] [datetime] NOT NULL,
 	[JobStepSavedCombo]  AS ((((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0)))+'.')+CONVERT([varchar](32),[Saved],(126))) PERSISTED,
 	[Most_Recent_Entry] [tinyint] NOT NULL,
 	[Tool_Version_ID] [int] NULL,
 	[Memory_Usage_MB] [int] NULL,
 	[Remote_Info_ID] [int] NULL,
 	[Remote_Start] [smalldatetime] NULL,
-	[Remote_Finish] [smalldatetime] NULL
+	[Remote_Finish] [smalldatetime] NULL,
+ CONSTRAINT [PK_T_Job_Steps_History] PRIMARY KEY NONCLUSTERED 
+(
+	[Job] ASC,
+	[Step_Number] ASC,
+	[Saved] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -102,7 +108,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_d_T_Job_Steps_History] on [dbo].[T_Job_Steps_History]
 For Delete
 /****************************************************
@@ -134,8 +139,6 @@ AS
 	          LookupQ.Step_Number = Target.Step_Number AND
 	          LookupQ.Saved = Target.Saved
 
-
-
 GO
 ALTER TABLE [dbo].[T_Job_Steps_History] ENABLE TRIGGER [trig_d_T_Job_Steps_History]
 GO
@@ -144,7 +147,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_iu_T_Job_Steps_History] on [dbo].[T_Job_Steps_History]
 For Insert, Update
 /****************************************************
@@ -178,7 +180,6 @@ AS
 		          LookupQ.Step_Number = Target.Step_Number AND
 		          LookupQ.Saved = Target.Saved
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Job_Steps_History] ENABLE TRIGGER [trig_iu_T_Job_Steps_History]
