@@ -17,12 +17,17 @@ CREATE TABLE [dbo].[T_Jobs_History](
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
 	[Runtime_Minutes] [real] NULL,
-	[Saved] [datetime] NULL,
+	[Saved] [datetime] NOT NULL,
 	[Most_Recent_Entry] [tinyint] NOT NULL,
 	[Transfer_Folder_Path] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Owner] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[DataPkgID] [int] NULL,
-	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+ CONSTRAINT [PK_T_Jobs_History] PRIMARY KEY NONCLUSTERED 
+(
+	[Job] ASC,
+	[Saved] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

@@ -14,8 +14,13 @@ CREATE TABLE [dbo].[T_Jobs_History](
 	[Imported] [datetime] NULL,
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
-	[Saved] [datetime] NULL,
-	[Most_Recent_Entry] [tinyint] NOT NULL
+	[Saved] [datetime] NOT NULL,
+	[Most_Recent_Entry] [tinyint] NOT NULL,
+ CONSTRAINT [PK_T_Jobs_History] PRIMARY KEY NONCLUSTERED 
+(
+	[Job] ASC,
+	[Saved] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
@@ -67,8 +72,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create Trigger trig_d_T_Jobs_History on T_Jobs_History
+create Trigger trig_d_T_Jobs_History on dbo.T_Jobs_History
 For Delete
 /****************************************************
 **
@@ -105,8 +109,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create Trigger trig_iu_T_Jobs_History on T_Jobs_History
+create Trigger trig_iu_T_Jobs_History on dbo.T_Jobs_History
 For Insert, Update
 /****************************************************
 **
