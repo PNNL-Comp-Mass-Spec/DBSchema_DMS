@@ -12,7 +12,9 @@ CREATE PROCEDURE [dbo].[DeleteOldJobsFromHistory]
 **
 **          However, assure that at least 250,000 jobs are retained
 **
-**          Also delete old status rows from T_Machine_Status_History
+**          Additionally:
+**          - Delete old status rows from T_Machine_Status_History
+**          - Delete old rows from T_Job_Step_Processing_Stats
 **
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
@@ -181,6 +183,20 @@ As
                               Row_Number() OVER ( PARTITION BY Machine ORDER BY entry_id DESC ) AS RowRank
                        FROM T_Machine_Status_History ) RankQ
                 WHERE RowRank > 1000 )
+
+        -- Keep the 500 most recent processing stats values for each processor
+        DELETE T_Job_Step_Processing_Stats
+        WHERE Entry_ID IN 
+              ( SELECT Entry_ID
+                FROM ( SELECT Entry_ID,
+                              Processor,
+                              Entered,
+                              Job,
+                              Step,
+                              Row_Number() OVER ( PARTITION BY Processor ORDER BY Entered DESC ) AS RowRank
+                       FROM T_Job_Step_Processing_Stats ) RankQ
+                WHERE RowRank > 500 )
+
     End
 
     If @infoOnly > 0
