@@ -12,6 +12,8 @@ CREATE PROCEDURE [dbo].[DeleteOldJobsFromHistory]
 **
 **          However, assure that at least 250,000 jobs are retained
 **
+**          Also delete old status rows from T_Machine_Status_History
+**
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
 **
@@ -135,6 +137,27 @@ As
                FROM #Tmp_JobsToDelete
                ORDER BY Job DESC ) FilterQ
         ORDER BY Job
+
+        SELECT H.Entry_ID,
+               H.Posting_Time,
+               H.Machine,
+               H.Processor_Count_Active,
+               H.Free_Memory_MB,
+               'First row to be deleted'
+        FROM T_Machine_Status_History H
+             INNER JOIN ( SELECT Machine,
+                                 Min(Entry_ID) AS Entry_ID
+                          FROM T_Machine_Status_History
+                          WHERE Entry_ID IN 
+                                   ( SELECT Entry_ID
+                                     FROM ( SELECT Entry_ID,
+                                            Row_Number() OVER ( PARTITION BY Machine ORDER BY entry_id DESC ) AS RowRank
+                                            FROM T_Machine_Status_History ) RankQ
+                                     WHERE RowRank > 1000 )
+                          GROUP BY Machine 
+                        ) FilterQ
+               ON H.Entry_ID = FilterQ.Entry_ID
+        ORDER BY Machine
     End
     Else
     Begin
@@ -149,6 +172,15 @@ As
 
         Delete From T_Jobs_History
         Where Job In (Select Job From #Tmp_JobsToDelete)
+
+        -- Keep the 1000 most recent status values for each machine
+        DELETE T_Machine_Status_History
+        WHERE Entry_ID IN 
+              ( SELECT Entry_ID
+                FROM ( SELECT Entry_ID,
+                              Row_Number() OVER ( PARTITION BY Machine ORDER BY entry_id DESC ) AS RowRank
+                       FROM T_Machine_Status_History ) RankQ
+                WHERE RowRank > 1000 )
     End
 
     If @infoOnly > 0
