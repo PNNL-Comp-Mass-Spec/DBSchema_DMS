@@ -24,12 +24,21 @@ CREATE TABLE [dbo].[T_Step_Tools](
 	[Holdoff_Interval_Minutes] [int] NOT NULL,
  CONSTRAINT [PK_T_Step_Tools_1] PRIMARY KEY CLUSTERED 
 (
-	[Name] ASC
+	[ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Step_Tools] TO [DDL_Viewer] AS [dbo]
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Step_Tools_Name] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Step_Tools_Name] ON [dbo].[T_Step_Tools]
+(
+	[Name] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Step_Tools_Shared_Result_Version] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Step_Tools_Shared_Result_Version] ON [dbo].[T_Step_Tools]
