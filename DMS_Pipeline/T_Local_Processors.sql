@@ -35,8 +35,8 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Local_Processors_ProcTool_Mgr_ID_Machine_include_Processor_Name] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Local_Processors_ProcTool_Mgr_ID_Machine_include_Processor_Name] ON [dbo].[T_Local_Processors]
+/****** Object:  Index [IX_T_Local_Processors_Tool_Mgr_ID_Machine_include_Proc_Name] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Local_Processors_Tool_Mgr_ID_Machine_include_Proc_Name] ON [dbo].[T_Local_Processors]
 (
 	[ProcTool_Mgr_ID] ASC,
 	[Machine] ASC

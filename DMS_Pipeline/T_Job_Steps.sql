@@ -103,8 +103,8 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Job_Steps_State_Job_Step_Dependencies_SharedResultVer_Signature_StepTool] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_State_Job_Step_Dependencies_SharedResultVer_Signature_StepTool] ON [dbo].[T_Job_Steps]
+/****** Object:  Index [IX_T_Job_Steps_State_Job_Step_Dep_Shared_Results_Ver_Sig_Tool] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_State_Job_Step_Dep_Shared_Results_Ver_Sig_Tool] ON [dbo].[T_Job_Steps]
 (
 	[State] ASC,
 	[Job] ASC,
@@ -118,24 +118,24 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_Job_StepNumber_MemoryUsage_RemoteInfo] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Step_Tool_State_Next_Try_include_Job_StepNumber_MemoryUsage_RemoteInfo] ON [dbo].[T_Job_Steps]
-(
-	[Step_Tool] ASC,
-	[State] ASC,
-	[Next_Try] ASC
-)
-INCLUDE([Job],[Step_Number],[Memory_Usage_MB],[Remote_Info_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
-SET ANSI_PADDING ON
-
-GO
 /****** Object:  Index [IX_T_Job_Steps_StepTool_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_StepTool_State] ON [dbo].[T_Job_Steps]
 (
 	[Step_Tool] ASC,
 	[State] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Job_Steps_Tool_State_Next_Try_include_Job_Step_Memory] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Tool_State_Next_Try_include_Job_Step_Memory] ON [dbo].[T_Job_Steps]
+(
+	[Step_Tool] ASC,
+	[State] ASC,
+	[Next_Try] ASC
+)
+INCLUDE([Job],[Step_Number],[Memory_Usage_MB],[Remote_Info_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Dependencies]  DEFAULT ((0)) FOR [Dependencies]
 GO
