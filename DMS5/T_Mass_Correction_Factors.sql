@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[T_Mass_Correction_Factors](
 (
 	[Mass_Correction_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY],
- CONSTRAINT [IX_T_Mass_Correction_Factors_MonoisotopicMass_and_AffectedAtom] UNIQUE CLUSTERED 
+ CONSTRAINT [IX_T_Mass_Correction_Factors_Unique_Mass_and_Affected_Atom] UNIQUE CLUSTERED 
 (
 	[Monoisotopic_Mass] ASC,
 	[Affected_Atom] ASC
