@@ -17,18 +17,10 @@ CREATE TABLE [dbo].[T_Job_Step_Processing_Stats](
 	[Actual_CPU_Load] [tinyint] NULL,
  CONSTRAINT [PK_T_Job_Step_Processing_Stats] PRIMARY KEY CLUSTERED 
 (
-	[Entered] ASC,
-	[Job] ASC,
-	[Step] ASC
+	[Entry_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Job_Step_Processing_Stats] TO [DDL_Viewer] AS [dbo]
-GO
-/****** Object:  Index [IX_T_Job_Step_Processing_Stats_Entry_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Processing_Stats_Entry_ID] ON [dbo].[T_Job_Step_Processing_Stats]
-(
-	[Entry_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
