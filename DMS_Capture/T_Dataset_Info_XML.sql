@@ -17,12 +17,6 @@ CREATE TABLE [dbo].[T_Dataset_Info_XML](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Dataset_Info_XML] TO [DDL_Viewer] AS [dbo]
 GO
-/****** Object:  Index [IX_T_Dataset_Info_XML] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Dataset_Info_XML] ON [dbo].[T_Dataset_Info_XML]
-(
-	[Dataset_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-GO
 ALTER TABLE [dbo].[T_Dataset_Info_XML] ADD  CONSTRAINT [DF_T_Dataset_Info_XML_Cache_Date]  DEFAULT (getdate()) FOR [Cache_Date]
 GO
 ALTER TABLE [dbo].[T_Dataset_Info_XML] ADD  CONSTRAINT [DF_T_Dataset_Info_XML_Ignore]  DEFAULT ((0)) FOR [Ignore]
