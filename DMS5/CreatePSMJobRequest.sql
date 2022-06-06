@@ -33,6 +33,7 @@ CREATE Procedure [dbo].[CreatePSMJobRequest]
 **			08/01/2017 mem - Use THROW if not authorized
 **			12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
 **          03/19/2021 mem - Remove obsolete parameter from call to AddUpdateAnalysisJobRequest
+**          06/06/2022 mem - Use new argument name when calling AddUpdateAnalysisJobRequest
 **    
 *****************************************************/
 (
@@ -350,7 +351,7 @@ As
 				@protCollOptionsList = @protCollOptionsList,
 				@organismName = @organismName,
 				@organismDBName = 'na',					-- Legacy fasta file
-				@requestorPRN = @ownerPRN,
+				@requesterPRN = @ownerPRN,
 				@comment = @comment,
 				@specialProcessing = null,
 				@state = 'New',
