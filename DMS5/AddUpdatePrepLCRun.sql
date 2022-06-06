@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/27/2022 mem - Update @samplePrepRequest to replace semicolons with commas, then assure that the list only contains integers
+**          06/06/2022 mem - Only validate @id if updating an existing item
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -79,7 +80,7 @@ As
     Set @id = IsNull(@ID, 0)
     Set @samplePrepRequest = Ltrim(Rtrim(IsNull(@samplePrepRequest, '')))
 
-    If @id <= 0
+    If @mode = 'update' And @id <= 0
     Begin
         RAISERROR ('Prep LC run ID must be a positive integer', 11, 7)
     End
