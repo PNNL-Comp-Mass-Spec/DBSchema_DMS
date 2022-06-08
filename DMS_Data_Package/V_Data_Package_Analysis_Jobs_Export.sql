@@ -10,9 +10,10 @@ SELECT Data_Package_ID,
        Job,
        Dataset,
        Tool,
-       [Package Comment],
-       [Item Added]
+       Package_Comment,
+       Item_Added
 FROM dbo.T_Data_Package_Analysis_Jobs
+
 
 
 GO

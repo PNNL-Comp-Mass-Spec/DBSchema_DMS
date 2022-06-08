@@ -10,8 +10,8 @@ CREATE TABLE [dbo].[T_Data_Package_Biomaterial](
 	[Created] [datetime] NULL,
 	[Campaign] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Item Added] [datetime] NOT NULL,
-	[Package Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Item_Added] [datetime] NOT NULL,
+	[Package_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Data_Package_Biomaterial] PRIMARY KEY CLUSTERED 
 (
 	[Data_Package_ID] ASC,
@@ -26,9 +26,9 @@ GRANT SELECT ON [dbo].[T_Data_Package_Biomaterial] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package_Biomaterial] TO [DMS_SP_User] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Data_Package_Biomaterial] ADD  CONSTRAINT [DF_T_Data_Package_Biomaterial_Item Added]  DEFAULT (getdate()) FOR [Item Added]
+ALTER TABLE [dbo].[T_Data_Package_Biomaterial] ADD  CONSTRAINT [DF_T_Data_Package_Biomaterial_Item Added]  DEFAULT (getdate()) FOR [Item_Added]
 GO
-ALTER TABLE [dbo].[T_Data_Package_Biomaterial] ADD  CONSTRAINT [DF_T_Data_Package_Biomaterial_Package Comment]  DEFAULT ('') FOR [Package Comment]
+ALTER TABLE [dbo].[T_Data_Package_Biomaterial] ADD  CONSTRAINT [DF_T_Data_Package_Biomaterial_Package Comment]  DEFAULT ('') FOR [Package_Comment]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Biomaterial]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Biomaterial_T_Data_Package] FOREIGN KEY([Data_Package_ID])
 REFERENCES [dbo].[T_Data_Package] ([ID])

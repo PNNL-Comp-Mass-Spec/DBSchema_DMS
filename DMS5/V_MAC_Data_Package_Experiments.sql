@@ -10,8 +10,8 @@ SELECT Data_Package_ID,
        Experiment_ID,
        Experiment,
        Created,
-       [Item Added],
-       [Package Comment]
+       Item_Added,
+       Package_Comment
 FROM S_V_Data_Package_Experiments_Export
 
 

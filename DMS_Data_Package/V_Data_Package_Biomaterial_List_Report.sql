@@ -10,7 +10,7 @@ SELECT DPB.Data_Package_ID AS ID,
        DPB.Name AS Biomaterial,
        DPB.Campaign,
        DPB.Type,
-       DPB.[Package Comment],
+       DPB.Package_Comment,
        CL.[Source],
        CL.[Contact],
        CL.[Reason],
@@ -21,10 +21,11 @@ SELECT DPB.Data_Package_ID AS ID,
        CL.[Location],
        CL.[Material Status],
        CL.ID AS [Cell Culture ID],
-       DPB.[Item Added]
+       DPB.Item_Added
 FROM dbo.T_Data_Package_Biomaterial DPB
      INNER JOIN S_V_Cell_Culture_List_Report_2 CL
        ON DPB.Biomaterial_ID = CL.ID
+
 
 
 

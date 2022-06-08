@@ -11,7 +11,7 @@ SELECT DPJ.Data_Package_ID AS ID,
        DPJ.Dataset,
        DPJ.Dataset_ID,
        DPJ.Tool,
-       DPJ.[Package Comment],
+       DPJ.Package_Comment,
        AJL.Campaign,
        AJL.Experiment,
        AJL.Instrument,
@@ -28,11 +28,12 @@ SELECT DPJ.Data_Package_ID AS ID,
        AJL.[Results Folder],
        AJL.[Results Folder Path],
        AJL.[Results URL],
-       DPJ.[Item Added],
+       DPJ.Item_Added,
        AJL.Comment AS [Comment]
 FROM dbo.T_Data_Package_Analysis_Jobs AS DPJ
      INNER JOIN dbo.S_V_Analysis_Job_List_Report_2 AS AJL
        ON DPJ.Job = AJL.Job
+
 
 
 GO

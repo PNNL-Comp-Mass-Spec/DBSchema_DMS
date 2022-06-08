@@ -10,9 +10,10 @@ SELECT Data_Package_ID,
        Experiment_ID,
        Experiment,
        Created,
-       [Item Added],
-       [Package Comment]
+       Item_Added,
+       Package_Comment
 FROM T_Data_Package_Experiments
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Experiments_Export] TO [DDL_Viewer] AS [dbo]

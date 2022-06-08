@@ -25,7 +25,7 @@ SELECT TPD.Data_Package_ID,
        E.Experiment_Num AS Experiment,
        E.EX_reason AS Experiment_Reason,
        E.EX_comment AS Experiment_Comment,
-       TPD.[Package Comment] AS PackageComment,
+       TPD.Package_Comment AS PackageComment,
        E.EX_Tissue_ID As Experiment_Tissue_ID,
        BTOInfo.Tissue As Experiment_Tissue_Name
 FROM T_Data_Package_Datasets TPD

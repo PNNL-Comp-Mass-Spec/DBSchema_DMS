@@ -6,8 +6,8 @@ GO
 CREATE TABLE [dbo].[T_Data_Package_EUS_Proposals](
 	[Data_Package_ID] [int] NOT NULL,
 	[Proposal_ID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Item Added] [datetime] NOT NULL,
-	[Package Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Item_Added] [datetime] NOT NULL,
+	[Package_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Data_Package_EUS_Proposals] PRIMARY KEY CLUSTERED 
 (
 	[Data_Package_ID] ASC,
@@ -22,9 +22,9 @@ GRANT SELECT ON [dbo].[T_Data_Package_EUS_Proposals] TO [DMS_SP_User] AS [dbo]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Package_EUS_Proposals] TO [DMS_SP_User] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals] ADD  CONSTRAINT [DF_T_Data_Package_EUS_Proposals_Item Added]  DEFAULT (getdate()) FOR [Item Added]
+ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals] ADD  CONSTRAINT [DF_T_Data_Package_EUS_Proposals_Item Added]  DEFAULT (getdate()) FOR [Item_Added]
 GO
-ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals] ADD  CONSTRAINT [DF_T_Data_Package_EUS_Proposals_Package Comment]  DEFAULT ('') FOR [Package Comment]
+ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals] ADD  CONSTRAINT [DF_T_Data_Package_EUS_Proposals_Package Comment]  DEFAULT ('') FOR [Package_Comment]
 GO
 ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_EUS_Proposals_T_Data_Package] FOREIGN KEY([Data_Package_ID])
 REFERENCES [dbo].[T_Data_Package] ([ID])

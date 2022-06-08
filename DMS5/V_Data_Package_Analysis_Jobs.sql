@@ -11,15 +11,14 @@ SELECT DPJ.Data_Package_ID,
        DPJ.Dataset,
        J.AJ_datasetID AS Dataset_ID,
        DPJ.Tool,
-       DPJ.[Package Comment],
-       DPJ.[Item Added],
+       DPJ.Package_Comment,
+       DPJ.Item_Added,
        MJ.Folder
 FROM dbo.T_Analysis_Job J
      INNER JOIN dbo.S_V_Data_Package_Analysis_Jobs_Export DPJ
        ON J.AJ_jobID = DPJ.Job
      INNER JOIN V_Mage_Analysis_Jobs MJ
        ON J.AJ_jobID = MJ.Job
-
 
 
 GO

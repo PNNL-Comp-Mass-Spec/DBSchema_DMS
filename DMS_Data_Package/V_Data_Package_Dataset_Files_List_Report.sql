@@ -15,7 +15,7 @@ SELECT DPD.Data_Package_ID AS ID,
        DF.File_Size_Rank AS [File Size Rank],
        DPD.Experiment,
        DPD.Instrument,
-       DPD.[Package Comment],
+       DPD.Package_Comment,
        DL.Campaign,
        DL.[State],
        DL.Created,
@@ -28,7 +28,7 @@ SELECT DPD.Data_Package_ID AS ID,
        DL.[LC Column],
        DL.[Separation Type],
        DL.Request,
-       DPD.[Item Added],
+       DPD.Item_Added,
        DL.[Comment],
        DL.[Dataset Type] AS [Type]
 FROM dbo.T_Data_Package_Datasets AS DPD
@@ -44,6 +44,7 @@ FROM dbo.T_Data_Package_Datasets AS DPD
         FROM dbo.S_Dataset_Files
         WHERE Deleted = 0
      ) DF ON DPD.Dataset_ID = DF.Dataset_ID
+
 
 
 GO

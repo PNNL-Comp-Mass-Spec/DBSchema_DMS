@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Mage_Data_Package_Analysis_Jobs] as   
+CREATE VIEW [dbo].[V_Mage_Data_Package_Analysis_Jobs] AS
 SELECT VMA.Job,
        VMA.State,
        VMA.Dataset,
@@ -19,11 +19,11 @@ SELECT VMA.Job,
        VMA.[Organism DB],
        VMA.[Protein Collection List],
        VMA.[Protein Options],
-       VMA.Comment AS [Comment],
+       VMA.Comment,
        VMA.[Results Folder],
        VMA.Folder,
        DPJ.Data_Package_ID,
-       DPJ.[Package Comment],
+       DPJ.Package_Comment,
        InstName.IN_class AS Instrument_Class,
        DTN.DST_name AS Dataset_Type
 FROM V_Mage_Analysis_Jobs VMA

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Mage_Data_Package_Datasets] as   
+CREATE VIEW [dbo].[V_Mage_Data_Package_Datasets] AS
 SELECT VMD.Dataset_ID,
        VMD.Dataset,
        VMD.Experiment,
@@ -16,7 +16,7 @@ SELECT VMD.Dataset_ID,
        VMD.Folder,
        VMD.Comment,
        TPD.Data_Package_ID,
-       TPD.[Package Comment]
+       TPD.Package_Comment
 FROM V_Mage_Dataset_List AS VMD
      INNER JOIN DMS_Data_Package.dbo.T_Data_Package_Datasets AS TPD
        ON VMD.Dataset_ID = TPD.Dataset_ID

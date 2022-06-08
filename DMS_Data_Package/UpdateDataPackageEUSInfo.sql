@@ -7,10 +7,10 @@ GO
 CREATE PROCEDURE [dbo].[UpdateDataPackageEUSInfo]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Updates EUS-related fields in T_Data_Package for one or more data packages
 **      Also updates Instrument_ID
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
@@ -21,7 +21,8 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageEUSInfo]
 **          07/07/2017 mem - Now updating Instrument and EUS_Instrument_ID
 **          03/07/2018 mem - Properly handle null values for Best_EUS_Proposal_ID, Best_EUS_Instrument_ID, and Best_Instrument_Name
 **          05/18/2022 mem - Use new EUS Proposal column name
-**    
+**          06/08/2022 mem - Use new Item_Added column name
+**
 *****************************************************/
 (
     @DataPackageList varchar(max),        -- '' or 0 to update all data packages, otherwise a comma separated list of data package IDs to update
@@ -29,17 +30,17 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageEUSInfo]
 )
 As
     set nocount on
-    
+
     declare @myError int = 0
     declare @myRowCount int = 0
-    
+
     Declare @DataPackageCount int = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateDataPackageEUSInfo', @raiseError = 1
     If @authorized = 0
     Begin
@@ -49,21 +50,21 @@ As
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
-    Set @DataPackageList = IsNull(@DataPackageList, '');    
+
+    Set @DataPackageList = IsNull(@DataPackageList, '');
     Set @message = ''
-    
+
     ---------------------------------------------------
     -- Populate a temporary table with the data package IDs to update
     ---------------------------------------------------
-    
+
     CREATE TABLE dbo.[#TmpDataPackagesToUpdate] (
         ID int not NULL,
         Best_EUS_Proposal_ID varchar(10) NULL,
         Best_Instrument_Name varchar(50) NULL,
         Best_EUS_Instrument_ID int NULL
     )
-    
+
     CREATE CLUSTERED INDEX [#IX_TmpDataPackagesToUpdate] ON [dbo].[#TmpDataPackagesToUpdate]
     (
         ID ASC
@@ -87,7 +88,7 @@ As
     Set @myRowCount = 0
     SELECT @myRowCount = COUNT(*)
     FROM #TmpDataPackagesToUpdate
-    
+
     Set @DataPackageCount = IsNull(@myRowCount, 0)
 
     If @DataPackageCount = 0
@@ -105,20 +106,20 @@ As
         Else
         Begin
             Declare @firstID int
-            
+
             SELECT @firstID = ID
             FROM #TmpDataPackagesToUpdate
-            
+
             Set @message = 'Updating data package ' + Cast(@firstID as varchar(12))
         End
-        
+
         -- Print @message
     End
 
     ---------------------------------------------------
     -- Update the EUS Person ID of the data package owner
     ---------------------------------------------------
-    
+
     UPDATE T_Data_Package
     SET EUS_Person_ID = EUSUser.EUS_Person_ID
     FROM T_Data_Package DP
@@ -161,9 +162,9 @@ As
                                            ON DPD.Dataset_ID = DR.ID
                                     WHERE NOT DR.Proposal IS NULL AND NOT DR.Proposal LIKE 'EPR%'
                                     GROUP BY DPD.Data_Package_ID, DR.Proposal
-                                  ) SourceQ 
+                                  ) SourceQ
                            ) RankQ
-                      WHERE RankQ.CountRank = 1 
+                      WHERE RankQ.CountRank = 1
                      ) FilterQ
            ON Target.ID = FilterQ.Data_Package_ID
     --
@@ -182,14 +183,14 @@ As
                              Proposal_ID
                       FROM ( SELECT Data_Package_ID,
                                     Proposal_ID,
-                                    [Item Added],
-                                    Row_Number() OVER ( Partition By Data_Package_ID Order By [Item Added] DESC ) AS IdRank
+                                    Item_Added,
+                                    Row_Number() OVER ( Partition By Data_Package_ID Order By Item_Added DESC ) AS IdRank
                              FROM T_Data_Package_EUS_Proposals
                              WHERE (Data_Package_ID IN ( SELECT ID
                                                          FROM #TmpDataPackagesToUpdate
-                                                         WHERE Best_EUS_Proposal_ID IS NULL )) 
+                                                         WHERE Best_EUS_Proposal_ID IS NULL ))
                            ) RankQ
-                      WHERE RankQ.IdRank = 1 
+                      WHERE RankQ.IdRank = 1
                     ) FilterQ
            ON Target.ID = FilterQ.Data_Package_ID
     --
@@ -216,9 +217,9 @@ As
                                            ON DPD.Data_Package_ID = Src.ID
                                     WHERE NOT DPD.Instrument Is Null
                                     GROUP BY DPD.Data_Package_ID, DPD.Instrument
-                                  ) SourceQ 
+                                  ) SourceQ
                            ) RankQ
-                      WHERE RankQ.CountRank = 1 
+                      WHERE RankQ.CountRank = 1
                      ) FilterQ
            ON Target.ID = FilterQ.Data_Package_ID
     --
@@ -230,12 +231,12 @@ As
     --
     UPDATE #TmpDataPackagesToUpdate
     SET Best_EUS_Instrument_ID = EUSInst.EUS_Instrument_ID
-    FROM #TmpDataPackagesToUpdate Target 
-         INNER JOIN S_V_EUS_Instrument_ID_Lookup EUSInst 
+    FROM #TmpDataPackagesToUpdate Target
+         INNER JOIN S_V_EUS_Instrument_ID_Lookup EUSInst
            ON Target.Best_Instrument_Name = EUSInst.Instrument_Name
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     ---------------------------------------------------
     -- Update EUS Proposal ID, EUS_Instrument_ID, and Instrument_ID as necessary
     -- Do not change existing values in T_Data_Package to null values
@@ -263,6 +264,7 @@ As
 Done:
 
     Return @myError
+
 
 
 GO

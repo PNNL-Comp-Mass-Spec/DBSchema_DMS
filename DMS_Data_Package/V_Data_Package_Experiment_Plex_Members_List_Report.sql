@@ -21,9 +21,10 @@ SELECT DPE.Data_Package_ID AS ID,
        PM.Tissue,
        PM.Labelling,
        PM.MASIC_Name,
-       [Item Added]
+       Item_Added
 FROM dbo.T_Data_Package_Experiments DPE
      Inner Join [S_V_Experiment_Plex_Members_List_Report] PM
        ON PM.Plex_Exp_ID = DPE.Experiment_ID
+
 
 GO

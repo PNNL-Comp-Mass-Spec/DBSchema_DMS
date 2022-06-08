@@ -11,7 +11,7 @@ SELECT DPD.Data_Package_ID AS ID,
        DPD.Dataset_ID,
        DPD.Experiment,
        DPD.Instrument,
-       DPD.[Package Comment],
+       DPD.Package_Comment,
        DL.Campaign,
        DL.[State],
        DL.Created,
@@ -24,7 +24,7 @@ SELECT DPD.Data_Package_ID AS ID,
        DL.[LC Column],
        DL.[Separation Type],
        DL.Request,
-       DPD.[Item Added],
+       DPD.Item_Added,
        DL.[Comment],
        DL.[Dataset Type] AS [Type],
        DL.[Proposal],
@@ -38,6 +38,7 @@ FROM dbo.T_Data_Package_Datasets AS DPD
        ON DPD.Dataset_ID = DL.ID
 	 LEFT OUTER JOIN dbo.S_V_Analysis_Job_PSM_Summary_Export PSM
 	   ON DPD.Dataset_ID = PSM.Dataset_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Datasets_List_Report] TO [DDL_Viewer] AS [dbo]

@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          07/06/2021 mem - Add support for dataset IDs when @mode is 'comment' or 'delete'
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          05/18/2022 mem - Use new EUS Proposal column name
+**          06/08/2022 mem - Rename package comment field to Package_Comment
 **
 *****************************************************/
 (
@@ -462,7 +463,7 @@ As
             Else
             Begin
                 UPDATE T_Data_Package_Biomaterial
-                SET [Package Comment] = @comment
+                SET Package_Comment = @comment
                 FROM T_Data_Package_Biomaterial Target
                      INNER JOIN #TPI
                        ON #TPI.DataPackageID = Target.Data_Package_ID AND
@@ -514,7 +515,7 @@ As
                 INSERT INTO T_Data_Package_Biomaterial(
                     Data_Package_ID,
                     Biomaterial_ID,
-                    [Package Comment],
+                    Package_Comment,
                     Name,
                     Campaign,
                     Created,
@@ -596,7 +597,7 @@ As
             Else
             Begin
                 UPDATE T_Data_Package_EUS_Proposals
-                SET [Package Comment] = @comment
+                SET Package_Comment = @comment
                 FROM T_Data_Package_EUS_Proposals Target
                      INNER JOIN #TPI
                        ON #TPI.DataPackageID = Target.Data_Package_ID AND
@@ -642,7 +643,7 @@ As
                 -- Add new items
                 INSERT INTO T_Data_Package_EUS_Proposals( Data_Package_ID,
                                                           Proposal_ID,
-                                                          [Package Comment] )
+                                                          Package_Comment )
                 SELECT DISTINCT #TPI.DataPackageID,
                                 TX.ID,
                                 @comment
@@ -716,7 +717,7 @@ As
             Else
             Begin
                 UPDATE T_Data_Package_Experiments
-                SET [Package Comment] = @comment
+                SET Package_Comment = @comment
                 FROM T_Data_Package_Experiments Target
                      INNER JOIN #TPI
                        ON #TPI.DataPackageID = Target.Data_Package_ID AND
@@ -767,7 +768,7 @@ As
                 INSERT INTO T_Data_Package_Experiments(
                     Data_Package_ID,
                     Experiment_ID,
-                    [Package Comment],
+                    Package_Comment,
                     Experiment,
                     Created
                 )
@@ -847,7 +848,7 @@ As
             Else
             Begin
                 UPDATE T_Data_Package_Datasets
-                SET [Package Comment] = @comment
+                SET Package_Comment = @comment
                 FROM T_Data_Package_Datasets Target
                      INNER JOIN #TPI
                        ON #TPI.DataPackageID = Target.Data_Package_ID AND
@@ -897,7 +898,7 @@ As
                 -- Add new items
                 INSERT INTO T_Data_Package_Datasets( Data_Package_ID,
                                                      Dataset_ID,
-                                                     [Package Comment],
+                                                     Package_Comment,
                                                      Dataset,
                                                      Created,
                                                      Experiment,
@@ -973,7 +974,7 @@ As
             Else
             Begin
                 UPDATE Target
-                SET [Package Comment] = @comment
+                SET Package_Comment = @comment
                 FROM T_Data_Package_Analysis_Jobs Target
                      INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
                        ON Target.Data_Package_ID = ItemsQ.DataPackageID AND
@@ -1019,7 +1020,7 @@ As
                 -- Add new items
                 INSERT INTO T_Data_Package_Analysis_Jobs( Data_Package_ID,
                                                           Job,
-                                                          [Package Comment],
+                                                          Package_Comment,
                                                           Created,
                                                           Dataset_ID,
                                                           Dataset,

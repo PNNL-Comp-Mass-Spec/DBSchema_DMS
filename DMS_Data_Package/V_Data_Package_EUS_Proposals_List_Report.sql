@@ -11,10 +11,11 @@ SELECT DPP.Data_Package_ID AS ID,
        PL.Title,
        PL.Users,
        PL.State,
-       DPP.[Item Added]
+       DPP.Item_Added
 FROM T_Data_Package_EUS_Proposals DPP
      INNER JOIN S_V_EUS_Proposals_List_Report PL
        ON PL.ID = DPP.Proposal_ID
+
 
 
 

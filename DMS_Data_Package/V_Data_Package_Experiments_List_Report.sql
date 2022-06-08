@@ -9,7 +9,7 @@ AS
 SELECT DPE.Data_Package_ID AS ID,
        DPE.Experiment,
        EL.[Campaign],
-       DPE.[Package Comment],
+       DPE.Package_Comment,
        EL.[Researcher],
        EL.[Organism],
        EL.[Reason],
@@ -23,10 +23,11 @@ SELECT DPE.Data_Package_ID AS ID,
        EL.[Predigest],
        EL.[Postdigest],
        EL.[Request],
-       [Item Added]
+       DPE.Item_Added
 FROM dbo.T_Data_Package_Experiments DPE
      INNER JOIN S_V_Experiment_List_Report_2 EL
        ON EL.ID = DPE.Experiment_ID
+
 
 
 GO
