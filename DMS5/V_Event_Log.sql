@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Event_Log]
 AS
-SELECT EL."Index",
+SELECT EL.Event_ID,
        EL.Target_Type,
        CASE EL.Target_Type
            WHEN 1 THEN 'Campaign'

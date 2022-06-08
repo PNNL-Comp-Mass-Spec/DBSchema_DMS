@@ -4,9 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Event_Log_Archive_List_2] 
+CREATE VIEW [dbo].[V_Event_Log_Archive_List_2] 
 as
-SELECT EL.[Index],
+SELECT EL.Event_ID,
        EL.Target_ID AS [Dataset ID],
        T_Dataset.Dataset_Num AS Dataset,
        'Update' AS [Type],
@@ -23,7 +23,7 @@ FROM T_Event_Log EL
 WHERE EL.Target_Type = 7 AND
       EL.Entered > DateAdd(day, -4, GetDate())
 UNION
-SELECT EL.[Index],
+SELECT EL.Event_ID,
        EL.Target_ID AS [Dataset ID],
        T_Dataset.Dataset_Num AS Dataset,
        'Archive' AS [Type],

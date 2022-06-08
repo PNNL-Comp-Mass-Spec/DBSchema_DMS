@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Event_Log_Archive_Update_List]
 AS
-SELECT EL.[Index],
+SELECT EL.Event_ID,
        EL.Target_ID AS [Dataset ID],
        T_Dataset.Dataset_Num AS Dataset,
        T_Archive_Update_State_Name.AUS_name AS [Old State],

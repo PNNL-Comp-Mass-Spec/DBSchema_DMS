@@ -4,10 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE View [dbo].[V_Event_Log_Archive_List]
+CREATE VIEW [dbo].[V_Event_Log_Archive_List]
 As
-SELECT EL.[Index],
+SELECT EL.Event_ID,
        EL.Target_ID AS [Dataset ID],
        T_Dataset.Dataset_Num AS Dataset,
        OldState.DASN_StateName AS [Old State],

@@ -4,9 +4,9 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE View [dbo].[V_Event_Log_Analysis_Job_List]
+CREATE VIEW [dbo].[V_Event_Log_Analysis_Job_List]
 As
-SELECT EL.[Index],
+SELECT EL.Event_ID,
        EL.Target_ID AS Job,
        T_Dataset.Dataset_Num AS Dataset,
        OldState.AJS_name AS [Old State],
