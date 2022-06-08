@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Data_Package_Analysis_Jobs](
 	[Created] [datetime] NULL,
 	[Item Added] [datetime] NOT NULL,
 	[Package Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
- CONSTRAINT [PK_T_Data_Package_Analysis_Jobs_1] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_T_Data_Package_Analysis_Jobs] PRIMARY KEY CLUSTERED 
 (
 	[Data_Package_ID] ASC,
 	[Job] ASC
