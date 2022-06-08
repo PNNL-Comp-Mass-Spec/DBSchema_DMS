@@ -6,28 +6,28 @@ GO
 
 CREATE Procedure dbo.CleanupOperatingLogs
 /****************************************************
-** 
+**
 **	Desc:	Deletes Info entries from T_Log_Entries if they are
 **			more than @InfoHoldoffWeeks weeks old
 **
 **			Move old log entries and event entries to DMSHistoricLogCapture
 **
 **	Return values: 0: success, otherwise, error code
-** 
+**
 **	Parameters:
 **
 **	Auth:	mem
 **	Date:	10/04/2011 mem - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
-**    
+**
 *****************************************************/
 (
-	@InfoHoldoffWeeks int = 1,
-	@LogRetentionIntervalDays int = 180	
+	@InfoHoldoffWeeks int = 2,
+	@LogRetentionIntervalDays int = 180
 )
 As
 	Set XACT_ABORT, nocount on
-	
+
 	declare @myError int
 	declare @myRowCount int
 	set @myError = 0
@@ -35,17 +35,17 @@ As
 
 	Declare @message varchar(256)
 	Set @message = ''
-	
+
 	declare @CallingProcName varchar(128)
 	declare @CurrentLocation varchar(128)
 	Set @CurrentLocation = 'Start'
 
 	Begin Try
-		
+
 		---------------------------------------------------
 		-- Validate the inputs
 		---------------------------------------------------
-		
+
 		If IsNull(@InfoHoldoffWeeks, 0) < 1
 			Set @InfoHoldoffWeeks = 1
 
@@ -57,11 +57,11 @@ As
 		----------------------------------------------------
 		--
 		Set @CurrentLocation = 'Delete Info and Warn entries'
-		
+
 		DELETE FROM T_Log_Entries
 		WHERE (posting_time < DATEADD(week, -@InfoHoldoffWeeks, GETDATE())) AND
 			(TYPE = 'info' OR
-			 (TYPE = 'warn' AND message = 'Dataset Quality tool is not presently active') )	
+			 (TYPE = 'warn' AND message = 'Dataset Quality tool is not presently active') )
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -76,19 +76,19 @@ As
 		----------------------------------------------------
 		--
 		Set @CurrentLocation = 'Call MoveEntriesToHistory'
-		
+
 		exec @myError = MoveEntriesToHistory @LogRetentionIntervalDays
-		
+
 	End Try
 	Begin Catch
 		-- Error caught; log the error
 		Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'CleanupOperatingLogs')
-		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+		exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
 								@ErrorNum = @myError output, @message = @message output
 	End Catch
-	
+
 Done:
-	
+
 	return @myError
 
 
