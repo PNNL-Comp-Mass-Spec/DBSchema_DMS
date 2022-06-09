@@ -7,13 +7,14 @@ GO
 CREATE PROCEDURE [dbo].[DeleteOldEventsAndHistoricLogs]
 /****************************************************
 **
-**  Desc:   Delete entries over 5 years old in T_Event_Log and T_Historic_Log_Entries
+**  Desc:   Delete entries over 5 years old in T_Event_Log and T_Log_Entries
 **
 **          However, keep two weeks of events per year for historic reference reasons
 **          (retain the first week of February and the first week of August)
 **
 **  Auth:   mem
 **  Date:   06/08/2022 mem - Initial version
+**          06/09/2022 mem - Rename T_Historic_Log_Entries to T_Log_Entries
 **
 *****************************************************/
 (
@@ -183,7 +184,7 @@ As
 
     INSERT INTO #Tmp_HistoricLogIDs( Entry_ID, Posting_Time )
     SELECT Entry_ID, posting_time
-    FROM T_Historic_Log_Entries
+    FROM T_Log_Entries
     WHERE posting_time < @dateThreshold And 
           Not (Month(posting_time) In (2,8) And Day(posting_time) Between 1 And 7) And
           (@yearFilter < 1970 Or Year(posting_time) = @yearFilter)
@@ -216,7 +217,7 @@ As
             INSERT INTO #Tmp_LogEntriesToDelete (Entry_ID, Posted_By, Posting_Time, [Type], Message, DBName)
             SELECT TOP 10 T.Entry_ID, T.Posted_By, T.Posting_Time, T.[Type], T.Message, T.DBName
             FROM #Tmp_HistoricLogIDs S
-                 INNER JOIN T_Historic_Log_Entries T
+                 INNER JOIN T_Log_Entries T
                    ON S.Entry_ID = T.Entry_ID
             ORDER BY T.Entry_ID
         
@@ -226,7 +227,7 @@ As
                    FROM #Tmp_HistoricLogIDs
                    ORDER BY Entry_ID DESC 
                  ) S
-                 INNER JOIN T_Historic_Log_Entries T 
+                 INNER JOIN T_Log_Entries T 
                    ON S.Entry_ID = T.Entry_ID
             ORDER BY T.Entry_ID
 
@@ -236,7 +237,7 @@ As
         End
         Else
         Begin
-            Delete From T_Historic_Log_Entries
+            Delete From T_Log_Entries
             Where Entry_ID In (Select Entry_ID From #Tmp_HistoricLogIDs)
         End
 
@@ -246,7 +247,7 @@ As
             Set @historicLogMessage = 'Deleted '
 
         Set @historicLogMessage = @historicLogMessage + 
-            Cast(@logEntriesToDelete As Varchar(12)) + ' old entries from T_Historic_Log_Entries ' + @thresholdDescription + '; ' +
+            Cast(@logEntriesToDelete As Varchar(12)) + ' old entries from T_Log_Entries ' + @thresholdDescription + '; ' +
             'Entry_ID range ' + Cast(@entryIdMin As varchar(12)) + ' to ' + Cast(@entryIdMax As varchar(12))
 
         If @infoOnly = 0 And @logEntriesToDelete > 0
