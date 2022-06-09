@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.CleanupOperatingLogs
+CREATE Procedure [dbo].[CleanupOperatingLogs]
 /****************************************************
 ** 
 **	Desc:	Deletes Info entries from T_Log_Entries if they are
-**			more than @InfoHoldoffWeeks weeks old
+**			more than @LogRetentionIntervalHours hours old
 **
 **			Move old log entries and event entries to DMSHistoricLog
 **
@@ -21,26 +21,23 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **			07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **			11/21/2012 mem - Removed call to MoveAnalysisLogEntries
 **			02/23/2016 mem - Add set XACT_ABORT on
+**          06/09/2022 mem - Update default log retention interval
 **    
 *****************************************************/
 (
-	@LogRetentionIntervalHours int = 120,
+	@LogRetentionIntervalHours int = 336,
 	@EventLogRetentionIntervalDays int = 365
 )
 As
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError Int = 0
+	Declare @myRowCount int = 0
 
-	Declare @message varchar(256)
-	Set @message = ''
+	Declare @message varchar(256) = ''
 	
-	declare @CallingProcName varchar(128)
-	declare @CurrentLocation varchar(128)
-	Set @CurrentLocation = 'Start'
+	Declare @CallingProcName varchar(128)
+	Declare @CurrentLocation varchar(128) = 'Start'
 
 	Begin Try
 		
@@ -48,8 +45,8 @@ As
 		-- Validate the inputs
 		---------------------------------------------------
 		
-		If IsNull(@LogRetentionIntervalHours, 0) < 24
-			Set @LogRetentionIntervalHours = 24
+		If IsNull(@LogRetentionIntervalHours, 0) < 120
+			Set @LogRetentionIntervalHours = 120
 
 		If IsNull(@EventLogRetentionIntervalDays, 0) < 32
 			Set @EventLogRetentionIntervalDays = 32
