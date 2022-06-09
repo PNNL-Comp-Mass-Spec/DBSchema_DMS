@@ -12,3 +12,5 @@ SELECT Entry_ID AS Entry, posted_by AS [Posted By],
 FROM T_Historic_Log_Entries
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Historic_Log_Report] TO [DDL_Viewer] AS [dbo]
+GO

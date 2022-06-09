@@ -32,3 +32,5 @@ FROM Table_Space_Summary S CROSS JOIN
 ORDER BY S.Space_Used_MB DESC
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Size_Summary] TO [DDL_Viewer] AS [dbo]
+GO

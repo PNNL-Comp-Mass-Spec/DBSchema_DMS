@@ -15,3 +15,5 @@ WHERE (o.type = 'u') AND (i.indid < 2) AND
 ORDER BY o.name
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Row_Counts] TO [DDL_Viewer] AS [dbo]
+GO

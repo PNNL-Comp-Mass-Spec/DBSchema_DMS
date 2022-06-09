@@ -20,3 +20,5 @@ WHERE (spt.number = 1) AND (spt.type = 'E')
 ORDER BY su.tablesize DESC, su.tablename
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Table_Sizes] TO [DDL_Viewer] AS [dbo]
+GO
