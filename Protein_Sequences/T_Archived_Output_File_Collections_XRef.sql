@@ -20,8 +20,8 @@ CREATE NONCLUSTERED INDEX [IX_T_Archived_Output_File_Collections_XRef_Archived_F
 	[Archived_File_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_T_Archived_Output_File_Collections_XRef_Protein_Collection_ID] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Archived_Output_File_Collections_XRef_Protein_Collection_ID] ON [dbo].[T_Archived_Output_File_Collections_XRef]
+/****** Object:  Index [IX_t_archived_output_file_collections_xref_Protein_Collecn_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_t_archived_output_file_collections_xref_Protein_Collecn_ID] ON [dbo].[T_Archived_Output_File_Collections_XRef]
 (
 	[Protein_Collection_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
