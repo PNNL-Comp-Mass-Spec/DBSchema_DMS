@@ -18,6 +18,7 @@ CREATE Procedure [dbo].[MoveHistoricLogEntries]
 **          10/15/2012 mem - Now excluding routine messages from BackupDMSDBs and RebuildFragmentedIndices
 **          10/29/2015 mem - Increase default value from 5 days to 14 days (336 hours)
 **          06/09/2022 mem - Rename target table from T_Historic_Log_Entries to T_Log_Entries
+**                         - No longer store the database name in the target table
 **    
 *****************************************************/
 (
@@ -33,9 +34,6 @@ As
         Set @intervalHrs = 120
 
     set @cutoffDateTime = dateadd(hour, -1 * @intervalHrs, getdate())
-
-    Declare @DBName varchar(64)
-    set @DBName = DB_NAME()
 
     set nocount off
     
@@ -66,13 +64,12 @@ As
     
     -- Copy entries into the historic log database
     --
-    INSERT INTO DMSHistoricLog.dbo.T_Log_Entries (Entry_ID, posted_by, posting_time, Type, message, DBName)
+    INSERT INTO DMSHistoricLog.dbo.T_Log_Entries (Entry_ID, posted_by, posting_time, Type, message)
     SELECT Entry_ID,
            posted_by,
            posting_time,
            Type,
-           message,
-           @DBName
+           message
     FROM T_Log_Entries
     WHERE posting_time < @cutoffDateTime
     --
