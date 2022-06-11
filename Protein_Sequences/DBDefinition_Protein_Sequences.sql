@@ -2,9 +2,9 @@
 CREATE DATABASE [Protein_Sequences]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 180925824KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 199726400KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 12584640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
+( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 116264640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
