@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[GetCampaignWorkPackageList]
 **
 **  Auth:   mem
 **  Date:   06/07/2019 mem - Initial version
+**          06/11/2022 mem - Exclude null values and empty strings from the list
 **    
 *****************************************************/
 (
@@ -36,7 +37,9 @@ AS
                       ON DS.Exp_ID = E.Exp_ID
                     INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
-               WHERE C.Campaign_Num = @campaignName ) LookupQ
+               WHERE C.Campaign_Num = @campaignName And 
+                     Len(Ltrim(Rtrim(Coalesce(RR.RDS_WorkPackage, '')))) > 0
+             ) LookupQ
     
         RETURN @list
     END
