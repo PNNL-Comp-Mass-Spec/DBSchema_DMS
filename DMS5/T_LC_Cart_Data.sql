@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 97 ******/
+/****** RowCount: 98 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (1,'unknown',1,'Not a valid cart',null)
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used','3/10/2006 10:34:00 AM')
@@ -98,4 +98,5 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (125,'Roxanne',2,'Waters High-Flow H-class+ Sample Manager-FTN and Quaternary Solvent Manager','11/16/2020 4:45:00 PM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (126,'Titus',2,'Thermo Dionex Ultimate 3000 with autosampler, gradient pump, loading pump, and column heating / trapping compartment','9/13/2021 1:25:00 PM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (127,'Evsep02',2,'Online Delsalting LC','4/5/2022 5:39:00 AM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (128,'Tonga',2,'Formerly the NMR fractionation LC.  Agilent 1290 Infinity II Pump, Autosampler, Column Heater, UV detector and Fraction collector','6/10/2022 10:58:00 AM')
 SET IDENTITY_INSERT [T_LC_Cart] OFF
