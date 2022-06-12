@@ -15,7 +15,7 @@ SELECT ML.ID AS ID,
        ML.Col,
        -- Unused: ML.Barcode,
        ML.[Comment],
-       ML.Container_Limit AS Limit,
+       ML.Container_Limit,
        COUNT(MC.ID) AS Containers,
        ML.Container_Limit - COUNT(MC.ID) AS Available,
        ML.[Status]       

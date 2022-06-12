@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Material_Locations_Picklist]
 AS
 SELECT [Location],
@@ -14,7 +13,7 @@ SELECT [Location],
        Rack,
        [Row],
        Col,
-       Limit,
+       Container_Limit,
        Containers,
        Available
 FROM dbo.V_Material_Location_List_Report
