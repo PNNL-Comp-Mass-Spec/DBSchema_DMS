@@ -84,6 +84,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          03/01/2020 mem - Add call to UpdateDatasetDeviceInfoXML
 **          10/10/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
 **          02/14/2022 mem - Log an error if the acquisition length is overly long
+**          06/13/2022 mem - Update call to GetDatasetScanTypeList since now a scalar-valued function
 **    
 *****************************************************/
 (
@@ -676,11 +677,10 @@ As
     -----------------------------------------------
     --
     UPDATE T_Dataset_Info
-    SET Scan_Types = DSTypes.ScanTypeList
+    SET Scan_Types = dbo.GetDatasetScanTypeList(@datasetID)
     FROM T_Dataset DS
          INNER JOIN T_Dataset_Info DSInfo
            ON DSInfo.Dataset_ID = DS.Dataset_ID
-         CROSS APPLY GetDatasetScanTypeList ( DS.Dataset_ID ) DSTypes
     WHERE DS.Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
