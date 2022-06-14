@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[StoreProjectUsageStats]
+CREATE PROCEDURE [dbo].[StoreProjectUsageStats]
 /****************************************************
 **
 **  Desc:
@@ -116,11 +116,11 @@ AS
            CASE
                WHEN EUSPro.Proposal_Type IN ('Resource Owner') THEN 1                                             -- Resource Owner
                WHEN EUSPro.Proposal_Type IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public') THEN 2    -- Proprietary
-               WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity
+               WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity (replaces Proprietary Public)
                WHEN EUSPro.Proposal_Type IN ('Partner') THEN 5                                                    -- Partner
                WHEN EUSPro.Proposal_Type IN ('Staff Time') THEN 6                                                 -- Staff Time
                WHEN EUSPro.Proposal_Type NOT IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 3  -- EMSL_User
-              ELSE 0                                                                                              -- Unknown
+               ELSE 0                                                                                             -- Unknown
            END AS Project_Type_ID,
            0 AS Samples,
            COUNT(*) AS Datasets,
@@ -169,7 +169,7 @@ AS
                CASE
                    WHEN EUSPro.Proposal_Type IN ('Resource Owner') THEN 1                                             -- Resource Owner
                    WHEN EUSPro.Proposal_Type IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public') THEN 2    -- Proprietary
-                   WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity
+                   WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity (replaces Proprietary Public)
                    WHEN EUSPro.Proposal_Type IN ('Partner') THEN 5                                                    -- Partner
                    WHEN EUSPro.Proposal_Type IN ('Staff Time') THEN 6                                                 -- Staff Time
                    WHEN EUSPro.Proposal_Type NOT IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 3  -- EMSL_User
@@ -255,11 +255,11 @@ AS
                CASE
                    WHEN EUSPro.Proposal_Type IN ('Resource Owner') THEN 1                                             -- Resource Owner
                    WHEN EUSPro.Proposal_Type IN ('Proprietary', 'Proprietary Public', 'Proprietary_Public') THEN 2    -- Proprietary
-                   WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity
+                   WHEN EUSPro.Proposal_Type IN ('Capacity') THEN 4                                                   -- Capacity (replaces Proprietary Public)
                    WHEN EUSPro.Proposal_Type IN ('Partner') THEN 5                                                    -- Partner
                    WHEN EUSPro.Proposal_Type IN ('Staff Time') THEN 6                                                 -- Staff Time
                    WHEN EUSPro.Proposal_Type NOT IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 3  -- EMSL_User
-                   ELSE 0                                                                                            -- Unknown
+                   ELSE 0                                                                                             -- Unknown
                END AS Project_Type_ID,
                COUNT(DISTINCT Exp_ID) AS Samples,
                0 AS Datasets,
