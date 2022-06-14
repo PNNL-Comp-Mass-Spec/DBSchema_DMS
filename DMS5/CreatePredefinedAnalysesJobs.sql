@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          08/29/2018 mem - Tabs to spaces
 **          03/31/2021 mem - Expand @organismName and @organismDBName to varchar(128)
+**          06/14/2022 mem - Send procedure name to PostLogEntry
 **
 *****************************************************/
 (
@@ -187,25 +188,37 @@ As
         ---------------------------------------------------
         --
         If @myError <> 0 OR @myRowCount <> 1
+        Begin
             Set @done = 1
+        End
         Else
         Begin -- <b>
         
             If @AnalysisToolNameFilter = ''
+            Begin
                 Set @CreateJob = 1
+            End
             Else
             Begin
                 If @AnalysisToolName Like @AnalysisToolNameFilter
+                Begin
                     Set @CreateJob = 1
+                End
                 Else
+                Begin
                     Set @CreateJob = 0
+                End
             End
 
             If IsNull(@propagationMode, 0) = 0
+            Begin
                 Set @propagationModeText = 'Export'
+            End
             Else
+            Begin
                 Set @propagationModeText = 'No Export'
-            
+            End
+
             If @CreateJob <> 0
             Begin -- <c>
             
@@ -249,15 +262,21 @@ As
                 If @result = 0 
                 Begin
                     If @infoOnly = 0
+                    Begin
                         Set @jobsCreated = @jobsCreated + 1 
+                    End
                 End
                 Else 
                 Begin -- <d>
                     If @message = ''
+                    Begin
                         Set @message = @NewMessage
+                    End
                     Else
+                    Begin
                         Set @message = @message + '; ' + @NewMessage
-                    
+                    End
+
                     -- ResultCode 52500 means a duplicate job exists; that error can be ignored                    
                     If @result <> 52500
                     Begin -- <e>
@@ -269,8 +288,20 @@ As
                             
                         Set @message = @message + ' [' + convert(varchar(12), @result) + ']'
                         
-                        Set @logMessage = @NewMessage + '; Dataset ' + @datasetNum + ', Tool ' + @analysisToolName
-                        exec PostLogEntry 'Error', @logMessage
+                        Set @logMessage = @NewMessage
+                        
+                        If CharIndex(@datasetNum, @logMessage) < 1
+                        Begin
+                            Set @logMessage = @logMessage + '; Dataset ' + @datasetNum + ', '
+                        End
+                        Else
+                        Begin
+                            Set @logMessage = @logMessage + ';'
+                        End
+
+                        Set @logMessage = @logMessage + @analysisToolName
+
+                        exec PostLogEntry 'Error', @logMessage, 'CreatePredefinedAnalysesJobs'
                     End -- </e>
                     
                 End -- </d>
@@ -303,9 +334,13 @@ As
     If @JobFailCount > 0 and @myError = 0
     Begin
         If @JobFailErrorCode <> 0
+        Begin
             Set @myError = @JobFailErrorCode
+        End
         Else
+        Begin
             Set @myError = 2
+        End
     End
     
     END TRY
