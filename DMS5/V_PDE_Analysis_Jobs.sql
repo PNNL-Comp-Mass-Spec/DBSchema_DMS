@@ -3,8 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_PDE_Analysis_Jobs
+
+CREATE VIEW [dbo].[V_PDE_Analysis_Jobs]
 AS
+-- This view was used by PRISM Data Extractor, then StarSuite Extractor, both of which were retired in 2011 when Mage Extractor was released
+--
 SELECT     dbo.T_Analysis_Job.AJ_jobID AS AnalysisID, dbo.T_Dataset.Dataset_Num AS BaseFileName, 
                       dbo.V_Dataset_Folder_Paths.Dataset_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName + '\' AS AnalysisJobDirectory, 
                       dbo.V_Dataset_Folder_Paths.Archive_Folder_Path + '\' + dbo.T_Analysis_Job.AJ_resultsFolderName + '\' AS AnalysisJobArchiveDirectory

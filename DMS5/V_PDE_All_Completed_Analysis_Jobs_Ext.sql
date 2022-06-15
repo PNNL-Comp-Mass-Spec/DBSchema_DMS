@@ -6,6 +6,8 @@ GO
 
 CREATE VIEW [dbo].[V_PDE_All_Completed_Analysis_Jobs_Ext]
 AS
+-- This view was used by PRISM Data Extractor, then StarSuite Extractor, both of which were retired in 2011 when Mage Extractor was released
+--
 SELECT     dbo.T_Analysis_Job.AJ_jobID AS AnalysisID, dbo.T_Dataset.Dataset_Num AS DatasetName, dbo.T_Experiments.Experiment_Num AS Experiment, 
                       dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Analysis_Job.AJ_finish AS Completed, 
                       dbo.T_Analysis_Job.AJ_parmFileName AS ParamFileUsed, dbo.T_Organisms.OG_name AS Organism, 
