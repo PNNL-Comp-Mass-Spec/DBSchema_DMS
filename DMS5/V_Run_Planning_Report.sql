@@ -91,7 +91,7 @@ FROM    ( SELECT    [Inst. Group],
                              U.U_Name AS Requester,
                              RR.RDS_created AS Request_Created,
                              RR.RDS_WorkPackage AS [Work Package],
-                             ISNULL(CC.Activation_State_Name, '') AS [WP State],
+                             Coalesce(CC.Activation_State_Name, '') AS [WP State],
                              CC.Activation_State AS WPActivationState,
                              RR.RDS_EUS_Proposal_ID AS Proposal,
                              EPT.Abbreviation AS [Proposal Type],
@@ -100,11 +100,11 @@ FROM    ( SELECT    [Inst. Group],
                              RR.RDS_BatchID AS Batch,
                              RRB.Comment As Batch_Comment,
                              QS.Queue_State_Name AS [Queue State],
-                             CASE WHEN RR.Queue_State = 2 THEN ISNULL(AssignedInstrument.IN_name, '') ELSE '' END AS [Queued Instrument],
+                             CASE WHEN RR.Queue_State = 2 THEN Coalesce(AssignedInstrument.IN_name, '') ELSE '' END AS [Queued Instrument],
                              LEFT(RRB.Batch, 20) + CASE WHEN LEN(RRB.Batch) > 20 THEN '...'
                                                         ELSE ''
                                                    END AS Batch_Prefix,
-                             CONVERT(datetime, FLOOR(CONVERT(float, RRB.Last_Ordered))) AS [Last Ordered],
+                             Cast(RRB.Last_Ordered as Date) AS [Last Ordered],
                              CASE
                                  WHEN SPR.ID = 0 THEN NULL
                                  ELSE QT.[Days In Queue]
