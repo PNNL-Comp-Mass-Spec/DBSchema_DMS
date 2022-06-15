@@ -15,7 +15,10 @@ SELECT Request_ID,
            WHEN State IN (4, 5) THEN DateDiff(DAY, Created, [Complete or Closed])
            ELSE DateDiff(DAY, Created, ISNULL([Complete or Closed], GETDATE()))
        END AS [Days In Queue],
-       DateDiff(DAY, StateFirstEntered, GETDATE()) AS [Days In State]       
+       CASE
+           WHEN State = 5 THEN NULL 
+           Else DateDiff(DAY, StateFirstEntered, GETDATE())
+       End AS [Days In State]
 FROM ( SELECT SPR.ID AS Request_ID,
               SPR.Created,
               SPR.[State],
