@@ -110,14 +110,13 @@ FROM    ( SELECT    [Inst. Group],
                                  ELSE QT.[Days In Queue]
                              END AS [Days in Prep Queue],
                              CASE
-                                 WHEN ISNULL(SPR.BlockAndRandomizeRuns, '') = 'yes' AND
-                                      (ISNULL(RR.RDS_Block, '') = '' OR
-                                       ISNULL(RR.RDS_Run_Order, '') = '') THEN 1
+                                 WHEN Coalesce(SPR.BlockAndRandomizeRuns, '') = 'yes' AND (
+                                      Coalesce(RR.RDS_Block, 0) = 0 Or Coalesce(RR.RDS_Run_Order, 0) = 0) THEN 1
                                  ELSE 0
                              END AS BlkMissing,
                              CASE
-                                 WHEN ISNULL(RR.RDS_Block, '') <> '' AND
-                                      ISNULL(RR.RDS_Run_Order, '') <> '' THEN 1
+                                 WHEN Coalesce(RR.RDS_Block, 0) > 0 AND
+                                      Coalesce(RR.RDS_Run_Order, 0) > 0 THEN 1
                                  ELSE 0
                              END AS Blocked,
                              SG.Fraction_Count As Fraction_Count
