@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2] AS
-SELECT AJ.AJ_jobID AS JobNum,
+SELECT AJ.AJ_jobID AS Job,
        DS.Dataset_Num AS Dataset,
        E.Experiment_Num AS Experiment,
        DS.DS_folder_name AS [Dataset Folder],
