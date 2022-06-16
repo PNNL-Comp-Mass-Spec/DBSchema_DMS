@@ -24,10 +24,11 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 **          09/10/2018 mem - Remove invalid check of @mode against check_add or check_update
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
 **
 *****************************************************/
 (
-    @targetName varchar(128) = '',          -- Experiment, Cell Culture, Dataset, or SamplePrepRequest
+    @targetName varchar(128) = '',          -- Experiment, Biomaterial (previously 'Cell Culture'), Dataset, or SamplePrepRequest
     @targetEntityName varchar(128) = '',    -- Target entity ID or name
     @categoryName varchar(128) = '',
     @subCategoryName varchar(128) = '',
@@ -58,10 +59,12 @@ As
     End;
 
     Begin TRY
-
+    
     ---------------------------------------------------
     -- What mode are we in
     ---------------------------------------------------
+  
+    Set @mode = Coalesce(@mode, 'Undefined_mode')
 
     If @mode In ('check_update', 'check_add')
     Begin
@@ -78,8 +81,17 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    Set @itemNameList = IsNull(@itemNameList, '')
-    Set @itemValueList = IsNull(@itemValueList, '')
+    Set @targetName = Ltrim(Rtrim(Coalesce(@targetName, '')))
+    Set @targetEntityName = Ltrim(Rtrim(Coalesce(@targetEntityName, '')))
+    Set @categoryName = Ltrim(Rtrim(Coalesce(@categoryName, '')))
+    Set @subCategoryName = Ltrim(Rtrim(Coalesce(@subCategoryName, '')))
+    Set @itemNameList = Ltrim(Rtrim(Coalesce(@itemNameList, '')))
+    Set @itemValueList = Ltrim(Rtrim(Coalesce(@itemValueList, '')))
+
+    If @targetName = 'Cell Culture' And Exists (Select * From T_AuxInfo_Target Where Name = 'Biomaterial')
+    Begin
+        Set @targetName = 'Biomaterial'
+    End
 
     ---------------------------------------------------
     -- Has ID been supplied as target name?
@@ -88,6 +100,7 @@ As
     Declare @targetID int = 0
 
     Set @targetID = Try_Parse(@targetEntityName as int)
+
     If @targetID IS NULL
     Begin -- <a1>
         ---------------------------------------------------
@@ -111,6 +124,18 @@ As
         Begin
             Set @msg = 'Could not look up table criteria for target: "' + @targetName + '"'
             RAISERROR (@msg, 11, 1)
+        End
+
+        If @tgtTableName = 'T_Cell_Culture'
+        Begin
+            -- Auto-switch the target table to t_biomaterial if T_Cell_Culture does not exist but t_biomaterial does
+            If Not Exists (Select * From information_schema.tables Where table_name = 'T_Cell_Culture' and table_type = 'BASE TABLE')
+               And Exists (Select * From information_schema.tables Where table_name = 't_biomaterial'  and table_type = 'BASE TABLE')
+            Begin
+                Set @tgtTableName = 't_biomaterial'
+                Set @tgtTableIDCol = 'biomaterial_id'
+                Set @tgtTableNameCol = 'biomaterial_name'
+            End
         End
 
         If @mode <> 'check_only'

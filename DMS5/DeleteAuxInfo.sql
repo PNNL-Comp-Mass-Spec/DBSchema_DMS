@@ -4,113 +4,129 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure DeleteAuxInfo
+CREATE Procedure [dbo].[DeleteAuxInfo]
 /****************************************************
 **
-**	Desc: 
-**		Deletes existing auxiliary information in database
-**		for given target type and identity
+**  Desc: 
+**      Deletes existing auxiliary information in database
+**      for given target type and identity
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**		Auth: grk
-**		Date: 4/8/2002
+**  Auth:   grk
+**  Date:   04/08/2002
+**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
 **    
 *****************************************************/
 (
-	@targetName varchar(128) = '',
-	@targetEntityName varchar(128) = '',
-	@message varchar(512) = '' output
+    @targetName varchar(128) = '',
+    @targetEntityName varchar(128) = '',
+    @message varchar(512) = '' output
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int
-	set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+    
+    set @message = ''
+        
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
+    
+    Set @targetName = Ltrim(Rtrim(Coalesce(@targetName, '')))
+    Set @targetEntityName = Ltrim(Rtrim(Coalesce(@targetEntityName, '')))
 
-	declare @myRowCount int
-	set @myRowCount = 0
-	
-	set @message = ''
-		
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    If @targetName = 'Cell Culture' And Exists (Select * From T_AuxInfo_Target Where Name = 'Biomaterial')
+    Begin
+        Set @targetName = 'Biomaterial'
+    End
 
-	-- future
+    ---------------------------------------------------
+    -- Resolve target name to target table criteria
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Resolve target name to target table criteria
-	---------------------------------------------------
+    Declare @tgtTableName varchar(128)
+    Declare @tgtTableNameCol varchar(128)
+    Declare @tgtTableIDCol varchar(128)
 
-	declare @tgtTableName varchar(128)
-	declare @tgtTableNameCol varchar(128)
-	declare @tgtTableIDCol varchar(128)
+    SELECT 
+        @tgtTableName = Target_Table, 
+        @tgtTableIDCol = Target_ID_Col, 
+        @tgtTableNameCol = Target_Name_Col
+    FROM T_AuxInfo_Target
+    WHERE (Name = @targetName)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0 or @myRowCount <> 1
+    begin
+        set @message = 'Could not look up table criteria for target: "' + @targetName + '"'
+        return 51000
+    end
+    
+    If @tgtTableName = 'T_Cell_Culture'
+    Begin
+        -- Auto-switch the target table to t_biomaterial if T_Cell_Culture does not exist but t_biomaterial does
+        If Not Exists (Select * From information_schema.tables Where table_name = 'T_Cell_Culture' and table_type = 'BASE TABLE')
+            And Exists (Select * From information_schema.tables Where table_name = 't_biomaterial'  and table_type = 'BASE TABLE')
+        Begin
+            Set @tgtTableName = 't_biomaterial'
+            Set @tgtTableIDCol = 'biomaterial_id'
+            Set @tgtTableNameCol = 'biomaterial_name'
+        End
+    End
+    ---------------------------------------------------
+    -- Resolve target name and entity name to entity ID
+    ---------------------------------------------------
 
-	SELECT 
-		@tgtTableName = Target_Table, 
-		@tgtTableIDCol = Target_ID_Col, 
-		@tgtTableNameCol = Target_Name_Col
-	FROM T_AuxInfo_Target
-	WHERE (Name = @targetName)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @message = 'Could not look up table criteria for target: "' + @targetName + '"'
-		return 51000
-	end
+    Declare @targetID int
+    set @targetID = 0
+    
+    Declare @sql nvarchar(1024)
+    
+    set @sql = N'' 
+    set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
+    set @sql = @sql + ' FROM ' + @tgtTableName
+    set @sql = @sql + ' WHERE ' + @tgtTableNameCol
+    set @sql = @sql + ' = ''' + @targetEntityName + ''''
+    
+    exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
-	---------------------------------------------------
-	-- Resolve target name and entity name to entity ID
-	---------------------------------------------------
-
-	declare @targetID int
-	set @targetID = 0
-	
-	declare @sql nvarchar(1024)
-	
-	set @sql = N'' 
-	set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
-	set @sql = @sql + ' FROM ' + @tgtTableName
-	set @sql = @sql + ' WHERE ' + @tgtTableNameCol
-	set @sql = @sql + ' = ''' + @targetEntityName + ''''
-	
-	exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
-
-	if @targetID = 0
-	begin
-		set @message = 'Error resolving ID for ' + @targetName + ' "' + @targetEntityName + '"'
-		return 51000
-	end
+    if @targetID = 0
+    begin
+        set @message = 'Error resolving ID for ' + @targetName + ' "' + @targetEntityName + '"'
+        return 51000
+    end
 
 
-	---------------------------------------------------
-	-- Delete all entries from auxiliary value table
-	-- for the given target type and identity
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Delete all entries from auxiliary value table
+    -- for the given target type and identity
+    ---------------------------------------------------
 
-	DELETE FROM T_AuxInfo_Value
-	WHERE (Target_ID = @targetID) AND 
-	(
-		AuxInfo_ID IN
-		(
-		SELECT Item_ID
-		FROM V_Aux_Info_Definition_wID
-		WHERE (Target = @targetName)
-		)
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error deleting auxiliary info for ' + @targetName + ' "' + @targetEntityName + '"'
-		return 51000
-	end
+    DELETE FROM T_AuxInfo_Value
+    WHERE (Target_ID = @targetID) AND 
+    (
+        AuxInfo_ID IN
+        (
+        SELECT Item_ID
+        FROM V_Aux_Info_Definition_wID
+        WHERE (Target = @targetName)
+        )
+    )
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error deleting auxiliary info for ' + @targetName + ' "' + @targetEntityName + '"'
+        return 51000
+    end
 
-	return 0
+    return 0
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteAuxInfo] TO [DDL_Viewer] AS [dbo]
 GO
