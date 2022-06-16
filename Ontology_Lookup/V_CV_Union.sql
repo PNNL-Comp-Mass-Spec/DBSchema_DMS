@@ -86,7 +86,7 @@ AS
     SELECT 'NEWT' AS Source,
            Term_PK,
            Term_Name,
-           identifier,
+           Cast(identifier as varchar(24)),
            Is_Leaf,
            Parent_term_name,
            Parent_term_ID,
