@@ -33,7 +33,7 @@ SELECT DISTINCT O.Organism_ID,
                 O.OG_RowVersion
 FROM dbo.T_Organisms O
      LEFT OUTER JOIN S_V_CV_NEWT NEWT
-       ON CONVERT(varchar(24), O.NCBI_Taxonomy_ID) = NEWT.identifier
+       ON O.NCBI_Taxonomy_ID = NEWT.identifier
      LEFT OUTER JOIN S_V_NCBI_Taxonomy_Cached NCBI
        ON O.NCBI_Taxonomy_ID = NCBI.Tax_ID
 

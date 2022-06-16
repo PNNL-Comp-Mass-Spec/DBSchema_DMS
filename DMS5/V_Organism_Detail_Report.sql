@@ -38,7 +38,7 @@ FROM dbo.T_Organisms O
      INNER JOIN T_YesNo
        ON O.Auto_Define_Taxonomy = T_YesNo.Flag
      LEFT OUTER JOIN
-        S_V_CV_NEWT NEWT ON Cast(O.NCBI_Taxonomy_ID as varchar(24)) = NEWT.identifier
+        S_V_CV_NEWT NEWT ON O.NCBI_Taxonomy_ID = NEWT.identifier
      LEFT OUTER JOIN V_Protein_Collection_Name PC
        ON O.OG_Name = PC.[Organism Name]
      LEFT OUTER JOIN S_V_NCBI_Taxonomy_Cached NCBI 
