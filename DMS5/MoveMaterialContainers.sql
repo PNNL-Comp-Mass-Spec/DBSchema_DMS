@@ -7,7 +7,7 @@ GO
 CREATE Procedure [dbo].[MoveMaterialContainers]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Moves containers from one location to another
 **      Allows for moving between freezers, shelves, and racks, but requires that Row and Col remain unchanged
 **      Created in August 2016 to migrate samples from old freezer 1206A to new freezer 1206A, which  has more shelves but fewer racks
@@ -15,7 +15,8 @@ CREATE Procedure [dbo].[MoveMaterialContainers]
 **  Auth:   mem
 **  Date:   08/03/2016
 **          08/27/2018 mem - Rename the view Material Location list report view
-**    
+**          06/21/2022 mem - Use new column name Container_Limit in view V_Material_Location_List_Report
+**
 *****************************************************/
 (
     @freezerTagOld varchar(24),
@@ -35,18 +36,18 @@ As
     ---------------------------------------------------
     -- Validate the Inputs
     ---------------------------------------------------
-    
+
     Set @freezerTagOld = IsNull(@freezerTagOld, '')
     Set @ShelfOld = IsNull(@ShelfOld, -1)
     Set @RackOld = IsNull(@RackOld, -1)
-    
+
     Set @freezerTagNew = IsNull(@freezerTagNew, '')
     Set @ShelfNew = IsNull(@ShelfNew, -1)
     Set @RackNew = IsNull(@RackNew, -1)
     Set @infoOnly = IsNull(@infoOnly, 1)
     Set @message = ''
     Set @callingUser = IsNull(@callingUser, '')
-    
+
     If @freezerTagOld = ''
     Begin
         Set @message = '@freezerTagOld cannot be empty'
@@ -58,19 +59,19 @@ As
         Set @message = '@freezerTagNew cannot be empty'
         Goto Done
     End
-    
+
     If @ShelfOld <= 0 or @RackOld <= 0
     Begin
         Set @message = '@ShelfOld and @RackOld must be positive integers'
         Goto Done
     End
-    
+
     If @ShelfNew <= 0 or @RackNew <= 0
     Begin
         Set @message = '@ShelfNew and @RackNew must be positive integers'
         Goto Done
     End
-    
+
     If @callingUser = ''
     Begin
         Set @callingUser = Suser_Sname()
@@ -79,7 +80,7 @@ As
     ---------------------------------------------------
     -- Create some temporary tables
     ---------------------------------------------------
-    --        
+    --
     CREATE TABLE #Tmp_ContainersToProcess (
         Entry_ID     int IDENTITY ( 1, 1 ) NOT NULL,
         MC_ID        int NOT NULL,
@@ -108,7 +109,7 @@ As
     ---------------------------------------------------
     -- Populate the table
     ---------------------------------------------------
-    --        
+    --
     INSERT INTO #Tmp_ContainersToProcess (MC_ID, Container, [Type], Location_ID, Location_Tag, Shelf, Rack, Row, Col )
     SELECT MC.ID AS MC_ID,
            MC.Tag AS Container,
@@ -138,14 +139,14 @@ As
     ---------------------------------------------------
     -- Show the matching containers
     ---------------------------------------------------
-    --    
+    --
     SELECT *
     FROM #Tmp_ContainersToProcess
 
     ---------------------------------------------------
     -- Step through the containers and update their location
     ---------------------------------------------------
-    --    
+    --
     Declare @EntryID int = 0
     Declare @ContainerID int
     Declare @ContainerName varchar(128)
@@ -163,7 +164,7 @@ As
     Declare @contCount int
     Declare @locLimit int
     Declare @locStatus varchar(64)
-    
+
     Declare @moveStatus varchar(32)
     Declare @transName varchar(32) = 'UpdateMaterialContainers'
 
@@ -196,10 +197,10 @@ As
             SET @LocationTagNew = @freezerTagNew + '.' + CAST(@ShelfNew as varchar(20)) + '.' + CAST(@RackNew as varchar(20)) + '.' + @Row + '.' + @Col
             SET @numContainers = 1
 
-            SELECT 
-                @LocationIDNew = #ID, 
+            SELECT
+                @LocationIDNew = #ID,
                 @contCount = Containers,
-                @locLimit = Limit, 
+                @locLimit = Container_Limit,
                 @locStatus = Status
             FROM  V_Material_Location_List_Report
             WHERE Location = @LocationTagNew
@@ -214,7 +215,7 @@ As
             ---------------------------------------------------
             -- is location suitable?
             ---------------------------------------------------
-            
+
             If @locStatus <> 'Active'
             Begin
                 set @message = 'Location "' + @LocationTagNew + '" is not in the "Active" state'
@@ -228,16 +229,16 @@ As
                 rollback transaction @transName
                 GOTO Done
             End
-        
+
             If @infoOnly <> 0
             Begin
                 Set @moveStatus = 'Preview'
             End
             Else
             Begin -- <c>
-            
+
                 Set @moveStatus = 'Moved'
-            
+
                 ---------------------------------------------------
                 -- Update container to be at new location
                 ---------------------------------------------------
@@ -256,13 +257,13 @@ As
                 End
 
                 INSERT INTO T_Material_Log (
-                    [Type], 
-                    Item, 
-                    Initial_State, 
-                    Final_State, 
+                    [Type],
+                    Item,
+                    Initial_State,
+                    Final_State,
                     User_PRN,
                     Comment
-                ) 
+                )
                 VALUES(
                     'move_container',
                     @ContainerName,
@@ -282,7 +283,7 @@ As
                 End
 
             End -- </c>
-            
+
             INSERT INTO #Tmp_Move_Status (Container_ID, Container, [Type], Location_Old, Location_Current, Location_New, LocationIDNew, Status)
             SELECT     #ID AS Container_ID,
                     Container,
@@ -316,6 +317,7 @@ Done:
     End
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[MoveMaterialContainers] TO [DDL_Viewer] AS [dbo]

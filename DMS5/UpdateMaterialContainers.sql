@@ -7,12 +7,12 @@ GO
 CREATE Procedure [dbo].[UpdateMaterialContainers]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Makes changes for specified list of containers
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters: 
+**  Parameters:
 **
 **  Auth:   grk
 **  Date:   03/26/2008     - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
@@ -21,6 +21,7 @@ CREATE Procedure [dbo].[UpdateMaterialContainers]
 **          05/17/2018 mem - Add mode 'unretire_container'
 **                         - Do not allow updating containers of type 'na'
 **          08/27/2018 mem - Rename the view Material Location list report view
+**          06/21/2022 mem - Use new column name Container_Limit in view V_Material_Location_List_Report
 **
 *****************************************************/
 (
@@ -38,18 +39,18 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateMaterialContainers', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @mode = IsNull(@mode, '')
     Set @containerList = IsNull(@containerList, '')
     Set @newValue= IsNull(@newValue, '')
@@ -80,7 +81,7 @@ As
     ---------------------------------------------------
     -- populate temporary table from container list
     ---------------------------------------------------
-    
+
     INSERT INTO @material_container_list
         (ID, iName, iLocation, iItemCount, [Status], [Type])
     SELECT #ID,
@@ -156,10 +157,10 @@ As
         set @locLimit = 0
         set @locStatus = ''
         --
-        SELECT 
-            @locID = #ID, 
+        SELECT
+            @locID = #ID,
             @contCount = Containers,
-            @locLimit = Limit, 
+            @locLimit = Container_Limit,
             @locStatus = [Status]
         FROM  V_Material_Location_List_Report
         WHERE Location = @location
@@ -181,7 +182,7 @@ As
         ---------------------------------------------------
         -- is location suitable?
         ---------------------------------------------------
-        
+
         if @locStatus <> 'Active'
         begin
             set @message = 'Location "' + @location + '" is not in the "Active" state'
@@ -271,13 +272,13 @@ return 0
     ---------------------------------------------------
     -- update containers to be at new location
     ---------------------------------------------------
-    
+
     UPDATE T_Material_Containers
-    SET 
+    SET
         Location_ID = @locID,
-        Status = CASE @mode 
+        Status = CASE @mode
                     WHEN 'retire_container'              THEN 'Inactive'
-                    WHEN 'retire_container_and_contents' THEN 'Inactive' 
+                    WHEN 'retire_container_and_contents' THEN 'Inactive'
                     WHEN 'unretire_container'            THEN 'Active'
                     ELSE Status
                  END
@@ -315,14 +316,14 @@ return 0
     ---------------------------------------------------
     --
     INSERT INTO T_Material_Log (
-        Type, 
-        Item, 
-        Initial_State, 
-        Final_State, 
+        Type,
+        Item,
+        Initial_State,
+        Final_State,
         User_PRN,
         Comment
-    ) 
-    SELECT 
+    )
+    SELECT
         @moveType,
         iName,
         iLocation,
@@ -330,7 +331,7 @@ return 0
         @callingUser,
         @comment
     FROM @material_container_list
-    WHERE iLocation <> @location Or 
+    WHERE iLocation <> @location Or
           @mode <> 'move_container'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -341,10 +342,11 @@ return 0
         set @message = 'Error making log entries'
         return 51027
     end
-    
+
     commit transaction @transName
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialContainers] TO [DDL_Viewer] AS [dbo]
