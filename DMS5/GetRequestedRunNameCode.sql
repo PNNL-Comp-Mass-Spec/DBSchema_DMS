@@ -7,7 +7,7 @@ GO
 CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Generates the Name Code string for a given requested run
 **      This string is used when grouping requested runs for run planning purposes
 **
@@ -25,8 +25,8 @@ CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
 **          08/10/2010 mem - Added @datasetTypeID and @separationType
 **                         - Increased size of return string to varchar(64)
 **          08/26/2021 mem - Use Batch ID instead of PRN
-**            
-**    
+**          06/22/2022 mem - Remove parameter @batchRequesterPRN since unused
+**
 *****************************************************/
 (
     @requestName varchar(128),
@@ -35,29 +35,28 @@ CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
     @batchID int,
     @batchName varchar(128),
     @batchCreated datetime,
-    @batchRequesterPRN varchar(64),
     @datasetTypeID int,
     @separationType varchar(32)
 )
 RETURNS varchar(64)
 AS
 BEGIN
-    Return CASE WHEN @batchID = 0 
+    Return CASE WHEN @batchID = 0
                 THEN
-                    SUBSTRING(@requestName, 1, 3) + '_' + 
-                    CONVERT(varchar(10), @requestCreated, 112) + '_' + 
-                    'R_' + 
+                    SUBSTRING(@requestName, 1, 3) + '_' +
+                    CONVERT(varchar(10), @requestCreated, 112) + '_' +
+                    'R_' +
                     @requesterPRN + '_' +
                     CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
                     IsNull(@separationType, '')
                 ELSE
-                    SUBSTRING(@batchName, 1, 3) + '_' + 
-                    CONVERT(varchar(10), @batchCreated, 112) + '_' + 
-                    'B_' + 
+                    SUBSTRING(@batchName, 1, 3) + '_' +
+                    CONVERT(varchar(10), @batchCreated, 112) + '_' +
+                    'B_' +
                     CAST(@batchID AS VarChar(12)) + '_' +
                     CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
                     IsNull(@separationType, '')
-                    
+
            END
 END
 

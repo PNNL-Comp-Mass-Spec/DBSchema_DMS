@@ -363,7 +363,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_u_Requested_Run] on [dbo].[T_Requested_Run]
+CREATE TRIGGER [dbo].[trig_u_Requested_Run] on [dbo].[T_Requested_Run]
 After Insert, Update
 /****************************************************
 **
@@ -376,7 +376,8 @@ After Insert, Update
 **          06/27/2018 mem - Update the Updated column
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          10/20/2020 mem - Change Queue_State to 3 (Analyzed) if the requested run status is Completed
-**    
+**          06/22/2022 mem - No longer pass the username of the batch owner to GetRequestedRunNameCode
+**
 *****************************************************/
 AS
     If @@RowCount = 0
@@ -394,15 +395,13 @@ AS
     Begin
         UPDATE T_Requested_Run
         SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
-                                                         RR.RDS_BatchID, RRB.Batch, RRB.Created, U.U_PRN,
+                                                         RR.RDS_BatchID, RRB.Batch, RRB.Created,
                                                          RR.RDS_type_ID, RR.RDS_Sec_Sep)
         FROM T_Requested_Run RR
              INNER JOIN inserted
                ON RR.ID = inserted.ID
              LEFT OUTER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
-             INNER JOIN T_Users U
-               ON RRB.Owner = U.ID
     End
     
     If Update(RDS_Status)
