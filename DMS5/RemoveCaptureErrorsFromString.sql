@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.RemoveCaptureErrorsFromString
+CREATE FUNCTION [dbo].[RemoveCaptureErrorsFromString]
 /****************************************************
 **
 **	Desc:	Removes common dataset capture error messages
@@ -15,6 +15,7 @@ CREATE FUNCTION dbo.RemoveCaptureErrorsFromString
 **	Date:	08/08/2017 mem - Initial version
 **			08/16/2017 mem - Add "Error running OpenChrom"
 **			11/22/2017 mem - Add "Authentication failure: The user name or password is incorrect."
+**          06/23/2022 mem - Bug fix: pass @updatedComment to RemoveFromString() instead of @comment
 **
 *****************************************************/
 (
@@ -24,9 +25,9 @@ RETURNS varchar(2048)
 AS
 Begin
  
-	Declare @updatedComment varchar(2048)
+	Declare @updatedComment varchar(2048) = Coalesce(@comment, '')
 	
-	DECLARE @commentsToRemove TABLE
+	Declare @commentsToRemove TABLE
 	(
 		CommentID int identity(1,1),
 		Comment varchar(2048)
@@ -59,7 +60,7 @@ Begin
 		End
 		Else
 		Begin
-			Set @updatedComment = dbo.RemoveFromString(@comment, @textToFind)		
+			Set @updatedComment = dbo.RemoveFromString(@updatedComment, @textToFind)		
 		End
 	End
 	
