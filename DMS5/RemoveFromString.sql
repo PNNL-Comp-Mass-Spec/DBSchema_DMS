@@ -4,20 +4,21 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION dbo.RemoveFromString
+CREATE FUNCTION [dbo].[RemoveFromString]
 /****************************************************
 **
 **	Desc:	Removes the specified text from the parent string, including
 **			removing any comma or semicolon delimiter that precedes the text
 **
-**			If @textToRemove ends in a percent sign, this function will also remove text
+**			If @textToRemove ends in a percent sign (wildcard symbol), this function will also remove text
 **			following @textToRemove, continuing to the next delimiter (comma, semicolon, or end of string)
 **
-**	Returns the updated string
+**	Returns the updated text
 **
 **	Auth:	mem
 **	Date:	10/25/2016 mem - Initial version
 **			08/08/2017 mem - Add support for @textToRemove ending in %
+**          06/23/2022 mem - Move logic that handles wildcards (percent signs) outside the while loop
 **
 *****************************************************/
 (
@@ -37,8 +38,32 @@ Begin
 			
 	If IsNull(@text, '') = ''
 		Set @text = ''
-
-	If IsNull(@textToRemove, '') <> ''
+        
+	If Right(@textToRemove, 1) = '%'
+	Begin
+		Set @matchPos = PatIndex('%' + @textToRemove, @text)
+				
+		If @matchPos >= 1
+		Begin
+			Set @nextDelimiter = CharIndex(';', @text, @matchPos + 1)
+			If @nextDelimiter = 0
+			Begin
+				Set @nextDelimiter = CharIndex(',', @text, @matchPos + 1)
+			End
+					
+			If @nextDelimiter > 1
+			Begin
+				Set @text = 
+					Rtrim(Left(@text, @matchPos-1) + 
+					LTrim(Substring(@text, @nextDelimiter + 1, Len(@text))))
+			End
+			Else
+			Begin
+				Set @text = Rtrim(Left(@text, @matchPos-1))
+			End
+		End
+	End
+    Else If IsNull(@textToRemove, '') <> ''
 	Begin
 		While @iteration <= 4
 		Begin
@@ -52,36 +77,8 @@ Begin
 				Set @textToFind = ',' + @textToRemove
 			If @iteration = 4
 				Set @textToFind = @textToRemove
-
-			If Right(@textToRemove, 1) = '%'
-			Begin
-				Set @matchPos = PatIndex('%' + @textToRemove, @text)
-				
-				If @matchPos >= 1
-				Begin
-					Set @nextDelimiter = CharIndex(';', @text, @matchPos + 1)
-					If @nextDelimiter = 0
-					Begin
-						Set @nextDelimiter = CharIndex(',', @text, @matchPos + 1)
-					End
-					
-					If @nextDelimiter > 1
-					Begin
-						Set @text = 
-							Rtrim(Left(@text, @matchPos-1) + 
-							LTrim(Substring(@text, @nextDelimiter + 1, Len(@text))))
-					End
-					Else
-					Begin
-						Set @text = Rtrim(Left(@text, @matchPos-1))
-					End
-				End
-			End
-			Else
-			Begin
-				Set @text = Replace(@text, @textToFind, '')
-			End
-
+			
+			Set @text = Replace(@text, @textToFind, '')
 			Set @iteration = @iteration + 1
 		End		
 	End
