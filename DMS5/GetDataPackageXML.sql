@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE FUNCTION [dbo].[GetDataPackageXML]
 /****************************************************
 **
@@ -14,11 +15,12 @@ CREATE FUNCTION [dbo].[GetDataPackageXML]
 **          05/06/2012 grk - Added support for experiments
 **          06/08/2022 mem - Rename package type field to Package_Type
 **                         - Rename package comment field to Package_Comment
+**          06/18/2022 mem - Add support for returning XML for all of the sections by setting @options to 'All'
 **    
 *****************************************************/
 (
     @DataPackageID INT,
-    @options VARCHAR(256) -- 'Parameters, Experiments, Datasets, Jobs, Paths'
+    @options VARCHAR(256) -- 'Parameters', 'Experiments', 'Datasets', 'Jobs', 'Paths', or 'All'
 )
 RETURNS VARCHAR(MAX)
 AS
@@ -27,13 +29,22 @@ BEGIN
     DECLARE @result VARCHAR(MAX) = ''
     DECLARE @crlf VARCHAR(2) = CHAR(13)
 
+    Declare @includeAll Tinyint
+
+    Set @options = LTrim(RTrim(Coalesce(@options, '')))
+
+    If @options = '' Or @options = 'All'
+        Set @includeAll = 1;
+    Else
+        Set @includeAll = 0;
+
     SET @result = @result + '<data_package>'  + @crlf
     
     ---------------------------------------------------
     -- data package parameters
     ---------------------------------------------------
     
-    IF CHARINDEX('Parameters', @options) > 0
+    If @includeAll > 0 Or CHARINDEX('Parameters', @options) > 0
     BEGIN --<a>
         SET @result = @result + '<general>' + @crlf
 
@@ -67,7 +78,7 @@ BEGIN
     -- experiment details
     ---------------------------------------------------
     
-    IF CHARINDEX('Experiments', @options) > 0
+    If @includeAll > 0 Or CHARINDEX('Experiments', @options) > 0
     BEGIN --<e>
         SET @result = @result + @crlf + '<experiments>' + @crlf
     
@@ -99,7 +110,7 @@ BEGIN
     -- dataset details
     ---------------------------------------------------
 
-    IF CHARINDEX('Datasets', @options) > 0
+    If @includeAll > 0 Or CHARINDEX('Datasets', @options) > 0
     BEGIN --<d>
         SET @result = @result + @crlf + '<datasets>' + @crlf
     
@@ -128,7 +139,7 @@ BEGIN
     -- job details
     ---------------------------------------------------
 
-    IF CHARINDEX('Jobs', @options) > 0
+    If @includeAll > 0 Or CHARINDEX('Jobs', @options) > 0
     BEGIN --<b>
         SET @result = @result + @crlf + '<jobs>' + @crlf
     
@@ -141,7 +152,7 @@ BEGIN
                     VMA.Parameter_File,
                     VMA.Settings_File,
                     VMA.[Protein Collection List] AS Protein_Collection_List,
-                    VMA.[Protein Options],
+                    VMA.[Protein Options] As Protein_Options,
                     VMA.Comment,
                     VMA.State,
                     DPJ.Package_Comment
@@ -160,7 +171,7 @@ BEGIN
     -- job archive paths
     ---------------------------------------------------
     
-    IF CHARINDEX('Paths', @options) > 0
+    If @includeAll > 0 Or CHARINDEX('Paths', @options) > 0
     BEGIN --<c>
         
         SET @result = @result + @crlf + '<paths>'
