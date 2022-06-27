@@ -55,7 +55,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Emory-Standard',105,'Datasets acquired
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-FHCRC-Standard',9,'Datasets acquired at FHCRC',0,'Other',0,'11/17/2005 4:54:11 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-IMER-ND_2hr',106,'IMER cart, but no digestion (bypass the IMER column); 2 hour separation',1,'LC-IMER-ND_2hr',1,'5/15/2018 7:54:09 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-IMER-ND_3hr',107,'IMER cart, but no digestion (bypass the IMER column); 3 hour separation',1,'LC-IMER-ND_3hr',1,'5/15/2018 7:54:09 PM')
-INSERT INTO [T_Secondary_Sep] VALUES ('LC-IMER_2hr',84,'LC system with online trypsin digestion, 2 hour separation',1,'LC-IMER_2hr',1,'5/18/2015 3:37:43 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-IMER_2hr',84,'LC system with online trypsin digestion, 2 hour separation',0,'LC-IMER_2hr',1,'5/18/2015 3:37:43 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-IMER_3hr',85,'LC system with online trypsin digestion, 3 hour separation',1,'LC-IMER_3hr',1,'6/8/2015 10:04:33 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-IMER_5hr',86,'LC system with online trypsin digestion, 5 hour separation',0,'LC-IMER_5hr',1,'6/9/2015 2:15:17 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ISCO-Formic_100minute',18,'ISCO system, formic acid solvent, 100 minute separation (exponential dilution gradient)',0,'LC-Formic_100min',1,'11/7/2007 11:13:01 PM')

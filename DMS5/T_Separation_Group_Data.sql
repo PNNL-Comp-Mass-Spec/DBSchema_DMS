@@ -25,7 +25,7 @@ INSERT INTO [T_Separation_Group] VALUES ('LC-HiFlow','High flow LC (analytical L
 INSERT INTO [T_Separation_Group] VALUES ('LC-HILIC','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IMER-ND_2hr','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IMER-ND_3hr','',1,0,0)
-INSERT INTO [T_Separation_Group] VALUES ('LC-IMER_2hr','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-IMER_2hr','',0,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IMER_3hr','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IMER_5hr','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IntactProtein_200min','',1,1,0)
