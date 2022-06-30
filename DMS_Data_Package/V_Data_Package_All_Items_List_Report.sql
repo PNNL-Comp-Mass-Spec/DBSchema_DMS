@@ -1,9 +1,10 @@
-/****** Object:  View [dbo].[V_Data_Package_AllItems_List_Report] ******/
+/****** Object:  View [dbo].[V_Data_Package_All_Items_List_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Data_Package_AllItems_List_Report
+
+CREATE VIEW [dbo].[V_Data_Package_All_Items_List_Report]
 AS
 SELECT     Data_Package_ID AS ID, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Job" id="' + CONVERT(varchar(128), Job) + '"/>' AS [Sel.],
                       'Job' AS Item_Type, CONVERT(varchar(128), Job) AS Item, Dataset AS Parent_Entity, Tool AS Info, Item_Added, Package_Comment, 1 AS SortKey
@@ -23,7 +24,7 @@ FROM         dbo.T_Data_Package_Biomaterial
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_AllItems_List_Report] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_All_Items_List_Report] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[V_Data_Package_AllItems_List_Report] TO [DMS_SP_User] AS [dbo]
+GRANT SELECT ON [dbo].[V_Data_Package_All_Items_List_Report] TO [DMS_SP_User] AS [dbo]
 GO
