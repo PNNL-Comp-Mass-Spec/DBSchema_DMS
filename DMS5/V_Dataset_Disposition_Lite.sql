@@ -6,7 +6,7 @@ GO
 
 CREATE view [dbo].[V_Dataset_Disposition_Lite] as
 SELECT ID,
-       [Sel.],
+       [Sel],
        Dataset,
        SMAQC,
        [LC Cart],

@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Material_Move_Containers_List_Report]
 AS
 SELECT MC.Tag AS Container,
-       '' AS [Sel.],
+       '' AS [Sel],
        MC.Type,
        ML.Tag AS Location,
        COUNT(ContentsQ.Material_ID) AS Items,

@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Assignment]
 AS
-SELECT '' AS [Sel.],
+SELECT '' AS [Sel],
        SPR.ID,
        SPR.Created,
        SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],

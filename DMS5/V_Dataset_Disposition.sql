@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Dataset_Disposition] 
 AS
 SELECT DS.Dataset_ID AS ID,
-       '' AS [Sel.],
+       '' AS [Sel],
        DS.Dataset_Num AS Dataset,
        SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS QC_Link,
        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + InstName.In_Name AS SMAQC,
