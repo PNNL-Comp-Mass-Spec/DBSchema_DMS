@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-create VIEW V_Pipeline_Jobs_History_Detail_Report
+CREATE VIEW [dbo].[V_Pipeline_Jobs_History_Detail_Report]
 AS
 SELECT J.Job,
        J.Priority,
@@ -14,8 +13,6 @@ SELECT J.Job,
        J.State AS Job_State_ID,
        ISNULL(JS.Steps, 0) AS Steps,
        J.Dataset,
-       AJ.AJ_settingsFileName AS Settings_File,
-       AJ.AJ_parmFileName AS Parameter_File,
        J.Results_Folder_Name,
        J.Imported,
        J.Start,
@@ -32,8 +29,6 @@ FROM dbo.T_Jobs_History AS J
                        WHERE Most_Recent_Entry = 1
                        GROUP BY Job ) JS
        ON J.Job = JS.Job
-     LEFT OUTER JOIN dbo.S_DMS_T_Analysis_Job AS AJ
-       ON J.Job = AJ.AJ_jobID
 WHERE J.Most_Recent_Entry = 1
 
 GO
