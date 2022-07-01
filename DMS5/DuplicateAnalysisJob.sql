@@ -16,16 +16,17 @@ CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
 **          01/28/2016 mem - Added parameter @newSettingsFile
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          06/30/2022 mem - Rename parameter file argument
-**    
+**          07/01/2022 mem - Rename parameter file column when previewing the new job
+**
 *****************************************************/
 (
-    @job int,                                -- Job number to copy
-    @newComment varchar(512) = '',            -- New job comment; use old comment if blank
+    @job int,                               -- Job number to copy
+    @newComment varchar(512) = '',          -- New job comment; use old comment if blank
     @overrideNoExport smallint = -1,        -- 0 for export, 1 for No Export, -1 to leave unchanged
-    @appendOldJobToComment tinyint = 1,        -- If 1 append "Compare to job 0000" to the comment
-    @newSettingsFile varchar(255) = '',        -- Use to change the settings file
-    @infoOnly tinyint = 0,                    -- 0 to create the job, 1 to preview
-    @message varchar(512) = '' output        -- Output message
+    @appendOldJobToComment tinyint = 1,     -- If 1 append "Compare to job 0000" to the comment
+    @newSettingsFile varchar(255) = '',     -- Use to change the settings file
+    @infoOnly tinyint = 0,                  -- 0 to create the job, 1 to preview
+    @message varchar(512) = '' output       -- Output message
 )
 As
     set nocount on
@@ -34,7 +35,7 @@ As
     declare @myRowCount int
     set @myError = 0
     set @myRowCount = 0
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -46,12 +47,12 @@ As
     Set @newSettingsFile = IsNull(@newSettingsFile, '')
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
-    
+
     If @job = 0
     Begin
         Set @message = '@job is invalid'
         Select @message as Error
-        
+
         Goto Done
     End
 
@@ -69,7 +70,7 @@ As
     Declare @comment varchar(512)
     Declare @specialProcessing varchar(512)
     Declare @propMode smallint
-    
+
     ---------------------------------------------------
     -- Lookup the job values in T_Analysis_Job
     ---------------------------------------------------
@@ -102,13 +103,13 @@ As
     Begin
         Set @message = 'Job not found: ' + Cast(@job as varchar(11))
         Select @message as Error
-        
+
         Goto Done
     End
-    
+
     If @newComment <> ''
         Set @comment = @newComment
-    
+
     If @appendOldJobToComment <> 0
     Begin
         Declare @oldJobInfo varchar(24) = 'Compare to job ' + Cast(@job as varchar(12))
@@ -119,10 +120,10 @@ As
         Set @settingsFileName = @newSettingsFile
 
     Declare @propagationMode varchar(24)
-    
+
     If @overrideNoExport >= 0
         Set @propMode = @overrideNoExport
-        
+
     If @propMode <> 0
         Set @propagationMode = 'No Export'
     Else
@@ -133,7 +134,7 @@ As
         SELECT @dataset AS dataset,
                @priority AS priority,
                @toolName AS toolName,
-               @paramFileName AS parmFileName,
+               @paramFileName AS paramFileName,
                @settingsFileName AS settingsFileName,
                @organismName AS organismName,
                @protCollNameList AS protCollNameList,
@@ -146,7 +147,7 @@ As
     End
 
     Declare @newJob varchar(32)
-    
+
     -- Call the stored procedure to create/preview the job creation
     EXEC @myError = AddUpdateAnalysisjob
         @dataset,
@@ -182,13 +183,14 @@ As
                 Set @message = 'AddUpdateAnalysisjob returned error code = ' + Cast(@myError as varchar(12))
             Select @message as Error
         End
-        
-        
+
+
     End
-    
+
 Done:
-    
+
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DuplicateAnalysisJob] TO [DDL_Viewer] AS [dbo]

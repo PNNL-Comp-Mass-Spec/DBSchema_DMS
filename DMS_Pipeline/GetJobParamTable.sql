@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          12/12/2018 mem - Update comments and capitalization
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
 **                         - Cast ProteinCollectionList to varchar(4000)
+**          07/01/2022 mem - Rename job parameters to ParamFileName and ParamFileStoragePath
 **
 *****************************************************/
 (
@@ -80,10 +81,10 @@ AS
           CAST(Dataset_Storage_Path As varchar(4000))           AS DatasetStoragePath,
           CAST(Transfer_Folder_Path As varchar(4000))           AS transferFolderPath,
           CAST(InstrumentDataPurged As varchar(4000))           AS InstrumentDataPurged,
-          CAST(ParamFileName As varchar(4000))                  AS ParmFileName,
+          CAST(ParamFileName As varchar(4000))                  AS ParamFileName,
           CAST(SettingsFileName As varchar(4000))               AS SettingsFileName,
           CAST(Special_Processing As varchar(4000))             AS Special_Processing,
-          CAST(ParamFileStoragePath As varchar(4000))           AS ParmFileStoragePath,     -- Storage path for the primary tool of the script
+          CAST(ParamFileStoragePath As varchar(4000))           AS ParamFileStoragePath,     -- Storage path for the primary tool of the script
           CAST(OrganismDBName As varchar(4000))                 AS legacyFastaFileName,
           CAST(ProteinCollectionList As varchar(4000))          AS ProteinCollectionList,
           CAST(ProteinOptionsList As varchar(4000))             AS ProteinOptions,
@@ -109,10 +110,10 @@ AS
         DatasetArchivePath,
         transferFolderPath,
         InstrumentDataPurged,
-        ParmFileName,
+        ParamFileName,
         SettingsFileName,
         Special_Processing,
-        ParmFileStoragePath,
+        ParamFileStoragePath,
         legacyFastaFileName,
         ProteinCollectionList,
         ProteinOptions,
@@ -131,13 +132,13 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-      ---------------------------------------------------
+    ---------------------------------------------------
     -- Simulate section association for step tool
     ---------------------------------------------------
     --
     UPDATE #T_Tmp_ParamTab
     SET [Section] = 'PeptideSearch'
-    WHERE [Name] in ('ParmFileName', 'ParmFileStoragePath', 'OrganismName',  'legacyFastaFileName',  'ProteinCollectionList',  'ProteinOptions')
+    WHERE [Name] in ('ParamFileName', 'ParamFileStoragePath', 'OrganismName',  'legacyFastaFileName',  'ProteinCollectionList',  'ProteinOptions')
 
     ---------------------------------------------------
     -- Possibly override the settings file name
@@ -406,6 +407,7 @@ AS
     ORDER BY [Section], [Name]
 
     RETURN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [DDL_Viewer] AS [dbo]

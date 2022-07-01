@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Creates analysis jobs for a given list of
 **      analysis job requests
 **
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 **          04/08/2015 mem - Now parsing the job request list using udfParseDelimitedIntegerList
 **          04/11/2022 mem - Expand @protCollNameList to varchar(4000)
 **          06/30/2022 mem - Rename parameter file argument
+**          07/01/2022 mem - Rename parameter file column in temporary table
 **
 *****************************************************/
 (
@@ -34,7 +35,7 @@ CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 As
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @requestID int
     Declare @toolName varchar(64)
     Declare @paramFileName varchar(255)
@@ -48,7 +49,7 @@ As
     Declare @protCollNameList varchar(4000)
     Declare @protCollOptionsList varchar(256)
     Declare @message varchar(512)
-    
+
     -------------------------------------------------
     -- Temporary table to hold job requests
     -------------------------------------------------
@@ -56,7 +57,7 @@ As
     CREATE TABLE #TRL (
         requestID int,
         toolName varchar(64),
-        parmFileName varchar(255),
+        paramFileName varchar(255),
         settingsFileName varchar(255),
         organismDBName varchar(128),
         organismName varchar(128),
@@ -67,8 +68,8 @@ As
         protCollNameList varchar(4000),
         protCollOptionsList varchar(256),
         stateName varchar(24)
-    )    
-    --    
+    )
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
 
@@ -78,7 +79,7 @@ As
     INSERT INTO #TRL (
         requestID,
         toolName,
-        parmFileName,
+        paramFileName,
         settingsFileName,
         organismDBName,
         organismName,
@@ -104,10 +105,10 @@ As
       prot_coll_name_list,
       prot_coll_options_list,
       State
-    FROM   
+    FROM
       V_Analysis_Job_Request_Entry
     WHERE request_id IN (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@jobRequestList, ','))
-    --    
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
 
@@ -119,7 +120,7 @@ As
         result int,
         description varchar(512)
     )
-    --    
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
 
@@ -131,7 +132,7 @@ As
     FROM #TRL INNER JOIN
          dbo.T_Analysis_Job_Request AJR ON #TRL.requestID = AJR.AJR_requestID
     WHERE AJR.AJR_state <> 1
-    --    
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
 
@@ -139,14 +140,14 @@ As
     Begin
         -- Remove the invalid rows from #TRL
         DELETE #TRL
-        FROM #TRL INNER JOIN 
+        FROM #TRL INNER JOIN
              #XRS ON #TRL.requestID = #XRS.requestID
-             
+
         -- Continue only if @mode is <> 'add'
         if @mode = 'add'
             Goto ReportResults
     End
-        
+
 
     -------------------------------------------------
     -- Cycle through each request,
@@ -161,7 +162,7 @@ As
     set @done = 0
     set @result = 0
     set @requestID = 0
-    
+
     while @done = 0
     begin -- <a>
         -------------------------------------------------
@@ -172,12 +173,12 @@ As
         -- Get next request to process
         -------------------------------------------------
         SELECT TOP 1 @requestID = requestID
-        FROM #TRL 
+        FROM #TRL
         WHERE requestID > @requestID
         ORDER BY requestID
-        --    
-        SELECT @myError = @@error, @myRowCount = @@rowcount        
-        
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
         -------------------------------------------------
         -- done, if no more requests
         -------------------------------------------------
@@ -190,7 +191,7 @@ As
             -------------------------------------------------
             SELECT
                 @toolName =  toolName,
-                @paramFileName = parmFileName,
+                @paramFileName = paramFileName,
                 @settingsFileName = settingsFileName,
                 @organismDBName = organismDBName,
                 @organismName = organismName,
@@ -202,7 +203,7 @@ As
                 @protCollOptionsList = protCollOptionsList
             FROM #TRL
             WHERE requestID = @requestID
-            --    
+            --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
 
@@ -210,7 +211,7 @@ As
             -- Check for existing jobs
             -------------------------------------------------
             Set @ExistingJobCount = 0
-            
+
             SELECT @ExistingJobCount = COUNT(*)
             FROM dbo.T_Analysis_Job
             WHERE AJ_RequestID = @requestID
@@ -225,7 +226,7 @@ As
             End
             Else
                 Set @ExistingJobMsg = ''
-            
+
 
             -------------------------------------------------
             -- Use it to make a bunch of jobs
@@ -247,13 +248,13 @@ As
                                 @associatedProcessorGroup=@associatedProcessorGroup,
                                 @propagationMode=@propagationMode,
                                 @removeDatasetsWithJobs='Y',
-                                @mode=@mode, 
+                                @mode=@mode,
                                 @message=@message output
 
             Set @message = IsNull(@message, '')
             If @ExistingJobCount > 0
                 Set @message = @ExistingJobMsg + '; ' + @message
-            
+
             -------------------------------------------------
             -- Keep track of results
             -------------------------------------------------
@@ -262,7 +263,7 @@ As
             VALUES     (@requestID, @result, @message)
         end -- </b>
 
-            
+
     end -- </a>
 
 ReportResults:
@@ -270,11 +271,12 @@ ReportResults:
     -------------------------------------------------
     -- Report results
     -------------------------------------------------
-    SELECT * 
+    SELECT *
     FROM #XRS
     ORDER BY requestID
-    
+
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [DDL_Viewer] AS [dbo]

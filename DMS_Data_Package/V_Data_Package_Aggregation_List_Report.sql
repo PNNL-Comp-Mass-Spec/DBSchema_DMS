@@ -16,7 +16,7 @@ SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS [Sel],
            WHEN TJ.Job IS NULL THEN 'No'
            ELSE 'Yes'
        END AS In_Package,
-       TM.[Parm File],
+       TM.[Param File],
        TM.Settings_File,
        TD.Data_Package_ID,
        TM.[Organism DB],

@@ -16,8 +16,8 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          <Param Section="JobParameters" Name="CreateMzMLFiles" Value="False" />
 **          <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\MaxQuant_Staging" />
 **          <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
-**          <Param Section="PeptideSearch" Name="ParmFileName" Value="MaxQuant_Tryp_Stat_CysAlk_Dyn_MetOx_NTermAcet_20ppmParTol.xml" />
-**          <Param Section="PeptideSearch" Name="ParmFileStoragePath" Value="\\gigasax\DMS_Parameter_Files\MaxQuant" />
+**          <Param Section="PeptideSearch" Name="ParamFileName" Value="MaxQuant_Tryp_Stat_CysAlk_Dyn_MetOx_NTermAcet_20ppmParTol.xml" />
+**          <Param Section="PeptideSearch" Name="ParamFileStoragePath" Value="\\gigasax\DMS_Parameter_Files\MaxQuant" />
 **          <Param Section="PeptideSearch" Name="OrganismName" Value="Homo_Sapiens" />
 **          <Param Section="PeptideSearch" Name="ProteinCollectionList" Value="TBD" />
 **          <Param Section="PeptideSearch" Name="ProteinOptions" Value="seq_direction=forward,filetype=fasta" />
@@ -59,6 +59,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **                         - If VerifyJobParameters returns an error, return the error message in @message
 **          01/31/2022 mem - Add more print statements to aid debugging
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
+**          07/01/2022 mem - Update parameter names in comments
 **
 *****************************************************/
 (
@@ -383,6 +384,7 @@ AS
 
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [DDL_Viewer] AS [dbo]

@@ -79,6 +79,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          03/03/2022 mem - Add support for MSFragger options AutoDefineExperimentGroupWithDatasetName and AutoDefineExperimentGroupWithExperimentName
 **          03/17/2022 mem - Log errors only after parameters have been validated
 **          06/30/2022 mem - Rename parameter file argument
+**          07/01/2022 mem - Rename auto generated parameters to use ParamFileName and ParamFileStoragePath
 **
 *****************************************************/
 (
@@ -702,8 +703,8 @@ As
                 <Param Section="MSXMLGenerator" Name="MSXMLOutputType" Value="' + @msXMLOutputType + '" />
                 <Param Section="MSXMLGenerator" Name="CentroidMSXML" Value="' + @centroidMSXML + '" />
                 <Param Section="MSXMLGenerator" Name="CentroidPeakCountToRetain" Value="' + @centroidPeakCountToRetain + '" />
-                <Param Section="PeptideSearch" Name="ParmFileName" Value="' + @paramFileName + ' " />
-                <Param Section="PeptideSearch" Name="ParmFileStoragePath" Value="' + @paramFileStoragePath + '" />
+                <Param Section="PeptideSearch" Name="ParamFileName" Value="' + @paramFileName + ' " />
+                <Param Section="PeptideSearch" Name="ParamFileStoragePath" Value="' + @paramFileStoragePath + '" />
                 <Param Section="PeptideSearch" Name="OrganismName" Value="' + @organismName + ' " />
                 <Param Section="PeptideSearch" Name="ProteinCollectionList" Value="' + @protCollNameList + '" />
                 <Param Section="PeptideSearch" Name="ProteinOptions" Value="' +  @protCollOptionsList + '" />
@@ -734,7 +735,7 @@ As
                     Set @jobParam = @jobParam +
                     '<Param Section="Philosopher" Name="AutoDefineExperimentGroupWithDatasetName" Value="' + @autoDefineExperimentGroupWithDatasetName + '" />'
                 End
-                
+
                 If Coalesce(@autoDefineExperimentGroupWithExperimentName, '') <> ''
                 Begin
                     Set @jobParam = @jobParam +
@@ -1328,6 +1329,7 @@ Explain:
     End Catch
 
     return @myError
+
 
 
 GO

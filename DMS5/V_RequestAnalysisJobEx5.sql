@@ -10,9 +10,9 @@ SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS JobNum,
        DS.Dataset_Num AS DatasetNum,
        DS.DS_folder_name AS DatasetFolderName,
        ArchPath.AP_network_share_path AS DatasetStoragePath,
-       AJ.AJ_parmFileName AS ParmFileName,
+       AJ.AJ_parmFileName AS ParamFileName,
        AJ.AJ_settingsFileName AS SettingsFileName,
-       Tool.AJT_parmFileStoragePath AS ParmFileStoragePath,
+       Tool.AJT_parmFileStoragePath AS ParamFileStoragePath,
        AJ.AJ_organismDBName AS legacyFastaFileName,
        AJ.AJ_proteinCollectionList AS ProteinCollectionList,
        AJ.AJ_proteinOptionsList AS ProteinOptions,
@@ -47,6 +47,7 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DS.Dataset_ID = DSArch.AS_Dataset_ID
      INNER JOIN dbo.T_Archive_Path AS ArchPath
        ON DSArch.AS_storage_path_ID = ArchPath.AP_path_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_RequestAnalysisJobEx5] TO [DDL_Viewer] AS [dbo]

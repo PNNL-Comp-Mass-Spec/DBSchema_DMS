@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Analysis_Job]
 AS
 SELECT AJ.AJ_jobID AS Job,
@@ -12,9 +11,9 @@ SELECT AJ.AJ_jobID AS Job,
        DS.Dataset_Num AS Dataset,
        DFP.Dataset_Folder_Path AS Dataset_Storage_Path,
 	   DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName As Results_Folder_Path,
-       AJ.AJ_parmFileName AS ParmFileName,
+       AJ.AJ_parmFileName AS ParamFileName,
        AJ.AJ_settingsFileName AS SettingsFileName,
-       AnTool.AJT_parmFileStoragePath AS ParmFileStoragePath,
+       AnTool.AJT_parmFileStoragePath AS ParamFileStoragePath,
        AJ.AJ_organismDBName AS OrganismDBName,
        AJ.AJ_proteinCollectionList AS ProteinCollectionList,
        AJ.AJ_proteinOptionsList AS ProteinOptions,
@@ -57,6 +56,7 @@ FROM T_Analysis_Job AJ
        ON DS.Exp_ID = E.Exp_ID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
+
 
 
 
