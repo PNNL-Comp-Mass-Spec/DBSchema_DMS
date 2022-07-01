@@ -11,7 +11,7 @@ SELECT JS.Job,
        JS.Step_Number AS Step,
        S.Script,
        JS.Step_Tool AS Tool,
-       ParamQ.Settings_File, 
+       ParamQ.Settings_File,
        ParamQ.Parameter_File,
        SSN.Name AS StateName,
        JS.State,
@@ -19,7 +19,7 @@ SELECT JS.Job,
        JS.Finish,
        CASE WHEN (JS.Remote_Info_ID > 1) AND NOT JS.Remote_Start IS NULL
             THEN CONVERT(decimal(9, 1), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) / 60.0)
-            WHEN NOT JS.Finish IS NULL 
+            WHEN NOT JS.Finish IS NULL
             THEN CONVERT(decimal(9, 1), DATEDIFF(SECOND, JS.Start, ISNULL(JS.Finish, GetDate())) / 60.0)
             ELSE NULL
        END AS RunTime_Minutes,
@@ -55,17 +55,18 @@ FROM T_Step_Tool_Versions STV
           JS.Saved = J.Saved
      LEFT OUTER JOIN T_Remote_Info RI
        ON JS.Remote_Info_ID = RI.Remote_Info_ID
-     LEFT OUTER JOIN T_Local_Processors LP 
+     LEFT OUTER JOIN T_Local_Processors LP
        On JS.Processor = LP.Processor_Name
      LEFT OUTER JOIN (
           SELECT Job,
                  Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
-                 Parameters.query('Param[@Name = "ParmFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
-                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
-          FROM [T_Job_Parameters_History] 
+                 Parameters.query('Param[@Name = "ParamFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
+                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path
+          FROM [T_Job_Parameters_History]
           WHERE Most_Recent_Entry = 1
      ) ParamQ ON ParamQ.Job = JS.Job
 WHERE J.Most_Recent_Entry = 1
+
 
 
 GO

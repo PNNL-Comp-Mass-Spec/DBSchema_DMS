@@ -19,20 +19,20 @@ SELECT JS.Job,
        CASE WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) THEN
                 Convert(decimal(9,2), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) / 60.0)
             ELSE
-                Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) 
+                Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0)
        END As Runtime,
-       JS.Processor,      
+       JS.Processor,
        JS.State,
        CASE WHEN JS.State = 9 Or JS.Remote_Info_ID > 1 THEN Convert(DECIMAL(9,2), IsNull(JS.Remote_Progress, 0))
             WHEN JS.State = 4 THEN Convert(DECIMAL(9,2), PS.Progress)
             WHEN JS.State = 5 THEN 100
-            ELSE 0 
+            ELSE 0
        END AS [Job Progress],
        CASE WHEN JS.State = 4 AND JS.Step_Tool = 'XTandem' THEN 0      -- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
             WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) AND IsNull(JS.Remote_Progress, 0) > 0 THEN
                CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) /
                                           (JS.Remote_Progress / 100.0) / 60.0 / 60.0)
-            WHEN JS.State = 4 AND PS.Progress > 0 THEN 
+            WHEN JS.State = 4 AND PS.Progress > 0 THEN
                CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.Start, ISNULL(JS.Finish, GetDate())) /
                                           (PS.Progress / 100.0) / 60.0 / 60.0)
             WHEN JS.State = 5 THEN Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0 / 60.0)
@@ -68,13 +68,14 @@ FROM dbo.T_Job_Steps AS JS
        ON J.State = JSN.ID
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS
       ON JS.Processor = PS.Processor_Name
-     LEFT OUTER JOIN ( 
+     LEFT OUTER JOIN (
           SELECT Job,
                  Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
-                 Parameters.query('Param[@Name = "ParmFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
-                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
-          FROM [T_Job_Parameters] 
+                 Parameters.query('Param[@Name = "ParamFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
+                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path
+          FROM [T_Job_Parameters]
      ) ParamQ ON ParamQ.Job = JS.Job
+
 
 
 GO

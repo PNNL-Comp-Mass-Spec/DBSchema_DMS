@@ -155,7 +155,7 @@ AS
 
         SELECT @parameterFileName = Value
         FROM #TJP
-        WHERE Name = 'ParmFileName'
+        WHERE Name = 'ParamFileName'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -285,6 +285,7 @@ AS
     End
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[VerifyJobParameters] TO [DDL_Viewer] AS [dbo]

@@ -4,26 +4,26 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Job_Steps2] 
+CREATE VIEW [dbo].[V_Job_Steps2]
 AS
-SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State, 
+SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Settings_File, ParamQ.Parameter_File, DataQ.StateName, DataQ.State,
        DataQ.Start, DataQ.Finish, DataQ.RunTime_Minutes, DataQ.LastCPUStatus_Minutes, DataQ.Job_Progress, DataQ.RunTime_Predicted_Hours, DataQ.Processor, DataQ.Process_ID, DataQ.ProgRunner_ProcessID, DataQ.ProgRunner_CoreUsage,
-       CASE WHEN DataQ.ProcessorWarningFlag = 0 
-            THEN 'pskill \\' + DataQ.Machine + ' ' + CAST(DataQ.Process_ID AS varchar(12)) 
+       CASE WHEN DataQ.ProcessorWarningFlag = 0
+            THEN 'pskill \\' + DataQ.Machine + ' ' + CAST(DataQ.Process_ID AS varchar(12))
             ELSE 'Processor Warning'
             END AS Kill_Manager,
-       CASE WHEN DataQ.ProcessorWarningFlag = 0 
-            THEN 'pskill \\' + DataQ.Machine+ ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12)) 
+       CASE WHEN DataQ.ProcessorWarningFlag = 0
+            THEN 'pskill \\' + DataQ.Machine+ ' ' + CAST(DataQ.ProgRunner_ProcessID AS varchar(12))
             ELSE 'Processor Warning'
             END AS Kill_ProgRunner,
        DataQ.Processor_Warning,
        DataQ.Input_Folder, DataQ.Output_Folder, DataQ.Priority, DataQ.Signature, DataQ.Dependencies, DataQ.CPU_Load, DataQ.Actual_CPU_Load, DataQ.Memory_Usage_MB, DataQ.Tool_Version_ID, DataQ.Tool_Version,
-       DataQ.Completion_Code, DataQ.Completion_Message, 
-       DataQ.Evaluation_Code, DataQ.Evaluation_Message, 
-       DataQ.Next_Try, 
+       DataQ.Completion_Code, DataQ.Completion_Message,
+       DataQ.Evaluation_Code, DataQ.Evaluation_Message,
+       DataQ.Next_Try,
        DataQ.Retry_Count,
-       DataQ.Remote_Info_ID, 
-       DataQ.Remote_Info, 
+       DataQ.Remote_Info_ID,
+       DataQ.Remote_Info,
        DataQ.Remote_Timestamp,
        DataQ.Remote_Start,
        DataQ.Remote_Finish,
@@ -32,17 +32,17 @@ SELECT DataQ.Job, DataQ.Dataset, DataQ.Step, DataQ.Script, DataQ.Tool, ParamQ.Se
        DataQ.DataPkgID,
        DataQ.Machine,
        DataQ.WorkDirPath,
-       DataQ.Transfer_Folder_Path, 
+       DataQ.Transfer_Folder_Path,
        ParamQ.Dataset_Storage_Path + DataQ.Dataset AS Dataset_Folder_Path,
-       DataQ.LogFilePath + 
+       DataQ.LogFilePath +
          CASE WHEN YEAR(GetDate()) <> YEAR(DataQ.Start) THEN TheYear + '\'
          ELSE ''
-         END + 
-         'AnalysisMgr_' + 
+         END +
+         'AnalysisMgr_' +
          DataQ.TheYear + '-' +
          CASE WHEN LEN(DataQ.TheMonth) = 1 THEN '0' + TheMonth
          ELSE DataQ.TheMonth
-         END + '-' + 
+         END + '-' +
          CASE WHEN LEN(DataQ.TheDay) = 1 THEN '0' + TheDay
          ELSE DataQ.TheDay
          END +
@@ -70,7 +70,7 @@ FROM ( SELECT JS.Job,
               JS.Output_Folder,
               JS.Priority,
               JS.Signature,
-              JS.Dependencies, 
+              JS.Dependencies,
               JS.CPU_Load,
               JS.Actual_CPU_Load,
               JS.Memory_Usage_MB,
@@ -101,13 +101,14 @@ FROM ( SELECT JS.Job,
             LEFT OUTER JOIN dbo.T_Local_Processors LP
               ON JS.Processor = LP.Processor_Name
     ) DataQ
-    LEFT OUTER JOIN ( 
+    LEFT OUTER JOIN (
           SELECT Job,
                  Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
-                 Parameters.query('Param[@Name = "ParmFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
-                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path                         
-          FROM [T_Job_Parameters] 
+                 Parameters.query('Param[@Name = "ParamFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
+                 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path
+          FROM [T_Job_Parameters]
    ) ParamQ ON ParamQ.Job = DataQ.Job
+
 
 
 GO

@@ -17,7 +17,7 @@ SELECT JS.JobStepSavedCombo AS ID,
        JS.State AS StateID,
        JS.Start,
        JS.Finish,
-       Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) as Runtime_Minutes,      
+       Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) as Runtime_Minutes,
        JS.Processor,
        JS.Input_Folder_Name AS Input_Folder,
        JS.Output_Folder_Name AS Output_Folder,
@@ -41,20 +41,21 @@ FROM dbo.T_Job_Steps_History AS JS
                     FROM T_Jobs_History
 				    WHERE Most_Recent_Entry = 1
 				 ) AS J
-       ON JS.Job = J.Job 
+       ON JS.Job = J.Job
    INNER JOIN dbo.T_Job_State_Name JSN
-       ON J.State = JSN.ID   
-   LEFT OUTER JOIN ( 
+       ON J.State = JSN.ID
+   LEFT OUTER JOIN (
           SELECT Job,
 				 Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
-				 Parameters.query('Param[@Name = "ParmFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
+				 Parameters.query('Param[@Name = "ParamFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
 				 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path
-		  FROM [T_Job_Parameters_History] 
+		  FROM [T_Job_Parameters_History]
 		  WHERE Most_Recent_Entry = 1
      ) ParamQ ON ParamQ.Job = JS.Job
-     LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV 
+     LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
 WHERE Most_Recent_Entry = 1
+
 
 
 
