@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **                         - Updated to convert @comment and @associatedProcessorGroup to '' if null (Ticket #648)
 **          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644, http://prismtrac.pnl.gov/trac/ticket/644)
 **          04/22/2008 mem - Updated to call AlterEnteredByUser when updating T_Analysis_Job_Processor_Group_Associations
-**          09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          02/27/2009 mem - Expanded @comment to varchar(512)
 **          04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
@@ -75,13 +75,14 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          09/05/2018 mem - When @mode is 'add', if @state is 'hold' or 'holding', create the job, but put it on hold (state 8)
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
     @datasetNum varchar(128),
     @priority int = 2,
     @toolName varchar(64),
-    @parmFileName varchar(255),
+    @paramFileName varchar(255),
     @settingsFileName varchar(255),
     @organismName varchar(128),
     @protCollNameList varchar(4000),
@@ -390,7 +391,7 @@ As
     --
     exec @result = ValidateAnalysisJobParameters
                             @toolName = @toolName,
-                            @parmFileName = @parmFileName output,
+                            @paramFileName = @paramFileName output,
                             @settingsFileName = @settingsFileName output,
                             @organismDBName = @organismDBName output,
                             @organismName = @organismName,
@@ -477,7 +478,7 @@ As
                   @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5
                 ) AND
                 AJT.AJT_toolName = @toolName AND
-                AJ.AJ_parmFileName = @parmFileName AND
+                AJ.AJ_parmFileName = @paramFileName AND
                 AJ.AJ_settingsFileName = @settingsFileName AND
                 (
                   ( @protCollNameList = 'na' AND
@@ -545,7 +546,7 @@ As
                    @priority AS AJ_priority,
                    getdate() AS AJ_created,
                    @analysisToolID AS AJ_analysisToolID,
-                   @parmFileName AS AJ_parmFileName,
+                   @paramFileName AS AJ_parmFileName,
                    @settingsFileName AS AJ_settingsFileName,
                    @organismDBName AS AJ_organismDBName,
                    @protCollNameList AS AJ_proteinCollectionList,
@@ -594,7 +595,7 @@ As
                 @priority,
                 getdate(),
                 @analysisToolID,
-                @parmFileName,
+                @paramFileName,
                 @settingsFileName,
                 @organismDBName,
                 @protCollNameList,
@@ -721,7 +722,7 @@ As
                    @priority AS AJ_priority,
                    AJ_created,
                    @analysisToolID AS AJ_analysisToolID,
-                   @parmFileName AS AJ_parmFileName,
+                   @paramFileName AS AJ_parmFileName,
                    @settingsFileName AS AJ_settingsFileName,
                    @organismDBName AS AJ_organismDBName,
                    @protCollNameList AS AJ_proteinCollectionList,
@@ -755,7 +756,7 @@ As
             SET
                 AJ_priority = @priority,
                 AJ_analysisToolID = @analysisToolID,
-                AJ_parmFileName = @parmFileName,
+                AJ_parmFileName = @paramFileName,
                 AJ_settingsFileName = @settingsFileName,
                 AJ_organismDBName = @organismDBName,
                 AJ_proteinCollectionList = @protCollNameList,

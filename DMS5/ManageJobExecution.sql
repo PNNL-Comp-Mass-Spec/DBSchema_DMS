@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[ManageJobExecution]
 /****************************************************
 **
@@ -20,6 +21,7 @@ CREATE PROCEDURE [dbo].[ManageJobExecution]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/31/2021 mem - Expand @organismName to varchar(128)
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
@@ -107,7 +109,7 @@ As
     Declare @assignedProcessor varchar(64)          = @noChangeText
     Declare @associatedProcessorGroup varchar(64)   = @noChangeText
     Declare @propagationMode varchar(24)            = @noChangeText
-    Declare @parmFileName varchar(255)              = @noChangeText
+    Declare @paramFileName varchar(255)              = @noChangeText
     Declare @settingsFileName varchar(255)          = @noChangeText
     Declare @organismName varchar(128)              = @noChangeText
     Declare @protCollNameList varchar(4000)         = @noChangeText
@@ -173,7 +175,7 @@ As
         @assignedProcessor,
         @associatedProcessorGroup,
         @propagationMode,
-        @parmFileName,
+        @paramFileName,
         @settingsFileName,
         @organismName,
         @protCollNameList,

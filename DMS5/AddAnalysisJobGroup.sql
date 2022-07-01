@@ -27,7 +27,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          02/19/2008 grk - add explicit NULL column attribute to #TD
 **          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID (Ticket #644)
 **          05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling AlterEventLogEntryUserMultiID
-**          09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          02/27/2009 mem - Expanded @comment to varchar(512)
 **          04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
@@ -78,13 +78,14 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          02/18/2022 mem - Add MSFragger DatabaseSplitCount to the settings for data package based MSFragger jobs
 **          03/03/2022 mem - Add support for MSFragger options AutoDefineExperimentGroupWithDatasetName and AutoDefineExperimentGroupWithExperimentName
 **          03/17/2022 mem - Log errors only after parameters have been validated
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
     @datasetList varchar(max),                      -- Ignored if @dataPackageID is a positive integer
     @priority int = 2,
     @toolName varchar(64),
-    @parmFileName varchar(255),
+    @paramFileName varchar(255),
     @settingsFileName varchar(255),
     @organismDBName varchar(128),                   -- Legacy FASTA name; 'na' if using protein collections
     @organismName varchar(128),
@@ -282,7 +283,7 @@ As
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 
@@ -296,7 +297,7 @@ As
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
     End
 
-    If (@toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @parmFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
 
@@ -349,7 +350,7 @@ As
         WHERE
             (NOT (AJ.AJ_StateID IN (5))) AND
             AJT.AJT_toolName = @toolName AND
-            AJ.AJ_parmFileName = @parmFileName AND
+            AJ.AJ_parmFileName = @paramFileName AND
             (AJ.AJ_settingsFileName = @settingsFileName OR
              AJ.AJ_settingsFileName = 'na' AND @settingsFileName = 'Decon2LS_DefSettings.xml') AND
             ( (    @protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND
@@ -427,7 +428,7 @@ As
     --
     exec @result = ValidateAnalysisJobParameters
                             @toolName = @toolName,
-                            @parmFileName = @parmFileName output,
+                            @paramFileName = @paramFileName output,
                             @settingsFileName = @settingsFileName output,
                             @organismDBName = @organismDBName output,
                             @organismName = @organismName,
@@ -508,9 +509,9 @@ As
 
         If @toolName In ('MaxQuant', 'MSFragger')
         Begin -- <MaxQuant_MSFragger>
-            Declare @parmFileStoragePath varchar(128)
+            Declare @paramFileStoragePath varchar(128)
 
-            SELECT @parmFileStoragePath = AJT_parmFileStoragePath
+            SELECT @paramFileStoragePath = AJT_parmFileStoragePath
             FROM T_analysis_tool
             WHERE AJT_toolName = @toolName
             --
@@ -701,8 +702,8 @@ As
                 <Param Section="MSXMLGenerator" Name="MSXMLOutputType" Value="' + @msXMLOutputType + '" />
                 <Param Section="MSXMLGenerator" Name="CentroidMSXML" Value="' + @centroidMSXML + '" />
                 <Param Section="MSXMLGenerator" Name="CentroidPeakCountToRetain" Value="' + @centroidPeakCountToRetain + '" />
-                <Param Section="PeptideSearch" Name="ParmFileName" Value="' + @parmFileName + ' " />
-                <Param Section="PeptideSearch" Name="ParmFileStoragePath" Value="' + @parmFileStoragePath + '" />
+                <Param Section="PeptideSearch" Name="ParmFileName" Value="' + @paramFileName + ' " />
+                <Param Section="PeptideSearch" Name="ParmFileStoragePath" Value="' + @paramFileStoragePath + '" />
                 <Param Section="PeptideSearch" Name="OrganismName" Value="' + @organismName + ' " />
                 <Param Section="PeptideSearch" Name="ProteinCollectionList" Value="' + @protCollNameList + '" />
                 <Param Section="PeptideSearch" Name="ProteinOptions" Value="' +  @protCollOptionsList + '" />
@@ -901,7 +902,7 @@ As
                     UPDATE T_Analysis_Job
                     SET AJ_requestID = @requestID,
                         AJ_settingsFileName = @settingsFileName,
-                        AJ_parmFileName = @parmFileName,
+                        AJ_parmFileName = @paramFileName,
                         AJ_organismID = @organismID,
                         AJ_proteinCollectionList = @protCollNameList,
                         AJ_proteinOptionsList = @protCollOptionsList,
@@ -1126,7 +1127,7 @@ As
             @priority,
             getdate(),
             @analysisToolID,
-            @parmFileName,
+            @paramFileName,
             @settingsFileName,
             @organismDBName,
             @protCollNameList,

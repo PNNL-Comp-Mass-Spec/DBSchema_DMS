@@ -28,7 +28,7 @@ SELECT
        PSM.Tool AS PSM_Tool,
        PSM.Campaign,
        PSM.Experiment,
-       PSM.[Parm File] AS PSM_Job_Param_File,
+       PSM.[Param File] AS PSM_Job_Param_File,
        PSM.Settings_File AS PSM_Job_Settings_File,
        PSM.Organism,
        PSM.[Organism DB] AS PSM_Job_Org_DB,

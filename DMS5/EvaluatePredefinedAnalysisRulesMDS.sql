@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE EvaluatePredefinedAnalysisRulesMDS
+CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRulesMDS]
 /****************************************************
 ** 
 **	Desc: 
@@ -27,6 +27,7 @@ CREATE PROCEDURE EvaluatePredefinedAnalysisRulesMDS
 **			02/22/2012 mem - Switched to using a table-variable for dataset names (instead of a physical temporary table)
 **			05/03/2012 mem - Added support for the Special Processing field
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          06/30/2022 mem - Rename parameter file column
 **    
 *****************************************************/
 (
@@ -58,7 +59,7 @@ As
 		datasetNum varchar(128),
 		priority varchar(8),
 		analysisToolName varchar(64),
-		parmFileName varchar(255),
+		paramFileName varchar(255),
 		settingsFileName varchar(128),
 		organismDBName varchar(128),
 		organismName varchar(128),
@@ -155,7 +156,7 @@ As
 		priority as Pri,
 		associatedProcessorGroup as Processor_Group,
 		comment as Comment,
-		parmFileName as [Param_File],
+		paramFileName as [Param_File],
 		settingsFileName as [Settings_File],
 		organismDBName as [OrganismDB_File],
 		organismName as Organism,

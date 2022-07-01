@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
 **  Date:   01/20/2016 mem - Initial version
 **          01/28/2016 mem - Added parameter @newSettingsFile
 **          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/30/2022 mem - Rename parameter file argument
 **    
 *****************************************************/
 (
@@ -58,7 +59,7 @@ As
     Declare @dataset varchar(128)
     Declare @priority int
     Declare @toolName varchar(64)
-    Declare @parmFileName varchar(255)
+    Declare @paramFileName varchar(255)
     Declare @settingsFileName varchar(255)
     Declare @organismName varchar(128)
     Declare @protCollNameList varchar(4000)
@@ -76,7 +77,7 @@ As
     SELECT @dataset = DS.Dataset_Num,
            @priority = J.AJ_priority,
            @toolName = T_Analysis_Tool.AJT_toolName,
-           @parmFileName = J.AJ_parmFileName,
+           @paramFileName = J.AJ_parmFileName,
            @settingsFileName = J.AJ_settingsFileName,
            @organismName = Org.OG_name,
            @protCollNameList = J.AJ_proteinCollectionList,
@@ -132,7 +133,7 @@ As
         SELECT @dataset AS dataset,
                @priority AS priority,
                @toolName AS toolName,
-               @parmFileName AS parmFileName,
+               @paramFileName AS parmFileName,
                @settingsFileName AS settingsFileName,
                @organismName AS organismName,
                @protCollNameList AS protCollNameList,
@@ -151,7 +152,7 @@ As
         @dataset,
         @priority,
         @toolName,
-        @parmFileName,
+        @paramFileName,
         @settingsFileName,
         @organismName,
         @protCollNameList,

@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
 **          01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **          02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648, http://prismtrac.pnl.gov/trac/ticket/648)
-**          09/12/2008 mem - Now passing @parmFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          09/24/2008 grk - Increased size of comment argument (and column in database)(Ticket:692, http://prismtrac.pnl.gov/trac/ticket/692)
 **          12/02/2008 grk - Disallow editing unless in "New" state
 **          09/19/2009 grk - Added field to request admin review (Ticket #747, http://prismtrac.pnl.gov/trac/ticket/747)
@@ -91,13 +91,14 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          10/15/2021 mem - Require that @dataPackageID be defined when using a match between runs parameter file for MaxQuant and MSFragger
 **          03/10/2022 mem - Replace spaces and tabs in the dataset list with commas
 **          05/23/2022 mem - Rename requester argument
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
     @datasets varchar(max),
     @requestName varchar(128),
     @toolName varchar(64),
-    @parmFileName varchar(255),
+    @paramFileName varchar(255),
     @settingsFileName varchar(255),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
@@ -400,7 +401,7 @@ As
     --
     exec @result = ValidateAnalysisJobParameters
                             @toolName = @toolName,
-                            @parmFileName = @parmFileName output,
+                            @paramFileName = @paramFileName output,
                             @settingsFileName = @settingsFileName output,
                             @organismDBName = @organismDBName output,
                             @organismName = @organismName,
@@ -433,7 +434,7 @@ As
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @parmFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 
@@ -565,7 +566,7 @@ As
         RAISERROR ('Use a data package to define datasets when performing a match-between-runs search with MSFragger', 11, 4)
     End
 
-    If @toolName Like 'MaxQuant%'And @dataPackageID = 0 And (@parmFileName Like '%MatchBetweenRun%' Or @parmFileName Like '%MBR%')
+    If @toolName Like 'MaxQuant%'And @dataPackageID = 0 And (@paramFileName Like '%MatchBetweenRun%' Or @paramFileName Like '%MBR%')
     Begin
         RAISERROR ('Use a data package to define datasets when performing a match-between-runs search with MaxQuant', 11, 4)
     End
@@ -631,7 +632,7 @@ As
             @requestName,
             getdate(),
             @toolName,
-            @parmFileName,
+            @paramFileName,
             @settingsFileName,
             @organismDBName,
             @organismID,
@@ -686,7 +687,7 @@ As
     ---------------------------------------------------
     If @mode = 'PreviewAdd'
     Begin
-        Set @message = 'Would create request "' + @requestName + '" with parameter file "' + @parmFileName + '" and settings file "' + @settingsFileName + '"'
+        Set @message = 'Would create request "' + @requestName + '" with parameter file "' + @paramFileName + '" and settings file "' + @settingsFileName + '"'
     End
 
     ---------------------------------------------------
@@ -703,7 +704,7 @@ As
         UPDATE T_Analysis_Job_Request
         SET AJR_requestName = @requestName,
             AJR_analysisToolName = @toolName,
-            AJR_parmFileName = @parmFileName,
+            AJR_parmFileName = @paramFileName,
             AJR_settingsFileName = @settingsFileName,
             AJR_organismDBName = @organismDBName,
             AJR_organism_ID = @organismID,

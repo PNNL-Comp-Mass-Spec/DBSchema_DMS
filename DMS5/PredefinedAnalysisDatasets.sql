@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE PredefinedAnalysisDatasets
+
+CREATE PROCEDURE [dbo].[PredefinedAnalysisDatasets]
 /****************************************************
 ** 
 **  Desc:	Shows datasets that satisfy a given predefined analysis rule 
@@ -23,6 +24,7 @@ CREATE PROCEDURE PredefinedAnalysisDatasets
 **			08/04/2016 mem - Fix column name for dataset Rating ID
 **			03/17/2017 mem - Include job, parameter file, settings file, etc. for the predefines that would run for the matching datasets
 **			04/21/2017 mem - Add AD_instrumentNameCriteria
+**          06/30/2022 mem - Rename parameter file argument
 **    
 *****************************************************/
 (
@@ -61,7 +63,7 @@ As
 	Declare @datasetExclCriteria varchar(128)	
 
 	Declare @analysisToolName varchar(64)
-	Declare @parmFileName varchar(255)
+	Declare @paramFileName varchar(255)
 	Declare @settingsFileName varchar(255)
 	Declare @proteinCollectionList varchar(512)
 	Declare @organismDBName varchar(128)
@@ -104,7 +106,7 @@ As
 		@experimentExclCriteria = AD_experimentExclCriteria,
 		@datasetExclCriteria = AD_datasetExclCriteria,		
 		@analysisToolName = AD_analysisToolName,
-		@parmFileName = AD_parmFileName,
+		@paramFileName = AD_parmFileName,
 		@settingsFileName = AD_settingsFileName,
 		@proteinCollectionList = AD_proteinCollectionList,
 		@organismDBName = AD_organismDBName
@@ -189,7 +191,7 @@ As
 		Set @S = @S +        ' Rating As [DS Rating], Rating_Name AS Rating,'
 		Set @S = @S +        ' Separation_Type As [Sep Type],'
 		Set @S = @S +        ' ''' + @analysisToolName + ''' AS Tool,'
-		Set @S = @S +        ' ''' + @parmFileName + ''' AS [Parameter File],'
+		Set @S = @S +        ' ''' + @paramFileName + ''' AS [Parameter File],'
 		Set @S = @S +        ' ''' + @settingsFileName + ''' AS [Settings File],'
 		Set @S = @S +        ' ''' + @proteinCollectionList + ''' AS [Protein Collections],'
 		Set @S = @S +        ' ''' + @organismDBName + ''' AS [Legacy FASTA]'

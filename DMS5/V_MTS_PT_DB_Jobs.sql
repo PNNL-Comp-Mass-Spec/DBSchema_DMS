@@ -16,7 +16,7 @@ SELECT JM.Job,
        Inst.IN_name AS Instrument,
        C.Campaign_Num AS Campaign,
        AnTool.AJT_toolName as [Tool],
-       AJ.AJ_parmFileName as [Parm File],
+       AJ.AJ_parmFileName as [Param File],
        AJ.AJ_settingsFileName as [Settings File],
        AJ.AJ_proteinCollectionList as [Protein Collection List],
        JM.SortKey AS #SortKey

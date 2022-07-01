@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.FindAnalysisJob
+CREATE PROCEDURE [dbo].[FindAnalysisJob]
 /****************************************************
 **
 **	Desc: 
@@ -23,6 +23,8 @@ CREATE PROCEDURE dbo.FindAnalysisJob
 **			10/30/2007 jds - Added support for list of RunRequest IDs (Ticket #560)
 **			12/12/2007 mem - No longer joining V_Analysis_Job_and_Dataset_Archive_State since that view is longer used in V_Find_Analysis_Job
 **			01/24/2008 mem - Switched the @i_ variables to use the datetime data type (Ticket #225)
+**          06/30/2022 mem - Use new parameter file column name
+**                         - Rename parameter file argument
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -36,7 +38,7 @@ CREATE PROCEDURE dbo.FindAnalysisJob
 	@Campaign varchar(50) = '',
 	@Experiment varchar(50) = '',
 	@Instrument varchar(24) = '',
-	@ParmFile varchar(255) = '',
+	@ParamFile varchar(255) = '',
 	@SettingsFile varchar(255) = '',
 	@Organism varchar(50) = '',
 	@OrganismDB varchar(64) = '',
@@ -101,8 +103,8 @@ As
 	DECLARE @i_Instrument varchar(24)
 	SET @i_Instrument = '%' + @Instrument + '%'
 	--
-	DECLARE @i_Parm_File varchar(255)
-	SET @i_Parm_File = '%' + @ParmFile + '%'
+	DECLARE @i_Param_File varchar(255)
+	SET @i_Param_File = '%' + @ParamFile + '%'
 	--
 	DECLARE @i_Settings_File varchar(255)
 	SET @i_Settings_File = '%' + @SettingsFile + '%'
@@ -170,8 +172,8 @@ As
 		Set @W = @W + ' AND ([Experiment] LIKE ''' + @i_Experiment + ''' )'
 	If Len(@Instrument) > 0
 		Set @W = @W + ' AND ([Instrument] LIKE ''' + @i_Instrument + ''' )'
-	If Len(@ParmFile) > 0
-		Set @W = @W + ' AND ([Parm_File] LIKE ''' + @i_Parm_File + ''' )'
+	If Len(@ParamFile) > 0
+		Set @W = @W + ' AND ([Param_File] LIKE ''' + @i_Param_File + ''' )'
 	If Len(@SettingsFile) > 0
 		Set @W = @W + ' AND ([Settings_File] LIKE ''' + @i_Settings_File + ''' )'
 	If Len(@Organism) > 0

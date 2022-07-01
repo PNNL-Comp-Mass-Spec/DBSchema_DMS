@@ -3,14 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE FindMatchingDatasetsForJobRequest
+
+CREATE PROCEDURE [dbo].[FindMatchingDatasetsForJobRequest]
 /****************************************************
 **
 **	Desc: 
-**  Return list of datasets for given job request
-**  showing how many jobs exist for each that 
-**  match the parameters of the request 
-**  (regardless of whether or not job is linked to request)
+**      Return list of datasets for given job request
+**      showing how many jobs exist for each that 
+**      match the parameters of the request 
+**      (regardless of whether or not job is linked to request)
 **
 **	Return values: 0: success, otherwise, error code
 **
@@ -23,6 +24,7 @@ CREATE PROCEDURE FindMatchingDatasetsForJobRequest
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			06/09/2017 mem - Add support for state 13 (inactive)
+**          06/30/2022 mem - Rename parameter file argument
 **    
 *****************************************************/
 (
@@ -43,7 +45,7 @@ AS
 	declare
 		@datasetList varchar(8000),
 		@toolName varchar(64),
-		@parmFileName varchar(255),
+		@paramFileName varchar(255),
 		@settingsFileName varchar(255),
 		@organismDBName varchar(128),
 		@organismName varchar(128),
@@ -57,7 +59,7 @@ AS
 		SELECT 
 			@datasetList = AJR_datasets,
 			@toolName = AJR_analysisToolName,
-			@parmFileName = AJR_parmFileName,
+			@paramFileName = AJR_parmFileName,
 			@settingsFileName = AJR_settingsFileName,
 			@organismName = OG_name,
 			@organismDBName = AJR_organismDBName,
@@ -113,7 +115,7 @@ AS
 			@requestDatasets RD ON RD.dataset = DS.Dataset_Num
 		WHERE
 			AJT.AJT_toolName = @toolName AND 
-			AJ.AJ_parmFileName = @parmFileName AND 
+			AJ.AJ_parmFileName = @paramFileName AND 
 			AJ.AJ_settingsFileName = @settingsFileName AND 
 			( (	@proteinCollectionList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND 
 				Org.OG_name = IsNull(@organismName, Org.OG_name)

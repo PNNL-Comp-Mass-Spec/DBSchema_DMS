@@ -29,6 +29,7 @@ CREATE FUNCTION [dbo].[GetExistingJobsMatchingJobRequest]
 **          09/25/2012 mem - Expanded @organismDBName to varchar(128)
 **          07/30/2019 mem - Get dataset ID from T_Analysis_Job_Request_Datasets
 **          07/31/2019 mem - Remove unused table from query join list
+**          06/30/2022 mem - Rename parameter file variable
 **    
 *****************************************************/
 (
@@ -44,7 +45,7 @@ BEGIN
     Declare @myError Int = 0
 
     Declare @analysisToolName varchar(64),
-            @parmFileName varchar(255),
+            @paramFileName varchar(255),
             @settingsFileName varchar(255),
             @organismDBName varchar(128),
             @organismName varchar(255),
@@ -56,7 +57,7 @@ BEGIN
     -- Lookup the entries for @RequestID in T_Analysis_Job_Request
     --
     SELECT @analysisToolName = AJR.AJR_analysisToolName,
-           @parmFileName = AJR.AJR_parmFileName,
+           @paramFileName = AJR.AJR_parmFileName,
            @settingsFileName = AJR.AJR_settingsFileName,
            @organismDBName = AJR.AJR_organismDBName,
            @organismName = Org.OG_Name,
@@ -100,7 +101,7 @@ BEGIN
              INNER JOIN T_Organisms Org
                ON AJ.AJ_organismID = Org.Organism_ID
         WHERE AJT.AJT_toolName = @analysisToolName AND
-              AJ.AJ_parmFileName = @parmFileName AND
+              AJ.AJ_parmFileName = @paramFileName AND
               AJ.AJ_settingsFileName = @settingsFileName AND
               ISNULL(AJ.AJ_specialProcessing, '') = ISNULL(@specialProcessing, '') AND
               (@resultType NOT LIKE '%Peptide_Hit%' OR

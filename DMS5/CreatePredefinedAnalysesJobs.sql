@@ -37,6 +37,8 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **          08/29/2018 mem - Tabs to spaces
 **          03/31/2021 mem - Expand @organismName and @organismDBName to varchar(128)
 **          06/14/2022 mem - Send procedure name to PostLogEntry
+**          06/30/2022 mem - Rename parameter file column
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
@@ -81,7 +83,7 @@ As
         datasetNum varchar(128),
         priority varchar(8),
         analysisToolName varchar(64),
-        parmFileName varchar(255),
+        paramFileName varchar(255),
         settingsFileName varchar(128),
         organismDBName varchar(128),
         organismName varchar(128),
@@ -130,7 +132,7 @@ As
     Declare @instrumentClass varchar(32)
     Declare @priority int
     Declare @analysisToolName varchar(64)
-    Declare @parmFileName varchar(255)
+    Declare @paramFileName varchar(255)
     Declare @settingsFileName varchar(255)
     Declare @organismName varchar(128)
     Declare @organismDBName varchar(128)
@@ -165,7 +167,7 @@ As
         SELECT TOP 1
             @priority = priority,
             @analysisToolName = analysisToolName,
-            @parmFileName = parmFileName,
+            @paramFileName = paramFileName,
             @settingsFileName = settingsFileName,
             @organismDBName = organismDBName,
             @organismName = organismName,
@@ -225,7 +227,7 @@ As
                 If @infoOnly <> 0
                 Begin
                     Print ''
-                    Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetNum + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@parmFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
+                    Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetNum + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@paramFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
                 End
 
                 ---------------------------------------------------
@@ -235,7 +237,7 @@ As
                             @datasetNum = @datasetNum,
                             @priority = @priority,
                             @toolName = @analysisToolName,
-                            @parmFileName = @parmFileName,
+                            @paramFileName = @paramFileName,
                             @settingsFileName = @settingsFileName,
                             @organismName = @organismName,
                             @protCollNameList = @proteinCollectionList,

@@ -4,9 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-CREATE VIEW dbo.V_Analysis_Job_Search
+CREATE VIEW [dbo].[V_Analysis_Job_Search]
 AS
 SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_priority AS [Pri.],
@@ -14,7 +12,7 @@ SELECT AJ.AJ_jobID AS Job,
        ATool.AJT_toolName AS [Tool Name],
        DS.Dataset_Num AS Dataset,
        InstName.IN_name AS Instrument,
-       AJ.AJ_parmFileName AS [Parm File],
+       AJ.AJ_parmFileName AS [Param File],
        AJ.AJ_settingsFileName AS [Settings File],
        Org.OG_name AS Organism,
        AJ.AJ_organismDBName AS [Organism DB],

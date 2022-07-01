@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateAnalysisJobs]
+CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
 /****************************************************
 **
 **	Desc:
@@ -28,7 +28,7 @@ CREATE Procedure [dbo].[UpdateAnalysisJobs]
 **			02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
 **			03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
 **			04/09/2008 mem - Now calling AlterEnteredByUserMultiID if the jobs are associated with a processor group 
-**			07/11/2008 jds - Added 5 new fields (@parmFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
+**			07/11/2008 jds - Added 5 new fields (@paramFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
 **							 and code to validate param file settings file against tool type
 **			10/06/2008 mem - Now updating parameter file name, settings file name, protein collection list, protein options list, and organism when a job is reset (for any of these that are not '[no change]')
 **			11/05/2008 mem - Now allowing for find/replace in comments when @mode = 'reset'
@@ -46,6 +46,7 @@ CREATE Procedure [dbo].[UpdateAnalysisJobs]
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **          03/31/2021 mem - Expand @organismName to varchar(128)
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
@@ -59,7 +60,7 @@ CREATE Procedure [dbo].[UpdateAnalysisJobs]
     @associatedProcessorGroup varchar(64) = '',
     @propagationMode varchar(24) = '[no change]',
 --
-    @parmFileName varchar(255) = '[no change]',
+    @paramFileName varchar(255) = '[no change]',
     @settingsFileName varchar(64) = '[no change]',
     @organismName varchar(128) = '[no change]',
     @protCollNameList varchar(4000) = '[no change]',
@@ -152,7 +153,7 @@ As
 						@assignedProcessor,
 						@associatedProcessorGroup,
 						@propagationMode,
-						@parmFileName,
+						@paramFileName,
 						@settingsFileName,
 						@organismName,
 						@protCollNameList,

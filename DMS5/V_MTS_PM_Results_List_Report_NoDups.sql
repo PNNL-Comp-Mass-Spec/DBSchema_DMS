@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_MTS_PM_Results_List_Report_NoDups]
 AS
 SELECT Dataset,
@@ -29,7 +28,7 @@ SELECT Dataset,
        PPM_Shift,
        QID,
        MD_ID,
-       [Parm File],
+       [Param File],
        Settings_File,
        Ini_File_Name,
        Comparison_Mass_Tag_Count,
@@ -56,7 +55,7 @@ FROM ( SELECT DS.Dataset_Num AS Dataset,
               PM.Refine_Mass_Cal_PPMShift AS PPM_Shift,
               PM.QID,
               PM.MD_ID,
-              AJ.AJ_parmFileName AS [Parm File],
+              AJ.AJ_parmFileName AS [Param File],
               AJ.AJ_settingsFileName AS Settings_File,
               PM.Ini_File_Name,
               PM.Comparison_Mass_Tag_Count,

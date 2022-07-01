@@ -4,10 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
-
 CREATE VIEW [dbo].[V_MTS_PM_Results_List_Report]
 AS
 SELECT PM.DMS_Job AS Job,
@@ -32,7 +28,7 @@ SELECT PM.DMS_Job AS Job,
        Refine_Mass_Cal_PPMShift AS PPM_Shift,
        PM.QID,
        PM.MD_ID,
-       AJ.AJ_parmFileName AS [Parm File],
+       AJ.AJ_parmFileName AS [Param File],
        AJ.AJ_settingsFileName AS Settings_File,
        PM.Ini_File_Name, 
        PM.Comparison_Mass_Tag_Count, 

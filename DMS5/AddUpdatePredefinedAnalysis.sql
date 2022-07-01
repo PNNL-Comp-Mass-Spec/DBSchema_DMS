@@ -43,6 +43,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/10/2018 mem - Validate the settings file name
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
@@ -59,7 +60,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
     @labellingInclCriteria varchar(64),
     @labellingExclCriteria varchar(64),
     @analysisToolName varchar(64),
-    @parmFileName varchar(255),
+    @paramFileName varchar(255),
     @settingsFileName varchar(255),
     @organismName varchar(128),
     @organismDBName varchar(128),
@@ -127,7 +128,7 @@ As
         RAISERROR ('Analysis tool name was blank', 11, 1)
     end
 
-    if LEN(IsNull(@parmFileName,'')) < 1
+    if LEN(IsNull(@paramFileName,'')) < 1
     begin
         set @myError = 51033
         RAISERROR ('Parameter file name was blank', 11, 1)
@@ -387,11 +388,11 @@ As
     -- Validate the parameter file name
     ---------------------------------------------------
     --
-    If @parmFileName <> 'na'
+    If @paramFileName <> 'na'
     Begin
-        If Not Exists (SELECT * FROM T_Param_Files WHERE Param_File_Name = @parmFileName)
+        If Not Exists (SELECT * FROM T_Param_Files WHERE Param_File_Name = @paramFileName)
         Begin
-            set @msg = 'Could not find entry in database for parameter file "' + @parmFileName + '"'
+            set @msg = 'Could not find entry in database for parameter file "' + @paramFileName + '"'
             RAISERROR (@msg, 11, 10)
         End
     End
@@ -554,7 +555,7 @@ As
             @labellingExclCriteria,
             @separationTypeCriteria,
             @analysisToolName,
-            @parmFileName,
+            @paramFileName,
             @settingsFileName,
             @organismID,
             @organismDBName,
@@ -613,7 +614,7 @@ As
             AD_labellingExclCriteria = @labellingExclCriteria,
             AD_separationTypeCriteria = @separationTypeCriteria,
             AD_analysisToolName = @analysisToolName,
-            AD_parmFileName = @parmFileName,
+            AD_parmFileName = @paramFileName,
             AD_settingsFileName = @settingsFileName,
             AD_organism_ID = @organismID,
             AD_organismDBName = @organismDBName,

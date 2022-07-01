@@ -42,7 +42,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs
 **          10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
 **          09/12/2008 mem - Now calling ValidateNAParameter for the various parameters that can be 'na' (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
-**                         - Changed @parmFileName and @settingsFileName to be input/output parameters instead of input only
+**                         - Changed @paramFileName and @settingsFileName to be input/output parameters instead of input only
 **          01/14/2009 mem - Now raising an error if @protCollNameList is over 2000 characters long (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **          01/28/2009 mem - Now checking for settings files in T_Settings_Files instead of on disk (Ticket #718, http://prismtrac.pnl.gov/trac/ticket/718)
 **          12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
@@ -85,11 +85,12 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          08/26/2021 mem - Add logic for MSFragger
 **          10/05/2021 mem - Show custom message if @toolName contains an inactive _dta.txt based MS-GF+ tool
 **          11/08/2021 mem - Allow instrument class 'Data_Folders' and dataset type 'DataFiles' (both used by instrument 'DMS_Pipeline_Data') to apply to all analysis tools
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
     @toolName varchar(64),
-    @parmFileName varchar(255) output,
+    @paramFileName varchar(255) output,
     @settingsFileName varchar(255) output,
     @organismDBName varchar(128) output,        -- Legacy fasta file; typically 'na'
     @organismName varchar(128),
@@ -359,7 +360,7 @@ As
     ---------------------------------------------------
     --
     Set @settingsFileName =    dbo.ValidateNAParameter(@settingsFileName, 1)
-    Set @parmFileName =        dbo.ValidateNAParameter(@parmFileName, 1)
+    Set @paramFileName =        dbo.ValidateNAParameter(@paramFileName, 1)
 
     ---------------------------------------------------
     -- Check for settings file or parameter file being 'na' when not allowed
@@ -375,7 +376,7 @@ As
         return 51009
     End
 
-    If @paramFileRequired > 0 And @parmFileName = 'na'
+    If @paramFileRequired > 0 And @paramFileName = 'na'
     Begin
         Set @message = 'A parameter file is required for analysis tool "' + @toolName + '"'
         
@@ -391,14 +392,14 @@ As
     --
     Set @result = 0
     --
-    If @parmFileName <> 'na'
+    If @paramFileName <> 'na'
     Begin
-        If @parmFileName Like 'MSGFDB[_]%'
+        If @paramFileName Like 'MSGFDB[_]%'
         Begin
-            Set @parmFileName = 'MSGFPlus_' + Substring(@parmFileName, 8, 500)
+            Set @paramFileName = 'MSGFPlus_' + Substring(@paramFileName, 8, 500)
         End
 
-        If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid <> 0))
+        If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @paramFileName) AND (Valid <> 0))
         Begin
             -- The specified parameter file is valid
             -- Make sure the parameter file tool corresponds to @toolName
@@ -408,7 +409,7 @@ As
                 FROM T_Param_Files PF
                      INNER JOIN T_Analysis_Tool ToolList
                        ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
-                WHERE (PF.Param_File_Name = @parmFileName) AND
+                WHERE (PF.Param_File_Name = @paramFileName) AND
                       (ToolList.AJT_toolName = @toolName)
                 )
             Begin
@@ -416,10 +417,10 @@ As
                 FROM T_Param_Files PF
                      INNER JOIN T_Analysis_Tool ToolList
                  ON PF.Param_File_Type_ID = ToolList.AJT_paramFileType
-                WHERE (PF.Param_File_Name = @parmFileName)
+                WHERE (PF.Param_File_Name = @paramFileName)
                 ORDER BY ToolList.AJT_toolID
 
-                Set @message = 'Parameter file "' + IsNull(@parmFileName, '??') + '" is for tool ' + IsNull(@paramFileTool, '??') + '; not ' + IsNull(@toolName, '??')
+                Set @message = 'Parameter file "' + IsNull(@paramFileName, '??') + '" is for tool ' + IsNull(@paramFileTool, '??') + '; not ' + IsNull(@toolName, '??')
                 If @showDebugMessages <> 0
                     print @message
 
@@ -430,10 +431,10 @@ As
         Begin
             -- Parameter file either does not exist or is inactive
             --
-            If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @parmFileName) AND (Valid = 0))
-                Set @message = 'Parameter file is inactive and cannot be used' + ':"' + @parmFileName + '"'
+            If Exists (SELECT * FROM dbo.T_Param_Files WHERE (Param_File_Name = @paramFileName) AND (Valid = 0))
+                Set @message = 'Parameter file is inactive and cannot be used' + ':"' + @paramFileName + '"'
             Else
-                Set @message = 'Parameter file could not be found' + ':"' + @parmFileName + '"'
+                Set @message = 'Parameter file could not be found' + ':"' + @paramFileName + '"'
 
             If @showDebugMessages <> 0
                 print @message
@@ -679,10 +680,10 @@ As
                     'Switchgrass_Rhiz_MG-RAST_metagenome_DecoyWithContams_2013-10-10.fasta')
             Begin
                 If Not
-                ( @parmFileName Like '%PartTryp_NoMods%' Or
-                    @parmFileName Like '%PartTryp_StatCysAlk.txt' Or
-                    @parmFileName Like '%PartTryp_StatCysAlk_[0-9]%ppm%' Or
-                    @parmFileName Like '%[_]Tryp[_]%'
+                ( @paramFileName Like '%PartTryp_NoMods%' Or
+                    @paramFileName Like '%PartTryp_StatCysAlk.txt' Or
+                    @paramFileName Like '%PartTryp_StatCysAlk_[0-9]%ppm%' Or
+                    @paramFileName Like '%[_]Tryp[_]%'
                 )
                 Begin
                     Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
@@ -709,7 +710,7 @@ As
 
                 SELECT @DynModCount = Count(*)
                 FROM V_Param_File_Mass_Mods
-                WHERE Param_File_Name = @parmFileName AND
+                WHERE Param_File_Name = @paramFileName AND
                     Mod_Type_Symbol = 'D'
 
                 If IsNull(@DynModCount, 0) > 1

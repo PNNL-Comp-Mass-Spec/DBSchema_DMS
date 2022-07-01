@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_GPM_Analysis_Job_Report]
 AS
 SELECT     
@@ -13,7 +14,7 @@ SELECT
 	T_Dataset.Dataset_Num AS Dataset,
 	t_storage_path.SP_instrument_name AS Instrument,
 	T_Analysis_Tool.AJT_toolName AS [Tool Name],
-	T_Analysis_Job.AJ_parmFileName AS [Parm File],
+	T_Analysis_Job.AJ_parmFileName AS [Param File],
 	T_Analysis_Job.AJ_settingsFileName AS [Settings File],
 	T_Organisms.OG_name AS Organism,
 	T_Analysis_Job.AJ_organismDBName AS [Organism DB],

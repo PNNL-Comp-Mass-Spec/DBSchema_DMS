@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          04/08/2015 mem - Now parsing the job request list using udfParseDelimitedIntegerList
 **          04/11/2022 mem - Expand @protCollNameList to varchar(4000)
+**          06/30/2022 mem - Rename parameter file argument
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ As
     
     Declare @requestID int
     Declare @toolName varchar(64)
-    Declare @parmFileName varchar(255)
+    Declare @paramFileName varchar(255)
     Declare @settingsFileName varchar(255)
     Declare @organismDBName varchar(128)
     Declare @organismName varchar(128)
@@ -90,22 +91,22 @@ As
         stateName
     )
     SELECT
-      AJR_requestID,
-      AJR_analysisToolName,
-      AJR_parmFileName,
-      AJR_settingsFileName,
-      AJR_organismDBName,
-      AJR_organismName,
-      AJR_datasets,
-      AJR_comment,
-      AJR_specialProcessing,
-      requestor,
-      protCollNameList,
-      protCollOptionsList,
+      request_id,
+      analysis_tool,
+      param_file_name,
+      settings_file_name,
+      organism_db_name,
+      organism_name,
+      datasets,
+      comment,
+      special_processing,
+      requester,
+      prot_coll_name_list,
+      prot_coll_options_list,
       State
     FROM   
       V_Analysis_Job_Request_Entry
-    WHERE AJR_requestID IN (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@jobRequestList, ','))
+    WHERE request_id IN (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@jobRequestList, ','))
     --    
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -189,7 +190,7 @@ As
             -------------------------------------------------
             SELECT
                 @toolName =  toolName,
-                @parmFileName = parmFileName,
+                @paramFileName = parmFileName,
                 @settingsFileName = settingsFileName,
                 @organismDBName = organismDBName,
                 @organismName = organismName,
@@ -233,7 +234,7 @@ As
                                 @datasetList=@datasetList,
                                 @priority=@priority,
                                 @toolName=@toolName,
-                                @parmFileName=@parmFileName,
+                                @paramFileName=@paramFileName,
                                 @settingsFileName=@settingsFileName,
                                 @organismDBName=@organismDBName,
                                 @organismName=@organismName,

@@ -3,13 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Analysis_Job_Processor_Group_Association_List_Report
+
+CREATE VIEW [dbo].[V_Analysis_Job_Processor_Group_Association_List_Report]
 AS
 SELECT dbo.T_Analysis_Job_Processor_Group_Associations.Job_ID
      AS Job, dbo.T_Analysis_State_Name.AJS_name AS State, 
     dbo.T_Dataset.Dataset_Num AS Dataset, 
     dbo.T_Analysis_Tool.AJT_toolName AS Tool, 
-    dbo.T_Analysis_Job.AJ_parmFileName AS [Parm File], 
+    dbo.T_Analysis_Job.AJ_parmFileName AS [Param File], 
     dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File], 
     dbo.T_Analysis_Job_Processor_Group_Associations.Group_ID AS
      [#GroupID]

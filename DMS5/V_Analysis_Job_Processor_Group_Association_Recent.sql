@@ -11,7 +11,7 @@ SELECT AJPG.Group_Name,
        ASN.AJS_name AS State,
        DS.Dataset_Num AS Dataset,
        Tool.AJT_toolName AS Tool,
-       AJ.AJ_parmFileName AS [Parm File],
+       AJ.AJ_parmFileName AS [Param File],
        AJ.AJ_settingsFileName AS [Settings File]
 FROM dbo.T_Analysis_Job_Processor_Group_Membership AJPGM
      RIGHT OUTER JOIN dbo.T_Analysis_Job_Processor_Group_Associations AJPGA

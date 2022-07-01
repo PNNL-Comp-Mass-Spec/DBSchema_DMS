@@ -14,7 +14,7 @@ SELECT AJ.AJ_jobID AS Job,
        C.Campaign_Num AS Campaign,
        E.Experiment_Num AS Experiment,
        InstName.IN_name AS Instrument,
-       AJ.AJ_parmFileName AS Parm_File,
+       AJ.AJ_parmFileName AS Param_File,
        AJ.AJ_settingsFileName AS Settings_File,
        Org.OG_name AS Organism,
        AJ.AJ_organismDBName AS Organism_DB,
@@ -44,7 +44,6 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
                       INNER JOIN dbo.T_Campaign AS C
                         ON E.EX_campaign_ID = C.Campaign_ID
        ON DAP.Dataset_ID = DS.Dataset_ID
-
 
 
 GO

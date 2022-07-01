@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE FindExistingJobsForJobParams
+
+CREATE PROCEDURE [dbo].[FindExistingJobsForJobParams]
 /****************************************************
 **
 **	Desc: 
@@ -28,12 +29,13 @@ CREATE PROCEDURE FindExistingJobsForJobParams
 **			09/18/2009 grk - Cleaned up unused parameters
 **			05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
+**          06/30/2022 mem - Rename parameter file argument
 **    
 *****************************************************/
 (
 	@datasetList varchar(6000),
 	@toolName varchar(64),
-	@parmFileName varchar(255),
+	@paramFileName varchar(255),
 	@settingsFileName varchar(255),
 	@organismDBName varchar(128),
 	@organismName varchar(128),
@@ -180,7 +182,7 @@ AS
 	     INNER JOIN T_Analysis_State_Name ASN
 	       ON AJ.AJ_StateID = ASN.AJS_stateID
 	WHERE AJT.AJT_toolName = @toolName AND
-	      AJ.AJ_parmFileName = @parmFileName AND
+	      AJ.AJ_parmFileName = @paramFileName AND
 	      AJ.AJ_settingsFileName = @settingsFileName AND
 	      (@resultType NOT LIKE '%Peptide_Hit%' OR
 	       @resultType LIKE '%Peptide_Hit%' AND

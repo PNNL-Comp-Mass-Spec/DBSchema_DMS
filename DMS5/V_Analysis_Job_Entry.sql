@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Analysis_Job_Entry
+CREATE VIEW [dbo].[V_Analysis_Job_Entry]
 AS
 SELECT CONVERT(varchar(32), AJ.AJ_jobID) AS job,
        AJ.AJ_priority as priority,
        AnalysisTool.AJT_toolName AS tool_name,
        DS.Dataset_Num AS dataset,
-       AJ.AJ_parmFileName AS parm_file,
+       AJ.AJ_parmFileName AS param_file,
        AJ.AJ_settingsFileName AS settings_file,
        Org.OG_name AS organism,
        AJ.AJ_organismDBName AS organism_db,

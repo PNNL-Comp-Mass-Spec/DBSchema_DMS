@@ -4,14 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Source_Analysis_Job] as
+CREATE VIEW [dbo].[V_Source_Analysis_Job] as
 SELECT  AJ.AJ_jobID AS Job ,
         AJ.AJ_StateNameCached AS State ,
         AnalysisTool.AJT_toolName AS Tool ,
         DS.Dataset_Num AS Dataset ,
         E.Experiment_Num AS Experiment ,
         InstName.IN_name AS Instrument ,
-        AJ.AJ_parmFileName AS [Parm File] ,
+        AJ.AJ_parmFileName AS [Param File] ,
         AJ.AJ_settingsFileName AS Settings_File ,
         AJ.AJ_comment AS Comment ,
         AJ.AJ_requestID AS [Job Request] ,

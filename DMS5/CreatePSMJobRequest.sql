@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[CreatePSMJobRequest]
+CREATE PROCEDURE [dbo].[CreatePSMJobRequest]
 /****************************************************
 **
 **	Desc: Creates a new analysis job request using the appropriate
@@ -34,6 +34,7 @@ CREATE Procedure [dbo].[CreatePSMJobRequest]
 **			12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
 **          03/19/2021 mem - Remove obsolete parameter from call to AddUpdateAnalysisJobRequest
 **          06/06/2022 mem - Use new argument name when calling AddUpdateAnalysisJobRequest
+**          06/30/2022 mem - Rename parameter file argument
 **    
 *****************************************************/
 (
@@ -345,7 +346,7 @@ As
 		exec @myError = AddUpdateAnalysisJobRequest @datasets = @datasets,
 				@requestName = @requestName,
 				@toolName = @toolName,
-				@parmFileName = @ParamFile,
+				@paramFileName = @ParamFile,
 				@settingsFileName = @SettingsFile,
 				@protCollNameList = @protCollNameList,
 				@protCollOptionsList = @protCollOptionsList,

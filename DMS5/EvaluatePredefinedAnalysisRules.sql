@@ -17,7 +17,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
             datasetNum varchar(128),
             priority varchar(8),
             analysisToolName varchar(64),
-            parmFileName varchar(255),
+            paramFileName varchar(255),
             settingsFileName varchar(128),
             organismDBName varchar(128),
             organismName varchar(128),
@@ -68,6 +68,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          04/21/2017 mem - Add AD_instrumentNameCriteria
 **          10/05/2017 mem - Create jobs for datasets with rating -4: "Not released (allow analysis)"
 **          08/29/2018 mem - Create jobs for datasets with rating -6: "Rerun (Good Data)"
+**          06/30/2022 mem - Rename parameter file column
 **
 *****************************************************/
 (
@@ -237,7 +238,7 @@ As
         AD_scanCountMin int NOT NULL,
         AD_scanCountMax int NOT NULL,
         AD_analysisToolName varchar (64) NOT NULL,
-        AD_parmFileName varchar (255) NOT NULL,
+        AD_paramFileName varchar (255) NOT NULL,
         AD_settingsFileName varchar (255) NULL,
         AD_organismName varchar (128) NOT NULL,
         AD_organismDBName varchar (128) NOT NULL,
@@ -291,7 +292,7 @@ As
             [Separation Type Crit.] varchar(64) NULL,
             [ScanCount Min] int NULL, 
             [ScanCount Max] int NULL,
-            [Parm File] varchar(255) NULL, 
+            [Param File] varchar(255) NULL, 
             [Settings File] varchar(255) NULL,
             Organism varchar(128) NULL, 
             [Organism DB] varchar(128) NULL, 
@@ -330,7 +331,7 @@ As
         AD_scanCountMin,
         AD_scanCountMax,
         AD_analysisToolName,
-        AD_parmFileName,
+        AD_paramFileName,
         AD_settingsFileName,
         AD_organismName,
         AD_organismDBName,
@@ -444,7 +445,7 @@ As
             [Labelling Incl.], [Labelling Excl.],
             [Separation Type Crit.],  
             [ScanCount Min], [ScanCount Max],            
-            [Parm File], [Settings File],
+            [Param File], [Settings File],
             Organism, [Organism DB], 
             [Prot. Coll.], [Prot. Opts.],
             [Special Proc.],
@@ -469,7 +470,7 @@ As
                 AD_labellingInclCriteria, AD_labellingExclCriteria,
                 AD_separationTypeCriteria, 
                 AD_scanCountMin, AD_scanCountMax,
-                AD_parmFileName, AD_settingsFileName,
+                AD_paramFileName, AD_settingsFileName,
                 AD_organismName, AD_organismDBName, 
                 AD_proteinCollectionList, AD_proteinOptionsList, 
                 Special_Processing,
@@ -507,7 +508,7 @@ As
         datasetNum varchar(128),
         priority varchar(8),
         analysisToolName varchar(64),
-        parmFileName varchar(255),
+        paramFileName varchar(255),
         settingsFileName varchar(128),
         organismDBName varchar(128),
         organismName varchar(128),
@@ -539,7 +540,7 @@ As
     Declare @RuleNextLevel int
     
     Declare @priority int
-    Declare @parmFileName varchar(255)
+    Declare @paramFileName varchar(255)
     Declare @settingsFileName varchar(255)
     Declare @organismDBName varchar(128)
     Declare @proteinCollectionList varchar(4000)
@@ -586,7 +587,7 @@ As
         ---------------------------------------------------
         SELECT TOP 1
             @analysisToolName = AD_analysisToolName,
-            @parmFileName = AD_parmFileName,
+            @paramFileName = AD_paramFileName,
             @settingsFileName = AD_settingsFileName,
             @organismName = AD_organismName,
             @organismDBName = AD_organismDBName,
@@ -780,7 +781,7 @@ As
                     datasetNum,
                     priority,
                     analysisToolName,
-                    parmFileName,
+                    paramFileName,
                     settingsFileName,
                     organismDBName,
                     organismName,
@@ -796,7 +797,7 @@ As
                     @datasetNum,
                     @priority,
                     @analysisToolName,
-                    @parmFileName,
+                    @paramFileName,
                     @settingsFileName,
                     @organismDBName,
                     @organismName,
@@ -869,7 +870,7 @@ As
             priority as Pri,
             associatedProcessorGroup as Processor_Group,
             comment as Comment,
-            parmFileName as [Param_File],
+            paramFileName as [Param_File],
             settingsFileName as [Settings_File],
             organismDBName as [OrganismDB_File],
             organismName as Organism,
@@ -894,7 +895,7 @@ As
             datasetNum,
             priority,
             analysisToolName,
-            parmFileName,
+            paramFileName,
             settingsFileName,
             organismDBName,
             organismName,
@@ -911,7 +912,7 @@ As
             datasetNum,
             priority,
             analysisToolName,
-            parmFileName,
+            paramFileName,
             settingsFileName,
             organismDBName,
             organismName,
