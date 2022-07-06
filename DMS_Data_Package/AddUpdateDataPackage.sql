@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataPackage]
 **          06/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **                         - Validate @state
 **          11/19/2020 mem - Add @dataDOI and @manuscriptDOI
+**          07/05/2022 mem - Include the data package ID when logging errors
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -355,6 +356,11 @@ As
         
         If @logErrors > 0
         Begin
+            If Not @ID Is Null
+            Begin
+                Set @msgForLog = @msgForLog + '; Data Package ID ' + Cast(@ID As Varchar(12))
+            End
+
             Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateDataPackage'
         End
                     
