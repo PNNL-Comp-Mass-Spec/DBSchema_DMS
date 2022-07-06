@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeDataPackageStorageFolder
+
+CREATE PROCEDURE [dbo].[MakeDataPackageStorageFolder]
 /****************************************************
 **
 **  Desc: Requests creation of data storage folder for data package
@@ -22,6 +23,7 @@ CREATE PROCEDURE MakeDataPackageStorageFolder
 **			04/07/2011 mem - Fixed bug constructing @PathFolder (year was in the wrong place)
 **			07/30/2012 mem - Now updating @message prior to calling PostLogEntry
 **			03/17/2016 mem - Remove call to CallSendMessage
+**          07/05/2022 mem - Remove reference to obsolete column in view V_Data_Package_Folder_Creation_Parameters
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -46,18 +48,16 @@ As
 	-- Lookup the parameters needed to call AddDataFolderCreateTask
 	---------------------------------------------------
 
-	Declare @PackageID int
 	Declare @PathLocalRoot varchar(256)
 	Declare @PathSharedRoot varchar(256)
 	Declare @PathFolder varchar(512)
 	Declare @SourceDB varchar(128) = DB_Name()
 	
-	SELECT @PackageID = ID,
-	       @PathLocalRoot = [Local],
+	SELECT @PathLocalRoot = [Local],
 	       @PathSharedRoot = [share],
 	       @PathFolder = team + '\' + [year] + '\' + folder
 	FROM V_Data_Package_Folder_Creation_Parameters
-	WHERE package = @ID
+	WHERE ID = @ID
 
 	exec @myError = S_AddDataFolderCreateTask 
 					@PathLocalRoot = @PathLocalRoot, 
@@ -65,7 +65,7 @@ As
 					@FolderPath = @PathFolder, 
 					@SourceDB = @SourceDB, 
 					@SourceTable = 'T_Data_Package', 
-					@SourceID = @PackageID, 
+					@SourceID = @ID, 
 					@SourceIDFieldName = 'ID', 
 					@Command = 'add'
 
