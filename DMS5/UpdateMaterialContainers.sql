@@ -22,6 +22,7 @@ CREATE Procedure [dbo].[UpdateMaterialContainers]
 **                         - Do not allow updating containers of type 'na'
 **          08/27/2018 mem - Rename the view Material Location list report view
 **          06/21/2022 mem - Use new column name Container_Limit in view V_Material_Location_List_Report
+**          07/07/2022 mem - Include container name in "container not empty" message
 **
 *****************************************************/
 (
@@ -72,11 +73,11 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Failed to create temporary table'
+    If @myError <> 0
+    Begin
+        Set @message = 'Failed to create temporary table'
         return 51007
-    end
+    End
 
     ---------------------------------------------------
     -- populate temporary table from container list
@@ -97,11 +98,11 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error populating temporary table'
+    If @myError <> 0
+    Begin
+        Set @message = 'Error populating temporary table'
         return 51009
-    end
+    End
 
     -- Remember how many containers are in the list
     --
@@ -110,9 +111,9 @@ As
     If @numContainers = 0
     Begin
         If CharIndex(',', @containerList) > 1
-            set @message = 'Invalid Container IDs: ' + @containerList
+            Set @message = 'Invalid Container IDs: ' + @containerList
         Else
-            set @message = 'Invalid Container ID: ' + @containerList
+            Set @message = 'Invalid Container ID: ' + @containerList
 
         return 51010
     End
@@ -121,7 +122,7 @@ As
     Begin
         If CharIndex(',', @containerList) > 1
         Begin
-            set @message = 'Containers of type "na" cannot be updated by the website; contact a DMS admin (see UpdateMaterialContainers)'
+            Set @message = 'Containers of type "na" cannot be updated by the website; contact a DMS admin (see UpdateMaterialContainers)'
         End
         Else
         Begin
@@ -130,32 +131,32 @@ As
             Select @containerName = iName
             From @material_container_list
 
-            set @message = 'Container "' + IsNull(@containerName, @containerList) + '" cannot be updated by the website; contact a DMS admin (see UpdateMaterialContainers)'
+            Set @message = 'Container "' + IsNull(@containerName, @containerList) + '" cannot be updated by the website; contact a DMS admin (see UpdateMaterialContainers)'
         End
 
         return 51011
     End
 
     ---------------------------------------------------
-    -- resolve location to ID (according to mode)
+    -- Resolve location to ID (according to mode)
     ---------------------------------------------------
     --
     Declare @location varchar(128) = 'None' -- the null location
     --
     Declare @locID int = 1  -- the null location
     --
-    if @mode = 'move_container'
-    begin -- <c>
-        set @location = @newValue
-        set @locID = 0
+    If @mode = 'move_container'
+    Begin -- <c>
+        Set @location = @newValue
+        Set @locID = 0
         --
         Declare @contCount int
         Declare @locLimit int
         Declare @locStatus varchar(64)
         --
-        set @contCount = 0
-        set @locLimit = 0
-        set @locStatus = ''
+        Set @contCount = 0
+        Set @locLimit = 0
+        Set @locStatus = ''
         --
         SELECT
             @locID = #ID,
@@ -167,42 +168,43 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Could not resove location name "' + @location + '" to ID'
+        If @myError <> 0
+        Begin
+            Set @message = 'Could not resove location name "' + @location + '" to ID'
             return 51019
-        end
+        End
         --
-        if @locID = 0
-        begin
-            set @message = 'Destination location "' + @location + '" could not be found in database'
+        If @locID = 0
+        Begin
+            Set @message = 'Destination location "' + @location + '" could not be found in database'
             return 51020
-        end
+        End
 
         ---------------------------------------------------
         -- is location suitable?
         ---------------------------------------------------
 
-        if @locStatus <> 'Active'
-        begin
-            set @message = 'Location "' + @location + '" is not in the "Active" state'
+        If @locStatus <> 'Active'
+        Begin
+            Set @message = 'Location "' + @location + '" is not in the "Active" state'
             return 51021
-        end
+        End
 
-        if @contCount + @numContainers > @locLimit
-        begin
-            set @message = 'The maximum container capacity (' + cast(@locLimit as varchar(12)) + ') of location "' + @location + '" would be exceeded by the move'
+        If @contCount + @numContainers > @locLimit
+        Begin
+            Set @message = 'The maximum container capacity (' + cast(@locLimit as varchar(12)) + ') of location "' + @location + '" would be exceeded by the move'
             return 51023
-        end
+        End
 
-    end -- </c>
+    End -- </c>
 
     ---------------------------------------------------
     -- determine whether or not any containers have contents
     ---------------------------------------------------
-    Declare @c int = 1
+    Declare @nonEmptyContainerCount int = 1
+    Declare @nonEmptyContainers Varchar(255)
     --
-    SELECT @c = count(*)
+    SELECT @nonEmptyContainerCount = count(*)
     FROM @material_container_list
     WHERE iItemCount > 0
 
@@ -211,11 +213,25 @@ As
     -- container must be empty
     ---------------------------------------------------
     --
-    if @mode = 'retire_container' AND @c > 0
-    begin
-        set @message = 'All containers must be empty in order to retire them'
+    If @mode = 'retire_container' AND @nonEmptyContainerCount > 0
+    Begin
+        If @numContainers = 1
+        Begin
+            Set @message = 'Container ' + @containerList + ' is not empty; cannot retire it'
+        End
+        Else
+        Begin
+            Set @nonEmptyContainers = Null
+
+            Select @nonEmptyContainers = Coalesce(@nonEmptyContainers + ', ' + iName, iName)
+            From @material_container_list
+            Order By iName
+
+            Set @message = 'All containers must be empty in order to retire them; see ' + @nonEmptyContainers
+        End
+        
         return 51024
-    end
+    End
 
     ---------------------------------------------------
     -- for 'contents' container retirement
@@ -223,14 +239,14 @@ As
     ---------------------------------------------------
     --
     -- arrange for containers and their contents to have common comment
-    if @mode = 'retire_container_and_contents' AND @comment = ''
+    If @mode = 'retire_container_and_contents' AND @comment = ''
     Begin
-        set @comment ='CR-' + convert(varchar, getdate(), 102) + '.' + convert(varchar, getdate(), 108)
+        Set @comment ='CR-' + convert(varchar, getdate(), 102) + '.' + convert(varchar, getdate(), 108)
     End
 
     -- retire the contents
-    if @mode = 'retire_container_and_contents' AND @c > 0
-    begin
+    If @mode = 'retire_container_and_contents' AND @nonEmptyContainerCount > 0
+    Begin
         exec @myError = UpdateMaterialItems
                 'retire_items',
                 @containerList,
@@ -240,19 +256,19 @@ As
                 @message output,
                 @callingUser
 
-        if @myError <> 0
+        If @myError <> 0
             return @myError
-    end
+    End
 
-     if @mode = 'unretire_container'
+     If @mode = 'unretire_container'
      Begin
         -- Make sure the container(s) are all Inactive
         If Exists (Select * From @material_container_list Where [Status] <> 'Inactive')
         Begin
             If @numContainers = 1
-                set @message = 'Container is already active; cannot unretire ' + @containerList
+                Set @message = 'Container is already active; cannot unretire ' + @containerList
             Else
-                set @message = 'All containers must be Inactive in order to unretire them: ' + @containerList
+                Set @message = 'All containers must be Inactive in order to unretire them: ' + @containerList
             return 51025
         End
      End
@@ -267,31 +283,31 @@ return 0
     ---------------------------------------------------
     --
     Declare @transName varchar(32) = 'UpdateMaterialContainers'
-    begin transaction @transName
+    Begin transaction @transName
 
     ---------------------------------------------------
     -- update containers to be at new location
     ---------------------------------------------------
 
     UPDATE T_Material_Containers
-    SET
+    Set
         Location_ID = @locID,
         Status = CASE @mode
                     WHEN 'retire_container'              THEN 'Inactive'
                     WHEN 'retire_container_and_contents' THEN 'Inactive'
                     WHEN 'unretire_container'            THEN 'Active'
                     ELSE Status
-                 END
+                 End
     WHERE ID IN (SELECT ID FROM @material_container_list)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error updating location reference'
+        Set @message = 'Error updating location reference'
         return 51026
-    end
+    End
 
     ---------------------------------------------------
     -- Set up appropriate label for log
@@ -299,17 +315,17 @@ return 0
 
     Declare @moveType varchar(128) = '??'
 
-    if @mode = 'retire_container'
-        set @moveType = 'Container Retirement'
+    If @mode = 'retire_container'
+        Set @moveType = 'Container Retirement'
     else
-    if @mode = 'retire_container_and_contents'
-        set @moveType = 'Container Retirement'
+    If @mode = 'retire_container_and_contents'
+        Set @moveType = 'Container Retirement'
     else
-    if @mode = 'unretire_container'
-        set @moveType = 'Container Unretirement'
+    If @mode = 'unretire_container'
+        Set @moveType = 'Container Unretirement'
     else
-    if @mode = 'move_container'
-        set @moveType = 'Container Move'
+    If @mode = 'move_container'
+        Set @moveType = 'Container Move'
 
     ---------------------------------------------------
     -- make log entries
@@ -336,12 +352,12 @@ return 0
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error making log entries'
+        Set @message = 'Error making log entries'
         return 51027
-    end
+    End
 
     commit transaction @transName
 
