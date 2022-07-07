@@ -23,7 +23,7 @@ FROM T_AuxInfo_Category Category
        ON Subcategory.ID = Item.Parent_ID
      INNER JOIN T_AuxInfo_Target Category_Target
        ON Category.Target_Type_ID = Category_Target.ID
-WHERE (Item.Active = 'Y')
+WHERE Item.Active = 'Y'
 
 
 GO
