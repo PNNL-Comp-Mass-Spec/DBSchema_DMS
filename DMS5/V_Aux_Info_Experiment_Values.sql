@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_Auxinfo_Experiment_Values] ******/
+/****** Object:  View [dbo].[V_Aux_Info_Experiment_Values] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create View V_Auxinfo_Experiment_Values as 
+create View [dbo].[V_Aux_Info_Experiment_Values] as 
 SELECT  T_Experiments.Experiment_Num AS Experiment ,
         T_AuxInfo_Value.Target_ID AS ID ,
         T_AuxInfo_Category.Name AS Category ,
@@ -18,5 +18,5 @@ FROM    T_AuxInfo_Category
 WHERE   ( T_AuxInfo_Category.Target_Type_ID = 500 )                
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Auxinfo_Experiment_Values] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Experiment_Values] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_Auxinfo_SamplePrepRequest_Values] ******/
+/****** Object:  View [dbo].[V_Aux_Info_Sample_Prep_Request_Values] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-Create View V_Auxinfo_SamplePrepRequest_Values as 
+Create View [dbo].[V_Aux_Info_Sample_Prep_Request_Values] as 
 SELECT  T_Sample_Prep_Request.Request_Name AS Request ,
         T_AuxInfo_Value.Target_ID AS ID ,
         T_AuxInfo_Category.Name AS Category ,
@@ -17,5 +17,5 @@ FROM    T_AuxInfo_Category
         INNER JOIN T_Sample_Prep_Request ON T_AuxInfo_Value.Target_ID = T_Sample_Prep_Request.ID
 WHERE   ( T_AuxInfo_Category.Target_Type_ID = 503 )
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Auxinfo_SamplePrepRequest_Values] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Aux_Info_Sample_Prep_Request_Values] TO [DDL_Viewer] AS [dbo]
 GO
