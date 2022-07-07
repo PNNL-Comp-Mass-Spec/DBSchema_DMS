@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Archive_Path_List_Report]
 AS
-SELECT TAP.AP_path_ID AS [Path ID], 
-    TIN.IN_name AS [Instrument Name], 
-    TAP.AP_archive_path AS [Archive Path], 
-    TAP.AP_Server_Name AS [Archive Server], 
-    TAP.AP_Function AS [Archive Path Status], 
+SELECT TAP.AP_path_ID AS Path_ID, 
+    TIN.IN_name AS Instrument_Name, 
+    TAP.AP_archive_path AS Archive_Path, 
+    TAP.AP_Server_Name As Archive_Server, 
+    TAP.AP_Function AS Archive_Path_Status, 
     COUNT(DA.AS_Dataset_ID) AS Datasets,
     TIN.IN_Description AS Description, 
-    TAP.AP_network_share_path AS [Archive Share Path], 
-    TAP.AP_archive_URL AS [Archive URL], 
+    TAP.AP_network_share_path AS Archive_Share_Path, 
+    TAP.AP_archive_URL AS Archive_URL, 
     TAP.AP_Created as Created
 FROM T_Instrument_Name TIN INNER JOIN
     T_Archive_Path TAP ON 
