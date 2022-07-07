@@ -10,7 +10,7 @@ SELECT T_Cell_Culture.CC_Name AS Biomaterial,
        T_AuxInfo_Category.Name AS Category,
        T_AuxInfo_Subcategory.Name AS Subcategory,
        T_AuxInfo_Description.Name AS Item,
-       T_AuxInfo_Value.VALUE
+       T_AuxInfo_Value.Value
 FROM T_AuxInfo_Category
      INNER JOIN T_AuxInfo_Subcategory
        ON T_AuxInfo_Category.ID = T_AuxInfo_Subcategory.Parent_ID
