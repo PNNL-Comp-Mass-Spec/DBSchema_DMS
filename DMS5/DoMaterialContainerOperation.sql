@@ -20,7 +20,7 @@ CREATE Procedure [dbo].[DoMaterialContainerOperation]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Prevent updating containers of type 'na'
-**          06/29/2022 mem - Include container name when logging error messages from UpdateMaterialContainers
+**          07/07/2022 mem - Include container name when logging error messages from UpdateMaterialContainers
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -123,7 +123,7 @@ As
             Else
                 Set @msg = @message + ' (container ' + @name + ')'
             
-            Exec PostLogEntry 'Error', @message, 'DoMaterialContainerOperation'
+            Exec PostLogEntry 'Error', @msg, 'DoMaterialContainerOperation'
         End
 
     END CATCH
