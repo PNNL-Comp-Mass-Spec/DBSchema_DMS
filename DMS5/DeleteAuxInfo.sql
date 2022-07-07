@@ -16,6 +16,7 @@ CREATE Procedure [dbo].[DeleteAuxInfo]
 **  Auth:   grk
 **  Date:   04/08/2002
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          07/06/2022 mem - Use new aux info definition view name
 **    
 *****************************************************/
 (
@@ -112,7 +113,7 @@ As
         AuxInfo_ID IN
         (
         SELECT Item_ID
-        FROM V_Aux_Info_Definition_wID
+        FROM V_Aux_Info_Definition_with_ID
         WHERE (Target = @targetName)
         )
     )

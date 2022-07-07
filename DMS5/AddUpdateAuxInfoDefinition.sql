@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateAuxInfoDefinition]
+
+CREATE PROCEDURE [dbo].[AddUpdateAuxInfoDefinition]
 /****************************************************
 **
 **  Desc: 
@@ -14,10 +15,11 @@ CREATE Procedure [dbo].[AddUpdateAuxInfoDefinition]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   04/19/2002
+**  Date:   04/19/2002 grk - Initial release
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          07/06/2022 mem - Use new aux info definition view name
 **    
 *****************************************************/
 (
@@ -385,7 +387,7 @@ As
         set @tmpID = 0
         --
         SELECT @tmpID = Item_ID
-        FROM V_AuxInfo_Definition
+        FROM V_Aux_Info_Definition
         WHERE (Target = @targetName) AND
               (Category = @categoryName) AND
               (Subcategory = @subcategoryName) AND

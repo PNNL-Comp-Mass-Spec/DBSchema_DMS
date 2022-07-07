@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          07/06/2022 mem - Use new aux info definition view name
 **
 *****************************************************/
 (
@@ -242,7 +243,7 @@ As
             Set @itemID = 0
 
             SELECT @itemID = Item_ID
-            FROM V_AuxInfo_Definition
+            FROM V_Aux_Info_Definition
             WHERE Target = @targetName AND
                   Category = @categoryName AND
                   Subcategory = @subCategoryName AND

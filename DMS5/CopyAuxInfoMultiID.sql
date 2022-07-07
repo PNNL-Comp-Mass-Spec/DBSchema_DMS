@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[CopyAuxInfoMultiID]
+CREATE PROCEDURE [dbo].[CopyAuxInfoMultiID]
 /****************************************************
 **
 **  Desc:   Copies aux info from a source item to multiple targets
@@ -13,6 +13,7 @@ CREATE Procedure [dbo].[CopyAuxInfoMultiID]
 **  Date:   01/27/2003
 **          09/27/2007 mem - Extended CopyAuxInfo to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          07/06/2022 mem - Use new aux info definition view name
 **    
 *****************************************************/
 (
@@ -232,7 +233,7 @@ AS
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
               (AuxInfo_ID IN ( SELECT Item_ID
-                               FROM V_AuxInfo_Definition
+                               FROM V_Aux_Info_Definition
                                WHERE (Target = @targetName) AND
                                      (Category = @categoryName) ))
         --
@@ -258,7 +259,7 @@ AS
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
               (AI.AuxInfo_ID IN ( SELECT Item_ID
-                                  FROM V_AuxInfo_Definition
+                                  FROM V_Aux_Info_Definition
                                   WHERE (Target = @targetName) AND
                                         (Category = @categoryName) ))
 
@@ -295,7 +296,7 @@ AS
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
               (AuxInfo_ID IN ( SELECT Item_ID
-                               FROM V_AuxInfo_Definition
+                               FROM V_Aux_Info_Definition
                                WHERE (Target = @targetName) AND
                                      (Category = @categoryName) AND
                                      (Subcategory = @subCategoryName) ))
@@ -322,7 +323,7 @@ AS
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
               (AI.AuxInfo_ID IN ( SELECT Item_ID
-                                  FROM V_AuxInfo_Definition
+                                  FROM V_Aux_Info_Definition
                                   WHERE (Target = @targetName) AND
                                         (Category = @categoryName) AND
                                         (Subcategory = @subCategoryName) ))
@@ -359,7 +360,7 @@ AS
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
               (AuxInfo_ID IN ( SELECT Item_ID
-                               FROM V_AuxInfo_Definition
+                               FROM V_Aux_Info_Definition
                                WHERE (Target = @targetName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -383,7 +384,7 @@ AS
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
               (AI.AuxInfo_ID IN ( SELECT Item_ID
-                                  FROM V_AuxInfo_Definition
+                                  FROM V_Aux_Info_Definition
                                   WHERE (Target = @targetName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

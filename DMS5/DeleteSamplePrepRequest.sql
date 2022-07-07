@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.DeleteSamplePrepRequest
+
+CREATE Procedure [dbo].[DeleteSamplePrepRequest]
 /****************************************************
 **
 **	Desc: 
@@ -19,6 +20,7 @@ CREATE Procedure dbo.DeleteSamplePrepRequest
 **			05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          07/06/2022 mem - Use new aux info definition view name
 **
 *****************************************************/
 (
@@ -41,9 +43,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'DeleteSamplePrepRequest', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 
    	---------------------------------------------------
 	-- Start transaction
@@ -84,7 +86,7 @@ As
 		AuxInfo_ID IN
 		(
 		SELECT Item_ID
-		FROM V_Aux_Info_Definition_wID
+		FROM V_Aux_Info_Definition_with_ID
 		WHERE (Target = 'SamplePrepRequest')
 		)
 	)
