@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Aux_Info_Biomaterial_Values]
 AS
 SELECT T_Cell_Culture.CC_Name AS Biomaterial,
