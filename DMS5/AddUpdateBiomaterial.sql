@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateCellCulture] ******/
+/****** Object:  StoredProcedure [dbo].[AddUpdateBiomaterial] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[AddUpdateCellCulture]
+CREATE PROCEDURE [dbo].[AddUpdateBiomaterial]
 /****************************************************
 **
 **  Desc:
-**      Adds new or updates existing cell culture in database
+**      Adds new or updates existing biomaterial items in database
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -40,17 +40,18 @@ CREATE PROCEDURE [dbo].[AddUpdateCellCulture]
 **          08/31/2018 mem - Add @mutation, @plasmid, and @cellLine
 **                         - Remove deprecated parameters that are now tracked in T_Reference_Compound
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          07/08/2022 mem - Rename procedure from AddUpdateCellCulture to AddUpdateBiomaterial and update argument names
 **
 *****************************************************/
 (
-    @cellCultureName varchar(64),       -- Name of biomaterial (or peptide sequence if tracking an MRM peptide)
+    @biomaterialName varchar(64),       -- Name of biomaterial (or peptide sequence if tracking an MRM peptide)
     @sourceName varchar(64),            -- Source that the material came from; can be a person (onsite or offsite) or a company
     @contactPRN varchar(64),            -- Contact for the Source; typically PNNL staff, but can be offsite person
     @piPRN varchar(32),                 -- Project lead
-    @cultureType varchar(32),
+    @biomaterialType varchar(32),
     @reason varchar(500),
     @comment varchar(500),
-    @campaignNum varchar(64),
+    @campaignName varchar(64),
     @mode varchar(12) = 'add',          -- 'add', 'update', 'check_add', 'check_update'
     @message varchar(512) output,
     @container varchar(128) = 'na',
@@ -76,7 +77,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateCellCulture', @raiseError = 1
+    Exec @authorized = VerifySPAuthorized 'AddUpdateCellBiomaterial', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -88,13 +89,13 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    Set @cellCultureName = LTrim(RTrim(IsNull(@cellCultureName, '')))
+    Set @biomaterialName = LTrim(RTrim(IsNull(@biomaterialName, '')))
     Set @sourceName = LTrim(RTrim(IsNull(@sourceName, '')))
     Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))
     Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))
-    Set @cultureType = LTrim(RTrim(IsNull(@cultureType, '')))
+    Set @biomaterialType = LTrim(RTrim(IsNull(@biomaterialType, '')))
     Set @reason = LTrim(RTrim(IsNull(@reason, '')))
-    Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
+    Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
 
     Set @container = LTrim(RTrim(IsNull(@container, '')))
 
@@ -107,10 +108,7 @@ As
     Set @callingUser = IsNull(@callingUser, '')
 
     Set @myError = 0
-    If LEN(@campaignNum) < 1
-    Begin
-        RAISERROR ('Campaign Name must be defined', 11, 1)
-    End
+
     If LEN(@contactPRN) < 1
     Begin
         RAISERROR ('Contact Name must be defined', 11, 3)
@@ -121,7 +119,7 @@ As
         RAISERROR ('Principle Investigator PRN must be defined', 11, 3)
     End
     --
-    If LEN(@cellCultureName) < 1
+    If LEN(@biomaterialName) < 1
     Begin
         RAISERROR ('Biomaterial Name must be defined', 11, 4)
     End
@@ -131,10 +129,10 @@ As
         RAISERROR ('Source Name must be defined', 11, 5)
     End
     --
-    If LEN(@cultureType) < 1
+    If LEN(@biomaterialType) < 1
     Begin
         Set @myError = 51001
-        RAISERROR ('Culture Type must be defined', 11, 6)
+        RAISERROR ('Biomaterial Type must be defined', 11, 6)
     End
     --
     If LEN(@reason) < 1
@@ -142,7 +140,7 @@ As
         RAISERROR ('Reason must be defined', 11, 7)
     End
     --
-    If LEN(@campaignNum) < 1
+    If LEN(@campaignName) < 1
     Begin
         RAISERROR ('Campaign Name must be defined', 11, 8)
     End
@@ -151,50 +149,50 @@ As
     -- Is entry already in database?
     ---------------------------------------------------
 
-    Declare @cellCultureID int = 0
+    Declare @biomaterialID int = 0
     Declare @curContainerID int = 0
     --
     SELECT
-        @cellCultureID = CC_ID,
+        @biomaterialID = CC_ID,
         @curContainerID = CC_Container_ID
     FROM T_Cell_Culture
-    WHERE CC_Name = @cellCultureName
+    WHERE CC_Name = @biomaterialName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        Set @msg = 'Error trying to resolve biomaterial ID (cell culture ID)'
+        Set @msg = 'Error trying to resolve biomaterial ID'
         RAISERROR (@msg, 11, 10)
     End
 
     -- cannot create an entry that already exists
     --
-    If @cellCultureID <> 0 and (@mode = 'add' or @mode = 'check_add')
+    If @biomaterialID <> 0 and (@mode = 'add' or @mode = 'check_add')
     Begin
-        Set @msg = 'Cannot add: Biomaterial "' + @cellCultureName + '" already in database '
+        Set @msg = 'Cannot add: Biomaterial "' + @biomaterialName + '" already in database '
         RAISERROR (@msg, 11, 11)
     End
 
     -- Cannot update a non-existent entry
     --
-    If @cellCultureID = 0 and (@mode = 'update' or @mode = 'check_update')
+    If @biomaterialID = 0 and (@mode = 'update' or @mode = 'check_update')
     Begin
-        Set @msg = 'Cannot update: Biomaterial "' + @cellCultureName + '" is not in database '
+        Set @msg = 'Cannot update: Biomaterial "' + @biomaterialName + '" is not in database '
         RAISERROR (@msg, 11, 12)
     End
 
     ---------------------------------------------------
-    -- Resolve campaign number to ID
+    -- Resolve campaign name to ID
     ---------------------------------------------------
 
     Declare @campaignID int = 0
     --
-    execute @campaignID = GetCampaignID @campaignNum
+    execute @campaignID = GetCampaignID @campaignName
     --
     If @campaignID = 0
     Begin
-        Set @msg = 'Could not resolve campaign name "' + @campaignNum + '" to ID"'
+        Set @msg = 'Could not resolve campaign name "' + @campaignName + '" to ID"'
         RAISERROR (@msg, 11, 13)
     End
 
@@ -206,13 +204,13 @@ As
     --
     SELECT @typeID = ID
     FROM T_Cell_Culture_Type_Name
-    WHERE [Name] = @cultureType
+    WHERE [Name] = @biomaterialType
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        Set @msg = 'Could not resolve type name "' + @cultureType + '" to ID'
+        Set @msg = 'Could not resolve type name "' + @biomaterialType + '" to ID'
         RAISERROR (@msg, 11, 14)
     End
 
@@ -354,7 +352,7 @@ As
             Cell_Line,
             CC_Created
         ) VALUES (
-            @cellCultureName,
+            @biomaterialName,
             @sourceName,
             @contactPRN,
             @piPRN,
@@ -373,36 +371,36 @@ As
         --
         If @myError <> 0
         Begin
-            Set @msg = 'Insert operation failed: "' + @cellCultureName + '"'
+            Set @msg = 'Insert operation failed: "' + @biomaterialName + '"'
             RAISERROR (@msg, 11, 18)
         End
 
-        Set @cellCultureID = SCOPE_IDENTITY()
+        Set @biomaterialID = SCOPE_IDENTITY()
 
-        -- As a precaution, query T_Cell_Culture using Biomaterial name to make sure we have the correct CC_ID
+        -- As a precaution, query T_Cell_Culture using Biomaterial name to make sure we have the correct biomaterial ID
         Declare @IDConfirm int = 0
 
         SELECT @IDConfirm = CC_ID
         FROM T_Cell_Culture
-        WHERE CC_Name = @cellCultureName
+        WHERE CC_Name = @biomaterialName
 
-        If @cellCultureID <> IsNull(@IDConfirm, @cellCultureID)
+        If @biomaterialID <> IsNull(@IDConfirm, @biomaterialID)
         Begin
             Declare @DebugMsg varchar(512)
-            Set @DebugMsg = 'Warning: Inconsistent identity values when adding biomaterial ' + @cellCultureName + ': Found ID ' +
+            Set @DebugMsg = 'Warning: Inconsistent identity values when adding biomaterial ' + @biomaterialName + ': Found ID ' +
                             Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
-                            Cast(@cellCultureID as varchar(12))
+                            Cast(@biomaterialID as varchar(12))
 
-            exec postlogentry 'Error', @DebugMsg, 'AddUpdateCellCulture'
+            exec postlogentry 'Error', @DebugMsg, 'AddUpdateBiomaterial'
 
-            Set @cellCultureID = @IDConfirm
+            Set @biomaterialID = @IDConfirm
         End
 
         Declare @StateID int = 1
 
         -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 2, @cellCultureID, @StateID, @callingUser
+            Exec AlterEventLogEntryUser 2, @biomaterialID, @StateID, @callingUser
 
         -- Material movement logging
         --
@@ -410,7 +408,7 @@ As
         Begin
             exec PostMaterialLogEntry
                  'Biomaterial Move',
-                 @cellCultureName,
+                 @biomaterialName,
                  'na',
                  @container,
                  @callingUser,
@@ -420,13 +418,13 @@ As
         If IsNull(@organismList, '') <> ''
         Begin
             -- Update the associated organism(s)
-            exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
+            exec UpdateOrganismListForBiomaterial @biomaterialName, @organismList, @infoOnly=0, @message = @message output
         End
 
     End -- </add>
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
     --
     If @Mode = 'update'
@@ -446,13 +444,13 @@ As
             Mutation          = @mutation,
             Plasmid           = @plasmid,
             Cell_Line         = @cellLine
-        WHERE CC_Name = @cellCultureName
+        WHERE CC_Name = @biomaterialName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0 or @myRowCount <> 1
         Begin
-            Set @msg = 'Update operation failed: "' + @cellCultureName + '"'
+            Set @msg = 'Update operation failed: "' + @biomaterialName + '"'
             RAISERROR (@msg, 11, 19)
         End
 
@@ -462,7 +460,7 @@ As
         Begin
             exec PostMaterialLogEntry
                  'Biomaterial Move',
-                 @cellCultureName,
+                 @biomaterialName,
                  @curContainerName,
                  @container,
                  @callingUser,
@@ -471,7 +469,7 @@ As
 
         -- Update the associated organism(s)
         Set @organismList = IsNull(@organismList, '')
-        exec UpdateOrganismListForBiomaterial @cellCultureName, @organismList, @infoOnly=0, @message = @message output
+        exec UpdateOrganismListForBiomaterial @biomaterialName, @organismList, @infoOnly=0, @message = @message output
 
     End -- </update>
 
@@ -485,8 +483,8 @@ As
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @cellCultureName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateCellCulture'
+            Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @biomaterialName
+            exec PostLogEntry 'Error', @logMessage, 'AddUpdateBiomaterial'
         End
 
     End CATCH
@@ -495,11 +493,11 @@ As
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateBiomaterial] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[AddUpdateBiomaterial] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateCellCulture] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[AddUpdateBiomaterial] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateCellCulture] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[AddUpdateBiomaterial] TO [Limited_Table_Write] AS [dbo]
 GO
