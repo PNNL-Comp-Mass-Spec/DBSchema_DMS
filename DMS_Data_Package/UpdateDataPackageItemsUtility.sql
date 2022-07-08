@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          05/18/2022 mem - Use new EUS Proposal column name
 **          06/08/2022 mem - Rename package comment field to Package_Comment
+**          07/08/2022 mem - Use new synonym name for experiment biomaterial view
 **
 *****************************************************/
 (
@@ -233,18 +234,18 @@ As
             SELECT DISTINCT
                 TP.DataPackageID,
                 'Biomaterial',
-                TX.Cell_Culture_Name
+                TX.Biomaterial_Name
             FROM
                 #TPI TP
-                INNER JOIN S_V_Experiment_Cell_Culture TX
-                ON TP.Identifier = TX.Experiment_Num
+                INNER JOIN S_V_Experiment_Biomaterial TX
+                ON TP.Identifier = TX.Experiment
             WHERE
                 TP.[Type] = 'Experiment' AND
-                TX.Cell_Culture_Name NOT IN ('(none)')
+                TX.Biomaterial_Name NOT IN ('(none)')
                 AND NOT EXISTS (
                     SELECT *
                     FROM #TPI
-                    WHERE #TPI.[Type] = 'Biomaterial' AND #TPI.Identifier = TX.Cell_Culture_Name AND #TPI.DataPackageID = TP.DataPackageID
+                    WHERE #TPI.[Type] = 'Biomaterial' AND #TPI.Identifier = TX.Biomaterial_Name AND #TPI.DataPackageID = TP.DataPackageID
                 )
 
         END -- </add_associated_items>
