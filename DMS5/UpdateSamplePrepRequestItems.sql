@@ -21,11 +21,12 @@ CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          07/08/2022 mem - Change Item_ID from text to integer
 **
 *****************************************************/
 (
 	@samplePrepRequestID int,
-	@mode varchar(12) = 'update',
+	@mode varchar(12) = 'update',           -- 'update' or 'debug'
 	@message varchar(512) = '' output,
 	@callingUser varchar(128) = ''
 )
@@ -56,9 +57,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateSamplePrepRequestItems', @raiseError = 1
 	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+	Begin;
+		Throw 51000, 'Access denied', 1;
+	End;
 
 	BEGIN TRY
 		
@@ -67,12 +68,12 @@ As
 		---------------------------------------------------	
 		CREATE TABLE #ITM (
 			ID int,
-			Item_ID VARCHAR(128),
+			Item_ID int,
 			Item_Name varchar(512),
 			Item_Type varchar(128),
-			[Status] VARCHAR(128),
-			Created DATETIME,
-			Marked CHAR(1) NOT NULL
+			[Status] varchar(128),
+			Created datetime,
+			Marked char(1) NOT NULL
 		)
 		-- all items are marked as not in database by default
 		ALTER TABLE #ITM ADD CONSTRAINT [DF_ITM]  DEFAULT ('N') FOR Marked

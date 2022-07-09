@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Sample_Prep_Request_Items](
 	[ID] [int] NOT NULL,
-	[Item_ID] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Item_ID] [int] NOT NULL,
 	[Item_Name] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Item_Type] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Status] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
