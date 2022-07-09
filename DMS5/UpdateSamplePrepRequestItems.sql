@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
 **          07/08/2022 mem - Change Item_ID from text to integer
+**                         - No longer clear the Created column for existing items
 **
 *****************************************************/
 (
@@ -219,9 +220,9 @@ As
 		if @mode = 'update'
 		BEGIN --<update>
 
-			DECLARE @transName VARCHAR(32)
-			SET @transName = 'AddBatchExperimentEntry'
-			BEGIN  TRANSACTION @transName
+			DECLARE @transName VARCHAR(64) = 'UpdateSamplePrepRequestItems'
+
+			BEGIN TRANSACTION @transName
 
 			---------------------------------------------------
 			-- insert unmarked items into database
@@ -246,17 +247,30 @@ As
 			WHERE   Marked = 'N'
 
 			---------------------------------------------------
-			-- update marked items
+			-- Clear the status of marked items
 			---------------------------------------------------
 
 			UPDATE T_Sample_Prep_Request_Items
-			SET T_Sample_Prep_Request_Items.[Status] = '' ,
-				T_Sample_Prep_Request_Items.Created = ''
-			FROM T_Sample_Prep_Request_Items AS TI
-				INNER JOIN #ITM ON TI.ID = #ITM.ID
-				AND TI.Item_ID = #ITM.Item_ID
-				AND TI.Item_Type = #ITM.Item_Type
-			WHERE   Marked = 'Y'
+			SET [Status] = ''
+			FROM T_Sample_Prep_Request_Items AS I
+				INNER JOIN #ITM ON I.ID = #ITM.ID
+				AND I.Item_ID = #ITM.Item_ID
+				AND I.Item_Type = #ITM.Item_Type
+			WHERE #ITM.Marked = 'Y' And Len(Coalesce(I.[Status], '')) > 0
+
+            ---------------------------------------------------
+			-- Update the Created date for marked items (if not correct)
+			---------------------------------------------------
+
+			UPDATE T_Sample_Prep_Request_Items
+			SET Created = #ITM.Created
+			FROM T_Sample_Prep_Request_Items AS I
+				INNER JOIN #ITM ON I.ID = #ITM.ID
+				AND I.Item_ID = #ITM.Item_ID
+				AND I.Item_Type = #ITM.Item_Type
+			WHERE #ITM.Marked = 'Y' And (
+                  I.Created Is Null And Not #ITM.Created Is Null Or
+                  I.Created <> #ITM.Created)
 
 			---------------------------------------------------
 			-- delete marked items from database
