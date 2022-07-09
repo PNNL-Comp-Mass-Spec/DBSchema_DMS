@@ -85,14 +85,14 @@ As
 		-- biomaterial
 		INSERT INTO #ITM (ID, Item_ID, Item_Name, Item_Type, [Status], Created) 
 		SELECT  SPR.ID ,
-				TBM.CC_ID AS Item_ID,
+				B.CC_ID AS Item_ID,
 				TL.Item AS Item_Name,
 				'biomaterial' AS Item_Type,
-				TBM.CC_Material_Active AS [Status],
-				TBM.CC_Created AS Created
+				B.CC_Material_Active AS [Status],
+				B.CC_Created AS Created
 		FROM    dbo.T_Sample_Prep_Request SPR
 				CROSS APPLY dbo.MakeTableFromListDelim(SPR.Cell_Culture_List, ';') TL
-				INNER JOIN dbo.T_Cell_Culture TBM ON TBM.CC_Name = TL.Item
+				INNER JOIN dbo.T_Cell_Culture B ON B.CC_Name = TL.Item
 		WHERE   SPR.ID = @samplePrepRequestID
 				AND SPR.Cell_Culture_List <> '(none)'
 				AND SPR.Cell_Culture_List <> ''
@@ -100,69 +100,69 @@ As
 		-- experiments
 		INSERT INTO #ITM (ID, Item_ID, Item_Name, Item_Type, [Status], Created) 
 		SELECT  SPR.ID ,
-				TEXP.Exp_ID AS Item_ID,
-				TEXP.Experiment_Num AS Item_Name,
+				E.Exp_ID AS Item_ID,
+				E.Experiment_Num AS Item_Name,
 				'experiment' AS Item_Type,
-				TEXP.Ex_Material_Active AS [Status],
-				TEXP.EX_created AS Created
+				E.Ex_Material_Active AS [Status],
+				E.EX_created AS Created
 		FROM    dbo.T_Sample_Prep_Request SPR
-				INNER JOIN dbo.T_Experiments TEXP ON SPR.ID = TEXP.EX_sample_prep_request_ID
+				INNER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
 		WHERE SPR.ID = @samplePrepRequestID
 		        
 		-- experiment groups 
 		INSERT INTO #ITM (ID, Item_ID, Item_Name, Item_Type, [Status], Created) 
 		SELECT DISTINCT
 				SPR.ID ,
-				TEGM.Group_ID AS Item_ID ,
-				TEG.EG_Description AS Item_Name ,
+				GM.Group_ID AS Item_ID ,
+				G.EG_Description AS Item_Name ,
 				'experiment_group' AS Item_Type,
-				TEG.EG_Group_Type AS [Status],
-				TEG.EG_Created AS Created
+				G.EG_Group_Type AS [Status],
+				G.EG_Created AS Created
 		FROM    dbo.T_Sample_Prep_Request SPR
-				INNER JOIN dbo.T_Experiments TEXP ON SPR.ID = TEXP.EX_sample_prep_request_ID
-				INNER JOIN dbo.T_Experiment_Group_Members TEGM ON TEXP.Exp_ID = TEGM.Exp_ID
-				INNER JOIN dbo.T_Experiment_Groups TEG ON TEGM.Group_ID = TEG.Group_ID
+				INNER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
+				INNER JOIN dbo.T_Experiment_Group_Members GM ON E.Exp_ID = GM.Exp_ID
+				INNER JOIN dbo.T_Experiment_Groups G ON GM.Group_ID = G.Group_ID
 		WHERE SPR.ID = @samplePrepRequestID
 
 
 		-- material containers
 		INSERT INTO #ITM (ID, Item_ID, Item_Name, Item_Type, [Status], Created) 
 		SELECT  DISTINCT SPR.ID ,
-				TMC.ID AS Item_ID ,
-				TMC.Tag AS Item_Name ,
+				MC.ID AS Item_ID ,
+				MC.Tag AS Item_Name ,
 				'material_container' AS Item_Type,
-				TMC.Status,
-				TMC.Created
+				MC.Status,
+				MC.Created
 		FROM    dbo.T_Sample_Prep_Request SPR
-				INNER JOIN dbo.T_Experiments TEXP ON SPR.ID = TEXP.EX_sample_prep_request_ID
-				INNER JOIN dbo.T_Material_Containers TMC ON TEXP.EX_Container_ID = TMC.ID
-		WHERE SPR.ID = @samplePrepRequestID AND TMC.ID > 1
+				INNER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
+				INNER JOIN dbo.T_Material_Containers MC ON E.EX_Container_ID = MC.ID
+		WHERE SPR.ID = @samplePrepRequestID AND MC.ID > 1
 		  
 		 -- requested run        
 		INSERT INTO #ITM (ID, Item_ID, Item_Name, Item_Type, [Status], Created) 
 		SELECT  SPR.ID ,
-				TRR.ID AS Item_ID ,
-				TRR.RDS_Name AS Item_Name ,
+				RR.ID AS Item_ID ,
+				RR.RDS_Name AS Item_Name ,
 				'requested_run' AS Item_Type,
-				TRR.RDS_Status AS [Status],
-				TRR.RDS_created AS Created
+				RR.RDS_Status AS [Status],
+				RR.RDS_created AS Created
 		FROM    dbo.T_Sample_Prep_Request SPR
-				INNER JOIN dbo.T_Experiments TEXP ON SPR.ID = TEXP.EX_sample_prep_request_ID
-				INNER JOIN dbo.T_Requested_Run TRR ON TEXP.Exp_ID = TRR.Exp_ID
+				INNER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
+				INNER JOIN dbo.T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID
 		WHERE SPR.ID = @samplePrepRequestID
 
 		-- dataset
 		INSERT INTO #ITM (ID, Item_ID, Item_Name, Item_Type, [Status], Created) 
 		SELECT  SPR.ID ,
-				TDS.Dataset_ID AS Item_ID ,
-				TDS.Dataset_Num AS Item_Name ,
+				DS.Dataset_ID AS Item_ID ,
+				DS.Dataset_Num AS Item_Name ,
 				'dataset' AS Item_Type,
-				TDSN.DSS_name AS [Status],
-				TDS.DS_created AS Created
+				DSN.DSS_name AS [Status],
+				DS.DS_created AS Created
 		FROM    dbo.T_Sample_Prep_Request SPR
-				INNER JOIN dbo.T_Experiments TEXP ON SPR.ID = TEXP.EX_sample_prep_request_ID
-				INNER JOIN dbo.T_Dataset TDS ON TEXP.Exp_ID = TDS.Exp_ID
-				INNER JOIN T_DatasetStateName TDSN ON TDS.DS_state_ID = TDSN.Dataset_state_ID
+				INNER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
+				INNER JOIN dbo.T_Dataset DS ON E.Exp_ID = DS.Exp_ID
+				INNER JOIN T_DatasetStateName DSN ON DS.DS_state_ID = DSN.Dataset_state_ID
 		WHERE SPR.ID = @samplePrepRequestID
 
 		-- HPLC Runs - Reference to sample prep request IDs in comma delimited list in text field
@@ -173,12 +173,12 @@ As
 				'prep_lc_run' AS Item_Type,
 				'' AS [Status],
 				Created
-		FROM    ( SELECT    TPLCR.ID AS Item_ID ,
-							TPLCR.Comment as Item_Name,
+		FROM    ( SELECT    LCRun.ID AS Item_ID ,
+							LCRun.Comment as Item_Name,
 							CONVERT(INT, TL.Item) AS SPR_ID,
-							TPLCR.Created
-				  FROM      T_Prep_LC_Run TPLCR
-							CROSS APPLY dbo.MakeTableFromList(TPLCR.SamplePrepRequest) TL
+							LCRun.Created
+				  FROM      T_Prep_LC_Run LCRun
+							CROSS APPLY dbo.MakeTableFromList(LCRun.SamplePrepRequest) TL
 				  WHERE     SamplePrepRequest LIKE '%' + CONVERT(VARCHAR(12), @samplePrepRequestID)
 							+ '%'
 				) TX
@@ -191,9 +191,9 @@ As
 		UPDATE #ITM
 		SET Marked = 'Y'
 		FROM #ITM
-			INNER JOIN dbo.T_Sample_Prep_Request_Items TI ON TI.ID = #ITM.ID
-			AND TI.Item_ID = #ITM.Item_ID
-			AND TI.Item_Type = #ITM.Item_Type
+			INNER JOIN dbo.T_Sample_Prep_Request_Items I ON I.ID = #ITM.ID
+			AND I.Item_ID = #ITM.Item_ID
+			AND I.Item_Type = #ITM.Item_Type
 
 		---------------------------------------------------
 		-- mark items for delete that are already in database
@@ -201,17 +201,17 @@ As
 		---------------------------------------------------
 
 		INSERT INTO #ITM (ID, Item_ID, Item_Type, Marked) 
-		SELECT  TI.ID ,
-				TI.Item_ID ,
-				TI.Item_Type ,
+		SELECT  I.ID ,
+				I.Item_ID ,
+				I.Item_Type ,
 				'D' AS Marked
-		FROM    dbo.T_Sample_Prep_Request_Items TI
+		FROM    dbo.T_Sample_Prep_Request_Items I
 		WHERE   ID = @samplePrepRequestID
 				AND NOT EXISTS ( SELECT *
 								 FROM   #ITM
-								 WHERE  TI.ID = #ITM.ID
-										AND TI.Item_ID = #ITM.Item_ID
-										AND TI.Item_Type = #ITM.Item_Type )
+								 WHERE  I.ID = #ITM.ID
+										AND I.Item_ID = #ITM.Item_ID
+										AND I.Item_Type = #ITM.Item_Type )
 
 		---------------------------------------------------
 		-- update database
