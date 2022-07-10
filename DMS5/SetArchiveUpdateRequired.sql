@@ -4,117 +4,112 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE Procedure [dbo].[SetArchiveUpdateRequired]
 /****************************************************
 **
-**	Desc: Sets archive status of dataset
-**        to update required
+**  Desc: 
+**      Sets archive status of dataset to update required
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters:
-**
-**		Auth: grk
-**		Date: 12/3/2002   
-**            03/06/2007 grk - add changes for deep purge (ticket #403)
-**            03/07/2007 dac - fixed incorrect check for "in progress" update states (ticket #408)
-**			  09/02/2011 mem - Now calling PostUsageLogEntry
+**  Auth:   grk
+**  Date:   12/3/2002   
+**          03/06/2007 grk - add changes for deep purge (ticket #403)
+**          03/07/2007 dac - fixed incorrect check for "in progress" update states (ticket #408)
+**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          07/09/2022 mem - Tabs to spaces
 **    
 *****************************************************/
 (
-	@datasetNum varchar(128),
-	@message varchar(512) output
+    @datasetNum varchar(128),
+    @message varchar(512) output
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int
-	set @myError = 0
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
+    
+    set @message = ''
 
-	declare @myRowCount int
-	set @myRowCount = 0
-	
-	set @message = ''
+    Declare @datasetID int
+    Declare @updateState int
+    Declare @archiveState int
 
-	declare @datasetID int
-	declare @updateState int
-	declare @archiveState int
+    ---------------------------------------------------
+    -- Resolve dataset name to ID and archive state
+    ---------------------------------------------------
+    --
+    set @datasetID = 0
+    set @updateState = 0
+    --
+    SELECT     
+        @datasetID = Dataset_ID, 
+        @updateState = Update_State,
+        @archiveState = Archive_State
+    FROM V_DatasetArchive_Ex
+    WHERE Dataset_Number = @datasetNum
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0 or @myRowCount <> 1
+    begin
+        set @myError = 51220
+        set @message = 'Error trying to get dataset ID for dataset "' + @datasetNum + '"'
+        goto done
+    end
 
-   	---------------------------------------------------
-	-- resolve dataset name to ID and archive state
-	---------------------------------------------------
-	--
-	set @datasetID = 0
-	set @updateState = 0
-	--
-	SELECT     
-		@datasetID = Dataset_ID, 
-		@updateState = Update_State,
-		@archiveState = Archive_State
-	FROM         V_DatasetArchive_Ex
-	WHERE     (Dataset_Number = @datasetNum)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @myError = 51220
-		set @message = 'Error trying to get dataset ID for dataset "' + @datasetNum + '"'
-		goto done
-	end
+    ---------------------------------------------------
+    -- Check dataset archive update state for "in progress"
+    ---------------------------------------------------
+    if not @updateState in (1, 2, 4, 5)
+    begin
+        set @myError = 51250
+        set @message = 'Archive update state for dataset "' + @datasetNum + '" is not correct'
+        goto done
+    end
 
-   	---------------------------------------------------
-	-- check dataset archive update state for "in progress"
-	---------------------------------------------------
-	if not @updateState in (1, 2, 4, 5)
-	begin
-		set @myError = 51250
-		set @message = 'Archive update state for dataset "' + @datasetNum + '" is not correct'
-		goto done
-	end
+    ---------------------------------------------------
+    -- If archive state is "purged", set it to "complete"
+    -- to allow for re-purging
+    ---------------------------------------------------
+    if @archiveState = 4
+    begin
+        set @archiveState = 3
+    end
 
-   	---------------------------------------------------
-	-- if archive state is "purged", set it to "complete"
-	-- to allow for re-purging
-	---------------------------------------------------
-	if @archiveState = 4
-	begin
-		set @archiveState = 3
-	end
+    ---------------------------------------------------
+    -- Update dataset archive state 
+    ---------------------------------------------------
+    
+    UPDATE T_Dataset_Archive
+    SET AS_update_state_ID = 2,  AS_state_ID = @archiveState
+    WHERE     (AS_Dataset_ID = @datasetID)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0 or @myRowCount <> 1
+    begin
+        set @message = 'Update operation failed'
+        set @myError = 99
+        goto done
+    end
 
-   	---------------------------------------------------
-	-- Update dataset archive state 
-	---------------------------------------------------
-	
-	UPDATE T_Dataset_Archive
-	SET AS_update_state_ID = 2,  AS_state_ID = @archiveState
-	WHERE     (AS_Dataset_ID = @datasetID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @message = 'Update operation failed'
-		set @myError = 99
-		goto done
-	end
-
-   	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
-	--
+    ---------------------------------------------------
+    -- Exit
+    ---------------------------------------------------
+    --
 Done:
 
-	---------------------------------------------------
-	-- Log SP usage
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Log SP usage
+    ---------------------------------------------------
 
-	Declare @UsageMessage varchar(512)
-	Set @UsageMessage = 'Dataset: ' + @datasetNum
-	Exec PostUsageLogEntry 'SetArchiveUpdateRequired', @UsageMessage
+    Declare @UsageMessage varchar(512)
+    Set @UsageMessage = 'Dataset: ' + @datasetNum
+    Exec PostUsageLogEntry 'SetArchiveUpdateRequired', @UsageMessage
 
-	return @myError
+    return @myError
 
 
 GO
