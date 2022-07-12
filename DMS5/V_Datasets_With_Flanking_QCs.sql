@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create VIEW V_Datasets_With_Flanking_QCs
+
+CREATE VIEW [dbo].[V_Datasets_With_Flanking_QCs]
 AS
 SELECT Dataset_Num AS Dataset,
        Acq_Time Acq_Time_Start,
@@ -20,7 +21,7 @@ FROM ( SELECT Dataset_Num,
               QC_Dataset,
               Diff_Hours / 24.0 AS Diff_Days,
               SubsequentRun,
-              row_number() OVER ( PARTITION BY Dataset_Num, SubsequentRun ORDER BY Diff_Hours ) AS 
+              row_number() OVER ( PARTITION BY Dataset_Num, SubsequentRun ORDER BY Abs(Diff_Hours) ) AS 
                 Proximity_Rank
        FROM ( SELECT DS.Dataset_Num,
                      ISNULL(DS.Acq_Time_Start, DS.DS_created) AS Acq_Time,
@@ -33,12 +34,14 @@ FROM ( SELECT Dataset_Num,
 					ELSE 1
 					END AS SubsequentRun
               FROM T_Dataset DS
-                   INNER JOIN ( SELECT Dataset_Num,
-                                       ISNULL(Acq_Time_Start, DS_created) AS Acq_Time,
-                                       DS_instrument_name_ID,
-                                       DS_LC_column_ID
-                                FROM T_Dataset DS
-                                WHERE Dataset_Num LIKE 'qc_shew%' ) QCDatasets
+                   INNER JOIN ( SELECT QCD.Dataset_Num,
+                                       ISNULL(QCD.Acq_Time_Start, QCD.DS_created) AS Acq_Time,
+                                       QCD.DS_instrument_name_ID,
+                                       QCD.DS_LC_column_ID
+                                FROM T_Dataset QCD
+                                WHERE QCD.Dataset_Num LIKE 'qc_shew%' OR 
+                                      QCD.Dataset_Num LIKE 'qc_mam%' OR 
+                                      QCD.Dataset_Num like 'qc_pp_mcf%' ) QCDatasets
                      ON DS.DS_instrument_name_ID = QCDatasets.DS_instrument_name_ID AND
                         DS.DS_LC_column_ID = QCDatasets.DS_LC_column_ID AND
                         DS.Dataset_Num <> QCDatasets.Dataset_Num
