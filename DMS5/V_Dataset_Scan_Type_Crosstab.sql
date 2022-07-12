@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_Dataset_ScanType_CrossTab] ******/
+/****** Object:  View [dbo].[V_Dataset_Scan_Type_Crosstab] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Dataset_ScanType_CrossTab
+CREATE VIEW [dbo].[V_Dataset_Scan_Type_Crosstab]
 AS (
 SELECT PivotData.Dataset_ID,
        PivotData.Dataset,
@@ -51,5 +51,5 @@ FROM ( SELECT DS.Dataset_ID,
 
 )
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_ScanType_CrossTab] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scan_Type_Crosstab] TO [DDL_Viewer] AS [dbo]
 GO
