@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_MiscOptions](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Value] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Value] [int] NOT NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_MiscOptions] PRIMARY KEY CLUSTERED 
 (
