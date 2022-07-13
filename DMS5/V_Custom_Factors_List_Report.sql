@@ -7,27 +7,23 @@ GO
 CREATE VIEW [dbo].[V_Custom_Factors_List_Report] as
 SELECT RR.RDS_BatchID AS Batch,
        RR.ID AS Request,
-       F.Factor,
-       F.Value AS [Value],			
+       F.Name AS Factor,
+       F.Value AS [Value],
        RR.DatasetID AS Dataset_ID,
        DS.Dataset_Num AS Dataset,
-       ISNULL(DSExp.Exp_ID, RRExp.Exp_ID) AS Experiment_ID,
-       ISNULL(DSExp.Experiment_Num, RRExp.Experiment_Num) AS Experiment,
-       ISNULL(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign
-FROM (SELECT TargetID AS RequestID,
-             Name AS Factor,
-             Value AS [Value]
-      FROM T_Factor F
-      WHERE (TYPE = 'Run_Request')
-     ) F
-     INNER JOIN T_Requested_Run RR
-       ON F.RequestID = RR.ID
+       COALESCE(DSExp.Exp_ID, RRExp.Exp_ID) AS Experiment_ID,
+       COALESCE(DSExp.Experiment_Num, RRExp.Experiment_Num) AS Experiment,
+       COALESCE(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign
+FROM T_Requested_Run AS RR
+     INNER JOIN T_Factor AS F
+       ON F.TargetID = RR.ID AND
+          F.Type = 'Run_Request'
+     INNER JOIN T_Experiments RRExp
+       ON RR.Exp_ID = RRExp.Exp_ID
+     INNER JOIN T_Campaign RRCampaign
+       ON RRCampaign.Campaign_ID = RRExp.EX_campaign_ID
      LEFT OUTER JOIN T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
-     INNER JOIN T_Campaign RRCampaign
-                INNER JOIN T_Experiments RRExp
-                  ON RRCampaign.Campaign_ID = RRExp.EX_campaign_ID
-       ON RR.Exp_ID = RRExp.Exp_ID
      LEFT OUTER JOIN T_Experiments DSExp
        ON DS.Exp_ID = DSExp.Exp_ID
      LEFT OUTER JOIN T_Campaign DSCampaign
