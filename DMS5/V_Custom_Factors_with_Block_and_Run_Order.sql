@@ -4,18 +4,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Custom_Factors_with_Block_and_Run_Order] as
-SELECT F.Factor,
+SELECT RR.RDS_BatchID AS Batch,
+       RR.ID AS Request,       
+       F.Factor,
        F.Value AS [Value],
-       RR.ID AS Request,
-       RR.RDS_BatchID AS Batch,
-       RR.DatasetID,
+       RR.DatasetID As Dataset_ID,
        DS.Dataset_Num AS Dataset,
-       ISNULL(DSExp.Exp_ID, RRExp.Exp_ID) AS ExperimentID,
-       ISNULL(DSExp.Experiment_Num, RRExp.Experiment_Num) AS Experiment,
-       ISNULL(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign
-FROM (SELECT TargetID AS RequestID,
+       COALESCE(DSExp.Exp_ID, RRExp.Exp_ID) AS Experiment_ID,
+       COALESCE(DSExp.Experiment_Num, RRExp.Experiment_Num) AS Experiment,
+       COALESCE(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign
+FROM (SELECT TargetID AS Request_ID,
              Name AS Factor,
              Value AS [Value]
       FROM T_Factor F
@@ -34,7 +33,7 @@ FROM (SELECT TargetID AS RequestID,
       WHERE NOT RDS_Run_Order IS NULL 
      ) F
      INNER JOIN T_Requested_Run RR
-       ON F.RequestID = RR.ID
+       ON F.Request_ID = RR.ID
      LEFT OUTER JOIN T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
      INNER JOIN T_Campaign RRCampaign
