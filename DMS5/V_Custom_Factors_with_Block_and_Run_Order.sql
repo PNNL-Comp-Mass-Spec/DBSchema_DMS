@@ -1,11 +1,11 @@
-/****** Object:  View [dbo].[V_Factors_List_Report] ******/
+/****** Object:  View [dbo].[V_Custom_Factors_with_Block_and_Run_Order] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
 
-CREATE VIEW [dbo].[V_Factors_List_Report] as
+CREATE VIEW [dbo].[V_Custom_Factors_with_Block_and_Run_Order] as
 SELECT F.Factor,
        F.Value AS [Value],
        RR.ID AS Request,
@@ -48,5 +48,5 @@ FROM (SELECT TargetID AS RequestID,
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Factors_List_Report] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Custom_Factors_with_Block_and_Run_Order] TO [DDL_Viewer] AS [dbo]
 GO
