@@ -23,39 +23,39 @@ CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **
 *****************************************************/
 (
-    @Seq INT
+    @Seq int
 )
 RETURNS varchar(4096)
 As
 Begin
-    Declare @Message VARCHAR(4096) = ''
+    Declare @Message varchar(4096) = ''
 
-    Declare @EMSLInstID INT ,
-        @Instrument VARCHAR(64) ,
-        @Type VARCHAR(128) ,
-        @Start DATETIME ,
-        @Minutes INT ,
-        @Proposal VARCHAR(32) ,
-        @Usage VARCHAR(32) ,
-        @Users VARCHAR(1024) ,
-        @Operator VARCHAR(64) ,
-        @Comment VARCHAR(4096) ,
-        @Year INT ,
-        @Month INT ,
-        @DatasetID INT
+    Declare @EMSLInstID int ,
+        @Instrument varchar(64) ,
+        @Type varchar(128) ,
+        @Start datetime ,
+        @Minutes int ,
+        @Proposal varchar(32) ,
+        @Usage varchar(32) ,
+        @Users varchar(1024) ,
+        @Operator int,
+        @Comment varchar(4096) ,
+        @Year int ,
+        @Month int ,
+        @DatasetID int
 
-    Declare @ProposalId VARCHAR(10) ,
-        @Title VARCHAR(2048) ,
-        @StateID INT ,
-        @ImportDate DATETIME ,
-        @ProposalType VARCHAR(100) ,
-        @ProposalStartDate DATETIME ,
-        @ProposalEndDate DATETIME ,
-        @LastAffected DATETIME
-
+    Declare @ProposalId varchar(10) ,
+        @Title varchar(2048) ,
+        @StateID int ,
+        @ImportDate datetime ,
+        @ProposalType varchar(100) ,
+        @ProposalStartDate datetime ,
+        @ProposalEndDate datetime ,
+        @LastAffected datetime
 
     SELECT @EMSLInstID = InstUsage.EMSL_Inst_ID,
            @Instrument = InstName.IN_Name,
@@ -77,8 +77,8 @@ Begin
            ON InstUsage.Usage_Type = InstUsageType.ID
     WHERE (InstUsage.Seq = @Seq)
 
-    IF @Usage = 'CAP_DEV' AND ISNULL(@Operator, '') = ''
-        Set @Message = @Message + 'Capability Development requires an operator' + ', '
+    IF @Usage = 'CAP_DEV' AND @Operator Is Null
+        Set @Message = @Message + 'Capability Development requires an instrument operator ID' + ', '
 
     IF NOT @Usage IN ('ONSITE', 'MAINTENANCE') AND ISNULL(@Comment, '') = ''
         Set @Message = @Message + 'Missing Comment' + ', '
@@ -109,10 +109,9 @@ Begin
         Set @Message = @Message + 'Run start not between proposal start/end dates' + ', '
     END
 
-
     IF NOT @ProposalId IS NULL
     BEGIN
-        Declare @hits INT = 0
+        Declare @hits int = 0
         If @Users Like '%,%'
         Begin
             SELECT @hits = COUNT(*)

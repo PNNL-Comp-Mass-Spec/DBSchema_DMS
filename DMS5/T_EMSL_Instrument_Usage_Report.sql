@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[T_EMSL_Instrument_Usage_Report](
 	[Usage] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Usage_Type] [tinyint] NULL,
 	[Users] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Operator] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Operator] [int] NULL,
 	[Comment] [varchar](4096) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Year] [int] NULL,
 	[Month] [int] NULL,

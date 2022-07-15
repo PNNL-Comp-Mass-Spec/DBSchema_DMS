@@ -42,13 +42,14 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          02/15/2022 mem - Define column names when previewing updates
 **          03/17/2022 mem - After populating the staging table, update @instrument if required
 **                         - Call stored procedure UpdateEMSLInstrumentAcqOverlapColumn
+**          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @instrument varchar(64),        -- Instrument name to process; leave this blank if processing by EMSL instrument ID
-    @eusInstrumentId Int,           -- EMSL instrument ID to process; use this to process instruments like the 12T or the 15T where there are two instrument entries in DMS, yet they both map to the same EUS_Instrument_ID
+    @eusInstrumentId int,           -- EMSL instrument ID to process; use this to process instruments like the 12T or the 15T where there are two instrument entries in DMS, yet they both map to the same EUS_Instrument_ID
     @endDate datetime,              -- This is used to determine the target year and month; the day of the month does not really matter
     @message varchar(512) output,   -- Optionally specify debug reports to show, for example '1' or '1,2,3'
     @infoOnly tinyint = 0
@@ -58,7 +59,6 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-
 
     Declare @outputFormat varchar(12) = 'report'
     Declare @maxNormalInterval int
@@ -75,7 +75,7 @@ AS
     Declare @xml xml
     Declare @num int
     Declare @count int
-    
+
     Set @instrument = IsNull(@instrument, '')
     Set @eusInstrumentId = IsNull(@eusInstrumentId, 0)
 
@@ -152,12 +152,13 @@ AS
             [Usage] varchar(32) NULL,
             [Usage_Type] tinyint NULL,
             [Users] varchar(1024),
-            [Operator] varchar(64),
+            [Operator] varchar(64),        -- Could be an empty string or an Operator ID
             [Comment] varchar(4096) NULL,
             [Year] int,
             [Month] int,
             [Dataset_ID] int,
-            [Mark] int NULL,         -- 0 if adding a new row to T_EMSL_Instrument_Usage_Report, 1 if matches an existing row that will be updated
+            [Operator_ID] int NULL,        -- Value of [Operator] if an integer, otherwise null
+            [Mark] int NULL,               -- 0 if adding a new row to T_EMSL_Instrument_Usage_Report, 1 if matches an existing row that will be updated
             Seq int NULL
         )
 
@@ -209,9 +210,10 @@ AS
             Set @instrument = @actualInstrument
         End
 
-        -- Assure that the comment field does not have LF or CR
+        -- Populate the Operator_ID field and assure that the comment field does not have LF or CR
         UPDATE #STAGING
-        SET Comment = Replace(Replace(Comment, Char(10), ' '), Char(13), ' ')
+        SET Operator_ID = Try_Convert(int, Operator),
+            Comment = Replace(Replace(Comment, Char(10), ' '), Char(13), ' ')
 
         ---------------------------------------------------
         -- Populate columns DMS_Inst_ID and Usage_Type
@@ -222,7 +224,6 @@ AS
         FROM #STAGING
              INNER JOIN T_Instrument_Name InstName
                ON #STAGING.Instrument = InstName.IN_Name
-
 
         UPDATE #STAGING
         SET Usage_Type = InstUsageType.ID
@@ -360,8 +361,8 @@ AS
                    CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END AS Proposal,
                    CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage ELSE InstUsageType.Name END AS [Usage],
                    CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END AS Usage_Type,
-                   CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END AS Users,
-                   CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END AS Operator,
+                   CASE WHEN ISNULL(InstUsage.Users, '') = ''    THEN #STAGING.Users ELSE InstUsage.Users END AS Users,
+                   CASE WHEN InstUsage.Operator Is Null          THEN #STAGING.Operator_ID ELSE InstUsage.Operator END AS Operator,
                    #STAGING.[Year] AS [Year],
                    #STAGING.[Month] AS [Month],
                    CASE WHEN ISNULL(InstUsage.[Comment], '') = '' THEN #STAGING.[Comment] ELSE InstUsage.[Comment] END AS [Comment]
@@ -388,6 +389,7 @@ AS
                    [Year],
                    [Month],
                    Dataset_ID,
+                   Operator_ID,
                    Seq
             FROM #STAGING
             WHERE [Mark] = 0
@@ -436,10 +438,10 @@ AS
                     SET
                     [Minutes] = #STAGING.[Minutes],
                     [Start] = #STAGING.[Start],
-                    Proposal = CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END,
+                    Proposal = CASE WHEN ISNULL(InstUsage.Proposal, '') = ''   THEN #STAGING.Proposal ELSE InstUsage.Proposal END,
                     Usage_Type = CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END,
-                    Users = CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END,
-                    Operator = CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END,
+                    Users = CASE WHEN ISNULL(InstUsage.Users, '') = ''         THEN #STAGING.Users ELSE InstUsage.Users END,
+                    Operator = CASE WHEN InstUsage.Operator Is Null            THEN #STAGING.Operator ELSE InstUsage.Operator END,
                     [Year] = #STAGING.[Year],
                     [Month] = #STAGING.[Month],
                     Comment = CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment END,
@@ -460,8 +462,8 @@ AS
                         #STAGING.[Start],
                         CASE WHEN ISNULL(InstUsage.Proposal, '') = '' THEN #STAGING.Proposal ELSE InstUsage.Proposal END As Proposal,
                         CASE WHEN ISNULL(InstUsage.Usage_Type, 0) = 0 THEN #STAGING.Usage_Type ELSE InstUsage.Usage_Type END As Usage_Type,
-                        CASE WHEN ISNULL(InstUsage.Users, '') = '' THEN #STAGING.Users ELSE InstUsage.Users END As Users,
-                        CASE WHEN ISNULL(InstUsage.Operator, '') = '' THEN #STAGING.Operator ELSE InstUsage.Operator END As Operator,
+                        CASE WHEN ISNULL(InstUsage.Users, '') = ''    THEN #STAGING.Users ELSE InstUsage.Users END As Users,
+                        CASE WHEN InstUsage.Operator Is Null          THEN #STAGING.Operator ELSE InstUsage.Operator END As Operator,
                         #STAGING.[Year],
                         #STAGING.[Month],
                         CASE WHEN ISNULL(InstUsage.Comment, '') = '' THEN #STAGING.Comment ELSE InstUsage.Comment End As Comment,
@@ -505,7 +507,7 @@ AS
                                                             Dataset_ID, UpdatedBy, Seq )
                 SELECT EMSL_Inst_ID, DMS_Inst_ID, [Type],
                        [Start], [Minutes], Proposal, Usage_Type,
-                       Users, Operator, Comment, [Year], [Month],
+                       Users, Operator_ID, Comment, [Year], [Month],
                        Dataset_ID, @callingUser, Seq
                 FROM #STAGING
                 WHERE [Mark] = 0
@@ -518,7 +520,7 @@ AS
                 SELECT 'Insert Row' as [Action],
                        EMSL_Inst_ID, DMS_Inst_ID, [Type],
                        [Start], [Minutes], Proposal, Usage_Type,
-                       Users, Operator, Comment, [Year], [Month],
+                       Users, Operator_ID, Comment, [Year], [Month],
                        Dataset_ID, @callingUser as UpdatedBy, Seq
                 FROM #STAGING
                 WHERE [Mark] = 0
@@ -559,7 +561,6 @@ AS
                     Print 'Would delete ' + Cast(@myRowCount as varchar(9)) + ' shorter "long intervals" from T_EMSL_Instrument_Usage_Report'
             End
 
-
             ---------------------------------------------------
             -- Clean out any "long intervals" that don't appear
             -- in the main interval table
@@ -597,7 +598,6 @@ AS
                 If @myRowCount > 0
                     Print 'Would delete ' + Cast(@myRowCount as varchar(9)) + ' longer "long intervals" from T_EMSL_Instrument_Usage_Report'
             End
-
 
             ---------------------------------------------------
             -- Add automatic log references for missing comments

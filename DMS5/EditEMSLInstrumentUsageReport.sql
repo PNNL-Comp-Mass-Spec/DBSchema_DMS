@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **		Updates selected EMSL instrument usage report items
 **
 **		This procedure appears to be unused in 2017
@@ -18,22 +18,23 @@ CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
 **  Date:	08/31/2012 grk - Initial release
 **          09/11/2012 grk - fixed update SQL
 **			04/11/2017 mem - Replace column Usage with Usage_Type
-**  
+**          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**
 *****************************************************/
 (
-	@Year INT = 2012 ,
-    @Month INT = 8 ,
-    @Instrument VARCHAR(64) = '',
-    @Type VARCHAR(32) = '',
-    @Usage Varchar(32) = '',
-    @Proposal VARCHAR(32) = '',
-    @Users VARCHAR(512) = '',
-    @Operator VARCHAR(32) = '',  
-    @Comment VARCHAR(512) = '',
-    @FieldName VARCHAR(32) = '' , -- Proposal, Usage,  Users,  Operator,  Comment, 
-    @NewValue VARCHAR(512) = '',
+	@Year int = 2012 ,
+    @Month int = 8 ,
+    @Instrument varchar(64) = '',
+    @Type varchar(32) = '',
+    @Usage varchar(32) = '',
+    @Proposal varchar(32) = '',
+    @Users varchar(512) = '',
+    @Operator varchar(32) = '',     -- Operator for update (should be an integer representing EUS Person ID; if an empty string, will store NULL for the operator ID)
+    @Comment varchar(512) = '',
+    @FieldName varchar(32) = '' ,   -- Proposal, Usage,  Users,  Operator,  Comment,
+    @NewValue varchar(512) = '',
     @DoUpdate TINYINT = 0
-)	
+)
 AS
 	SET NOCOUNT ON
 
@@ -48,18 +49,21 @@ AS
 
 	Set @Month = IsNull(@Month, 0)
 	Set @Year = IsNull(@Year, 0)
-	
+
 	Set @Instrument = IsNull(@Instrument, '')
 	Set @Type = IsNull(@Type, '')
 	Set @Usage = IsNull(@Usage, '')
 	Set @Proposal = IsNull(@Proposal, '')
 	Set @Users = IsNull(@Users, '')
-	Set @Operator = IsNull(@Operator, '')
+
+    -- Assure that @Operator is either an integer or null
+    Set @Operator = Try_Convert(int, @Operator)
+
 	Set @NewValue = IsNull(@NewValue, '')
-	
+
 	Declare @instrumentID int = 0
 	Declare @usageTypeID tinyint = 0
-	
+
 	If @Instrument <> ''
 	Begin
 		SELECT @instrumentID = Instrument_ID
@@ -67,13 +71,13 @@ AS
 		WHERE IN_name = @Instrument
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-		
+
 		If @instrumentID = 0
 		Begin
 			RAISERROR ('Instrument not found: "%s"', 11, 4, @Instrument)
 		End
 	End
-	
+
 	If @Usage <> ''
 	Begin
 		SELECT @usageTypeID = ID
@@ -81,13 +85,13 @@ AS
 		WHERE [Name] = @Usage
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
-		
+
 		If @usageTypeID = 0
 		Begin
 			RAISERROR ('Usage type not found: "%s"', 11, 4, @Usage)
 		End
 	End
-	
+
 	---------------------------------------------------
 	-- Temp table to hold keys to affected items
 	---------------------------------------------------
@@ -110,20 +114,20 @@ AS
 			AND (( @usageTypeID = 0 ) OR ( Usage_Type = @usageTypeID ))
 			AND (( @Proposal = '' ) OR ( Proposal = @Proposal ))
 			AND (( @Users = '' ) OR ( Users = @Users ))
-			AND (( @Operator = '' ) OR ( Operator = @Operator ))
+			AND (( @Operator Is Null ) OR ( Operator = @Operator ))
 
 	---------------------------------------------------
 	-- Display affected items or make change
 	---------------------------------------------------
 
-	IF @DoUpdate = 0 
-	BEGIN 
-		SELECT * 
+	IF @DoUpdate = 0
+	BEGIN
+		SELECT *
 		FROM #TX INNER JOIN dbo.T_EMSL_Instrument_Usage_Report TD ON #TX.Seq = TD.Seq
-	END 
+	END
 	ELSE
 		BEGIN
-	 
+
 		IF @FieldName = 'Proposal'
 		BEGIN
 			UPDATE TD
@@ -136,13 +140,13 @@ AS
 			If @NewValue <> ''
 			Begin
 				Declare @newUsageTypeID tinyint = 0
-				
+
 				SELECT @newUsageTypeID = ID
 				FROM T_EMSL_Instrument_Usage_Type
 				WHERE [Name] = @NewValue
 				--
 				SELECT @myError = @@error, @myRowCount = @@rowcount
-				
+
 				If @myRowCount = 0 Or @newUsageTypeID = 0
 				Begin
 					RAISERROR ('Invalid usage type: "%s"', 11, 4, @NewValue)
@@ -165,8 +169,9 @@ AS
 
 		IF @FieldName = 'Operator'
 		BEGIN
+		    -- Store null if @NewValue is not an integer
 			UPDATE TD
-			SET Operator = @NewValue
+			SET Operator = Try_Convert(int, @NewValue)
 			FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
 		END
 
@@ -178,9 +183,8 @@ AS
 		END
 	END
 
-
 	---------------------------------------------------
-	-- 
+	--
 	---------------------------------------------------
 
 	DROP TABLE #TX

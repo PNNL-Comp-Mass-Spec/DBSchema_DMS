@@ -7,9 +7,9 @@ GO
 CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 /****************************************************
 **
-**  Desc:  Update requested EMSL instument usage table from input XML list 
+**  Desc:  Update requested EMSL instument usage table from input XML list
 **
-**  @factorList will look like this 
+**  @factorList will look like this
 **
 **      <id type="Seq" />
 **      <r i="1939" f="Comment" v="..." />
@@ -20,7 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   10/07/2012 
+**  Date:   10/07/2012
 **          10/09/2012 grk - Enabled 10 day edit cutoff and UpdateDatasetInterval for 'reload'
 **          11/21/2012 mem - Extended cutoff for 'reload' to be 45 days instead of 10 days
 **          01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 45 days
@@ -35,16 +35,17 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 **          05/03/2019 mem - Pass 0 to UpdateEMSLInstrumentUsageReport for @eusInstrumentID
 **          09/10/2019 mem - Extended cutoff for 'update' to be 365 days instead of 90 days
 **                         - Changed the cutoff for reload to 60 days
-**    
+**          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @factorList text,
     @operation varchar(32),        -- 'update', 'refresh', 'reload'
-    @year VARCHAR(12),
-    @month VARCHAR(12),
-    @instrument VARCHAR(128),
+    @year varchar(12),
+    @month varchar(12),
+    @instrument varchar(128),
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
@@ -57,22 +58,22 @@ As
     Declare @myRowCount int = 0
 
     Set @message = ''
-     
-    Declare @msg VARCHAR(512) 
 
-    Declare @startOfMonth Datetime 
-    Declare @startOfNextMonth Datetime
-    Declare @endOfMonth Datetime
-    Declare @lockDateReload Datetime
-    Declare @lockDateUpdate Datetime
+    Declare @msg varchar(512)
+
+    Declare @startOfMonth datetime
+    Declare @startOfNextMonth datetime
+    Declare @endOfMonth datetime
+    Declare @lockDateReload datetime
+    Declare @lockDateUpdate datetime
 
     Declare @xml AS xml
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageReport', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -82,14 +83,14 @@ As
     ---------------------------------------------------
      -- validate inputs
     ---------------------------------------------------
-    
+
     If IsNull(@callingUser, '') = ''
         Set @callingUser = dbo.GetUserLoginWithoutDomain('')
 
     Declare @instrumentID int = 0
-    
+
     Set @instrument = IsNull(@instrument, '')
-    
+
     If @Instrument <> ''
     Begin
         SELECT @instrumentID = Instrument_ID
@@ -97,7 +98,7 @@ As
         WHERE IN_name = @Instrument
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @instrumentID = 0
         Begin
             RAISERROR ('Instrument not found: "%s"', 11, 4, @Instrument)
@@ -122,11 +123,11 @@ As
     Begin
         RAISERROR ('Year must be defined', 11, 4)
     End
-    
-    Declare @monthValue Int = Try_Cast(@month As Int)
-    Declare @yearValue Int = Try_Cast(@year As Int)
 
-    If @monthValue Is Null 
+    Declare @monthValue int = Try_Cast(@month As int)
+    Declare @yearValue int = Try_Cast(@year As int)
+
+    If @monthValue Is Null
     Begin
         RAISERROR ('Month must be an integer, not: "%s"', 11, 4, @month)
     End
@@ -137,14 +138,14 @@ As
     End
 
     -- Uncomment to debug
-    -- Declare @debugMessage Varchar(1024) = 'Operation: ' + @operation + '; Instrument: ' + @instrument + '; ' + @year + '-' + @month + '; ' + Cast(@factorList As Varchar(1024))
+    -- Declare @debugMessage varchar(1024) = 'Operation: ' + @operation + '; Instrument: ' + @instrument + '; ' + @year + '-' + @month + '; ' + Cast(@factorList As varchar(1024))
     -- Exec PostLogEntry 'Debug', @debugMessage, 'UpdateInstrumentUsageReport'
-    
+
     -----------------------------------------------------------
     -- Copy @factorList text variable into the XML variable
     -----------------------------------------------------------
     Set @xml = @factorList
-    
+
     ---------------------------------------------------
     ---------------------------------------------------
     BEGIN TRY
@@ -167,10 +168,10 @@ As
         -----------------------------------------------------------
         -- foundational actions for various operations
         -----------------------------------------------------------
-              
+
         IF @operation in ('update')
-        BEGIN --<a>        
-        
+        BEGIN --<a>
+
             -----------------------------------------------------------
             -- temp table to hold update items
             -----------------------------------------------------------
@@ -201,70 +202,73 @@ As
             -----------------------------------------------------------
             -- make sure changed fields are allowed
             -----------------------------------------------------------
-            
-            Declare @badFields VARCHAR(4096) = ''
-            SELECT DISTINCT @badFields = @badFields + Field + ',' FROM #TMP WHERE NOT Field IN ('Proposal', 'Operator', 'Comment', 'Users', 'Usage')
-            --                                   
-            IF @badFields <> ''        
+
+            Declare @badFields varchar(4096) = ''
+
+            SELECT DISTINCT @badFields = @badFields + Field + ','
+            FROM #TMP
+            WHERE NOT Field IN ('Proposal', 'Operator', 'Comment', 'Users', 'Usage')
+            --
+            IF @badFields <> ''
                 RAISERROR ('The following field(s) are not editable: %s', 11, 27, @badFields)
 
         END --<a>
-  
+
         IF @operation in ('reload', 'refresh')
         BEGIN --<b>
             -----------------------------------------------------------
-            -- validation    
+            -- validation
             -----------------------------------------------------------
-            
+
             IF @operation = 'reload' AND ISNULL(@instrument, '') = ''
                 RAISERROR ('An instrument must be specified for the reload operation', 11, 10)
-        
-                    
+
+
             IF ISNULL(@year, '') = '' OR ISNULL(@month, '') = ''
                 RAISERROR ('A year and month must be specified for this operation', 11, 11)
 
-            IF ISNULL(@instrument, '') = '' 
-            BEGIN 
+            IF ISNULL(@instrument, '') = ''
+            BEGIN
                 ---------------------------------------------------
                 -- Get list of EMSL instruments
                 ---------------------------------------------------
                 --
                 CREATE TABLE #Tmp_Instruments (
-                    Seq INT IDENTITY(1,1) NOT NULL,
+                    Seq int IDENTITY(1,1) NOT NULL,
                     Instrument varchar(65)
                 )
                 INSERT INTO #Tmp_Instruments (Instrument)
-                SELECT [Name]                                                                                      
-                FROM V_Instrument_Tracked 
+                SELECT [Name]
+                FROM V_Instrument_Tracked
                 WHERE ISNULL(EUS_Primary_Instrument, '') = 'Y'
-            END                             
-    
-        END --<b>                        
+            END
+
+        END --<b>
 
         IF @operation = 'update'
         BEGIN
             UPDATE T_EMSL_Instrument_Usage_Report
             SET Comment = #TMP.Value
             FROM T_EMSL_Instrument_Usage_Report
-            INNER JOIN #TMP ON Seq = Identifier
-            WHERE Field = 'Comment'                        
-        
+                 INNER JOIN #TMP ON Seq = Identifier
+            WHERE Field = 'Comment'
+
             UPDATE T_EMSL_Instrument_Usage_Report
             SET Proposal = #TMP.Value
             FROM T_EMSL_Instrument_Usage_Report
-            INNER JOIN #TMP ON Seq = Identifier
-            WHERE Field = 'Proposal'                        
+                 INNER JOIN #TMP ON Seq = Identifier
+            WHERE Field = 'Proposal'
 
             UPDATE T_EMSL_Instrument_Usage_Report
-            SET Operator = #TMP.Value
+            SET Operator = Try_Convert(int, #TMP.Value)
             FROM T_EMSL_Instrument_Usage_Report
-            INNER JOIN #TMP ON Seq = Identifier
-            WHERE Field = 'Operator'                        
+                 INNER JOIN #TMP ON Seq = Identifier
+            WHERE Field = 'Operator'
 
             UPDATE T_EMSL_Instrument_Usage_Report
             SET Users = #TMP.Value
             FROM T_EMSL_Instrument_Usage_Report
-            INNER JOIN #TMP ON Seq = Identifier
+                 INNER JOIN #TMP ON Seq = Identifier
             WHERE Field = 'Users'
 
             UPDATE T_EMSL_Instrument_Usage_Report
@@ -275,73 +279,73 @@ As
                  INNER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
                    ON #TMP.VALUE = InstUsageType.Name
             WHERE Field = 'Usage'
-            
+
             UPDATE T_EMSL_Instrument_Usage_Report
-            SET 
+            SET
                 Updated = GETDATE(),
-                UpdatedBy = @callingUser        
+                UpdatedBy = @callingUser
             FROM T_EMSL_Instrument_Usage_Report
             INNER JOIN #TMP ON Seq = Identifier
 
-        END 
+        END
 
         IF @operation = 'reload'
-        BEGIN        
+        BEGIN
             UPDATE T_EMSL_Instrument_Usage_Report
-            SET 
+            SET
                 Usage_Type = Null,
                 Proposal = '',
                 Users = '',
-                Operator = '',
+                Operator = Null,
                 Comment = ''
-            WHERE @year = [Year]
-            AND @month = [Month]
-            AND (@instrument = '' OR DMS_Inst_ID = @instrumentID)
+            WHERE @year = [Year] AND
+                  @month = [Month] AND
+                  (@instrument = '' OR DMS_Inst_ID = @instrumentID)
 
             EXEC UpdateDatasetInterval @instrument, @startOfMonth, @endOfMonth, @message output
-    
-            Set @operation = 'refresh'            
-        END 
+
+            Set @operation = 'refresh'
+        END
 
         IF @operation = 'refresh'
         BEGIN
             IF Len(ISNULL(@instrument, '')) > 0
-            BEGIN                     
+            BEGIN
                 EXEC @myError = UpdateEMSLInstrumentUsageReport @instrument, 0, @endOfMonth, @msg output
-                IF(@myError <> 0)          
+                IF(@myError <> 0)
                     RAISERROR (@msg, 11, 6)
             END
-            ELSE 
+            ELSE
             BEGIN --<m>
-                Declare @inst VARCHAR(64)
-                Declare @index INT = 0
+                Declare @inst varchar(64)
+                Declare @index int = 0
                 Declare @done TINYINT = 0
 
                 WHILE @done = 0
                 BEGIN --<x>
-                    Set @inst = NULL 
+                    Set @inst = NULL
                     SELECT TOP 1 @inst = Instrument
-                    FROM #Tmp_Instruments 
+                    FROM #Tmp_Instruments
                     WHERE Seq > @index
-            
+
                     Set @index = @index + 1
-            
-                    IF @inst IS NULL 
-                    BEGIN 
+
+                    IF @inst IS NULL
+                    BEGIN
                         Set @done = 1
-                    END 
-                    ELSE 
+                    END
+                    ELSE
                     BEGIN --<y>
                         EXEC UpdateEMSLInstrumentUsageReport @inst, 0, @endOfMonth, @msg output
                     END  --<y>
                 END --<x>
-            END --<m>                                                    
-        END 
+            END --<m>
+        END
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;

@@ -7,40 +7,41 @@ GO
 CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **
 **	Return value: nearest preceeding log message
 **
-**	Parameters: 
+**	Parameters:
 **
 **	Auth:	grk
 **	Date:	08/28/2012
 **			04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
-**    
+**          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**
 *****************************************************/
 (
-	@Seq INT,
+	@Seq int,
 	@OmitText SMALLINT = 0
 )
 RETURNS varchar(4096)
 AS
 	BEGIN
-		Declare @Message VARCHAR(4096) = ''
+		Declare @Message varchar(4096) = ''
 
-		Declare @EMSLInstID INT ,
-			@Instrument VARCHAR(64) ,
-			@Type VARCHAR(128) ,
-			@Start DATETIME ,
-			@Minutes INT ,
-			@Proposal VARCHAR(32) ,
-			@Usage VARCHAR(32) ,
-			@Users VARCHAR(1024) ,
-			@Operator VARCHAR(64) ,
-			@Comment VARCHAR(4096) ,
-			@Year INT ,
-			@Month INT ,
-			@DatasetID INT 
+		Declare @EMSLInstID int ,
+			@Instrument varchar(64) ,
+			@Type varchar(128) ,
+			@Start datetime ,
+			@Minutes int ,
+			@Proposal varchar(32) ,
+			@Usage varchar(32) ,
+			@Users varchar(1024) ,
+			@Operator int ,
+			@Comment varchar(4096) ,
+			@Year int ,
+			@Month int ,
+			@DatasetID int
 
 		SELECT @EMSLInstID = InstUsage.EMSL_Inst_ID,
 		       @Instrument = InstName.IN_Name,
@@ -62,13 +63,12 @@ AS
 		       ON InstUsage.Usage_Type = InstUsageType.ID
 		WHERE   ( Seq = @Seq )
 
-
 		IF @Usage <> 'ONSITE' AND ISNULL(@Comment, '') = ''
-		BEGIN 
-			Declare @opNote VARCHAR(4096) = '', @opNoteTime DATETIME , @opNoteID INT = 0
-			Declare @confNote VARCHAR(4096) = '', @confNoteTime DATETIME , @confNoteID INT = 0
+		BEGIN
+			Declare @opNote varchar(4096) = '', @opNoteTime datetime , @opNoteID int = 0
+			Declare @confNote varchar(4096) = '', @confNoteTime datetime , @confNoteID int = 0
 
-			SELECT TOP(1) 
+			SELECT TOP(1)
 				@opNoteID = ID,
 				@opNoteTime = Entered,
 				@opNote = CASE WHEN @OmitText > 0 THEN ISNULL(Note, '') ELSE '' END
@@ -83,14 +83,14 @@ AS
 			FROM    T_Instrument_Config_History
 			WHERE Instrument = @Instrument AND Date_Of_Change < @Start
 			ORDER BY Date_Of_Change DESC
-			
+
 		   Set @message = CASE WHEN @opNoteTime > @confNoteTime
-							   THEN '[Op Log:' + CONVERT(VARCHAR(128), @opNoteID)
+							   THEN '[Op Log:' + CONVERT(varchar(128), @opNoteID)
 									+ '] ' + @opNote
-							   ELSE '[Config Log:' + CONVERT(VARCHAR(128), @confNoteID)
+							   ELSE '[Config Log:' + CONVERT(varchar(128), @confNoteID)
 									+ '] ' + @confNote
-						  END 
-		END 
+						  END
+		END
 		RETURN @Message
 	END
 

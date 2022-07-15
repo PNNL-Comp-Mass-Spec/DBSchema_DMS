@@ -6,7 +6,7 @@ GO
 
 CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 /****************************************************
-**  Desc: 
+**  Desc:
 **      Outputs contents of EMSL instrument usage report table as a daily rollup, including rows with Dataset_ID_Acq_Overlap
 **      This UDF is used by the CodeIgniter instance at http://prismsupport.pnl.gov/dms2ws/
 **
@@ -25,11 +25,12 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 **                         - Saved as new UDF named GetEMSLInstrumentUsageDailyDetails
 **          04/27/2020 mem - Populate the Seq column using Seq values in T_EMSL_Instrument_Usage_Report
 **          03/17/2022 mem - Add ID_Acq_Overlap (from Dataset_ID_Acq_Overlap) to the output
-**    
-*****************************************************/ 
+**          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**
+*****************************************************/
 (
-    @Year INT, 
-    @Month INT 
+    @Year int,
+    @Month int
 )
 RETURNS @T_Report_Output TABLE
     (
@@ -41,7 +42,7 @@ RETURNS @T_Report_Output TABLE
       [Proposal] [varchar](32) NULL,
       [Usage] [varchar](32) NULL,
       [Users] [varchar](1024) NULL,
-      [Operator] [varchar](64) NULL,
+      [Operator] [varchar](64) NULL,    -- Could be a comma separated list of Operator IDs
       [Comment] [varchar](4096) NULL,
       [Year] [int],
       [Month] [int],
@@ -51,58 +52,57 @@ RETURNS @T_Report_Output TABLE
       [Updated] [datetime] NULL,
       [UpdatedBy] [varchar](32) NULL
     )
-AS 
-    BEGIN    
+AS
+    BEGIN
         -- Table for processing runs and intervals for reporting month
         Declare @T_Working TABLE
             (
-              [Dataset_ID] INT NULL,
-              [EMSL_Inst_ID] INT NULL,
-              [DMS_Instrument] VARCHAR(64) NULL,
-              [Type] VARCHAR(128) NULL,         -- Dataset or Interval
-              [Proposal] VARCHAR(32) NULL,
+              [Dataset_ID] int NULL,
+              [EMSL_Inst_ID] int NULL,
+              [DMS_Instrument] varchar(64) NULL,
+              [Type] varchar(128) NULL,         -- Dataset or Interval
+              [Proposal] varchar(32) NULL,
               [Users] [varchar](1024) NULL,
-              [Usage] VARCHAR(32) NULL,
-              [Start] DATETIME NULL,
-              [End] DATETIME NULL,
-              [EndOfDay] DATETIME NULL,
-              [Year] INT NULL,
-              [Month] INT NULL,
-              [Day] INT NULL,
-              [DayAtRunEnd] INT NULL,
-              [MonthAtRunEnd] INT NULL,
-              [BeginningOfNextDay] DATETIME NULL,
-              [DurationSeconds] INT NULL,
-              [DurationSecondsInCurrentDay] INT NULL,
-              [RemainingDurationSeconds] INT NULL,
-              [Dataset_ID_Acq_Overlap] INT NULL,
-              Comment VARCHAR(MAX) NULL,
-              [Operator] [varchar](64) NULL,
-              [Seq] INT NULL
+              [Usage] varchar(32) NULL,
+              [Start] datetime NULL,
+              [End] datetime NULL,
+              [EndOfDay] datetime NULL,
+              [Year] int NULL,
+              [Month] int NULL,
+              [Day] int NULL,
+              [DayAtRunEnd] int NULL,
+              [MonthAtRunEnd] int NULL,
+              [BeginningOfNextDay] datetime NULL,
+              [DurationSeconds] int NULL,
+              [DurationSecondsInCurrentDay] int NULL,
+              [RemainingDurationSeconds] int NULL,
+              [Dataset_ID_Acq_Overlap] int NULL,
+              Comment varchar(MAX) NULL,
+              [Operator] int NULL,
+              [Seq] int NULL
             )
 
         -- Intermediate storage for report entries
-        -- 
+        --
         Declare @T_Report_Accumulation TABLE
             (
-              [Start] DATETIME,
-              [DurationSeconds] INT,
-              [Month] INT,
-              [Day] INT,
-              [Dataset_ID] INT,
-              [EMSL_Inst_ID] INT,
-              [DMS_Instrument] VARCHAR(64),
-              [Proposal] VARCHAR(32),
-              [Usage] VARCHAR(32),
+              [Start] datetime,
+              [DurationSeconds] int,
+              [Month] int,
+              [Day] int,
+              [Dataset_ID] int,
+              [EMSL_Inst_ID] int,
+              [DMS_Instrument] varchar(64),
+              [Proposal] varchar(32),
+              [Usage] varchar(32),
               [Year] [int] NULL,
               [Type] [varchar](128),
               [Users] [varchar](1024) NULL,
-              [Operator] [varchar](64) NULL,
-              [Dataset_ID_Acq_Overlap] INT NULL,
+              [Operator] [varchar](64) NULL,        -- Could be a comma separated list of Operator IDs
+              [Dataset_ID_Acq_Overlap] int NULL,
               [Comment] [varchar](4096) NULL,
-              [Seq] INT NULL
+              [Seq] int NULL
             )
-
 
         -- Import entries from EMSL instrument usage table
         -- for given month and year into working table
@@ -146,7 +146,6 @@ AS
                 WHERE InstUsage.[Year] = @Year AND
                       InstUsage.[Month] = @Month
 
-
         -- Repetitive process to pull records out of working table
         -- into accumulation table
         --
@@ -159,9 +158,9 @@ AS
         --  a. starting at 11:40 pm on April 17 and lasting 20 minutes
         --  b. starting at 12:00 am on April 18 and lasting 10 minutes
 
-        Declare @done INT = 0
+        Declare @done int = 0
 
-        WHILE @done = 0 
+        WHILE @done = 0
         BEGIN -- <loop>
 
             -- Update working table with end times
@@ -172,11 +171,11 @@ AS
                     [MonthAtRunEnd] = DATEPART(month, DATEADD(second, [DurationSeconds], [Start])),
                     [EndOfDay] = DATEADD(ms, -2, DATEADD(dd, 1,DATEDIFF(dd, 0, [Start]))),
                     [BeginningOfNextDay] = DATEADD(day, 1, CAST([Start] AS DATE))
-            -- 
+            --
             UPDATE  @T_Working
             SET     [DurationSecondsInCurrentDay] = DATEDIFF(second, [Start], EndOfDay),
                     [RemainingDurationSeconds] = [DurationSeconds] - DATEDIFF(second, [Start], EndOfDay)
-                
+
             -- Copy usage records that do not span more than one day
             -- from working table to accumulation table
             INSERT INTO @T_Report_Accumulation
@@ -212,25 +211,25 @@ AS
                             [Type],
                             Dataset_ID_Acq_Overlap,
                             Comment,
-                            Operator,
+                            Cast(Operator as varchar(12)),
                             [Seq]
                     FROM @T_Working
                     WHERE [Day] = [DayAtRunEnd] AND
                           [Month] = [MonthAtRunEnd]
-            
+
             -- Remove the usage records that we just copied into @T_Report_Accumulation
             DELETE  FROM @T_Working
             WHERE   [Day] = [DayAtRunEnd] AND
                     [Month] = [MonthAtRunEnd]
 
             -- Also remove any rows that have a negative value for RemainingDurationSeconds
-            -- This will be true for any datasets that were started in the evening on the last day of the month 
+            -- This will be true for any datasets that were started in the evening on the last day of the month
             -- and were still acquiring data when we reached midnight and entered a new month
             DELETE  FROM @T_Working
-            WHERE   RemainingDurationSeconds < 0 
+            WHERE   RemainingDurationSeconds < 0
 
             -- Copy report entries into accumulation table for
-            -- remaining durations (datasets that cross daily boundaries) 
+            -- remaining durations (datasets that cross daily boundaries)
             -- using only duration time contained inside the daily boundary
             INSERT INTO @T_Report_Accumulation
                     (   EMSL_Inst_ID,
@@ -264,9 +263,9 @@ AS
                             [Type],
                             Dataset_ID_Acq_Overlap,
                             Comment,
-                            Operator,
+                            Cast(Operator as varchar(12)),
                             [Seq]
-                    FROM @T_Working 
+                    FROM @T_Working
 
             -- Update start time and duration of entries in working table
             UPDATE @T_Working
@@ -280,7 +279,7 @@ AS
                     [BeginningOfNextDay] = NULL,
                     [DurationSecondsInCurrentDay] = NULL,
                     [RemainingDurationSeconds] = NULL
-            
+
             -- We are done when there is nothing left to process in working table
             IF NOT EXISTS (SELECT * FROM @T_Working)
             Begin
@@ -391,7 +390,7 @@ AS
                                       TA.[Month] = TZ.[Month] AND
                                       TA.[Day] = TZ.[Day]
 
-                                      
+
         ----------------------------------------------------
         -- Copy report entries from accumulation table to report output table
         ----------------------------------------------------
@@ -416,7 +415,7 @@ AS
                   [ID_Acq_Overlap],     -- Dataset_ID_Acq_Overlap
                   [Seq],
                   [Updated],
-                  [UpdatedBy] 
+                  [UpdatedBy]
                 )
                 SELECT  EMSL_Inst_ID,
                         DMS_Instrument AS Instrument,
@@ -456,7 +455,6 @@ AS
                          [Day] ASC,
                          [Start] ASC
 
-
         -- Next, add maintenance datasets, where we report one entry per day
         --
         INSERT  INTO @T_Report_Output
@@ -476,7 +474,7 @@ AS
                   [ID_Acq_Overlap],     -- Dataset_ID_Acq_Overlap
                   [Seq],
                   [Updated],
-                  [UpdatedBy] 
+                  [UpdatedBy]
                 )
                 SELECT  EMSL_Inst_ID,
                         DMS_Instrument AS Instrument,
