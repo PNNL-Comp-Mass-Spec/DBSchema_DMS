@@ -7,6 +7,8 @@ CREATE TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type](
 	[IN_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Dataset_Type] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Dataset_Usage_Count] [int] NULL,
+	[Dataset_Usage_Last_Year] [int] NULL,
  CONSTRAINT [PK_T_Instrument_Group_Allowed_DS_Type] PRIMARY KEY CLUSTERED 
 (
 	[IN_Group] ASC,
