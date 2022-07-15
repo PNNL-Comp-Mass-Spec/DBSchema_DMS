@@ -20,7 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 **
 **  Auth:   mem
 **  Date:   11/04/2008 mem - Initial version (Ticket: #698)
-**          12/21/2009 mem - Added parameter @updateJobRequestStatistics
+**          12/21/2009 mem - Add parameter @updateJobRequestStatistics
 **          10/20/2011 mem - Now considering analysis tool name when updated T_Param_Files and T_Settings_Files
 **          09/11/2012 mem - Now updating T_Protein_Collection_Usage by calling UpdateProteinCollectionUsage
 **          07/18/2016 mem - Now updating Job_Usage_Last_Year in T_Param_Files and T_Settings_Files
@@ -28,7 +28,8 @@ CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 **          08/30/2018 mem - Tabs to spaces
 **          07/14/2022 mem - Update dataset usage in T_Instrument_Group_Allowed_DS_Type
 **                         - Update dataset usage in T_Cached_Instrument_Dataset_Type_Usage
-**                         - Added parameter @showRuntimeStats
+**                         - Add parameter @showRuntimeStats
+**                         - Only update counts if they change
 **    
 *****************************************************/
 (
@@ -65,11 +66,11 @@ As
     ------------------------------------------------
     --
     Set @message = ''
-    Set @previewSql = IsNull(@previewSql, 0)
-    Set @updateParamSettingsFileCounts = IsNull(@updateParamSettingsFileCounts, 1)
-    Set @updateGeneralStatistics = IsNull(@updateGeneralStatistics, 0)
-    Set @updateJobRequestStatistics = IsNull(@updateJobRequestStatistics, 1)
-    Set @showRuntimeStats = IsNull(@showRuntimeStats, 0)
+    Set @previewSql = Coalesce(@previewSql, 0)
+    Set @updateParamSettingsFileCounts = Coalesce(@updateParamSettingsFileCounts, 1)
+    Set @updateGeneralStatistics = Coalesce(@updateGeneralStatistics, 0)
+    Set @updateJobRequestStatistics = Coalesce(@updateJobRequestStatistics, 1)
+    Set @showRuntimeStats = Coalesce(@showRuntimeStats, 0)
 
     CREATE TABLE #Tmp_Update_Stats (
         Entry_ID        int Identity(1,1),
@@ -90,8 +91,8 @@ As
         Set @startTime = GetDate()
 
         UPDATE T_Param_Files
-        SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0),
-            Job_Usage_Last_Year = IsNull(StatsQ.JobCountLastYear, 0)        -- Usage over the last 12 months
+        SET Job_Usage_Count = Coalesce(StatsQ.JobCount, 0),
+            Job_Usage_Last_Year = Coalesce(StatsQ.JobCountLastYear, 0)        -- Usage over the last 12 months
         FROM T_Param_Files PF
              LEFT OUTER JOIN ( SELECT AJ.AJ_parmFileName AS Param_File_Name,
                                       PFT.Param_File_Type_ID,
@@ -109,6 +110,8 @@ As
                               ) StatsQ
                ON PF.Param_File_Name = StatsQ.Param_File_Name AND
                   PF.Param_File_Type_ID = StatsQ.Param_File_Type_ID
+        WHERE Coalesce(Job_Usage_Count, 0) <> Coalesce(StatsQ.JobCount, 0) OR
+              Coalesce(Job_Usage_Last_Year, 0) <> Coalesce(StatsQ.JobCountLastYear, 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     
@@ -123,8 +126,8 @@ As
         Set @startTime = GetDate()
 
         UPDATE T_Settings_Files
-        SET Job_Usage_Count = IsNull(StatsQ.JobCount, 0),
-            Job_Usage_Last_Year = IsNull(StatsQ.JobCountLastYear, 0)        -- Usage over the last 12 months
+        SET Job_Usage_Count = Coalesce(StatsQ.JobCount, 0),
+            Job_Usage_Last_Year = Coalesce(StatsQ.JobCountLastYear, 0)        -- Usage over the last 12 months
         FROM T_Settings_Files SF
              LEFT OUTER JOIN ( SELECT AJ.AJ_settingsFileName AS Settings_File_Name,
                                       AnTool.AJT_toolName,
@@ -140,6 +143,8 @@ As
                               ) StatsQ
                ON SF.Analysis_Tool = StatsQ.AJT_toolName AND
                   SF.File_Name = StatsQ.Settings_File_Name
+        WHERE Coalesce(Job_Usage_Count, 0) <> Coalesce(StatsQ.JobCount, 0) OR
+              Coalesce(Job_Usage_Last_Year, 0) <> Coalesce(StatsQ.JobCountLastYear, 0) 
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -154,8 +159,8 @@ As
         Set @startTime = GetDate()
 
         UPDATE T_LC_Cart_Configuration
-        SET Dataset_Usage_Count = IsNull(StatsQ.DatasetCount, 0),
-            Dataset_Usage_Last_Year = IsNull(StatsQ.DatasetCountLastYear, 0)        -- Usage over the last 12 months
+        SET Dataset_Usage_Count = Coalesce(StatsQ.DatasetCount, 0),
+            Dataset_Usage_Last_Year = Coalesce(StatsQ.DatasetCountLastYear, 0)        -- Usage over the last 12 months
         FROM T_LC_Cart_Configuration Target
              LEFT OUTER JOIN ( SELECT Cart_Config_ID,
                                       COUNT(*) AS DatasetCount,
@@ -168,6 +173,8 @@ As
                                GROUP BY Cart_Config_ID 
                               ) StatsQ
                ON Target.Cart_Config_ID = StatsQ.Cart_Config_ID
+        WHERE Coalesce(Dataset_Usage_Count, 0) <> Coalesce(StatsQ.DatasetCount, 0) OR
+              Coalesce(Dataset_Usage_Last_Year, 0) <> Coalesce(StatsQ.DatasetCountLastYear, 0) 
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -182,8 +189,8 @@ As
         Set @startTime = GetDate()
 
         UPDATE T_Instrument_Group_Allowed_DS_Type
-        SET Dataset_Usage_Count = IsNull(StatsQ.DatasetCount, 0),
-            Dataset_Usage_Last_Year = IsNull(StatsQ.DatasetCountLastYear, 0)        -- Usage over the last 12 months
+        SET Dataset_Usage_Count = Coalesce(StatsQ.DatasetCount, 0),
+            Dataset_Usage_Last_Year = Coalesce(StatsQ.DatasetCountLastYear, 0)        -- Usage over the last 12 months
         FROM T_Instrument_Group_Allowed_DS_Type Target
              LEFT OUTER JOIN ( SELECT InstName.IN_Group As Instrument_Group,
                                        DTN.DST_name As Dataset_Type,
@@ -201,6 +208,8 @@ As
                               ) StatsQ
                ON Target.IN_Group = StatsQ.Instrument_Group And
                   Target.Dataset_Type = StatsQ.Dataset_Type
+        WHERE Coalesce(Dataset_Usage_Count, 0) <> Coalesce(StatsQ.DatasetCount, 0) OR
+              Coalesce(Dataset_Usage_Last_Year, 0) <> Coalesce(StatsQ.DatasetCountLastYear, 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -249,8 +258,8 @@ As
         -- Update stats in T_Cached_Instrument_Dataset_Type_Usage
         --
         Update T_Cached_Instrument_Dataset_Type_Usage
-        SET Dataset_Usage_Count = IsNull(StatsQ.DatasetCount, 0),
-            Dataset_Usage_Last_Year = IsNull(StatsQ.DatasetCountLastYear, 0)
+        SET Dataset_Usage_Count = Coalesce(StatsQ.DatasetCount, 0),
+            Dataset_Usage_Last_Year = Coalesce(StatsQ.DatasetCountLastYear, 0)
         FROM T_Cached_Instrument_Dataset_Type_Usage Target
              LEFT OUTER JOIN ( SELECT InstName.Instrument_ID,
                                       DTN.DST_name As Dataset_Type,
@@ -268,6 +277,8 @@ As
                               ) StatsQ
                ON Target.Instrument_ID = StatsQ.Instrument_ID And
                   Target.Dataset_Type = StatsQ.Dataset_Type
+        WHERE Coalesce(Dataset_Usage_Count, 0) <> Coalesce(StatsQ.DatasetCount, 0) OR
+              Coalesce(Dataset_Usage_Last_Year, 0) <> Coalesce(StatsQ.DatasetCountLastYear, 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -329,9 +340,9 @@ As
         INSERT INTO #TmpStatEntries VALUES ('Organism_Count', 'Last 7 days',  'SELECT @Total = COUNT(*) FROM T_Organisms WHERE OG_Created > DATEADD(day, -7, GetDate())', 0)
         INSERT INTO #TmpStatEntries VALUES ('Organism_Count', 'Last 30 days', 'SELECT @Total = COUNT(*) FROM T_Organisms WHERE OG_Created > DATEADD(day, -30, GetDate())', 0)
 
-        INSERT INTO #TmpStatEntries VALUES ('RawDataTB', 'All',          'SELECT @TotalDec = Round(SUM(IsNull(File_Size_Bytes,0)) / 1024.0 / 1024.0 / 1024.0 / 1024.0, 2) FROM T_Dataset', 1)
-        INSERT INTO #TmpStatEntries VALUES ('RawDataTB', 'Last 7 days',  'SELECT @TotalDec = Round(SUM(IsNull(File_Size_Bytes,0)) / 1024.0 / 1024.0 / 1024.0 / 1024.0, 2) FROM T_Dataset WHERE DS_Created > DATEADD(day, -7, GetDate())', 1)
-        INSERT INTO #TmpStatEntries VALUES ('RawDataTB', 'Last 30 days', 'SELECT @TotalDec = Round(SUM(IsNull(File_Size_Bytes,0)) / 1024.0 / 1024.0 / 1024.0 / 1024.0, 2) FROM T_Dataset WHERE DS_Created > DATEADD(day, -30, GetDate())', 1)
+        INSERT INTO #TmpStatEntries VALUES ('RawDataTB', 'All',          'SELECT @TotalDec = Round(SUM(Coalesce(File_Size_Bytes,0)) / 1024.0 / 1024.0 / 1024.0 / 1024.0, 2) FROM T_Dataset', 1)
+        INSERT INTO #TmpStatEntries VALUES ('RawDataTB', 'Last 7 days',  'SELECT @TotalDec = Round(SUM(Coalesce(File_Size_Bytes,0)) / 1024.0 / 1024.0 / 1024.0 / 1024.0, 2) FROM T_Dataset WHERE DS_Created > DATEADD(day, -7, GetDate())', 1)
+        INSERT INTO #TmpStatEntries VALUES ('RawDataTB', 'Last 30 days', 'SELECT @TotalDec = Round(SUM(Coalesce(File_Size_Bytes,0)) / 1024.0 / 1024.0 / 1024.0 / 1024.0, 2) FROM T_Dataset WHERE DS_Created > DATEADD(day, -30, GetDate())', 1)
 
         -- Initialize @SqlParams
         Set @SqlParams = '@Total int output'
@@ -374,22 +385,28 @@ As
                     Begin            
                         Set @Total = 0
                         exec sp_executesql @Sql, @SqlParams, @Total = @Total Output
-                        Set @Value = Convert(varchar(12), IsNull(@Total, 0))
+                        Set @Value = Convert(varchar(12), Coalesce(@Total, 0))
                     End
                     Else
                     Begin
                         Set @TotalDec = 0
                         exec sp_executesql @Sql, @SqlParamsDec, @TotalDec = @TotalDec Output
-                        Set @Value = Convert(varchar(12), IsNull(@TotalDec, 0))
+                        Set @Value = Convert(varchar(12), Coalesce(@TotalDec, 0))
                     End
-                    
+
                     IF Exists ( SELECT * FROM T_General_Statistics WHERE Category = @Category AND Label = @Label )
+                    Begin
                         UPDATE T_General_Statistics
                         SET Value = @Value, Last_Affected = GetDate()
-                        WHERE Category = @Category AND Label = @Label
-                    ELSE
+                        WHERE Category = @Category AND 
+                              Label = @Label AND 
+                              Coalesce(Value, '0') <> Coalesce(@Value, '0')
+                    End
+                    Else
+                    Begin
                         INSERT INTO T_General_Statistics( Category, Label, Value, Last_Affected)
                         VALUES(@Category, @Label, @Value, GetDate())
+                    End
                 End -- </d>
                                 
             End -- </c>
@@ -424,7 +441,7 @@ As
                           GROUP BY AJR.AJR_requestID 
                          ) StatQ
                ON AJR.AJR_requestID = StatQ.AJR_requestID AND
-                  ISNULL(AJR.AJR_jobCount, - 1) <> StatQ.JobCount
+                  Coalesce(AJR.AJR_jobCount, - 1) <> StatQ.JobCount
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -436,6 +453,11 @@ As
     If @showRuntimeStats > 0
     Begin
         SELECT *
+        FROM #Tmp_Update_Stats
+        UNION
+        SELECT 15 AS Entry_ID,
+               'Total runtime' AS Task,
+               Sum(Runtime_Seconds) AS Runtime_Seconds
         FROM #Tmp_Update_Stats
         ORDER BY Entry_ID
     End
