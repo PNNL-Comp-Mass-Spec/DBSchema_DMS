@@ -21,6 +21,10 @@ GRANT VIEW DEFINITION ON [dbo].[T_Instrument_Group_Allowed_DS_Type] TO [DDL_View
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Comment]  DEFAULT ('') FOR [Comment]
 GO
+ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Dataset_Usage_Count]  DEFAULT ((0)) FOR [Dataset_Usage_Count]
+GO
+ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Dataset_Usage_Last_Year]  DEFAULT ((0)) FOR [Dataset_Usage_Last_Year]
+GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_DatasetTypeName_Dataset_Type] FOREIGN KEY([Dataset_Type])
 REFERENCES [dbo].[T_DatasetTypeName] ([DST_name])
 ON UPDATE CASCADE

@@ -50,6 +50,8 @@ ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Valid]  DEFA
 GO
 ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Job_Usage_Count]  DEFAULT ((0)) FOR [Job_Usage_Count]
 GO
+ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Job_Usage_Last_Year]  DEFAULT ((0)) FOR [Job_Usage_Last_Year]
+GO
 ALTER TABLE [dbo].[T_Param_Files] ADD  CONSTRAINT [DF_T_Param_Files_Mod_List]  DEFAULT ('') FOR [Mod_List]
 GO
 ALTER TABLE [dbo].[T_Param_Files]  WITH CHECK ADD  CONSTRAINT [FK_T_Param_Files_T_Param_File_Types] FOREIGN KEY([Param_File_Type_ID])

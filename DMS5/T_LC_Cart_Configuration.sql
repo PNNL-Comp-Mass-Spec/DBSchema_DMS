@@ -68,6 +68,10 @@ ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Config
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Configuration_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO
+ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Configuration_Dataset_Usage_Count]  DEFAULT ((0)) FOR [Dataset_Usage_Count]
+GO
+ALTER TABLE [dbo].[T_LC_Cart_Configuration] ADD  CONSTRAINT [DF_T_LC_Cart_Configuration_Dataset_Usage_Last_Year]  DEFAULT ((0)) FOR [Dataset_Usage_Last_Year]
+GO
 ALTER TABLE [dbo].[T_LC_Cart_Configuration]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Configuration_T_LC_Cart] FOREIGN KEY([Cart_ID])
 REFERENCES [dbo].[T_LC_Cart] ([ID])
 GO
