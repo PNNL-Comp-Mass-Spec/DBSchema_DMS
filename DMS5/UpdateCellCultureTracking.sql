@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[UpdateCellCultureTracking]
 /****************************************************
 **
-**  Desc: Updates cell culture tracking table with summary counts
+**  Desc: Updates summary stats in T_Cell_Culture_Tracking
 **
 **  Return values: 0: success, otherwise, error code
 **    
@@ -33,10 +33,10 @@ AS
     ----------------------------------------------------------
     --
     CREATE TABLE #Tmp_CellCultureStats (
-	    CC_ID int NOT NULL,
-	    Experiment_Count int NOT NULL,
-	    Dataset_Count int NOT NULL,
-	    Job_Count int NOT NULL,
+        CC_ID int NOT NULL,
+        Experiment_Count int NOT NULL,
+        Dataset_Count int NOT NULL,
+        Job_Count int NOT NULL,
         CONSTRAINT PK_Tmp_CellCultureStats PRIMARY KEY CLUSTERED ( CC_ID Asc)
     ) 
      
@@ -52,7 +52,7 @@ AS
            0, 0, 0
     FROM T_Cell_Culture
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
      
      
     ----------------------------------------------------------
@@ -108,8 +108,8 @@ AS
                      ) AS S
            ON #Tmp_CellCultureStats.CC_ID = S.CC_ID
 
-     ----------------------------------------------------------
-    -- Update [T_Cell_Culture_Tracking] using #Tmp_CellCultureStats
+    ----------------------------------------------------------
+    -- Update T_Cell_Culture_Tracking using #Tmp_CellCultureStats
     ----------------------------------------------------------
     --        
     MERGE T_Cell_Culture_Tracking AS t
@@ -131,6 +131,7 @@ AS
     ;
     
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCellCultureTracking] TO [DDL_Viewer] AS [dbo]

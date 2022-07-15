@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[UpdateCampaignTracking]
 /****************************************************
 **
-**  Desc: Updates cell culture tracking table with summary counts
+**  Desc: Updates summary stats in T_Campaign_Tracking
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -36,23 +36,23 @@ AS
     ----------------------------------------------------------
     --
     CREATE TABLE #Tmp_CampaignStats (
-	    Campaign_ID int NOT NULL,
-	    Sample_Submission_Count int NOT NULL,
-	    Cell_Culture_Count int NOT NULL,
-	    Experiment_Count int NOT NULL,
-	    Dataset_Count int NOT NULL,
-	    Job_Count int NOT NULL,
-	    Run_Request_Count int NOT NULL,
-	    Sample_Prep_Request_Count int NOT NULL,
-	    Data_Package_Count int NOT NULL,
-	    Sample_Submission_Most_Recent datetime NULL,
-	    Cell_Culture_Most_Recent datetime NULL,
-	    Experiment_Most_Recent datetime NULL,
-	    Dataset_Most_Recent datetime NULL,
-	    Job_Most_Recent datetime NULL,
-	    Run_Request_Most_Recent datetime NULL,
-	    Sample_Prep_Request_Most_Recent datetime NULL,
-	    Most_Recent_Activity datetime NULL,
+        Campaign_ID int NOT NULL,
+        Sample_Submission_Count int NOT NULL,
+        Cell_Culture_Count int NOT NULL,
+        Experiment_Count int NOT NULL,
+        Dataset_Count int NOT NULL,
+        Job_Count int NOT NULL,
+        Run_Request_Count int NOT NULL,
+        Sample_Prep_Request_Count int NOT NULL,
+        Data_Package_Count int NOT NULL,
+        Sample_Submission_Most_Recent datetime NULL,
+        Cell_Culture_Most_Recent datetime NULL,
+        Experiment_Most_Recent datetime NULL,
+        Dataset_Most_Recent datetime NULL,
+        Job_Most_Recent datetime NULL,
+        Run_Request_Most_Recent datetime NULL,
+        Sample_Prep_Request_Most_Recent datetime NULL,
+        Most_Recent_Activity datetime NULL,
         CONSTRAINT PK_Tmp_CampaignStats PRIMARY KEY CLUSTERED (Campaign_ID ASC)
     ) 
      
@@ -75,7 +75,7 @@ AS
            0, 0, 0, 0, 0, 0, 0, 0
     FROM T_Campaign
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ----------------------------------------------------------
     -- Update sample submission statistics
