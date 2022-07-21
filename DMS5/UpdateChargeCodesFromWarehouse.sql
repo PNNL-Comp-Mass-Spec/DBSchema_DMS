@@ -7,17 +7,17 @@ GO
 CREATE Procedure [dbo].[UpdateChargeCodesFromWarehouse]
 /****************************************************
 **
-**    Desc: 
-**        Updates charge code (aka work package) information in T_Charge_Code using linked server SQLSRVPROD02
+**  Desc:
+**      Updates charge code (aka work package) information in T_Charge_Code using linked server SQLSRVPROD02
 **
-**        Defined the linked server using:
-**            EXEC sp_addlinkedserver 'SQLSRVPROD02', '', 'SQLNCLI', 'SQLSRVPROD02,915'
-**            EXEC sp_addlinkedsrvlogin 'SQLSRVPROD02', 'FALSE', NULL, 'PRISM', '5GigYawn'
+**      Defined the linked server using:
+**          EXEC sp_addlinkedserver 'SQLSRVPROD02', '', 'SQLNCLI', 'SQLSRVPROD02,915'
+**          EXEC sp_addlinkedsrvlogin 'SQLSRVPROD02', 'FALSE', NULL, 'PRISM', '5GigYawn'
 **
-**    Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**    Auth:     mem
-**    Date:     06/04/2013 mem - Initial version
+**  Auth:     mem
+**  Date:     06/04/2013 mem - Initial version
 **            06/05/2013 mem - Now calling AutoAddChargeCodeUsers
 **            06/06/2013 mem - Now caching column DEACT_SW, which is "Y" when the charge code is Deactivated (can also be "R"; don't know what that means)
 **            12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
@@ -27,17 +27,17 @@ CREATE Procedure [dbo].[UpdateChargeCodesFromWarehouse]
 **            03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **            07/11/2017 mem - Use computed column HID_Number in T_Users
 **            02/08/2022 mem - Change tabs to spaces and update comments
-**    
+**            07/21/2022 mem - Also examine SubAccount_Inactive_Date when considering changing Charge_Code_State from 0 to 1 for work packages that are no longer Deactivated
 *****************************************************/
 (
-    @infoOnly tinyint = 0,
+    @infoOnly tinyint = 0,                         -- Set to 1 to preview work package metadata after updates are applied; set to 2 to only show updated rows
     @updateAll tinyint = 0,                        -- Set to 1 to force an update of all rows in T_Charge_Code; by default, filters on charge codes based on Setup_Date and Auth_Amt
     @ExplicitChargeCodeList varchar(2000) = '',    -- Comma separated list of Charge codes (work packages) to add to T_Charge_Code regardless of filters.  When used, other charge codes are ignored
     @message varchar(512)='' output
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     declare @myError int = 0
     declare @myRowCount int = 0
     declare @MergeUpdateCount int = 0
@@ -50,22 +50,22 @@ AS
     ----------------------------------------------------------
     -- Validate the inputs
     ----------------------------------------------------------
-    
+
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @updateAll = IsNull(@updateAll, 0)
     Set @ExplicitChargeCodeList = IsNull(@ExplicitChargeCodeList, '')
     Set @message = ''
-    
+
     ---------------------------------------------------
     -- Create the temporary table that will be used to
-    -- track the number of inserts, updates, and deletes 
+    -- track the number of inserts, updates, and deletes
     -- performed by the MERGE statement
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_UpdateSummary (
         UpdateAction varchar(32)
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_UpdateSummary ON #Tmp_UpdateSummary (UpdateAction)
 
 
@@ -74,17 +74,17 @@ AS
         Charge_Code varchar(64),
         Most_Recent_Usage datetime
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_WPsInUseLast3Years ON #Tmp_WPsInUseLast3Years (Charge_Code)
 
     -- Create a temporary table to keep track of WPs in @ExplicitChargeCodeList
     CREATE TABLE #Tmp_WPsExplicit (
         Charge_Code varchar(64)
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_WPsExplicit ON #Tmp_WPsExplicit (Charge_Code)
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
         If @ExplicitChargeCodeList <> ''
         Begin
@@ -94,7 +94,7 @@ AS
             FROM dbo.udfParseDelimitedList(@ExplicitChargeCodeList, ',', 'UpdateChargeCodesFromWarehouse')
         End
 
-        
+
         ----------------------------------------------------------
         -- Create a temporary table to track the charge code information
         -- stored in the data warehouse
@@ -117,7 +117,7 @@ AS
             Auth_PRN varchar(5) NULL,
             Auth_HID varchar(7) NULL            
         )
-        
+
         CREATE CLUSTERED INDEX IX_Tmp_ChargeCode ON #Tmp_ChargeCode (Charge_Code)
 
         ----------------------------------------------------------
@@ -162,12 +162,12 @@ AS
                  INNER JOIN #Tmp_WPsExplicit
                    ON CC.CHARGE_CD = #Tmp_WPsExplicit.Charge_Code
                  LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
-                   ON CC.CHARGE_CD = CT.CHARGE_CD
+                   ON CC.CHARGE_CD = CT.CHARGE_CD;
 
         End
         Else
         Begin
-            
+
             INSERT INTO #Tmp_ChargeCode( Charge_Code,
                                          Resp_PRN,
                                          Resp_HID,
@@ -201,32 +201,32 @@ AS
             FROM SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE CC
                  LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
                    ON CC.CHARGE_CD = CT.CHARGE_CD
-            WHERE    (CC.SETUP_DATE >= DateAdd(year, -10, GetDate()) AND            -- Filter out charge codes created over 10 years ago
+            WHERE   (CC.SETUP_DATE >= DateAdd(year, -10, GetDate()) AND         -- Filter out charge codes created over 10 years ago
                      CC.AUTH_AMT > 0 AND                                        -- Ignore charge codes with an authorization amount of $0
                      CC.CHARGE_CD NOT LIKE 'RB%' AND                            -- Filter out charge codes that are used for purchasing, not labor
                      CC.CHARGE_CD NOT LIKE '[RV]%'
                     )
                     OR
-                    (CC.SETUP_DATE >= DateAdd(year, -2, GetDate()) AND            -- Filter out charge codes created over 2 years ago
-                     CC.RESP_HID IN (                                            -- Filter on charge codes where the Responsible person is an active DMS user; this includes codes with Auth_Amt = 0
+                    (CC.SETUP_DATE >= DateAdd(year, -2, GetDate()) AND          -- Filter out charge codes created over 2 years ago
+                     CC.RESP_HID IN (                                           -- Filter on charge codes where the Responsible person is an active DMS user; this includes codes with Auth_Amt = 0
                         SELECT HID_Number
-                        FROM T_Users 
+                        FROM T_Users
                         WHERE U_Status = 'Active'
                         ) AND
                      CC.CHARGE_CD NOT LIKE 'RB%' AND                            -- Filter out charge codes that are used for purchasing, not labor
                      CC.CHARGE_CD NOT LIKE '[RV]%'
                     )
                     OR
-                    (@updateAll > 0 AND CC.CHARGE_CD IN (SELECT Charge_Code FROM T_Charge_Code))
-                
-        End          
+                    (@updateAll > 0 AND CC.CHARGE_CD IN (SELECT Charge_Code FROM T_Charge_Code));
+
+        End
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
 
         If @infoOnly = 0
         Begin
-        
+
             ----------------------------------------------------------
             -- Merge new/updated charge codes
             --
@@ -243,7 +243,7 @@ AS
             Set @CurrentLocation = 'Merge data'
 
             MERGE T_Charge_Code AS Target
-            USING 
+            USING
                 ( SELECT Charge_Code, Resp_PRN, Resp_HID, WBS_Title, Charge_Code_Title,
                          SubAccount, SubAccount_Title, Setup_Date, SubAccount_Effective_Date,
                          Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_PRN, Auth_HID
@@ -252,8 +252,8 @@ AS
                               SubAccount, SubAccount_Title, Setup_Date, SubAccount_Effective_Date,
                               Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_PRN, Auth_HID )
             ON ( target.Charge_Code = source.Charge_Code )
-            WHEN Matched  AND 
-                    (    IsNull(target.Resp_PRN, '') <> IsNull(source.Resp_PRN, '') OR
+            WHEN Matched  AND
+                    (   IsNull(target.Resp_PRN, '') <> IsNull(source.Resp_PRN, '') OR
                         IsNull(target.Resp_HID, '') <> IsNull(source.Resp_HID, '') OR
                         IsNull(target.WBS_Title, '') <> IsNull(source.WBS_Title, '') OR
                         IsNull(target.Charge_Code_Title, '') <> IsNull(source.Charge_Code_Title, '') OR
@@ -266,7 +266,7 @@ AS
                         target.Deactivated <> source.Deactivated OR
                         target.Auth_Amt <> source.Auth_Amt OR
                         IsNull(target.Auth_PRN, '') <> IsNull(source.Auth_PRN, '') OR
-                        IsNull(target.Auth_HID, '') <> IsNull(source.Auth_HID, '')                        
+                        IsNull(target.Auth_HID, '') <> IsNull(source.Auth_HID, '')
                         )
                 THEN UPDATE SET
                     Resp_PRN = source.Resp_PRN,
@@ -284,7 +284,7 @@ AS
                     Auth_PRN = source.Auth_PRN,
                     Auth_HID = source.Auth_HID,
                     Last_Affected = GetDate()
-            WHEN NOT Matched BY Target 
+            WHEN NOT Matched BY Target
                 THEN INSERT  (
                          Charge_Code, Resp_PRN, Resp_HID, WBS_Title, Charge_Code_Title,
                          SubAccount, SubAccount_Title, Setup_Date, SubAccount_Effective_Date,
@@ -297,7 +297,7 @@ AS
                       1,        -- Auto_Defined=1
                       1,        -- Charge_Code_State = 1 (Interest Unknown)
                       dbo.ChargeCodeActivationState(source.Deactivated, 1, 0, 0),
-                      GetDate() 
+                      GetDate()
                     )
             OUTPUT $ACTION INTO #Tmp_UpdateSummary ;
 
@@ -311,30 +311,30 @@ AS
             SELECT @MergeUpdateCount = COUNT(*)
             FROM #Tmp_UpdateSummary
             WHERE UpdateAction = 'UPDATE'
-            
+
             If @MergeUpdateCount > 0 OR @MergeInsertCount > 0
             Begin
                 Set @message = 'Updated T_Charge_Code: ' + Convert(varchar(12), @MergeInsertCount) + ' added; ' + Convert(varchar(12), @MergeUpdateCount) + ' updated'
-                
+
                 Exec PostLogEntry 'Normal', @message, 'UpdateChargeCodesFromWarehouse'
                 Set @message = ''
             End
-            
+
             ----------------------------------------------------------
             -- Update usage columns
             ----------------------------------------------------------
             --
             Set @CurrentLocation = 'Update usage columns'
-            
+
             exec UpdateChargeCodeUsage @infoonly=0
-            
+
             ----------------------------------------------------------
             -- Update Inactive_Date_Most_Recent
             -- based on Inactive_Date and SubAccount_Inactive_Date
             ----------------------------------------------------------
             --
             Set @CurrentLocation = 'Update Inactive_Date_Most_Recent using Inactive_Date and SubAccount_Inactive_Date'
-            
+
             UPDATE T_Charge_Code
             SET Inactive_Date_Most_Recent = OuterQ.Inactive_Date_Most_Recent
             FROM T_Charge_Code target
@@ -348,8 +348,8 @@ AS
                               FROM ( SELECT Charge_Code,
                                             COALESCE(Inactive_Date, SubAccount_Inactive_Date, Inactive_Date_Most_Recent) AS Inactive1,
                                             COALESCE(SubAccount_Inactive_Date, Inactive_Date, Inactive_Date_Most_Recent) AS Inactive2
-                             FROM T_Charge_Code 
-                                    ) InnerQ 
+                             FROM T_Charge_Code
+                                    ) InnerQ
                           ) OuterQ
                    ON target.Charge_Code = OuterQ.Charge_Code AND
                       NOT OuterQ.Inactive_Date_Most_Recent IS NULL
@@ -357,57 +357,60 @@ AS
                 target.Inactive_Date_Most_Recent IS NULL
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             ----------------------------------------------------------
             -- Update Inactive_Date_Most_Recent
             -- based on Deactivated
             ----------------------------------------------------------
             --
             Set @CurrentLocation = 'Update Inactive_Date_Most_Recent using Deactivated'
-            
+
             UPDATE T_Charge_Code
             SET Inactive_Date_Most_Recent = GetDate()
-            WHERE (Deactivated = 'Y') AND (Inactive_Date_Most_Recent IS NULL)
+            WHERE Deactivated = 'Y' AND Inactive_Date_Most_Recent IS NULL
             --
-            SELECT @myError = @@error, @myRowCount = @@rowcount      
+            SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
             -- Set the state to 0 for deactivated work packages
             --
             UPDATE T_Charge_Code
             SET Charge_Code_State = 0
-            WHERE (Charge_Code_State <> 0) AND
-                   Deactivated = 'Y'
+            WHERE Charge_Code_State <> 0 AND
+                  Deactivated = 'Y'
             --
-            SELECT @myError = @@error, @myRowCount = @@rowcount      
-                   
-                   
-            -- Look for work packages that have a state of 0 but were created within the last 2 years and are not deactivated
-            -- Change their state back to 1 (Interest Unknown)
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+
+            -- Look for work packages that have a state of 0 but are no longer deactivated
+            -- If created within the last 2 years, or if Inactive_Date_Most_Recent is within the last two years,
+            -- change their state back to 1 (Interest Unknown)
             --
             UPDATE T_Charge_Code
             SET Charge_Code_State = 1
-            WHERE (Charge_Code_State = 0) AND
-                   Deactivated = 'N' AND
-                   Setup_Date > DATEADD(year, -2, GETDATE())
+            WHERE Charge_Code_State = 0 AND
+                  Deactivated = 'N' AND
+                  (Setup_Date > DATEADD(year, -2, GETDATE())
+                    -- Or SubAccount_Inactive_Date > DATEADD(year, -2, GETDATE())
+                  )
             --
-            SELECT @myError = @@error, @myRowCount = @@rowcount      
-            
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
             ----------------------------------------------------------
             -- Auto-mark active charge codes that are currently in state 1 = "Interest Unknown"
             -- Change the state to 2 for any that have sample prep requests or requested runs that use the charge code
             ----------------------------------------------------------
             --
             Set @CurrentLocation = 'Update Charge_Code_State'
-            
+
             UPDATE T_Charge_Code
             SET Charge_Code_State = 2
-            WHERE (Charge_Code_State = 1) AND
+            WHERE Charge_Code_State = 1 AND
                   (Usage_SamplePrep > 0 OR
                    Usage_RequestedRun > 0)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             ----------------------------------------------------------
             -- Find WPs used within the last 3 years
             ----------------------------------------------------------
@@ -415,7 +418,7 @@ AS
             INSERT INTO #Tmp_WPsInUseLast3Years ( Charge_Code, Most_Recent_Usage)
             SELECT Charge_Code, Max(Most_Recent_Usage)
             FROM ( SELECT A.Charge_Code,
-                          CASE WHEN A.Most_Recent_SPR >= IsNUll(B.Most_Recent_RR, A.Most_Recent_SPR) 
+                          CASE WHEN A.Most_Recent_SPR >= IsNUll(B.Most_Recent_RR, A.Most_Recent_SPR)
                                THEN A.Most_Recent_SPR
                                ELSE B.Most_Recent_RR
                           END AS Most_Recent_Usage
@@ -424,16 +427,16 @@ AS
                           FROM T_Charge_Code CC
                                INNER JOIN T_Sample_Prep_Request SPR
                                  ON CC.Charge_Code = SPR.Work_Package_Number
-                          GROUP BY CC.Charge_Code 
+                          GROUP BY CC.Charge_Code
                   ) A INNER JOIN
-             ( SELECT CC.Charge_Code, 
+             ( SELECT CC.Charge_Code,
                                  MAX(RR.RDS_created) AS Most_Recent_RR
                           FROM T_Requested_Run RR
                                INNER JOIN T_Charge_Code CC
                                  ON RR.RDS_WorkPackage = CC.Charge_Code
-                          GROUP BY CC.Charge_Code 
+                          GROUP BY CC.Charge_Code
                         ) B
-                          ON A.Charge_Code = B.Charge_Code 
+                          ON A.Charge_Code = B.Charge_Code
                   ) UsageQ
             WHERE Most_Recent_Usage >= DateAdd(year, -3, GetDate())
             GROUP BY Charge_Code
@@ -513,19 +516,17 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
-    
-        
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateChargeCodesFromWarehouse')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
-                                
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
     END CATCH
-    
+
     return @myError
 
 
