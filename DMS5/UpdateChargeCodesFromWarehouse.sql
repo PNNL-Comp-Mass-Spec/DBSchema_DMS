@@ -28,6 +28,8 @@ CREATE Procedure [dbo].[UpdateChargeCodesFromWarehouse]
 **            07/11/2017 mem - Use computed column HID_Number in T_Users
 **            02/08/2022 mem - Change tabs to spaces and update comments
 **            07/21/2022 mem - Also examine SubAccount_Inactive_Date when considering changing Charge_Code_State from 0 to 1 for work packages that are no longer Deactivated
+**                           - When @infoOnly is >= 2, only show new or updated work packages
+**
 *****************************************************/
 (
     @infoOnly tinyint = 0,                         -- Set to 1 to preview work package metadata after updates are applied; set to 2 to only show updated rows
@@ -115,7 +117,8 @@ AS
             Deactivated varchar(1) NOT NULL,
             Auth_Amt numeric(12, 0) NOT NULL,
             Auth_PRN varchar(5) NULL,
-            Auth_HID varchar(7) NULL            
+            Auth_HID varchar(7) NULL,
+            Update_Status varchar(64) NULL
         )
 
         CREATE CLUSTERED INDEX IX_Tmp_ChargeCode ON #Tmp_ChargeCode (Charge_Code)
@@ -142,7 +145,8 @@ AS
                                          Deactivated,
                                          Auth_Amt,
                                          Auth_PRN,
-                                         Auth_HID )
+                                         Auth_HID,
+                                         Update_Status)
             SELECT CC.CHARGE_CD,
                    CC.RESP_PAY_NO,
                    CC.RESP_HID,
@@ -157,7 +161,8 @@ AS
                    CC.DEACT_SW,
                    CC.AUTH_AMT,
                    CC.AUTH_PAY_NO,
-                   CC.AUTH_HID
+                   CC.AUTH_HID,
+                   ''
             FROM SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE CC
                  INNER JOIN #Tmp_WPsExplicit
                    ON CC.CHARGE_CD = #Tmp_WPsExplicit.Charge_Code
@@ -182,7 +187,8 @@ AS
                                          Deactivated,
                                          Auth_Amt,
                                          Auth_PRN,
-                                         Auth_HID )
+                                         Auth_HID,
+                                         Update_Status)
             SELECT CC.CHARGE_CD,
                    CC.RESP_PAY_NO,
                    CC.RESP_HID,
@@ -197,7 +203,8 @@ AS
                    CC.DEACT_SW,
                    CC.AUTH_AMT,
                    CC.AUTH_PAY_NO,
-                   CC.AUTH_HID
+                   CC.AUTH_HID,
+                   ''
             FROM SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE CC
                  LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
                    ON CC.CHARGE_CD = CT.CHARGE_CD
@@ -503,15 +510,53 @@ AS
             -- Preview the updates
             ----------------------------------------------------------
             --
-        
-            SELECT CASE WHEN T_Charge_Code.Charge_Code IS NULL 
-                        THEN 'New CC'
-                        ELSE 'Existing CC'
-                   END AS State,
-                   #Tmp_ChargeCode.*
-            FROM #Tmp_ChargeCode
-                 LEFT OUTER JOIN T_Charge_Code
-                   ON #Tmp_ChargeCode.Charge_Code = T_Charge_Code.Charge_Code
+            UPDATE #Tmp_ChargeCode
+            SET Update_Status =
+                    CASE WHEN target.Deactivated = 'Y' And source.Deactivated = 'N' THEN 'Re-activated Existing WP'
+                         WHEN target.Deactivated = 'N' And source.Deactivated = 'Y' THEN 'Deactivated Existing WP'
+                         WHEN IsNull(target.WBS_Title, '') <> IsNull(source.WBS_Title, '') OR
+                              IsNull(target.Charge_Code_Title, '') <> IsNull(source.Charge_Code_Title, '') OR
+                              IsNull(target.SubAccount, '') <> IsNull(source.SubAccount, '') OR
+                              IsNull(target.SubAccount_Title, '') <> IsNull(source.SubAccount_Title, '') OR
+                              target.Setup_Date <> source.Setup_Date OR
+                              IsNull(target.SubAccount_Effective_Date, '') <> IsNull(source.SubAccount_Effective_Date, '') OR
+                              IsNull(target.Inactive_Date, '') <> IsNull(source.Inactive_Date, '') OR
+                              IsNull(target.SubAccount_Inactive_Date, '') <> IsNull(source.SubAccount_Inactive_Date, '') OR
+                              target.Deactivated <> source.Deactivated
+                              THEN 'Updated Existing CC'
+                         ELSE 'Unchanged Existing CC'
+                    END
+            FROM #Tmp_ChargeCode Source
+                 INNER JOIN T_Charge_Code Target
+                   ON Source.Charge_Code = Target.Charge_Code
+
+            Update #Tmp_ChargeCode
+            Set Update_Status = 'New CC'
+            Where Update_Status = ''
+
+            SELECT Update_Status,
+                   New.Charge_Code,
+                   Old.Resp_PRN, New.Resp_PRN,
+                   Old.Resp_HID, New.Resp_HID,
+                   Old.WBS_Title, New.WBS_Title,
+                   Old.Charge_Code_Title, New.Charge_Code_Title,
+                   Old.SubAccount, New.SubAccount,
+                   Old.SubAccount_Title, New.SubAccount_Title,
+                   Old.Setup_Date, New.Setup_Date,
+                   Old.SubAccount_Effective_Date, New.SubAccount_Effective_Date,
+                   Old.Inactive_Date, New.Inactive_Date,
+                   Old.SubAccount_Inactive_Date, New.SubAccount_Inactive_Date,
+                   Old.Deactivated, New.Deactivated,
+                   Old.Auth_Amt, New.Auth_Amt,
+                   Old.Auth_PRN, New.Auth_PRN,
+                   Old.Auth_HID, New.Auth_HID
+            FROM #Tmp_ChargeCode New Left Outer Join
+                 T_Charge_Code Old
+                   ON New.Charge_Code = Old.Charge_Code
+            WHERE @infoOnly = 1 OR
+                  @infoOnly >= 2 AND
+                  New.Update_Status NOT LIKE 'Unchanged%'
+            ORDER BY New.Update_Status, New.Charge_Code
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
