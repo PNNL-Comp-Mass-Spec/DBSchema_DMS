@@ -11,7 +11,7 @@ SELECT ContentsQ.Item,
        ContentsQ.Material_ID AS ID,
        MC.Tag AS Container,
        MC.[Type],
-       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS [#I_ID],  -- ItemID
+       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS [#ItemID],
        ML.Tag AS [Location],
        ContentsQ.Material_Status As [Item Status],
        MC.[Status] As [Container Status],

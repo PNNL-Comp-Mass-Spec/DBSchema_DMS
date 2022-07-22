@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-Create VIEW [dbo].[V_Material_Move_Items_List_Report]
+CREATE VIEW [dbo].[V_Material_Move_Items_List_Report]
 As
 -- This view shows active items in containers
 SELECT ContentsQ.Item,       
@@ -12,7 +12,7 @@ SELECT ContentsQ.Item,
        ContentsQ.Material_ID AS ID,
        MC.Tag AS Container,
        MC.[Type],
-       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS [#I_ID],  -- ItemID
+       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS [#ItemID],
        ML.Tag AS [Location],
        MC.[Status] As [Container Status],
        ContentsQ.Request_ID AS [Prep Request]
