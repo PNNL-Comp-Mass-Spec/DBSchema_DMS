@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateChargeCodesFromWarehouse]
+CREATE PROCEDURE [dbo].[UpdateChargeCodesFromWarehouse]
 /****************************************************
 **
 **  Desc:
@@ -572,7 +572,7 @@ AS
             ROLLBACK TRANSACTION;
     END CATCH
 
-    return @myError
+    Return @myError
 
 
 GO
