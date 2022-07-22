@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          02/19/2021 mem - Validate the characters in the new dataset name
 **          11/04/2021 mem - Add more MASIC file names and use sed to edit MASIC's index.html file
 **          11/05/2021 mem - Add more MASIC file names and rename files in any MzRefinery directories
+**          07/21/2022 mem - Move misplaced 'cd ..' and add missing 'rem'
 **    
 *****************************************************/
 (
@@ -568,19 +569,20 @@ AS
             Print 'move ' + @datasetNameOld + '_MZRefinery_MassErrors.png    ' + @datasetNameNew + '_MZRefinery_MassErrors.png'
             Print 'move ' + @datasetNameOld + '_msgfplus.mzRefinement.tsv    ' + @datasetNameNew + '_msgfplus.mzRefinement.tsv'
             Print 'move ' + @datasetNameOld + '.mzML.gz_CacheInfo.txt        ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
-            Print 'cd ..'        
             Print ''
             Print 'rem Use sed to change the dataset name in the _CacheInfo.txt file'
             Print 'cat ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt | sed -r "s/' + @datasetNameOld + '/' + @datasetNameNew + '/g" > _CacheInfo.txt.new'
             Print 'move ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt ' + @datasetNameNew + '.mzML.gz_OldCacheInfo.txt'
             Print 'move _CacheInfo.txt.new ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
 
-            Print 'ToDo: rename the .mzML.gz file at:'
+            Print 'rem ToDo: rename or delete the .mzML.gz file at:'
             Print 'cat ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
+            Print 'cd ..'        
         End
 
     End -- </jobLoop>
 
+    Print ''
     Print 'popd'
     Print ''
     Print ''
