@@ -16,21 +16,34 @@ SELECT RR.ID AS Request,
        RR.RDS_created AS Created,
        RR.RDS_comment AS [Comment],
        RR.RDS_note AS Note,
-       RR.RDS_WorkPackage AS [Work Package],
-       RR.RDS_Well_Plate_Num AS [Wellplate Number],
-       RR.RDS_Well_Num AS [Well Number],
-       RR.RDS_internal_standard AS [Internal Standard],
-       RR.RDS_instrument_setting AS [Instrument Settings],
-       RR.RDS_special_instructions AS [Special Instructions],
+       RR.RDS_WorkPackage AS [Work Package],            -- Deprecated in July 2022
+       RR.RDS_WorkPackage AS Work_Package,
+       RR.RDS_Well_Plate_Num AS [Wellplate Number],     -- Deprecated in July 2022
+       RR.RDS_Well_Plate_Num AS Wellplate,
+       RR.RDS_Well_Num AS [Well Number],                -- Deprecated in July 2022
+       RR.RDS_Well_Num AS Well,
+       RR.RDS_internal_standard AS [Internal Standard], -- Deprecated in July 2022
+       RR.RDS_internal_standard AS Internal_Standard,
+       RR.RDS_instrument_setting AS [Instrument Settings],      -- Deprecated in July 2022
+       RR.RDS_instrument_setting AS Instrument_Settings,
+       RR.RDS_special_instructions AS [Special Instructions],   -- Deprecated in July 2022
+       RR.RDS_special_instructions AS Special_Instructions,
        LC.Cart_Name AS Cart,
-       RR.RDS_Run_Start AS [Run Start],
-       RR.RDS_Run_Finish AS [Run Finish],
-       EUT.Name AS [Usage Type],
-       RRCU.User_List AS [EUS Users],
-       RR.RDS_EUS_Proposal_ID AS [Proposal ID],
-       RR.RDS_MRM_Attachment AS MRMFileID,
+       RR.RDS_Run_Start AS [Run Start],                 -- Deprecated in July 2022
+       RR.RDS_Run_Start AS Run_Start,
+       RR.RDS_Run_Finish AS [Run Finish],               -- Deprecated in July 2022
+       RR.RDS_Run_Finish AS Run_Finish,
+       EUT.Name AS [Usage Type],                        -- Deprecated in July 2022
+       EUT.Name AS Usage_Type,
+       RRCU.User_List AS [EUS Users],                   -- Deprecated in July 2022
+       RRCU.User_List AS EUS_Users,
+       RR.RDS_EUS_Proposal_ID AS [Proposal ID],         -- Deprecated in July 2022
+       RR.RDS_EUS_Proposal_ID AS Proposal_ID,
+       RR.RDS_MRM_Attachment AS MRMFileID,              -- Deprecated in July 2022
+       RR.RDS_MRM_Attachment AS MRM_File_ID,
        RR.RDS_Block AS [Block],
-       RR.RDS_Run_Order AS RunOrder,
+       RR.RDS_Run_Order AS RunOrder,                    -- Deprecated in July 2022
+       RR.RDS_Run_Order AS Run_Order,
        RR.RDS_BatchID AS Batch,
        RR.Vialing_Conc,
        RR.Vialing_Vol
