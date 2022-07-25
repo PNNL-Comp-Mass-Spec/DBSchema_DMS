@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
 **                         - Add @useRaiseError
 **          06/02/2021 mem - Expand @requestedRunList to varchar(max)
+**          07/24/2022 mem - Remove trailing tabs from batch name
 **
 *****************************************************/
 (
@@ -104,6 +105,9 @@ As
         Else
             Return @myError
     End
+
+    Set @name = Ltrim(Rtrim(Replace(Replace(@name, char(10), ' '), char(9), ' ')))
+    Set @description = IsNull(@description, '')
 
     If Len(IsNull(@requestedCompletionDate, '')) = 0
     Begin
