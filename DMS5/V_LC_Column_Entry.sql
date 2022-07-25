@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_LC_Column_Entry
+CREATE VIEW [dbo].[V_LC_Column_Entry]
 AS
 SELECT C.SC_Column_Number AS lc_column,
        C.SC_Packing_Mfg AS packing_mfg,
@@ -16,7 +16,7 @@ SELECT C.SC_Column_Number AS lc_column,
        C.SC_Length AS column_length,
        C.SC_Operator_PRN AS operator_prn,
        C.SC_Comment AS comment,
-       C.id,
+       C.id As column_id,
        SN.LCS_Name AS column_state
 FROM T_LC_Column C
      INNER JOIN T_LC_Column_State_Name SN

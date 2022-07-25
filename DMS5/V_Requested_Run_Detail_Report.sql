@@ -40,7 +40,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Run_Order AS [Run Order],
        LC.Cart_Name AS Cart,
        CartConfig.Cart_Config_Name AS [Cart Config],
-       RR.RDS_Cart_Col AS [Column Number],
+       RR.RDS_Cart_Col AS [Column Name],
        RR.RDS_WorkPackage [Work Package],
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
             ELSE ISNULL(CC.Activation_State_Name, 'Invalid') 
