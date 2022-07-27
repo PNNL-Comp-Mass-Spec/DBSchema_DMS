@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsWork]
 **          03/12/2021 mem - Add ToolName (which tracks the pipeline script name) if not present in T_Job_Parameters
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
+**          07/27/2022 mem - Move check for missing ToolName parameter to after adding job parameters using T_Job_Parameters
 **
 *****************************************************/
 (
@@ -222,13 +223,6 @@ AS
 
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
 
-    -- Add ToolName if not present in T_Job_Parameters
-    -- This will be the case for jobs created directly in the pipeline database (including MAC jobs and MaxQuant_DataPkg jobs)
-    If Not Exists (Select * from #Tmp_JobParamsTable Where [Section] = 'JobParameters' and [Name] = 'ToolName')
-    Begin
-        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'ToolName', @scriptName)
-    End
-
     If @debugMode <> 0
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job parameters using cross apply'
 
@@ -262,7 +256,7 @@ AS
            FROM ( SELECT xmlNode.value('@Section', 'varchar(128)') AS [Section],
                          xmlNode.value('@Name', 'varchar(128)') AS [Name],
                          xmlNode.value('@Value', 'varchar(4000)') AS [Value],
-         REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'varchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
+                         REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'varchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
                   FROM T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
                   WHERE T_Job_Parameters.Job = @jobNumber
                 ) LookupQ
@@ -278,6 +272,13 @@ AS
         set @message = 'Error getting job parameters'
         goto Done
     end
+
+     -- Add ToolName if not present in #Tmp_JobParamsTable
+    -- This will be the case for jobs created directly in the pipeline database (including MAC jobs and MaxQuant_DataPkg jobs)
+    If Not Exists (Select * from #Tmp_JobParamsTable Where [Section] = 'JobParameters' and [Name] = 'ToolName')
+    Begin
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'ToolName', @scriptName)
+    End
 
 Done:
 
