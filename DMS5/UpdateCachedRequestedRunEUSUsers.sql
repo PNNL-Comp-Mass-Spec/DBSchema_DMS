@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE UpdateCachedRequestedRunEUSUsers
+CREATE PROCEDURE [dbo].[UpdateCachedRequestedRunEUSUsers]
 /****************************************************
 **
 **	Desc:	Updates the data in T_Active_Requested_Run_Cached_EUS_Users
 **			This table tracks the list of EUS users for each active requested run
 **
-**			We only track active requested runs because V_Scheduled_Run_Export
+**			We only track active requested runs because V_Requested_Run_Active_Export
 **			only returns active requested runs, and that view is the primary
 **			beneficiary of T_Active_Requested_Run_Cached_EUS_Users
 **
