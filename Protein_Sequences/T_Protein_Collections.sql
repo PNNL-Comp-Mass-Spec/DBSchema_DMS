@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Protein_Collections](
 	[Protein_Collection_ID] [int] IDENTITY(1000,1) NOT NULL,
-	[FileName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Collection_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Source] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Collection_Type_ID] [tinyint] NOT NULL,
@@ -31,10 +31,10 @@ GO
 SET ANSI_PADDING ON
 
 GO
-/****** Object:  Index [IX_T_Protein_Collections_FileName] ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Protein_Collections_FileName] ON [dbo].[T_Protein_Collections]
+/****** Object:  Index [IX_T_Protein_Collections_Collection_Name] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Protein_Collections_Collection_Name] ON [dbo].[T_Protein_Collections]
 (
-	[FileName] ASC
+	[Collection_Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Collection_Type_ID]  DEFAULT ((1)) FOR [Collection_Type_ID]

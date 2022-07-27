@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Protein_Collections_List_Report_Ex]
 AS
-SELECT PC.[FileName] AS [Name],
+SELECT PC.Collection_Name AS [Name],
        OrgPicker.Organism_Name AS [Organism Name],
        OrgXref.Organism_ID AS [Organism ID],
        PC.[Description],

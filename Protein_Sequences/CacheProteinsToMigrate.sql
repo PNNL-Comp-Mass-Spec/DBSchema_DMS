@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[CacheProteinsToMigrate]
 **
 **  Auth:   mem
 **  Date:   07/26/2022
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **
 *****************************************************/
 (
@@ -66,7 +67,7 @@ AS
         Begin -- <a>
 
             SELECT TOP 1 @proteinCollectionID = Protein_Collection_ID,
-                         @proteinCollectionName = FileName
+                         @proteinCollectionName = Collection_Name
             FROM T_Protein_Collections
             WHERE Migrate_to_Filtered_Tables > 0 And Protein_Collection_ID > @proteinCollectionID
             ORDER BY Protein_Collection_ID

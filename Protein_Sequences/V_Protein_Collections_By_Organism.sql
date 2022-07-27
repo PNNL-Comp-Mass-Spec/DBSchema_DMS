@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Protein_Collections_By_Organism]
 AS
 SELECT DISTINCT PC.Protein_Collection_ID,
-                PC.[FileName] + ' (' + CAST(PC.NumProteins AS varchar) + ' Entries)' AS [Display],
+                PC.Collection_Name + ' (' + CAST(PC.NumProteins AS varchar) + ' Entries)' AS [Display],
                 PC.[Description],
                 PC.Source,
                 PC.Collection_State_ID,
@@ -17,7 +17,7 @@ SELECT DISTINCT PC.Protein_Collection_ID,
                 PC.NumProteins,
                 PC.NumResidues,
                 PC.Authentication_Hash,
-                PC.[FileName] AS [Filename],
+                PC.Collection_Name,
                 OrgXref.Organism_ID,
                 PC.Primary_Annotation_Type_ID AS Authority_ID,
                 OrgList.[Name] AS Organism_Name,

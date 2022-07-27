@@ -26,6 +26,7 @@ CREATE Procedure dbo.StandardizeProteinCollectionList
 **			08/11/2006 mem - Updated to place contaminants collections at the end of the list
 **			10/04/2007 mem - Increased @protCollNameList from varchar(2048) to varchar(max)
 **			06/24/2013 mem - Now removing duplicate protein collection names in @protCollNameList
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **    
 *****************************************************/
 (
@@ -75,12 +76,6 @@ As
 		
 		-- Determine the Collection_Type_ID values for the entries in #TmpProteinCollections
 		-- Additionally, correct any capitalization errors
-		UPDATE #TmpProteinCollections
-		SET Collection_Type_ID = PCT.Collection_Type_ID,
-			Collection_Name = PC.FileName
-		FROM #TmpProteinCollections TempPC INNER JOIN
-			T_Protein_Collections PC ON TempPC.Collection_Name = PC.FileName INNER JOIN
-			T_Protein_Collection_Types PCT ON PC.Collection_Type_ID = PCT.Collection_Type_ID
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 		
@@ -91,6 +86,13 @@ As
 		ORDER BY Collection_Name
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
+        UPDATE #TmpProteinCollections
+        SET Collection_Type_ID = PCT.Collection_Type_ID,
+            Collection_Name = PC.Collection_Name
+        FROM #TmpProteinCollections TempPC INNER JOIN
+            T_Protein_Collections PC ON TempPC.Collection_Name = PC.Collection_Name INNER JOIN
+            T_Protein_Collection_Types PCT ON PC.Collection_Type_ID = PCT.Collection_Type_ID
+        --
 
 		-- Now populate @ProtCollNameListNew with any entries having Collection_Type_ID <> 4 and <> 5
 		SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ',' 

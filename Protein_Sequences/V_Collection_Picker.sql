@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Collection_Picker]
 AS
-SELECT PC.[FileName] AS [Name],
+SELECT PC.Collection_Name AS [Name],
        PC.Protein_Collection_ID AS ID,
        PC.[Description],
        PC.[Source],

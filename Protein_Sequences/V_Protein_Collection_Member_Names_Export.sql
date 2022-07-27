@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Protein_Collection_Member_Names_Export]
 AS
 SELECT PCM.Protein_Collection_ID,
-       PC.FileName AS Protein_Collection,
+       PC.Collection_Name AS Protein_Collection,
        PCM.Protein_Name,
        PCM.Description,
        PCM.Residue_Count,

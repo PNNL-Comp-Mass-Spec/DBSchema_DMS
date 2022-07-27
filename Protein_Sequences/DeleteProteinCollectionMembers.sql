@@ -16,6 +16,7 @@ CREATE PROCEDURE DeleteProteinCollectionMembers
 **	Date:	10/07/2004 kja - Initial version
 **			07/20/2015 mem - Now setting NumProteins and TotalResidues to 0 in T_Protein_Collections
 **			09/14/2015 mem - Added parameter @NumProteinsForReLoad
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **    
 *****************************************************/
 (
@@ -57,9 +58,9 @@ As
 	declare @Collection_Name varchar(128)
 	declare @State_Name varchar(64)
 	
-	SELECT @Collection_Name = FileName
 	FROM T_Protein_Collections
 	WHERE (Protein_Collection_ID = @Collection_ID)
+    SELECT @collectionName = Collection_Name
 
 	SELECT @State_Name = State
 	FROM T_Protein_Collection_States

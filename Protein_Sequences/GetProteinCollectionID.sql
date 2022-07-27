@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[GetProteinCollectionID]
 **  Auth:   kja
 **  Date:   09/29/2004
 **          06/26/2019 mem - Add comments and convert tabs to spaces
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **    
 *****************************************************/
 (
@@ -25,7 +26,7 @@ As
     
     SELECT @Collection_ID = Protein_Collection_ID
     FROM T_Protein_Collections
-    WHERE (FileName = @fileName)
+    WHERE Collection_Name = @collectionName
     
     return @Collection_ID
 

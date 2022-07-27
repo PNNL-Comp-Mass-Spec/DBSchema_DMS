@@ -7,10 +7,10 @@ GO
 CREATE VIEW [dbo].[V_Protein_Collection_List_Export]
 AS
 SELECT PC.Protein_Collection_ID,
-       PC.FileName AS Name,
+       PC.Collection_Name AS Name,
        PC.Description,
        PCS.State AS Collection_State,
-       PCT.TYPE AS Collection_Type,
+       PCT.Type AS Collection_Type,
        PC.NumProteins AS Protein_Count,
        PC.NumResidues AS Residue_Count,
        NameAuth.Name AS Annotation_Naming_Authority,

@@ -18,6 +18,7 @@ CREATE Procedure dbo.ValidateAnalysisJobProteinParameters
 **	Return values: 0: success, otherwise, error code
 **
 **	Parameters:
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **
 **	original argument specs: grk
 **	Date: 04/04/2006
@@ -230,9 +231,6 @@ As
 				Set	@tmpCollName = SUBSTRING(@tmpCollName, 0, @tmpExtPosition)
 			End
 		
-			SELECT @tmpCollectionID = Protein_Collection_ID, @isEncrypted = Contents_Encrypted
-			FROM T_Protein_Collections
-			WHERE FileName = @tmpCollName
 		
 			SELECT @myError = @@error, @myRowCount = @@rowcount
 			
@@ -274,6 +272,10 @@ As
 			Set @cleanCollNameList = @cleanCollNameList + @tmpCollName
 		End -- </b2>
 		
+            SELECT @currentCollectionID = Protein_Collection_ID, @isEncrypted = Contents_Encrypted
+            FROM T_Protein_Collections
+            WHERE Collection_Name = @currentCollectionName
+        
 
 		/****************************************************************
 		** Copy the data from @cleanCollNameList to @protCollNameList and 

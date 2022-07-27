@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Protein_Collections_List_Report]
 AS
 SELECT PC.Protein_Collection_ID AS [Collection ID],
-       PC.[FileName] AS [Name],
+       PC.Collection_Name AS [Name],
        PC.[Description],
        PCS.[State],
        PC.NumProteins AS [Protein Count],

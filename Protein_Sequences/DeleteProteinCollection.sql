@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[DeleteProteinCollection]
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          06/20/2018 mem - Delete entries in T_Protein_Collection_Members_Cached
 **                         - Add RAISERROR calls with severity level 11 (forcing the Catch block to be entered)
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **    
 *****************************************************/
 (
@@ -67,7 +68,7 @@ As
             Goto Done
         End
             
-        SELECT @Collection_Name = FileName
+        SELECT @collectionName = Collection_Name
         FROM T_Protein_Collections
         WHERE (Protein_Collection_ID = @Collection_ID)
         

@@ -16,6 +16,8 @@ CREATE PROCEDURE dbo.GetArchivedFileIDForProteinCollectionList
 **	Auth:	mem
 **	Date:	06/07/2006
 **			07/04/2006 mem - Updated to return the newest Archived File Collection ID when there is more than one possible match
+**          07/04/2006 mem - Updated to return the newest Archived File Collection ID when there is more than one possible match
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 ** 
 *****************************************************/
 (
@@ -130,12 +132,12 @@ As
 				FROM T_Archived_Output_File_Collections_XRef AOFC INNER JOIN
 					 T_Archived_Output_Files AOF ON AOFC.Archived_File_ID = AOF.Archived_File_ID INNER JOIN
 					 T_Protein_Collections PC ON AOFC.Protein_Collection_ID = PC.Protein_Collection_ID
-				WHERE PC.FileName = @ProteinCollectionName AND AOF.Creation_Options = @CreationOptions)
 			)
 	GROUP BY AOF.Archived_File_ID
 	HAVING COUNT(*) = @ProteinCollectionCount
 	--
 	SELECT @myRowcount = @@rowcount, @myError = @@error
+                WHERE PC.Collection_Name = @proteinCollectionName AND AOF.Creation_Options = @CreationOptions)
 
 	If @myError <> 0
 	Begin
@@ -206,7 +208,6 @@ As
 				FROM #TmpArchived_Output_File_IDs AOF INNER JOIN
 					 T_Archived_Output_File_Collections_XRef AOFC ON AOF.Archived_File_ID = AOFC.Archived_File_ID INNER JOIN
 					 T_Protein_Collections PC ON AOFC.Protein_Collection_ID = PC.Protein_Collection_ID
-				WHERE PC.FileName = @ProteinCollectionName
 				--
 				SELECT @myRowcount = @@rowcount, @myError = @@error
 				
@@ -219,6 +220,7 @@ As
 				
 			End -- </c>
 		End -- </b>
+                WHERE PC.Collection_Name = @proteinCollectionName
 
 		-----------------------------------------------------
 		-- Grab the last entry in #TmpArchived_Output_File_IDs with

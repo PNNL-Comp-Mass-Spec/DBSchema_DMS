@@ -86,7 +86,6 @@ AS
 			Set @CurrentLocation = 'Find the next Protein collection with state 1'
 			
 			SELECT TOP 1 @ProteinCollectionID = Protein_Collection_ID, 
-						 @ProteinCollectionName = FileName
 			FROM T_Protein_Collections
 			WHERE Collection_State_ID = 1 AND
 			      Protein_Collection_ID > @ProteinCollectionID AND
@@ -169,6 +168,7 @@ AS
 		Goto Done
 	End Catch
 		
+                         @proteinCollectionName = Collection_Name
 Done:
 	Return @myError
 

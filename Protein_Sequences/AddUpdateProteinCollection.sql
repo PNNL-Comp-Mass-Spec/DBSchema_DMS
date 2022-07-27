@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **          11/24/2015 mem - Added @collectionSource
 **          06/26/2019 mem - Add comments and convert tabs to spaces
 **          01/20/2020 mem - Replace < and > with ( and ) in the source and description
+**          07/27/2022 mem - Switch from FileName to Collection_Name
 **    
 *****************************************************/
 (
@@ -115,7 +116,7 @@ As
     begin
     
         INSERT INTO T_Protein_Collections (
-            FileName,
+            Collection_Name,
             Description,
             Source,
             Collection_Type_ID,
@@ -175,7 +176,7 @@ As
             NumProteins = @numProteins,
             NumResidues = @numResidues,
             DateModified = GETDATE()        
-        WHERE FileName = @fileName
+        WHERE Collection_Name = @collectionName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
