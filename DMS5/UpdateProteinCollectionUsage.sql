@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[UpdateProteinCollectionUsage]
 **          03/17/2017 mem - Use tables T_Cached_Protein_Collection_List_Map and T_Cached_Protein_Collection_List_Members to minimize calls to MakeTableFromListDelim
 **          10/23/2017 mem - Use S_V_Protein_Collections_by_Organism instead of S_V_Protein_Collection_Picker since S_V_Protein_Collection_Picker only includes active protein collections
 **          08/30/2018 mem - Tabs to spaces
+**          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateProteinCollectionUsage]
 AS
 
     Set XACT_ABORT, nocount on
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
@@ -38,30 +39,30 @@ AS
     Declare @CallingProcName varchar(128)
     Declare @CurrentLocation varchar(128)
     Set @CurrentLocation = 'Start'
-    
+
     ---------------------------------------------------
     -- Create the temporary table that will be used to
-    -- track the number of inserts, updates, and deletes 
+    -- track the number of inserts, updates, and deletes
     -- performed by the MERGE statement
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_UpdateSummary (
         UpdateAction varchar(32)
     )
-        
+
     Begin Try
-                
+
         Set @CurrentLocation = 'Merge data into T_Protein_Collection_Usage'
 
         -- Use a MERGE Statement to synchronize T_Protein_Collection_Usage with S_V_Protein_Collections_by_Organism
         MERGE T_Protein_Collection_Usage AS target
-        USING (SELECT DISTINCT Protein_Collection_ID AS ID, [FileName] AS [Name] 
+        USING (SELECT DISTINCT Protein_Collection_ID AS ID, Collection_Name AS [Name]
                FROM S_V_Protein_Collections_by_Organism
             ) AS Source ( Protein_Collection_ID, [Name])
         ON (target.Protein_Collection_ID = source.Protein_Collection_ID)
-        WHEN Matched AND ( Target.[Name] <> Source.[Name] ) THEN 
+        WHEN Matched AND ( Target.[Name] <> Source.[Name] ) THEN
             UPDATE Set
-                  [Name] = Source.[Name]                 
+                  [Name] = Source.[Name]
         WHEN Not Matched THEN
             INSERT ( Protein_Collection_ID, [Name], Job_Usage_Count)
             VALUES ( Source.Protein_Collection_ID, Source.[Name], 0)
@@ -84,7 +85,7 @@ AS
         -- T_Cached_Protein_Collection_List_Members to
         -- minimize calls to MakeTableFromListDelim
         ---------------------------------------------------
-        
+
         -- First add any missing protein collection lists to T_Cached_Protein_Collection_List_Map
         --
         INSERT INTO T_Cached_Protein_Collection_List_Map( Protein_Collection_List )
@@ -110,7 +111,7 @@ AS
                FROM T_Cached_Protein_Collection_List_Map PCLMap
                     LEFT OUTER JOIN T_Cached_Protein_Collection_List_Members PCLMembers
                       ON PCLMap.ProtCollectionList_ID = PCLMembers.ProtCollectionList_ID
-               WHERE (PCLMembers.Protein_Collection_Name IS NULL) 
+               WHERE (PCLMembers.Protein_Collection_Name IS NULL)
              ) SourceQ
              CROSS APPLY dbo.MakeTableFromListDelim ( SourceQ.Protein_Collection_List, ',' ) AS ProteinCollections
         --
@@ -129,31 +130,31 @@ AS
                                  Max(NewestJob) AS Most_Recent_Date
                           FROM ( SELECT AJ_proteinCollectionList,
                                         COUNT(*) AS Jobs,
-                                        Sum(CASE WHEN COALESCE(AJ_created, AJ_start, AJ_finish) >= DateAdd(MONTH, - 12, GetDate()) 
+                                        Sum(CASE WHEN COALESCE(AJ_created, AJ_start, AJ_finish) >= DateAdd(MONTH, - 12, GetDate())
                                                  THEN 1
                                                  ELSE 0
                                             END) AS Job_Usage_Count_Last12Months,
                                         MAX(COALESCE(AJ_created, AJ_start, AJ_finish)) AS NewestJob
                                  FROM T_Analysis_Job
-                                 GROUP BY AJ_proteinCollectionList 
+                                 GROUP BY AJ_proteinCollectionList
                                ) CountQ
                                INNER JOIN T_Cached_Protein_Collection_List_Map PCLMap
                                  ON CountQ.AJ_proteinCollectionList = PCLMap.Protein_Collection_List
                                INNER JOIN T_Cached_Protein_Collection_List_Members PCLMembers
                                  ON PCLMap.ProtCollectionList_ID = PCLMembers.ProtCollectionList_ID
-                          GROUP BY PCLMembers.Protein_Collection_Name 
+                          GROUP BY PCLMembers.Protein_Collection_Name
                         ) AS UsageQ
                ON Target.[Name] = UsageQ.ProteinCollection
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateProteinCollectionUsage')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
-        Goto Done        
+        Goto Done
     End Catch
 
 Done:

@@ -51,7 +51,7 @@ FROM ( SELECT [Name],
               [State],
               Includes_Contaminants,
               FileSizeMB
-       FROM ( SELECT [Filename] As [Name],
+       FROM ( SELECT Collection_Name As [Name],
                      [Type],
                      [Description],
                      [Source],

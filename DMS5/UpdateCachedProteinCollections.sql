@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedProteinCollections]
 **  Date:   06/13/2016 mem - Initial Version
 **          10/23/2017 mem - Use S_V_Protein_Collections_by_Organism instead of S_V_Protein_Collection_Picker since S_V_Protein_Collection_Picker only includes active protein collections
 **          08/30/2021 mem - Populate field State_Name
+**          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
 **
 *****************************************************/
 (
@@ -32,15 +33,15 @@ AS
     Declare @CallingProcName varchar(128)
     Declare @CurrentLocation varchar(128)
     Set @CurrentLocation = 'Start'
-    
+
     Begin Try
         Set @CurrentLocation = 'Update T_Cached_Protein_Collections'
         --
-         
+
         MERGE [dbo].[T_Cached_Protein_Collections] AS t
-        USING (SELECT Protein_Collection_ID AS ID, Organism_ID, 
-                      FileName AS [Name], [Description], State_Name,
-                      NumProteins AS Entries, NumResidues AS Residues, 
+        USING (SELECT Protein_Collection_ID AS ID, Organism_ID,
+                      Collection_Name AS [Name], [Description], State_Name,
+                      NumProteins AS Entries, NumResidues AS Residues,
                       [Type], Filesize
                FROM dbo.S_V_Protein_Collections_by_Organism) as s
         ON ( t.[ID] = s.[ID] AND t.[Organism_ID] = s.[Organism_ID])
@@ -59,7 +60,7 @@ AS
             ISNULL( NULLIF(t.[Filesize], s.[Filesize]),
                     NULLIF(s.[Filesize], t.[Filesize])) IS NOT NULL
             )
-        THEN UPDATE Set 
+        THEN UPDATE Set
             [Name] = s.[Name],
             [Description] = s.[Description],
             [State_Name] = s.[State_Name],
@@ -73,7 +74,7 @@ AS
             VALUES(s.[ID], s.[Organism_ID], s.[Name], s.[Description], s.[State_Name], s.[Entries], s.[Residues], s.[Type], s.[Filesize], GetDate(), GetDate())
         WHEN NOT MATCHED BY SOURCE THEN DELETE
         ;
-    
+
         If @myError <> 0
         Begin
             Set @message = 'Error updating T_Cached_Protein_Collections via merge (ErrorID = ' + Convert(varchar(12), @myError) + ')'
@@ -85,13 +86,14 @@ AS
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateCachedProteinCollections')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
-        Goto Done        
+        Goto Done
     End Catch
-            
+
 Done:
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedProteinCollections] TO [DDL_Viewer] AS [dbo]

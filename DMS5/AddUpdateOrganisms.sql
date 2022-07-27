@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          12/11/2020 mem - Allow duplicate metagenome organisms
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Check for whitespace in @orgName
+**          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -422,7 +423,7 @@ As
 
         If Not Exists (SELECT * FROM S_V_Protein_Collection_Picker WHERE [Name] = @orgDBName)
         Begin
-            If Exists (SELECT * FROM S_V_Protein_Collections_by_Organism WHERE Filename = @orgDBName AND Collection_State_ID = 4)
+            If Exists (SELECT * FROM S_V_Protein_Collections_by_Organism WHERE Collection_Name = @orgDBName AND Collection_State_ID = 4)
                 Set @msg = 'Default protein collection is invalid because it is inactive: ' + @orgDBName
             Else
                 Set @msg = 'Protein collection not found: ' + @orgDBName
