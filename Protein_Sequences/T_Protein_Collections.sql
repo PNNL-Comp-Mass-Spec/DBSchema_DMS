@@ -20,6 +20,7 @@ CREATE TABLE [dbo].[T_Protein_Collections](
 	[Contents_Encrypted] [tinyint] NOT NULL,
 	[Uploaded_By] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Collection_RowVersion] [timestamp] NOT NULL,
+	[Migrate_to_Filtered_Tables] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Protein_Collections] PRIMARY KEY CLUSTERED 
 (
 	[Protein_Collection_ID] ASC
@@ -49,6 +50,8 @@ GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Contents_Encrypted]  DEFAULT ((0)) FOR [Contents_Encrypted]
 GO
 ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Uploaded_By]  DEFAULT (suser_sname()) FOR [Uploaded_By]
+GO
+ALTER TABLE [dbo].[T_Protein_Collections] ADD  CONSTRAINT [DF_T_Protein_Collections_Migrate_to_Filtered_Tables]  DEFAULT ((0)) FOR [Migrate_to_Filtered_Tables]
 GO
 ALTER TABLE [dbo].[T_Protein_Collections]  WITH CHECK ADD  CONSTRAINT [FK_T_Protein_Collections_T_Annotation_Types] FOREIGN KEY([Primary_Annotation_Type_ID])
 REFERENCES [dbo].[T_Annotation_Types] ([Annotation_Type_ID])
