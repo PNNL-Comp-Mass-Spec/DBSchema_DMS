@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE PROCEDURE [dbo].[DeleteProteinCollection]
 /****************************************************
 **
@@ -18,10 +19,11 @@ CREATE PROCEDURE [dbo].[DeleteProteinCollection]
 **          06/20/2018 mem - Delete entries in T_Protein_Collection_Members_Cached
 **                         - Add RAISERROR calls with severity level 11 (forcing the Catch block to be entered)
 **          07/27/2022 mem - Switch from FileName to Collection_Name
+**                         - Rename argument to @collectionID
 **    
 *****************************************************/
 (
-    @Collection_ID int,
+    @collectionID int,
     @message varchar(512)='' output
 )
 As
@@ -34,8 +36,8 @@ As
     
     Declare @msg varchar(256)
 
-    Declare @Collection_Name varchar(128)
-    Declare @State_Name varchar(64)
+    Declare @collectionName varchar(128)
+    Declare @stateName varchar(64)
     
     Declare @ArchivedFileID int
 
@@ -57,28 +59,28 @@ As
         
         SELECT @collectionState = Collection_State_ID
         FROM T_Protein_Collections
-        WHERE Protein_Collection_ID = @Collection_ID
+        WHERE Protein_Collection_ID = @collectionID
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
         If @myRowCount = 0
         Begin
-            Set @message = 'Collection_ID ' + Convert(varchar(12), @Collection_ID) + ' not found in T_Protein_Collections; unable to continue'
+            Set @message = 'Collection_ID ' + Convert(varchar(12), @collectionID) + ' not found in T_Protein_Collections; unable to continue'
             Print @message
             Goto Done
         End
             
         SELECT @collectionName = Collection_Name
         FROM T_Protein_Collections
-        WHERE (Protein_Collection_ID = @Collection_ID)
+        WHERE Protein_Collection_ID = @collectionID
         
-        SELECT @State_Name = State
+        SELECT @stateName = State
         FROM T_Protein_Collection_States
-        WHERE (Collection_State_ID = @collectionState)                    
+        WHERE Collection_State_ID = @collectionState
 
         If @collectionState > 2    
         Begin
-            Set @msg = 'Cannot Delete collection "' + @Collection_Name + '": ' + @State_Name + ' collections are protected'
+            Set @msg = 'Cannot Delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
             RAISERROR (@msg, 10, 1)
                 
             return 51140
@@ -97,7 +99,7 @@ As
         -- Delete the collection members
         ---------------------------------------------------
 
-        exec @myError = DeleteProteinCollectionMembers @Collection_ID, @message = @message output
+        exec @myError = DeleteProteinCollectionMembers @collectionID, @message = @message output
 
         If @myError <> 0
         Begin
@@ -110,13 +112,13 @@ As
         Set @ArchivedFileID = -1
         SELECT TOP 1 @ArchivedFileID = Archived_File_ID
         FROM T_Archived_Output_File_Collections_XRef
-        WHERE Protein_Collection_ID = @Collection_ID
+        WHERE Protein_Collection_ID = @collectionID
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
         -- Delete the entry from T_Archived_Output_File_Collections_XRef
         DELETE FROM T_Archived_Output_File_Collections_XRef
-        WHERE Protein_Collection_ID = @Collection_ID 
+        WHERE Protein_Collection_ID = @collectionID 
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -127,7 +129,7 @@ As
         If Not Exists (SELECT * FROM T_Archived_Output_File_Collections_XRef where Archived_File_ID = @ArchivedFileID)
         Begin
             DELETE FROM T_Archived_Output_Files
-            WHERE (Archived_File_ID = @ArchivedFileID)
+            WHERE Archived_File_ID = @ArchivedFileID
             --
             SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -137,7 +139,7 @@ As
 
         -- Delete the entry from T_Annotation_Groups
         DELETE FROM T_Annotation_Groups
-        WHERE (Protein_Collection_ID = @Collection_ID)
+        WHERE Protein_Collection_ID = @collectionID
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -145,7 +147,7 @@ As
             RAISERROR ('Error deleting rows from T_Annotation_Groups', 11, 1)
 
         DELETE FROM T_Protein_Collection_Members_Cached
-        WHERE (Protein_Collection_ID = @Collection_ID)
+        WHERE Protein_Collection_ID = @collectionID
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -154,7 +156,7 @@ As
 
         -- Delete the entry from T_Protein_Collections
         DELETE FROM T_Protein_Collections
-        WHERE Protein_Collection_ID = @Collection_ID
+        WHERE Protein_Collection_ID = @collectionID
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -173,7 +175,7 @@ As
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Protein Collection ' + Cast(@Collection_ID As varchar(12))
+            Declare @logMessage varchar(1024) = @message + '; Protein Collection ' + Cast(@collectionID As varchar(12))
             exec PostLogEntry 'Error', @logMessage, 'DeleteProteinCollection'
         End 
 

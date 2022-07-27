@@ -4,107 +4,106 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE DeleteProteinCollectionMembers
+CREATE PROCEDURE [dbo].[DeleteProteinCollectionMembers]
 /****************************************************
 **
-**	Desc:	Deletes Protein Collection Member Entries from a given Protein Collection ID
-**			Called by the Organism Database Handler when replacing the proteins for an existing protein collection
+**  Desc:    Deletes Protein Collection Member Entries from a given Protein Collection ID
+**            Called by the Organism Database Handler when replacing the proteins for an existing protein collection
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	kja
-**	Date:	10/07/2004 kja - Initial version
-**			07/20/2015 mem - Now setting NumProteins and TotalResidues to 0 in T_Protein_Collections
-**			09/14/2015 mem - Added parameter @NumProteinsForReLoad
+**  Auth:   kja
+**  Date:   10/07/2004 kja - Initial version
+**          07/20/2015 mem - Now setting NumProteins and TotalResidues to 0 in T_Protein_Collections
+**          09/14/2015 mem - Added parameter @NumProteinsForReLoad
 **          07/27/2022 mem - Switch from FileName to Collection_Name
+**                         - Rename argument to @collectionID
 **    
 *****************************************************/
 (
-	@Collection_ID int,
-	@message varchar(512) output,
-	@NumProteinsForReLoad int = 0		-- Number of proteins that will be associated with this collection after they are added to the database following this delete
+    @collectionID int,
+    @message varchar(512) output,
+    @NumProteinsForReLoad int = 0        -- Number of proteins that will be associated with this collection after they are added to the database following this delete
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-	
-	set @NumProteinsForReLoad = IsNull(@NumProteinsForReLoad, 0)
-	set @message = ''	
-	
-	declare @msg varchar(256)	
-	declare @result int
-	
-	---------------------------------------------------
-	-- Check if collection is OK to delete
-	---------------------------------------------------
-	
-	If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @Collection_ID)
-	Begin
-		set @msg = 'Protein collection ID not found: ' + Cast(@Collection_ID as varchar(12))
-		RAISERROR (@msg, 10, 1)			
-		return 51140
-	End
-	
-	declare @collectionState int
-	
-	SELECT @collectionState = Collection_State_ID
-	FROM T_Protein_Collections
-	WHERE Protein_Collection_ID = @Collection_ID
-					
-	declare @Collection_Name varchar(128)
-	declare @State_Name varchar(64)
-	
-	FROM T_Protein_Collections
-	WHERE (Protein_Collection_ID = @Collection_ID)
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+    
+    set @NumProteinsForReLoad = IsNull(@NumProteinsForReLoad, 0)
+    set @message = ''    
+    
+    declare @msg varchar(256)    
+    declare @result int
+    
+    ---------------------------------------------------
+    -- Check if collection is OK to delete
+    ---------------------------------------------------
+    
+    If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @collectionID)
+    Begin
+        set @msg = 'Protein collection ID not found: ' + Cast(@collectionID as varchar(12))
+        RAISERROR (@msg, 10, 1)            
+        return 51140
+    End
+    
+    declare @collectionState int
+    
+    SELECT @collectionState = Collection_State_ID
+    FROM T_Protein_Collections
+    WHERE Protein_Collection_ID = @collectionID
+                    
+    declare @collectionName varchar(128)
+    declare @stateName varchar(64)
+    
     SELECT @collectionName = Collection_Name
+    FROM T_Protein_Collections
+    WHERE Protein_Collection_ID = @collectionID
 
-	SELECT @State_Name = State
-	FROM T_Protein_Collection_States
-	WHERE (Collection_State_ID = @collectionState)					
+    SELECT @stateName = State
+    FROM T_Protein_Collection_States
+    WHERE Collection_State_ID = @collectionState
 
-	if @collectionState > 2	
-	begin
-		set @msg = 'Cannot Delete collection "' + @Collection_Name + '": ' + @State_Name + ' collections are protected'
-		RAISERROR (@msg,10, 1)
-			
-		return 51140
-	end
-	
-	---------------------------------------------------
-	-- Start transaction
-	---------------------------------------------------
+    if @collectionState > 2    
+    begin
+        set @msg = 'Cannot Delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
+        RAISERROR (@msg,10, 1)
+            
+        return 51140
+    end
+    
+    ---------------------------------------------------
+    -- Start transaction
+    ---------------------------------------------------
 
-	declare @transName varchar(32)
-	set @transName = 'DeleteProteinCollectionMembers'
-	begin transaction @transName
+    declare @transName varchar(32)
+    set @transName = 'DeleteProteinCollectionMembers'
+    begin transaction @transName
 
-	---------------------------------------------------
-	-- delete the proteins for this protein collection
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- delete the proteins for this protein collection
+    ---------------------------------------------------
 
-	DELETE FROM T_Protein_Collection_Members 
-	WHERE (Protein_Collection_ID = @Collection_ID)
-	
-	if @@error <> 0
-	begin
-		rollback transaction @transName
-		RAISERROR ('Delete from entries table was unsuccessful for collection',
-			10, 1)
-		return 51130
-	end
+    DELETE FROM T_Protein_Collection_Members 
+    WHERE Protein_Collection_ID = @collectionID
+    
+    if @@error <> 0
+    begin
+        rollback transaction @transName
+        RAISERROR ('Delete from entries table was unsuccessful for collection',
+            10, 1)
+        return 51130
+    end
 
-	UPDATE T_Protein_Collections
-	SET NumProteins = @NumProteinsForReLoad,
-		NumResidues = 0
-	WHERE Protein_Collection_ID = @Collection_ID
+    UPDATE T_Protein_Collections
+    SET NumProteins = @NumProteinsForReLoad,
+        NumResidues = 0
+    WHERE Protein_Collection_ID = @collectionID
 
-	commit transaction @transname
-	
-	return 0
+    commit transaction @transname
+    
+    return 0
 
 
 GO

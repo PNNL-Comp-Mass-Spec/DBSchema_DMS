@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[CacheProteinsToMigrate]
 /****************************************************
 **
@@ -28,7 +27,7 @@ AS
     Declare @myError int = 0
 
     Declare @continue int
-    Declare @proteinCollectionId int
+    Declare @proteinCollectionID int
     Declare @proteinCollectionName varchar(256)
     Declare @proteinCountTotal int
     Declare @proteinCountCached int
@@ -48,11 +47,11 @@ AS
     Begin Try
         If @proteinCollectionIdStart > 0
         Begin
-            Set @proteinCollectionId = @proteinCollectionIdStart - 1
+            Set @proteinCollectionID = @proteinCollectionIdStart - 1
         End
         Else
         Begin
-            Set @proteinCollectionId = 0
+            Set @proteinCollectionID = 0
         End
 
         --------------------------------------------------------------

@@ -15,16 +15,17 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **  Date:   09/29/2004
 **          11/23/2005 KJA
 **          09/13/2007 mem - Now using GetProteinCollectionID instead of @@Identity to lookup the collection ID
-**          01/18/2010 mem - Now validating that @fileName does not contain a space
+**          01/18/2010 mem - Now validating that @@collectionName does not contain a space
 **                         - Now returns 0 if an error occurs; returns the protein collection ID if no errors
 **          11/24/2015 mem - Added @collectionSource
 **          06/26/2019 mem - Add comments and convert tabs to spaces
 **          01/20/2020 mem - Replace < and > with ( and ) in the source and description
 **          07/27/2022 mem - Switch from FileName to Collection_Name
+**                         - Rename argument @fileName to @collectionName
 **    
 *****************************************************/
 (
-    @fileName varchar(128),         -- This is actually protein collection name, not the original .fasta file name
+    @collectionName varchar(128),         -- Protein collection name, which is typically the original FASTA file name but without the file extension
     @description varchar(900),
     @collectionSource varchar(900) = '',
     @collection_type int = 1,
@@ -39,28 +40,29 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 As
     set nocount on
 
-    declare @myError Int = 0
-    declare @myRowCount Int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
     
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
 
     set @myError = 0
-    if LEN(@fileName) < 1
+
+    if LEN(@collectionName) < 1
     begin
         set @myError = 51000
-        Set @message = 'fileName was blank'
+        Set @message = '@collectionName was blank'
         RAISERROR (@message, 10, 1)
     end
 
-    -- Make sure @fileName does not contain a space
-    Set @fileName = RTrim(@fileName)
+    -- Make sure @@collectionName does not contain a space
+    Set @collectionName = RTrim(@collectionName)
     
-    If @fileName Like '% %'
+    If @collectionName Like '% %'
     begin
         set @myError = 51001
-        Set @message = 'Protein collection contains a space: "' + @fileName + '"'
+        Set @message = 'Protein collection name contains a space: "' + @collectionName + '"'
         RAISERROR (@message, 10, 1)
     end
     
@@ -78,17 +80,17 @@ As
     -- Does entry already exist?
     ---------------------------------------------------
     
-    declare @Collection_ID Int = 0
+    declare @collectionID Int = 0
     
-    execute @Collection_ID = GetProteinCollectionID @fileName
+    execute @collectionID = GetProteinCollectionID @collectionName
     
-    if @Collection_ID > 0 and @mode = 'add'
+    if @collectionID > 0 and @mode = 'add'
     begin
         -- Collection already exists; change @mode to 'update'
         set @mode = 'update'
     end
     
-    if @Collection_ID = 0 and @mode = 'update'
+    if @collectionID = 0 and @mode = 'update'
     begin
         -- Collection not found; change @mode to 'add'
         set @mode = 'add'
@@ -96,7 +98,7 @@ As
     
     -- Uncomment to debug
     --
-    -- set @message = 'mode ' + @mode + ', collection '+ @fileName
+    -- set @message = 'mode ' + @mode + ', collection '+ @collectionName
     -- exec PostLogEntry 'Debug', @message, 'AddUpdateProteinCollection'
     -- set @message=''
     
@@ -104,11 +106,9 @@ As
     -- Start transaction
     ---------------------------------------------------
 
-    declare @transName varchar(32)
-    set @transName = 'AddProteinCollectionEntry'
+    declare @transName varchar(32) = 'AddProteinCollectionEntry'
     begin transaction @transName
-
-
+    
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
@@ -128,7 +128,7 @@ As
             DateModified,
             Uploaded_By
         ) VALUES (
-            @fileName, 
+            @collectionName, 
             @description,
             @collectionSource,
             @collection_type,
@@ -146,7 +146,7 @@ As
         if @myError <> 0
         begin
             rollback transaction @transName
-            set @message = 'Insert operation failed: "' + @filename + '"'
+            set @message = 'Insert operation failed: "' + @collectionName + '"'
             RAISERROR (@message, 10, 1)
             -- Return zero, since we did not create a protein collection
             Return 0
@@ -157,7 +157,7 @@ As
 --            Annotation_Group,
 --            Annotation_Type_ID
 --            ) VALUES (
---            @Collection_ID,
+--            @collectionID,
 --            0,
 --            @primary_annotation_type_id
 --            )
@@ -183,7 +183,7 @@ As
         if @myError <> 0
         begin
             rollback transaction @transName
-            set @message = 'Update operation failed: "' + @filename + '"'
+            set @message = 'Update operation failed: "' + @collectionName + '"'
             RAISERROR (@message, 10, 1)
             -- Return zero, since we did not create a protein collection
             Return 0
@@ -192,8 +192,8 @@ As
     
     commit transaction @transName
 
-    -- Lookup the collection ID for @fileName
-    execute @Collection_ID = GetProteinCollectionID @fileName
+    -- Lookup the collection ID
+    execute @collectionID = GetProteinCollectionID @collectionName
     
     if @mode = 'add'
     begin
@@ -205,7 +205,7 @@ As
             Annotation_Group,
             Annotation_Type_ID
         ) VALUES (
-            @Collection_ID,
+            @collectionID,
             0,
             @primary_annotation_type_id
         )
@@ -215,7 +215,7 @@ As
         if @myError <> 0
         begin
             rollback transaction @transName
-            set @message = 'Update operation failed: "' + @filename + '"'
+            set @message = 'Update operation failed: "' + @collectionName + '"'
             RAISERROR (@message, 10, 1)
             -- Return zero, since we did not create a protein collection
             Return 0
@@ -224,7 +224,7 @@ As
         commit transaction @transName
     end
         
-    return @Collection_ID
+    return @collectionID
 
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateProteinCollection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
