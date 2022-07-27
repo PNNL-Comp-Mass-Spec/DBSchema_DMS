@@ -23,7 +23,7 @@ SELECT DISTINCT PC.Protein_Collection_ID,
                 OrgList.[Name] AS Organism_Name,
                 PC.Contents_Encrypted,
                 PC.Includes_Contaminants,
-                AOF.Filesize
+                AOF.Filesize AS File_Size
 FROM T_Protein_Collections PC
      INNER JOIN T_Collection_Organism_Xref OrgXref
        ON PC.Protein_Collection_ID = OrgXref.Protein_Collection_ID
