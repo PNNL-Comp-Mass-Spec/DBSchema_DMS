@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Archived_Output_File_Stats_Export]
 AS
 SELECT AOF.Archived_File_ID,
-       AOF.Filesize,
+       AOF.Filesize AS File_Size_Bytes,
        COUNT(PC.Protein_Collection_ID) AS Protein_Collection_Count,
        SUM(PC.NumProteins) AS Protein_Count,
        SUM(PC.NumResidues) AS Residue_Count,
