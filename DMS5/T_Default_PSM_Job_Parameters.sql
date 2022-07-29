@@ -14,16 +14,25 @@ CREATE TABLE [dbo].[T_Default_PSM_Job_Parameters](
 	[Enabled] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Default_PSM_Job_Parameters] PRIMARY KEY CLUSTERED 
 (
+	[Entry_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+GRANT VIEW DEFINITION ON [dbo].[T_Default_PSM_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Default_PSM_Job_Parameters_Uniq_Type_Tool_MetOx_CysAlk_STYPhos] ******/
+CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Default_PSM_Job_Parameters_Uniq_Type_Tool_MetOx_CysAlk_STYPhos] ON [dbo].[T_Default_PSM_Job_Parameters]
+(
 	[Job_Type_Name] ASC,
 	[Tool_Name] ASC,
 	[DynMetOx] ASC,
 	[StatCysAlk] ASC,
 	[DynSTYPhos] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
-) ON [PRIMARY]
-
-GO
-GRANT VIEW DEFINITION ON [dbo].[T_Default_PSM_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Default_PSM_Job_Parameters] ADD  CONSTRAINT [DF_T_Default_PSM_Job_Parameters_Enabled]  DEFAULT ((1)) FOR [Enabled]
 GO
