@@ -76,6 +76,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          09/05/2018 mem - When @mode is 'add', if @state is 'hold' or 'holding', create the job, but put it on hold (state 8)
 **          06/30/2022 mem - Rename parameter file argument
+**          07/29/2022 mem - Assure that the parameter file and settings file names are not null
 **
 *****************************************************/
 (
@@ -112,16 +113,18 @@ As
     Declare @AlterEnteredByRequired tinyint = 0
 
     ---------------------------------------------------
-    -- Assure that the comment and associated processor group
-    -- variables are not null
+    -- Validate the inputs
     ---------------------------------------------------
 
-    Set @comment = IsNull(@comment, '')
-    Set @associatedProcessorGroup = IsNull(@associatedProcessorGroup, '')
-    Set @callingUser = IsNull(@callingUser, '')
-    Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 0)
-    Set @PreventDuplicatesIgnoresNoExport = IsNull(@PreventDuplicatesIgnoresNoExport, 1)
-    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @paramFileName = LTrim(RTrim(Coalesce(@paramFileName, '')))
+    Set @settingsFileName = LTrim(RTrim(Coalesce(@settingsFileName, '')))
+
+    Set @comment = LTrim(RTrim(Coalesce(@comment, '')))
+    Set @associatedProcessorGroup = LTrim(RTrim(Coalesce(@associatedProcessorGroup, '')))
+    Set @callingUser = LTrim(RTrim(Coalesce(@callingUser, '')))
+    Set @PreventDuplicateJobs = Coalesce(@PreventDuplicateJobs, 0)
+    Set @PreventDuplicatesIgnoresNoExport = Coalesce(@PreventDuplicatesIgnoresNoExport, 1)
+    Set @infoOnly = Coalesce(@infoOnly, 0)
 
     Set @message = ''
 
@@ -195,8 +198,8 @@ As
             Declare @currentComment varchar(512)
 
             SELECT @currentStateName = ASN.AJS_name,
-                   @currentComment = IsNull(J.AJ_comment, ''),
-                   @currentExportMode = IsNull(J.AJ_propagationMode, 0)
+                   @currentComment = Coalesce(J.AJ_comment, ''),
+                   @currentExportMode = Coalesce(J.AJ_propagationMode, 0)
             FROM T_Analysis_Job J
                  INNER JOIN T_Analysis_State_Name ASN
                    ON J.AJ_StateID = ASN.AJS_stateID
@@ -269,7 +272,7 @@ As
 
     If @mode = 'reset'
     Begin
-        If @organismDBName Like 'ID[_]%' And IsNull(@protCollNameList, '') Not In ('', 'na')
+        If @organismDBName Like 'ID[_]%' And Coalesce(@protCollNameList, '') Not In ('', 'na')
         Begin
             -- We are resetting a job that used a protein collection; clear @organismDBName
             Set @organismDBName = ''
@@ -412,7 +415,7 @@ As
     --
     If @result <> 0
     Begin
-        If IsNull(@msg, '') = ''
+        If Coalesce(@msg, '') = ''
             Set @msg = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobParameters'
 
         If @infoOnly <> 0
@@ -421,7 +424,7 @@ As
         RAISERROR (@msg, 11, 18)
     End
 
-    If IsNull(@Warning, '') <> ''
+    If Coalesce(@Warning, '') <> ''
     Begin
         Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ', 512)
 
@@ -483,11 +486,11 @@ As
                 (
                   ( @protCollNameList = 'na' AND
                     AJ.AJ_organismDBName = @organismDBName AND
-                    Org.OG_name = IsNull(@organismName, Org.OG_name)
+                    Org.OG_name = Coalesce(@organismName, Org.OG_name)
                   ) OR
                   ( @protCollNameList <> 'na' AND
-                    AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND
-                     AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
+                    AJ.AJ_proteinCollectionList = Coalesce(@protCollNameList, AJ.AJ_proteinCollectionList) AND
+                     AJ.AJ_proteinOptionsList = Coalesce(@protCollOptionsList, AJ.AJ_proteinOptionsList)
                   ) OR
                   ( AJT.AJT_orgDbReqd = 0 )
                 )
@@ -533,7 +536,7 @@ As
         Declare @newJobNum int
         Declare @newStateID int = 1
 
-        If IsNull(@SpecialProcessingWaitUntilReady, 0) > 0 And IsNull(@specialProcessing, '') <> ''
+        If Coalesce(@SpecialProcessingWaitUntilReady, 0) > 0 And Coalesce(@specialProcessing, '') <> ''
             Set @newStateID = 19
 
         If @stateName Like 'hold%'

@@ -80,6 +80,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          03/17/2022 mem - Log errors only after parameters have been validated
 **          06/30/2022 mem - Rename parameter file argument
 **          07/01/2022 mem - Rename auto generated parameters to use ParamFileName and ParamFileStoragePath
+**          07/29/2022 mem - Assure that the parameter file and settings file names are not null
 **
 *****************************************************/
 (
@@ -143,15 +144,15 @@ As
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @requestID = IsNull(@requestID, 0)
+    Set @requestID = Coalesce(@requestID, 0)
 
-    Set @dataPackageID = IsNull(@dataPackageID, 0)
+    Set @dataPackageID = Coalesce(@dataPackageID, 0)
     If @dataPackageID < 0
         Set @dataPackageID = 0
 
-    Set @datasetList = LTrim(RTrim(IsNull(@datasetList, '')))
+    Set @datasetList = LTrim(RTrim(Coalesce(@datasetList, '')))
 
-    Set @mode = ISNULL(@mode, '')
+    Set @mode = Coalesce(@mode, '')
 
     If Not @mode in ('add', 'preview')
     Begin
@@ -171,6 +172,8 @@ As
         RAISERROR ('Dataset list is empty for request %d', 11, 1, @requestID)
     End
 
+    Set @paramFileName = LTrim(RTrim(Coalesce(@paramFileName, '')))
+    Set @settingsFileName = LTrim(RTrim(Coalesce(@settingsFileName, '')))
 
     /*
     ---------------------------------------------------
@@ -288,13 +291,13 @@ As
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
             Set @message = 'Note: changed protein options to forward-only since MS-GF+ parameter files typically have tda=1'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'TopPIC%'
             Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
     End
 
@@ -302,7 +305,7 @@ As
     Begin
         Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'MSFragger%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'MSFragger%'
             Set @message = 'Note: changed protein options to decoy-mode since MSFragger expects the FASTA file to have decoy proteins'
     End
 
@@ -355,17 +358,17 @@ As
             (AJ.AJ_settingsFileName = @settingsFileName OR
              AJ.AJ_settingsFileName = 'na' AND @settingsFileName = 'Decon2LS_DefSettings.xml') AND
             ( (    @protCollNameList = 'na' AND AJ.AJ_organismDBName = @organismDBName AND
-                Org.OG_name = IsNull(@organismName, Org.OG_name)
+                Org.OG_name = Coalesce(@organismName, Org.OG_name)
               ) OR
               (    @protCollNameList <> 'na' AND
-                AJ.AJ_proteinCollectionList = IsNull(@protCollNameList, AJ.AJ_proteinCollectionList) AND
-                AJ.AJ_proteinOptionsList = IsNull(@protCollOptionsList, AJ.AJ_proteinOptionsList)
+                AJ.AJ_proteinCollectionList = Coalesce(@protCollNameList, AJ.AJ_proteinCollectionList) AND
+                AJ.AJ_proteinOptionsList = Coalesce(@protCollOptionsList, AJ.AJ_proteinOptionsList)
               ) OR
               (
                 AJT.AJT_orgDbReqd = 0
               )
             ) AND
-            IsNull(AJ.AJ_specialProcessing, '') = IsNull(@specialProcessing, '')
+            Coalesce(AJ.AJ_specialProcessing, '') = Coalesce(@specialProcessing, '')
         GROUP BY DS.Dataset_Num
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -450,7 +453,7 @@ As
     If @result <> 0
         RAISERROR ('ValidateAnalysisJobParameters: %s for request %d', 11, 8, @msg, @requestID)
 
-    If IsNull(@warning, '') <> ''
+    If Coalesce(@warning, '') <> ''
     Begin
         Set @comment = dbo.AppendToText(@comment, @warning, 0, '; ', 512)
     End
@@ -462,7 +465,7 @@ As
     --
     Set @jobStateID = 1
     --
-    If IsNull(@specialProcessing, '') <> '' AND
+    If Coalesce(@specialProcessing, '') <> '' AND
        Exists (SELECT * FROM T_Analysis_Tool WHERE AJT_toolName = @toolName AND Use_SpecialProcWaiting > 0)
     Begin
         Set @jobStateID = 19
@@ -497,7 +500,7 @@ As
             If @myError <> 0
                 RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
 
-            Set @requestStateID = IsNull(@requestStateID, 0)
+            Set @requestStateID = Coalesce(@requestStateID, 0)
 
             If Not @requestStateID IN (1, 5)
             Begin
@@ -886,7 +889,7 @@ As
 
             if @myError <> 0
             Begin
-                Set @msgForLog = 'Error code ' + Cast(@myError as varchar(12)) + ' S_Pipeline_AddUpdateLocalJob: ' + IsNull(@message, '??')
+                Set @msgForLog = 'Error code ' + Cast(@myError as varchar(12)) + ' S_Pipeline_AddUpdateLocalJob: ' + Coalesce(@message, '??')
                 exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
             End
 
@@ -914,7 +917,7 @@ As
                 End
                 Else
                 Begin
-                    Set @msgForLog = 'Error code ' + Cast(@backfillError as varchar(12)) + ' calling BackfillPipelineJobs: ' + IsNull(@msgForLog, '??')
+                    Set @msgForLog = 'Error code ' + Cast(@backfillError as varchar(12)) + ' calling BackfillPipelineJobs: ' + Coalesce(@msgForLog, '??')
                     exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
                 End
             End
@@ -1027,7 +1030,7 @@ As
             If @myError <> 0
                 RAISERROR ('Error looking up request state in T_Analysis_Job_Request for request %d', 11, 7, @requestID)
 
-            Set @requestStateID = IsNull(@requestStateID, 0)
+            Set @requestStateID = Coalesce(@requestStateID, 0)
 
             If @requestStateID IN (1, 5)
             Begin
@@ -1142,7 +1145,7 @@ As
             @jobStateID,
             @requestID,
             @propMode,
-            IsNull(Dataset_Unreviewed, 1)
+            Coalesce(Dataset_Unreviewed, 1)
         FROM #TD
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
