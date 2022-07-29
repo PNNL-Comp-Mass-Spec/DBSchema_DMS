@@ -15,21 +15,21 @@ CREATE PROCEDURE [dbo].[UpdateCachedJobRequestExistingJobs]
 **  Date:   07/30/2019 mem - Initial version
 **          07/31/2019 mem - Add option to find existing job requests that match jobs created within the last @jobSearchHours
 **          06/25/2021 mem - Fix bug comparing legacy organism DB name in T_Analysis_Job to T_Analysis_Job_Request_Datasets
-**    
+**
 *****************************************************/
 (
     @processingMode tinyint = 0,    -- 0 to only add new job requests, 1 to add new job requests and update existing information; ignored if @requestId or @jobSearchHours is non-zero
     @requestId int = 0,             -- When non-zero, a single request ID to add / update
     @jobSearchHours int = 0,        -- When non-zero, compare jobs created within this many hours to existing job requests
     @infoOnly tinyint = 0,
-    @message varchar(512) = '' output    
+    @message varchar(512) = '' output
 )
 As
     Set nocount on
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+
     Declare @currentRequestId int = 0
     Declare @continue tinyint = 1
     Declare @jobRequestsAdded int = 0
@@ -39,12 +39,12 @@ As
     -- Validate the inputs
     ------------------------------------------------
     --
-    Set @processingMode = IsNull(@processingMode, 0)
-    Set @requestId = IsNull(@requestId, 0)
-    Set @jobSearchHours = IsNull(@jobSearchHours, 0)
-    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @processingMode = Coalesce(@processingMode, 0)
+    Set @requestId = Coalesce(@requestId, 0)
+    Set @jobSearchHours = Coalesce(@jobSearchHours, 0)
+    Set @infoOnly = Coalesce(@infoOnly, 0)
     Set @message = ''
-    
+
     If @requestId = 1
     Begin
         Select '@requestId 1 is a special placeholder request; table T_Analysis_Job_Request_Existing_Jobs does not track jobs for @requestId 1' As Warning
@@ -57,7 +57,7 @@ As
         Begin
             SELECT DISTINCT AJR.AJR_requestID AS Request_ID,
               CASE
-                  WHEN CachedJobs.Request_ID IS NULL 
+                  WHEN CachedJobs.Request_ID IS NULL
                   THEN 'Analysis job request to add to T_Analysis_Job_Request_Existing_Jobs'
                   ELSE 'Existing Analysis job request to validate against T_Analysis_Job_Request_Existing_Jobs'
               END AS Status
@@ -77,7 +77,7 @@ As
             WHEN NOT MATCHED BY TARGET THEN
                 INSERT(Request_ID, Job)
                 VALUES(s.Request_ID, s.Job)
-            WHEN NOT MATCHED BY SOURCE AND t.Request_ID = @requestId THEN DELETE; 
+            WHEN NOT MATCHED BY SOURCE AND t.Request_ID = @requestId THEN DELETE;
         End
         Goto Done
     End -- </a1>
@@ -87,7 +87,7 @@ As
         ------------------------------------------------
         -- Find jobs created in the last @jobSearchHours that match one or more job requests
         ------------------------------------------------
-        --        
+        --
         CREATE TABLE #TmpRequestsAndExistingJobs (
             Request_ID int NOT NULL,
             Job        int NOT NULL
@@ -105,7 +105,7 @@ As
                ON AJT.AJT_toolName = AJR.AJR_analysisToolName AND
                   AJ.AJ_parmFileName = AJR.AJR_parmFileName AND
                   AJ.AJ_settingsFileName = AJR.AJR_settingsFileName AND
-                  ISNULL(AJ.AJ_specialProcessing, '') = ISNULL(AJR.AJR_specialProcessing, '')
+                  Coalesce(AJ.AJ_specialProcessing, '') = Coalesce(AJR.AJR_specialProcessing, '')
              INNER JOIN T_Analysis_Job_Request_Datasets AJRD
                ON AJR.AJR_requestID = AJRD.Request_ID AND
                   AJRD.Dataset_ID = AJ.aj_datasetid
@@ -135,7 +135,7 @@ As
             --
             SELECT DISTINCT RJ.Request_ID AS Request_ID,
               CASE
-                  WHEN CachedJobs.Request_ID IS NULL 
+                  WHEN CachedJobs.Request_ID IS NULL
                   THEN 'Analysis job request to add to T_Analysis_Job_Request_Existing_Jobs'
                   ELSE 'Existing Analysis job request to validate against T_Analysis_Job_Request_Existing_Jobs'
               END AS Status
@@ -169,7 +169,7 @@ As
             ------------------------------------------------
             -- Use a merge statement to add/remove rows from T_Analysis_Job_Request_Existing_Jobs
             --
-            -- We must process each Request_ID separately since the 
+            -- We must process each Request_ID separately since the
             -- Delete operation in the Merge statement does not support
             -- WHEN NOT MATCHED BY Source And t.Request_ID = s.Request_ID THEN DELETE
             ------------------------------------------------
@@ -209,13 +209,13 @@ As
 
             If @jobRequestsAdded > 0
             Begin
-                Set @message = Convert(varchar(12), @jobRequestsAdded) + 
+                Set @message = Convert(varchar(12), @jobRequestsAdded) +
                                dbo.CheckPlural(@jobRequestsAdded, ' job request was added', ' job requests were added')
             End
 
             If @jobRequestsUpdated > 0
             Begin
-                Set @message = dbo.AppendToText(@message, Convert(varchar(12), @jobRequestsUpdated) + 
+                Set @message = dbo.AppendToText(@message, Convert(varchar(12), @jobRequestsUpdated) +
                                                 dbo.CheckPlural(@jobRequestsUpdated, ' job request was updated', ' job requests were updated') + ' via a merge',
                                                 0, '; ', 512)
             End
@@ -229,7 +229,7 @@ As
         ------------------------------------------------
         -- Add new analysis job requests to T_Analysis_Job_Request_Existing_Jobs
         ------------------------------------------------
-        --    
+        --
         If @infoOnly > 0
         Begin
             ------------------------------------------------
@@ -251,7 +251,7 @@ As
             Begin
                 Select 'No analysis job requests need to be added to T_Analysis_Job_Request_Existing_Jobs' As Status
             End
-        End    
+        End
         Else
         Begin
             ------------------------------------------------
@@ -270,7 +270,7 @@ As
                           ON AJR.AJR_requestID = CachedJobs.Request_ID
                    WHERE AJR.AJR_requestID > 1 AND
                          AJR.AJR_created > DateAdd(Day, -30, GetDate()) AND
-                         CachedJobs.Request_ID IS NULL 
+                         CachedJobs.Request_ID IS NULL
                  ) LookupQ
                  CROSS APPLY GetExistingJobsMatchingJobRequest ( LookupQ.Request_ID )
             ORDER BY LookupQ.Request_ID, Job
@@ -298,7 +298,7 @@ As
             --
             SELECT DISTINCT AJR.AJR_requestID AS Request_ID,
               CASE
-                  WHEN CachedJobs.Request_ID IS NULL 
+                  WHEN CachedJobs.Request_ID IS NULL
                   THEN 'Analysis job request to add to T_Analysis_Job_Request_Existing_Jobs'
                   ELSE 'Existing Analysis job request to validate against T_Analysis_Job_Request_Existing_Jobs'
               END AS Status
@@ -334,7 +334,7 @@ As
 
             If @myRowCount > 0
             Begin
-                Set @message = Convert(varchar(12), @myRowCount) + 
+                Set @message = Convert(varchar(12), @myRowCount) +
                                dbo.CheckPlural(@myRowCount, ' job request was updated', ' job requests were updated') + ' via a merge'
             End
         End

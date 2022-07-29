@@ -7,8 +7,9 @@ GO
 CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
 /****************************************************
 **
-**  Desc:   Creates jobs in DMS5 for jobs that were originally
-**          created in the DMS_Pipeline database
+**  Desc:
+**      Creates jobs in DMS5 for jobs that were originally
+**      created in the DMS_Pipeline database
 **
 **  Return values: 0 if no error; otherwise error code
 **
@@ -28,6 +29,7 @@ CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
 **          07/06/2021 mem - Extract parameter file name, protein collection list, and legacy FASTA file name from job parameters
 **          08/26/2021 mem - Auto change script MSFragger_DataPkg to MSFragger
 **          07/01/2022 mem - Use new parameter name for parameter file when querying V_Pipeline_Job_Parameters
+**          07/29/2022 mem - Settings file names can no longer be null
 **
 *****************************************************/
 (
@@ -79,8 +81,8 @@ AS
     Declare @mode varchar(12)
     Declare @msg varchar(256)
 
-    declare @callingProcName varchar(128)
-    declare @currentLocation varchar(128)
+    Declare @callingProcName varchar(128)
+    Declare @currentLocation varchar(128)
     Set @currentLocation = 'Start'
 
 
@@ -88,8 +90,8 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @infoOnly = IsNull(@infoOnly, 1)
-    Set @jobsToProcess = IsNull(@jobsToProcess, 0)
+    Set @infoOnly = Coalesce(@infoOnly, 1)
+    Set @jobsToProcess = Coalesce(@jobsToProcess, 0)
     Set @message = ''
 
 
@@ -107,7 +109,7 @@ AS
         Finish datetime NULL,
         AnalysisToolID int NOT NULL,
         ParamFileName varchar(255) NOT NULL,
-        SettingsFileName varchar(255) NULL,
+        SettingsFileName varchar(255) NOT NULL,
         OrganismDBName varchar(128) NOT NULL,
         OrganismID int NOT NULL,
         DatasetID int NOT NULL,
@@ -258,7 +260,7 @@ AS
                 -- Validate @owner; update if not valid
                 ---------------------------------------------------
                 --
-                If Not Exists (SELECT * FROM T_Users WHERE U_PRN = IsNull(@owner, ''))
+                If Not Exists (SELECT * FROM T_Users WHERE U_PRN = Coalesce(@owner, ''))
                     Set @owner = 'H09090911'
 
                 ---------------------------------------------------
@@ -296,13 +298,13 @@ AS
                 WHERE job = 1914830 AND
                       Param_Name = 'LegacyFastaFileName'
 
-                If IsNull(@parameterFileName, '') = ''
+                If Coalesce(@parameterFileName, '') = ''
                     Set @parameterFileName = 'na'
 
-                If IsNull(@proteinCollectionList, '') = ''
+                If Coalesce(@proteinCollectionList, '') = ''
                     Set @proteinCollectionList = 'na'
 
-                If IsNull(@legacyFastaFileName, '') = ''
+                If Coalesce(@legacyFastaFileName, '') = ''
                     Set @legacyFastaFileName = 'na'
 
                 ------------------------------------------------
@@ -312,7 +314,7 @@ AS
                 Set @datasetID = -1
                 Set @datasetComment = ''
 
-                If IsNull(@dataset, 'Aggregation') <> 'Aggregation'
+                If Coalesce(@dataset, 'Aggregation') <> 'Aggregation'
                 Begin
 
                     SELECT @datasetID = Dataset_ID
@@ -360,7 +362,7 @@ AS
                         --
                         Select @myRowCount = @@rowCount, @myError = @@error
 
-                        If @myRowCount = 0 Or IsNull(@dataPackageFolder, '') = ''
+                        If @myRowCount = 0 Or Coalesce(@dataPackageFolder, '') = ''
                         Begin
                             -- Data Package not found (or Package_File_Folder is not defined)
                             Set @dataset = 'DataPackage_' + Convert(varchar(12), @dataPackageID)
@@ -456,7 +458,7 @@ AS
                             ------------------------------------------------
 
                             Set @message = 'Error creating dataset ' + @dataset + ' for DMS Pipeline job ' + @jobStr
-                            If IsNull(@msg, '') <> ''
+                            If Coalesce(@msg, '') <> ''
                                 Set @message = @message + ': ' + @msg
 
                             If @infoOnly > 0
@@ -493,7 +495,7 @@ AS
                                     Set @datasetID = -1
                                 End
 
-                                If IsNull(@storagePathRelative, '') <> ''
+                                If Coalesce(@storagePathRelative, '') <> ''
                                 Begin
                                     If @peptideAtlasStagingTask <> 0
                                     Begin
@@ -507,7 +509,7 @@ AS
                                         FROM T_Storage_Path
                                         WHERE (SP_path IN ('PeptideAtlas_Staging', 'PeptideAtlas_Staging\'))
 
-                                        If IsNull(@peptideAtlasStagingPathID, 0) > 0
+                                        If Coalesce(@peptideAtlasStagingPathID, 0) > 0
                                         Begin
                                             UPDATE T_Dataset
                                             SET DS_Storage_Path_ID = @peptideAtlasStagingPathID
@@ -557,7 +559,7 @@ AS
                                @legacyFastaFileName,    -- OrganismDBName
                                @organismID,             -- OrganismID
                                @datasetID,              -- DatasetID
-                               IsNull(@comment, ''),    -- Comment
+                               Coalesce(@comment, ''),    -- Comment
                                @owner,                  -- Owner
                                @state,                  -- StateID
                                'Job_Broker',            -- AssignedProcessorName
@@ -619,7 +621,7 @@ AS
             END TRY
             BEGIN CATCH
                 -- Error caught; log the error then continue with the next job to backfill
-                    Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
+                    Set @callingProcName = Coalesce(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
                     exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1,
                                             @errorNum = @myError output, @message = @message output
             END CATCH
@@ -672,9 +674,9 @@ NextJob:
             WHEN Matched AND
                         (   Target.AJ_StateID <> 14 AND target.AJ_StateID <> source.State OR
                             Target.AJ_priority <> source.Priority OR
-                            IsNull(target.AJ_start ,'1/1/1990') <> IsNull(source.Start,'1/1/1990') OR
-                            IsNull(target.AJ_finish ,'1/1/1990') <> IsNull(source.Finish,'1/1/1990') OR
-                            IsNull(target.AJ_ProcessingTimeMinutes, 0) <> IsNull(source.ProcessingTimeMinutes, 0)
+                            Coalesce(target.AJ_start ,'1/1/1990') <> Coalesce(source.Start,'1/1/1990') OR
+                            Coalesce(target.AJ_finish ,'1/1/1990') <> Coalesce(source.Finish,'1/1/1990') OR
+                            Coalesce(target.AJ_ProcessingTimeMinutes, 0) <> Coalesce(source.ProcessingTimeMinutes, 0)
                         )
             THEN UPDATE
                 Set AJ_StateID = CASE WHEN Target.AJ_StateID = 14 Then 14 Else source.State End,
@@ -697,7 +699,7 @@ NextJob:
         END TRY
         BEGIN CATCH
             -- Error caught; log the error then continue with the next job to backfill
-                Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
+                Set @callingProcName = Coalesce(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
                 exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1,
                                         @errorNum = @myError output, @message = @message output
         END CATCH

@@ -53,33 +53,31 @@ As
 
     Set XACT_ABORT, nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @Job int
-    declare @StepNumber int
-    declare @StepTool varchar(64)
-    declare @JobState int
-    declare @StepState int
-    declare @Processor varchar(128)
-    declare @Comment varchar(750)
-    declare @SettingsFile varchar(255)
-    declare @AnalysisTool varchar(64)
+    Declare @Job int
+    Declare @StepNumber int
+    Declare @StepTool varchar(64)
+    Declare @JobState int
+    Declare @StepState int
+    Declare @Processor varchar(128)
+    Declare @Comment varchar(750)
+    Declare @SettingsFile varchar(255)
+    Declare @AnalysisTool varchar(64)
 
     Declare @NewJobState int
-    declare @NewComment varchar(750)
+    Declare @NewComment varchar(750)
     Declare @NewSettingsFile varchar(255)
     Declare @SkipInfo varchar(255)
 
-    declare @continue tinyint
+    Declare @continue tinyint
 
-    declare @RetryJob tinyint
-    declare @SetProcessorAutoRecover tinyint
-    declare @SettingsFileChanged tinyint
+    Declare @RetryJob tinyint
+    Declare @SetProcessorAutoRecover tinyint
+    Declare @SettingsFileChanged tinyint
 
-    declare @RetryCount int
+    Declare @RetryCount int
     Declare @MatchIndex int
     Declare @MatchIndexLast int
     Declare @PoundIndex int
@@ -97,13 +95,13 @@ As
         ---------------------------------------------------
         --
 
-        Set @WindowHours = IsNull(@WindowHours, 12)
+        Set @WindowHours = Coalesce(@WindowHours, 12)
         If @WindowHours < 2
             Set @WindowHours = 2
 
-        Set @infoOnly = IsNull(@infoOnly, 0)
+        Set @infoOnly = Coalesce(@infoOnly, 0)
 
-        Set @StepToolFilter = IsNull(@StepToolFilter, '')
+        Set @StepToolFilter = Coalesce(@StepToolFilter, '')
 
         Set @message = ''
 
@@ -137,9 +135,9 @@ As
                JS.Step_Tool,
                J.AJ_StateID AS Job_State,
                JS.State AS Step_State,
-               IsNull(JS.Processor, '') AS Processor,
-               IsNull(J.AJ_comment, '') AS Comment,
-               IsNull(J.AJ_finish, J.AJ_Start) as Job_Finish,
+               Coalesce(JS.Processor, '') AS Processor,
+               Coalesce(J.AJ_comment, '') AS Comment,
+               Coalesce(J.AJ_finish, J.AJ_Start) as Job_Finish,
                J.AJ_settingsFileName,
                Tool.AJT_toolName
         FROM T_Analysis_Job J
@@ -148,7 +146,7 @@ As
              INNER JOIN T_Analysis_Tool Tool
                ON J.AJ_analysisToolID = Tool.AJT_toolID
         WHERE J.AJ_StateID = 5 AND
-              IsNull(J.AJ_finish, J.AJ_Start) >= DATEADD(hour, -@WindowHours, GETDATE()) AND
+              Coalesce(J.AJ_finish, J.AJ_Start) >= DATEADD(hour, -@WindowHours, GETDATE()) AND
               JS.State = 6 AND
               (@StepToolFilter = '' OR JS.Step_Tool = @StepToolFilter)
         --
@@ -167,9 +165,9 @@ As
                JS.Step_Tool,
                J.AJ_StateID AS Job_State,
                JS.State AS Step_State,
-               IsNull(JS.Processor, '') AS Processor,
-               IsNull(J.AJ_comment, '') AS Comment,
-               IsNull(J.AJ_finish, J.AJ_Start) as Job_Finish,
+               Coalesce(JS.Processor, '') AS Processor,
+               Coalesce(J.AJ_comment, '') AS Comment,
+               Coalesce(J.AJ_finish, J.AJ_Start) as Job_Finish,
                J.AJ_settingsFileName,
                Tool.AJT_toolName
         FROM T_Analysis_Job J
@@ -203,10 +201,10 @@ As
                              @StepTool = Step_Tool,                -- Step tool name
                              @JobState = Job_State,
                              @StepState = Step_State,
-                 @Processor = Processor,
+                             @Processor = Processor,
                              @Comment = Comment,
                              @SettingsFile = Settings_File,
-                        @AnalysisTool = AnalysisTool        -- Overall Job Analysis Tool Name
+                             @AnalysisTool = AnalysisTool        -- Overall Job Analysis Tool Name
                 FROM #Tmp_FailedJobs
                 WHERE Job > @Job
                 ORDER BY Job
@@ -278,7 +276,7 @@ As
                                 If @MatchIndex - @PoundIndex - 1 > 0
                                 Begin
                                     Set @RetryCountText = SubString(@RetryText, @PoundIndex+1, @MatchIndex - @PoundIndex - 1)
-                                    Set @RetryCount = IsNull(Try_Parse(@RetryCountText as int), @retryCount)
+                                    Set @RetryCount = Coalesce(Try_Parse(@RetryCountText as int), @retryCount)
                                 End
                             End
                         End
@@ -315,9 +313,9 @@ As
                             FROM T_Settings_Files
                             WHERE Analysis_Tool = @AnalysisTool AND
                                   File_Name = @SettingsFile AND
-                             IsNull(MSGFPlus_AutoCentroid, '') <> ''
+                                  Coalesce(MSGFPlus_AutoCentroid, '') <> ''
 
-                            If IsNull(@NewSettingsFile, '') <> ''
+                            If Coalesce(@NewSettingsFile, '') <> ''
                             Begin
 
                                 Set @RetryJob = 1

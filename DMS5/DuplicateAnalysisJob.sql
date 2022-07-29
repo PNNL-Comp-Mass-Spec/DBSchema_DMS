@@ -31,21 +31,19 @@ CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
 As
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @job = IsNull(@job, 0)
-    Set @newComment = IsNull(@newComment, '')
-    Set @overrideNoExport = IsNull(@overrideNoExport, -1)
-    Set @appendOldJobToComment = IsNull(@appendOldJobToComment, 1)
-    Set @newSettingsFile = IsNull(@newSettingsFile, '')
-    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @job = Coalesce(@job, 0)
+    Set @newComment = LTrim(RTrim(Coalesce(@newComment, '')))
+    Set @overrideNoExport = Coalesce(@overrideNoExport, -1)
+    Set @appendOldJobToComment = Coalesce(@appendOldJobToComment, 1)
+    Set @newSettingsFile = LTrim(RTrim(Coalesce(@newSettingsFile, '')))
+    Set @infoOnly = Coalesce(@infoOnly, 0)
     Set @message = ''
 
     If @job = 0
@@ -170,16 +168,16 @@ As
         @infoOnly             = @infoOnly,
         @jobNum = @newJob OUTPUT
 
-    If @infoonly = 0
+    If @infoOnly = 0
     Begin
         If @myError = 0
         Begin
-            Set @message = 'Duplicated job ' + Cast(@job as varchar(12)) + ' to create job ' + IsNull(@newJob, '')
+            Set @message = 'Duplicated job ' + Cast(@job as varchar(12)) + ' to create job ' + Coalesce(@newJob, '')
             Select @message as Result
         End
         Else
         Begin
-            If IsNull(@message, '') = ''
+            If Coalesce(@message, '') = ''
                 Set @message = 'AddUpdateAnalysisjob returned error code = ' + Cast(@myError as varchar(12))
             Select @message as Error
         End

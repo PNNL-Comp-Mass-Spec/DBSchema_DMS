@@ -7,14 +7,15 @@ GO
 CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
 /****************************************************
 **
-**  Desc:   Clone a series of related analysis jobs to create new jobs
-**          with a new parameter file, new settings file, and/or new protein collection list
+**  Desc:
+**      Clone a series of related analysis jobs to create new jobs
+**      with a new parameter file, new settings file, and/or new protein collection list
 **
-**          The source jobs must all have the same parameter file and settings file (this is a safety feature)
-**          The source jobs do not have to use the same protein collection
+**      The source jobs must all have the same parameter file and settings file (this is a safety feature)
+**      The source jobs do not have to use the same protein collection
 **
-**          If @newProteinCollectionList is empty, each new job will have the same protein collection as the old job
-**          If @newProteinCollectionList is not empty, all new jobs will have the same protein collection
+**      If @newProteinCollectionList is empty, each new job will have the same protein collection as the old job
+**      If @newProteinCollectionList is not empty, all new jobs will have the same protein collection
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -23,7 +24,8 @@ CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
 **          07/19/2016 mem - Add parameter @allowDuplicateJob
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/12/2018 mem - Send @maxLength to AppendToText
-**    
+**          07/29/2022 mem - Use Coalesce instead of IsNull
+**
 *****************************************************/
 (
     @sourceJobs varchar(4000),                       -- Comma-separated list of jobs to copy
@@ -39,37 +41,35 @@ CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
 As
     Set nocount on
 
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @result int
     Declare @newJobIdStart int
     Declare @jobCount int
     Declare @jobCountCompare int
-    
+
     Declare @mostCommonParamFile varchar(255)
     Declare @mostCommonSettingsFile varchar(255)
-    
+
     Declare @errorMessage varchar(512)
-    
-    
+
+
     BEGIN TRY
-        
+
         -----------------------------------------
         -- Validate the inputs
         -----------------------------------------
-        
-        Set @sourceJobs = IsNull(@sourceJobs, '')
-        Set @newParamFileName = LTrim(RTrim(IsNull(@newParamFileName, '')))
-        Set @newSettingsFileName = LTrim(RTrim(IsNull(@newSettingsFileName, '')))
-        Set @newProteinCollectionList = LTrim(RTrim(IsNull(@newProteinCollectionList, '')))
-        
-        Set @supersedeOldJob = IsNull(@supersedeOldJob, 0)
-        Set @updateOldJobComment = IsNull(@updateOldJobComment, 1)
-        Set @infoOnly = IsNull(@infoOnly, 1)
-        
+
+        Set @sourceJobs = Coalesce(@sourceJobs, '')
+        Set @newParamFileName = LTrim(RTrim(Coalesce(@newParamFileName, '')))
+        Set @newSettingsFileName = LTrim(RTrim(Coalesce(@newSettingsFileName, '')))
+        Set @newProteinCollectionList = LTrim(RTrim(Coalesce(@newProteinCollectionList, '')))
+
+        Set @supersedeOldJob = Coalesce(@supersedeOldJob, 0)
+        Set @updateOldJobComment = Coalesce(@updateOldJobComment, 1)
+        Set @infoOnly = Coalesce(@infoOnly, 1)
+
         Set @message = ''
 
         If @sourceJobs = ''
@@ -92,14 +92,14 @@ As
 
             if @result <> 0
             begin
-                If IsNull(@message, '') = ''
+                If Coalesce(@message, '') = ''
                     Set @message = 'Protein collection list validation error, result code ' + Cast(@result as varchar(9))
 
                 Goto Done
             end
-            
+
         End
-        
+
         -----------------------------------------
         -- Create some temporary tables
         -----------------------------------------
@@ -160,39 +160,39 @@ As
                ON #Tmp_SourceJobs.JobID = J.AJ_JobID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If Exists (SELECT * FROM #Tmp_SourceJobs WHERE Valid = 0)
         Begin
             Set @message = 'One or more Job IDs are invalid'
             Select *
             FROM #Tmp_SourceJobs
             Order By JobId
-            
+
             Goto Done
         End
-        
+
         If Exists (SELECT * FROM #Tmp_SourceJobs WHERE NOT StateID IN (4, 14))
         Begin
             Set @message = 'One or more Job IDs are not in state 4 or 14'
-            
+
             SELECT *
             FROM #Tmp_SourceJobs
             Order By StateID, JobId
-            
+
             Goto Done
         End
-        
+
         -----------------------------------------
         -- Count the source jobs
         -----------------------------------------
-        --    
+        --
         SELECT @jobCount = COUNT(*)
         FROM #Tmp_SourceJobs
-        
+
         -----------------------------------------
         -- Validate that all the source jobs have the same parameter file
         -----------------------------------------
-        --    
+        --
         SELECT TOP 1 @mostCommonParamFile = AJ_parmFileName,
                      @jobCountCompare = NumJobs
         FROM ( SELECT J.AJ_parmFileName AS AJ_parmFileName,
@@ -208,7 +208,7 @@ As
         If @jobCountCompare < @jobCount
         Begin
             Set @message = 'The source jobs must all have the same parameter file'
-            
+
             SELECT JobId,
                    Valid,
                    J.AJ_parmFileName,
@@ -221,14 +221,14 @@ As
                  INNER JOIN T_Analysis_Job J
            ON #Tmp_SourceJobs.JobID = J.AJ_JobID
             ORDER BY CASE WHEN J.AJ_parmFileName = @mostCommonParamFile THEN 1 ELSE 0 END, J.AJ_JobID
-            
+
             Goto Done
         End
 
         -----------------------------------------
         -- Validate that all the source jobs have the same settings file
         -----------------------------------------
-        --        
+        --
         SELECT TOP 1 @mostCommonSettingsFile = AJ_settingsFileName,
                      @jobCountCompare = NumJobs
         FROM ( SELECT J.AJ_settingsFileName AS AJ_settingsFileName,
@@ -244,7 +244,7 @@ As
         If @jobCountCompare < @jobCount
         Begin
             Set @message = 'The source jobs must all have the same settings file'
-            
+
             SELECT JobId,
                    Valid,
                    J.AJ_parmFileName,
@@ -257,12 +257,12 @@ As
                  INNER JOIN T_Analysis_Job J
                    ON #Tmp_SourceJobs.JobID = J.AJ_JobID
             ORDER BY CASE WHEN J.AJ_settingsFileName = @mostCommonSettingsFile THEN 1 ELSE 0 END, J.AJ_JobID
-            
+
             Goto Done
         End
 
         -----------------------------------------
-        -- If @newProteinCollectionList is not empty, 
+        -- If @newProteinCollectionList is not empty,
         -- make sure that it was not in use by any of the old jobs
         -----------------------------------------
         --
@@ -297,7 +297,7 @@ As
                     Set @message = 'The new parameter file name matches the old name; not cloning the jobs: ' + @newParamFileName
                     Goto Done
                 End
-            
+
                 If @newSettingsFileName <> '' And @mostCommonSettingsFile = @newSettingsFileName
                 Begin
                     Set @message = 'The new settings file name matches the old name; not cloning the jobs: ' + @newSettingsFileName
@@ -311,41 +311,41 @@ As
         -----------------------------------------
         --
         Declare @CloneJobs varchar(24) = 'Clone jobs'
-        
+
         Begin Tran @CloneJobs
-        
+
         -----------------------------------------
         -- Determine the starting JobID for the new jobs
         -----------------------------------------
-        --    
-        
+        --
+
         If @infoOnly = 0
         Begin
             -- Reserve a block of Job Ids
             -- This procedure populates temporary table #TmpNewJobIDs
-            
+
             CREATE TABLE #TmpNewJobIDs (
                 ID int NOT NULL
-            )        
-            
+            )
+
             EXEC GetNewJobIDBlock @JobCount = @jobCount, @note = 'CloneAnalysisJobs'
-            
+
             SELECT @newJobIdStart = Min(Id)
             FROM #TmpNewJobIDs
-            
+
             DROP TABLE #TmpNewJobIDs
         END
         ELSE
         Begin
             -- Pretend that the new Jobs will start at job 100,000,000
-            --    
+            --
             Set @newJobIdStart = 100000000
         End
 
         -----------------------------------------
         -- Populate #Tmp_NewJobInfo with the new job info
         -----------------------------------------
-        --    
+        --
         INSERT INTO #Tmp_NewJobInfo( JobId_Old,
                                      JobId_New,
                                      AJ_batchID,
@@ -368,11 +368,11 @@ As
                J.AJ_priority,
                J.AJ_analysisToolID,
                CASE
-                   WHEN IsNull(@newParamFileName, '') = '' THEN J.AJ_parmFileName
+                   WHEN Coalesce(@newParamFileName, '') = '' THEN J.AJ_parmFileName
                    ELSE @newParamFileName
                END AS AJ_parmFileName,
                CASE
-                   WHEN IsNull(@newSettingsFileName, '') = '' THEN J.AJ_settingsFileName
+                   WHEN Coalesce(@newSettingsFileName, '') = '' THEN J.AJ_settingsFileName
                    ELSE @newSettingsFileName
                END AS AJ_settingsFileName,
                J.AJ_organismDBName,
@@ -381,7 +381,7 @@ As
                'Rerun of job ' + CAST(J.AJ_jobID AS varchar(9)) AS AJ_comment,
                J.AJ_owner,
                CASE
-                   WHEN IsNull(@newProteinCollectionList, '') = '' THEN J.AJ_proteinCollectionList
+                   WHEN Coalesce(@newProteinCollectionList, '') = '' THEN J.AJ_proteinCollectionList
                    ELSE @newProteinCollectionList
                END AS AJ_proteinCollectionList,
                J.AJ_proteinOptionsList,
@@ -393,32 +393,32 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        
+
         IF @infoOnly = 0
         BEGIN
-            
+
             -----------------------------------------
             -- Make the new jobs
             -----------------------------------------
-            --    
+            --
             INSERT INTO T_Analysis_Job (
-                AJ_JobId, AJ_batchID, AJ_priority, AJ_Created, AJ_analysisToolID, AJ_parmFileName, AJ_settingsFileName, AJ_organismDBName, 
-                AJ_organismID, AJ_datasetID, AJ_comment, AJ_owner, AJ_StateID, AJ_proteinCollectionList, AJ_proteinOptionsList, 
-   AJ_requestID, AJ_propagationMode)
-            SELECT 
-                JobId_New, AJ_batchID, AJ_priority, GetDate(), AJ_analysisToolID, AJ_parmFileName, AJ_settingsFileName, AJ_organismDBName, 
-                AJ_organismID, AJ_datasetID, AJ_comment, AJ_owner, 1 AS AJ_StateID, AJ_proteinCollectionList, AJ_proteinOptionsList, 
+                AJ_JobId, AJ_batchID, AJ_priority, AJ_Created, AJ_analysisToolID, AJ_parmFileName, AJ_settingsFileName, AJ_organismDBName,
+                AJ_organismID, AJ_datasetID, AJ_comment, AJ_owner, AJ_StateID, AJ_proteinCollectionList, AJ_proteinOptionsList,
+                AJ_requestID, AJ_propagationMode)
+            SELECT
+                JobId_New, AJ_batchID, AJ_priority, GetDate(), AJ_analysisToolID, AJ_parmFileName, AJ_settingsFileName, AJ_organismDBName,
+                AJ_organismID, AJ_datasetID, AJ_comment, AJ_owner, 1 AS AJ_StateID, AJ_proteinCollectionList, AJ_proteinOptionsList,
                 AJ_requestID, AJ_propagationMode
             FROM #Tmp_NewJobInfo
             ORDER BY JobId_New
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
-            
+
+
             If @supersedeOldJob > 0 Or @updateOldJobComment > 0
             Begin
                 Declare @action varchar(24)
-                
+
                 If @supersedeOldJob = 0
                     Set @action = 'compare to job'
                 Else
@@ -437,7 +437,7 @@ As
                      INNER JOIN #Tmp_NewJobInfo Src
                        ON Target.AJ_JobID = Src.JobId_Old
             End
-            
+
         END
         ELSE
         BEGIN
@@ -449,31 +449,31 @@ As
         End
 
         Commit Tran
-    
-    
+
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @errorMessage output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'CloneAnalysisJobs'
     END CATCH
 
-Done:    
+Done:
 
     If @message <> ''
     Begin
         Select @message as Message
     End
-    
+
     If @errorMessage <> ''
     Begin
         Select @errorMessage as ErrorMessage
     End
-    
+
     return @myError
 
 GO
