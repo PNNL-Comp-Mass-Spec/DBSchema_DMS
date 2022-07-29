@@ -7,14 +7,15 @@ GO
 CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 /****************************************************
 **
-**  Desc:   Updates various cached statistics
-**          - Job_Usage_Count in T_Param_Files
-**          - Job_Usage_Count in T_Settings_Files
-**          - Job_Count in T_Analysis_Job_Request
-**          - Job_Usage_Count in T_Protein_Collection_Usage
-**          - Dataset usage stats in T_Cached_Instrument_Dataset_Type_Usage
-**          - Dataset usage stats in T_Instrument_Group_Allowed_DS_Type
-**          - Dataset usage stats in T_LC_Cart_Configuration
+**  Desc:
+**      Updates various cached statistics
+**      - Job_Usage_Count in T_Param_Files
+**      - Job_Usage_Count in T_Settings_Files
+**      - Job_Count in T_Analysis_Job_Request
+**      - Job_Usage_Count in T_Protein_Collection_Usage
+**      - Dataset usage stats in T_Cached_Instrument_Dataset_Type_Usage
+**      - Dataset usage stats in T_Instrument_Group_Allowed_DS_Type
+**      - Dataset usage stats in T_LC_Cart_Configuration
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -30,19 +31,19 @@ CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 **                         - Update dataset usage in T_Cached_Instrument_Dataset_Type_Usage
 **                         - Add parameter @showRuntimeStats
 **                         - Only update counts if they change
-**    
+**
 *****************************************************/
 (
     @message varchar(512) = '' output,
     @previewSql tinyint = 0,                        -- When non-zero, preview the SQL used to compile stats for T_General_Statistics
     @updateParamSettingsFileCounts tinyint = 1,     -- When non-zero, update cached counts in T_Param_Files, T_Settings_Files, T_Cached_Instrument_Dataset_Type_Usage, T_Instrument_Group_Allowed_DS_Type, and T_LC_Cart_Configuration
     @updateGeneralStatistics tinyint = 1,           -- When non-zero, update T_General_Statistics
-    @updateJobRequestStatistics tinyint = 1 ,        -- When non-zero, update T_Analysis_Job_Request
+    @updateJobRequestStatistics tinyint = 1 ,       -- When non-zero, update T_Analysis_Job_Request
     @showRuntimeStats tinyint = 0
 )
 As
     Set nocount on
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
@@ -54,13 +55,13 @@ As
     Declare @Sql nvarchar(2048)
     Declare @SqlParams nvarchar(128)
     Declare @SqlParamsDec nvarchar(128)
-    
+
     Declare @Total int
     Declare @TotalDec decimal(18, 3)
     Declare @Value varchar(128)
-    
+
     Declare @Continue int
-    
+
     ------------------------------------------------
     -- Validate the inputs
     ------------------------------------------------
@@ -77,7 +78,7 @@ As
         Task            varchar(128),
         Runtime_Seconds float
     )
-    
+
     Declare @startTime Datetime
 
     If @updateParamSettingsFileCounts <> 0
@@ -106,7 +107,7 @@ As
                                       ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
                                     INNER JOIN T_Param_File_Types PFT
                                       ON AnTool.AJT_paramFileType = PFT.Param_File_Type_ID
-                               GROUP BY AJ.AJ_parmFileName, PFT.Param_File_Type_ID 
+                               GROUP BY AJ.AJ_parmFileName, PFT.Param_File_Type_ID
                               ) StatsQ
                ON PF.Param_File_Name = StatsQ.Param_File_Name AND
                   PF.Param_File_Type_ID = StatsQ.Param_File_Type_ID
@@ -114,7 +115,7 @@ As
               Coalesce(Job_Usage_Last_Year, 0) <> Coalesce(StatsQ.JobCountLastYear, 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
         INSERT INTO #Tmp_Update_Stats( Task, Runtime_Seconds )
         SELECT 'Update job counts in T_Param_Files',
                DateDiff(Millisecond, @startTime, GetDate()) / 1000.0
@@ -139,19 +140,19 @@ As
                                FROM T_Analysis_Job AJ
                                     INNER JOIN T_Analysis_Tool AnTool
                                       ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
-                               GROUP BY AJ.AJ_settingsFileName, AnTool.AJT_toolName 
+                               GROUP BY AJ.AJ_settingsFileName, AnTool.AJT_toolName
                               ) StatsQ
                ON SF.Analysis_Tool = StatsQ.AJT_toolName AND
                   SF.File_Name = StatsQ.Settings_File_Name
         WHERE Coalesce(Job_Usage_Count, 0) <> Coalesce(StatsQ.JobCount, 0) OR
-              Coalesce(Job_Usage_Last_Year, 0) <> Coalesce(StatsQ.JobCountLastYear, 0) 
+              Coalesce(Job_Usage_Last_Year, 0) <> Coalesce(StatsQ.JobCountLastYear, 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         INSERT INTO #Tmp_Update_Stats( Task, Runtime_Seconds )
         SELECT 'Update job counts in T_Settings_Files',
                DateDiff(Millisecond, @startTime, GetDate()) / 1000.0
-        
+
         ------------------------------------------------
         -- Update Usage Counts for LC Cart Configuration items
         ------------------------------------------------
@@ -170,11 +171,11 @@ As
                                           END) AS DatasetCountLastYear
                                FROM T_Dataset
                                WHERE NOT Cart_Config_ID IS NULL
-                               GROUP BY Cart_Config_ID 
+                               GROUP BY Cart_Config_ID
                               ) StatsQ
                ON Target.Cart_Config_ID = StatsQ.Cart_Config_ID
         WHERE Coalesce(Dataset_Usage_Count, 0) <> Coalesce(StatsQ.DatasetCount, 0) OR
-              Coalesce(Dataset_Usage_Last_Year, 0) <> Coalesce(StatsQ.DatasetCountLastYear, 0) 
+              Coalesce(Dataset_Usage_Last_Year, 0) <> Coalesce(StatsQ.DatasetCountLastYear, 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -218,13 +219,13 @@ As
                DateDiff(Millisecond, @startTime, GetDate()) / 1000.0
 
 
-               
+
         ------------------------------------------------
         -- Update Usage Counts for Instruments, by dataset type
         ------------------------------------------------
         --
         Set @startTime = GetDate()
-                
+
         -- Add missing rows to T_Cached_Instrument_Dataset_Type_Usage
         --
         INSERT INTO T_Cached_Instrument_Dataset_Type_Usage( Instrument_ID, Dataset_Type )
@@ -254,7 +255,7 @@ As
                             WHERE GT.IN_Group IS NULL )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         -- Update stats in T_Cached_Instrument_Dataset_Type_Usage
         --
         Update T_Cached_Instrument_Dataset_Type_Usage
@@ -298,7 +299,7 @@ As
         SELECT 'Update usage counts for protein collections',
                DateDiff(Millisecond, @startTime, GetDate()) / 1000.0
     End -- </a1>
-    
+
     If @updateGeneralStatistics <> 0
     Begin -- <a2>
         ------------------------------------------------
@@ -314,7 +315,7 @@ As
             UseDecimal tinyint NOT NULL Default 0,
             UniqueID int IDENTITY(1,1)
         )
-        
+
         INSERT INTO #TmpStatEntries VALUES ('Job_Count', 'All',          'SELECT @Total = COUNT(*) FROM T_Analysis_Job', 0)
         INSERT INTO #TmpStatEntries VALUES ('Job_Count', 'Last 7 days',  'SELECT @Total = COUNT(*) FROM T_Analysis_Job WHERE AJ_created > DATEADD(day, -7, GetDate())', 0)
         INSERT INTO #TmpStatEntries VALUES ('Job_Count', 'Last 30 days', 'SELECT @Total = COUNT(*) FROM T_Analysis_Job WHERE AJ_created > DATEADD(DAY, -30, GetDate())', 0)
@@ -347,13 +348,13 @@ As
         -- Initialize @SqlParams
         Set @SqlParams = '@Total int output'
         Set @SqlParamsDec = '@TotalDec decimal(18, 3) output'
-        
+
         ------------------------------------------------
         -- Use the queries in #TmpStatEntries to update T_General_Statistics
         ------------------------------------------------
-        
+
         Set @UniqueID = 0
-        
+
         Set @Continue = 1
         While @Continue = 1
         Begin -- <b>
@@ -376,13 +377,13 @@ As
                     Print @Sql
                 Else
                 Begin -- <d>
-                
+
                     ------------------------------------------------
                     -- Run the query in @Sql; store the value for @Total in T_General_Statistics
                     ------------------------------------------------
 
                     If @UseDecimal = 0
-                    Begin            
+                    Begin
                         Set @Total = 0
                         exec sp_executesql @Sql, @SqlParams, @Total = @Total Output
                         Set @Value = Convert(varchar(12), Coalesce(@Total, 0))
@@ -398,8 +399,8 @@ As
                     Begin
                         UPDATE T_General_Statistics
                         SET Value = @Value, Last_Affected = GetDate()
-                        WHERE Category = @Category AND 
-                              Label = @Label AND 
+                        WHERE Category = @Category AND
+                              Label = @Label AND
                               Coalesce(Value, '0') <> Coalesce(@Value, '0')
                     End
                     Else
@@ -408,10 +409,10 @@ As
                         VALUES(@Category, @Label, @Value, GetDate())
                     End
                 End -- </d>
-                                
+
             End -- </c>
         End -- </b>
-                  
+
         INSERT INTO #Tmp_Update_Stats( Task, Runtime_Seconds )
         SELECT 'Update values in T_General_Statistics',
                DateDiff(Millisecond, @startTime, GetDate()) / 1000.0
@@ -438,7 +439,7 @@ As
                                  ON AJR.AJR_organism_ID = Org.Organism_ID
                                LEFT OUTER JOIN T_Analysis_Job AJ
                                  ON AJR.AJR_requestID = AJ.AJ_requestID
-                          GROUP BY AJR.AJR_requestID 
+                          GROUP BY AJR.AJR_requestID
                          ) StatQ
                ON AJR.AJR_requestID = StatQ.AJR_requestID AND
                   Coalesce(AJR.AJR_jobCount, - 1) <> StatQ.JobCount
