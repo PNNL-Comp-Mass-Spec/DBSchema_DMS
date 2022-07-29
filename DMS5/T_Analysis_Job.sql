@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Analysis_Job](
 	[AJ_finish] [datetime] NULL,
 	[AJ_analysisToolID] [int] NOT NULL,
 	[AJ_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AJ_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AJ_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJ_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJ_organismID] [int] NOT NULL,
 	[AJ_datasetID] [int] NOT NULL,

@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Analysis_Job_Request](
 	[AJR_created] [datetime] NOT NULL,
 	[AJR_analysisToolName] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_parmFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[AJR_settingsFileName] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AJR_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[AJR_organism_ID] [int] NOT NULL,
 	[AJR_datasets] [varchar](max) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
