@@ -89,7 +89,7 @@ AS
 	WHERE deleted.TypeID = 17
 
 GO
-ALTER TABLE [dbo].[T_ParamValue] DISABLE TRIGGER [trig_d_T_ParamValue]
+ALTER TABLE [dbo].[T_ParamValue] ENABLE TRIGGER [trig_d_T_ParamValue]
 GO
 /****** Object:  Trigger [dbo].[trig_i_T_ParamValue] ******/
 SET ANSI_NULLS ON
