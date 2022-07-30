@@ -19,4 +19,5 @@ FROM dbo.T_Archived_Output_Files AOF
        ON AOFC.Protein_Collection_ID = PC.Protein_Collection_ID
 GROUP BY AOF.Archived_File_ID, AOF.Filesize, dbo.udfGetFileNameFromPath(AOF.Archived_File_Path)
 
+
 GO
