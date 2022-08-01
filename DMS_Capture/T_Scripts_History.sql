@@ -30,8 +30,3 @@ ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Ente
 GO
 ALTER TABLE [dbo].[T_Scripts_History] ADD  CONSTRAINT [DF_T_Scripts_History_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO
-ALTER TABLE [dbo].[T_Scripts_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Scripts_History_T_Scripts] FOREIGN KEY([Script])
-REFERENCES [dbo].[T_Scripts] ([Script])
-GO
-ALTER TABLE [dbo].[T_Scripts_History] CHECK CONSTRAINT [FK_T_Scripts_History_T_Scripts]
-GO
