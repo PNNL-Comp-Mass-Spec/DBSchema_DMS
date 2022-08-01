@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **                         - Add @useRaiseError
 **          06/02/2021 mem - Expand @requestedRunList to varchar(max)
 **          07/24/2022 mem - Remove trailing tabs from batch name
+**          08/01/2022 mem - If @mode is 'update' and @id is 0, do not set Batch ID to 0 for other requested runs
 **
 *****************************************************/
 (
@@ -354,23 +355,26 @@ As
 
     If @mode In ('add', 'update')
     Begin
-        -- Remove any existing references to the batch
-        -- from requested runs
-        --
-        UPDATE T_Requested_Run
-        SET RDS_BatchID = 0
-        WHERE RDS_BatchID = @id
-        --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        If @myError <> 0
+        If @id > 0
         Begin
-            Set @message = 'Failed trying to remove batch reference from existing requests'
+            -- Remove any existing references to the batch
+            -- from requested runs
+            --
+            UPDATE T_Requested_Run
+            SET RDS_BatchID = 0
+            WHERE RDS_BatchID = @id
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            --
+            If @myError <> 0
+            Begin
+                Set @message = 'Failed trying to remove batch reference from existing requests'
 
-            If @useRaiseError > 0
-                RAISERROR (@message, 11, 28)
-            Else
-                Return 50009
+                If @useRaiseError > 0
+                    RAISERROR (@message, 11, 28)
+                Else
+                    Return 50009
+            End
         End
 
         -- Add reference to this batch to the requests in the list
