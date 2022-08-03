@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Charge_Code_Detail_Report
+
+CREATE VIEW [dbo].[V_Charge_Code_Detail_Report]
 AS
 SELECT CC.Charge_Code,
        ISNULL(CCA.Activation_State_Name, 'Invalid') AS State,
@@ -17,8 +18,8 @@ SELECT CC.Charge_Code,
        CC.SubAccount_Inactive_Date,
        CC.Deactivated,
        CC.Setup_Date,
-       CC.Usage_SamplePrep,
-       CC.Usage_RequestedRun,
+       CC.Usage_SamplePrep AS Usage_Sample_Prep,
+       CC.Usage_RequestedRun AS Usage_Requested_Run,
        CC.Resp_PRN,
        CC.Resp_HID,
        DMSUser.U_PRN AS Owner_PRN,

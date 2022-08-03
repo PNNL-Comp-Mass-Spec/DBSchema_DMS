@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Helper_Charge_Code]
 AS
 SELECT CC.Charge_Code,
@@ -11,8 +12,8 @@ SELECT CC.Charge_Code,
        CC.WBS_Title AS WBS,
        CC.Charge_Code_Title AS Title,
        CC.SubAccount_Title AS SubAccount,
-       CC.Usage_SamplePrep,
-       CC.Usage_RequestedRun,
+       CC.Usage_SamplePrep AS Usage_Sample_Prep,
+       CC.Usage_RequestedRun AS Usage_Requested_Run,
        ISNULL(DMSUser.U_PRN, 'D' + CC.Resp_PRN) AS Owner_PRN,
        DMSUser.U_Name AS Owner_Name,
        CC.Setup_Date,
@@ -24,7 +25,6 @@ FROM T_Charge_Code CC
      LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map DMSUser
        ON CC.Charge_Code = DMSUser.Charge_Code
 WHERE CC.Charge_Code_State > 0
-
 
 
 GO
