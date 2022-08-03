@@ -79,6 +79,9 @@ After Update
 **  Date:   08/05/2010 mem - Initial version
 **          08/10/2010 mem - Now passing dataset type and separation type to GetRequestedRunNameCode
 **          06/27/2022 mem - No longer pass the username of the batch owner to GetRequestedRunNameCode
+**          08/01/2022 mem - Only update RDS_NameCode if the name code has changed; 
+**                           this is important for requested runs with BatchID = 0 (since we want to avoid 
+**                           updating large numbers of rows if the name code didn't actually change)
 **    
 *****************************************************/
 AS
@@ -100,6 +103,9 @@ AS
                ON RR.RDS_BatchID = inserted.ID
              INNER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
+        WHERE RR.RDS_NameCode <> dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+                                                               RR.RDS_BatchID, RRB.Batch, RRB.Created,
+                                                               RR.RDS_type_ID, RR.RDS_Sec_Sep)
     End
 
 GO
