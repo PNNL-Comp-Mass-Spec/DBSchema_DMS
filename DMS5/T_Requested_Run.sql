@@ -45,6 +45,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[Queue_Date] [smalldatetime] NULL,
 	[Entered] [datetime] NULL,
 	[Updated] [smalldatetime] NULL,
+	[Updated_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Requested_Run] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -377,6 +378,7 @@ After Insert, Update
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          10/20/2020 mem - Change Queue_State to 3 (Analyzed) if the requested run status is Completed
 **          06/22/2022 mem - No longer pass the username of the batch owner to GetRequestedRunNameCode
+**          08/01/2022 mem - Update column Updated_By
 **
 *****************************************************/
 AS
@@ -421,7 +423,8 @@ AS
 
     UPDATE T_Requested_Run
     SET Updated = GetDate(), 
-        Queue_State = CASE WHEN inserted.RDS_Status = 'Completed' THEN 3 ELSE inserted.Queue_State END
+        Queue_State = CASE WHEN inserted.RDS_Status = 'Completed' THEN 3 ELSE inserted.Queue_State End,
+        Updated_By = Suser_Sname()      -- + ' from ' + HOST_NAME()
     FROM T_Requested_Run RR
          INNER JOIN inserted
            ON RR.ID = inserted.ID
