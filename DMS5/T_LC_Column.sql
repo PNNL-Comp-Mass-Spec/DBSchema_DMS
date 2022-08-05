@@ -46,6 +46,8 @@ ALTER TABLE [dbo].[T_LC_Column] ADD  CONSTRAINT [DF_T_LC_Column_SC_Packing_Mfg] 
 GO
 ALTER TABLE [dbo].[T_LC_Column] ADD  CONSTRAINT [DF_T_LC_Column_SC_State]  DEFAULT (0) FOR [SC_State]
 GO
+ALTER TABLE [dbo].[T_LC_Column] ADD  CONSTRAINT [DF_T_LC_Column_SC_Created]  DEFAULT (getdate()) FOR [SC_Created]
+GO
 ALTER TABLE [dbo].[T_LC_Column]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Column_T_LC_Column_State_Name] FOREIGN KEY([SC_State])
 REFERENCES [dbo].[T_LC_Column_State_Name] ([LCS_ID])
 GO

@@ -96,6 +96,8 @@ ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Contain
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Material_Active]  DEFAULT ('Active') FOR [CC_Material_Active]
 GO
+ALTER TABLE [dbo].[T_Cell_Culture] ADD  CONSTRAINT [DF_T_Cell_Culture_CC_Created]  DEFAULT (getdate()) FOR [CC_Created]
+GO
 ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [FK_T_Cell_Culture_T_Campaign] FOREIGN KEY([CC_Campaign_ID])
 REFERENCES [dbo].[T_Campaign] ([Campaign_ID])
 GO

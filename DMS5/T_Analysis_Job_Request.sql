@@ -60,6 +60,8 @@ CREATE NONCLUSTERED INDEX [IX_T_Analysis_Job_Request_State_Created] ON [dbo].[T_
 	[AJR_created] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Analysis_Job_Request] ADD  CONSTRAINT [DF_T_Analysis_Job_Request_AJR_created]  DEFAULT (getdate()) FOR [AJR_created]
+GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] ADD  CONSTRAINT [DF_T_Analysis_Job_Request_AJR_state]  DEFAULT ((0)) FOR [AJR_state]
 GO
 ALTER TABLE [dbo].[T_Analysis_Job_Request] ADD  CONSTRAINT [DF_T_Analysis_Job_AJR_proteinCollectionList]  DEFAULT ('na') FOR [AJR_proteinCollectionList]

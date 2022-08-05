@@ -38,6 +38,8 @@ CREATE NONCLUSTERED INDEX [IX_T_Experiment_Groups_ParentExpID_GroupID_IncludeTyp
 )
 INCLUDE([EG_Group_Type],[EG_Created],[EG_Description]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_EG_Created]  DEFAULT (getdate()) FOR [EG_Created]
+GO
 ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_Parent_Exp_ID]  DEFAULT ((0)) FOR [Parent_Exp_ID]
 GO
 ALTER TABLE [dbo].[T_Experiment_Groups] ADD  CONSTRAINT [DF_T_Experiment_Groups_MemberCount]  DEFAULT ((0)) FOR [MemberCount]

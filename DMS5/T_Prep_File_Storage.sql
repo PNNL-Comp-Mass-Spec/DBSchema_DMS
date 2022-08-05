@@ -21,3 +21,5 @@ CREATE TABLE [dbo].[T_Prep_File_Storage](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Prep_File_Storage] TO [DDL_Viewer] AS [dbo]
 GO
+ALTER TABLE [dbo].[T_Prep_File_Storage] ADD  CONSTRAINT [DF_T_Prep_File_Storage_Created]  DEFAULT (getdate()) FOR [Created]
+GO
