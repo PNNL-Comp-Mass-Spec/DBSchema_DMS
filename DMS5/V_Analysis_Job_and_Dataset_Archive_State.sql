@@ -17,16 +17,17 @@ SELECT AJ.AJ_jobID AS Job,
                 DA.AS_state_ID > 3 THEN ASN.AJS_name + ' (Dataset ' + DASN.DASN_StateName + ')'
            ELSE ASN.AJS_name
        END AS Job_State,
-       IsNull(DASN.DASN_StateName, '') AS Dataset_Archive_State
-FROM dbo.T_DatasetArchiveStateName AS DASN
-     INNER JOIN dbo.T_Dataset_Archive AS DA
-       ON DASN.DASN_StateID = DA.AS_state_ID
-     RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
-                      INNER JOIN dbo.T_Analysis_State_Name AS ASN
-                        ON AJ.AJ_StateID = ASN.AJS_stateID
-                      INNER JOIN dbo.T_Dataset AS D
-                        ON AJ.AJ_datasetID = D.Dataset_ID
-       ON DA.AS_Dataset_ID = D.Dataset_ID
+       IsNull(DASN.DASN_StateName, '') AS Dataset_Archive_State,
+       AJ.AJ_datasetID As Dataset_ID
+FROM T_Analysis_Job AS AJ
+     INNER JOIN T_Analysis_State_Name AS ASN
+       ON AJ.AJ_StateID = ASN.AJS_stateID
+     INNER JOIN T_Dataset AS D
+       ON AJ.AJ_datasetID = D.Dataset_ID
+     LEFT OUTER JOIN T_Dataset_Archive DA
+       On DA.AS_Dataset_ID = AJ.AJ_datasetID
+     LEFT OUTER JOIN T_DatasetArchiveStateName AS DASN
+       On  DASN.DASN_StateID = DA.AS_state_ID
 
 
 GO
