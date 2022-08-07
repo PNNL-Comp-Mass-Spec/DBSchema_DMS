@@ -202,6 +202,8 @@ ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Cart
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Sec_Sep]  DEFAULT ('none') FOR [RDS_Sec_Sep]
 GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Origin]  DEFAULT ('user') FOR [RDS_Origin]
+GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_Status]  DEFAULT ('Active') FOR [RDS_Status]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Queue_State]  DEFAULT ((1)) FOR [Queue_State]
