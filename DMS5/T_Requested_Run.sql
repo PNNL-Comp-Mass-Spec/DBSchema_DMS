@@ -383,6 +383,7 @@ After Insert, Update
 **          10/20/2020 mem - Change Queue_State to 3 (Analyzed) if the requested run status is Completed
 **          06/22/2022 mem - No longer pass the username of the batch owner to GetRequestedRunNameCode
 **          08/01/2022 mem - Update column Updated_By
+**          08/06/2022 mem - Only update RDS_NameCode if it has changed
 **
 *****************************************************/
 AS
@@ -408,6 +409,9 @@ AS
                ON RR.ID = inserted.ID
              LEFT OUTER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
+        Where Coalesce(RR.RDS_NameCode, '') <> dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+                                                                             RR.RDS_BatchID, RRB.Batch, RRB.Created,
+                                                                             RR.RDS_type_ID, RR.RDS_Sec_Sep)
     End
     
     If Update(RDS_Status)
