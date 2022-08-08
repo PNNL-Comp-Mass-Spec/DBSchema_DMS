@@ -97,6 +97,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          03/21/2022 mem - Refactor personnel validation code into ValidateRequestUsers
 **          04/11/2022 mem - Check for whitespace in @requestName
 **          04/18/2022 mem - Replace tabs in prep request names with spaces
+**          08/08/2022 mem - Update StateChanged when the state changes
 **
 *****************************************************/
 (
@@ -756,6 +757,7 @@ As
             Comment = @comment,
             Priority = @priority,
             State = @stateID,
+            StateChanged = Case When @currentStateID = @stateID Then StateChanged Else GetDate() End,
             State_Comment = @stateComment,
             Instrument_Group = @instrumentGroup,
             Instrument_Name = Null,

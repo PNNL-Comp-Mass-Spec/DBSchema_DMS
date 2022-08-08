@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 **  Date:   03/22/2022 mem - Initial version
 **          03/26/2022 mem - Replace parameter @batchID with @batchIDs
 **                         - Add parameter @comment
+**          08/08/2022 mem - Update State_Changed when the state changes
 **
 *****************************************************/
 (
@@ -736,6 +737,7 @@ As
                   ELSE Estimated_Analysis_Time_Days
               END,
             State = @stateID,
+            State_Changed = Case When @currentStateID = @stateID Then State_Changed Else GetDate() End,
             State_Comment = @stateComment,
             Campaign = @campaign,
             Organism = @organism,
