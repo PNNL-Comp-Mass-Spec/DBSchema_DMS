@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
 /****************************************************
 **
@@ -12,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
 **  Date:   03/02/2016 mem - Initial version
 **          03/03/2016 mem - Auto define Phylum as Community when @NCBITaxonomyID is 48479
 **          03/31/2021 mem - Expand @organismName to varchar(128)
+**          08/08/2022 mem - Use Substring instead of Replace when removing genus name from species name
 **    
 *****************************************************/
 (
@@ -168,8 +170,11 @@ As
         exec UpdateTaxonomyItemIfDefined 'subspecies', @newSpecies output
         exec UpdateTaxonomyItemIfDefined 'species', @newSpecies output
 
-        -- Remove genus from species
-        Set @newSpecies = LTrim(Replace(@newSpecies, @newGenus, ''))
+        -- If the species name starts with the genus name, remove it
+        If @newSpecies Like @newGenus + ' %' And Len(@newSpecies) > Len(@newGenus) + 1
+        Begin
+            Set @newSpecies = Substring(@newSpecies, LEN(@newGenus) + 2, 200)
+        End
 
         Declare @taxonomyName varchar(255)
         Declare @taxonomyRank varchar(32)
