@@ -41,38 +41,6 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Param_Entries] CHECK CONSTRAINT [FK_T_Param_Entries_T_Param_Files]
 GO
-/****** Object:  Trigger [dbo].[trig_d_T_Param_Entries] ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TRIGGER [dbo].[trig_d_T_Param_Entries] ON [dbo].[T_Param_Entries] 
-FOR DELETE
-AS
-/****************************************************
-**
-**	Desc: 
-**		Updates Date_Modified in T_Param_Files
-**
-**	Auth: 	mem
-**	Date: 	10/12/2007 (Ticket:557)
-**    
-*****************************************************/
-	
-	If @@RowCount = 0
-		Return
-
-	UPDATE T_Param_Files
-	SET Date_Modified = GetDate()
-	FROM T_Param_Files P INNER JOIN
-		 deleted ON P.Param_File_ID = deleted.Param_File_ID
-
-
-
-GO
-ALTER TABLE [dbo].[T_Param_Entries] ENABLE TRIGGER [trig_d_T_Param_Entries]
-GO
 /****** Object:  Trigger [dbo].[trig_i_T_Param_Entries] ******/
 SET ANSI_NULLS ON
 GO
