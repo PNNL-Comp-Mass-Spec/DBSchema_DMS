@@ -14,7 +14,8 @@ CREATE PROCEDURE [dbo].[CopyAuxInfoMultiID]
 **          09/27/2007 mem - Extended CopyAuxInfo to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
-**    
+**          08/15/2022 mem - Use new column names
+**
 *****************************************************/
 (
     @targetName varchar(128),                -- 'Experiment', 'Biomaterial' (previously 'Cell Culture'), 'Dataset', or 'SamplePrepRequest'; see See T_Aux_Info_Target
@@ -30,13 +31,13 @@ AS
 
     Declare @myError Int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     Declare @msg varchar(256)
     Declare @sql nvarchar(2048)
     Declare @MatchVal int
-    
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
@@ -61,9 +62,9 @@ AS
     Declare @tgtTableNameCol varchar(128)
     Declare @tgtTableIDCol varchar(128)
 
-    SELECT 
-        @tgtTableName = Target_Table, 
-        @tgtTableIDCol = Target_ID_Col, 
+    SELECT
+        @tgtTableName = Target_Table,
+        @tgtTableIDCol = Target_ID_Col,
         @tgtTableNameCol = Target_Name_Col
     FROM T_AuxInfo_Target
     WHERE (Name = @targetName)
@@ -76,7 +77,7 @@ AS
         RAISERROR (@msg, 10, 1)
         return 51000
     end
-    
+
     If @tgtTableName = 'T_Cell_Culture'
     Begin
         -- Auto-switch the target table to t_biomaterial if T_Cell_Culture does not exist but t_biomaterial does
@@ -94,12 +95,12 @@ AS
     ---------------------------------------------------
 
     Set @MatchVal = Null
-    
-    set @sql = N'' 
+
+    set @sql = N''
     set @sql = @sql + ' SELECT @MatchVal = ' + @tgtTableIDCol
     set @sql = @sql + ' FROM ' + @tgtTableName
     set @sql = @sql + ' WHERE ' + @tgtTableIDCol + ' = ' + Convert(varchar(12), @sourceEntityID)
-    
+
     exec sp_executesql @sql, N'@MatchVal int output', @MatchVal = @MatchVal output
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -111,16 +112,16 @@ AS
         return 51002
     End
 
-    
+
     ---------------------------------------------------
     -- Populate a temporary table with the IDs in @targetEntityIDList
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_TargetEntities (
         EntityID int,
         Valid tinyint Default 0
     )
-    
+
     INSERT INTO #Tmp_TargetEntities( EntityID,
                                      Valid )
     SELECT DISTINCT Convert(int, Item),
@@ -129,12 +130,12 @@ AS
     WHERE (Len(IsNull(Item, '')) > 0)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
 
     ---------------------------------------------------
     -- Look for unknown IDs in #Tmp_TargetEntities
     ---------------------------------------------------
-    
+
     Set @sql = ''
     Set @sql = @sql + ' UPDATE #Tmp_TargetEntities'
     Set @sql = @sql + ' SET Valid = 1'
@@ -144,59 +145,59 @@ AS
     Exec (@sql)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     -- Create a list of Entitites that have Valid = 0 in #Tmp_TargetEntities
     Declare @IDList varchar(400)
     Declare @IDListMaxLength int
     Set @IDListMaxLength = 200
-    
+
     Set @IDList = ''
-    SELECT @IDList = @IDList + CASE WHEN Len(@IDList) < @IDListMaxLength 
+    SELECT @IDList = @IDList + CASE WHEN Len(@IDList) < @IDListMaxLength
                                THEN Convert(varchar(12), EntityID) + ', '
                                ELSE '.' END
     FROM #Tmp_TargetEntities
     WHERE Valid = 0
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myRowCount > 0
     Begin
         -- Unknown entries found; inform the caller
-        
+
         -- Remove the trailing comma
         Set @IDList = Left(@IDList, Len(@IDList)-1)
-        
+
         -- Make sure the list is no longer than @IDListMaxLength+15 characters
         If Len(@IDList) > @IDListMaxLength+15
             Set @IDList = Left(@IDList, @IDListMaxLength+15)
-            
+
         If @myRowCount = 1
-            Set @msg = 'Error: Target ID ' + @IDList + ' is not defined in ' + @tgtTableName + '; unable to continue'        
+            Set @msg = 'Error: Target ID ' + @IDList + ' is not defined in ' + @tgtTableName + '; unable to continue'
         Else
             Set @msg = 'Error: found ' + Convert(varchar(12), @myRowCount) + ' invalid target IDs not defined in ' + @tgtTableName + ': ' + @IDList
 
         RAISERROR (@msg, 10, 1)
         return 51003
     End
-    
+
     ---------------------------------------------------
     -- Generate a list of the IDs in #Tmp_TargetEntities
     ---------------------------------------------------
-    
+
     Set @IDList = ''
-    SELECT @IDList = @IDList + CASE WHEN Len(@IDList) < @IDListMaxLength 
+    SELECT @IDList = @IDList + CASE WHEN Len(@IDList) < @IDListMaxLength
                                THEN Convert(varchar(12), EntityID) + ', '
                                ELSE '.' END
     FROM #Tmp_TargetEntities
     ORDER BY EntityID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myRowCount > 0
     Begin
         -- Remove the trailing comma
         Set @IDList = Left(@IDList, Len(@IDList)-1)
-        
+
         -- Make sure the list is no longer than @IDListMaxLength+15 characters
         If Len(@IDList) > @IDListMaxLength+15
             Set @IDList = Left(@IDList, @IDListMaxLength+15)
@@ -209,8 +210,8 @@ AS
         RAISERROR (@msg, 10, 1)
         return 51004
     End
-    
-        
+
+
     ---------------------------------------------------
     -- copy existing values in aux info table
     -- for given target name and category
@@ -226,16 +227,16 @@ AS
         --
         set @transName = 'CopyAuxInfo-copyCategory'
         begin transaction @transName
-        
+
         -- delete any existing values
         --
         DELETE FROM T_AuxInfo_Value
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
-              (AuxInfo_ID IN ( SELECT Item_ID
-                               FROM V_Aux_Info_Definition
-                               WHERE (Target = @targetName) AND
-                                     (Category = @categoryName) ))
+              (Aux_Description_ID IN ( SELECT Item_ID
+                                       FROM V_Aux_Info_Definition
+                                       WHERE (Target = @targetName) AND
+                                             (Category = @categoryName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -250,18 +251,18 @@ AS
         -- insert new values
         --
         INSERT INTO T_AuxInfo_Value( Target_ID,
-                                     AuxInfo_ID,
-                                     VALUE )
+                                     Aux_Description_ID,
+                                     Value )
         SELECT TE.EntityID AS Target_ID,
-               AI.AuxInfo_ID,
-               AI.VALUE
+               AI.Aux_Description_ID,
+               AI.Value
         FROM T_AuxInfo_Value AI
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
-              (AI.AuxInfo_ID IN ( SELECT Item_ID
-                                  FROM V_Aux_Info_Definition
-                                  WHERE (Target = @targetName) AND
-                                        (Category = @categoryName) ))
+              (AI.Aux_Description_ID IN ( SELECT Item_ID
+                                          FROM V_Aux_Info_Definition
+                                          WHERE (Target = @targetName) AND
+                                                (Category = @categoryName) ))
 
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -289,17 +290,17 @@ AS
         --
         set @transName = 'CopyAuxInfo-copySubcategory'
         begin transaction @transName
-        
+
         -- delete any existing values
         --
         DELETE FROM T_AuxInfo_Value
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
-              (AuxInfo_ID IN ( SELECT Item_ID
-                               FROM V_Aux_Info_Definition
-                               WHERE (Target = @targetName) AND
-                                     (Category = @categoryName) AND
-                                     (Subcategory = @subCategoryName) ))
+              (Aux_Description_ID IN ( SELECT Item_ID
+                                       FROM V_Aux_Info_Definition
+                                       WHERE (Target = @targetName) AND
+                                             (Category = @categoryName) AND
+                                             (Subcategory = @subCategoryName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -314,19 +315,19 @@ AS
         -- insert new values
         --
         INSERT INTO T_AuxInfo_Value( Target_ID,
-                                     AuxInfo_ID,
-                                     VALUE )
+                                     Aux_Description_ID,
+                                     Value )
         SELECT TE.EntityID AS Target_ID,
-               AI.AuxInfo_ID,
-               AI.VALUE
+               AI.Aux_Description_ID,
+               AI.Value
         FROM T_AuxInfo_Value AI
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
-              (AI.AuxInfo_ID IN ( SELECT Item_ID
-                                  FROM V_Aux_Info_Definition
-                                  WHERE (Target = @targetName) AND
-                                        (Category = @categoryName) AND
-                                        (Subcategory = @subCategoryName) ))
+              (AI.Aux_Description_ID IN ( SELECT Item_ID
+                                          FROM V_Aux_Info_Definition
+                                          WHERE (Target = @targetName) AND
+                                                (Category = @categoryName) AND
+                                                (Subcategory = @subCategoryName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -342,7 +343,7 @@ AS
 
     ---------------------------------------------------
     -- copy existing values in aux info table
-    -- for given target name 
+    -- for given target name
     -- from given source target entity
     -- to given destination entity
     ---------------------------------------------------
@@ -353,15 +354,15 @@ AS
         --
         set @transName = 'CopyAuxInfo-copyAll'
         begin transaction @transName
-        
+
         -- delete any existing values
         --
         DELETE FROM T_AuxInfo_Value
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
-              (AuxInfo_ID IN ( SELECT Item_ID
-                               FROM V_Aux_Info_Definition
-                               WHERE (Target = @targetName) ))
+              (Aux_Description_ID IN ( SELECT Item_ID
+                                       FROM V_Aux_Info_Definition
+                                       WHERE (Target = @targetName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -375,17 +376,17 @@ AS
 
         --
         INSERT INTO T_AuxInfo_Value( Target_ID,
-                                     AuxInfo_ID,
-                                     VALUE )
+                                     Aux_Description_ID,
+                                     Value )
         SELECT TE.EntityID AS Target_ID,
-               AI.AuxInfo_ID,
-               AI.VALUE
+               AI.Aux_Description_ID,
+               AI.Value
         FROM T_AuxInfo_Value AI
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
-              (AI.AuxInfo_ID IN ( SELECT Item_ID
-                                  FROM V_Aux_Info_Definition
-                                  WHERE (Target = @targetName) ))
+              (AI.Aux_Description_ID IN ( SELECT Item_ID
+                                          FROM V_Aux_Info_Definition
+                                          WHERE (Target = @targetName) ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -404,7 +405,7 @@ AS
     -- Exit the procedure
     ---------------------------------------------------
 Done:
-    return 0 
+    return 0
 
 
 GO

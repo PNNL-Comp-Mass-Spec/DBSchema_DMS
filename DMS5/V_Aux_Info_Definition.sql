@@ -18,9 +18,9 @@ SELECT Category_Target.[Name] AS Target,
        Item.HelperAppend
 FROM T_AuxInfo_Category Category
      INNER JOIN T_AuxInfo_Subcategory Subcategory
-       ON Category.ID = Subcategory.Parent_ID
+       ON Category.ID = Subcategory.Aux_Category_ID
      INNER JOIN T_AuxInfo_Description Item
-       ON Subcategory.ID = Item.Parent_ID
+       ON Subcategory.ID = Item.Aux_Subcategory_ID
      INNER JOIN T_AuxInfo_Target Category_Target
        ON Category.Target_Type_ID = Category_Target.ID
 WHERE Item.Active = 'Y'

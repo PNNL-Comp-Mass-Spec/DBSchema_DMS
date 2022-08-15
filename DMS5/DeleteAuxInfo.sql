@@ -4,10 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[DeleteAuxInfo]
+CREATE PROCEDURE [dbo].[DeleteAuxInfo]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Deletes existing auxiliary information in database
 **      for given target type and identity
 **
@@ -17,7 +17,8 @@ CREATE Procedure [dbo].[DeleteAuxInfo]
 **  Date:   04/08/2002
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
-**    
+**          08/15/2022 mem - Use new column name
+**
 *****************************************************/
 (
     @targetName varchar(128) = '',
@@ -29,13 +30,13 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-        
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
-    
+
     Set @targetName = Ltrim(Rtrim(Coalesce(@targetName, '')))
     Set @targetEntityName = Ltrim(Rtrim(Coalesce(@targetEntityName, '')))
 
@@ -52,9 +53,9 @@ As
     Declare @tgtTableNameCol varchar(128)
     Declare @tgtTableIDCol varchar(128)
 
-    SELECT 
-        @tgtTableName = Target_Table, 
-        @tgtTableIDCol = Target_ID_Col, 
+    SELECT
+        @tgtTableName = Target_Table,
+        @tgtTableIDCol = Target_ID_Col,
         @tgtTableNameCol = Target_Name_Col
     FROM T_AuxInfo_Target
     WHERE (Name = @targetName)
@@ -66,7 +67,7 @@ As
         set @message = 'Could not look up table criteria for target: "' + @targetName + '"'
         return 51000
     end
-    
+
     If @tgtTableName = 'T_Cell_Culture'
     Begin
         -- Auto-switch the target table to t_biomaterial if T_Cell_Culture does not exist but t_biomaterial does
@@ -84,15 +85,15 @@ As
 
     Declare @targetID int
     set @targetID = 0
-    
+
     Declare @sql nvarchar(1024)
-    
-    set @sql = N'' 
+
+    set @sql = N''
     set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
     set @sql = @sql + ' FROM ' + @tgtTableName
     set @sql = @sql + ' WHERE ' + @tgtTableNameCol
     set @sql = @sql + ' = ''' + @targetEntityName + ''''
-    
+
     exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
     if @targetID = 0
@@ -108,13 +109,13 @@ As
     ---------------------------------------------------
 
     DELETE FROM T_AuxInfo_Value
-    WHERE (Target_ID = @targetID) AND 
+    WHERE (Target_ID = @targetID) AND
     (
-        AuxInfo_ID IN
+        Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition_with_ID
-        WHERE (Target = @targetName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition_with_ID
+            WHERE (Target = @targetName)
         )
     )
     --
@@ -127,6 +128,7 @@ As
     end
 
     return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteAuxInfo] TO [DDL_Viewer] AS [dbo]

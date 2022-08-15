@@ -1,6 +1,6 @@
 /****** Object:  Table [T_AuxInfo_Allowed_Values] ******/
 /****** RowCount: 99 ******/
-/****** Columns: AuxInfoID, [Value] ******/
+/****** Columns: Aux_Description_ID, [Value] ******/
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (60,'N14 Labeled')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (60,'N15 Labeled')
 INSERT INTO [T_AuxInfo_Allowed_Values] VALUES (69,'Late Log')

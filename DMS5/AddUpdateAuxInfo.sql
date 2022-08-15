@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
+**          08/15/2022 mem - Use new column name
 **
 *****************************************************/
 (
@@ -60,11 +61,11 @@ As
     End;
 
     Begin TRY
-    
+
     ---------------------------------------------------
     -- What mode are we in
     ---------------------------------------------------
-  
+
     Set @mode = Coalesce(@mode, 'Undefined_mode')
 
     If @mode In ('check_update', 'check_add')
@@ -201,7 +202,7 @@ As
     Declare @count int = 0
     Declare @EntryID int = -1
 
-    Declare @itemID int
+    Declare @descriptionID int
 
     Declare @inFld varchar(128)
     Declare @vFld varchar(128)
@@ -238,11 +239,11 @@ As
             FROM @tblAuxInfoValues
             WHERE EntryID = @EntryID
 
-            -- Resolve item name to item ID
+            -- Resolve item name to aux description ID
             --
-            Set @itemID = 0
+            Set @descriptionID = 0
 
-            SELECT @itemID = Item_ID
+            SELECT @descriptionID = Item_ID
             FROM V_Aux_Info_Definition
             WHERE Target = @targetName AND
                   Category = @categoryName AND
@@ -251,7 +252,7 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
-            If @myError <> 0 or @itemID = 0
+            If @myError <> 0 or @descriptionID = 0
             Begin
                 Set @msg = 'Could not resolve item to ID: "' + @inFld + '" for category ' + @categoryName + ', subcategory ' + @subCategoryName
                 RAISERROR (@msg, 11, 1)
@@ -264,7 +265,7 @@ As
                 If @vFld = ''
                 Begin
                     DELETE FROM T_AuxInfo_Value
-                    WHERE AuxInfo_ID = @itemID AND Target_ID = @targetID
+                    WHERE Aux_Description_ID = @descriptionID AND Target_ID = @targetID
                 End
                 Else
                 Begin -- <d>
@@ -273,7 +274,7 @@ As
                     --
                     SELECT @tVal = [Value]
                     FROM T_AuxInfo_Value
-                    WHERE AuxInfo_ID = @itemID AND Target_ID = @targetID
+                    WHERE Aux_Description_ID = @descriptionID AND Target_ID = @targetID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
                     --
@@ -292,15 +293,15 @@ As
                         Begin
                             UPDATE T_AuxInfo_Value
                             SET [Value] = @vFld
-                            WHERE AuxInfo_ID = @itemID AND Target_ID = @targetID
+                            WHERE Aux_Description_ID = @descriptionID AND Target_ID = @targetID
                         End
                     End
                     Else
                     Begin
                         INSERT INTO T_AuxInfo_Value( Target_ID,
-                                                     AuxInfo_ID,
+                                                     Aux_Description_ID,
                                                      [Value] )
-                        VALUES(@targetID, @itemID, @vFld)
+                        VALUES(@targetID, @descriptionID, @vFld)
                     End
 
                 End -- </d>

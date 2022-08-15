@@ -3,39 +3,39 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetAuxInfoAllowedValues
+
+CREATE FUNCTION [dbo].[GetAuxInfoAllowedValues]
 /****************************************************
 **
-**	Desc: 
-**  Builds delimited list of allowed values for given aux info item
+**  Desc: 
+**      Builds delimited list of allowed values for given aux info item
 **
-**	Return value: delimited list
+**  Return value: vertical bar delimited list
 **
-**	Parameters: 
-**
-**		Auth: grk
-**		Date: 08/24/2010
+**  Auth:   grk
+**  Date:   08/24/2010
+**          08/15/2022 mem - Use new column name
 **    
 *****************************************************/
 (
-@ID int
+    @ID int
 )
 RETURNS varchar(1024)
 AS
-	BEGIN
-		declare @list varchar(1024)
-		set @list = ''
-		
-		SELECT 
- 			@list = @list + CASE 
-								WHEN @list = '' THEN Value
-								ELSE ' | ' + Value
-							END
-			FROM T_AuxInfo_Allowed_Values
-			WHERE AuxInfoID = @ID
+BEGIN
+    Declare @list varchar(1024) = ''
+        
+    SELECT 
+            @list = @list + CASE 
+                            WHEN @list = '' THEN Value
+                            ELSE ' | ' + Value
+                        END
+        FROM T_AuxInfo_Allowed_Values
+        WHERE Aux_Description_ID = @ID
 
-		RETURN @list
-	END
+    RETURN @list
+END
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetAuxInfoAllowedValues] TO [DDL_Viewer] AS [dbo]
 GO

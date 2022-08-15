@@ -13,12 +13,13 @@ CREATE PROCEDURE [dbo].[CopyAuxInfo]
 **  Date:   01/27/2003 grk - Initial release
 **          07/12/2008 grk - Added error check for source
 **          07/06/2022 mem - Use new aux info definition view name
-**    
+**          08/15/2022 mem - Use new column name
+**
 *****************************************************/
     @targetName varchar(128),
     @targetEntityName varchar(128),
-    @categoryName varchar(128), 
-    @subCategoryName varchar(128), 
+    @categoryName varchar(128),
+    @subCategoryName varchar(128),
     @sourceEntityName varchar(128),
     @mode varchar(24),
     @message varchar(512) output
@@ -30,11 +31,11 @@ AS
 
     declare @myRowCount int
     set @myRowCount = 0
-    
+
     set @message = ''
-    
+
     declare @msg varchar(256)
-    
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
@@ -55,9 +56,9 @@ AS
     declare @tgtTableNameCol varchar(128)
     declare @tgtTableIDCol varchar(128)
 
-    SELECT 
-        @tgtTableName = Target_Table, 
-        @tgtTableIDCol = Target_ID_Col, 
+    SELECT
+        @tgtTableName = Target_Table,
+        @tgtTableIDCol = Target_ID_Col,
         @tgtTableNameCol = Target_Name_Col
     FROM T_AuxInfo_Target
     WHERE (Name = @targetName)
@@ -77,15 +78,15 @@ AS
 
     declare @targetID int
     set @targetID = 0
-    
+
     declare @sql nvarchar(1024)
-    
-    set @sql = N'' 
+
+    set @sql = N''
     set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
     set @sql = @sql + ' FROM ' + @tgtTableName
     set @sql = @sql + ' WHERE ' + @tgtTableNameCol
     set @sql = @sql + ' = ''' + @targetEntityName + ''''
-    
+
     exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
     if @targetID = 0
@@ -104,12 +105,12 @@ AS
 
     set @targetID = 0
 
-    set @sql = N'' 
+    set @sql = N''
     set @sql = @sql + 'SELECT @targetID = ' + @tgtTableIDCol
     set @sql = @sql + ' FROM ' + @tgtTableName
     set @sql = @sql + ' WHERE ' + @tgtTableNameCol
     set @sql = @sql + ' = ''' + @sourceEntityName + ''''
-    
+
     exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
 
     if @targetID = 0
@@ -122,7 +123,7 @@ AS
     declare @sourceEntityID int
     set @sourceEntityID = @targetID
 
-    
+
     ---------------------------------------------------
     -- copy existing values in aux info table
     -- for given target name and category
@@ -138,17 +139,17 @@ begin
     --
     set @transName = 'CopyAuxInfo-copyCategory'
     begin transaction @transName
-    
+
     -- delete any existing values
     --
     Delete From T_AuxInfo_Value
-    WHERE (Target_ID = @destEntityID) 
-    AND (AuxInfo_ID IN
+    WHERE (Target_ID = @destEntityID)
+    AND (Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition
-        WHERE (Target = @targetName) AND 
-                (Category = @categoryName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition
+            WHERE (Target = @targetName) AND
+                  (Category = @categoryName)
         )
     )
     --
@@ -165,16 +166,16 @@ begin
     -- insert new values
     --
     INSERT INTO T_AuxInfo_Value
-       (Target_ID, AuxInfo_ID, Value)
-    SELECT @destEntityID AS Target_ID, AuxInfo_ID, Value
+       (Target_ID, Aux_Description_ID, Value)
+    SELECT @destEntityID AS Target_ID, Aux_Description_ID, Value
     FROM T_AuxInfo_Value
-    WHERE (Target_ID = @sourceEntityID) 
-    AND (AuxInfo_ID IN
+    WHERE (Target_ID = @sourceEntityID)
+    AND (Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition
-        WHERE (Target = @targetName) AND 
-                (Category = @categoryName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition
+            WHERE (Target = @targetName) AND
+                  (Category = @categoryName)
         )
     )
     --
@@ -203,18 +204,18 @@ begin
     --
     set @transName = 'CopyAuxInfo-copySubcategory'
     begin transaction @transName
-    
+
     -- delete any existing values
     --
     Delete from T_AuxInfo_Value
-    WHERE (Target_ID = @destEntityID) 
-    AND (AuxInfo_ID IN
+    WHERE (Target_ID = @destEntityID)
+    AND (Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition
-        WHERE (Target = @targetName) AND 
-                (Category = @categoryName) AND 
-                (Subcategory = @subCategoryName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition
+            WHERE (Target = @targetName) AND
+                  (Category = @categoryName) AND
+                  (Subcategory = @subCategoryName)
         )
     )
     --
@@ -231,17 +232,17 @@ begin
     -- insert new values
     --
     INSERT INTO T_AuxInfo_Value
-       (Target_ID, AuxInfo_ID, Value)
-    SELECT @destEntityID AS Target_ID, AuxInfo_ID, Value
+       (Target_ID, Aux_Description_ID, Value)
+    SELECT @destEntityID AS Target_ID, Aux_Description_ID, Value
     FROM T_AuxInfo_Value
-    WHERE (Target_ID = @sourceEntityID) 
-    AND (AuxInfo_ID IN
+    WHERE (Target_ID = @sourceEntityID)
+    AND (Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition
-        WHERE (Target = @targetName) AND 
-                (Category = @categoryName) AND 
-                (Subcategory = @subCategoryName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition
+            WHERE (Target = @targetName) AND
+                  (Category = @categoryName) AND
+                  (Subcategory = @subCategoryName)
         )
     )
     --
@@ -259,7 +260,7 @@ end
 
     ---------------------------------------------------
     -- copy existing values in aux info table
-    -- for given target name 
+    -- for given target name
     -- from given source target entity
     -- to given destination entity
     ---------------------------------------------------
@@ -270,16 +271,16 @@ begin
     --
     set @transName = 'CopyAuxInfo-copyAll'
     begin transaction @transName
-    
+
     -- delete any existing values
     --
     Delete from T_AuxInfo_Value
-    WHERE (Target_ID = @destEntityID) 
-    AND (AuxInfo_ID IN
+    WHERE (Target_ID = @destEntityID)
+    AND (Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition
-        WHERE (Target = @targetName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition
+            WHERE (Target = @targetName)
         )
     )
     --
@@ -295,15 +296,15 @@ begin
 
     --
     INSERT INTO T_AuxInfo_Value
-       (Target_ID, AuxInfo_ID, Value)
-    SELECT @destEntityID AS Target_ID, AuxInfo_ID, Value
+       (Target_ID, Aux_Description_ID, Value)
+    SELECT @destEntityID AS Target_ID, Aux_Description_ID, Value
     FROM T_AuxInfo_Value
-    WHERE (Target_ID = @sourceEntityID) 
-    AND (AuxInfo_ID IN
+    WHERE (Target_ID = @sourceEntityID)
+    AND (Aux_Description_ID IN
         (
-        SELECT Item_ID
-        FROM V_Aux_Info_Definition
-        WHERE (Target = @targetName)
+            SELECT Item_ID
+            FROM V_Aux_Info_Definition
+            WHERE (Target = @targetName)
         )
     )
     --
@@ -321,10 +322,11 @@ end
 
 
     ---------------------------------------------------
-    -- 
+    --
     ---------------------------------------------------
 
     return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfo] TO [DDL_Viewer] AS [dbo]

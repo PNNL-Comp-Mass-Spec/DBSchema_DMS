@@ -13,13 +13,13 @@ SELECT Category_Target.[Name] AS Target,
        AllowedVals.[Value] AS AllowedValue
 FROM T_AuxInfo_Category Category
      INNER JOIN T_AuxInfo_Subcategory Subcategory
-       ON Category.ID = Subcategory.Parent_ID
+       ON Category.ID = Subcategory.Aux_Category_ID
      INNER JOIN T_AuxInfo_Description Item
-       ON Subcategory.ID = Item.Parent_ID
+       ON Subcategory.ID = Item.Aux_Subcategory_ID
      INNER JOIN T_AuxInfo_Target Category_Target
        ON Category.Target_Type_ID = Category_Target.ID
      INNER JOIN T_AuxInfo_Allowed_Values AllowedVals
-       ON Item.ID = AllowedVals.AuxInfoID
+       ON Item.ID = AllowedVals.Aux_Description_ID
 
 
 GO
