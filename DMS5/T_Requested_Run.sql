@@ -384,6 +384,10 @@ After Insert, Update
 **          06/22/2022 mem - No longer pass the username of the batch owner to GetRequestedRunNameCode
 **          08/01/2022 mem - Update column Updated_By
 **          08/06/2022 mem - Only update RDS_NameCode if it has changed
+**          08/16/2022 mem - Log renamed requested runs
+**                         - Log dataset_id changes (ignoring change from null to a value)
+**                         - Log exp_id changes
+**                         - Log requested runs that have the same dataset_id
 **
 *****************************************************/
 AS
@@ -401,7 +405,7 @@ AS
        Update(RDS_Sec_Sep)
     Begin
         UPDATE T_Requested_Run
-        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN,
                                                          RR.RDS_BatchID, RRB.Batch, RRB.Created,
                                                          RR.RDS_type_ID, RR.RDS_Sec_Sep)
         FROM T_Requested_Run RR
@@ -409,11 +413,11 @@ AS
                ON RR.ID = inserted.ID
              LEFT OUTER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
-        Where Coalesce(RR.RDS_NameCode, '') <> dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+        Where Coalesce(RR.RDS_NameCode, '') <> dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN,
                                                                              RR.RDS_BatchID, RRB.Batch, RRB.Created,
                                                                              RR.RDS_type_ID, RR.RDS_Sec_Sep)
     End
-    
+
     If Update(RDS_Status)
     Begin
         INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
@@ -430,12 +434,94 @@ AS
     End
 
     UPDATE T_Requested_Run
-    SET Updated = GetDate(), 
+    SET Updated = GetDate(),
         Queue_State = CASE WHEN inserted.RDS_Status = 'Completed' THEN 3 ELSE inserted.Queue_State End,
         Updated_By = Suser_Sname()      -- + ' from ' + HOST_NAME()
     FROM T_Requested_Run RR
          INNER JOIN inserted
            ON RR.ID = inserted.ID
+    If Exists (SELECT * FROM deleted)
+    Begin
+        -- Update Trigger
+
+        -- Check for renamed requested run
+        If Update(RDS_Name)
+        Begin
+            INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+            SELECT 11 AS Target_Type,
+                   inserted.ID,
+                   deleted.RDS_Name,
+                   inserted.RDS_Name
+            FROM deleted
+                 INNER JOIN inserted
+                   ON deleted.ID = inserted.ID
+            WHERE deleted.RDS_Name <> inserted.RDS_Name
+            ORDER BY inserted.ID
+        End
+
+        -- Check for updated Dataset ID (including changing to null)
+        -- If changing from null to a value, log only if another requested run already has the given Dataset ID
+        If Update(DatasetID)
+        Begin
+            INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+            SELECT 14 AS Target_Type,
+                   inserted.ID,
+                   Cast(deleted.DatasetID AS varchar(12)) + ': ' + Coalesce(OldDataset.Dataset_Num, '??'),
+                   CASE
+                       WHEN inserted.DatasetID IS NULL THEN 'null'
+                       ELSE Cast(inserted.DatasetID AS varchar(12)) + ': ' + Coalesce(NewDataset.Dataset_Num, '??')
+                   END
+            FROM deleted
+                 INNER JOIN inserted
+                   ON deleted.ID = inserted.ID
+                 LEFT OUTER JOIN T_Dataset AS OldDataset
+                   ON deleted.DatasetID = OldDataset.Dataset_ID
+                 LEFT OUTER JOIN T_Dataset AS NewDataset
+                   ON inserted.DatasetID = NewDataset.Dataset_ID
+            WHERE NOT deleted.DatasetID IS Null And deleted.DatasetID <> Coalesce(inserted.DatasetID, 0)
+            ORDER BY inserted.ID
+        End
+                
+        -- Check for updated Experiment ID
+        If Update(Exp_ID)
+        Begin
+            INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+            SELECT 15 AS Target_Type,
+                   inserted.ID,
+                   Cast(deleted.Exp_ID AS varchar(12)) + ': ' + OldExperiment.Experiment_Num,
+                   Cast(inserted.Exp_ID AS varchar(12)) + ': ' + NewExperiment.Experiment_Num
+            FROM deleted
+                 INNER JOIN inserted
+                   ON deleted.ID = inserted.ID
+                 LEFT OUTER JOIN T_Experiments AS OldExperiment
+                   ON deleted.Exp_ID = OldExperiment.Exp_ID
+                 LEFT OUTER JOIN T_Experiments AS NewExperiment
+                   ON inserted.Exp_ID = NewExperiment.Exp_ID
+            WHERE deleted.Exp_ID <> inserted.Exp_ID
+            ORDER BY inserted.ID
+        End
+    End
+    
+    If Update(DatasetID)
+    Begin
+
+         -- Check whether another requested run already has the new Dataset ID
+        INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+        SELECT 14 AS Target_Type,
+                inserted.ID,
+                'Dataset ID ' + Cast(inserted.DatasetID AS varchar(12)) + ' is already referenced by Request ID ' + Cast(RR.ID As varchar(12)),
+                Cast(inserted.DatasetID AS varchar(12)) + ': ' + Coalesce(NewDataset.Dataset_Num, '??')
+        FROM T_Requested_Run RR
+                INNER JOIN inserted
+                ON inserted.DatasetID = RR.DatasetID And
+                    inserted.ID <> RR.ID
+                LEFT OUTER JOIN T_Dataset AS NewDataset
+                ON inserted.DatasetID = NewDataset.Dataset_ID
+        WHERE Not inserted.DatasetID Is Null
+        ORDER BY inserted.DatasetID, RR.ID
+
+    End
+
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_u_Requested_Run]
