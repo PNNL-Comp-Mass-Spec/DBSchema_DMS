@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[MapMACJobParameters]
 **          01/11/2013 mem - Add TMT10Plex and mention MasterWorkflowSyn.xml
 **          01/22/2021 mem - Add support for script MAC_TMT10Plex
 **          07/01/2022 mem - Use new parameter name for parameter file when querying #MACJobParams
+**          08/16/2022 mem - Deprecate scripts Global_Label-Free_AMT_Tag and Isobaric_Labeling
 **
 *****************************************************/
 (
@@ -78,9 +79,9 @@ AS
     -- and mapping for template
     ---------------------------------------------------
 
-    IF @scriptName LIKE 'Isobaric_Labeling%' OR
-       @scriptName LIKE 'MAC_iTRAQ%' OR
+    IF @scriptName LIKE 'MAC_iTRAQ%' OR
        @scriptName LIKE 'MAC_TMT%Plex'
+       -- Deprecated: @scriptName LIKE 'Isobaric_Labeling%'
     BEGIN
         -- The user will have defined @experimentLabelling using the drop-down box at http://dms2.pnl.gov/mac_jobs/create
         -- The options are: 4plex (4-Plex Itraq), 6plex (6-Plex TMT), 8plex (8-plex Itraq), and TMT10Plex (10-plex TMT)
@@ -153,6 +154,9 @@ AS
         WHERE [Name] = 'AScoreSearchType'
 
     END
+
+    /*
+     * Deprecated
 
     IF @scriptName IN ('Global_Label-Free_AMT_Tag')
     BEGIN
@@ -243,6 +247,8 @@ AS
         WHERE [Name] = 'AMTDBServer'
 
     END
+
+    */
 
     return @myError
 
