@@ -36,6 +36,9 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
 **                         - Cast ProteinCollectionList to varchar(4000)
 **          07/01/2022 mem - Rename job parameters to ParamFileName and ParamFileStoragePath
+**          08/16/2022 mem - Remove reference to MTS view
+**                           (previously looked for tag AMTDB in the Special_Processing field for MultiAlign jobs; 
+**                            given the AMT tag DB name, the code used a view to determine the server on which the MT DB resides)
 **
 *****************************************************/
 (
@@ -170,7 +173,7 @@ AS
         End
     End
 
-      ---------------------------------------------------
+    ---------------------------------------------------
     -- Get settings file parameters from DMS
     ---------------------------------------------------
     --
@@ -298,7 +301,7 @@ AS
 */
 
 
-      ---------------------------------------------------
+    ---------------------------------------------------
     -- Check whether the settings file has an
     -- External DTA folder defined
     ---------------------------------------------------
@@ -342,49 +345,6 @@ AS
             If @debugMode <> 0
                 Print 'Note: ExternalDTAFolderName is  "' + @extDTA + '", as defined in the settings file'
         End
-    End
-
-      ---------------------------------------------------
-    -- Check whether the Special_Processing field has an AMT DB defined
-    -- If it does, add this as a new parameter in the JobParameters section
-    ---------------------------------------------------
-    --
-    exec CheckAddSpecialProcessingParam 'AMTDB'
-
-    -- If AMTDB is defined, we need to lookup the name of the server on which the MT DB resides
-    Declare @AMTDB varchar(256) = ''
-
-    SELECT @AMTDB = Value
-    FROM #T_Tmp_ParamTab
-    WHERE [Section] = 'JobParameters' AND [Name] = 'AMTDB'
-
-    If Len(IsNull(@AMTDB, '')) > 0
-    Begin
-        Declare @AMTDBServer varchar(128) = ''
-
-        SELECT @AMTDBServer = Server_Name
-        FROM S_DMS_V_MTS_MT_DBs
-        WHERE State_ID < 100 AND MT_DB_Name = @AMTDB
-
-        If Len(IsNull(@AMTDB, '')) = 0
-        Begin
-            -- DB not found in S_DMS_V_MTS_MT_DBs
-            -- Try directly querying MTS (via the appropriate synonym in DMS5)
-            SELECT @AMTDBServer = Server_Name
-            FROM DMS5.dbo.S_MTS_MT_DBs
-            WHERE State_ID < 100 AND MT_DB_Name = @AMTDB
-
-        End
-
-        If Len(IsNull(@AMTDBServer, '')) = 0
-        Begin
-            Set @message = 'Unable to resolve MTS server for database ' + @AMTDB + '; not listed in DMS5.dbo.S_MTS_MT_DBs'
-            exec PostLogEntry 'Error', @message, 'GetJobParamTable'
-            Set @message = ''
-        End
-
-        -- Add entry 'AMTDBServer' to #T_Tmp_ParamTab
-        exec AddUpdateTmpParamTabEntry 'JobParameters', 'AMTDBServer', @AMTDBServer
     End
 
     --------------------------------------------------
