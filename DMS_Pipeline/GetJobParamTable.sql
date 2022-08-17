@@ -36,9 +36,10 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
 **                         - Cast ProteinCollectionList to varchar(4000)
 **          07/01/2022 mem - Rename job parameters to ParamFileName and ParamFileStoragePath
-**          08/16/2022 mem - Remove reference to MTS view
+**          08/17/2022 mem - Remove reference to MTS view
 **                           (previously looked for tag AMTDB in the Special_Processing field for MultiAlign jobs; 
 **                            given the AMT tag DB name, the code used a view to determine the server on which the MT DB resides)
+**                         - Remove check for DataImportFolder in the Special_Processing field
 **
 *****************************************************/
 (
@@ -347,14 +348,7 @@ AS
         End
     End
 
-    --------------------------------------------------
-    -- Check whether the Special_Processing field has a Data Import Folder defined
-    -- If it does, add this as a new parameter in the JobParameters section
     ---------------------------------------------------
-    --
-    exec CheckAddSpecialProcessingParam 'DataImportFolder'
-
-      ---------------------------------------------------
     -- Output the table of parameters
     ---------------------------------------------------
 
