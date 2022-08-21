@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[AppendToText]
 **  Auth:   mem
 **  Date:   05/12/2010 mem - Initial version
 **          06/12/2018 mem - Add parameter @maxLength
+***         08/20/2022 mem - Do not append the delimiter if already present at the end of the base text
 **
 *****************************************************/
 (
@@ -42,9 +43,24 @@ Begin
         If @charLoc = 0 Or @addDuplicateText <> 0
         Begin
             If @text = ''
+            Begin
                 Set @text = @addnlText
+            End
             Else
-                Set @text = @text + @delimiter + @addnlText
+            Begin
+                If Len(Ltrim(Rtrim(@delimiter))) > 0 And RTrim(@text) Like '%' + RTrim(@delimiter)
+                Begin
+                    -- The text already ends with the delimiter, though we may need to add a space
+                    If @delimiter Like '% ' And Not @text Like '% '
+                        Set @text = @text + ' '
+                End
+                Else
+                Begin
+                    Set @text = @text + @delimiter 
+                End
+
+                Set @text = @text + @addnlText
+            End
         End
     End
     
