@@ -113,6 +113,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          02/17/2022 mem - Rename variables and add missing Else clause
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          05/27/2022 mem - Expand @msg to varchar(1024)
+**          08/22/2022 mem - Do not log EUS Usage validation errors to T_Log_Entries
 **
 *****************************************************/
 (
@@ -1042,19 +1043,22 @@ As
             Declare @eusUsageTypeID Int
 
             exec @myError = ValidateEUSUsage
-                            @eusUsageType output,
-                            @eusProposalID output,
-                            @eusUsersList output,
-                            @eusUsageTypeID output,
-                            @msg output,
-                            @AutoPopulateUserListIfBlank = 0,
-                            @samplePrepRequest = 0,
-                            @experimentID = @experimentID,
-                            @campaignID = 0,
-                            @addingItem = @addingDataset
+                                @eusUsageType output,
+                                @eusProposalID output,
+                                @eusUsersList output,
+                                @eusUsageTypeID output,
+                                @msg output,
+                                @AutoPopulateUserListIfBlank = 0,
+                                @samplePrepRequest = 0,
+                                @experimentID = @experimentID,
+                                @campaignID = 0,
+                                @addingItem = @addingDataset
 
             If @myError <> 0
+            Begin
+                Set @logErrors = 0
                 RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+            End
 
             If IsNull(@msg, '') <> ''
             Begin
@@ -1079,7 +1083,6 @@ As
 
         Declare @dsCreatorPRN varchar(256) = suser_sname()
 
-        Declare @rslt int
         Declare @run_Start varchar(10) = ''
         Declare @run_Finish varchar(10) = ''
 
@@ -1092,32 +1095,32 @@ As
             exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateDataset'
         End
 
-        exec @rslt = CreateXmlDatasetTriggerFile
-            @datasetNum,
-            @experimentNum,
-            @instrumentName,
-            @secSep,
-            @lcCartName,
-            @lcColumnNum,
-            @wellplateNum,
-            @wellNum,
-            @msType,
-            @operPRN,
-            @dsCreatorPRN,
-            @comment,
-            @rating,
-            @requestID,
-            @workPackage,
-            @eusUsageType,
-            @eusProposalID,
-            @eusUsersList,
-            @run_Start,
-            @run_Finish,
-            @captureSubfolder,
-            @lcCartConfig,
-            @message output
+        exec @result = CreateXmlDatasetTriggerFile
+                        @datasetNum,
+                        @experimentNum,
+                        @instrumentName,
+                        @secSep,
+                        @lcCartName,
+                        @lcColumnNum,
+                        @wellplateNum,
+                        @wellNum,
+                        @msType,
+                        @operPRN,
+                        @dsCreatorPRN,
+                        @comment,
+                        @rating,
+                        @requestID,
+                        @workPackage,
+                        @eusUsageType,
+                        @eusProposalID,
+                        @eusUsersList,
+                        @run_Start,
+                        @run_Finish,
+                        @captureSubfolder,
+                        @lcCartConfig,
+                        @message output
 
-        If @rslt > 0
+        If @result > 0
         Begin
             -- CreateXmlDatasetTriggerFile should have already logged critical errors to T_Log_Entries
             -- No need for this procedure to log the message again
@@ -1335,6 +1338,8 @@ As
                 Begin
                     Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
                 End
+
+                Set @logErrors = 0
 
                 RAISERROR (@msg, 11, 24)
             End
@@ -1641,8 +1646,7 @@ As
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        If @logErrors > 0 And
-           Not @message Like 'ValidateEUSUsage%'
+        If @logErrors > 0 And Not @message Like '%ValidateEUSUsage%'
         Begin
             Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNum
             exec PostLogEntry 'Error', @logMessage, 'AddUpdateDataset'
