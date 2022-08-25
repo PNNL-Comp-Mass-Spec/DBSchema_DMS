@@ -59,9 +59,9 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     Begin Try
 
@@ -472,6 +472,7 @@ Done:
         set @result = @temp
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DDL_Viewer] AS [dbo]
