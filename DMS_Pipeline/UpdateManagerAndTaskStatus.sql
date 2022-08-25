@@ -3,159 +3,140 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateManagerAndTaskStatus
+
+CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatus]
 /****************************************************
 **
-**  ####################################################
-**  This stored procedure has been superseded by UpdateManagerAndTaskStatusXML,
-**  which is called by the StatusMessageDBUpdater
-**  (running at \\proto-3\DMS_Programs\StatusMessageDBUpdater)
+**  Desc:
+**      Logs the current status of the given analysis manager
 **
-**  The StatusMessageDBUpdater caches the status messages from the managers, then
-**  periodically calls UpdateManagerAndTaskStatusXML to update T_Processor_Status
-**  with processor status information
+**      Manager status is typically stored in the database using UpdateManagerAndTaskStatusXML,
+**      which is called by the StatusMessageDBUpdater
+**      (running at \\proto-5\DMS_Programs\StatusMessageDBUpdater)
 **
-**  If Analysis Manager parameter LogStatusToBrokerDB is set to true
-**  a call to method WriteStatusFile will cascade into
-**  method LogStatus, which calls this stored procedure
-**  ####################################################
+**      The StatusMessageDBUpdater caches the status messages from the managers, then
+**      periodically calls UpdateManagerAndTaskStatusXML to update T_Processor_Status
 **
-**  Desc:   Logs the current status of the given analysis manager
-**
-**  Return values: 0: success, otherwise, error code
+**      However, if the message broker stops working, running analysis managers
+**      will set LogStatusToBrokerDB to true, meaning calls to WriteStatusFile
+**      will cascade into method LogStatus, which will call this stored procedure
 **
 **  Auth:   mem
 **          03/24/2009 mem - Initial version
-**          03/26/2009 mem - Added parameter @MostRecentJobInfo
-**          03/31/2009 mem - Added parameter @DSScanCount
+**          03/26/2009 mem - Added parameter @mostRecentJobInfo
+**          03/31/2009 mem - Added parameter @dSScanCount
 **          04/09/2009 grk - @message needs to be initialized to '' inside body of sproc
 **          06/26/2009 mem - Expanded to support the new status fields
 **          08/29/2009 mem - Commented out the update code to disable the functionality of this procedure (superseded by UpdateManagerAndTaskStatusXML, which is called by StatusMessageDBUpdater)
 **          05/04/2015 mem - Added Process_ID
 **          11/20/2015 mem - Added ProgRunner_ProcessID and ProgRunner_CoreUsage
+**          08/25/2022 mem - Re-enabled the functionality of this procedure
+**                         - Replaced int parameters @mgrStatusCode, @taskStatusCode, and @taskDetailStatusCode
+**                           with string parameters @mgrStatus, @taskStatus, and @taskDetailStatus
 **
 *****************************************************/
 (
-    @MgrName varchar(128),
-    @MgrStatusCode int,                        -- See T_Processor_Status_Codes; 0=Idle, 1=Running, 2=Stopped, 3=Starting, 4=Closing, 5=Retrieving Dataset, 6=Disabled, 7=FlagFileExists
-    @LastUpdate datetime,
-    @LastStartTime datetime,
-    @CPUUtilization real,
-    @FreeMemoryMB real,
+    @mgrName varchar(128),
+    @mgrStatus Varchar(50),
+    @lastUpdate datetime,
+    @lastStartTime datetime,
+    @cPUUtilization real,
+    @freeMemoryMB real,
 
-    @ProcessID int = null,
-    @ProgRunnerProcessID int = null,
-    @ProgRunnerCoreUsage real = null,
+    @processID int = null,
+    @progRunnerProcessID int = null,
+    @progRunnerCoreUsage real = null,
 
-    @MostRecentErrorMessage varchar(1024) = '',
+    @mostRecentErrorMessage varchar(1024) = '',
 
     -- Task    items
-    @StepTool varchar(128),
-    @TaskStatusCode int,                    -- See T_Processor_Task_Status_Codes;
-    @DurationHours real,
-    @Progress real,
-    @CurrentOperation varchar(256),
+    @stepTool varchar(128),
+    @taskStatus Varchar(50),
+    @durationHours real,
+    @progress real,
+    @currentOperation varchar(256),
 
     -- Task detail items
-    @TaskDetailStatusCode int,                -- See T_Processor_Task_Detail_Status_Codes;
-    @Job int,
-    @JobStep int,
-    @Dataset varchar(256),
-    @MostRecentLogMessage varchar(1024) = '',
-    @MostRecentJobInfo varchar(256) = '',
-    @SpectrumCount int=0,                    -- The total number of spectra that need to be processed (or have been generated).  For Sequest, this is the DTA count
+    @taskDetailStatus Varchar(50),
+    @job int,
+    @jobStep int,
+    @dataset varchar(256),
+    @mostRecentLogMessage varchar(1024) = '',
+    @mostRecentJobInfo varchar(256) = '',
+    @spectrumCount int=0,                    -- The total number of spectra that need to be processed (or have been generated).  For Sequest, this is the DTA count
     @message varchar(512)='' output
 )
 As
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError Int = 0
+    Declare @myRowCount Int = 0
+
     set @message = ''
 
-
-/*
-**    Code commented out 8/29/2009 by MEM to disable the functionality of this procedure
-**
-
     ---------------------------------------------------
-    -- Validate the inputs; clear the outputs
+    -- Validate the inputs
     ---------------------------------------------------
 
-    Set @MgrName = IsNull(@MgrName, '')
-    Set @MgrStatusCode = IsNull(@MgrStatusCode, 0)
-    Set @LastUpdate = IsNull(@LastUpdate, GetDate())
-    Set @LastStartTime = IsNull(@LastStartTime, Null)
-    Set @CPUUtilization = IsNull(@CPUUtilization, Null)
-    Set @FreeMemoryMB = IsNull(@FreeMemoryMB, Null)
-    Set @ProcessID = IsNull(@ProcessID, null)
-    Set @ProgRunnerProcessID = IsNull(@ProgRunnerProcessID, null)
-    Set @ProgRunnerCoreUsage = IsNull(@ProgRunnerCoreUsage, null)
-    Set @MostRecentErrorMessage = IsNull(@MostRecentErrorMessage, '')
+    Set @mgrName = IsNull(@mgrName, '')
+    Set @mgrStatus = IsNull(@mgrStatus, 'Stopped')
+    Set @lastUpdate = IsNull(@lastUpdate, GetDate())
+    Set @mostRecentErrorMessage = IsNull(@mostRecentErrorMessage, '')
 
-    Set @StepTool = IsNull(@StepTool, '')
-    Set @TaskStatusCode = IsNull(@TaskStatusCode, 0)
-    Set @DurationHours = IsNull(@DurationHours, Null)
-    Set @Progress = IsNull(@Progress, Null)
-    Set @CurrentOperation = IsNull(@CurrentOperation, '')
+    Set @stepTool = IsNull(@stepTool, '')
+    Set @taskStatus = IsNull(@taskStatus, 'No Task')
+    Set @currentOperation = IsNull(@currentOperation, '')
 
-    Set @TaskDetailStatusCode = IsNull(@TaskDetailStatusCode, 0)
-    Set @Job = IsNull(@Job, Null)
-    Set @JobStep = IsNull(@JobStep, Null)
-    Set @Dataset = IsNull(@Dataset, '')
-    Set @MostRecentLogMessage = IsNull(@MostRecentLogMessage, '')
-    Set @MostRecentJobInfo = IsNull(@MostRecentJobInfo, '')
-    Set @SpectrumCount = IsNull(@SpectrumCount, 0)
+    Set @taskDetailStatus = IsNull(@taskDetailStatus, 'No Task')
+    Set @dataset = IsNull(@dataset, '')
+    Set @mostRecentLogMessage = IsNull(@mostRecentLogMessage, '')
+    Set @mostRecentJobInfo = IsNull(@mostRecentJobInfo, '')
+    Set @spectrumCount = IsNull(@spectrumCount, 0)
 
     Set @message = ''
 
-    If Len(@MgrName) = 0
+    If Len(@mgrName) = 0
     Begin
         Set @message = 'Processor name is empty; unable to continue'
         Goto Done
     End
 
-
     -- Check whether this processor is missing from T_Processor_Status
-    If Not Exists (SELECT * FROM T_Processor_Status WHERE Processor_Name = @MgrName)
+    If Not Exists (SELECT * FROM T_Processor_Status WHERE Processor_Name = @mgrName)
     Begin
         -- Processor is missing; add it
-        INSERT INTO T_Processor_Status (Processor_Name, Mgr_Status_Code, Task_Status_Code, Task_Detail_Status_Code)
-        VALUES (@MgrName, @MgrStatusCode, @TaskStatusCode, @TaskDetailStatusCode)
+        INSERT INTO T_Processor_Status (Processor_Name, Mgr_Status, Task_Status, Task_Detail_Status)
+        VALUES (@mgrName, @mgrStatus, @taskStatus, @taskDetailStatus)
     End
-
-
 
     UPDATE T_Processor_Status
     SET
         Remote_Manager = '',
-        Mgr_Status_Code = @MgrStatusCode,
-        Status_Date = @LastUpdate,
-        Last_Start_Time = @LastStartTime,
-        CPU_Utilization = @CPUUtilization,
-        Free_Memory_MB = @FreeMemoryMB,
-        Process_ID = @ProcessID,
-        ProgRunner_ProcessID = @ProgRunnerProcessID,
-        ProgRunner_CoreUsage = @ProgRunnerCoreUsage,
+        Mgr_Status = @mgrStatus,
+        Status_Date = @lastUpdate,
+        Last_Start_Time = @lastStartTime,
+        CPU_Utilization = @cPUUtilization,
+        Free_Memory_MB = @freeMemoryMB,
+        Process_ID = @processID,
+        ProgRunner_ProcessID = @progRunnerProcessID,
+        ProgRunner_CoreUsage = @progRunnerCoreUsage,
 
-        Most_Recent_Error_Message = CASE WHEN @MostRecentErrorMessage <> '' THEN @MostRecentErrorMessage ELSE Most_Recent_Error_Message END,
+        Most_Recent_Error_Message = CASE WHEN @mostRecentErrorMessage <> '' THEN @mostRecentErrorMessage ELSE Most_Recent_Error_Message END,
 
-        Step_Tool = @StepTool,
-        Task_Status_Code = @TaskStatusCode,
-        Duration_Hours = @DurationHours,
-        Progress = @Progress,
-        Current_Operation = @CurrentOperation,
+        Step_Tool = @stepTool,
+        Task_Status = @taskStatus,
+        Duration_Hours = @durationHours,
+        Progress = @progress,
+        Current_Operation = @currentOperation,
 
-        Task_Detail_Status_Code = @TaskDetailStatusCode,
-        Job = @Job,
-        Job_Step = @JobStep,
-        Dataset = @Dataset,
-        Most_Recent_Log_Message =   CASE WHEN @MostRecentLogMessage <> ''   THEN @MostRecentLogMessage   ELSE Most_Recent_Log_Message END,
-        Most_Recent_Job_Info =      CASE WHEN @MostRecentJobInfo <> ''      THEN @MostRecentJobInfo      ELSE Most_Recent_Job_Info END,
-        Spectrum_Count = @SpectrumCount
-    WHERE Processor_Name = @MgrName
+        Task_Detail_Status = @taskDetailStatus,
+        Job = @job,
+        Job_Step = @jobStep,
+        Dataset = @dataset,
+        Most_Recent_Log_Message =   CASE WHEN @mostRecentLogMessage <> ''   THEN @mostRecentLogMessage   ELSE Most_Recent_Log_Message END,
+        Most_Recent_Job_Info =      CASE WHEN @mostRecentJobInfo <> ''      THEN @mostRecentJobInfo      ELSE Most_Recent_Job_Info END,
+        Spectrum_Count = @spectrumCount
+    WHERE Processor_Name = @mgrName
 
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -166,8 +147,6 @@ As
         goto Done
     end
 
-*/
-
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
@@ -175,7 +154,6 @@ As
 Done:
     --
     return @myError
-
 
 
 GO
