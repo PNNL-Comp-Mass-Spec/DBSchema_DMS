@@ -11,7 +11,7 @@ FROM T_User_Operations_Permissions O
      INNER JOIN T_Users U
        ON O.U_ID = U.ID
 WHERE U.U_Status = 'Active' AND
-      O.Op_ID IN (16)
+      O.Op_ID IN (16)       -- DMS_Sample_Preparation
 
 
 GO
