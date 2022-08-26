@@ -60,6 +60,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          01/31/2022 mem - Add more print statements to aid debugging
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
 **          07/01/2022 mem - Update parameter names in comments
+**          08/25/2022 mem - Use new column name in T_Log_Entries
 **
 *****************************************************/
 (
@@ -372,12 +373,12 @@ AS
                 SELECT @logEntryID = MAX(Entry_ID)
                 FROM T_Log_Entries
                 WHERE message = @logMessage AND
-                      ABS(DATEDIFF(SECOND, posting_time, GetDate())) < 15
+                      ABS(DATEDIFF(SECOND, Entered, GetDate())) < 15
                 --
                 SELECT @myRowCount = @@rowcount
 
                 If @myRowCount > 0
-                    Exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @logEntryID, @CallingUser, @EntryDateColumnName = 'posting_time'
+                    Exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @logEntryID, @CallingUser, @EntryDateColumnName = 'Entered'
             End
         End
     END CATCH

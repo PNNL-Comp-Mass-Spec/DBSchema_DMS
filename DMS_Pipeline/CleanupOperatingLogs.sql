@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.CleanupOperatingLogs
+CREATE PROCEDURE [dbo].[CleanupOperatingLogs]
 /****************************************************
 ** 
 **	Desc:	Move old log entries and event entries to DMSHistoricLogPipeline
@@ -16,6 +16,7 @@ CREATE Procedure dbo.CleanupOperatingLogs
 **	Auth:	mem
 **	Date:	10/04/2011 mem - Initial version
 **			02/23/2016 mem - Add set XACT_ABORT on
+**          08/25/2022 mem - Use new column name in T_Log_Entries
 **    
 *****************************************************/
 (
@@ -25,11 +26,9 @@ CREATE Procedure dbo.CleanupOperatingLogs
 As
 	Set XACT_ABORT, nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
+	
 	Declare @message varchar(256)
 	Set @message = ''
 	
@@ -56,7 +55,7 @@ As
 		Set @CurrentLocation = 'Delete non-noteworthy log entries'
 		
 		DELETE FROM T_Log_Entries
-		WHERE (posting_time < DATEADD(week, -@InfoHoldoffWeeks, GETDATE())) AND 
+		WHERE (Entered < DATEADD(week, -@InfoHoldoffWeeks, GETDATE())) AND 
 		      (message LIKE 'Resuming [0-9]%job%' OR
 		       message LIKE 'Deleted job % from T_Jobs')
 		--

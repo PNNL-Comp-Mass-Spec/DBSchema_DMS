@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
 **                         - Prevent dataset from being automatically reset more than 4 times
 **          08/16/2017 mem - Look for 'Authentication failure: The user name or password is incorrect'
 **          05/28/2019 mem - Use a holdoff of 15 minutes for authentication errors
+**          08/25/2022 mem - Use new column name in T_Log_Entries
 **  
 *****************************************************/
 (
@@ -163,7 +164,7 @@ As
                 ------------------------------------------------
                 --            
                 INSERT INTO T_Log_Entries( posted_by,
-                                           posting_time,
+                                           Entered,
                                            [Type],
                                            message )
                 SELECT 'ResetFailedDatasetCaptureTasks',
@@ -235,7 +236,7 @@ As
                             WHERE ([Type] = 'error') AND
                                 (message LIKE '%' + @DatasetName + '%') AND
                                 (message LIKE '%exception%') AND
-                                (posting_time < GetDate())
+                                (Entered < GetDate())
                             --
                             SELECT @myError = @@error, @myRowCount = @@rowcount
 

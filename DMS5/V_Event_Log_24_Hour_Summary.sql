@@ -137,7 +137,7 @@ GROUP BY T_Instrument_Name.IN_class
 UNION
 SELECT     '(X9) Warnings' AS Label, CAST(COUNT(*) AS varchar(12)) AS Number
 FROM         T_Log_Entries
-WHERE     Posting_Time > DateAdd(Hour, -24, GetDate()) AND (type = 'Warning')
+WHERE     Entered > DateAdd(Hour, -24, GetDate()) AND (type = 'Warning')
 
 
 GO

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddNewDataset]
+CREATE PROCEDURE [dbo].[AddNewDataset]
 /****************************************************
 **
 **  Desc: 
@@ -48,6 +48,7 @@ CREATE Procedure [dbo].[AddNewDataset]
 **          10/10/2020 mem - Rename variables
 **          12/17/2020 mem - Ignore @captureSubfolder if it is an absolute path to a network share (e.g. \\proto-2\External_Orbitrap_Xfer)
 **          05/26/2021 mem - Expand @message to varchar(1024)
+**          08/25/2022 mem - Use new column name in T_Log_Entries
 **    
 *****************************************************/
 (
@@ -260,9 +261,10 @@ AS
 
         -- Post this message to the log every 3 days
         If Not Exists (
-           SELECT * FROM T_Log_Entries 
+           SELECT * 
+           FROM T_Log_Entries 
            WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND 
-                 posting_time > DATEADD(day, -3, GETDATE()) )
+                 Entered > DATEADD(day, -3, GETDATE()) )
         Begin
             exec PostLogEntry 'Debug', @message, 'AddNewDataset'
         End

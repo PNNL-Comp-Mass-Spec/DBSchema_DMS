@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[DeleteOldEventsAndHistoricLogs]
 **
 **  Auth:   mem
 **  Date:   06/08/2022 mem - Initial version
+**          08/26/2022 mem - Use new column name in T_Log_Entries
 **
 *****************************************************/
 (
@@ -77,8 +78,8 @@ As
     
     CREATE TABLE #Tmp_HistoricLogIDs (
         Entry_ID   int NOT NULL,
-        Posting_Time datetime NOT NULL,
-        PRIMARY KEY CLUSTERED ( Entry_ID, Posting_Time )
+        Entered datetime NOT NULL,
+        PRIMARY KEY CLUSTERED ( Entry_ID, Entered )
     )
     
     CREATE TABLE #Tmp_EventsToDelete (
@@ -96,7 +97,7 @@ As
     CREATE TABLE #Tmp_LogEntriesToDelete (
         Entry_ID int NOT NULL,
 	    Posted_By varchar(64) NULL,
-	    Posting_Time datetime NOT NULL,
+	    Entered datetime NOT NULL,
 	    [Type] varchar(32) NULL,
 	    Message varchar(512) NULL
     )
@@ -348,12 +349,12 @@ As
     -- Find historic log items to delete
     ---------------------------------------------------
 
-    INSERT INTO #Tmp_HistoricLogIDs( Entry_ID, Posting_Time )
-    SELECT Entry_ID, posting_time
+    INSERT INTO #Tmp_HistoricLogIDs( Entry_ID, Entered )
+    SELECT Entry_ID, Entered
     FROM T_Log_Entries
-    WHERE posting_time < @dateThreshold And 
-          Not (Month(posting_time) In (2,8) And Day(posting_time) Between 1 And 7) And
-          (@yearFilter < 1970 Or Year(posting_time) = @yearFilter)
+    WHERE Entered < @dateThreshold And 
+          Not (Month(Entered) In (2,8) And Day(Entered) Between 1 And 7) And
+          (@yearFilter < 1970 Or Year(Entered) = @yearFilter)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -380,15 +381,15 @@ As
 
         If @infoOnly > 0
         Begin
-            INSERT INTO #Tmp_LogEntriesToDelete (Entry_ID, Posted_By, Posting_Time, [Type], Message)
-            SELECT TOP 10 T.Entry_ID, T.Posted_By, T.Posting_Time, T.[Type], T.Message
+            INSERT INTO #Tmp_LogEntriesToDelete (Entry_ID, Posted_By, Entered, [Type], Message)
+            SELECT TOP 10 T.Entry_ID, T.Posted_By, T.Entered, T.[Type], T.Message
             FROM #Tmp_HistoricLogIDs S
                  INNER JOIN T_Log_Entries T
                    ON S.Entry_ID = T.Entry_ID
             ORDER BY T.Entry_ID
         
-            INSERT INTO #Tmp_LogEntriesToDelete (Entry_ID, Posted_By, Posting_Time, [Type], Message)
-            SELECT TOP 10 T.Entry_ID, T.Posted_By, T.Posting_Time, T.[Type], T.Message
+            INSERT INTO #Tmp_LogEntriesToDelete (Entry_ID, Posted_By, Entered, [Type], Message)
+            SELECT TOP 10 T.Entry_ID, T.Posted_By, T.Entered, T.[Type], T.Message
             FROM ( SELECT TOP 10 Entry_ID
                    FROM #Tmp_HistoricLogIDs
                    ORDER BY Entry_ID DESC 
@@ -397,7 +398,7 @@ As
                    ON S.Entry_ID = T.Entry_ID
             ORDER BY T.Entry_ID
 
-            SELECT Entry_ID, Posted_By, Posting_Time, [Type], Message
+            SELECT Entry_ID, Posted_By, Entered, [Type], Message
             FROM #Tmp_LogEntriesToDelete
             ORDER By Entry_ID
         End

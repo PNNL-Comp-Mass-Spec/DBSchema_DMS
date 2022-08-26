@@ -6,10 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Log_Errors]
 AS
-SELECT Entry_ID, posted_by, posting_time, 
+SELECT Entry_ID, posted_by, Entered, 
     type, message, Entered_By
 FROM T_Log_Entries
 WHERE (type = 'error')
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors] TO [DDL_Viewer] AS [dbo]

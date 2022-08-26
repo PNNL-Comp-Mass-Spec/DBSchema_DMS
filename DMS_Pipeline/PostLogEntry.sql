@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE Procedure [dbo].[PostLogEntry]
 /****************************************************
 **
@@ -17,6 +18,7 @@ CREATE Procedure [dbo].[PostLogEntry]
 **			05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
 **			02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter (512 characters in DMS); disable ANSI Warnings before inserting into the table
 **          01/28/2020 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
+**          08/25/2022 mem - Use new column name
 **    
 *****************************************************/
 (
@@ -37,7 +39,7 @@ As
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
 		FROM T_Log_Entries
-		WHERE Message = @message AND Type = @type AND Posting_Time >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
+		WHERE Message = @message AND Type = @type AND Entered >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
 	End
 
 	If @duplicateRowCount = 0
@@ -45,7 +47,7 @@ As
 		SET ANSI_WARNINGS OFF;
 		
 		INSERT INTO T_Log_Entries( posted_by,
-		                           posting_time,
+		                           Entered,
 		                           [Type],
 		                           message )
 		VALUES(@postedBy, GETDATE(), @type, @message);

@@ -6,18 +6,17 @@ GO
 
 CREATE VIEW [dbo].[V_Log_Errors_ProductionDBs]
 AS
-SELECT 'DMS_Capture' AS DB, Entry_ID, posted_by, posting_time, type, message, Entered_By
+SELECT 'DMS_Capture' AS DB, Entry_ID, posted_by, Entered, type, message, Entered_By
 FROM DMS_Capture.dbo.V_Log_Errors
 UNION
-SELECT 'DMS5' AS DB, Entry_ID, posted_by, posting_time, type, message, '' AS Entered_By
+SELECT 'DMS5' AS DB, Entry_ID, posted_by, Entered, type, message, '' AS Entered_By
 FROM V_Log_Errors
 UNION
-SELECT 'DMS_Pipeline' AS DB, Entry_ID, posted_by, posting_time, type, message, Entered_By
+SELECT 'DMS_Pipeline' AS DB, Entry_ID, posted_by, Entered, type, message, Entered_By
 FROM DMS_Pipeline.dbo.V_Log_Errors
 UNION
-SELECT 'DMS_Data_Package' AS DB, Entry_ID, posted_by, posting_time, type, message, Entered_By
+SELECT 'DMS_Data_Package' AS DB, Entry_ID, posted_by, Entered, type, message, Entered_By
 FROM DMS_Data_Package.dbo.V_Log_Errors
-
 
 
 GO

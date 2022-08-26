@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-create Procedure PostLogEntry
+CREATE Procedure [dbo].[PostLogEntry]
 /****************************************************
 **
 **	Desc: Put new entry into the main log table or the
@@ -12,9 +12,9 @@ create Procedure PostLogEntry
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
+**	Parameters:
 **
-**	
+**
 **
 **	Auth:	grk
 **	Date:	01/26/2001
@@ -24,7 +24,7 @@ create Procedure PostLogEntry
 **			07/20/2009 grk - eliminate health log (http://prismtrac.pnl.gov/trac/ticket/742)
 **			09/13/2010 mem - Eliminate analysis log
 **						   - Auto-update @duplicateEntryHoldoffHours to be 24 when the log type is Health or Normal and the source is the space manager
-**    
+**          08/25/2022 mem - Use new column name
 *****************************************************/
 (
 	@type varchar(128),
@@ -35,17 +35,17 @@ create Procedure PostLogEntry
 As
 	Declare @duplicateRowCount int
 	Set @duplicateRowCount = 0
-	
+
 	If (@postedBy Like 'Space%') And @type In ('Health', 'Normal')
 	Begin
 		-- Auto-update @duplicateEntryHoldoffHours to be 24 if it is zero
 		-- Otherwise we get way too many health/status log entries
-		
+
 		If @duplicateEntryHoldoffHours = 0
 			Set @duplicateEntryHoldoffHours = 24
 	End
-	
-	
+
+
 	If IsNull(@duplicateEntryHoldoffHours, 0) > 0
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
@@ -55,7 +55,7 @@ As
 
 	If @duplicateRowCount = 0
 	Begin
-		INSERT INTO T_Log_Entries (posted_by, posting_time, type, message) 
+		INSERT INTO T_Log_Entries (posted_by, Entered, type, message)
 		VALUES ( @postedBy, GETDATE(), @type, @message)
 		--
 		if @@rowcount <> 1
@@ -64,7 +64,7 @@ As
 			return 51191
 		end
 	End
-			
+
 	return 0
 
 GO

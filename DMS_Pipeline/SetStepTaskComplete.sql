@@ -55,6 +55,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          03/12/2021 mem - Add support for completion codes 21 (CLOSEOUT_SKIPPED_MSXML_GEN) and 22 (CLOSEOUT_SKIPPED_MAXQUANT)
 **                         - Expand @completionMessage and @evaluationMessage to varchar(512)
 **          09/21/2021 mem - Add support for completion code 23 (CLOSEOUT_RESET_JOB_STEP)
+**          08/26/2022 mem - Use new column name in T_Log_Entries
 **
 *****************************************************/
 (
@@ -456,7 +457,7 @@ As
                     FROM T_Log_Entries
                     WHERE Message = @message And
                           type = 'Normal' And
-                          posting_Time >= DateAdd(day, -1, GetDate()) 
+                          Entered >= DateAdd(day, -1, GetDate()) 
              )
         Begin
             Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')' + 
@@ -580,6 +581,7 @@ CommitTran:
 Done:
     Set @returnCode = Cast(@myError As varchar(64))
     return @myError
+
 
 
 GO

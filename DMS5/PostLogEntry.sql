@@ -12,10 +12,6 @@ CREATE Procedure [dbo].[PostLogEntry]
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
 **	Auth:	grk
 **	Date:	01/26/2001
 **			06/08/2006 grk - added logic to put data extraction manager stuff in analysis log
@@ -26,6 +22,7 @@ CREATE Procedure [dbo].[PostLogEntry]
 **						   - Auto-update @duplicateEntryHoldoffHours to be 24 when the log type is Health or Normal and the source is the space manager
 **			02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter (512 characters in DMS); disable ANSI Warnings before inserting into the table
 **          01/28/2020 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
+**          08/25/2022 mem - Use new column name
 **    
 *****************************************************/
 (
@@ -57,7 +54,7 @@ As
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
 		FROM T_Log_Entries
-		WHERE Message = @message AND Type = @type AND Posting_Time >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
+		WHERE Message = @message AND Type = @type AND Entered >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
 	End
 
 	If @duplicateRowCount = 0
@@ -65,7 +62,7 @@ As
 		SET ANSI_WARNINGS OFF;
 		
 		INSERT INTO T_Log_Entries( posted_by,
-		                           posting_time,
+		                           Entered,
 		                           [Type],
 		                           message )
 		VALUES(@postedBy, GETDATE(), @type, @message);

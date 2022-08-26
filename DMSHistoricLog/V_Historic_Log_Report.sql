@@ -7,9 +7,10 @@ GO
 CREATE VIEW [dbo].[V_Historic_Log_Report]
 AS
 SELECT Entry_ID AS Entry, posted_by AS [Posted By], 
-   posting_time AS [Posting Time], type AS Type, 
+   Entered AS [Posting Time], type AS Type, 
    message AS Message
 FROM T_Log_Entries
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Historic_Log_Report] TO [DDL_Viewer] AS [dbo]

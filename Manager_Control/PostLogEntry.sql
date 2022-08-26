@@ -15,6 +15,7 @@ CREATE Procedure [dbo].[PostLogEntry]
 **	Date:	10/31/2001
 **			02/17/2005 mem - Added parameter @duplicateEntryHoldoffHours
 **			05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
+**          08/25/2022 mem - Use new column name
 **    
 *****************************************************/
 	@type varchar(128),
@@ -36,7 +37,7 @@ As
 	If @duplicateRowCount = 0
 	Begin
 		INSERT INTO T_Log_Entries
-			(posted_by, posting_time, type, message) 
+			(posted_by, Entered, type, message) 
 		VALUES ( @postedBy, GETDATE(), @type, @message)
 		--
 		if @@rowcount <> 1

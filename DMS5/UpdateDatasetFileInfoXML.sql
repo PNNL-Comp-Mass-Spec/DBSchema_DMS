@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
+CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
 ** 
 **  Desc:   Updates the information for the dataset specified by @datasetID
@@ -85,6 +85,7 @@ CREATE Procedure [dbo].[UpdateDatasetFileInfoXML]
 **          10/10/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
 **          02/14/2022 mem - Log an error if the acquisition length is overly long
 **          06/13/2022 mem - Update call to GetDatasetScanTypeList since now a scalar-valued function
+**          08/25/2022 mem - Use new column name in T_Log_Entries
 **    
 *****************************************************/
 (
@@ -475,7 +476,7 @@ As
             SET DS_sec_sep = @optimalSeparationType
             WHERE Dataset_ID = @datasetID
 
-            If NOT Exists (SELECT * FROM T_Log_Entries WHERE Message Like 'Auto-updated separation type%' And Posting_Time >= DateAdd(hour, -2, getdate()))
+            If NOT Exists (SELECT * FROM T_Log_Entries WHERE Message Like 'Auto-updated separation type%' And Entered >= DateAdd(hour, -2, getdate()))
             Begin
                 Set @msg = 'Auto-updated separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for dataset ' + @datasetName
                 Exec PostLogEntry 'Normal', @msg, 'UpdateDatasetFileInfoXML'

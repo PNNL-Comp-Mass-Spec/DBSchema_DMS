@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.PostLogEntry
+
+CREATE Procedure [dbo].[PostLogEntry]
 /****************************************************
 **
 **	Desc: Put new entry into the main log table
@@ -16,6 +17,7 @@ CREATE Procedure dbo.PostLogEntry
 **			05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
 **			07/14/2009 mem - Added parameter @callingUser
 **			02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter; disable ANSI Warnings before inserting into the table
+**          08/25/2022 mem - Use new column name
 **    
 *****************************************************/
 (
@@ -47,7 +49,7 @@ As
 		SET ANSI_WARNINGS OFF;
 		
 		INSERT INTO T_Log_Entries( posted_by,
-		                           posting_time,
+		                           Entered,
 		                           [Type],
 		                           message )
 		VALUES(@postedBy, GETDATE(), @type, @message);
@@ -63,7 +65,7 @@ As
 		end
 
 		If @callingUser <> ''
-			exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @EntryID, @CallingUser, @EntryDateColumnName = 'posting_time', @EnteredByColumnName = 'Entered_By'
+			exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @EntryID, @CallingUser, @EntryDateColumnName = 'Entered', @EnteredByColumnName = 'Entered_By'
 
 	End
 	

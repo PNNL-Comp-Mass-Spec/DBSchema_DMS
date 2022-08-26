@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[DeleteOldDataExperimentsJobsAndLogs]
 **          12/04/2017 mem - Add T_Experiment_Reference_Compounds
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
 **          08/15/2022 mem - Use new column names
+**          08/26/2022 mem - Use new column name in T_Log_Entries
 **
 *****************************************************/
 (
@@ -304,7 +305,7 @@ AS
 
         SELECT 'T_Log_Entries' AS Log_Table_Name, COUNT(*) AS [Rows To Delete]
         FROM T_Log_Entries
-        WHERE posting_Time < @LogDeleteThreshold
+        WHERE Entered < @LogDeleteThreshold
         UNION
         SELECT 'T_Event_Log' AS Log_Table_Name, COUNT(*) AS [Rows To Delete]
         FROM T_Event_Log
@@ -835,7 +836,7 @@ AS
     ---------------------------------------------------
 
     DELETE T_Log_Entries
-    WHERE posting_Time < @LogDeleteThreshold
+    WHERE Entered < @LogDeleteThreshold
 
     DELETE T_Event_Log
     WHERE Entered < @LogDeleteThreshold

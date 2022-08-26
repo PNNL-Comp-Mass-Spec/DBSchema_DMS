@@ -6,10 +6,11 @@ GO
 CREATE TABLE [dbo].[T_Log_Entries](
 	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
 	[posted_by] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[posting_time] [datetime] NOT NULL,
+	[Entered] [datetime] NOT NULL,
 	[type] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[message] [varchar](4096) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Entered_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[posting_time]  AS ([Entered]),
  CONSTRAINT [PK_T_Log_Entries] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
@@ -17,7 +18,7 @@ CREATE TABLE [dbo].[T_Log_Entries](
 ) ON [PRIMARY]
 
 GO
-ALTER TABLE [dbo].[T_Log_Entries] ADD  CONSTRAINT [DF_T_Log_Entries_posting_time]  DEFAULT (getdate()) FOR [posting_time]
+ALTER TABLE [dbo].[T_Log_Entries] ADD  CONSTRAINT [DF_T_Log_Entries_posting_time]  DEFAULT (getdate()) FOR [Entered]
 GO
 ALTER TABLE [dbo].[T_Log_Entries] ADD  CONSTRAINT [DF_T_Log_Entries_Entered_By]  DEFAULT (suser_sname()) FOR [Entered_By]
 GO
@@ -41,6 +42,7 @@ AS
 **	Auth:	mem
 **	Date:	08/17/2006
 **			09/01/2006 mem - Updated to use dbo.udfTimeStampText
+**          08/26/2022 mem - Use new column name in T_Log_Entries
 **    
 *****************************************************/
 	
@@ -48,7 +50,7 @@ AS
 		Return
 
 	If Update(posted_by) OR
-	   Update(posting_time) OR
+	   Update(Entered) OR
 	   Update(type) OR
 	   Update(message)
 	Begin
@@ -73,6 +75,7 @@ AS
 				) LookupQ ON T_Log_Entries.Entry_ID = LookupQ.Entry_ID
 
 	End
+
 
 GO
 ALTER TABLE [dbo].[T_Log_Entries] ENABLE TRIGGER [trig_u_T_Log_Entries]

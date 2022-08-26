@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.MoveEntriesToHistory
+
+CREATE PROCEDURE [dbo].[MoveEntriesToHistory]
 /****************************************************
 **
 **	Desc: Move entries from log tables into 
@@ -15,6 +16,7 @@ CREATE Procedure dbo.MoveEntriesToHistory
 **	Auth:	mem
 **	Date:	07/12/2011 mem - Initial version
 **			10/04/2011 mem - Removed @DBName parameter
+**          08/25/2022 mem - Use new column name in T_Log_Entries
 **    
 *****************************************************/
 (
@@ -190,18 +192,18 @@ As
 	INSERT INTO DMSHistoricLogPipeline.dbo.T_Log_Entries( 
 	                                                     Entry_ID,
 	                                                     posted_by,
-	                                                     posting_time,
+	                                                     Entered,
 	                                                     Type,
 	                                                     message,
 	                                                     Entered_By )
 	SELECT Entry_ID,
 	       posted_by,
-	       posting_time,
+	       Entered,
 	       Type,
 	       message,
 	       Entered_By
 	FROM T_Log_Entries
-	WHERE posting_time < @cutoffDateTime
+	WHERE Entered < @cutoffDateTime
 	ORDER BY Entry_ID
 	--
 	if @@error <> 0
@@ -215,7 +217,7 @@ As
 	-- Remove the old entries
 	--
 	DELETE FROM T_Log_Entries
-	WHERE posting_time < @cutoffDateTime
+	WHERE Entered < @cutoffDateTime
 	--
 	if @@error <> 0
 	begin

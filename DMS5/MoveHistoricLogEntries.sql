@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[MoveHistoricLogEntries]
+CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
 /****************************************************
 **
 **  Desc:   Move log entries from the main log table into the 
@@ -19,6 +19,7 @@ CREATE Procedure [dbo].[MoveHistoricLogEntries]
 **          10/29/2015 mem - Increase default value from 5 days to 14 days (336 hours)
 **          06/09/2022 mem - Rename target table from T_Historic_Log_Entries to T_Log_Entries
 **                         - No longer store the database name in the target table
+**          08/26/2022 mem - Use new column name in T_Log_Entries
 **    
 *****************************************************/
 (
@@ -45,7 +46,7 @@ As
 
     -- Delete log entries that we do not want to move to the DMS Historic Log DB
     DELETE FROM dbo.T_Log_Entries
-    WHERE posting_time < @cutoffDateTime AND
+    WHERE Entered < @cutoffDateTime AND
          ( message IN ('Archive or update complete for all available tasks', 
                        'Verfication complete for all available tasks', 
                        'Capture complete for all available tasks') OR
@@ -64,14 +65,14 @@ As
     
     -- Copy entries into the historic log database
     --
-    INSERT INTO DMSHistoricLog.dbo.T_Log_Entries (Entry_ID, posted_by, posting_time, Type, message)
+    INSERT INTO DMSHistoricLog.dbo.T_Log_Entries (Entry_ID, posted_by, Entered, Type, message)
     SELECT Entry_ID,
            posted_by,
-           posting_time,
+           Entered,
            Type,
            message
     FROM T_Log_Entries
-    WHERE posting_time < @cutoffDateTime
+    WHERE Entered < @cutoffDateTime
     --
     if @@error <> 0
     begin
@@ -84,7 +85,7 @@ As
     -- Remove the old entries from T_Log_Entries
     --
     DELETE FROM T_Log_Entries
-    WHERE posting_time < @cutoffDateTime
+    WHERE Entered < @cutoffDateTime
     --
     if @@error <> 0
     begin
@@ -97,6 +98,7 @@ As
     commit transaction @transName
     
     return 0
+
 
 GO
 GRANT ALTER ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]
