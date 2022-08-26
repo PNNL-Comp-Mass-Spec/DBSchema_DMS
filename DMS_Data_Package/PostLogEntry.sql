@@ -41,7 +41,7 @@ As
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
 		FROM T_Log_Entries
-		WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+		WHERE Message = @message AND Type = @type AND Entered >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
 	End
 
 	If @duplicateRowCount = 0

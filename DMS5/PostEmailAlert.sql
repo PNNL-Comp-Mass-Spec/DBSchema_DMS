@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[PostEmailAlert]
 /****************************************************
 **
@@ -14,6 +13,7 @@ CREATE PROCEDURE [dbo].[PostEmailAlert]
 **
 **	Auth:	mem
 **	Date:	06/14/2018 mem - Initial version
+**          08/26/2022 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
 **    
 *****************************************************/
 (
@@ -47,7 +47,7 @@ As
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
 		FROM T_Email_Alerts
-		WHERE Message = @message AND Alert_Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+		WHERE Message = @message AND Alert_Type = @type AND Posting_Time >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
 	End
 
 	If @duplicateRowCount > 0

@@ -25,6 +25,8 @@ CREATE Procedure [dbo].[PostLogEntry]
 **			09/13/2010 mem - Eliminate analysis log
 **						   - Auto-update @duplicateEntryHoldoffHours to be 24 when the log type is Health or Normal and the source is the space manager
 **          08/25/2022 mem - Use new column name
+**          08/26/2022 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
+**
 *****************************************************/
 (
 	@type varchar(128),
@@ -50,7 +52,7 @@ As
 	Begin
 		SELECT @duplicateRowCount = COUNT(*)
 		FROM T_Log_Entries
-		WHERE Message = @message AND Type = @type AND Posting_Time >= (GetDate() - @duplicateEntryHoldoffHours)
+		WHERE Message = @message AND Type = @type AND Entered >= DateAdd(hour, -@duplicateEntryHoldoffHours, GetDate())
 	End
 
 	If @duplicateRowCount = 0
