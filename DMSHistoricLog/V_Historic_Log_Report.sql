@@ -6,8 +6,8 @@ GO
 
 CREATE VIEW [dbo].[V_Historic_Log_Report]
 AS
-SELECT Entry_ID AS Entry, posted_by AS [Posted By], 
-   Entered AS [Posting Time], type AS Type, 
+SELECT Entry_ID AS Entry, posted_by AS [Posted By],
+   Entered, type AS Type,
    message AS Message
 FROM T_Log_Entries
 
