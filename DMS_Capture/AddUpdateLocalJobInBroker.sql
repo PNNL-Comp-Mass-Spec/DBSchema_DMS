@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE AddUpdateLocalJobInBroker
+CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE AddUpdateLocalJobInBroker
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
+**          08/28/2022 mem - When validating @mode = 'update', use state 3 for complete
 **
 *****************************************************/
 (
@@ -81,10 +82,10 @@ AS
             THROW 51001, @errorMsg, 1;
         End
 
-        IF @mode = 'update' AND NOT @state IN (1, 4, 5, 100) -- new, complete, failed, hold
+        IF @mode = 'update' AND NOT @state IN (1, 3, 5, 100) -- new, complete, failed, hold
         Begin
         Set @errorMsg = 'Cannot update job ' + Cast(@job as varchar(9)) +
-                        ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 4, 5, or 100';
+                        ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 3, 5, or 100';
             THROW 51002, @errorMsg, 1;
         End
 
