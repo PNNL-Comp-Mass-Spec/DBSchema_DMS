@@ -4,13 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Update parameters for one or more jobs
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
@@ -30,7 +29,8 @@ CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          01/30/2018 mem - Always update instrument settings using data in DMS (Storage_Server, Instrument, Instrument_Class, Max_Simultaneous_Captures, Capture_Subfolder)
 **          05/17/2019 mem - Switch from folder to directory
-**  
+**          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
+**
 *****************************************************/
 (
     @jobList varchar(max),
@@ -39,17 +39,17 @@ CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 )
 As
     set nocount on
-    
+
     declare @myError int = 0
     declare @myRowCount int = 0
-    
+
     set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateParametersForJob', @raiseError = 1;
     If @authorized = 0
     Begin
@@ -85,7 +85,7 @@ As
            ON J.Dataset_ID = VDD.Dataset_ID
          INNER JOIN #Tmp_Jobs
            ON J.Job = #Tmp_Jobs.Job
-        
+
     ---------------------------------------------------
     -- Create temp table for jobs that are being updated
     -- and populate it
@@ -107,7 +107,7 @@ As
         Capture_Subdirectory varchar(255) NULL
     )
     --
-    INSERT INTO #Jobs ( 
+    INSERT INTO #Jobs (
         [Job],
         [Priority],
         [Script],
@@ -151,20 +151,20 @@ As
 
     IF @DebugMode = 0
     Begin
-        -- Update the Storage Server stored in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
+        -- Update the Storage Server stored in T_Jobs if it differs from V_DMS_Dataset_Metadata
         --
         UPDATE T_Jobs
-        SET Storage_Server = DCJP.Storage_Server_Name
+        SET Storage_Server = DS.Storage_Server_Name
         FROM T_Jobs
-                INNER JOIN V_DMS_Capture_Job_Parameters DCJP
-                ON T_Jobs.Dataset_ID = DCJP.Dataset_ID
+                INNER JOIN V_DMS_Dataset_Metadata DS
+                ON T_Jobs.Dataset_ID = DS.Dataset_ID
                 INNER JOIN #Jobs
                 ON #Jobs.Job = T_Jobs.Job
-        WHERE IsNull(DCJP.Storage_Server_Name, '') <> '' AND IsNull(T_Jobs.Storage_Server, '') <> DCJP.Storage_Server_Name
+        WHERE IsNull(DS.Storage_Server_Name, '') <> '' AND IsNull(T_Jobs.Storage_Server, '') <> DS.Storage_Server_Name
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     End
-            
+
     ---------------------------------------------------
     -- loop through jobs and accumulate parameters
     -- into temp table
@@ -175,23 +175,23 @@ As
     declare @datasetID int
     declare @scriptName varchar(64)
     declare @done tinyint
-    
+
     set @done = 0
     set @prevJob = 0
     --
     while @done = 0
     begin --<a>
-        -- 
+        --
         set @job = 0
         --
-        SELECT TOP 1 
+        SELECT TOP 1
             @job = Job,
             @datasetID = Dataset_ID,
             @scriptName = Script
-        FROM 
+        FROM
             #Jobs
         WHERE Job > @prevJob
-        ORDER BY Job        
+        ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -226,7 +226,7 @@ As
     ---------------------------------------------------
     --
     IF @DebugMode > 0
-    BEGIN 
+    BEGIN
         SELECT
             Job,
             CONVERT(VARCHAR(4096), [Parameters]) AS Params
@@ -245,7 +245,7 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        
+
         -- Add any missing jobs
         --
         INSERT INTO T_Job_Parameters( Job,
@@ -258,7 +258,7 @@ As
         WHERE T_Job_Parameters.Job IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
     END
 
     ---------------------------------------------------
@@ -267,6 +267,7 @@ As
     --
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateParametersForJob] TO [DDL_Viewer] AS [dbo]

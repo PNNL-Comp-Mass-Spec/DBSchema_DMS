@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_DMS_Capture_Job_Parameters] ******/
+/****** Object:  View [dbo].[V_DMS_Dataset_Metadata] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_DMS_Capture_Job_Parameters]
+CREATE VIEW [dbo].[V_DMS_Dataset_Metadata]
 AS
 SELECT DS.Dataset_Num AS Dataset,
        DS.Dataset_ID,
@@ -59,5 +59,5 @@ FROM S_DMS_T_Dataset AS DS
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DMS_Capture_Job_Parameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Metadata] TO [DDL_Viewer] AS [dbo]
 GO

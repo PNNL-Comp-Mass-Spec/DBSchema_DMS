@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[GetJobParamTable]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Returns a table filled with the parameters for the
 **      given job (from #Jobs) in Section/Name/Value rows
 **
@@ -40,13 +40,14 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          11/16/2015 mem - Now including EUS_Operator_ID and Operator_PRN
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **                         - Add parameter SHA1_Hash
-**    
+**          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
+**
 *****************************************************/
 (
     @job int,
     @datasetID int
 )
-AS 
+AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -89,9 +90,9 @@ AS
     WHERE
         Dataset_ID = @datasetID AND
         Job = @job
-    --    
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Dataset_ID', @datasetID)
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Dataset', @dataset)
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Storage_Server_Name', @storage_server_name)
@@ -99,13 +100,13 @@ AS
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Instrument_Class', @instrument_class)
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Max_Simultaneous_Captures', @max_simultaneous_captures)
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Capture_Subdirectory', @capture_subdirectory)
-    
+
     ---------------------------------------------------
     -- Dataset Parameters
     --
-    -- Convert columns of data from V_DMS_Capture_Job_Parameters into rows added to @paramTab
+    -- Convert columns of data from V_DMS_Dataset_Metadata into rows added to @paramTab
     --
-    -- Note that by using Unpivot, any columns from V_DMS_Capture_Job_Parameters that are null
+    -- Note that by using Unpivot, any columns from V_DMS_Dataset_Metadata that are null
     -- will not be entered into@paramTab
     ---------------------------------------------------
     --
@@ -134,19 +135,19 @@ AS
           CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID,
           CONVERT(varchar(2000), EUS_Operator_ID) AS EUS_Operator_ID,
           CONVERT(varchar(2000), Operator_PRN) AS Operator_PRN
-          
+
         FROM
-          V_DMS_Capture_Job_Parameters
+          V_DMS_Dataset_Metadata
         WHERE
           Dataset_ID = @datasetID
-      ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Directory, Method, Capture_Exclusion_Window, Created , 
-                                           Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External, 
+      ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Directory, Method, Capture_Exclusion_Window, Created ,
+                                           Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External,
                                            Archive_Server, Archive_Path, Archive_Network_Share_Path,
                                            EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_PRN
                    ) ) as TP
-    --    
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-                     
+
     ---------------------------------------------------
     -- Instrument class params from V_DMS_Instrument_Class
     --
@@ -177,10 +178,10 @@ AS
 
     INSERT INTO @paramTab
     (Step_Number, [Section], [Name], Value )
-    SELECT 
+    SELECT
         NULL AS  [Step_Number],
         xmlNode.value('../@name', 'nvarchar(256)') [Section],
-        xmlNode.value('@key', 'nvarchar(256)') [Name], 
+        xmlNode.value('@key', 'nvarchar(256)') [Name],
         xmlNode.value('@value', 'nvarchar(4000)') [Value]
     FROM   @paramXML.nodes('//item') AS R(xmlNode)
 
@@ -189,30 +190,30 @@ AS
     VALUES
         (NULL, 'JobParameters', 'RawDataType', @rawDataType)
 
-    
+
     ---------------------------------------------------
-    -- Determine whether calibration should be performed 
+    -- Determine whether calibration should be performed
     -- (as of April 2013, only applies to IMS instruments)
     ---------------------------------------------------
-    
+
     Declare @PerformCalibration tinyint
     Declare @PerformCalibrationText varchar(12)
-    
+
     SELECT @PerformCalibration = Perform_Calibration
     FROM S_DMS_T_Instrument_Name
     WHERE IN_Name = @instrument_name
-    
+
     If IsNull(@PerformCalibration, 0) = 0
         Set @PerformCalibrationText = 'False'
     Else
-        Set @PerformCalibrationText = 'True'        
+        Set @PerformCalibrationText = 'True'
 
     INSERT INTO @paramTab
         ( Step_Number, [Section], [Name], Value )
     VALUES
-        (NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)        
-    
-    
+        (NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)
+
+
     ---------------------------------------------------
     -- Lookup the Analysis Transfer directory (e.g. \\proto-6\DMS3_Xfer)
     -- This directory is used to store metadata.txt files for dataset archive and archive update jobs
@@ -221,11 +222,11 @@ AS
     --
     Declare @StorageVolExternal varchar(128)
     Declare @TransferDirectoryPath varchar(128)
-    
+
     SELECT @StorageVolExternal = Value
     FROM @paramTab
     WHERE [Name] = 'Storage_Vol_External'
-    
+
     SELECT @TransferDirectoryPath = Transfer_Directory_Path
     FROM ( SELECT DISTINCT TStor.SP_vol_name_client AS Storage_Vol_External,
                            dbo.udfCombinePaths(TStor.SP_vol_name_client, Xfer.Client) AS Transfer_Directory_Path
@@ -234,12 +235,12 @@ AS
                              FROM S_DMS_V_MiscPaths
                              WHERE [Function] = 'AnalysisXfer' ) AS Xfer
            WHERE ISNULL(TStor.SP_vol_name_client, '') <> '' AND
-                 TStor.SP_vol_name_client <> '(na)' 
+                 TStor.SP_vol_name_client <> '(na)'
          ) DirectoryQ
     WHERE Storage_Vol_External = @StorageVolExternal
 
     Set @TransferDirectoryPath = IsNull(@TransferDirectoryPath, '')
-    
+
     INSERT INTO @paramTab
         ( Step_Number, [Section], [Name], Value )
     VALUES
@@ -255,7 +256,7 @@ AS
     WHERE Dataset_ID = @datasetID AND
           Deleted = 0 AND
           File_Size_Rank = 1
-    --    
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount > 0
@@ -277,7 +278,7 @@ AS
            [Value]
     FROM @paramTab
     ORDER BY [Section], [Name]
-  
+
     RETURN @myError
 
 
