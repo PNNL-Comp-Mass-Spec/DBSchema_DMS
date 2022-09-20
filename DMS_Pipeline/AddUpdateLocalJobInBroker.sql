@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **            Default parameters for each job script are defined in the Parameters column of table T_Scripts
 **
 **          <Param Section="JobParameters" Name="CreateMzMLFiles" Value="False" />
-**          <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\MaxQuant_Staging" />
+**          <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\MaxQuant_Staging" />        (or \\proto-9\MSFragger_Staging)
 **          <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
 **          <Param Section="PeptideSearch" Name="ParamFileName" Value="MaxQuant_Tryp_Stat_CysAlk_Dyn_MetOx_NTermAcet_20ppmParTol.xml" />
 **          <Param Section="PeptideSearch" Name="ParamFileStoragePath" Value="\\gigasax\DMS_Parameter_Files\MaxQuant" />

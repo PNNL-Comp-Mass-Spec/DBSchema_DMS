@@ -85,13 +85,17 @@ As
         WHERE ID = @DataPackageID
     End 
 
+    ---------------------------------------------------
+    -- Check whether job parameter CacheFolderRootPath has a cache root folder path defined
+    ---------------------------------------------------
 
-    ---------------------------------------------------
-    -- Is there a repo cache root folder path defined for job?
+    -- Step Tool         Default Value for CacheFolderRootPath
+    -- ---------------   -------------------------------------
+    -- PRIDE_Converter   \\protoapps\MassIVE_Staging
+    -- MaxQuant          \\protoapps\MaxQuant_Staging
+    -- MSFragger         \\proto-9\MSFragger_Staging
     --
-    -- Step Tool PRIDE_Converter uses this parameter to store
-    -- data in folder \\protoapps\MassIVE_Staging
-    ---------------------------------------------------
+    -- PeptideAtlas      \\protoapps\PeptideAtlas_Staging   (tool retired in 2020) 
     
     Declare @cacheFolderPath varchar(260) = ''
     Declare @cacheRootFolderPath varchar(260) = ''
