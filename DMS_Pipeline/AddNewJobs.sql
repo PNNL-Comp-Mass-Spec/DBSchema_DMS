@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[AddNewJobs]
 /****************************************************
 **
-**  Desc: Add jobs from DMS that are in “New” state that aren’t
+**  Desc: Add jobs from DMS that are in "New" state that aren't
 **        already in table.  Choose script for DMS analysis tool.
 **
 **        Suspend running jobs that now have state "Holding" in DMS

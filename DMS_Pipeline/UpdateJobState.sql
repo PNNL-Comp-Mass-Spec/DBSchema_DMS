@@ -9,7 +9,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **
 **  Desc: 
 **  Based on step state, look for jobs that have been completed, 
-**  or have entered the “in progress” state, 
+**  or have entered the "in progress" state, 
 **  and update state of job locally and in DMS accordingly
 **  
 **  First step: evaluate state of steps for jobs that are in new or busy state, 
