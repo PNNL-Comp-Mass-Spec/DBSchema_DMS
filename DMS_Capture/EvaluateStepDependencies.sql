@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
+**          09/23/2022 mem - Remove unnecesary Else
 **
 *****************************************************/
 (
@@ -214,8 +215,8 @@ As
                 if @actualValue = 0
                     set @Triggered = 1
             end
-            else
 */
+
 -- skip if instrument class not in list
 -- skip if dataset type not in list
             ---------------------------------------------------
@@ -243,7 +244,7 @@ As
                 if @actualValue = 3
                     set @Triggered = 1
             end
-            else
+
             ---------------------------------------------------
             -- skip if completion message of target step
             -- contains test value
