@@ -15,7 +15,8 @@ CREATE PROCEDURE dbo.SynchronizeJobStatsWithJobSteps
 **
 **	Auth:	mem
 **			01/22/2010 mem - Initial version
-**			03/10/2014 mem - Fixed logic related to @CompletedJobsOnly
+**			03/10/2014 mem - Fix logic related to @CompletedJobsOnly
+**          09/30/2022 mem - Fix bug that used the wrong state_id for completed tasks
 **
 *****************************************************/
 (
@@ -26,11 +27,9 @@ CREATE PROCEDURE dbo.SynchronizeJobStatsWithJobSteps
 As
 	set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-	
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
+
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
 	---------------------------------------------------
@@ -43,19 +42,20 @@ As
 		StartNew DateTime Null,
 		FinishNew DateTime Null
 	)
-	
+
 	CREATE UNIQUE CLUSTERED INDEX #IX_TmpJobsToUpdate ON #TmpJobsToUpdate (Job)
-	
+
 	---------------------------------------------------
 	-- Find jobs that need to be updated
+	-- When @CompletedJobsOnly is 1, filter on job state 3=Complete
 	---------------------------------------------------
-	
+
 	INSERT INTO #TmpJobsToUpdate ( Job )
 	SELECT J.job
 	FROM T_Jobs J
 	     INNER JOIN T_Job_Steps JS
 	       ON J.Job = JS.Job
-	WHERE (J.State = 4 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
+	WHERE (J.State = 3 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
 	      J.Finish < JS.Finish
 	GROUP BY J.job
 	UNION
@@ -63,7 +63,7 @@ As
 	FROM T_Jobs J
 	     INNER JOIN T_Job_Steps JS
 	       ON J.Job = JS.Job
-	WHERE (J.State = 4 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
+	WHERE (J.State = 3 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
 	      J.Start > JS.Start
 	GROUP BY J.Job
 
@@ -80,7 +80,7 @@ As
 	                         ON J.Job = JS.Job
 	                  WHERE J.Job IN ( SELECT Job
 	                                   FROM #TmpJobsToUpdate )
-	                  GROUP BY J.Job 
+	                  GROUP BY J.Job
 	                ) SourceQ
 	       ON #TmpJobsToUpdate.Job = SourceQ.Job
 
@@ -100,7 +100,7 @@ As
 		---------------------------------------------------
 		-- Update the Start/Finish times
 		---------------------------------------------------
-		
+
 		UPDATE T_Jobs
 		SET Start = JTU.StartNew,
 		    Finish = JTU.FinishNew
@@ -116,6 +116,7 @@ As
 Done:
 	--
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithJobSteps] TO [DDL_Viewer] AS [dbo]

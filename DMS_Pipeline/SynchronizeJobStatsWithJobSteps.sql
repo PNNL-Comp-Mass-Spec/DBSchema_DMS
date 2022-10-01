@@ -30,7 +30,7 @@ As
 	declare @myRowCount int
 	set @myError = 0
 	set @myRowCount = 0
-	
+
 	---------------------------------------------------
 	-- Validate the inputs; clear the outputs
 	---------------------------------------------------
@@ -43,13 +43,14 @@ As
 		StartNew DateTime Null,
 		FinishNew DateTime Null
 	)
-	
+
 	CREATE UNIQUE CLUSTERED INDEX #IX_TmpJobsToUpdate ON #TmpJobsToUpdate (Job)
-	
+
 	---------------------------------------------------
 	-- Find jobs that need to be updated
+	-- When @CompletedJobsOnly is 1, filter on job state 4=Complete
 	---------------------------------------------------
-	
+
 	INSERT INTO #TmpJobsToUpdate ( Job )
 	SELECT J.job
 	FROM T_Jobs J
@@ -82,7 +83,7 @@ As
 	                         ON J.Job = JS.Job
 	                  WHERE J.Job IN ( SELECT Job
 	                                   FROM #TmpJobsToUpdate )
-	                  GROUP BY J.Job 
+	                  GROUP BY J.Job
 	                ) SourceQ
 	       ON #TmpJobsToUpdate.Job = SourceQ.Job
 	--
@@ -104,7 +105,7 @@ As
 		---------------------------------------------------
 		-- Update the Start/Finish times
 		---------------------------------------------------
-		
+
 		UPDATE T_Jobs
 		SET Start = JTU.StartNew,
 		    Finish = JTU.FinishNew
@@ -123,6 +124,7 @@ As
 Done:
 	--
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithJobSteps] TO [DDL_Viewer] AS [dbo]
