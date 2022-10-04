@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
 **          08/26/2021 mem - Auto change script MSFragger_DataPkg to MSFragger
 **          07/01/2022 mem - Use new parameter name for parameter file when querying V_Pipeline_Job_Parameters
 **          07/29/2022 mem - Settings file names can no longer be null
+**          10/04/2022 mem - Assure that auto-generated dataset names only contain alphanumeric characters (plus underscore or dash)
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     Declare @priority int
     Declare @script varchar(64)
     Declare @state int
-    Declare @dataset varchar(128)
+    Declare @dataset varchar(255)
     Declare @results_Folder_Name varchar(128)
     Declare @imported datetime
     Declare @start datetime
@@ -80,6 +81,12 @@ AS
 
     Declare @mode varchar(12)
     Declare @msg varchar(256)
+
+    Declare @validCh varchar(255)
+    Declare @position int
+    Declare @numCh int
+    Declare @ch char(1)
+    Declare @cleanName varchar(255)
 
     Declare @callingProcName varchar(128)
     Declare @currentLocation varchar(128)
@@ -369,14 +376,13 @@ AS
                         End
                         Else
                         Begin
-                            -- Data Package found
+                            -- Data Package found; base the dataset name on the data package folder name
                             Set @dataset = 'DataPackage_' + @dataPackageFolder
 
                             If @peptideAtlasStagingTask <> 0
                             Begin
                                 Set @dataset = @dataset + '_Staging'
                             End
-
                         End
 
                         Set @datasetComment = 'https://dms2.pnl.gov/data_package/show/' + Convert(varchar(12), @dataPackageID)
@@ -389,15 +395,33 @@ AS
                         Set @dataset = Substring(@dataset, 1, 80)
                     End
 
-                    -- Make sure there are no spaces, periods, brackets, braces, or parentheses in @dataset
+                    -- Make sure there are no invalid characters in @dataset
+                    -- Dataset names can only contain letters, underscores, or dashes (see function ValidateChars)
+
                     Set @dataset = Replace(@dataset, ' ', '_')
-                    Set @dataset = Replace(@dataset, '.', '_')
-                    Set @dataset = Replace(@dataset, '[', '_')
-                    Set @dataset = Replace(@dataset, ']', '_')
-                    Set @dataset = Replace(@dataset, '{', '_')
-                    Set @dataset = Replace(@dataset, '}', '_')
-                    Set @dataset = Replace(@dataset, '(', '_')
-                    Set @dataset = Replace(@dataset, ')', '_')
+                                              
+                    Set @validCh = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'
+                    Set @position = 1
+	                Set @numCh = Len(@dataset)
+                    Set @cleanName = ''
+
+	                WHILE @position <= @numCh
+		            BEGIN
+			            Set @ch = SUBSTRING(@dataset, @position, 1)
+
+			            -- Note thate @ch will have a length of 0 if it is a space, but we replaced spaces with underscores above, so @ch should always be a valid character
+			            If Len(@ch) > 0
+			            Begin
+				            If CHARINDEX(@ch, @validCh) = 0
+					            Set @cleanName = @cleanName + '_'
+                            Else
+                                Set @cleanName = @cleanName + @ch
+			            End
+				
+			            Set @position = @position + 1
+		            END
+	                        
+                    Set @dataset = @cleanName
 
                     ------------------------------------------------
                     -- Now that we have constructed the name of the dataset to auto-create, see if it already exists
