@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 99 ******/
+/****** RowCount: 100 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (1,'unknown',1,'Not a valid cart',null)
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used','3/10/2006 10:34:00 AM')
@@ -100,4 +100,5 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (127,'Evsep02',2,'Online Delsalting LC','4/5/2022 5:39:00 AM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (128,'Tonga',2,'Formerly the NMR fractionation LC.  Agilent 1290 Infinity II Pump, Autosampler, Column Heater, UV detector and Fraction collector','6/10/2022 10:58:00 AM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (129,'Evsep01',2,'Online Delsalting LC','8/31/2022 7:08:00 AM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (130,'Birch',2,'Thermo/Dionex pump (800 bar) with Loading Pump .  Long armed pal. LCMSnet controlled','10/4/2022 2:11:00 PM')
 SET IDENTITY_INSERT [T_LC_Cart] OFF
