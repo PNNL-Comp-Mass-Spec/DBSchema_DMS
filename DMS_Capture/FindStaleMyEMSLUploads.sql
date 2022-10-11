@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 /****************************************************
 **
@@ -19,6 +18,7 @@ CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 **          07/01/2019 mem - Log details of entries over 1 year old that will have ErrorCode set to 101
 **          07/08/2019 mem - Fix bug updating RetrySucceeded
 **                         - Pass @logMessage to PostLogEntry
+**          10/11/2022 mem - Change minimum value for @staleUploadDays to 14
 **    
 *****************************************************/
 (
@@ -48,9 +48,9 @@ As
     Set @infoOnly = IsNull(@infoOnly, 0);
     Set @message = ''
 
-    If @staleUploadDays < 20
+    If @staleUploadDays < 14
     Begin
-        -- Require @staleUploadDays to be at least 20
+        -- Require @staleUploadDays to be at least 14
         Set @staleUploadDays = 14
     End    
     
