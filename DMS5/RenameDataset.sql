@@ -32,25 +32,40 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          11/04/2021 mem - Add more MASIC file names and use sed to edit MASIC's index.html file
 **          11/05/2021 mem - Add more MASIC file names and rename files in any MzRefinery directories
 **          07/21/2022 mem - Move misplaced 'cd ..' and add missing 'rem'
+**          10/10/2022 mem - Add @newRequestedRunID; if defined (and active), associate the dataset with this Request ID and use it to update the dataset's experiment
 **    
 *****************************************************/
 (
-    @datasetNameOld varchar(128) = '',
-    @datasetNameNew varchar(128) = '',
+    @datasetNameOld varchar(128) = '',          -- Existing dataset name
+    @datasetNameNew varchar(128) = '',          -- New dataset name
+    @newRequestedRunID int = 0,                 -- New requested run ID (must be an active requested run); define as -1 to leave unchanged
     @message varchar(512) = '' output,
     @infoOnly tinyint = 1
 )
 AS
     set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @datasetID int = 0
     Declare @experiment varchar(128)
+    Declare @datasetAlreadyRenamed tinyint = 0
+
     Declare @datasetFolderPath varchar(255) = ''
     Declare @storageServerSharePath varchar(255)
     Declare @lastSlashReverseText int
+    
+    Declare @newExperimentID Int
+    Declare @newExperiment Varchar(128)
+    Declare @requestedRunState varchar(32)
+
+    Declare @oldRequestedRunID int
+    Declare @runStart datetime
+    Declare @runFinish datetime
+    Declare @cartId int
+    Declare @cartConfigID int
+    Declare @cartColumn smallint
 
     Declare @jobsToUpdate table (Job int not null)
     Declare @job int = 0
@@ -80,8 +95,9 @@ AS
     -- Validate the inputs
     --------------------------------------------
     --
-    Set @datasetNameOld = ISNULL(@datasetNameOld, '')
-    Set @datasetNameNew = ISNULL(@datasetNameNew, '')
+    Set @datasetNameOld = IsNull(@datasetNameOld, '');
+    Set @datasetNameNew = IsNull(@datasetNameNew, '');
+    Set @newRequestedRunID = IsNull(@newRequestedRunID, 0);
 
     If @datasetNameOld = ''
     Begin
@@ -117,28 +133,36 @@ AS
 
         Goto Done
     End
-    
+
     --------------------------------------------
-    -- Lookup the dataset ID
+    -- Lookup the dataset ID and current experiment ID
     --------------------------------------------
     --
-    SELECT @datasetID = Dataset_ID
+    SELECT @datasetID = Dataset_ID,
+           @newExperimentID = Exp_ID
     FROM dbo.T_Dataset
     WHERE Dataset_Num = @datasetNameOld
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If IsNull(@datasetID, 0) = 0
+    If @myRowCount = 0
     Begin
         -- Old dataset name not found; perhaps it was already renamed in T_Dataset
-        SELECT @datasetID = Dataset_ID
+        SELECT @datasetID = Dataset_ID,
+               @newExperimentID = Exp_ID
         FROM dbo.T_Dataset
         WHERE Dataset_Num = @datasetNameNew
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        If @datasetID > 0
+        If @myRowCount > 0
         Begin
             -- Lookup the experiment for this dataset (using the new name)
             SELECT @experiment = Experiment
             FROM V_Dataset_Export
             WHERE Dataset = @datasetNameNew
+
+            Set @datasetAlreadyRenamed = 1
         End
     End
     Else
@@ -162,7 +186,38 @@ AS
         Set @message = 'Dataset not found using either the old name or the new name (' +  @datasetNameOld + ' or ' + @datasetNameNew + ')'
         Goto Done
     End
-            
+      
+    If @newRequestedRunID = 0
+    Begin
+        Set @message = 'Specify the new requested run ID using @newRequestedRunID (must be active); use -1 to leave the requested run ID unchanged'
+        Goto Done
+    End
+
+    If @newRequestedRunID > 0
+    Begin
+        -- Lookup the experiment associated with the new requested run
+        -- Additionally, verify that the requested run is active (if @datasetAlreadyRenamed = 0)
+
+        SELECT @newExperimentID = Exp_ID,
+               @requestedRunState = RDS_Status
+        FROM T_Requested_Run
+        WHERE ID = @newRequestedRunID
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Requested run ID not found in T_Requested_Run: ' + Cast(@newRequestedRunID As varchar(24))
+            Goto Done
+        End
+
+        If @datasetAlreadyRenamed = 0 And @requestedRunState <> 'Active'
+        Begin
+            Set @message = 'New requested run is not active: ' + Cast(@newRequestedRunID As varchar(24))
+            Goto Done
+        End
+    End
+
     -- Lookup the share folder for this dataset
     SELECT @datasetFolderPath = Dataset_Folder_Path
     FROM V_Dataset_Folder_Paths
@@ -172,26 +227,62 @@ AS
     Set @lastSlashReverseText = CharIndex('\', Reverse(@datasetFolderPath))
     Set @storageServerSharePath = Substring(@datasetFolderPath, 1, Len(@datasetFolderPath) - @lastSlashReverseText)
 
+    -- Lookup acquisition metadata stored in T_Requested_Run
+    SELECT @oldRequestedRunID = ID,
+           @runStart = RDS_Run_Start,
+           @runFinish = RDS_Run_Finish, 
+           @cartId = RDS_Cart_ID, 
+           @cartConfigID = RDS_Cart_Config_ID, 
+           @cartColumn = RDS_Cart_Col
+    FROM T_Requested_Run
+    WHERE DatasetID = @datasetID
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount = 0
+    Begin
+        Set @message = 'Dataset ID not found in T_Requested_Run: ' + Cast(@datasetID As varchar(24))
+        Goto Done
+    End
+
+    -- Lookup the experiment name for @newExperimentID
+    SELECT @newExperiment = Experiment_Num
+    FROM T_Experiments        
+    WHERE Exp_ID = @newExperimentID
+
     If @infoOnly = 0 
     Begin
         --------------------------------------------
         -- Rename the dataset in T_Dataset
         --------------------------------------------
         --
-        If Not Exists (Select * from T_Dataset WHERE Dataset_Num = @datasetNameNew)
+        If @datasetAlreadyRenamed = 0 And Not Exists (Select * from T_Dataset WHERE Dataset_Num = @datasetNameNew)
         Begin
-            SELECT Dataset_Num AS DatasetNameOld,
-                   @datasetNameNew AS DatasetNameNew,
-                   Dataset_ID,
-                   DS_Created
-            FROM T_Dataset
-            WHERE Dataset_Num IN (@datasetNameOld, @datasetNameNew)
+            -- Show the old and new values
+            SELECT DS.Dataset_Num  AS Dataset_Name_Old,
+                   @datasetNameNew AS Dataset_Name_New,
+                   DS.Dataset_ID,
+                   DS.DS_Created   AS Dataset_Created,
+                   CASE WHEN DS.Exp_ID = @newExperimentID 
+                        THEN Cast(DS.Exp_ID As Varchar(12)) + ' (Unchanged)' 
+                        ELSE Cast(DS.Exp_ID As Varchar(12)) + ' -> ' + Cast(@newExperimentID As Varchar(12))
+                   END AS Experiment_ID,
+                   CASE WHEN E.Experiment_Num = @newExperiment 
+                        THEN E.Experiment_Num + ' (Unchanged)' 
+                        ELSE E.Experiment_Num + ' -> ' + @newExperiment
+                   END AS Experiment
+            FROM T_Dataset DS
+                 INNER JOIN T_Experiments AS E
+                   ON DS.Exp_ID = E.Exp_ID
+            WHERE DS.Dataset_Num IN (@datasetNameOld, @datasetNameNew)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
+            -- Rename the dataset and update the experiment ID (if changed)
             UPDATE T_Dataset
             SET Dataset_Num = @datasetNameNew,
-                DS_folder_name = @datasetNameNew
+                DS_folder_name = @datasetNameNew,
+                Exp_ID = @newExperimentID
             WHERE Dataset_ID = @datasetID AND Dataset_Num = @datasetNameOld
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -209,29 +300,44 @@ AS
             SET File_Path = REPLACE(File_Path, @datasetNameOld, @datasetNameNew)
             FROM T_Dataset_Files
             WHERE Dataset_ID = @datasetID
-        End        
+        End
     End
     Else
     Begin
         -- Preview the changes
-        
         If Exists (Select * from T_Dataset WHERE Dataset_Num = @datasetNameNew)
         Begin
-            SELECT @datasetNameOld AS DatasetNameOld,
-                   Dataset_Num AS DatasetNameNew,
-                   Dataset_ID,
-                   DS_Created
-            FROM T_Dataset
-            WHERE Dataset_Num IN (@datasetNameOld, @datasetNameNew)
+            -- The dataset was already renamed
+            SELECT @datasetNameOld  AS Dataset_Name_Old,
+                   DS.Dataset_Num   AS Dataset_Name_New,
+                   DS.Dataset_ID,
+                   DS.DS_Created    AS Dataset_Created,
+                   DS.Exp_ID        AS Experiment_ID,
+                   E.Experiment_Num AS Experiment,
+                   Case When @datasetAlreadyRenamed = 0 Then 'No' Else 'Yes' End As Dataset_Already_Renamed
+            FROM T_Dataset DS
+                 INNER JOIN T_Experiments AS E
+                   ON DS.Exp_ID = E.Exp_ID
+            WHERE DS.Dataset_Num = @datasetNameNew
         End
         Else
         Begin
-            SELECT Dataset_Num AS DatasetNameOld,
-                   @datasetNameNew AS DatasetNameNew,
+            SELECT Dataset_Num     AS Dataset_Name_Old,
+                   @datasetNameNew AS Dataset_Name_New,
                    Dataset_ID,
-                   DS_Created
-            FROM T_Dataset
-            WHERE Dataset_Num IN (@datasetNameOld, @datasetNameNew)
+                   DS_Created      AS Dataset_Created,
+                   CASE WHEN DS.Exp_ID = @newExperimentID 
+                        THEN Cast(DS.Exp_ID As Varchar(12)) + ' (Unchanged)' 
+                        ELSE Cast(DS.Exp_ID As Varchar(12)) + ' -> ' + Cast(@newExperimentID As Varchar(12))
+                   END AS Experiment_ID,
+                   CASE WHEN E.Experiment_Num = @newExperiment 
+                        THEN E.Experiment_Num + ' (Unchanged)' 
+                        ELSE E.Experiment_Num + ' -> ' + @newExperiment
+                   END AS Experiment
+            FROM T_Dataset DS
+                 INNER JOIN T_Experiments AS E
+                   ON DS.Exp_ID = E.Exp_ID
+            WHERE Dataset_Num = @datasetNameOld
         End
 
         If Exists (Select * from T_Dataset_Files WHERE Dataset_ID = @datasetID)
@@ -247,16 +353,66 @@ AS
 
     End
 
-    --------------------------------------------
-    -- Look for Requested Runs that may need to be updated
-    --------------------------------------------
+    If @newRequestedRunID <= 0
+    Begin
+        --------------------------------------------
+        -- Show Requested Runs that may need to be updated
+        --------------------------------------------
 
-    SELECT Request, [Name], [Status], Origin, Campaign, Experiment, Dataset, Instrument
-    FROM V_Requested_Run_List_Report_2
-    WHERE (Dataset In (@datasetNameOld, @datasetNameNew)) OR
-          ([Name] LIKE @experiment + '%')
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
+        SELECT RL.Request,
+               RL.[Name],
+               RL.[Status],
+               RL.Origin,
+               RL.Campaign,
+               RL.Experiment,
+               RL.Dataset,
+               RL.Instrument,
+               RR.RDS_Run_Start,
+               RR.RDS_Run_Finish
+        FROM V_Requested_Run_List_Report_2 RL
+             INNER JOIN T_Requested_Run RR
+               ON RL.Request = RR.ID
+        WHERE RL.Dataset IN (@datasetNameOld, @datasetNameNew) OR
+              RL.[Name] LIKE @experiment + '%'
+    End
+    Else
+    Begin
+
+        If @infoOnly = 0 And @datasetAlreadyRenamed = 0
+        Begin
+            UPDATE T_Requested_Run
+            SET DatasetID = Null,
+                RDS_Run_Start = Null,
+                RDS_Run_Finish = Null,
+                RDS_Status = 'Active'
+            WHERE ID = @oldRequestedRunID
+
+            UPDATE T_Requested_Run
+            SET DatasetID          = @datasetID,
+                RDS_Run_Start      = @runStart,
+                RDS_Run_Finish     = @runFinish,
+                RDS_Cart_ID        = @cartId,
+                RDS_Cart_Config_ID = @cartConfigID,
+                RDS_Cart_Col       = @cartColumn,
+                RDS_Status         = 'Completed'
+            WHERE ID = @newRequestedRunID
+        End
+
+        SELECT RL.Request,
+               RL.[Name],
+               RL.[Status],
+               RL.Origin,
+               RL.Campaign,
+               RL.Experiment,
+               RL.Dataset,
+               RL.Instrument,
+               RR.RDS_Run_Start,
+               RR.RDS_Run_Finish
+        FROM V_Requested_Run_List_Report_2 RL
+             INNER JOIN T_Requested_Run RR
+               ON RL.Request = RR.ID
+        WHERE RL.Request IN (@oldRequestedRunID, @newRequestedRunID)
+    End
 
     --------------------------------------------
     -- Update jobs in the DMS_Capture database
