@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **          07/22/2019 mem - Refactor code into PopulateCampaignFilterTable, PopulateInstrumentFilterTable, and ResolveStartAndEndDates
 **          05/16/2022 mem - Treat 'Resource Owner' proposals as not EMSL funded
 **          05/18/2022 mem - Treat additional proposal types as not EMSL funded
+**          10/12/2022 mem - Add @showDebug
 **
 *****************************************************/
 (
@@ -56,7 +57,8 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
     @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
     @eusUsageFilterList varchar(2000) = '',     -- Comma separate list of EUS usage types, from table T_EUS_UsageType: CAP_DEV, MAINTENANCE, BROKEN, USER
     @instrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed)
-    @message varchar(256) = '' output
+    @message varchar(256) = '' Output,
+    @showDebug tinyint = 0                      -- When 1, summarize the contents of #Tmp_Datasets
 )
 AS
     Set XACT_ABORT, nocount on
@@ -83,6 +85,7 @@ AS
     Set @campaignIDFilterList = LTrim(RTrim(IsNull(@campaignIDFilterList, '')))
     Set @eusUsageFilterList = LTrim(RTrim(IsNull(@eusUsageFilterList, '')))
     Set @instrumentFilterList = LTrim(RTrim(IsNull(@instrumentFilterList, '')))
+    Set @showDebug = IsNull(@showDebug, 0)
 
     Set @message = ''
 
@@ -288,6 +291,13 @@ AS
 
     End
 
+    If @showDebug > 0
+    Begin
+        Select 'Initial Contents' As Status, EMSL_Funded, Count(*) As Datasets, Min(Dataset_ID) As Dataset_ID_First, Max(Dataset_ID) As Dataset_ID_Last
+        From #Tmp_Datasets
+        Group By EMSL_Funded
+    End
+
     ---------------------------------------------------
     -- Examine the work package associated with datasets in #Tmp_Datasets
     -- to find additional datasets that are EMSL-Funded
@@ -303,6 +313,13 @@ AS
     WHERE DS.EMSL_Funded = 0 And CC.SubAccount_Title LIKE '%Wiley Environmental%'
     --
     SELECT @myRowCount = @@RowCount
+    
+    If @showDebug > 0 And @myRowCount > 0
+    Begin
+        Select 'After updating EMSL_Funded for work packages with SubAccount containing "Wiley Environmental"' As Status, EMSL_Funded, Count(*) As Datasets, Min(Dataset_ID) As Dataset_ID_First, Max(Dataset_ID) As Dataset_ID_Last
+        From #Tmp_Datasets
+        Group By EMSL_Funded
+    End
 
     ---------------------------------------------------
     -- Examine the campaign associated with datasets in #Tmp_Datasets
@@ -322,7 +339,14 @@ AS
           C.CM_Fraction_EMSL_Funded > 0.74
     --
     SELECT @myRowCount = @@RowCount
-
+        
+    If @showDebug > 0 And @myRowCount > 0
+    Begin
+        Select 'After updating EMSL_Funded for Campaigns that are at least 75% EMSL Funded' As Status, EMSL_Funded, Count(*) As Datasets, Min(Dataset_ID) As Dataset_ID_First, Max(Dataset_ID) As Dataset_ID_Last
+        From #Tmp_Datasets
+        Group By EMSL_Funded
+    End
+    
     ---------------------------------------------------
     -- Generate report
     ---------------------------------------------------
@@ -468,7 +492,6 @@ AS
             ) CombinedStatsQ
         ) OuterQ
     ORDER BY Instrument
-
 
     END TRY
     BEGIN CATCH
