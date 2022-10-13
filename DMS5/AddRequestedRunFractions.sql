@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          01/15/2022 mem - Copy date created from the parent requested run to new requested runs, allowing Days in Queue on the list report to be based on the parent requested run's creation date
 **          02/17/2022 mem - Update requestor username warning
 **          05/23/2022 mem - Rename requester username argument and update username warning
+**          10/13/2022 mem - Fix bug calling LookupEUSFromExperimentSamplePrep
 **
 *****************************************************/
 (
@@ -444,7 +445,7 @@ As
     End
     --
     exec @myError = LookupEUSFromExperimentSamplePrep
-                        @myRowCount,
+                        @experimentName,
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUserID output,
