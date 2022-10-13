@@ -48,6 +48,7 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **          05/16/2022 mem - Treat 'Resource Owner' proposals as not EMSL funded
 **          05/18/2022 mem - Treat additional proposal types as not EMSL funded
 **          10/12/2022 mem - Add @showDebug
+**                         - No longer use Fraction_EMSL_Funded from t_campaign to determine EMSL funding status
 **
 *****************************************************/
 (
@@ -321,32 +322,6 @@ AS
         Group By EMSL_Funded
     End
 
-    ---------------------------------------------------
-    -- Examine the campaign associated with datasets in #Tmp_Datasets
-    -- to find additional datasets that are EMSL-Funded
-    ---------------------------------------------------
-
-    UPDATE #Tmp_Datasets
-    SET EMSL_Funded = 1
-    FROM #Tmp_Datasets DS
-         INNER JOIN T_Dataset D
-           ON DS.Dataset_ID = D.Dataset_ID
-         INNER JOIN T_Experiments E
-           ON D.Exp_ID = E.Exp_ID
-         INNER JOIN T_Campaign C
-           ON E.EX_campaign_ID = C.Campaign_ID
-    WHERE DS.EMSL_Funded = 0 AND
-          C.CM_Fraction_EMSL_Funded > 0.74
-    --
-    SELECT @myRowCount = @@RowCount
-        
-    If @showDebug > 0 And @myRowCount > 0
-    Begin
-        Select 'After updating EMSL_Funded for Campaigns that are at least 75% EMSL Funded' As Status, EMSL_Funded, Count(*) As Datasets, Min(Dataset_ID) As Dataset_ID_First, Max(Dataset_ID) As Dataset_ID_Last
-        From #Tmp_Datasets
-        Group By EMSL_Funded
-    End
-    
     ---------------------------------------------------
     -- Generate report
     ---------------------------------------------------
