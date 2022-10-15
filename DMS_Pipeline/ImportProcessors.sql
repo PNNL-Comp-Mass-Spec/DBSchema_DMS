@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ImportProcessors
+
+CREATE PROCEDURE [dbo].[ImportProcessors]
 /****************************************************
 **
 **	Desc:
@@ -16,6 +17,7 @@ CREATE PROCEDURE dbo.ImportProcessors
 **			06/03/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
 **			09/03/2009 mem - Now skipping disabled processors when looking for new processors to import
 **			11/11/2013 mem - Now setting ProcTool_Mgr_ID to 1 for newly added processors
+**          10/14/2022 mem - Remove invalid update query that aimed to disable local processors that were not in DMS, but didn't actually work
 **    
 *****************************************************/
 (
@@ -25,11 +27,8 @@ CREATE PROCEDURE dbo.ImportProcessors
 As
 	set nocount on
 	
-	declare @myError int
-	set @myError = 0
-
-	declare @myRowCount int
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 	
 	set @message = ''
 	
@@ -80,27 +79,17 @@ As
 		goto Done
 	end
 
+	---------------------------------------------------
+	-- Deprecated: disable local copies that are not in DMS
+	---------------------------------------------------
+	--
+	-- Update T_Local_Processors
+	-- Set State = 'X'
+	-- From T_Local_Processors INNER JOIN
+	-- 	 V_DMS_PipelineProcessors AS VPP 
+    --        ON T_Local_Processors.Processor_Name = VPP.Processor_Name
+	-- WHERE Not T_Local_Processors.Processor_Name IN (SELECT Processor_Name FROM V_DMS_PipelineProcessors);
 
-	---------------------------------------------------
-	-- disable local copies that are not in DMS
-	---------------------------------------------------
-	--
-	UPDATE
-		T_Local_Processors
-	SET
-		State = 'X'
-	FROM
-		T_Local_Processors INNER JOIN
-		V_DMS_PipelineProcessors AS VPP ON T_Local_Processors.Processor_Name = VPP.Processor_Name
-	WHERE T_Local_Processors.Processor_Name NOT IN (SELECT Processor_Name FROM V_DMS_PipelineProcessors)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	 --
-	if @myError <> 0
-	begin
-		set @message = 'Error updating superseded processors'
-		goto Done
-	end
 	---------------------------------------------------
 	-- Exit
 	---------------------------------------------------
