@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
 **          09/27/2018 mem - Rename @previewMode to @infoonly
 **          05/04/2020 mem - Add additional debug messages
 **          08/08/2020 mem - Customize message shown when @infoOnly = 0
+**          10/18/2022 mem - Fix logic bugs for warning messages
 **
 *****************************************************/
 (
@@ -86,12 +87,10 @@ As
 
                 If @jobState IN (2,3,9)
                     SET @skipMessage = 'DMS_Pipeline job will not be deleted; job is in progress'
-                Else If @jobState IN (2,3,9)
-                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job is in progress'
                 Else If @jobState IN (4,7,14)
                     SET @skipMessage = 'DMS_Pipeline job will not be deleted; job completed successfully'
                 Else
-                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job state is not New, Failed, or Successful'
+                    SET @skipMessage = 'DMS_Pipeline job will not be deleted; job state is not New, Failed, or Holding'
 
                 SELECT @skipMessage As Action, *
                 FROM T_Jobs
@@ -137,12 +136,10 @@ As
         Begin            
             If @jobState IN (2,3,9)
                 Print 'DMS_Pipeline ' + @jobText + ' not deleted; job is in progress'
-            Else If @jobState IN (2,3,9)
-                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job is in progress'
             Else If @jobState IN (4,7,14)
                 Print 'DMS_Pipeline ' + @jobText + ' not deleted; job completed successfully'
             Else
-                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job state is not New, Failed, or Successful'
+                Print 'DMS_Pipeline ' + @jobText + ' not deleted; job state is not New, Failed, or Holding'
         End
         
     End
