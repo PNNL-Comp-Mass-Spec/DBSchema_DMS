@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 **          04/11/2022 mem - Expand @protCollNameList to varchar(4000)
 **          06/30/2022 mem - Rename parameter file argument
 **          07/01/2022 mem - Rename parameter file column in temporary table
+**          10/21/2022 mem - Fix logic bug
 **
 *****************************************************/
 (
@@ -138,14 +139,17 @@ As
 
     If @myRowCount > 0
     Begin
+        -- One or more requests do not have State = 1
         -- Remove the invalid rows from #TRL
         DELETE #TRL
         FROM #TRL INNER JOIN
              #XRS ON #TRL.requestID = #XRS.requestID
 
         -- Continue only if @mode is <> 'add'
-        if @mode = 'add'
+        If @mode <> 'add'
+        Begin
             Goto ReportResults
+        End
     End
 
 
@@ -276,6 +280,7 @@ ReportResults:
     ORDER BY requestID
 
     Return @myError
+
 
 
 GO
