@@ -3,15 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateMaterialItems
+CREATE PROCEDURE [dbo].[UpdateMaterialItems]
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **	Makes changes for specified list of material items
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
+**	Parameters:
 **
 **	Auth:	grk
 **	Date:	03/27/2008 grk - Initial release (ticket http://prismtrac.pnl.gov/trac/ticket/603)
@@ -21,7 +21,8 @@ CREATE PROCEDURE dbo.UpdateMaterialItems
 **			08/01/2017 mem - Use THROW if not authorized
 **			11/28/2017 mem - Add support for Reference_Compound
 **			               - Only update Container_ID if @mode is 'move_material'
-**    
+**          10/25/2022 mem - Fix logic bug that used row counts from reference compounds instead of experiments
+**
 *****************************************************/
 (
 	@mode varchar(32),			-- 'move_material', 'retire_items'
@@ -47,14 +48,14 @@ As
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
+
+	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'UpdateMaterialItems', @raiseError = 1
 	If @authorized = 0
 	Begin
 		THROW 51000, 'Access denied', 1;
 	End
-	
+
 	---------------------------------------------------
 	-- Resolve container name to actual ID (if applicable)
 	---------------------------------------------------
@@ -72,7 +73,7 @@ As
 		set @container = @newValue
 		set @contID = 0
 		--
-		SELECT 
+		SELECT
 			@contID = ID,
 			@contStatus = Status
 		FROM T_Material_Containers
@@ -91,7 +92,7 @@ As
 			set @message = 'Destination container "' + @container + '" could not be found in database'
 			return 510019
 		end
-		
+
 		---------------------------------------------------
 		-- is container a valid target?
 		---------------------------------------------------
@@ -131,11 +132,11 @@ As
 
 		-- @itemList is a comma separated list of items of the form Type:ID, for example 'E:8432,E:8434,E:9786'
 		-- This is a list of three experiments, IDs 8432, 8434, and 9786
-		
+
 		INSERT INTO @material_items
 			(ID, iType)
-		SELECT 
-			substring(Item, 3, 300) as ID, 
+		SELECT
+			substring(Item, 3, 300) as ID,
 			substring(Item, 1, 1) as iType		-- B for Biomaterial, E for Experiment, R for RefCompound
 		FROM dbo.MakeTableFromList(@itemList)
    		--
@@ -149,7 +150,9 @@ As
 
 		-- Cache the count of items in temporary table @material_items
 		Declare @mixedMaterialCount int = @myRowCount
-		
+
+        Declare @experimentCount int = 0
+        
 		---------------------------------------------------
 		-- Update temporary table with information from
 		-- biomaterial entities (if any)
@@ -186,7 +189,7 @@ As
 		       ON V.ID = M.ID
 		WHERE M.iType = 'E'
        	--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+		SELECT @myError = @@error, @experimentCount = @@rowcount
 		--
 		if @myError <> 0
 		begin
@@ -215,14 +218,14 @@ As
 			set @message = 'Error updating material item table with reference compound information'
 			return 51011
 		end
-				
-		If @mode = 'retire_items' AND @mixedMaterialCount = 1 AND @myRowCount = 1
+
+		If @mode = 'retire_items' AND @mixedMaterialCount = 1 AND @experimentCount = 1
 		Begin
 			-- Retiring a single experiment
 			-- Check whether the item being updated is already retired
-			
+
 			Declare @retiredExperiment varchar(128) = ''
-			
+
 			SELECT @retiredExperiment = Experiment_Num
 			FROM T_Experiments
 			WHERE Exp_ID IN ( SELECT ID
@@ -234,12 +237,12 @@ As
 			If IsNull(@retiredExperiment, '') <> ''
 			Begin
 				-- Yes, the experiment is already retired
-				
+
 				set @message = 'Experiment is already retired (inactive and no container): ' + @retiredExperiment
 				return 51012
 			End
 		End
-	
+
 	end --<mm>
 
 	if 	@itemType = 'containers'
@@ -253,9 +256,9 @@ As
 		INSERT INTO @material_items
 			(ID, iType, iName, iContainer)
 		SELECT
-			T.Item_ID, 
+			T.Item_ID,
 			T.Item_Type,	-- B for Biomaterial, E for Experiment, R for RefCompound
-			T.Item, 
+			T.Item,
 			T_Material_Containers.Tag
 		FROM
 			T_Material_Containers INNER JOIN
@@ -381,7 +384,7 @@ return @myError
 		set @message = 'Error updating container reference for reference compounds'
 		return 51010
 	end
-	
+
 	---------------------------------------------------
 	-- Set up appropriate label for log
 	---------------------------------------------------
@@ -399,14 +402,14 @@ return @myError
 	---------------------------------------------------
 	--
 	INSERT INTO T_Material_Log (
-		Type, 
-		Item, 
-		Initial_State, 
-		Final_State, 
+		Type,
+		Item,
+		Initial_State,
+		Final_State,
 		User_PRN,
 		Comment
-	) 
-	SELECT 
+	)
+	SELECT
 		iType + ' ' + @moveType,
 		iName,
 		iContainer,
