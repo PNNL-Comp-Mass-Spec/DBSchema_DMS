@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Dataset_List_Report_2] 
+CREATE VIEW [dbo].[V_Dataset_List_Report_2]
 AS
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
@@ -18,7 +18,7 @@ SELECT DS.Dataset_ID AS ID,
        DTN.DST_name AS [Dataset Type],
        DS.DS_Oper_PRN AS Operator,
        DL.Dataset_Folder_Path AS [Dataset Folder Path],
-       DL.Archive_Folder_Path AS [Archive Folder Path],
+       -- Deprecated: DL.Archive_Folder_Path AS [Archive Folder Path],
        DL.QC_Link AS QC_Link,
        ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS [Acq Start],
        ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq End],
@@ -32,17 +32,17 @@ SELECT DS.Dataset_ID AS ID,
        -- Deprecated: RR.RDS_Block AS [Block],
        -- Deprecated: RR.RDS_Run_Order AS [Run Order],
        RR.ID AS Request,
-       RR.RDS_BatchID AS Batch,
+       -- Deprecated: RR.RDS_BatchID AS Batch,
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS [Proposal],
-       EPT.Proposal_Type_Name AS [Proposal Type],    -- Alternatively, show EPT.Abbreviation
+       -- Deprecated to improve performance: EPT.Abbreviation AS [EUS Proposal Type],
 
        -- <TemporarilyEnabled>
        EPT.Proposal_Type_Name AS [Proposal Type],
        -- </TemporarilyEnabled>
 
        RR.RDS_WorkPackage AS [Work Package],
-       RR.RDS_Requestor_PRN AS Requester,
+       -- Deprecated: RR.RDS_Requestor_PRN AS Requester,
        -- Deprecated: DASN.DASN_StateName AS [Archive State],
        -- Deprecated: T_YesNo.Description AS [Inst. Data Purged],
        Org.OG_name AS Organism,
