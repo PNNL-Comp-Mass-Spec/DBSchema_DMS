@@ -36,6 +36,11 @@ SELECT DS.Dataset_ID AS ID,
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS [Proposal],
        EPT.Proposal_Type_Name AS [Proposal Type],    -- Alternatively, show EPT.Abbreviation
+
+       -- <TemporarilyEnabled>
+       EPT.Proposal_Type_Name AS [Proposal Type],
+       -- </TemporarilyEnabled>
+
        RR.RDS_WorkPackage AS [Work Package],
        RR.RDS_Requestor_PRN AS Requester,
        -- Deprecated: DASN.DASN_StateName AS [Archive State],
@@ -68,12 +73,20 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN T_EUS_UsageType AS EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
+
+     -- <TemporarilyEnabled>
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
+     -- </TemporarilyEnabled>
+
      /*
-      * Deprecated to improve performance: 
+      * Deprecated to improve performance:
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
+       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
+       ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_DatasetArchiveStateName DASN
                      INNER JOIN T_Dataset_Archive DA
                        ON DASN.DASN_StateID = DA.AS_state_ID
