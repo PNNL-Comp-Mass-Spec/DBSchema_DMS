@@ -22,7 +22,7 @@ SELECT DPD.Data_Package_ID AS ID,
        DL.Rating,
        DL.[Dataset Folder Path],
        DL.[Acq Start],
-       DL.[Acq. End],
+       DL.[Acq End],
        DL.[Acq Length],
        DL.[Scan Count],
        DL.[LC Column],
@@ -44,6 +44,7 @@ FROM dbo.T_Data_Package_Datasets AS DPD
         FROM dbo.S_Dataset_Files
         WHERE Deleted = 0
      ) DF ON DPD.Dataset_ID = DF.Dataset_ID
+
 
 
 

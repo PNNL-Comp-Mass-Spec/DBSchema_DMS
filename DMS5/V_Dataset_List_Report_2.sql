@@ -21,7 +21,7 @@ SELECT DS.Dataset_ID AS ID,
        DL.Archive_Folder_Path AS [Archive Folder Path],
        DL.QC_Link AS QC_Link,
        ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS [Acq Start],
-       ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq. End],
+       ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq End],
        DS.Acq_Length_Minutes AS [Acq Length],
        DS.Scan_Count AS [Scan Count],
        Cast(DS.File_Size_Bytes / 1024.0 / 1024 AS decimal(9,2)) AS [File Size MB],
@@ -42,7 +42,7 @@ SELECT DS.Dataset_ID AS ID,
        -- Deprecated: T_YesNo.Description AS [Inst. Data Purged],
        Org.OG_name AS Organism,
        BTO.Tissue,
-       DS.DateSortKey AS #DateSortKey
+       DS.DateSortKey AS #date_sort_key
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
