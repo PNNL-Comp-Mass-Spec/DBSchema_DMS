@@ -17,7 +17,8 @@ CREATE PROCEDURE GetPackageDatasetJobToolCrosstab
 **	Date:	05/26/2010 grk - Initial release
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
-**    
+**          10/26/2022 mem - Change column #id to lowercase
+**
 *****************************************************/
 (
 	@DataPackageID INT,
@@ -34,7 +35,7 @@ As
 	set @myRowCount = 0
 
 	set @message = ''
-	
+
 	---------------------------------------------------
 	---------------------------------------------------
 	BEGIN TRY
@@ -55,23 +56,23 @@ As
 		CREATE TABLE #Datasets (
 			Dataset VARCHAR(128),
 			Jobs INT NULL,
-			#ID INT
+			#id INT
 		)
 		---------------------------------------------------
 		-- get list of package datasets
 		---------------------------------------------------
 		--
 		INSERT INTO #Datasets
-			( Dataset, #ID)
+			( Dataset, #id)
 		SELECT DISTINCT Dataset, @DataPackageID
-		FROM T_Data_Package_Datasets 
+		FROM T_Data_Package_Datasets
 		WHERE Data_Package_ID = @DataPackageID
-		
+
 		-- update job counts
 		UPDATE #Datasets
 		SET Jobs = TX.Total
 		FROM #Datasets
-		INNER JOIN 
+		INNER JOIN
 		(
 				SELECT Dataset, COUNT(*) AS Total
 				FROM T_Data_Package_Analysis_Jobs
@@ -83,7 +84,7 @@ As
 		-- get list of tools covered by package jobs
 		---------------------------------------------------
 		--
-		INSERT INTO #Tools 
+		INSERT INTO #Tools
 		( Tool )
 		SELECT DISTINCT
 		  Tool
@@ -91,13 +92,13 @@ As
 		  T_Data_Package_Analysis_Jobs
 		WHERE
 		  Data_Package_ID = @DataPackageID
-		  
+
 
 		---------------------------------------------------
 		-- add cols to temp dataset table for each tool
 		-- and update it with package job count
 		---------------------------------------------------
-		DECLARE 
+		DECLARE
 		@colName VARCHAR(128) = 0,
 		@done TINYINT = 0,
 		@s NVARCHAR(1000)
@@ -105,16 +106,16 @@ As
 		WHILE @done = 0
 		BEGIN --<a>
 		SET @colName = ''
-			SELECT TOP 1 @colName = Tool FROM #Tools 
+			SELECT TOP 1 @colName = Tool FROM #Tools
 			IF @colName = ''
 				SET @done = 1
 			ELSE
 			BEGIN --<b>
 				DELETE FROM #Tools WHERE Tool = @colName
-			
+
 				SET @s = REPLACE('ALTER TABLE #Datasets ADD @col@ INT NULL', '@col@', @colName)
 				EXEC(@s)
-				
+
 				DELETE FROM #Scratch
 				--
 				INSERT INTO #Scratch
@@ -126,12 +127,12 @@ As
 
 				SET @s = REPLACE('UPDATE #Datasets SET @col@ = TX.Total FROM #Datasets INNER JOIN #Scratch TX ON TX.Dataset = #Datasets.Dataset', '@col@', @colName)
 				EXEC(@s)
-			
+
 			END --<b>
 		END --<a>
-		
+
 		SELECT * FROM #Datasets
-		
+
 		---------------------------------------------------
 		--
 		---------------------------------------------------
@@ -143,15 +144,16 @@ As
 	---------------------------------------------------
 	---------------------------------------------------
 	END TRY
-	BEGIN CATCH 
+	BEGIN CATCH
 		EXEC FormatErrorMessage @message output, @myError output
-		
+
 		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 		Exec PostLogEntry 'Error', @msgForLog, 'GetPackageDatasetJobToolCrosstab'
-		
+
 	END CATCH
 
 	RETURN @myError
+
 
 
 GO
