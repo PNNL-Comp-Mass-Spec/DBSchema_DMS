@@ -18,7 +18,7 @@ SELECT ML.Tag AS [Location],
        COUNT(MC.ID) AS Containers,
        ML.Container_Limit - COUNT(MC.ID) AS Available,
        ML.[Status],
-       ML.ID AS [#ID]
+       ML.ID AS #id
 FROM dbo.T_Material_Locations ML
      INNER JOIN T_Material_Freezers
        ON ML.Freezer_Tag = T_Material_Freezers.Freezer_Tag

@@ -28,7 +28,7 @@ SELECT  SPR.ID,
         -- Deprecated in August 2018: SPR.Project_Number AS [Project Number],
         SPR.EUS_UsageType AS [EUS Usage Type],
         SPR.EUS_Proposal_ID AS [EUS Proposal],
-        dbo.GetSamplePrepRequestEUSUsersList(SPR.ID, 'V') As [EUS User],            
+        dbo.GetSamplePrepRequestEUSUsersList(SPR.ID, 'V') As [EUS User],
         SPR.Estimated_Completion AS [Estimated Completion],
         SN.State_Name AS State,
         SPR.Created,
@@ -36,9 +36,9 @@ SELECT  SPR.ID,
         NU.Updates,
         CASE
         WHEN SPR.State <> 5 AND
-             CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, return 10 for #WPActivationState
+             CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, return 10 for #wp_activation_state
         ELSE CC.Activation_State
-        END AS #WPActivationState
+        END AS #wp_activation_state
 FROM T_Sample_Prep_Request AS SPR
      INNER JOIN T_Sample_Prep_Request_State_Name AS SN
        ON SPR.State = SN.State_ID

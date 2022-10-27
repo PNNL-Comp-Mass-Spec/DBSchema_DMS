@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Items_List_Report]
 AS
-SELECT ContentsQ.Item,       
+SELECT ContentsQ.Item,
        ContentsQ.Item_Type,      -- Note that this field needs to be Item_Type, and not [Item Type]
        ContentsQ.Material_ID AS ID,
        MC.Tag AS Container,
        MC.[Type],
-       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS [#ItemID],
+       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS #item_id,
        ML.Tag AS [Location],
        ContentsQ.Material_Status As [Item Status],
        MC.[Status] As [Container Status],
@@ -31,7 +31,7 @@ FROM dbo.T_Material_Containers AS MC
                         CC_ID AS Material_ID,
                         null AS Request_ID,
                         CC_Material_Active As Material_Status
-                 FROM dbo.T_Cell_Culture 
+                 FROM dbo.T_Cell_Culture
                  UNION
                  SELECT Compound_Name AS Item,
                         'RefCompound' AS Item_Type,

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Material_Containers_List_Report] AS 
+CREATE VIEW [dbo].[V_Material_Containers_List_Report] AS
 SELECT Container,
        [Type],
        [Location],
@@ -14,9 +14,9 @@ SELECT Container,
        [Status],
        'New Biomaterial' AS [Action],
        Created,
-       dbo.GetMaterialContainerCampaignList([#ID], Items) AS Campaigns,
+       dbo.GetMaterialContainerCampaignList(#id, Items) AS Campaigns,
        Researcher,
-       [#ID]
+       #id
 FROM ( SELECT MC.Tag AS Container,
               MC.[Type],
               ML.Tag AS [Location],
@@ -25,7 +25,7 @@ FROM ( SELECT MC.Tag AS Container,
               MC.[Status],
               -- Unused: MC.Barcode,
               MC.Created,
-              MC.ID AS [#ID],
+              MC.ID AS #id,
               MC.Researcher,
               TFA.FileCount
        FROM T_Material_Containers AS MC
@@ -44,21 +44,22 @@ FROM ( SELECT MC.Tag AS Container,
                              SELECT Container_ID AS Container_ID,
                                     Compound_ID AS Material_ID
                              FROM T_Reference_Compound
-                             WHERE Active > 0 
+                             WHERE Active > 0
                             ) AS ContentsQ
               ON ContentsQ.Container_ID = MC.ID
             LEFT OUTER JOIN ( SELECT Entity_ID,
                                      COUNT(*) AS FileCount
                               FROM T_File_Attachment
-                              WHERE Entity_Type = 'material_container' 
+                              WHERE Entity_Type = 'material_container'
                                     AND
                                     Active > 0
-                              GROUP BY Entity_ID 
+                              GROUP BY Entity_ID
                              ) AS TFA
               ON TFA.Entity_ID = MC.Tag
-       GROUP BY MC.Tag, MC.[Type], ML.Tag, MC.[Comment], MC.Created, MC.[Status], 
-                MC.ID, MC.Researcher, TFA.FileCount 
+       GROUP BY MC.Tag, MC.[Type], ML.Tag, MC.[Comment], MC.Created, MC.[Status],
+                MC.ID, MC.Researcher, TFA.FileCount
      ) AS ContainerQ
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_List_Report] TO [DDL_Viewer] AS [dbo]

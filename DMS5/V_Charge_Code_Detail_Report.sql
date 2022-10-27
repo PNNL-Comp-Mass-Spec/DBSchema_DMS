@@ -27,12 +27,13 @@ SELECT CC.Charge_Code,
        CC.Auto_Defined,
        CC.Charge_Code_State,
        CC.Last_Affected,
-	   CCA.Activation_State AS #WPActivationState
+	   CCA.Activation_State AS #wp_activation_state
 FROM T_Charge_Code CC
      INNER JOIN T_Charge_Code_Activation_State CCA
        ON CC.Activation_State = CCA.Activation_State
      LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map DMSUser
        ON CC.Charge_Code = DMSUser.Charge_Code
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Charge_Code_Detail_Report] TO [DDL_Viewer] AS [dbo]

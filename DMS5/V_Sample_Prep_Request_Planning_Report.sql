@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Planning_Report]
 AS
 SELECT SPR.ID,
-       U.U_Name AS Requester,       
+       U.U_Name AS Requester,
        SPR.Request_Name AS [Request Name],
        SPR.Created,
        SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],
@@ -25,19 +25,19 @@ SELECT SPR.ID,
        SPR.Campaign,
        SPR.Work_Package_Number AS WP,
        ISNULL(CC.Activation_State_Name, '') AS [WP State],
-       Case 
+       Case
             When SPR.State In (4, 5) Then 0          -- Request is complete or closed
             When QT.[Days In Queue] <= 30 Then 30    -- Request is 0 to 30 days old
             When QT.[Days In Queue] <= 60 Then 60    -- Request is 30 to 60 days old
             When QT.[Days In Queue] <= 90 Then 90    -- Request is 60 to 90 days old
             Else 120                                 -- Request is over 90 days old
-       END AS #DaysInQueue,
+       END AS #days_in_queue,
        CASE
            WHEN SPR.State <> 5 AND
-                CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, then return 10 for #WPActivationState
+                CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, then return 10 for #wp_activation_state
            ELSE CC.Activation_State
-       END AS #WPActivationState,
-       SPR.Assigned_Personnel_SortKey As #Assigned_SortKey
+       END AS #wp_activation_state,
+       SPR.Assigned_Personnel_SortKey As #assigned_sort_key
 FROM T_Sample_Prep_Request AS SPR
      INNER JOIN T_Sample_Prep_Request_State_Name AS SN
        ON SPR.State = SN.State_ID
@@ -49,13 +49,14 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.Work_Package_Number = CC.Charge_Code
 WHERE (SPR.State > 0) And SPR.State < 5 AND
       SPR.Request_Type = 'Default'
-GROUP BY SPR.ID, U.U_Name, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Time_Days, 
-         SPR.State_Comment, SPR.Priority, SN.State_Name, SPR.Number_of_Samples, 
+GROUP BY SPR.ID, U.U_Name, SPR.Request_Name, SPR.Created, SPR.Estimated_Prep_Time_Days,
+         SPR.State_Comment, SPR.Priority, SN.State_Name, SPR.Number_of_Samples,
          SPR.Estimated_MS_runs, QT.[Days In Queue], QT.[Days In State],
-         SPR.Requested_Personnel, SPR.Assigned_Personnel, SPR.Prep_Method, 
-         SPR.Instrument_Group, SPR.Campaign, 
-         SPR.Work_Package_Number, CC.Activation_State_Name, SPR.State, 
+         SPR.Requested_Personnel, SPR.Assigned_Personnel, SPR.Prep_Method,
+         SPR.Instrument_Group, SPR.Campaign,
+         SPR.Work_Package_Number, CC.Activation_State_Name, SPR.State,
          CC.Activation_State, SPR.Assigned_Personnel_SortKey
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Planning_Report] TO [DDL_Viewer] AS [dbo]

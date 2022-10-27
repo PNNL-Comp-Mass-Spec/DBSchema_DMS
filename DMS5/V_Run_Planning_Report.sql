@@ -4,19 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Run_Planning_Report] 
+CREATE VIEW [dbo].[V_Run_Planning_Report]
 AS
 SELECT  GroupQ.[Inst. Group],
         GroupQ.[DS Type],
-        Case When GroupQ.Fraction_Count > 1 
-             Then GroupQ.[Run Count] * GroupQ.Fraction_Count 
-             Else GroupQ.[Run Count] 
+        Case When GroupQ.Fraction_Count > 1
+             Then GroupQ.[Run Count] * GroupQ.Fraction_Count
+             Else GroupQ.[Run Count]
         End AS [Run Count],
         GroupQ.Blocked,
         GroupQ.BlkMissing,
-        Case When RequestLookupQ.RDS_BatchID > 0 
-             Then GroupQ.Batch_Prefix 
-             Else GroupQ.Request_Prefix 
+        Case When RequestLookupQ.RDS_BatchID > 0
+             Then GroupQ.Batch_Prefix
+             Else GroupQ.Request_Prefix
         End AS [Request or Batch Name],
         RequestLookupQ.RDS_BatchID AS Batch,
         GroupQ.Requester,
@@ -26,7 +26,7 @@ SELECT  GroupQ.[Inst. Group],
         GroupQ.[Queued Instrument],
         -- Cast(TAC.Actual_Hours As decimal(10, 0)) As [Actual Hours],
         GroupQ.[Separation Group],
-        Case When RequestLookupQ.RDS_BatchID > 0 
+        Case When RequestLookupQ.RDS_BatchID > 0
              Then GroupQ.Batch_Comment
              Else RequestLookupQ.RDS_comment
         End As [Comment],
@@ -46,13 +46,13 @@ SELECT  GroupQ.[Inst. Group],
              WHEN DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) <= 90
              THEN 90  -- Request is 60 to 90 days old
              ELSE 120                                                            -- Request is over 90 days old
-        END AS #DaysInQueue,
-        GroupQ.WPActivationState AS #WPActivationState,
-        GroupQ.Requested_Batch_Priority AS #BatchPriority,
+        END AS #days_in_queue,
+        GroupQ.WPActivationState AS #wp_activation_state,
+        GroupQ.Requested_Batch_Priority AS #batch_priority,
         Case When GroupQ.Fraction_Count > 1 Then 1
              When GroupQ.FractionBasedRequestCount > 1 Then 2
              Else 0
-        End AS #FractionColorMode
+        End AS #fraction_color_mode
 FROM    ( SELECT    [Inst. Group],
                     MIN(RequestID) AS [Min Request],
                     COUNT(RequestID) AS [Run Count],
@@ -78,7 +78,7 @@ FROM    ( SELECT    [Inst. Group],
                     Sum(Case When RequestOrigin = 'fraction' Then 1 Else 0 End) As FractionBasedRequestCount,
                     MAX([Days in Prep Queue]) AS [Days in Prep Queue],
                     SUM(BlkMissing) AS BlkMissing,
-                    SUM(Blocked) AS Blocked                    
+                    SUM(Blocked) AS Blocked
           FROM      ( SELECT RR.RDS_instrument_group AS [Inst. Group],
                              RR.RDS_Sec_Sep AS [Separation Group],
                              DTN.DST_Name AS [DS Type],
@@ -127,7 +127,7 @@ FROM    ( SELECT    [Inst. Group],
                              ON RR.RDS_Requestor_PRN = U.U_PRN
                            INNER JOIN T_Experiments AS E
                              ON RR.Exp_ID = E.Exp_ID
-                           INNER JOIN T_Requested_Run_Queue_State QS 
+                           INNER JOIN T_Requested_Run_Queue_State QS
                              ON RR.Queue_State = QS.Queue_State
                            INNER JOIN T_EUS_UsageType AS EUT
                              ON RR.RDS_EUS_UsageType = EUT.ID
@@ -170,11 +170,11 @@ FROM    ( SELECT    [Inst. Group],
                     Requested_Batch_Priority,
                     Batch_Comment
         ) AS GroupQ
-        INNER JOIN T_Requested_Run AS RequestLookupQ 
+        INNER JOIN T_Requested_Run AS RequestLookupQ
             ON GroupQ.[Min Request] = RequestLookupQ.ID
-        INNER JOIN T_EUS_UsageType AS TEUT 
+        INNER JOIN T_EUS_UsageType AS TEUT
             ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
-        -- LEFT OUTER JOIN T_Cached_Instrument_Usage_by_Proposal AS TAC 
+        -- LEFT OUTER JOIN T_Cached_Instrument_Usage_by_Proposal AS TAC
         --     ON TAC.IN_Group = GroupQ.[Inst. Group] AND TAC.EUS_Proposal_ID = GroupQ.Proposal
 
 

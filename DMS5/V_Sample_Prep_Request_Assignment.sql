@@ -30,24 +30,24 @@ SELECT '' AS [Sel],
        SPR.[Reason],
        SPR.EUS_Proposal_ID AS [EUS Proposal],
        EPT.Proposal_Type_Name AS [EUS Proposal Type],
-       Case 
+       Case
             When SPR.State In (4,5) Then 0          -- Request is complete or closed
             When QT.[Days In Queue] <= 30 Then 30   -- Request is 0 to 30 days old
             When QT.[Days In Queue] <= 60 Then 60   -- Request is 30 to 60 days old
             When QT.[Days In Queue] <= 90 Then 90   -- Request is 60 to 90 days old
             Else 120                                -- Request is over 90 days old
         End
-        AS #DaysInQueue
+        AS #days_in_queue
 FROM T_Sample_Prep_Request SPR
      INNER JOIN T_Sample_Prep_Request_State_Name SN
        ON SPR.State = SN.State_ID
      LEFT OUTER JOIN T_Users QP
        ON SPR.Requester_PRN = QP.U_PRN
-     LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT 
+     LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times QT
        ON SPR.ID = QT.Request_ID
-     LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON SPR.EUS_Proposal_ID = EUP.Proposal_ID
-     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
       ON SPR.Tissue_ID = BTO.Identifier

@@ -13,8 +13,8 @@ SELECT DISTINCT TNE.ID AS Seq,
                 U.U_Name AS [User],
                 'Request Owner' AS [Role],
                 TNE.Entered,
-                TET.Target_Entity_Type AS [#EntityType],
-                U.U_PRN AS [#PRN],
+                TET.Target_Entity_Type AS #entity_type,
+                U.U_PRN AS #prn,
                 TET.ID AS EventType,
                 TNE.Event_Type AS EventTypeID,
                 TET.Link_Template
@@ -36,7 +36,6 @@ FROM T_Notification_Event TNE
 WHERE TET.Target_Entity_Type = 2 AND
       TET.Visible = 'Y' AND
       U.U_active = 'Y'
-
 
 
 GO

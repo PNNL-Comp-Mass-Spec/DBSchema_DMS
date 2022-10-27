@@ -67,9 +67,9 @@ SELECT  SPR.ID,
         SPR.Total_Item_Count,
         CASE
         WHEN SPR.State <> 5 AND
-             CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, return 10 for #WPActivationState
+             CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, return 10 for #wp_activation_state
         ELSE CC.Activation_State
-        END AS #WPActivationState
+        END AS #wp_activation_state
 FROM T_Sample_Prep_Request AS SPR
      INNER JOIN T_Sample_Prep_Request_State_Name AS SN
        ON SPR.State = SN.State_ID

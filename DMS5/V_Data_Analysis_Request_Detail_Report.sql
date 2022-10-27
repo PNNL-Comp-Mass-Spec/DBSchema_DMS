@@ -39,9 +39,9 @@ SELECT R.ID,
        UpdateQ.Updates,
        CASE
        WHEN R.State <> 4 AND
-            CC.Activation_State >= 3 THEN 10    -- If the analysis request is not closed, but the charge code is inactive, return 10 for #WPActivationState
+            CC.Activation_State >= 3 THEN 10    -- If the analysis request is not closed, but the charge code is inactive, return 10 for #wp_activation_state
        ELSE CC.Activation_State
-       END AS #WPActivationState
+       END AS #wp_activation_state
 FROM T_Data_Analysis_Request AS R
      INNER JOIN T_Data_Analysis_Request_State_Name AS SN
        ON R.State = SN.State_ID
@@ -61,7 +61,7 @@ FROM T_Data_Analysis_Request AS R
        ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_EUS_Proposal_State_Name PSN
        ON EUP.State_ID = PSN.ID
-     
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Analysis_Request_Detail_Report] TO [DDL_Viewer] AS [dbo]

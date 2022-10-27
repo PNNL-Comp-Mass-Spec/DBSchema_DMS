@@ -21,7 +21,7 @@ SELECT RR.ID AS Request,
        RR.RDS_comment AS Comment,
        RR.RDS_Well_Plate_Num AS Wellplate,
        RR.RDS_Well_Num AS Well,
-       RR.RDS_BatchID AS [#BatchID]
+       RR.RDS_BatchID AS #batch_id
 FROM T_Requested_Run RR
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID
@@ -29,6 +29,7 @@ FROM T_Requested_Run RR
        ON RR.RDS_BatchID = RRB.ID
      INNER JOIN T_Users U
        ON E.EX_researcher_PRN = U.U_PRN
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_Members_List_Report] TO [DDL_Viewer] AS [dbo]

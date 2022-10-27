@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Requested_Run_List_Report_2] 
+CREATE VIEW [dbo].[V_Requested_Run_List_Report_2]
 AS
 SELECT RR.ID AS Request,
        RR.RDS_Name AS Name,
@@ -51,12 +51,12 @@ SELECT RR.ID AS Request,
            WHEN QT.[Days In Queue] <= 60 THEN 60
            WHEN QT.[Days In Queue] <= 90 THEN 90
            ELSE 120
-       END AS [#DaysInQueue],
+       END AS #days_in_queue,
        CASE
            WHEN RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
+                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #wp_activation_state
            ELSE CC.Activation_State
-       END AS #WPActivationState
+       END AS #wp_activation_state
 FROM T_Requested_Run AS RR
      INNER JOIN T_DatasetTypeName AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
@@ -70,7 +70,7 @@ FROM T_Requested_Run AS RR
        ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN T_LC_Cart AS LC
        ON RR.RDS_Cart_ID = LC.ID
-     INNER JOIN T_Requested_Run_Queue_State QS 
+     INNER JOIN T_Requested_Run_Queue_State QS
        ON RR.Queue_State = QS.Queue_State
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
@@ -84,9 +84,9 @@ FROM T_Requested_Run AS RR
        ON RR.ID = QT.RequestedRun_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
-     LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
-     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_EUS_Proposal_State_Name PSN
        ON EUP.State_ID = PSN.ID

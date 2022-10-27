@@ -30,18 +30,18 @@ SELECT R.ID,
        ISNULL(CC.Activation_State_Name, 'Invalid') AS [WP State],
        R.EUS_Proposal_ID AS [EUS Proposal],
        EPT.Proposal_Type_Name AS [EUS Proposal Type],
-       CASE 
+       CASE
            WHEN R.State = 4 THEN 0                  -- Request is closed
            WHEN QT.[Days In Queue] <= 30 THEN 30    -- Request is 0 to 30 days old
            WHEN QT.[Days In Queue] <= 60 THEN 60    -- Request is 30 to 60 days old
            WHEN QT.[Days In Queue] <= 90 THEN 90    -- Request is 60 to 90 days old
            ELSE 120                                 -- Request is over 90 days old
-       END AS #DaysInQueue,
+       END AS #days_in_queue,
        CASE
        WHEN R.State <> 4 AND
-            CC.Activation_State >= 3 THEN 10    -- If the analysis request is not closed, but the charge code is inactive, return 10 for #WPActivationState
+            CC.Activation_State >= 3 THEN 10    -- If the analysis request is not closed, but the charge code is inactive, return 10 for #wp_activation_state
        ELSE CC.Activation_State
-       END AS #WPActivationState
+       END AS #wp_activation_state
 FROM T_Data_Analysis_Request AS R
      INNER JOIN T_Data_Analysis_Request_State_Name AS SN
        ON R.State = SN.State_ID

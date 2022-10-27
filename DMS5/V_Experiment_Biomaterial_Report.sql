@@ -10,7 +10,7 @@ SELECT E.Experiment_Num AS Experiment,
        E.EX_researcher_PRN AS Researcher,
        Org.OG_name AS Organism,
        E.EX_comment AS [Comment],
-       CC.CC_Name AS [#Biomaterial]
+       CC.CC_Name AS #biomaterial
 FROM T_Experiment_Cell_Cultures ECC
      INNER JOIN T_Experiments E
        ON ECC.Exp_ID = E.Exp_ID
@@ -18,7 +18,6 @@ FROM T_Experiment_Cell_Cultures ECC
        ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN T_Cell_Culture CC
        ON ECC.CC_ID = CC.CC_ID
-
 
 
 GO

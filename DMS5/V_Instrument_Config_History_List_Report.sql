@@ -18,12 +18,10 @@ SELECT TIH.ID,
            WHEN TU.U_PRN IS NULL THEN TIH.EnteredBy
            ELSE TU.Name_with_PRN
        END AS [Entered By],
-       TIH.Note AS [#NoteFull]
+       TIH.Note AS #note_full
 FROM T_Instrument_Config_History AS TIH
      LEFT OUTER JOIN T_Users AS TU
        ON TIH.EnteredBy = TU.U_PRN
-
-
 
 
 GO

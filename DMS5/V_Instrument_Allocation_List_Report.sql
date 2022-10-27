@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE view [dbo].[V_Instrument_Allocation_List_Report] as 
+
+CREATE view [dbo].[V_Instrument_Allocation_List_Report] as
 SELECT  TAL.Fiscal_Year ,
         TAL.Proposal_ID ,
         CONVERT(VARCHAR(32), T_EUS_Proposals.TITLE) + '...' AS Title ,
@@ -17,7 +18,7 @@ SELECT  TAL.Fiscal_Year ,
         TAL.GC ,
         TAL.QQQ ,
         TAL.Last_Affected AS Last_Updated ,
-        TAL.FY_Proposal AS [#FY_Proposal]
+        TAL.FY_Proposal AS #fy_proposal
 FROM    ( SELECT    Fiscal_Year ,
                     Proposal_ID ,
                     SUM(CASE WHEN Allocation_Tag = 'FT' THEN Allocated_Hours
@@ -57,6 +58,7 @@ FROM    ( SELECT    Fiscal_Year ,
                           WHERE     ( Allocation_Tag = 'General' )
                         ) AS TZ ON TZ.Fiscal_Year = TAL.Fiscal_Year
                                    AND TZ.Proposal_ID = TAL.Proposal_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allocation_List_Report] TO [DDL_Viewer] AS [dbo]

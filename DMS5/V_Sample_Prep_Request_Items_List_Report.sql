@@ -20,9 +20,9 @@ SELECT  ID AS [ID] ,
                 WHEN Item_Type = 'prep_lc_run' THEN Cast(Item_ID As Varchar(128))
                 WHEN Item_Type = 'requested_run' THEN Cast(Item_ID As Varchar(128))
                 ELSE ''
-        END AS #Link
+        END AS #link
 FROM    T_Sample_Prep_Request_Items
-  
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Items_List_Report] TO [DDL_Viewer] AS [dbo]

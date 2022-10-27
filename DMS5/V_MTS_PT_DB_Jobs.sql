@@ -19,8 +19,8 @@ SELECT JM.Job,
        AJ.AJ_parmFileName as [Param File],
        AJ.AJ_settingsFileName as [Settings File],
        AJ.AJ_proteinCollectionList as [Protein Collection List],
-       JM.SortKey AS #SortKey
-FROM T_MTS_PT_DB_Jobs_Cached JM 
+       JM.SortKey AS #sort_key
+FROM T_MTS_PT_DB_Jobs_Cached JM
      LEFT OUTER JOIN T_Dataset DS
                      INNER JOIN T_Analysis_Job AJ
                        ON DS.Dataset_ID = AJ.AJ_datasetID
@@ -33,8 +33,6 @@ FROM T_MTS_PT_DB_Jobs_Cached JM
                      INNER JOIN T_Analysis_Tool AnTool
                        ON AJ.AJ_analysisToolID = ANTool.AJT_toolID
        ON JM.Job = AJ.AJ_jobID
-
-
 
 
 GO

@@ -26,7 +26,7 @@ SELECT RR.ID AS Request,
        QS.Queue_State_Name AS [Queue State],
        ISNULL(AssignedInstrument.IN_name, '') AS [Queued Instrument],
        RR.RDS_Origin AS Origin,
-       RR.RDS_instrument_setting AS [Instrument Settings],       
+       RR.RDS_instrument_setting AS [Instrument Settings],
        RR.RDS_Well_Plate_Num AS [Well Plate],
        RR.RDS_Well_Num AS Well,
        RR.Vialing_Conc AS [Vialing Concentration],
@@ -43,7 +43,7 @@ SELECT RR.ID AS Request,
        RR.RDS_Cart_Col AS [Column Name],
        RR.RDS_WorkPackage [Work Package],
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
-            ELSE ISNULL(CC.Activation_State_Name, 'Invalid') 
+            ELSE ISNULL(CC.Activation_State_Name, 'Invalid')
             END AS [Work Package State],
        EUT.Name AS [EUS Usage Type],
        RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
@@ -56,9 +56,9 @@ SELECT RR.ID AS Request,
        RR.RDS_special_instructions AS [Special Instructions],
        Case
            When RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #WPActivationState
+                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #wp_activation_state
            Else CC.Activation_State
-       End AS #WPActivationState
+       End AS #wp_activation_state
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
                 INNER JOIN dbo.T_Experiments AS E
@@ -70,7 +70,7 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN T_LC_Cart AS LC
        ON RR.RDS_Cart_ID = LC.ID
-     INNER JOIN T_Requested_Run_Queue_State QS 
+     INNER JOIN T_Requested_Run_Queue_State QS
        ON RR.Queue_State = QS.Queue_State
      INNER JOIN dbo.T_Requested_Run_Batches AS RRB
        ON RR.RDS_BatchID = RRB.ID

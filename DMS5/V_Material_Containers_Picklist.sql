@@ -11,10 +11,11 @@ SELECT MC.Tag AS Container,
        MC.Status,
        MC.[Comment],
        L.Tag AS Location,
-       MC.SortKey AS #SortKey
+       MC.SortKey AS #sort_key
 FROM T_Material_Containers MC
      INNER JOIN T_Material_Locations L
        ON MC.Location_ID = L.ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Picklist] TO [DDL_Viewer] AS [dbo]

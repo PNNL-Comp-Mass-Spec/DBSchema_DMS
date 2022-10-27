@@ -27,7 +27,7 @@ SELECT JS.Job,
        JS.Completion_Message,
        JS.Evaluation_Code,
        JS.Evaluation_Message,
-       JS.Job_Plus_Step AS [#ID],
+       JS.Job_Plus_Step AS #id,
        J.Storage_Server,
 	   J.Instrument
 FROM dbo.T_Job_Steps AS JS

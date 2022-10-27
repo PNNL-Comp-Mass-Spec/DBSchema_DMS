@@ -16,7 +16,7 @@ SELECT RRB.ID,
        ActiveReqStats.[Last Request],
        RRB.Requested_Batch_Priority AS [Req. Priority],
        CASE WHEN CompletedRequests.Runs > 0 THEN
-               CASE WHEN CompletedRequests.InstrumentFirst = CompletedRequests.InstrumentLast 
+               CASE WHEN CompletedRequests.InstrumentFirst = CompletedRequests.InstrumentLast
                     THEN CompletedRequests.InstrumentFirst
                     ELSE CompletedRequests.InstrumentFirst + ' - ' + CompletedRequests.InstrumentLast
                END
@@ -26,7 +26,7 @@ SELECT RRB.ID,
        RRB.Description,
        T_Users.U_Name AS Owner,
        RRB.Created,
-       CASE WHEN ActiveReqSepTypes.Requests IS NULL 
+       CASE WHEN ActiveReqSepTypes.Requests IS NULL
             THEN CompletedRequests.MaxDaysInQueue    -- No active requested runs for this batch
             ELSE DATEDIFF(DAY, ISNULL(ActiveReqStats.Oldest_Request_Created, CompletedRequests.Oldest_Request_Created), GETDATE())
        END AS [Days In Queue],
@@ -34,7 +34,7 @@ SELECT RRB.ID,
        SPQ.[Days in Prep Queue],
        RRB.Justification_for_High_Priority,
        RRB.[Comment],
-       CASE WHEN ActiveReqSepTypes.SeparationTypeFirst = ActiveReqSepTypes.SeparationTypeLast 
+       CASE WHEN ActiveReqSepTypes.SeparationTypeFirst = ActiveReqSepTypes.SeparationTypeLast
             THEN ActiveReqSepTypes.SeparationTypeFirst
             ELSE ActiveReqSepTypes.SeparationTypeFirst + ' - ' + ActiveReqSepTypes.SeparationTypeLast
        END AS [Separation Type],        -- Separation group
@@ -44,7 +44,7 @@ SELECT RRB.ID,
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 60 THEN 60    -- Oldest active request is 30 to 60 days old
            WHEN DATEDIFF(DAY, ActiveReqStats.Oldest_Request_Created, GETDATE()) <= 90 THEN 90    -- Oldest active request is 60 to 90 days old
            ELSE 120                                                                              -- Oldest active request is over 90 days old
-       END AS [#DaysInQueue]
+       END AS #days_in_queue
        /*
        CASE
            WHEN ActiveReqSepTypes.Requests IS NULL OR
@@ -53,7 +53,7 @@ SELECT RRB.ID,
            WHEN CompletedRequests.MinDaysInQueue <= 60   THEN 60  -- Oldest request is 30 to 60 days old
            WHEN CompletedRequests.MinDaysInQueue <= 90   THEN 90  -- Oldest request is 60 to 90 days old
            ELSE 120                                               -- Oldest request is over 90 days old
-       END AS [#MinDaysInQueue]
+       END AS #min_days_in_queue
        */
 FROM T_Requested_Run_Batches AS RRB
      INNER JOIN T_Users
@@ -64,7 +64,7 @@ FROM T_Requested_Run_Batches AS RRB
                               COUNT(*) AS Requests
                        FROM T_Requested_Run AS RR1
                        WHERE (RDS_Status = 'Active')
-                       GROUP BY RDS_BatchID 
+                       GROUP BY RDS_BatchID
                      ) AS ActiveReqSepTypes
        ON ActiveReqSepTypes.BatchID = RRB.ID
      LEFT OUTER JOIN ( SELECT RR2.RDS_BatchID AS BatchID,
@@ -82,7 +82,7 @@ FROM T_Requested_Run_Batches AS RRB
                             INNER JOIN T_Instrument_Name AS InstName
                               ON DS.DS_instrument_name_ID = InstName.Instrument_ID
                        WHERE (NOT (RR2.DatasetID IS NULL))
-                       GROUP BY RR2.RDS_BatchID 
+                       GROUP BY RR2.RDS_BatchID
                      ) AS CompletedRequests
        ON CompletedRequests.BatchID = RRB.ID
      LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
@@ -92,7 +92,7 @@ FROM T_Requested_Run_Batches AS RRB
                        FROM T_Requested_Run AS RR3
                        WHERE (DatasetID IS NULL) AND
                              (RDS_Status = 'Active')
-                       GROUP BY RDS_BatchID 
+                       GROUP BY RDS_BatchID
                      ) AS ActiveReqStats
        ON ActiveReqStats.BatchID = RRB.ID
      LEFT OUTER JOIN ( SELECT RR4.RDS_BatchID AS BatchID,
@@ -116,7 +116,7 @@ FROM T_Requested_Run_Batches AS RRB
                                  SPR.ID <> 0
                             LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
                               ON SPR.ID = QT.Request_ID
-                       GROUP BY RR4.RDS_BatchID 
+                       GROUP BY RR4.RDS_BatchID
                      ) AS SPQ
        ON SPQ.BatchID = RRB.ID
 WHERE RRB.ID > 0

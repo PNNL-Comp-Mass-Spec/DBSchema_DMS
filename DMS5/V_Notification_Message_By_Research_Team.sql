@@ -6,35 +6,35 @@ GO
 
 CREATE VIEW [dbo].[V_Notification_Message_By_Research_Team]
 AS
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, [#EntityType], [#PRN], 
+SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, #entity_type, #prn,
        REPLACE(Link_Template, '@ID@', Entity) AS Link, EventTypeID
 FROM V_Notification_Requested_Run_Batches_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 UNION
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, [#EntityType], [#PRN], 
+SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, #entity_type, #prn,
        REPLACE(Link_Template, '@ID@', Entity) AS Link, EventTypeID
 FROM V_Notification_Analysis_Job_Request_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 UNION
-SELECT Src.Seq, Src.Event, Src.Entity, Src.Name, Src.Campaign, Src.[User], Src.[Role], Src.Entered, Src.[#EntityType], Src.[#PRN], 
+SELECT Src.Seq, Src.Event, Src.Entity, Src.Name, Src.Campaign, Src.[User], Src.[Role], Src.Entered, Src.#entity_type, Src.#prn,
        REPLACE(Src.Link_Template, '@ID@', Src.Entity) AS Link, Src.EventTypeID
 FROM V_Notification_Analysis_Job_Request_By_Request_Owner Src
-     LEFT OUTER JOIN ( SELECT Event, Entity, [#PRN]
+     LEFT OUTER JOIN ( SELECT Event, Entity, #prn
                        FROM V_Notification_Analysis_Job_Request_By_Research_Team
-                       WHERE Entered > DATEADD(HOUR, -24, GETDATE()) 
+                       WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 					 ) FilterQ
        ON Src.Event = FilterQ.Event AND
           Src.Entity = FilterQ.Entity AND
-          Src.[#PRN] = FilterQ.[#PRN]
+          Src.#prn = FilterQ.#prn
 WHERE Entered > DATEADD(HOUR, -24, GETDATE()) AND
-      FilterQ.[#PRN] IS NULL
+      FilterQ.#prn IS NULL
 UNION
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, [#EntityType], [#PRN], 
+SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, #entity_type, #prn,
        REPLACE(Link_Template, '@ID@', Entity) AS Link, EventTypeID
 FROM V_Notification_Sample_Prep_Request_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 UNION
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, [#EntityType], [#PRN], 
+SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, #entity_type, #prn,
        REPLACE(Link_Template, '@ID@', Entity) AS Link, EventTypeID
 FROM V_Notification_Datasets_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())

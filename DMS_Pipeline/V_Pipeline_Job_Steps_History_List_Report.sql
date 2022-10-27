@@ -16,10 +16,10 @@ SELECT JS.Job,
        JS.Start,
        JS.Finish,
        Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) as Runtime,
-       JS.Processor,      
+       JS.Processor,
        JS.State,
 		CASE WHEN JS.State = 5 THEN 100
-		     ELSE 0 
+		     ELSE 0
 		END AS [Job Progress],
 		CASE WHEN JS.State = 5 THEN Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0 / 60.0)
 			 ELSE 0
@@ -37,11 +37,11 @@ SELECT JS.Job,
        JS.Completion_Message,
        JS.Evaluation_Code,
        JS.Evaluation_Message,
-       JobStepSavedCombo AS [#ID]
+       JobStepSavedCombo AS #id
 FROM dbo.T_Job_Steps_History AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
        ON JS.State = SSN.ID
-     INNER JOIN (	SELECT Job, Dataset, Script, State, Priority				
+     INNER JOIN (	SELECT Job, Dataset, Script, State, Priority
 					FROM T_Jobs_History
 					WHERE Most_Recent_Entry = 1
 				 ) AS J
@@ -49,7 +49,6 @@ FROM dbo.T_Job_Steps_History AS JS
      INNER JOIN dbo.T_Job_State_Name JSN
        ON J.State = JSN.ID
 WHERE Most_Recent_Entry = 1
-
 
 
 GO

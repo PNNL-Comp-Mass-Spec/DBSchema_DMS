@@ -4,12 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Biomaterial_Experiment_Tracking]
 AS
-SELECT     T_Experiments.Experiment_Num AS Experiment, COUNT(T_Dataset.Dataset_ID) AS Datasets, T_Experiments.EX_reason AS Reason, 
-                      T_Experiments.EX_created AS Created, T_Cell_Culture.CC_Name AS [#CCName]
+SELECT     T_Experiments.Experiment_Num AS Experiment, COUNT(T_Dataset.Dataset_ID) AS Datasets, T_Experiments.EX_reason AS Reason,
+                      T_Experiments.EX_created AS Created, T_Cell_Culture.CC_Name AS #biomaterial_name
 FROM         T_Experiment_Cell_Cultures INNER JOIN
                       T_Experiments ON T_Experiment_Cell_Cultures.Exp_ID = T_Experiments.Exp_ID INNER JOIN
                       T_Cell_Culture ON T_Experiment_Cell_Cultures.CC_ID = T_Cell_Culture.CC_ID LEFT OUTER JOIN
