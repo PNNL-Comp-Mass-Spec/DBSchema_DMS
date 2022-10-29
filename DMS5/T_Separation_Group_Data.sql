@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 59 ******/
+/****** RowCount: 60 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
@@ -31,6 +31,7 @@ INSERT INTO [T_Separation_Group] VALUES ('LC-IMER_5hr','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IntactProtein_200min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-IonPairing','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_LipidSoluble','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_LipidSoluble_25MinGradient','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_Oxylipids','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_Sonnenburg','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Metabolomics_WaterSoluble','',1,1,0)
