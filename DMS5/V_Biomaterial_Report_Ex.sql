@@ -18,7 +18,7 @@ SELECT dbo.V_Biomaterial_Report.Name,
    AS [Exp. Count]
 FROM dbo.V_Biomaterial_Report INNER JOIN
    dbo.T_Experiment_Cell_Cultures ON
-   dbo.V_Biomaterial_Report.#id = dbo.T_Experiment_Cell_Cultures.CC_ID
+   dbo.V_Biomaterial_Report.id = dbo.T_Experiment_Cell_Cultures.CC_ID
 GROUP BY dbo.V_Biomaterial_Report.Name,
    dbo.V_Biomaterial_Report.Source,
    dbo.V_Biomaterial_Report.PI, dbo.V_Biomaterial_Report.Type,

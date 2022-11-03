@@ -12,8 +12,7 @@ SELECT dbo.T_Analysis_Job_Processor_Group_Associations.Job_ID
     dbo.T_Analysis_Tool.AJT_toolName AS Tool,
     dbo.T_Analysis_Job.AJ_parmFileName AS [Param File],
     dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File],
-    dbo.T_Analysis_Job_Processor_Group_Associations.Group_ID AS
-     #group_id
+    dbo.T_Analysis_Job_Processor_Group_Associations.Group_ID AS group_id
 FROM dbo.T_Analysis_Job_Processor_Group_Associations INNER JOIN
     dbo.T_Analysis_Job ON
     dbo.T_Analysis_Job_Processor_Group_Associations.Job_ID = dbo.T_Analysis_Job.AJ_jobID

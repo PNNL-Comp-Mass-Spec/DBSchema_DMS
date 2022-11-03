@@ -16,7 +16,7 @@ SELECT U.CC_Name AS Name,
        U.CC_PI_PRN AS PI,
        U.CC_Comment AS [Comment],
        C.Campaign_Num AS Campaign,
-       U.CC_ID AS #id
+       U.CC_ID AS id
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID

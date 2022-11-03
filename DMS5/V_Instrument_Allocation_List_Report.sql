@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Instrument_Allocation_List_Report] as
+CREATE VIEW [dbo].[V_Instrument_Allocation_List_Report] as
 SELECT  TAL.Fiscal_Year ,
         TAL.Proposal_ID ,
         CONVERT(VARCHAR(32), T_EUS_Proposals.TITLE) + '...' AS Title ,
@@ -18,7 +18,7 @@ SELECT  TAL.Fiscal_Year ,
         TAL.GC ,
         TAL.QQQ ,
         TAL.Last_Affected AS Last_Updated ,
-        TAL.FY_Proposal AS #fy_proposal
+        TAL.FY_Proposal AS fy_proposal
 FROM    ( SELECT    Fiscal_Year ,
                     Proposal_ID ,
                     SUM(CASE WHEN Allocation_Tag = 'FT' THEN Allocated_Hours

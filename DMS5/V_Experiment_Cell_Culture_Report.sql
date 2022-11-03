@@ -10,7 +10,7 @@ SELECT E.Experiment_Num AS Experiment,
        E.EX_researcher_PRN AS Researcher,
        Org.OG_name AS Organism,
        E.EX_comment AS [Comment],
-       CC.CC_Name AS #cell_culture
+       CC.CC_Name AS cell_culture
 FROM T_Experiment_Cell_Cultures ECC
      INNER JOIN T_Experiments E
        ON ECC.Exp_ID = E.Exp_ID

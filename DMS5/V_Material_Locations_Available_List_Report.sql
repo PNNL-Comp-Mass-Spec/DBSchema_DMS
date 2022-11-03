@@ -17,7 +17,7 @@ SELECT [Location],
        Containers,
        Available,
        'New Container' AS [Action],
-       #id
+       id
 FROM dbo.V_Material_Location_List_Report
 WHERE Available > 0 AND
       Status = 'Active'

@@ -37,7 +37,7 @@ SELECT '' AS [Sel],
             When QT.[Days In Queue] <= 90 Then 90   -- Request is 60 to 90 days old
             Else 120                                -- Request is over 90 days old
         End
-        AS #days_in_queue
+        AS days_in_queue_bin
 FROM T_Sample_Prep_Request SPR
      INNER JOIN T_Sample_Prep_Request_State_Name SN
        ON SPR.State = SN.State_ID

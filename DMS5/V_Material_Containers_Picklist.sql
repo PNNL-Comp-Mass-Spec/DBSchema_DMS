@@ -11,7 +11,7 @@ SELECT MC.Tag AS Container,
        MC.Status,
        MC.[Comment],
        L.Tag AS Location,
-       MC.SortKey AS #sort_key
+       MC.SortKey AS sort_key
 FROM T_Material_Containers MC
      INNER JOIN T_Material_Locations L
        ON MC.Location_ID = L.ID

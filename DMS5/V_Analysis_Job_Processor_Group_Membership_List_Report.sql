@@ -9,7 +9,7 @@ AS
 SELECT AJPGM.Processor_ID AS ID,
     AJP.Processor_Name AS Name,
     AJPGM.Membership_Enabled AS [Membership Enabled],
-    AJP.Machine, AJP.Notes, AJPGM.Group_ID AS #group_id,
+    AJP.Machine, AJP.Notes, AJPGM.Group_ID AS group_id,
     dbo.GetAJProcessorMembershipInGroupsList(AJP.ID, 2)
     AS [Group Membership]
 FROM dbo.T_Analysis_Job_Processor_Group_Membership AJPGM INNER

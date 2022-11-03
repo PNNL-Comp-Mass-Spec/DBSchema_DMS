@@ -30,7 +30,7 @@ SELECT OpsTask.ID,
            WHEN DATEDIFF(DAY, OpsTask.Created, GETDATE()) <= 60 THEN 60    -- Request is 30 to 60 days old
            WHEN DATEDIFF(DAY, OpsTask.Created, GETDATE()) <= 90 THEN 90    -- Request is 60 to 90 days old
            ELSE 120                                                        -- Request is over 90 days old
-       END AS #age_bracket
+       END AS age_bracket
 FROM T_Operations_Tasks OpsTask
      INNER JOIN T_Operations_Task_Type TaskType
        ON OpsTask.Task_Type_ID = TaskType.Task_Type_ID

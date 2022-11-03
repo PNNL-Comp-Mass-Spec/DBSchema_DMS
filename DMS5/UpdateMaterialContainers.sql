@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateMaterialContainers]
+CREATE PROCEDURE [dbo].[UpdateMaterialContainers]
 /****************************************************
 **
 **  Desc:
@@ -24,6 +24,7 @@ CREATE Procedure [dbo].[UpdateMaterialContainers]
 **          06/21/2022 mem - Use new column name Container_Limit in view V_Material_Location_List_Report
 **          07/07/2022 mem - Include container name in "container not empty" message
 **          10/22/2022 mem - Use an underscore to separate date and time in the auto-generated comment
+**          10/31/2022 mem - Use new column name id in views V_Material_Containers_List_Report and V_Material_Location_List_Report
 **
 *****************************************************/
 (
@@ -86,14 +87,14 @@ As
 
     INSERT INTO @material_container_list
         (ID, iName, iLocation, iItemCount, [Status], [Type])
-    SELECT #ID,
+    SELECT id,
            Container,
            Location,
            Items,
            [Status],
            [Type]
     FROM V_Material_Containers_List_Report
-    WHERE #ID IN ( SELECT Item
+    WHERE id IN ( SELECT Item
                    FROM dbo.MakeTableFromList ( @containerList ) )
 
     --
@@ -160,7 +161,7 @@ As
         Set @locStatus = ''
         --
         SELECT
-            @locID = #ID,
+            @locID = id,
             @contCount = Containers,
             @locLimit = Container_Limit,
             @locStatus = [Status]
@@ -230,7 +231,7 @@ As
 
             Set @message = 'All containers must be empty in order to retire them; see ' + @nonEmptyContainers
         End
-        
+
         return 51024
     End
 
@@ -238,7 +239,7 @@ As
     -- for 'contents' container retirement
     -- retire contents as well
     ---------------------------------------------------
-    
+
     -- Arrange for containers and their contents to have common comment
     -- Example comment: CR-2022.08.11_14:23:11
 

@@ -15,7 +15,7 @@ SELECT dbo.T_Internal_Std_Components.Name AS Component,
     dbo.T_Internal_Std_Components.Charge_Highest_Abu,
     dbo.T_Internal_Std_Components.Expected_GANET,
     dbo.T_Internal_Std_Components.Internal_Std_Component_ID AS
-     ID, dbo.T_Internal_Standards.Name AS #name
+     ID, dbo.T_Internal_Standards.Name AS name
 FROM dbo.T_Internal_Std_Parent_Mixes INNER JOIN
     dbo.T_Internal_Standards ON
     dbo.T_Internal_Std_Parent_Mixes.Parent_Mix_ID = dbo.T_Internal_Standards.Internal_Std_Parent_Mix_ID

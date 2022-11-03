@@ -13,7 +13,7 @@ SELECT E.Experiment_Num AS Experiment,
        E.EX_comment AS [Comment],
        E.EX_created AS Created,
        C.Campaign_Num AS Campaign,
-       E.EX_sample_prep_request_ID AS #id
+       E.EX_sample_prep_request_ID AS id
 FROM dbo.T_Experiments E
      INNER JOIN dbo.T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID

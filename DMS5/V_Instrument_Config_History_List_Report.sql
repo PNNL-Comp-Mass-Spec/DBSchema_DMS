@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Instrument_Config_History_List_Report] as
+CREATE VIEW [dbo].[V_Instrument_Config_History_List_Report] as
 SELECT TIH.ID,
        TIH.Instrument,
        Cast(TIH.Date_Of_Change AS date) AS [Date of Change],
@@ -18,7 +18,7 @@ SELECT TIH.ID,
            WHEN TU.U_PRN IS NULL THEN TIH.EnteredBy
            ELSE TU.Name_with_PRN
        END AS [Entered By],
-       TIH.Note AS #note_full
+       TIH.Note AS note_full
 FROM T_Instrument_Config_History AS TIH
      LEFT OUTER JOIN T_Users AS TU
        ON TIH.EnteredBy = TU.U_PRN

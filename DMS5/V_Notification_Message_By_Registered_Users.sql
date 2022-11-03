@@ -13,8 +13,8 @@ SELECT
   VNMRT.Campaign,
   VNMRT.Role,
   VNMRT.EventTypeID,
-  VNMRT.#entity_type,
-  VNMRT.#prn,
+  VNMRT.entity_type,
+  VNMRT.prn,
   VNMRT.[User],
   TNER.User_ID,
   VNMRT.Entered,
@@ -22,8 +22,8 @@ SELECT
 FROM
   T_Notification_Entity_User AS TNER
   INNER JOIN T_Users AS TU ON TNER.User_ID = TU.ID
-  INNER JOIN V_Notification_Message_By_Research_Team AS VNMRT ON TU.U_PRN = VNMRT.#prn
-                                                              AND TNER.Entity_Type_ID = VNMRT.#entity_type
+  INNER JOIN V_Notification_Message_By_Research_Team AS VNMRT ON TU.U_PRN = VNMRT.prn
+                                                              AND TNER.Entity_Type_ID = VNMRT.entity_type
 
 
 GO

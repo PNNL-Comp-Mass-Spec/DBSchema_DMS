@@ -11,7 +11,7 @@ SELECT
   T_Notification_Event_Type.Name AS Event,
   T_Notification_Event.Target_ID AS Entity,
   T_Notification_Event.Entered,
-  T_Notification_Event_Type.Target_Entity_Type AS #entity_type
+  T_Notification_Event_Type.Target_Entity_Type AS entity_type
 FROM
   T_Notification_Event
   INNER JOIN T_Notification_Event_Type ON T_Notification_Event.Event_Type = T_Notification_Event_Type.ID

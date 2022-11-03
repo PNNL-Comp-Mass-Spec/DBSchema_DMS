@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetCurrentMangerActivity
+
+CREATE PROCEDURE [dbo].[GetCurrentMangerActivity]
 /****************************************************
 **
 **  Desc:
@@ -21,6 +22,7 @@ CREATE PROCEDURE GetCurrentMangerActivity
 **          09/30/2009 grk - eliminated references to health log
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          10/27/2022 mem - Change # column to lowercase
+**          11/02/2022 mem - Remove # from column name
 **
 *****************************************************/
 AS
@@ -165,12 +167,6 @@ AS
     ) T on M.Who = T.Who
     WHERE M.[When] < T.[When]
 
-/**/
-
-    /*
-    -- FUTURE: get list of archive update in progress
-    --
-    */
 Done:
     -- dump contents of temporary table
     --
@@ -179,7 +175,7 @@ Done:
         [When],
         Who,
         What,
-        CASE WHEN DATEDIFF(hour, [When], getdate()) > 6 THEN 'ALERT' ELSE '' END as #alert
+        CASE WHEN DATEDIFF(hour, [When], getdate()) > 6 THEN 'ALERT' ELSE '' END as alert
     FROM #XT
     ORDER by Who DESC
 

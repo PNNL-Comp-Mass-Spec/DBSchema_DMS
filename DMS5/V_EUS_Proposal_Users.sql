@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_EUS_Proposal_Users]
 As
 SELECT U.PERSON_ID AS [User ID],
        U.NAME_FM AS [User Name],
-       PU.Proposal_ID AS #proposal,
+       PU.Proposal_ID AS proposal,
        IsNull(UsageQ.Prep_Requests, 0) AS [Prep Requests],
        PU.Last_Affected AS [Last_Affected],
        P.Proposal_Start_Date,

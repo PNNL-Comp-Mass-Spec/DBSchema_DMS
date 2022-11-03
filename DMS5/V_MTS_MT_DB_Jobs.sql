@@ -21,7 +21,7 @@ SELECT JM.Job,
        AJ.AJ_proteinCollectionList as [Protein Collection List],
        DS.DS_sec_sep AS [Separation Type],
 	   DFP.Dataset_Folder_Path AS [Dataset Folder Path],
-       JM.SortKey AS #sort_key
+       JM.SortKey AS sort_key
 FROM T_MTS_MT_DB_Jobs_Cached JM
      INNER JOIN T_MTS_MT_DBs_Cached MTDBs
        ON JM.MT_DB_Name = MTDBs.MT_DB_Name

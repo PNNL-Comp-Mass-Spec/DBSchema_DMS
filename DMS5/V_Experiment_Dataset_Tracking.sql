@@ -8,7 +8,7 @@ CREATE VIEW dbo.V_Experiment_Dataset_Tracking
 AS
 SELECT     dbo.T_Dataset.Dataset_Num AS Dataset, COUNT(dbo.T_Analysis_Job.AJ_jobID) AS Jobs, dbo.T_Instrument_Name.IN_name AS Instrument,
                       dbo.T_Campaign.Campaign_Num AS Campaign, dbo.T_Dataset.DS_created AS Created,
-                      dbo.T_Experiments.Experiment_Num AS #experiment
+                      dbo.T_Experiments.Experiment_Num AS experiment
 FROM         dbo.T_Experiments INNER JOIN
                       dbo.T_Dataset ON dbo.T_Experiments.Exp_ID = dbo.T_Dataset.Exp_ID INNER JOIN
                       dbo.T_Campaign ON dbo.T_Experiments.EX_campaign_ID = dbo.T_Campaign.Campaign_ID INNER JOIN

@@ -58,7 +58,7 @@ SELECT JS.Job,
        JS.Remote_Info_ID As RemoteInfoID,
        JS.Remote_Start,
        JS.Remote_Finish,
-       JS.Job_Plus_Step AS #id
+       JS.Job_Plus_Step AS id
 FROM dbo.T_Job_Steps AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
        ON JS.State = SSN.ID

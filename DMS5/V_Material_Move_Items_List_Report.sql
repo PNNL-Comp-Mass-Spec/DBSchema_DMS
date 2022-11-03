@@ -12,7 +12,7 @@ SELECT ContentsQ.Item,
        ContentsQ.Material_ID AS ID,
        MC.Tag AS Container,
        MC.[Type],
-       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS #item_id,
+       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS item_id,
        ML.Tag AS [Location],
        MC.[Status] As [Container Status],
        ContentsQ.Request_ID AS [Prep Request]
@@ -44,7 +44,6 @@ FROM dbo.T_Material_Containers AS MC
        ON ContentsQ.Container_ID = MC.ID
      INNER JOIN dbo.T_Material_Locations AS ML
        ON MC.Location_ID = ML.ID
-
 
 
 GO

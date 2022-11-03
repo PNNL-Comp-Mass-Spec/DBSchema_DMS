@@ -56,9 +56,9 @@ SELECT RR.ID AS Request,
        RR.RDS_special_instructions AS [Special Instructions],
        Case
            When RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #wp_activation_state
+                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for wp_activation_state
            Else CC.Activation_State
-       End AS #wp_activation_state
+       End AS wp_activation_state
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
                 INNER JOIN dbo.T_Experiments AS E

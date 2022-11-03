@@ -51,12 +51,12 @@ SELECT RR.ID AS Request,
            WHEN QT.[Days In Queue] <= 60 THEN 60
            WHEN QT.[Days In Queue] <= 90 THEN 90
            ELSE 120
-       END AS #days_in_queue,
+       END AS days_in_queue_bin,
        CASE
            WHEN RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for #wp_activation_state
+                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for wp_activation_state
            ELSE CC.Activation_State
-       END AS #wp_activation_state
+       END AS wp_activation_state
 FROM T_Requested_Run AS RR
      INNER JOIN T_DatasetTypeName AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID

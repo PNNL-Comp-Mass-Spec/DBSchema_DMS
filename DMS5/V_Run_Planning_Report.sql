@@ -46,13 +46,13 @@ SELECT  GroupQ.[Inst. Group],
              WHEN DATEDIFF(DAY, GroupQ.[Date Created], GETDATE()) <= 90
              THEN 90  -- Request is 60 to 90 days old
              ELSE 120                                                            -- Request is over 90 days old
-        END AS #days_in_queue,
-        GroupQ.WPActivationState AS #wp_activation_state,
-        GroupQ.Requested_Batch_Priority AS #batch_priority,
+        END AS days_in_queue_bin,
+        GroupQ.WPActivationState AS wp_activation_state,
+        GroupQ.Requested_Batch_Priority AS batch_priority,
         Case When GroupQ.Fraction_Count > 1 Then 1
              When GroupQ.FractionBasedRequestCount > 1 Then 2
              Else 0
-        End AS #fraction_color_mode
+        End AS fraction_color_mode
 FROM    ( SELECT    [Inst. Group],
                     MIN(RequestID) AS [Min Request],
                     COUNT(RequestID) AS [Run Count],

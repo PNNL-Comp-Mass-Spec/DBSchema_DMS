@@ -21,7 +21,7 @@ SELECT RR.ID AS Request,
        RR.RDS_comment AS Comment,
        RR.RDS_Well_Plate_Num AS Wellplate,
        RR.RDS_Well_Num AS Well,
-       RR.RDS_BatchID AS #batch_id
+       RR.RDS_BatchID AS batch_id
 FROM T_Requested_Run RR
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID

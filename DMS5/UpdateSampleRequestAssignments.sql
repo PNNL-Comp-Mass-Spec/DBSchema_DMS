@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure UpdateSampleRequestAssignments
+
+CREATE Procedure [dbo].[UpdateSampleRequestAssignments]
 /****************************************************
 **
 **	Desc: 
@@ -11,8 +12,6 @@ CREATE Procedure UpdateSampleRequestAssignments
 **	for given list of requested sample preps
 **
 **	Return values: 0: success, otherwise, error code
-**
-**	Parameters: 
 **
 **	Auth: grk
 **	Date: 	06/14/2005
@@ -26,6 +25,7 @@ CREATE Procedure UpdateSampleRequestAssignments
 **			06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
+**          11/02/2022 mem - Fix bug that treated priority as an integer; instead, should be Normal or High
 **    
 *****************************************************/
 (
@@ -34,15 +34,15 @@ CREATE Procedure UpdateSampleRequestAssignments
 	@reqIDList varchar(2048)
 )
 As
-	declare @myError int = 0
-	declare @myRowCount int = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @dt datetime
+	Declare @dt datetime
 
-	declare @done int = 0
-	declare @count int = 0
-	declare @id int = 0
-	declare @RequestIDNum varchar(12)
+	Declare @done int = 0
+	Declare @count int = 0
+	Declare @id int = 0
+	Declare @RequestIDNum varchar(12)
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
@@ -51,9 +51,9 @@ As
 	Declare @authorized tinyint = 0	
 	Exec @authorized = VerifySPAuthorized 'UpdateSampleRequestAssignments', @raiseError = 1
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
+	End;
 	
 	---------------------------------------------------
 	-- Populate a temorary table with the requests to process
@@ -102,20 +102,23 @@ As
 			-------------------------------------------------
 			if @mode = 'priority'
 			begin
-				-- get priority numberical value
+				-- Priority should be Normal or High
 				--
-				declare @pri int
-				set @pri = cast(@newValue as int)
+                If Not @newValue In ('Normal', 'High')
+				begin
+				    RAISERROR ('Priority should be Normal or High; not updating request %s', 10, 1, @RequestIDNum)
+				    return 51310
+			    end	
 				
 				-- set priority
 				--
 				UPDATE T_Sample_Prep_Request
-				SET	[Priority] = @pri
+				SET	[Priority] = @newValue
 				WHERE (ID = @id)	
 				--	
 				SELECT @myError = @@error, @myRowCount = @@rowcount
 			end
-
+            
 			-------------------------------------------------
 			-- This mode is used for web page option "Assign selected requests to preparer(s)"
 			if @mode = 'assignment'
@@ -147,7 +150,7 @@ As
 			if @mode = 'state'
 			begin
 				-- get state ID
-				declare @stID int
+				Declare @stID int
 				set @stID = 0
 				--
 				SELECT @stID = State_ID
@@ -158,8 +161,8 @@ As
 				--
 				if @myError <> 0
 				begin
-					RAISERROR ('lookup state failed: "%s"', 10, 1, @RequestIDNum)
-					return 51310
+					RAISERROR ('Lookup state failed for state name "%s"', 10, 1, @newValue)
+					return 51311
 				end	
 				--
 				UPDATE T_Sample_Prep_Request
@@ -182,8 +185,8 @@ As
 			-------------------------------------------------
 			if @myError <> 0
 			begin
-				RAISERROR ('operation failed for: "%s"', 10, 1, @RequestIDNum)
-				return 51310
+				RAISERROR ('Operation failed for for Request ID %s', 10, 1, @RequestIDNum)
+				return 51312
 			end	
 		end
 	end

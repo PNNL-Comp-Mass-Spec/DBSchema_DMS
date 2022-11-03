@@ -17,7 +17,7 @@ SELECT CC.Charge_Code,
        DMSUser.U_Name AS Owner_Name,
        CC.Setup_Date,
        SortKey,
-        CC.Activation_State AS #activation_state
+        CC.Activation_State AS activation_state
 FROM T_Charge_Code CC
      INNER JOIN T_Charge_Code_Activation_State CCA
        ON CC.Activation_State = CCA.Activation_State

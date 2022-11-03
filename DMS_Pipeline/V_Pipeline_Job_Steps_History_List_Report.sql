@@ -37,7 +37,7 @@ SELECT JS.Job,
        JS.Completion_Message,
        JS.Evaluation_Code,
        JS.Evaluation_Message,
-       JobStepSavedCombo AS #id
+       JobStepSavedCombo AS id
 FROM dbo.T_Job_Steps_History AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
        ON JS.State = SSN.ID

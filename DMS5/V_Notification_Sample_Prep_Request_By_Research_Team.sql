@@ -13,8 +13,8 @@ SELECT DISTINCT TNE.ID AS Seq,
                 T.[User],
                 T.[Role],
                 TNE.Entered,
-                TET.Target_Entity_Type AS #entity_type,
-                T.#prn,
+                TET.Target_Entity_Type AS entity_type,
+                T.prn,
                 TET.ID AS EventType,
                 TNE.Event_Type AS EventTypeID,
                 TET.Link_Template
@@ -28,7 +28,7 @@ FROM T_Notification_Event TNE
      INNER JOIN ( SELECT T_Campaign.Campaign_Num AS Campaign,
                          T_Users.U_Name AS [User],
                          dbo.GetResearchTeamUserRoleList(SRTM.Team_ID, SRTM.User_ID) AS [Role],
-                         T_Users.U_PRN AS #prn
+                         T_Users.U_PRN AS prn
                   FROM T_Campaign
                        INNER JOIN T_Research_Team
                          ON T_Campaign.CM_Research_Team = T_Research_Team.ID

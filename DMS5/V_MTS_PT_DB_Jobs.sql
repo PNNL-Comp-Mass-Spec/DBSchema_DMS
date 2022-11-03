@@ -19,7 +19,7 @@ SELECT JM.Job,
        AJ.AJ_parmFileName as [Param File],
        AJ.AJ_settingsFileName as [Settings File],
        AJ.AJ_proteinCollectionList as [Protein Collection List],
-       JM.SortKey AS #sort_key
+       JM.SortKey AS sort_key
 FROM T_MTS_PT_DB_Jobs_Cached JM
      LEFT OUTER JOIN T_Dataset DS
                      INNER JOIN T_Analysis_Job AJ

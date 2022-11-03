@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetPackageDatasetJobToolCrosstab
+CREATE PROCEDURE [dbo].[GetPackageDatasetJobToolCrosstab]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +18,7 @@ CREATE PROCEDURE GetPackageDatasetJobToolCrosstab
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			05/18/2016 mem - Log errors to T_Log_Entries
 **          10/26/2022 mem - Change column #id to lowercase
+**          10/31/2022 mem - Use new column name id in the temp table
 **
 *****************************************************/
 (
@@ -56,14 +57,14 @@ As
 		CREATE TABLE #Datasets (
 			Dataset VARCHAR(128),
 			Jobs INT NULL,
-			#id INT
+			id INT
 		)
 		---------------------------------------------------
 		-- get list of package datasets
 		---------------------------------------------------
 		--
 		INSERT INTO #Datasets
-			( Dataset, #id)
+			( Dataset, id)
 		SELECT DISTINCT Dataset, @DataPackageID
 		FROM T_Data_Package_Datasets
 		WHERE Data_Package_ID = @DataPackageID
@@ -153,7 +154,6 @@ As
 	END CATCH
 
 	RETURN @myError
-
 
 
 GO

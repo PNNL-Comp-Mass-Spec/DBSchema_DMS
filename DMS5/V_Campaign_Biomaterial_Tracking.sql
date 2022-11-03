@@ -9,7 +9,7 @@ AS
 SELECT dbo.T_Cell_Culture.CC_Name AS Biomaterial,
        dbo.T_Cell_Culture.CC_Reason AS Reason,
        dbo.T_Cell_Culture.CC_Created AS Created,
-       dbo.T_Campaign.Campaign_Num AS #campaign
+       dbo.T_Campaign.Campaign_Num AS campaign
 FROM dbo.T_Campaign
      INNER JOIN dbo.T_Cell_Culture
        ON dbo.T_Campaign.Campaign_ID = dbo.T_Cell_Culture.CC_Campaign_ID

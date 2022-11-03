@@ -14,9 +14,9 @@ SELECT Container,
        [Status],
        'New Biomaterial' AS [Action],
        Created,
-       dbo.GetMaterialContainerCampaignList(#id, Items) AS Campaigns,
+       dbo.GetMaterialContainerCampaignList(id, Items) AS Campaigns,
        Researcher,
-       #id
+       id
 FROM ( SELECT MC.Tag AS Container,
               MC.[Type],
               ML.Tag AS [Location],
@@ -25,7 +25,7 @@ FROM ( SELECT MC.Tag AS Container,
               MC.[Status],
               -- Unused: MC.Barcode,
               MC.Created,
-              MC.ID AS #id,
+              MC.ID AS id,
               MC.Researcher,
               TFA.FileCount
        FROM T_Material_Containers AS MC

@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[MoveMaterialContainers]
+CREATE PROCEDURE [dbo].[MoveMaterialContainers]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE Procedure [dbo].[MoveMaterialContainers]
 **  Date:   08/03/2016
 **          08/27/2018 mem - Rename the view Material Location list report view
 **          06/21/2022 mem - Use new column name Container_Limit in view V_Material_Location_List_Report
+**          10/31/2022 mem - Use new column name id in views V_Material_Location_List_Report and V_Material_Containers_List_Report
 **
 *****************************************************/
 (
@@ -198,7 +199,7 @@ As
             SET @numContainers = 1
 
             SELECT
-                @LocationIDNew = #ID,
+                @LocationIDNew = id,
                 @contCount = Containers,
                 @locLimit = Container_Limit,
                 @locStatus = Status
@@ -285,7 +286,7 @@ As
             End -- </c>
 
             INSERT INTO #Tmp_Move_Status (Container_ID, Container, [Type], Location_Old, Location_Current, Location_New, LocationIDNew, Status)
-            SELECT     #ID AS Container_ID,
+            SELECT     id AS Container_ID,
                     Container,
                     [Type],
                     @LocationTagOld AS Location_Old,
@@ -294,7 +295,7 @@ As
                     @LocationIDNew AS LocationIDNew,
                     @moveStatus
             FROM V_Material_Containers_List_Report
-            WHERE #ID = @ContainerID
+            WHERE id = @ContainerID
 
 
         End -- </b>

@@ -18,7 +18,7 @@ SELECT dbo.V_Cell_Culture_Report.Name,
    AS [Exp. Count]
 FROM dbo.V_Cell_Culture_Report INNER JOIN
    dbo.T_Experiment_Cell_Cultures ON
-   dbo.V_Cell_Culture_Report.#id = dbo.T_Experiment_Cell_Cultures.CC_ID
+   dbo.V_Cell_Culture_Report.id = dbo.T_Experiment_Cell_Cultures.CC_ID
 GROUP BY dbo.V_Cell_Culture_Report.Name,
    dbo.V_Cell_Culture_Report.Source,
    dbo.V_Cell_Culture_Report.PI, dbo.V_Cell_Culture_Report.Type,

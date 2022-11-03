@@ -16,7 +16,7 @@ SELECT E.Experiment_Num AS Experiment,
        Campaign.Campaign_Num AS Campaign,
        CEC.Cell_Culture_List AS [Cell Cultures],
        CEC.Reference_Compound_List AS [Ref Compounds],
-       E.Exp_ID AS #id
+       E.Exp_ID AS id
 FROM T_Experiments E
      INNER JOIN T_Campaign Campaign
        ON E.EX_campaign_ID = Campaign.Campaign_ID

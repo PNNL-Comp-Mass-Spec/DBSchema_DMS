@@ -14,7 +14,7 @@ SELECT MC.Tag AS Container,
        MC.Comment,
        -- Unused: MC.Barcode,
        MC.Created,
-       MC.ID AS #id
+       MC.ID AS id
 FROM dbo.T_Material_Containers MC
      INNER JOIN dbo.T_Material_Locations ML
        ON MC.Location_ID = ML.ID

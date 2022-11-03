@@ -20,7 +20,7 @@ SELECT  ID AS [ID] ,
                 WHEN Item_Type = 'prep_lc_run' THEN Cast(Item_ID As Varchar(128))
                 WHEN Item_Type = 'requested_run' THEN Cast(Item_ID As Varchar(128))
                 ELSE ''
-        END AS #link
+        END AS link
 FROM    T_Sample_Prep_Request_Items
 
 

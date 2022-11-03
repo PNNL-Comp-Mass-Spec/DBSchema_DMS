@@ -13,7 +13,7 @@ SELECT DS.Dataset_Num AS Dataset,
        E.EX_created AS [Created (Ex)],
        CCE.Cell_Culture_List AS [Cell Cultures],
        C.Campaign_Num AS Campaign,
-       DS.Dataset_ID AS #id
+       DS.Dataset_ID AS id
 FROM T_Dataset DS
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID

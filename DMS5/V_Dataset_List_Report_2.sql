@@ -47,7 +47,7 @@ SELECT DS.Dataset_ID AS ID,
        -- Deprecated: T_YesNo.Description AS [Inst. Data Purged],
        Org.OG_name AS Organism,
        BTO.Tissue,
-       DS.DateSortKey AS #date_sort_key
+       DS.DateSortKey AS date_sort_key
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
@@ -96,7 +96,6 @@ FROM T_DatasetStateName DSN
        */
      LEFT OUTER JOIN S_V_BTO_ID_to_Name AS BTO
        ON BTO.Identifier = E.EX_Tissue_ID
-
 
 
 GO

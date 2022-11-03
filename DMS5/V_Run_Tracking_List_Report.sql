@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Run_Tracking_List_Report] as
+CREATE VIEW [dbo].[V_Run_Tracking_List_Report] as
 SELECT  DS.Dataset_ID AS ID ,
         DS.Dataset_Num AS Dataset ,
         DS.Acq_Time_Start AS Time_Start ,
@@ -25,7 +25,7 @@ SELECT  DS.Dataset_ID AS ID ,
         DATEPART(YEAR, DS.Acq_Time_Start) AS Year ,
         DATEPART(MONTH, DS.Acq_Time_Start) AS Month ,
         DATEPART(DAY, DS.Acq_Time_Start) AS [Day],
-        CASE WHEN    DS.DS_type_ID = 100 THEN 'Tracking' ELSE 'Regular' END AS #dataset_type
+        CASE WHEN    DS.DS_type_ID = 100 THEN 'Tracking' ELSE 'Regular' END AS dataset_type
 FROM    dbo.T_Dataset AS DS
         INNER JOIN dbo.T_Instrument_Name ON DS.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
         INNER JOIN dbo.T_Experiments AS E ON DS.Exp_ID = E.Exp_ID
