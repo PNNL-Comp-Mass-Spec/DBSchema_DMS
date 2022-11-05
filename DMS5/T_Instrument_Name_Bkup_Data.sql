@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 187 ******/
+/****** RowCount: 188 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -187,4 +187,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Agilent_QTOF',185,'Agilen
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P',186,'BrukerFT_BAF',4149,4249,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T magnet (the 15T magnet was de-energized in spring 2022 due to magnet helium fill problems and helium shortage)','4/21/2022 3:05:49 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P_Imaging',187,'BrukerMALDI_Imaging_V2',4149,4273,'secfso',null,'EMSL 1621','Bruker 12T FTICR with MALDI imaging capability (mass spectrometer was previously used with the 15T magnet)','4/21/2022 3:08:42 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_IMS_AgQTOF',188,'IMS_Agilent_TOF_DotD',4152,2,'sec',null,'Offsite','IMS .d datasets acquired offsite','5/20/2022 9:15:09 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgTOF10',189,'Agilent_TOF_V2',2,2,'secfso',null,'EMSL 1422','TOF purchased by instrument development group','10/21/2022 2:27:28 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgTOF10',189,'Agilent_TOF_V2',4294,2,'secfso',null,'EMSL 1422','TOF purchased by instrument development group','10/21/2022 2:27:28 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('15T_FTICR_I',190,'BrukerFT_BAF',4295,2,'secfso',null,'EMSL 1621','Bruker Solarix 15T with an infinity cell','11/2/2022 11:33:18 AM')
