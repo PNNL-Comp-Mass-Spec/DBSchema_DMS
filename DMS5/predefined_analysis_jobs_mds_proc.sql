@@ -1,16 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[EvaluatePredefinedAnalysisRulesMDS] ******/
+/****** Object:  StoredProcedure [dbo].[predefined_analysis_jobs_mds_proc] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRulesMDS]
+CREATE PROCEDURE [dbo].[predefined_analysis_jobs_mds_proc]
 /****************************************************
 ** 
 **	Desc: 
-**      Evaluate predefined analysis rules for given
-**      list of datasets and generate the specifed 
-**      ouput type 
+**      Evaluate predefined analysis rules for given list of datasets
+**      Return a table of the jobs that would be created
 **
 **	Return values: 0: success, otherwise, error code
 ** 
@@ -28,24 +27,23 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRulesMDS]
 **			05/03/2012 mem - Added support for the Special Processing field
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **          06/30/2022 mem - Rename parameter file column
+**          11/09/2022 mem - Rename stored procedure from EvaluatePredefinedAnalysisRulesMDS to predefined_analysis_jobs_mds_proc
 **    
 *****************************************************/
 (
     @datasetList varchar(3500),
-	@message varchar(512) output
+	@message varchar(512) = '' output
 )
 As
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
-	declare @jobNum varchar(32)
-	declare @jobID int
-	declare @DatasetName varchar(128)
-	declare @result int
+	Declare @jobNum varchar(32)
+	Declare @jobID int
+	Declare @DatasetName varchar(128)
+	Declare @result int
 	
 	Set @datasetList = IsNull(@datasetList, '')
 	set @message = ''
@@ -105,9 +103,9 @@ As
 	-- for each one into job holding table
 	---------------------------------------------------
 	--
-	declare @done int = 0
-	declare @count int = 0
-	declare @EntryID int = 0
+	Declare @done int = 0
+	Declare @count int = 0
+	Declare @EntryID int = 0
 
 	while @done = 0 and @myError = 0
 	begin
@@ -175,11 +173,11 @@ Done:
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_jobs_mds_proc] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[predefined_analysis_jobs_mds_proc] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[predefined_analysis_jobs_mds_proc] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRulesMDS] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_jobs_mds_proc] TO [Limited_Table_Write] AS [dbo]
 GO
