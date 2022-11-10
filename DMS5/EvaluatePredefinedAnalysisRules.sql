@@ -70,6 +70,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          08/29/2018 mem - Create jobs for datasets with rating -6: "Rerun (Good Data)"
 **          06/30/2022 mem - Rename parameter file column
 **          11/08/2022 mem - Rename Rule_ID to Predefine_ID
+**          11/09/2022 mem - Replace % signs with %% in the text sent to RAISERROR()
 **
 *****************************************************/
 (
@@ -84,11 +85,8 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 As
     Set nocount on
     
-    Declare @myError int
-    Set @myError = 0
-
-    Declare @myRowCount int
-    Set @myRowCount = 0
+    Declare @myError Int =  0
+    Declare @myRowCount int = 0
     
     Set @message = ''
     Set @datasetNum = IsNull(@datasetNum, '')
@@ -106,7 +104,10 @@ As
     Begin
         Set @message = 'Unknown value for @outputType (' + @outputType + '); should be "Show Rules", "Show Jobs", or "Export Jobs"'
         If @RaiseErrorMessages <> 0
+        Begin
             RAISERROR (@message, 10, 1)
+        End
+
         return 51001
     End
     
@@ -135,6 +136,7 @@ As
     Declare @ScanCount int    
     
     Declare @ID int  = 0
+    Declare @msg Varchar(512)
     --
     SELECT     
         @Campaign = Campaign,
@@ -162,7 +164,10 @@ As
         Set @message = 'Dataset name not found in DMS: ' + @datasetNum
         
         If @RaiseErrorMessages <> 0
-            RAISERROR (@message, 10, 1)
+        Begin
+            Set @msg = Replace(@message, '%', '%%')
+            RAISERROR (@msg, 10, 1)
+        End
 
         If @myError = 0
             Set @myError = 53500
@@ -205,7 +210,8 @@ As
                     If @RaiseErrorMessages <> 0
                     Begin
                         Set @myError = 53501
-                        RAISERROR (@message, 10, 1)
+                        Set @msg = Replace(@message, '%', '%%')
+                        RAISERROR (@msg, 10, 1)
                     End
 
                     goto done
@@ -755,8 +761,9 @@ As
                         
                         If @RaiseErrorMessages <> 0
                         Begin
-                            RAISERROR (@message, 10, 1)
-                            return
+                            Set @msg = Replace(@message, '%', '%%')
+                            RAISERROR (@msg, 10, 1)
+                            Return @result
                         End
                         Else
                         Begin
