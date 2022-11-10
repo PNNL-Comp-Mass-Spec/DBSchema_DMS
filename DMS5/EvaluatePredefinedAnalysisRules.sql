@@ -8,10 +8,10 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 /****************************************************
 ** 
 **  Desc: 
-**     Evaluate predefined analysis rules for given
-**     dataset and generate the specifed ouput type 
+**      Evaluate predefined analysis rules for given
+**      dataset and generate the specifed ouput type 
 **
-**    The calling procedure must create table #JX
+**      When @outputType is 'Export Jobs', the calling procedure must create table #JX
 **
         CREATE TABLE #JX (
             datasetNum varchar(128),
@@ -69,6 +69,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          10/05/2017 mem - Create jobs for datasets with rating -4: "Not released (allow analysis)"
 **          08/29/2018 mem - Create jobs for datasets with rating -6: "Rerun (Good Data)"
 **          06/30/2022 mem - Rename parameter file column
+**          11/08/2022 mem - Rename Rule_ID to Predefine_ID
 **
 *****************************************************/
 (
@@ -267,7 +268,7 @@ As
             [Step] int IDENTITY(1,1),
             [Level] int, 
             [Seq.] int NULL, 
-            Rule_ID int, 
+            Predefine_ID int, 
             [Next Lvl.] int NULL, 
             [Trigger Mode] varchar(32) NULL,
             [Export Mode] varchar(32) NULL,
@@ -433,7 +434,7 @@ As
     If @outputType = 'Show Rules'
     Begin
         INSERT INTO #RuleEval (
-            [Level], [Seq.], Rule_ID, [Next Lvl.], [Trigger Mode], [Export Mode],
+            [Level], [Seq.], Predefine_ID, [Next Lvl.], [Trigger Mode], [Export Mode],
             [Action], [Reason], 
             [Notes], [Analysis Tool],
             [Instrument Class Crit.], [Instrument Crit.], [Instrument Exclusion], 
@@ -828,7 +829,7 @@ As
                     [Notes] = @RuleEvalNotes,
                     Priority = @priority, 
                     [Processor Group] = @associatedProcessorGroup
-                WHERE Rule_ID  = @paRuleID
+                WHERE Predefine_ID  = @paRuleID
             End
         End -- </b>
 
