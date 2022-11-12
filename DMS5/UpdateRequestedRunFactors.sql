@@ -65,6 +65,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/12/2022 mem - Trim leading and trailing whitespace when storing factors
+**          11/11/2022 mem - Trim whitespace when checking for unnamed factors
 **
 *****************************************************/
 (
@@ -112,7 +113,7 @@ As
     -- exec PostLogEntry 'Debug', Cast(@factorList As varchar(4096)), 'UpdateRequestedRunFactors'
 
     -----------------------------------------------------------
-    -- temp table to hold factors
+    -- Temp table to hold factors
     -----------------------------------------------------------
     --
     CREATE TABLE #TMP (
@@ -158,16 +159,16 @@ As
 
 
     -----------------------------------------------------------
-    -- populate temp table with new parameters
+    -- Populate temp table with new parameters
     -----------------------------------------------------------
     --
     INSERT INTO #TMP
         (Identifier, Factor, Value, DatasetID, UpdateSkipCode)
     SELECT
-        Ltrim(Rtrim(xmlNode.value('@i', 'nvarchar(256)'))) As Identifier,
-        Ltrim(Rtrim(xmlNode.value('@f', 'nvarchar(256)'))) As Factor,
-        Ltrim(Rtrim(xmlNode.value('@v', 'nvarchar(256)'))) As Value,
-        Ltrim(Rtrim(xmlNode.value('@d', 'nvarchar(256)'))) As DatasetID,        -- Only sometimes present
+        LTrim(RTrim(xmlNode.value('@i', 'nvarchar(256)'))) As Identifier,
+        LTrim(RTrim(xmlNode.value('@f', 'nvarchar(256)'))) As Factor,
+        LTrim(RTrim(xmlNode.value('@v', 'nvarchar(256)'))) As Value,
+        LTrim(RTrim(xmlNode.value('@d', 'nvarchar(256)'))) As DatasetID,        -- Only sometimes present
         0 AS UpdateSkipCode
     FROM @xml.nodes('//r') AS R(xmlNode)
     --
@@ -179,9 +180,9 @@ As
         return 51009
     end
 
-     -----------------------------------------------------------
+    -----------------------------------------------------------
     -- If table contains DatasetID values, then auto-populate the Identifier column with RequestIDs
-     -----------------------------------------------------------
+    -----------------------------------------------------------
 
     IF EXISTS (SELECT * FROM #TMP WHERE Not DatasetID IS NULL)
     Begin -- <a>
@@ -317,7 +318,7 @@ As
 
     End
 
-     -----------------------------------------------------------
+    -----------------------------------------------------------
     -- Check for unresolved requests
     -----------------------------------------------------------
     --
@@ -346,7 +347,7 @@ As
     end
 
     -----------------------------------------------------------
-    -- validate factor names
+    -- Validate factor names
     -----------------------------------------------------------
     --
     DECLARE    @badFactorNames VARCHAR(8000) = ''
@@ -500,7 +501,7 @@ As
                        WHERE UpdateSkipCode = 0 AND
                              #tmp.RequestID = T_Factor.TargetID AND
                              #tmp.Factor = T_Factor.Name AND
-                             #tmp.Value = '' )
+                             LTrim(RTrim(#tmp.Value)) = '' )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -511,7 +512,7 @@ As
         end
 
         -----------------------------------------------------------
-        -- update existing items in factors tables
+        -- Update existing items in factors tables
         -----------------------------------------------------------
         --
         UPDATE T_Factor
@@ -534,7 +535,7 @@ As
         end
 
         -----------------------------------------------------------
-        -- add new factors
+        -- Add new factors
         -----------------------------------------------------------
         --
         INSERT INTO dbo.T_Factor( [Type],
@@ -549,7 +550,7 @@ As
                GetDate()
         FROM #TMP
         WHERE UpdateSkipCode = 0 AND
-              #tmp.Value <> '' AND
+              LTrim(RTrim(#tmp.Value)) <> '' AND
               NOT EXISTS ( SELECT *
                            FROM T_Factor
                            WHERE #tmp.RequestID = T_Factor.TargetID AND
@@ -565,7 +566,7 @@ As
         end
 
         -----------------------------------------------------------
-        -- convert changed items to XML for logging
+        -- Convert changed items to XML for logging
         -----------------------------------------------------------
         --
         DECLARE @changeSummary varchar(max) = ''
@@ -575,7 +576,7 @@ As
         WHERE UpdateSkipCode = 0
 
         -----------------------------------------------------------
-        -- log changes
+        -- Log changes
         -----------------------------------------------------------
         --
         IF @changeSummary <> ''
