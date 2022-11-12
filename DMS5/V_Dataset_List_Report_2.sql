@@ -36,11 +36,7 @@ SELECT DS.Dataset_ID AS ID,
        EUT.Name AS [Usage],
        RR.RDS_EUS_Proposal_ID AS [Proposal],
        -- Deprecated to improve performance: EPT.Abbreviation AS [EUS Proposal Type],
-
-       -- <TemporarilyEnabled>
-       EPT.Proposal_Type_Name AS [Proposal Type],
-       -- </TemporarilyEnabled>
-
+       -- Deprecated to improve performance: EPT.Proposal_Type_Name AS [Proposal Type],
        RR.RDS_WorkPackage AS [Work Package],
        -- Deprecated: RR.RDS_Requestor_PRN AS Requester,
        -- Deprecated: DASN.DASN_StateName AS [Archive State],
@@ -73,14 +69,6 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN T_EUS_UsageType AS EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
-
-     -- <TemporarilyEnabled>
-     LEFT OUTER JOIN T_EUS_Proposals AS EUP
-       ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
-     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
-       ON EUP.Proposal_Type = EPT.Proposal_Type
-     -- </TemporarilyEnabled>
-
      /*
       * Deprecated to improve performance:
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
