@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
 **          02/17/2018 mem - Treat Results_Cleanup steps the same as Results_Transfer steps
 **          04/27/2018 mem - Use T_Job_Steps instead of V_Job_Steps so we can see the Start and Finish times for the job step (and not Remote_Start or Remote_Finish)
 **          01/04/2021 mem - Add support for PRIDE_Converter jobs
+**          11/14/2022 mem - Fix bug referencing the wrong column
 **    
 *****************************************************/
 (
@@ -170,7 +171,7 @@ As
     UPDATE #Tmp_Jobs
     SET [Comment] = 'Results_Transfer step in T_Job_Steps has a different Start/Finish value vs. T_Job_Steps_History; ' + 
            'Step ' + Cast(InvalidQ.Step AS varchar(9)) + '; ' + 
-           'Start ' +   Convert(varchar(34), InvalidQ.Start, 120) +  ' vs. ' + Convert(varchar(34), InvalidQ.Finish, 120) + '; ' + 
+           'Start ' +   Convert(varchar(34), InvalidQ.Start, 120) +  ' vs. ' + Convert(varchar(34), InvalidQ.Start_History, 120) + '; ' + 
            'Finish ' +  Convert(varchar(34), InvalidQ.Finish, 120) + ' vs. ' + Convert(varchar(34), InvalidQ.Finish_History, 120),
         Invalid = 1
     FROM #Tmp_Jobs
