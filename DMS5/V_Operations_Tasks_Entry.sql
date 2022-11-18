@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_Operations_Tasks_Entry]
 AS
 SELECT OpsTask.id,
        TaskType.task_type_name,
-       OpsTask.tab,
+       OpsTask.task,
        OpsTask.requester,
        OpsTask.requested_personnel,
        OpsTask.assigned_personnel,
@@ -23,6 +23,7 @@ FROM T_Operations_Tasks OpsTask
        ON OpsTask.Task_Type_ID = TaskType.Task_Type_ID
      INNER JOIN T_Lab_Locations L
        ON OpsTask.Lab_ID = L.Lab_ID
+
 
 
 GO

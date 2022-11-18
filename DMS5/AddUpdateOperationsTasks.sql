@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **          05/10/2022 mem - Add parameters @taskType and @labName
 **                         - Remove parameter @hoursSpent
 **          05/16/2022 mem - Do not log data validation errors
+**          11/18/2022 mem - Rename parameter to @task
 **    
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -30,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 (
     @id int output,
     @taskType varchar(50),
-    @tab varchar(64),
+    @task varchar(64),
     @requester varchar(64),
     @requestedPersonnel varchar(256),
     @assignedPersonnel varchar(256),
@@ -153,7 +154,7 @@ As
 
         INSERT INTO T_Operations_Tasks (
             Task_Type_ID,
-            Tab,
+            Task,
             Requester,
             Requested_Personnel,
             Assigned_Personnel,
@@ -166,7 +167,7 @@ As
             Closed             
         ) VALUES(
             @taskTypeID,
-            @tab, 
+            @task, 
             @requester, 
             @requestedPersonnel, 
             @assignedPersonnel, 
@@ -200,7 +201,7 @@ As
         --
         UPDATE T_Operations_Tasks
         SET Task_Type_ID = @taskTypeID,
-            Tab = @tab,
+            Task = @task,
             Requester = @requester,
             Requested_Personnel = @requestedPersonnel,
             Assigned_Personnel = @assignedPersonnel,
@@ -237,6 +238,7 @@ As
     End CATCH
     
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateOperationsTasks] TO [DDL_Viewer] AS [dbo]

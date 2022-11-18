@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Operations_Tasks](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[Task_Type_ID] [int] NOT NULL,
-	[Tab] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Task] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requester] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requested_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Assigned_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_Operations_Tasks_List_Report]
 AS
 SELECT OpsTask.ID,
        TaskType.Task_Type_Name As [Task Type],
-       OpsTask.Tab,
+       OpsTask.Task,
        OpsTask.Description,
        IsNull(U.Name_with_PRN, OpsTask.Requester) AS Requester,
        OpsTask.Assigned_Personnel AS [Assigned Personnel],
@@ -38,6 +38,7 @@ FROM T_Operations_Tasks OpsTask
        ON OpsTask.Lab_ID = L.Lab_ID
      LEFT OUTER JOIN T_Users U
        ON OpsTask.Requester = U.U_PRN
+
 
 
 GO

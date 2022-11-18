@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_Operations_Tasks_Detail_Report]
 AS
 SELECT OpsTask.ID,
        TaskType.Task_Type_Name As [Task Type],
-       OpsTask.Tab,
+       OpsTask.Task,
        OpsTask.Description,
        OpsTask.Requester,
        OpsTask.Requested_Personnel AS [Requested Personnel],
@@ -29,6 +29,7 @@ FROM T_Operations_Tasks OpsTask
        ON OpsTask.Task_Type_ID = TaskType.Task_Type_ID
      INNER JOIN T_Lab_Locations L
        ON OpsTask.Lab_ID = L.Lab_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Operations_Tasks_Detail_Report] TO [DDL_Viewer] AS [dbo]
