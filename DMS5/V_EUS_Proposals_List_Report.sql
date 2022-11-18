@@ -10,14 +10,13 @@ SELECT DISTINCT EUP.Proposal_ID AS ID,
                 S.Name AS State,
                 dbo.GetProposalEUSUsersList(EUP.Proposal_ID, 'N', 125) AS Users,
                 EUP.Title,
-                EUP.Import_Date AS [Import Date],
+                EUP.Import_Date AS [Import_Date],
                 EUP.Proposal_Start_Date AS [Start_Date],
                 EUP.Proposal_End_Date AS [End_Date],
-                EUP.Proposal_Type AS [Proposal Type],
-                EPT.Proposal_Type_Name AS [Type Name],
+                EPT.Proposal_Type_Name AS [Proposal_Type],
                 EPT.Abbreviation,
                 EUP.Numeric_ID,
-                EUP.Proposal_ID_AutoSupersede As [Superseded By]
+                EUP.Proposal_ID_AutoSupersede As [Superseded_By]
 FROM T_EUS_Proposals EUP
      INNER JOIN T_EUS_Proposal_State_Name S
        ON EUP.State_ID = S.ID
