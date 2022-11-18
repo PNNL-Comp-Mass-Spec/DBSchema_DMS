@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
 **          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          11/18/2022 mem - Rename parameter to @groupName
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -30,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
 (
     @ID int output,
     @GroupType varchar(50),
-    @Tab VARCHAR(128),                -- User-defined name for this experiment group, aka tag
+    @groupName VARCHAR(128),                -- User-defined name for this experiment group (previously @tab)
     @Description varchar(512),
     @ExperimentList varchar(MAX),
     @ParentExp varchar(50),
@@ -290,14 +291,14 @@ As
             EG_Description,
             Parent_Exp_ID,
             Researcher,
-            Tab
+            Group_Name
         ) VALUES (
             @GroupType,
             getdate(),
             @Description,
             @ParentExpID,
             @Researcher,
-            @Tab
+            @groupName
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -330,7 +331,7 @@ As
             EG_Description = @Description,
             Parent_Exp_ID = @ParentExpID,
             Researcher = @Researcher,
-            Tab = @Tab
+            Group_Name = @groupName
         WHERE (Group_ID = @ID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

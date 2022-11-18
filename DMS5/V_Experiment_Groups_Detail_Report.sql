@@ -4,10 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW  [dbo].[V_Experiment_Groups_Detail_Report] AS 
+CREATE VIEW [dbo].[V_Experiment_Groups_Detail_Report]
+AS 
 SELECT EG.Group_ID AS ID,
        EG.EG_Group_Type AS Group_Type,
-       EG.Tab,
+       EG.Group_Name,
        E.Experiment_Num AS Parent_Experiment,
        COUNT(EGM.Exp_ID) AS Members,
        EG.EG_Description AS Description,
@@ -35,7 +36,7 @@ FROM dbo.T_Experiment_Groups AS EG
                        GROUP BY Entity_ID 
 					 ) AS FA
        ON EG.Group_ID = CONVERT(int, FA.Entity_ID)
-GROUP BY EG.Group_ID, EG.EG_Group_Type, EG.Tab, EG.EG_Description, 
+GROUP BY EG.Group_ID, EG.EG_Group_Type, EG.Group_Name, EG.EG_Description, 
          EG.EG_Created, E.Experiment_Num, EG.Prep_LC_Run_ID, FA.FileCount, 
 		 CASE WHEN EG.Researcher IS NULL THEN ''
               ELSE U.Name_with_PRN

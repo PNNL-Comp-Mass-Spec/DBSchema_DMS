@@ -4,10 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Experiment_Groups_List_Report] AS 
+CREATE VIEW [dbo].[V_Experiment_Groups_List_Report] 
+AS 
 SELECT EG.Group_ID AS ID,
        EG.EG_Group_Type AS Group_Type,
-       EG.Tab,
+       EG.Group_Name,
        EG.EG_Description AS Description,
        EG.MemberCount Members,
        TA.Attachments AS Files,

@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW dbo.V_Experiment_Groups_Entry
+CREATE VIEW [dbo].[V_Experiment_Groups_Entry]
 AS
 SELECT EG.Group_ID AS id,
        EG.EG_Group_Type AS group_type,
-       EG.Tab As tab,
+       EG.Group_Name As group_name,
        EG.EG_Description AS description,
        E.Experiment_Num AS parent_exp,
        dbo.GetExpGroupExperimentList(EG.Group_ID) AS experiment_list,

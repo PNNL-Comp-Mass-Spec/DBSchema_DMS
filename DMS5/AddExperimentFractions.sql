@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **                         - No longer copy the parent experiment concentration to the fractions
 **          06/01/2021 mem - Raise an error if @mode is invalid
 **          04/12/2022 mem - Do not log data validation errors to T_Log_Entries
+**          11/18/2022 mem - Rename parameter to @groupName
 **
 *****************************************************/
 (
@@ -59,7 +60,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
     @suffix varchar(20) = '',                   -- Text to append to the parent experiment name, prior to adding the fraction number
     @nameSearch  varchar(128) = '',             -- Text to find in the parent experiment name, to be replaced by @nameReplace
     @nameReplace varchar(128) = '',             -- Replacement text
-    @tab varchar(128),                          -- User-defined name for this fraction group, aka tag
+    @groupName varchar(128),                    -- User-defined name for this experiment group (aka fraction group); previously @tab
     @description varchar(512),                  -- Purpose of group
     @totalCount int,                            -- Number of new experiments to automatically create
     @addUnderscore varchar(12) = 'Yes',         -- When Yes (or 1 or ''), add an underscore before the fraction number; when @suffix is defined, it is helpful to set this to 'No'
@@ -477,7 +478,7 @@ AS
             Prep_LC_Run_ID ,
             EG_Created ,
             Researcher,
-            Tab
+            Group_Name
         ) VALUES (
             @groupType ,
             @parentExperimentID ,
@@ -485,7 +486,7 @@ AS
             @prepLCRunID ,
             GETDATE() ,
             @researcherPRN,
-            @tab
+            @groupName
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

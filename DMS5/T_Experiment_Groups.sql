@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Experiment_Groups](
 	[Parent_Exp_ID] [int] NOT NULL,
 	[Prep_LC_Run_ID] [int] NULL,
 	[Researcher] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Tab] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Group_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[MemberCount] [int] NOT NULL,
  CONSTRAINT [PK_T_Experiment_Groups] PRIMARY KEY CLUSTERED 
 (
