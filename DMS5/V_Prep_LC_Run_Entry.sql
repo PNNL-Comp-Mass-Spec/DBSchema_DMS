@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Prep_LC_Run_Entry]
 AS
 SELECT  id,
-        tab,
+        prep_run_name,
         instrument,
         type,
         lc_column,

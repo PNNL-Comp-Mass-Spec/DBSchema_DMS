@@ -1,24 +1,25 @@
-/****** Object:  View [dbo].[V_Helper_Prep_Lc_Run_Tab_List_Report] ******/
+/****** Object:  View [dbo].[V_Helper_Prep_LC_Run_Name_List_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Helper_Prep_Lc_Run_Tab_List_Report] as
-SELECT TOP 1000 Tab as val
-FROM ( SELECT Tab,
+CREATE VIEW [dbo].[V_Helper_Prep_LC_Run_Name_List_Report]
+AS
+SELECT TOP 1000 Prep_Run_Name as val
+FROM ( SELECT Prep_Run_Name,
               UsageCount,
-              Row_Number() OVER ( ORDER BY UsageCount DESC, Tab ) AS UsageRank
-       FROM ( SELECT Tab,
+              Row_Number() OVER ( ORDER BY UsageCount DESC, Prep_Run_Name ) AS UsageRank
+       FROM ( SELECT Prep_Run_Name,
                      COUNT(*) AS UsageCount
               FROM T_Prep_LC_Run
-              WHERE (NOT (Tab IS NULL))
-              GROUP BY Tab 
+              WHERE Coalesce(Prep_Run_Name, '') <> ''
+              GROUP BY Prep_Run_Name 
             ) SourceQ 
       ) RankQ
 ORDER BY UsageRank
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_Lc_Run_Tab_List_Report] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Run_Name_List_Report] TO [DDL_Viewer] AS [dbo]
 GO

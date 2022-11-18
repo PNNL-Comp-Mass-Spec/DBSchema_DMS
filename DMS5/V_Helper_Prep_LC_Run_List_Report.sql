@@ -4,9 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Helper_Prep_LC_Run_List_Report] as
+CREATE VIEW [dbo].[V_Helper_Prep_LC_Run_List_Report]
+AS
 SELECT ID,
-       Tab,
+       Prep_Run_Name,
        Instrument,
        [Type],
        LC_Column AS [LC Column],
@@ -14,6 +15,7 @@ SELECT ID,
        Created,
        Number_Of_Runs AS [Number Of Runs]
 FROM T_Prep_LC_Run
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Run_List_Report] TO [DDL_Viewer] AS [dbo]

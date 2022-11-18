@@ -23,13 +23,14 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/27/2022 mem - Update @samplePrepRequest to replace semicolons with commas, then assure that the list only contains integers
 **          06/06/2022 mem - Only validate @id if updating an existing item
+**          11/18/2022 mem - Rename parameter to @prepRunName
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @id int output,
-    @tab varchar(128),
+    @prepRunName varchar(128),
     @instrument varchar(128),
     @type varchar(64),
     @lcColumn varchar(128),    
@@ -152,7 +153,7 @@ As
         Begin transaction @transName
 
         INSERT INTO T_Prep_LC_Run (
-            Tab,
+            Prep_Run_Name,
             Instrument,
             Type,
             LC_Column,
@@ -167,7 +168,7 @@ As
             Instrument_Pressure,
             Quality_Control    
         ) VALUES (
-            @tab,
+            @prepRunName,
             @instrument,
             @type,
             @lcColumn,
@@ -209,7 +210,7 @@ As
         Begin transaction @transName
         
         UPDATE T_Prep_LC_Run
-        SET Tab = @tab,
+        SET Prep_Run_Name = @prepRunName,
             Instrument = @instrument,
             TYPE = @type,
             LC_Column = @lcColumn,
@@ -255,6 +256,7 @@ As
     END Catch
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [DDL_Viewer] AS [dbo]
