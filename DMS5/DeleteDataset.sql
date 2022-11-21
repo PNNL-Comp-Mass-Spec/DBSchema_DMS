@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[DeleteDataset]
+CREATE PROCEDURE [dbo].[DeleteDataset]
 /****************************************************
 **
 **  Desc: Deletes given dataset from the dataset table
@@ -39,7 +39,7 @@ CREATE Procedure [dbo].[DeleteDataset]
 **                           Rename the first parameter
 **          04/17/2019 mem - Delete rows in T_Cached_Dataset_Instruments
 **          11/02/2021 mem - Show the full path to the dataset directory at the console
-**    
+**
 *****************************************************/
 (
     @datasetName varchar(128),
@@ -52,19 +52,19 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @msg varchar(256)
 
     Declare @datasetID int
     Declare @state int
-    
+
     Declare @result int
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DeleteDataset', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -84,17 +84,17 @@ As
         RAISERROR (@msg, 10, 1)
         return 51139
     End
-    
+
     ---------------------------------------------------
     -- Get the datasetID and current state
     ---------------------------------------------------
     --
     Set @datasetID = 0
     --
-    SELECT  
+    SELECT
         @state = DS_state_ID,
-        @datasetID = Dataset_ID        
-    FROM T_Dataset 
+        @datasetID = Dataset_ID
+    FROM T_Dataset
     WHERE Dataset_Num = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -129,7 +129,7 @@ As
         RAISERROR (@msg, 10, 1)
         return 51142
     End
-    
+
     If @infoOnly > 0
     Begin
         SELECT 'To be deleted' AS [Action], *
@@ -138,9 +138,9 @@ As
 
         If Exists (SELECT * FROM T_Requested_Run WHERE DatasetID = @datasetID)
         Begin
-            SELECT CASE WHEN RDS_Name Like 'AutoReq%' 
-                        THEN 'To be deleted' 
-                        ELSE 'To be marked active' 
+            SELECT CASE WHEN RDS_Name Like 'AutoReq%'
+                        THEN 'To be deleted'
+                        ELSE 'To be marked active'
                    End AS [Action], *
             FROM T_Requested_Run
             WHERE DatasetID = @datasetID
@@ -191,7 +191,7 @@ As
 
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
@@ -204,22 +204,22 @@ As
     -- Delete any entries for the dataset from the archive table
     ---------------------------------------------------
     --
-    DELETE FROM T_Dataset_Archive 
+    DELETE FROM T_Dataset_Archive
     WHERE AS_Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Delete from archive table was unsuccessful for dataset', 10, 1)
         return 51131
     end
-    
+
     ---------------------------------------------------
     -- Delete any auxiliary info associated with dataset
     ---------------------------------------------------
-    --    
+    --
     exec @result = DeleteAuxInfo 'Dataset', @datasetName, @message output
 
     if @result <> 0
@@ -237,7 +237,7 @@ As
     Declare @requestID int = Null
 
     SELECT @requestID = ID
-    FROM T_Requested_Run 
+    FROM T_Requested_Run
     WHERE DatasetID = @datasetID
 
     exec @result = UnconsumeScheduledRun @datasetName, @retainHistory=0, @message=@message output, @callingUser=@callingUser
@@ -248,7 +248,7 @@ As
         RAISERROR (@msg, 10, 1)
         return 51103
     end
-    
+
     If Not @requestID Is Null
     Begin
         SELECT 'Request updated; verify this action, especially if the deleted dataset was replaced with an identical, renamed dataset' AS [Comment], *
@@ -263,14 +263,14 @@ As
     WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Delete from Dataset Info table was unsuccessful for dataset', 10, 1)
         return 51132
     end
-    
+
     ---------------------------------------------------
     -- Delete any entries in T_Dataset_QC
     ---------------------------------------------------
@@ -279,14 +279,14 @@ As
     WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Delete from Dataset QC table was unsuccessful for dataset', 10, 1)
         return 51133
     end
-    
+
     ---------------------------------------------------
     -- Delete any entries in T_Dataset_ScanTypes
     ---------------------------------------------------
@@ -295,14 +295,14 @@ As
     WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Delete from Dataset ScanTypes table was unsuccessful for dataset', 10, 1)
         return 51134
     end
-    
+
     ---------------------------------------------------
     -- Mark entries in T_Dataset_Files as Deleted
     ---------------------------------------------------
@@ -330,7 +330,7 @@ As
     WHERE Dataset_ID = @datasetID AND State = 5
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
@@ -348,14 +348,14 @@ As
           message LIKE '%' + @datasetName + '%'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     begin
         rollback transaction @transName
         RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
         return 51136
     end
-    
+
     ---------------------------------------------------
     -- Remove jobs from T_Jobs in DMS_Capture
     ---------------------------------------------------
@@ -377,7 +377,7 @@ As
     WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myRowCount <> 1
     begin
         rollback transaction @transName
@@ -385,7 +385,7 @@ As
             10, 1)
         return 51137
     end
-    
+
     -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
     If Len(@callingUser) > 0
     Begin
@@ -404,6 +404,7 @@ As
 
 Done:
     return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteDataset] TO [DDL_Viewer] AS [dbo]

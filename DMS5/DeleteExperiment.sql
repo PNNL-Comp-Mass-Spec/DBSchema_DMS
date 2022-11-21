@@ -4,10 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[DeleteExperiment]
+CREATE PROCEDURE [dbo].[DeleteExperiment]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Deletes given Experiment from the Experiment table
 **      and all referencing tables.  Experiment may not
 **      have any associated datasets or requested runs
@@ -27,7 +27,7 @@ CREATE Procedure [dbo].[DeleteExperiment]
 **          09/10/2019 mem - Delete from T_Experiment_Plex_Members if mapped to Plex_Exp_ID
 **                         - Prevent deletion if the experiment is a plex channel in T_Experiment_Plex_Members
 **                         - Add @infoOnly
-**    
+**
 *****************************************************/
 (
     @experimentNum varchar(128),
@@ -40,12 +40,12 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     Declare @experimentId int
     Declare @state int
-    
+
     Declare @result int
 
     Set @experimentNum = IsNull(@experimentNum, '')
@@ -54,14 +54,14 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DeleteExperiment', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Get ExperimentID and current state
     ---------------------------------------------------
@@ -80,7 +80,7 @@ As
         RAISERROR (@message, 10, 1)
         return 51140
     End
-    
+
     ---------------------------------------------------
     -- Can't delete experiment that has any datasets
     ---------------------------------------------------
@@ -192,12 +192,12 @@ As
     Declare @transName varchar(32) = 'DeleteExperiment'
 
     Begin Transaction @transName
-    
+
     ---------------------------------------------------
-    -- Delete any entries for the Experiment from 
+    -- Delete any entries for the Experiment from
     -- cell culture map table
     ---------------------------------------------------
-    
+
     If @infoonly > 0
     Begin
         SELECT *
@@ -221,7 +221,7 @@ As
     End
 
     ---------------------------------------------------
-    -- Delete any entries for the Experiment from 
+    -- Delete any entries for the Experiment from
     -- experiment group map table
     ---------------------------------------------------
 
@@ -256,7 +256,7 @@ As
                 10, 1)
             return 51131
         End
-        
+
         If @infoonly = 0
         Begin
             -- Update MemberCount
@@ -276,7 +276,7 @@ As
     -- Remove any reference to this experiment as a
     -- parent experiment in the experiment groups table
     ---------------------------------------------------
-    
+
     If @infoonly > 0
     Begin
         SELECT *
@@ -303,7 +303,7 @@ As
     ---------------------------------------------------
     -- Delete experiment plex info
     ---------------------------------------------------
-       
+
     If @infoonly > 0
     Begin
         SELECT *
@@ -335,7 +335,7 @@ As
         ---------------------------------------------------
         -- Delete any auxiliary info associated with Experiment
         ---------------------------------------------------
-        
+
         exec @result = DeleteAuxInfo 'Experiment', @experimentNum, @message output
 
         If @result <> 0
@@ -346,7 +346,7 @@ As
             return 51136
         End
     End
-    
+
     ---------------------------------------------------
     -- Delete experiment from experiment table
     ---------------------------------------------------
@@ -382,7 +382,7 @@ As
     End
 
     commit transaction @transName
-    
+
     return @myError
 
 
