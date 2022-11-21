@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **          02/17/2022 mem - Rename variables, adjust formatting, convert tabs to spaces
 **          02/18/2022 mem - Call AddUpdateRequestedRun if the EUS usage info is updated
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          11/18/2022 mem - Use new column name in V_Requested_Run_Detail_Report
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -526,7 +527,7 @@ As
         SELECT @reqName = RR.RDS_Name,
                @existingEusProposal = RR.RDS_EUS_Proposal_ID,
                @existingEusUsageType = RR.RDS_EUS_UsageType,
-               @existingEusUser = RRD.[EUS User]
+               @existingEusUser = RRD.EUS_User
         FROM T_Dataset AS DS
              INNER JOIN T_Requested_Run AS RR
                ON DS.Dataset_ID = RR.DatasetID
@@ -620,7 +621,6 @@ As
     END CATCH
 
     return @myError
-
 
 
 GO
