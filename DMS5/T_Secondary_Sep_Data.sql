@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 122 ******/
+/****** RowCount: 123 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -77,6 +77,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-KoreaU-Standard',21,'Datasets acquired
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-MIT-Standard',63,'Datasets acquired at Forest White''s lab at MIT',0,'Other',0,'6/5/2012 9:52:46 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-NU-Standard',94,'Datasets acquired in the Kelleher lab at Northwestern',0,'Other',0,'11/5/2015 11:10:50 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ORNL-Standard',7,'Datasets acquired at Oak Ridge National Lab',0,'Other',0,'9/27/2004 4:26:09 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-PCR-Tube_2hr',124,'LC-PCR-Tube_2hr',1,'LC-PCR-Tube',1,'11/15/2022 8:29:27 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Pentylammonium_highflow_High_pH',102,'Waters constant high flow, ion pairing pentylamine plus HFIP, high pH ',1,'LC-IonPairing',0,'10/9/2017 3:40:24 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-PFGRC-Standard',32,'Datasets acquired in the Pathogen Functional Genomics Resource Center at JCVI',0,'Other',0,'8/16/2010 6:21:54 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ReproSil-75um',101,'75 um columns packed with 1.9 um Reprosil porous particles',1,'LC-ReproSil-75um',1,'11/23/2016 10:45:35 AM')

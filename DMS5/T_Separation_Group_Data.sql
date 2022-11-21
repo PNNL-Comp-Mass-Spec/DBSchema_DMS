@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 60 ******/
+/****** RowCount: 61 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
@@ -52,6 +52,7 @@ INSERT INTO [T_Separation_Group] VALUES ('LC-NanoPot_30min','NanoPot separations
 INSERT INTO [T_Separation_Group] VALUES ('LC-NanoPot_3hr','NanoPot separations',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-NanoSCX-12','Use for placeholder requested runs that can be converted into requested run fractions',1,0,12)
 INSERT INTO [T_Separation_Group] VALUES ('LC-NanoSCX-6 ','Use for placeholder requested runs that can be converted into requested run fractions',1,0,6)
+INSERT INTO [T_Separation_Group] VALUES ('LC-PCR-Tube','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Phospho','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-PRISM','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-ReproSil-75um','',1,1,0)
