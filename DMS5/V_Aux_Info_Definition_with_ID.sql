@@ -4,28 +4,29 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Aux_Info_Definition_with_ID]
 AS
-SELECT Category_Target.[Name] AS Target,
+SELECT Category_Target.Target_Type_Name AS Target,
        Category.Target_Type_ID AS TargT_ID,
-       Category.[Name] AS Category,
-       Category.ID AS Cat_ID,
-       Subcategory.[Name] AS Subcategory,
-       Subcategory.ID AS Sub_ID,
-       Item.[Name] AS Item,
-       Item.ID AS Item_ID,
+       Category.Aux_Category AS Category,
+       Category.Aux_Category_ID AS Cat_ID,
+       Subcategory.Aux_Subcategory AS Subcategory,
+       Subcategory.Aux_Subcategory_ID AS Sub_ID,
+       Item.Aux_Description AS Item,
+       Item.Aux_Description_ID AS Item_ID,
        Category.[Sequence] AS Cat_Seq,
        Subcategory.[Sequence] AS Sub_Seq,
        Item.[Sequence] AS Item_Seq,
        Item.DataSize,
        Item.HelperAppend
-FROM T_AuxInfo_Category Category
-     INNER JOIN T_AuxInfo_Subcategory Subcategory
-       ON Category.ID = Subcategory.Aux_Category_ID
-     INNER JOIN T_AuxInfo_Description Item
-       ON Subcategory.ID = Item.Aux_Subcategory_ID
-     INNER JOIN T_AuxInfo_Target Category_Target
-       ON Category.Target_Type_ID = Category_Target.ID
+FROM T_Aux_Info_Category Category
+     INNER JOIN T_Aux_Info_Subcategory Subcategory
+       ON Category.Aux_Category_ID = Subcategory.Aux_Category_ID
+     INNER JOIN T_Aux_Info_Description Item
+       ON Subcategory.Aux_Subcategory_ID = Item.Aux_Subcategory_ID
+     INNER JOIN T_Aux_Info_Target Category_Target
+       ON Category.Target_Type_ID = Category_Target.Target_Type_ID
 WHERE Item.Active = 'Y'
 
 

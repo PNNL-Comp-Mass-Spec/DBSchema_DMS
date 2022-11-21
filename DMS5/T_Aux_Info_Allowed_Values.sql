@@ -1,9 +1,9 @@
-/****** Object:  Table [dbo].[T_AuxInfo_Allowed_Values] ******/
+/****** Object:  Table [dbo].[T_Aux_Info_Allowed_Values] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[T_AuxInfo_Allowed_Values](
+CREATE TABLE [dbo].[T_Aux_Info_Allowed_Values](
 	[Aux_Description_ID] [int] NOT NULL,
 	[Value] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_AuxInfo_Allowed_Values] PRIMARY KEY CLUSTERED 
@@ -14,10 +14,10 @@ CREATE TABLE [dbo].[T_AuxInfo_Allowed_Values](
 ) ON [PRIMARY]
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[T_AuxInfo_Allowed_Values] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[T_Aux_Info_Allowed_Values] TO [DDL_Viewer] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_AuxInfo_Allowed_Values]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description] FOREIGN KEY([Aux_Description_ID])
-REFERENCES [dbo].[T_AuxInfo_Description] ([ID])
+ALTER TABLE [dbo].[T_Aux_Info_Allowed_Values]  WITH CHECK ADD  CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description] FOREIGN KEY([Aux_Description_ID])
+REFERENCES [dbo].[T_Aux_Info_Description] ([Aux_Description_ID])
 GO
-ALTER TABLE [dbo].[T_AuxInfo_Allowed_Values] CHECK CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description]
+ALTER TABLE [dbo].[T_Aux_Info_Allowed_Values] CHECK CONSTRAINT [FK_T_AuxInfo_Allowed_Values_T_AuxInfo_Description]
 GO
