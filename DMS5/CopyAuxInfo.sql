@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[CopyAuxInfo]
 **          07/12/2008 grk - Added error check for source
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
     @targetName varchar(128),
@@ -60,8 +61,8 @@ AS
         @tgtTableName = Target_Table,
         @tgtTableIDCol = Target_ID_Col,
         @tgtTableNameCol = Target_Name_Col
-    FROM T_AuxInfo_Target
-    WHERE (Name = @targetName)
+    FROM T_Aux_Info_Target
+    WHERE (Target_Type_Name = @targetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -142,7 +143,7 @@ begin
 
     -- delete any existing values
     --
-    Delete From T_AuxInfo_Value
+    Delete From T_Aux_Info_Value
     WHERE (Target_ID = @destEntityID)
     AND (Aux_Description_ID IN
         (
@@ -165,10 +166,10 @@ begin
 
     -- insert new values
     --
-    INSERT INTO T_AuxInfo_Value
+    INSERT INTO T_Aux_Info_Value
        (Target_ID, Aux_Description_ID, Value)
     SELECT @destEntityID AS Target_ID, Aux_Description_ID, Value
-    FROM T_AuxInfo_Value
+    FROM T_Aux_Info_Value
     WHERE (Target_ID = @sourceEntityID)
     AND (Aux_Description_ID IN
         (
@@ -207,7 +208,7 @@ begin
 
     -- delete any existing values
     --
-    Delete from T_AuxInfo_Value
+    Delete from T_Aux_Info_Value
     WHERE (Target_ID = @destEntityID)
     AND (Aux_Description_ID IN
         (
@@ -231,10 +232,10 @@ begin
 
     -- insert new values
     --
-    INSERT INTO T_AuxInfo_Value
+    INSERT INTO T_Aux_Info_Value
        (Target_ID, Aux_Description_ID, Value)
     SELECT @destEntityID AS Target_ID, Aux_Description_ID, Value
-    FROM T_AuxInfo_Value
+    FROM T_Aux_Info_Value
     WHERE (Target_ID = @sourceEntityID)
     AND (Aux_Description_ID IN
         (
@@ -274,7 +275,7 @@ begin
 
     -- delete any existing values
     --
-    Delete from T_AuxInfo_Value
+    Delete from T_Aux_Info_Value
     WHERE (Target_ID = @destEntityID)
     AND (Aux_Description_ID IN
         (
@@ -295,10 +296,10 @@ begin
     end
 
     --
-    INSERT INTO T_AuxInfo_Value
+    INSERT INTO T_Aux_Info_Value
        (Target_ID, Aux_Description_ID, Value)
     SELECT @destEntityID AS Target_ID, Aux_Description_ID, Value
-    FROM T_AuxInfo_Value
+    FROM T_Aux_Info_Value
     WHERE (Target_ID = @sourceEntityID)
     AND (Aux_Description_ID IN
         (

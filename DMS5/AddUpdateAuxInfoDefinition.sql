@@ -17,9 +17,10 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfoDefinition]
 **  Date:   04/19/2002 grk - Initial release
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_Aux_Info_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column names
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
 (
@@ -62,7 +63,7 @@ As
         THROW 51000, 'Access denied', 1;
     End;
 
-    If @mode <> 'AddTarget' And @targetName = 'Cell Culture' And Exists (Select * From T_AuxInfo_Target Where Name = 'Biomaterial')
+    If @mode <> 'AddTarget' And @targetName = 'Cell Culture' And Exists (Select * From T_Aux_Info_Target Where Target_Type_Name = 'Biomaterial')
     Begin
         Set @targetName = 'Biomaterial'
     End
@@ -80,9 +81,9 @@ As
         --
         set @tmpID = 0
         --
-        SELECT @tmpID = ID
-        FROM T_AuxInfo_Target
-        WHERE (Name = @TargetName)
+        SELECT @tmpID = Target_Type_ID
+        FROM T_Aux_Info_Target
+        WHERE Target_Type_Name = @TargetName
            --
         if @tmpID <> 0
         begin
@@ -93,8 +94,8 @@ As
 
         -- insert new target into table
         --
-        INSERT INTO T_AuxInfo_Target
-           (Name, Target_Table, Target_ID_Col, Target_Name_Col)
+        INSERT INTO T_Aux_Info_Target
+           (Target_Type_Name, Target_Table, Target_ID_Col, Target_Name_Col)
         VALUES (@TargetName, @Param1, @Param2, @Param3)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -118,9 +119,9 @@ As
         --
         set @targetTypeID = 0
         --
-        SELECT @targetTypeID = ID
-        FROM T_AuxInfo_Target
-        WHERE (Name = @TargetName)
+        SELECT @targetTypeID = Target_Type_ID
+        FROM T_Aux_Info_Target
+        WHERE Target_Type_Name = @TargetName
         --
         if @targetTypeID = 0
         begin
@@ -133,9 +134,9 @@ As
         --
         set @tmpID = 0
         --
-        SELECT @tmpID = ID
-        FROM T_AuxInfo_Category
-        WHERE (Target_Type_ID = @targetTypeID) AND (Name = @categoryName)
+        SELECT @tmpID = Aux_Category_ID
+        FROM T_Aux_Info_Category
+        WHERE (Target_Type_ID = @targetTypeID) AND (Aux_Category = @categoryName)
            --
         if @tmpID <> 0
         begin
@@ -149,7 +150,7 @@ As
         set @tmpSeq = 0
         --
         SELECT @tmpSeq = ISNULL(MAX(Sequence), 0)
-        FROM T_AuxInfo_Category
+        FROM T_Aux_Info_Category
         WHERE (Target_Type_ID = @targetTypeID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -160,8 +161,8 @@ As
 
         -- insert new category for parent target type
         --
-        INSERT INTO T_AuxInfo_Category
-           (Name, Target_Type_ID, Sequence)
+        INSERT INTO T_Aux_Info_Category
+           (Aux_Category, Target_Type_ID, Sequence)
         VALUES (@categoryName, @targetTypeID, @tmpSeq)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -184,12 +185,12 @@ As
         --
         set @categoryID = 0
         --
-        SELECT @categoryID = T_AuxInfo_Category.ID
-        FROM T_AuxInfo_Target
-             INNER JOIN T_AuxInfo_Category
-               ON T_AuxInfo_Target.ID = T_AuxInfo_Category.Target_Type_ID
-        WHERE (T_AuxInfo_Target.Name = @targetName) AND
-              (T_AuxInfo_Category.Name = @categoryName)
+        SELECT @categoryID = T_Aux_Info_Category.Aux_Category_ID
+        FROM T_Aux_Info_Target
+             INNER JOIN T_Aux_Info_Category
+               ON T_Aux_Info_Target.Target_Type_ID = T_Aux_Info_Category.Target_Type_ID
+        WHERE (T_Aux_Info_Target.Target_Type_Name = @targetName) AND
+              (T_Aux_Info_Category.Aux_Category = @categoryName)
            --
         if @categoryID = 0
         begin
@@ -202,9 +203,9 @@ As
         --
         set @tmpID = 0
         --
-        SELECT @tmpID = ID
-        FROM T_AuxInfo_Subcategory
-        WHERE (Aux_Category_ID = @categoryID) AND (Name = @subcategoryName)
+        SELECT @tmpID = Aux_Subcategory_ID
+        FROM T_Aux_Info_Subcategory
+        WHERE (Aux_Category_ID = @categoryID) AND (Aux_Subcategory = @subcategoryName)
         --
         if @tmpID <> 0
         begin
@@ -218,7 +219,7 @@ As
         set @tmpSeq = 0
         --
         SELECT @tmpSeq = ISNULL(MAX(Sequence), 0)
-        FROM T_AuxInfo_Subcategory
+        FROM T_Aux_Info_Subcategory
         WHERE (Aux_Category_ID = @categoryID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -229,8 +230,8 @@ As
 
         -- insert new subcategory for parent category
         --
-        INSERT INTO T_AuxInfo_Subcategory
-           (Name, Sequence, Aux_Category_ID)
+        INSERT INTO T_Aux_Info_Subcategory
+           (Aux_Subcategory, Sequence, Aux_Category_ID)
         VALUES (@subcategoryName, @tmpSeq, @categoryID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -253,15 +254,15 @@ As
         --
         set @subcategoryID = 0
         --
-        SELECT @subcategoryID = T_AuxInfo_Subcategory.ID
-        FROM T_AuxInfo_Target
-             INNER JOIN T_AuxInfo_Category
-               ON T_AuxInfo_Target.ID = T_AuxInfo_Category.Target_Type_ID
-             INNER JOIN T_AuxInfo_Subcategory
-               ON T_AuxInfo_Category.ID = T_AuxInfo_Subcategory.Aux_Category_ID
-        WHERE (T_AuxInfo_Target.Name = @targetName) AND
-              (T_AuxInfo_Category.Name = @categoryName) AND
-              (T_AuxInfo_Subcategory.Name = @subcategoryName)
+        SELECT @subcategoryID = T_Aux_Info_Subcategory.Aux_Subcategory_ID
+        FROM T_Aux_Info_Target
+             INNER JOIN T_Aux_Info_Category
+               ON T_Aux_Info_Target.Target_Type_ID = T_Aux_Info_Category.Target_Type_ID
+             INNER JOIN T_Aux_Info_Subcategory
+               ON T_Aux_Info_Category.Aux_Category_ID = T_Aux_Info_Subcategory.Aux_Category_ID
+        WHERE (T_Aux_Info_Target.Target_Type_Name = @targetName) AND
+              (T_Aux_Info_Category.Aux_Category = @categoryName) AND
+              (T_Aux_Info_Subcategory.Aux_Subcategory = @subcategoryName)
         --
         if @subcategoryID = 0
         begin
@@ -274,9 +275,9 @@ As
         --
         set @tmpID = 0
         --
-        SELECT @tmpID = ID
-        FROM T_AuxInfo_Description
-        WHERE (Aux_Subcategory_ID = @subcategoryID) AND (Name = @itemName)
+        SELECT @tmpID = Aux_Description_ID
+        FROM T_Aux_Info_Description
+        WHERE (Aux_Subcategory_ID = @subcategoryID) AND (Aux_Description = @itemName)
         --
         if @tmpID <> 0
         begin
@@ -290,7 +291,7 @@ As
         set @tmpSeq = 0
         --
         SELECT @tmpSeq = ISNULL(MAX(Sequence), 0)
-        FROM T_AuxInfo_Description
+        FROM T_Aux_Info_Description
         WHERE (Aux_Subcategory_ID = @subcategoryID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -301,8 +302,8 @@ As
 
         -- insert new item for parent subcategory
         --
-        INSERT INTO T_AuxInfo_Description
-           (Name, Aux_Subcategory_ID, Sequence, DataSize, HelperAppend)
+        INSERT INTO T_Aux_Info_Description
+           (Aux_Description, Aux_Subcategory_ID, Sequence, DataSize, HelperAppend)
         VALUES (@itemName, @subcategoryID, @tmpSeq, @Param1, @Param2)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -326,18 +327,18 @@ As
         --
         set @descriptionID = 0
         --
-        SELECT @descriptionID = T_AuxInfo_Description.ID
-        FROM T_AuxInfo_Target
-             INNER JOIN T_AuxInfo_Category
-               ON T_AuxInfo_Target.ID = T_AuxInfo_Category.Target_Type_ID
-             INNER JOIN T_AuxInfo_Subcategory
-               ON T_AuxInfo_Category.ID = T_AuxInfo_Subcategory.Aux_Category_ID
-             INNER JOIN T_AuxInfo_Description
-               ON T_AuxInfo_Subcategory.ID = T_AuxInfo_Description.Aux_Subcategory_ID
-        WHERE (T_AuxInfo_Target.Name = @targetName) AND
-              (T_AuxInfo_Category.Name = @categoryName) AND
-              (T_AuxInfo_Subcategory.Name = @subcategoryName) AND
-              (T_AuxInfo_Description.Name = @itemName)
+        SELECT @descriptionID = T_Aux_Info_Description.Aux_Description_ID
+        FROM T_Aux_Info_Target
+             INNER JOIN T_Aux_Info_Category
+               ON T_Aux_Info_Target.Target_Type_ID = T_Aux_Info_Category.Target_Type_ID
+             INNER JOIN T_Aux_Info_Subcategory
+               ON T_Aux_Info_Category.Aux_Category_ID = T_Aux_Info_Subcategory.Aux_Category_ID
+             INNER JOIN T_Aux_Info_Description
+               ON T_Aux_Info_Subcategory.Aux_Subcategory_ID = T_Aux_Info_Description.Aux_Subcategory_ID
+        WHERE (T_Aux_Info_Target.Target_Type_Name = @targetName) AND
+              (T_Aux_Info_Category.Aux_Category = @categoryName) AND
+              (T_Aux_Info_Subcategory.Aux_Subcategory = @subcategoryName) AND
+              (T_Aux_Info_Description.Aux_Description = @itemName)
         --
         if @descriptionID = 0
         begin
@@ -351,7 +352,7 @@ As
         set @tmpID = 0
         --
         SELECT @tmpID = Aux_Description_ID
-        FROM T_AuxInfo_Allowed_Values
+        FROM T_Aux_Info_Allowed_Values
         WHERE (Aux_Description_ID = @descriptionID) AND (Value = @Param1)
         --
         if @tmpID <> 0
@@ -364,7 +365,7 @@ As
 
         -- insert new allowed value for parent description ID
         --
-        INSERT INTO T_AuxInfo_Allowed_Values
+        INSERT INTO T_Aux_Info_Allowed_Values
            (Aux_Description_ID, Value)
         VALUES (@descriptionID, @Param1)
         --
@@ -414,8 +415,8 @@ As
             @Sequence = Sequence,
             @DataSize = DataSize,
             @HelperAppend = HelperAppend
-        FROM T_AuxInfo_Description
-        WHERE (ID = @tmpID)
+        FROM T_Aux_Info_Description
+        WHERE (Aux_Description_ID = @tmpID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -443,12 +444,12 @@ As
 
         -- update item
         --
-        UPDATE T_AuxInfo_Description
+        UPDATE T_Aux_Info_Description
         SET
             Sequence = @Sequence,
             DataSize = @DataSize,
             HelperAppend = @HelperAppend
-        WHERE (ID = @tmpID)
+        WHERE (Aux_Description_ID = @tmpID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --

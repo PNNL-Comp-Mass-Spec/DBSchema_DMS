@@ -24,9 +24,10 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 **          09/10/2018 mem - Remove invalid check of @mode against check_add or check_update
 **          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
-**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_Aux_Info_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ As
     Set @itemNameList = Ltrim(Rtrim(Coalesce(@itemNameList, '')))
     Set @itemValueList = Ltrim(Rtrim(Coalesce(@itemValueList, '')))
 
-    If @targetName = 'Cell Culture' And Exists (Select * From T_AuxInfo_Target Where Name = 'Biomaterial')
+    If @targetName = 'Cell Culture' And Exists (Select * From T_Aux_Info_Target Where Target_Type_Name = 'Biomaterial')
     Begin
         Set @targetName = 'Biomaterial'
     End
@@ -117,8 +118,8 @@ As
             @tgtTableName = Target_Table,
             @tgtTableIDCol = Target_ID_Col,
             @tgtTableNameCol = Target_Name_Col
-        FROM T_AuxInfo_Target
-        WHERE (Name = @targetName)
+        FROM T_Aux_Info_Target
+        WHERE Target_Type_Name = @targetName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -264,7 +265,7 @@ As
                 --
                 If @vFld = ''
                 Begin
-                    DELETE FROM T_AuxInfo_Value
+                    DELETE FROM T_Aux_Info_Value
                     WHERE Aux_Description_ID = @descriptionID AND Target_ID = @targetID
                 End
                 Else
@@ -273,7 +274,7 @@ As
                     -- Does entry exist in value table?
                     --
                     SELECT @tVal = [Value]
-                    FROM T_AuxInfo_Value
+                    FROM T_Aux_Info_Value
                     WHERE Aux_Description_ID = @descriptionID AND Target_ID = @targetID
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -291,14 +292,14 @@ As
                     Begin
                         If @tVal <> @vFld
                         Begin
-                            UPDATE T_AuxInfo_Value
+                            UPDATE T_Aux_Info_Value
                             SET [Value] = @vFld
                             WHERE Aux_Description_ID = @descriptionID AND Target_ID = @targetID
                         End
                     End
                     Else
                     Begin
-                        INSERT INTO T_AuxInfo_Value( Target_ID,
+                        INSERT INTO T_Aux_Info_Value( Target_ID,
                                                      Aux_Description_ID,
                                                      [Value] )
                         VALUES(@targetID, @descriptionID, @vFld)

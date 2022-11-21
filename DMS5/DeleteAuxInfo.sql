@@ -15,9 +15,10 @@ CREATE PROCEDURE [dbo].[DeleteAuxInfo]
 **
 **  Auth:   grk
 **  Date:   04/08/2002
-**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_Aux_Info_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
 (
@@ -40,7 +41,7 @@ As
     Set @targetName = Ltrim(Rtrim(Coalesce(@targetName, '')))
     Set @targetEntityName = Ltrim(Rtrim(Coalesce(@targetEntityName, '')))
 
-    If @targetName = 'Cell Culture' And Exists (Select * From T_AuxInfo_Target Where Name = 'Biomaterial')
+    If @targetName = 'Cell Culture' And Exists (Select * From T_Aux_Info_Target Where Target_Type_Name = 'Biomaterial')
     Begin
         Set @targetName = 'Biomaterial'
     End
@@ -57,8 +58,8 @@ As
         @tgtTableName = Target_Table,
         @tgtTableIDCol = Target_ID_Col,
         @tgtTableNameCol = Target_Name_Col
-    FROM T_AuxInfo_Target
-    WHERE (Name = @targetName)
+    FROM T_Aux_Info_Target
+    WHERE (Target_Type_Name = @targetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -108,7 +109,7 @@ As
     -- for the given target type and identity
     ---------------------------------------------------
 
-    DELETE FROM T_AuxInfo_Value
+    DELETE FROM T_Aux_Info_Value
     WHERE (Target_ID = @targetID) AND
     (
         Aux_Description_ID IN

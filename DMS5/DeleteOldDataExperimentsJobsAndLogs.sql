@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[DeleteOldDataExperimentsJobsAndLogs]
 **          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
 **          08/15/2022 mem - Use new column names
 **          08/26/2022 mem - Use new column name in T_Log_Entries
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
 (
@@ -751,14 +752,14 @@ AS
 
     -- Experiments (Target_Type_ID = 500)
     --
-    DELETE T_AuxInfo_Value
-    FROM T_AuxInfo_Category AIC
-         INNER JOIN T_AuxInfo_Subcategory Subcat
-           ON AIC.ID = Subcat.Aux_Category_ID
-         INNER JOIN T_AuxInfo_Description Descrip
-           ON Subcat.ID = Descrip.Aux_Subcategory_ID
-         INNER JOIN T_AuxInfo_Value AIVal
-           ON Descrip.ID = AIVal.Aux_Description_ID
+    DELETE T_Aux_Info_Value
+    FROM T_Aux_Info_Category AIC
+         INNER JOIN T_Aux_Info_Subcategory Subcat
+           ON AIC.Aux_Category_ID = Subcat.Aux_Category_ID
+         INNER JOIN T_Aux_Info_Description Descrip
+           ON Subcat.Aux_Subcategory_ID = Descrip.Aux_Subcategory_ID
+         INNER JOIN T_Aux_Info_Value AIVal
+           ON Descrip.Aux_Description_ID = AIVal.Aux_Description_ID
          LEFT OUTER JOIN T_Experiments E
            ON AIVal.Target_ID = E.Exp_ID
     WHERE (AIC.Target_Type_ID = 500) AND
@@ -769,21 +770,21 @@ AS
 
     If @myRowCount > 0
     Begin
-        Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' experiment related entries from T_AuxInfo_Value since orphaned'
+        Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' experiment related entries from T_Aux_Info_Value since orphaned'
         Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
     End
 
 
     -- Cell Cultures (Target_Type_ID = 501)
     --
-    DELETE T_AuxInfo_Value
-    FROM T_AuxInfo_Category AIC
-         INNER JOIN T_AuxInfo_Subcategory Subcat
-           ON AIC.ID = Subcat.Aux_Category_ID
-      INNER JOIN T_AuxInfo_Description Descrip
-           ON Subcat.ID = Descrip.Aux_Subcategory_ID
-         INNER JOIN T_AuxInfo_Value AIVal
-           ON Descrip.ID = AIVal.Aux_Description_ID
+    DELETE T_Aux_Info_Value
+    FROM T_Aux_Info_Category AIC
+         INNER JOIN T_Aux_Info_Subcategory Subcat
+           ON AIC.Aux_Category_ID = Subcat.Aux_Category_ID
+      INNER JOIN T_Aux_Info_Description Descrip
+           ON Subcat.Aux_Subcategory_ID = Descrip.Aux_Subcategory_ID
+         INNER JOIN T_Aux_Info_Value AIVal
+           ON Descrip.Aux_Description_ID = AIVal.Aux_Description_ID
          LEFT OUTER JOIN T_Cell_Culture
            ON AIVal.Target_ID = T_Cell_Culture.CC_ID
     WHERE (AIC.Target_Type_ID = 501) AND
@@ -794,7 +795,7 @@ AS
 
     If @myRowCount > 0
     Begin
-        Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' cell culture related entries from T_AuxInfo_Value since orphaned'
+        Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' cell culture related entries from T_Aux_Info_Value since orphaned'
         Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
     End
 
@@ -803,14 +804,14 @@ AS
     -- Thus, we'll skip this query
     --
 
-    --DELETE T_AuxInfo_Value
-    --FROM T_AuxInfo_Category AIC
-    --     INNER JOIN T_AuxInfo_Subcategory Subcat
-    --       ON AIC.ID = Subcat.Aux_Category_ID
-    --     INNER JOIN T_AuxInfo_Description Descrip
-    --     ON Subcat.ID = Descrip.Aux_Subcategory_ID
-    --     INNER JOIN T_AuxInfo_Value AIVal
-    --       ON Descrip.ID = AIVal.Aux_Description_ID
+    --DELETE T_Aux_Info_Value
+    --FROM T_Aux_Info_Category AIC
+    --     INNER JOIN T_Aux_Info_Subcategory Subcat
+    --       ON AIC.Aux_Category_ID = Subcat.Aux_Category_ID
+    --     INNER JOIN T_Aux_Info_Description Descrip
+    --     ON Subcat.Aux_Subcategory_ID = Descrip.Aux_Subcategory_ID
+    --     INNER JOIN T_Aux_Info_Value AIVal
+    --       ON Descrip.Aux_Description_ID = AIVal.Aux_Description_ID
     --     LEFT OUTER JOIN T_Dataset
     --       ON AIVal.Target_ID = T_Dataset.Dataset_ID
     --WHERE (AIC.Target_Type_ID = 502) AND

@@ -12,16 +12,17 @@ CREATE PROCEDURE [dbo].[CopyAuxInfoMultiID]
 **  Auth:   grk
 **  Date:   01/27/2003
 **          09/27/2007 mem - Extended CopyAuxInfo to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
-**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_AuxInfo_Target has an entry for 'Biomaterial
+**          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_Aux_Info_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column names
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
 (
     @targetName varchar(128),                -- 'Experiment', 'Biomaterial' (previously 'Cell Culture'), 'Dataset', or 'SamplePrepRequest'; see See T_Aux_Info_Target
     @targetEntityIDList varchar(8000),        -- Comma separated list of entity IDs; must all be of the same type
-    @categoryName varchar(128),                -- 'Lysis Method', 'Denaturing Conditions', etc.; see T_AuxInfo_Category; Note: Ignored if @mode = 'copyAll'
-    @subCategoryName varchar(128),            -- 'Procedure', 'Reagents', etc.; see T_AuxInfo_Subcategory; Note: Ignored if @mode = 'copyAll'
+    @categoryName varchar(128),                -- 'Lysis Method', 'Denaturing Conditions', etc.; see T_Aux_Info_Category; Note: Ignored if @mode = 'copyAll'
+    @subCategoryName varchar(128),            -- 'Procedure', 'Reagents', etc.; see T_Aux_Info_Subcategory; Note: Ignored if @mode = 'copyAll'
     @sourceEntityID int,                    -- ID of the source to copy information from
     @mode varchar(24),                        -- 'copyCategory', 'copySubcategory', 'copyAll'
     @message varchar(512) output
@@ -49,7 +50,7 @@ AS
         return 51007
     end
 
-    If @targetName = 'Cell Culture' And Exists (Select * From T_AuxInfo_Target Where Name = 'Biomaterial')
+    If @targetName = 'Cell Culture' And Exists (Select * From T_Aux_Info_Target Where Target_Type_Name = 'Biomaterial')
     Begin
         Set @targetName = 'Biomaterial'
     End
@@ -66,8 +67,8 @@ AS
         @tgtTableName = Target_Table,
         @tgtTableIDCol = Target_ID_Col,
         @tgtTableNameCol = Target_Name_Col
-    FROM T_AuxInfo_Target
-    WHERE (Name = @targetName)
+    FROM T_Aux_Info_Target
+    WHERE (Target_Type_Name = @targetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -230,7 +231,7 @@ AS
 
         -- delete any existing values
         --
-        DELETE FROM T_AuxInfo_Value
+        DELETE FROM T_Aux_Info_Value
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
               (Aux_Description_ID IN ( SELECT Item_ID
@@ -250,13 +251,13 @@ AS
 
         -- insert new values
         --
-        INSERT INTO T_AuxInfo_Value( Target_ID,
+        INSERT INTO T_Aux_Info_Value( Target_ID,
                                      Aux_Description_ID,
                                      Value )
         SELECT TE.EntityID AS Target_ID,
                AI.Aux_Description_ID,
                AI.Value
-        FROM T_AuxInfo_Value AI
+        FROM T_Aux_Info_Value AI
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
               (AI.Aux_Description_ID IN ( SELECT Item_ID
@@ -293,7 +294,7 @@ AS
 
         -- delete any existing values
         --
-        DELETE FROM T_AuxInfo_Value
+        DELETE FROM T_Aux_Info_Value
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
               (Aux_Description_ID IN ( SELECT Item_ID
@@ -314,13 +315,13 @@ AS
 
         -- insert new values
         --
-        INSERT INTO T_AuxInfo_Value( Target_ID,
+        INSERT INTO T_Aux_Info_Value( Target_ID,
                                      Aux_Description_ID,
                                      Value )
         SELECT TE.EntityID AS Target_ID,
                AI.Aux_Description_ID,
                AI.Value
-        FROM T_AuxInfo_Value AI
+        FROM T_Aux_Info_Value AI
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
               (AI.Aux_Description_ID IN ( SELECT Item_ID
@@ -357,7 +358,7 @@ AS
 
         -- delete any existing values
         --
-        DELETE FROM T_AuxInfo_Value
+        DELETE FROM T_Aux_Info_Value
         WHERE (Target_ID IN ( SELECT EntityID
                               FROM #Tmp_TargetEntities )) AND
               (Aux_Description_ID IN ( SELECT Item_ID
@@ -375,13 +376,13 @@ AS
         end
 
         --
-        INSERT INTO T_AuxInfo_Value( Target_ID,
+        INSERT INTO T_Aux_Info_Value( Target_ID,
                                      Aux_Description_ID,
                                      Value )
         SELECT TE.EntityID AS Target_ID,
                AI.Aux_Description_ID,
                AI.Value
-        FROM T_AuxInfo_Value AI
+        FROM T_Aux_Info_Value AI
              CROSS JOIN #Tmp_TargetEntities TE
         WHERE (AI.Target_ID = @sourceEntityID) AND
               (AI.Aux_Description_ID IN ( SELECT Item_ID

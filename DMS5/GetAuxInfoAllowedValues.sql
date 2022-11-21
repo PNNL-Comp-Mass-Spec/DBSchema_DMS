@@ -7,7 +7,7 @@ GO
 CREATE FUNCTION [dbo].[GetAuxInfoAllowedValues]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Builds delimited list of allowed values for given aux info item
 **
 **  Return value: vertical bar delimited list
@@ -15,7 +15,8 @@ CREATE FUNCTION [dbo].[GetAuxInfoAllowedValues]
 **  Auth:   grk
 **  Date:   08/24/2010
 **          08/15/2022 mem - Use new column name
-**    
+**          11/21/2022 mem - Use new aux info table and column names
+**
 *****************************************************/
 (
     @ID int
@@ -24,13 +25,13 @@ RETURNS varchar(1024)
 AS
 BEGIN
     Declare @list varchar(1024) = ''
-        
-    SELECT 
-            @list = @list + CASE 
+
+    SELECT
+            @list = @list + CASE
                             WHEN @list = '' THEN Value
                             ELSE ' | ' + Value
                         END
-        FROM T_AuxInfo_Allowed_Values
+        FROM T_Aux_Info_Allowed_Values
         WHERE Aux_Description_ID = @ID
 
     RETURN @list

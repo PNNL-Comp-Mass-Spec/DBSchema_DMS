@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[DeleteSamplePrepRequest]
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
+**          11/21/2022 mem - Use new aux info table and column names
 **
 *****************************************************/
 (
@@ -79,7 +80,7 @@ As
     -- for the sample prep request
     ---------------------------------------------------
 
-    DELETE FROM T_AuxInfo_Value
+    DELETE FROM T_Aux_Info_Value
     WHERE (Target_ID = @requestID) AND
     (
         Aux_Description_ID IN
