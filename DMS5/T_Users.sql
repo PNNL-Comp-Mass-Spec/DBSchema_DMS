@@ -72,15 +72,15 @@ ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Active] CHEC
 GO
 ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_Active]
 GO
+ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Name_Not_Empty] CHECK  (([U_Name]<>''))
+GO
+ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_Name_Not_Empty]
+GO
+ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Name_Whitespace] CHECK  (([dbo].[udfWhitespaceChars]([U_Name],(1))=(0)))
+GO
+ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_Name_Whitespace]
+GO
 ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Update] CHECK  (([U_Update]='N' OR [U_Update]='Y'))
 GO
 ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_Update]
-GO
-ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_UserName_NotEmpty] CHECK  (([U_Name]<>''))
-GO
-ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_UserName_NotEmpty]
-GO
-ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_UserName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([U_Name],(1))=(0)))
-GO
-ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_UserName_WhiteSpace]
 GO
