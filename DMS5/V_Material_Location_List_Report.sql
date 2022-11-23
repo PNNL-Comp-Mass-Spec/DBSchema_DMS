@@ -8,6 +8,7 @@ CREATE VIEW [dbo].[V_Material_Location_List_Report]
 AS
 SELECT ML.Tag AS [Location],
        T_Material_Freezers.Freezer,
+       T_Material_Freezers.Freezer_Tag,
        ML.Shelf,
        ML.Rack,
        ML.[Row],
@@ -24,8 +25,9 @@ FROM dbo.T_Material_Locations ML
        ON ML.Freezer_Tag = T_Material_Freezers.Freezer_Tag
      LEFT OUTER JOIN dbo.T_Material_Containers MC
        ON ML.ID = MC.Location_ID
-GROUP BY ML.ID, T_Material_Freezers.Freezer, ML.Shelf, ML.Rack, ML.[Row],
-         ML.[Comment], ML.Tag, ML.Col, ML.[Status], ML.Container_Limit
+GROUP BY ML.Tag, T_Material_Freezers.Freezer, T_Material_Freezers.Freezer_Tag,
+         ML.Shelf, ML.Rack, ML.[Row], ML.Col,
+         ML.[Comment], ML.Container_Limit, ML.[Status], ML.ID
 
 
 GO

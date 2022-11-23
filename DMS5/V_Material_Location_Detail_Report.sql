@@ -9,6 +9,7 @@ AS
 SELECT ML.ID AS ID,
        ML.Tag AS [Location],
        MF.Freezer,
+       MF.Freezer_Tag,
        ML.Shelf,
        ML.Rack,
        ML.[Row],
@@ -24,7 +25,7 @@ FROM dbo.T_Material_Locations ML
        ON ML.Freezer_Tag = MF.Freezer_Tag
      LEFT OUTER JOIN dbo.T_Material_Containers MC
        ON ML.ID = MC.Location_ID
-GROUP BY ML.ID, MF.Freezer, ML.Shelf, ML.Rack, ML.[Row],
+GROUP BY ML.ID, MF.Freezer, MF.Freezer_Tag, ML.Shelf, ML.Rack, ML.[Row],
          ML.[Comment], ML.Tag, ML.Col, ML.[Status], ML.Container_Limit
 
 
