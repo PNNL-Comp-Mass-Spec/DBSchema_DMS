@@ -6,7 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Locations]
 AS
-SELECT ID As Location_ID, Freezer_Tag, Shelf, Rack, Row, Col, Status, Barcode, Comment, Container_Limit, Tag As Location
+SELECT ID AS Location_ID,
+       Freezer_Tag,
+       Shelf,
+       Rack,
+       Row,
+       Col,
+       Status,
+       Barcode,
+       Comment,
+       Container_Limit,
+       Tag AS Location
 FROM T_Material_Locations
+
 
 GO
