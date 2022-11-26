@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[AddNewDataset]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Adds new dataset entry to DMS database from contents of XML.
 **
 **      This is for use by sample automation software
@@ -18,7 +18,7 @@ CREATE PROCEDURE [dbo].[AddNewDataset]
 **      This procedure is called by the DataImportManager (DIM)
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   grk
 **          05/04/2007 grk - Ticket #434
 **          10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
@@ -49,7 +49,8 @@ CREATE PROCEDURE [dbo].[AddNewDataset]
 **          12/17/2020 mem - Ignore @captureSubfolder if it is an absolute path to a network share (e.g. \\proto-2\External_Orbitrap_Xfer)
 **          05/26/2021 mem - Expand @message to varchar(1024)
 **          08/25/2022 mem - Use new column name in T_Log_Entries
-**    
+**          11/25/2022 mem - Rename variable and use new parameter name when calling AddUpdateDataset
+**
 *****************************************************/
 (
     @xmlDoc varchar(4000),
@@ -70,13 +71,13 @@ AS
 
     Declare @internalStandards varchar(64)
     Declare @addUpdateTimeStamp datetime
-    
+
     Declare @runStartDate datetime
     Declare @runFinishDate datetime
 
     Set @message = ''
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
-    
+
     Declare
         @datasetName          varchar(128)  = '',
         @experimentName       varchar(64)   = '',
@@ -86,7 +87,7 @@ AS
         @lcCartName           varchar(128)  = '',
         @lcCartConfig         varchar(128)  = '',
         @lcColumn             varchar(64)   = '',
-        @wellplateNumber      varchar(64)   = '',
+        @wellplate            varchar(64)   = '',
         @wellNumber           varchar(64)   = '',
         @datasetType          varchar(64)   = '',
         @operatorPRN          varchar(64)   = '',
@@ -100,14 +101,14 @@ AS
         @runStart             varchar(64)   = '',
         @runFinish            varchar(64)   = '',
         @datasetCreatorPRN    varchar(128)  = ''
-        
-        -- Note that @datasetCreatorPRN is the PRN of the person that created the dataset; 
+
+        -- Note that @datasetCreatorPRN is the PRN of the person that created the dataset;
         -- It is typically only present in trigger files created due to a dataset manually being created by a user
 
     ---------------------------------------------------
     --  Create temporary table to hold list of parameters
     ---------------------------------------------------
- 
+
      CREATE TABLE #TPAR (
         paramName varchar(128),
         paramValue varchar(512)
@@ -124,16 +125,16 @@ AS
     ---------------------------------------------------
     -- Convert @xmlDoc to XML
     ---------------------------------------------------
-    
+
     Declare @xml xml = Convert(xml, @xmlDoc)
-    
+
      ---------------------------------------------------
-    -- Populate parameter table from XML parameter description  
+    -- Populate parameter table from XML parameter description
     ---------------------------------------------------
 
     INSERT INTO #TPAR (paramName, paramValue)
     SELECT [Name], IsNull([Value], '')
-    FROM ( SELECT  xmlNode.value('@Name', 'varchar(128)') AS [Name], 
+    FROM ( SELECT  xmlNode.value('@Name', 'varchar(128)') AS [Name],
                    xmlNode.value('@Value', 'varchar(512)') AS [Value]
            FROM @xml.nodes('/Dataset/Parameter') AS R(xmlNode)
     ) LookupQ
@@ -169,7 +170,7 @@ AS
     SELECT    @lcCartName           = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name'
     SELECT    @lcCartConfig         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
     SELECT    @lcColumn             = paramValue FROM #TPAR WHERE paramName = 'LC Column'
-    SELECT    @wellplateNumber      = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number'
+    SELECT    @wellplate            = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number'
     SELECT    @wellNumber           = paramValue FROM #TPAR WHERE paramName = 'Well Number'
     SELECT    @datasetType          = paramValue FROM #TPAR WHERE paramName = 'Dataset Type'
     SELECT    @operatorPRN          = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)'
@@ -184,12 +185,12 @@ AS
     SELECT    @runFinish            = paramValue FROM #TPAR WHERE paramName = 'Run Finish'
     SELECT    @datasetCreatorPRN    = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
 
-    
+
      ---------------------------------------------------
     -- Check for QC or Blank datasets
      ---------------------------------------------------
 
-    If dbo.GetDatasetPriority(@datasetName) > 0 OR 
+    If dbo.GetDatasetPriority(@datasetName) > 0 OR
        dbo.GetDatasetPriority(@experimentName) > 0 OR
        (@datasetName LIKE 'Blank%' AND Not @datasetName LIKE '%-bad')
     Begin
@@ -198,7 +199,7 @@ AS
             -- Auto set interest rating to 5
             -- Initially set @interestRating to the text 'Released' but then query
             -- T_DatasetRatingName for rating 5 in case the rating name has changed
-        
+
             Set @interestRating = 'Released'
 
             SELECT @interestRating = DRN_name
@@ -218,9 +219,9 @@ AS
         Else
         If @datasetName Like 'QC_Shew[_-][0-9][0-9][_-][0-9][0-9]%'
             Set @experimentName = Substring(@datasetName, 1, 13)
-        
+
     End
-    
+
      ---------------------------------------------------
     -- Possibly auto-define the @emslUsageType
      ---------------------------------------------------
@@ -237,41 +238,41 @@ AS
 
     Set @internalStandards  = 'none'
     Set @addUpdateTimeStamp = GetDate()
-    
+
     ---------------------------------------------------
     -- Check for the comment ending in "Buzzard:"
     ---------------------------------------------------
-    
+
     Set @comment = LTrim(RTrim(@comment))
     If @comment Like '%Buzzard:'
         Set @comment = Substring(@comment, 1, Len(@comment) - 8)
-    
+
     If @captureSubdirectory LIKE '[A-Z]:\%' OR @captureSubdirectory LIKE '\\%'
     Begin
         Set @message = 'Capture subfolder is not a relative path for dataset ' + @datasetName + '; ignoring ' + @captureSubdirectory
-        
+
         exec PostLogEntry 'Error', @message, 'AddNewDataset'
-       
+
         Set @captureSubdirectory = ''
     End
- 
+
     If @captureSubdirectory = @datasetName
     Begin
         Set @message = 'Capture subfolder is identical to the dataset name for ' + @datasetName + '; changing to an empty string'
 
         -- Post this message to the log every 3 days
         If Not Exists (
-           SELECT * 
-           FROM T_Log_Entries 
-           WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND 
+           SELECT *
+           FROM T_Log_Entries
+           WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND
                  Entered > DATEADD(day, -3, GETDATE()) )
         Begin
             exec PostLogEntry 'Debug', @message, 'AddNewDataset'
         End
-       
+
         Set @captureSubdirectory = ''
     End
-    
+
     ---------------------------------------------------
     -- Create new dataset
     ---------------------------------------------------
@@ -282,7 +283,7 @@ AS
                         @instrumentName,
                         @datasetType,
                         @lcColumn,
-                        @wellplateNumber,
+                        @wellplate,
                         @wellNumber,
                         @separationType,
                         @internalStandards,
@@ -316,9 +317,9 @@ AS
     -- It's possible that @requestID got updated by AddUpdateDataset
     -- Lookup the current value
     ---------------------------------------------------
-    
+
     -- First use Dataset Name to lookup the Dataset ID
-    --        
+    --
     Set @datasetId = 0
     --
     SELECT @datasetId = Dataset_ID
@@ -340,11 +341,11 @@ AS
         RAISERROR (@message, 10, 1)
         return 51035
     End
-    
+
     ---------------------------------------------------
     -- Find request associated with dataset
     ---------------------------------------------------
-    
+
     Set @existingRequestID = 0
     --
     SELECT @existingRequestID = ID
@@ -359,26 +360,26 @@ AS
         RAISERROR (@message, 10, 1)
         return 51036
     End
-    
+
     If @existingRequestID <> 0
         Set @requestID = @existingRequestID
-    
+
     If Len(@datasetCreatorPRN) > 0
     Begin -- <a>
         ---------------------------------------------------
         -- Update T_Event_Log to reflect @datasetCreatorPRN creating this dataset
         ---------------------------------------------------
-        
+
         UPDATE T_Event_Log
         SET Entered_By = @datasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
         FROM T_Event_Log
         WHERE Target_ID = @datasetId AND
-              Target_State = 1 AND 
-              Target_Type = 4 AND 
+              Target_State = 1 AND
+              Target_Type = 4 AND
               Entered Between @addUpdateTimeStamp AND DateAdd(minute, 1, @addUpdateTimeStamp)
-            
+
     End -- </a>
-        
+
 
     ---------------------------------------------------
     -- Update the associated request with run start/finish values
@@ -386,17 +387,17 @@ AS
 
     If @requestID <> 0
     Begin
-    
+
         If @runStart <> ''
             Set @runStartDate = Convert(datetime, @runStart)
         Else
             Set @runStartDate = Null
-            
+
         If @runFinish <> ''
             Set @runFinishDate = Convert(datetime, @runFinish)
         Else
             Set @runFinishDate = Null
-            
+
         If Not @runStartDate Is Null and Not @runFinishDate Is Null
         Begin
             -- Check whether the @runFinishDate value is in the future
@@ -406,10 +407,10 @@ AS
                 Set @runFinishDate = @runStartDate
             End
         End
-        
+
         UPDATE T_Requested_Run
         SET
-            RDS_Run_Start = @runStartDate, 
+            RDS_Run_Start = @runStartDate,
             RDS_Run_Finish = @runFinishDate
         WHERE (ID = @requestID)
         --

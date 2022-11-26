@@ -103,6 +103,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          10/06/2021 mem - Add @batch, @block, and @runOrder
 **          02/17/2022 mem - Update requestor username warning
 **          05/23/2022 mem - Rename requester username argument and update username warning
+**          11/25/2022 mem - Rename parameter to @wellplate
 **
 *****************************************************/
 (
@@ -113,7 +114,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @autoPopulateUserListIfBlank=1)
     @msType varchar(20),
     @instrumentSettings varchar(512) = 'na',
-    @wellplateNum varchar(64) = 'na',
+    @wellplate varchar(64) = 'na',              -- Wellplate name
     @wellNum varchar(24) = 'na',
     @internalStandard varchar(50) = 'na',
     @comment varchar(1024) = 'na',
@@ -383,8 +384,8 @@ As
     If @mode IN ('update', 'check_update') AND (@oldStatus = 'Completed' AND @status <> 'Completed')
         RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
 
-    If IsNull(@wellplateNum, '') IN ('', 'na')
-        Set @wellplateNum = null
+    If IsNull(@wellplate, '') IN ('', 'na')
+        Set @wellplate = null
 
     If IsNull(@wellNum, '') IN ('', 'na')
         Set @wellNum = null
@@ -406,7 +407,7 @@ As
 
     SELECT
         @experimentID = Exp_ID,
-        @wellplateNum = CASE WHEN @wellplateNum = '(lookup)' THEN EX_wellplate_num ELSE @wellplateNum END,
+        @wellplate = CASE WHEN @wellplate = '(lookup)' THEN EX_wellplate_num ELSE @wellplate END,
         @wellNum =  CASE WHEN @wellNum = '(lookup)' THEN EX_well_num ELSE @wellNum END
     FROM T_Experiments
     WHERE Experiment_Num = @experimentNum
@@ -842,7 +843,7 @@ As
             @defaultPriority, -- priority
             @experimentID,
             @workPackage,
-            @wellplateNum,
+            @wellplate,
             @wellNum,
             @internalStandard,
             @batch,
@@ -941,7 +942,7 @@ As
             RDS_instrument_setting = @instrumentSettings,
             Exp_ID = @experimentID,
             RDS_WorkPackage = @workPackage,
-            RDS_Well_Plate_Num = @wellplateNum,
+            RDS_Well_Plate_Num = @wellplate,
             RDS_Well_Num = @wellNum,
             RDS_internal_standard = @internalStandard,
             RDS_BatchID = @batch,

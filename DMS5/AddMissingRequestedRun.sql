@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
 **			01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **
 *****************************************************/
 (
@@ -138,7 +139,7 @@ As
 								@workPackage = @workPackage,
 								@msType = @msType,
 								@instrumentSettings = 'na',
-								@wellplateNum = NULL,
+								@wellplate = NULL,
 								@wellNum = NULL,
 								@internalStandard = 'na',
 								@comment = 'Automatically created by Dataset entry',

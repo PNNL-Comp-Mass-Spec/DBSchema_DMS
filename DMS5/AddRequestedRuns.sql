@@ -50,6 +50,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/17/2022 mem - Update operator username warning
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **
 *****************************************************/
 (
@@ -250,7 +251,7 @@ As
     -- from experiments
     ---------------------------------------------------
     --
-    Declare @wellplateNum varchar(64) = '(lookup)'
+    Declare @wellplate varchar(64) = '(lookup)'
     Declare @wellNum varchar(24) = '(lookup)'
 
     Declare @instrumentGroupToUse varchar(64)
@@ -353,7 +354,7 @@ As
                                     @workPackage = @workPackage,
                                     @msType = @msType,
                                     @instrumentSettings = @instrumentSettings,
-                                    @wellplateNum = @wellplateNum,
+                                    @wellplate = @wellplate,
                                     @wellNum = @wellNum,
                                     @internalStandard = @internalStandard,
                                     @comment = @comment,
@@ -468,7 +469,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [DDL_Viewer] AS [dbo]

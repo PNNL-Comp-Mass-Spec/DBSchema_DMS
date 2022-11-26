@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **          02/18/2022 mem - Call AddUpdateRequestedRun if the EUS usage info is updated
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          11/18/2022 mem - Use new column name in V_Requested_Run_Detail_Report
+**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -61,7 +62,7 @@ As
 
     Declare @requestID int = 0
     Declare @reqName varchar(128)
-    Declare @wellplateNum varchar(64) = NULL
+    Declare @wellplate varchar(64) = NULL
     Declare @wellNum varchar(64) = NULL
     Declare @secSep varchar(64) = 'none'
     Declare @rating varchar(32) = 'Unknown'
@@ -371,7 +372,7 @@ As
             @experimentID,
             @ratingID,
             @columnID,
-            @wellplateNum,
+            @wellplate,
             @intStdID,
             @acqStart,
             @acqEnd
@@ -417,7 +418,7 @@ As
                                     @workPackage = 'none',
                                     @msType = @msType,
                                     @instrumentSettings = 'na',
-                                    @wellplateNum = NULL,
+                                    @wellplate = NULL,
                                     @wellNum = NULL,
                                     @internalStandard = 'na',
                                     @comment = 'Automatically created by Dataset entry',
@@ -551,7 +552,7 @@ As
                                     @workPackage = 'none',
                                     @msType = @msType,
                                     @instrumentSettings = 'na',
-                                    @wellplateNum = NULL,
+                                    @wellplate = NULL,
                                     @wellNum = NULL,
                                     @internalStandard = 'na',
                                     @comment = 'Automatically created by Dataset entry',

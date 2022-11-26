@@ -4,14 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[CreateXmlDatasetTriggerFile]
+CREATE PROCEDURE [dbo].[CreateXmlDatasetTriggerFile]
 /****************************************************
 **  Desc:   Creates an XML dataset trigger file to deposit into a directory
 **          where the DIM will pick it up, validate the dataset file(s) are available,
 **          and submit back to DMS
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   jds
 **  Date:   10/03/2007 jds - Initial version
 **          04/26/2010 grk - widened @Dataset_Name to 128 characters
@@ -23,7 +23,8 @@ CREATE Procedure [dbo].[CreateXmlDatasetTriggerFile]
 **          03/15/2017 mem - Log an error if @triggerFolderPath does not exist
 **          04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **          07/02/2019 mem - Add parameter @workPackage
-**    
+**          11/25/2022 mem - Rename parameter to @Wellplate
+**
 *****************************************************/
 (
     @Dataset_Name       varchar(128),       -- @datasetNum
@@ -32,7 +33,7 @@ CREATE Procedure [dbo].[CreateXmlDatasetTriggerFile]
     @Separation_Type    varchar(64),        -- @secSep
     @LC_Cart_Name       varchar(128),       -- @LCCartName
     @LC_Column          varchar(64),        -- @LCColumnNum
-    @Wellplate_Number   varchar(64),        -- @wellplateNum
+    @Wellplate          varchar(64),        -- @wellplate
     @Well_Number        varchar(64),        -- @wellNum
     @Dataset_Type       varchar(20),        -- @msType
     @Operator_PRN       varchar(64),        -- @operPRN
@@ -55,11 +56,11 @@ set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @logErrors tinyint = 0
-        
+
     If @Request Is Null
     Begin
         Set @myError = 70
@@ -68,12 +69,12 @@ set nocount on
     End
 
     Set @logErrors = 1
-    
+
     Declare @fso int
     Declare @hr int
     Declare @src varchar(255), @desc varchar(255)
     Declare @result int
-    
+
     Declare @triggerFolderPath varchar(100)
     select @triggerFolderPath = server
     from T_MiscPaths
@@ -88,7 +89,7 @@ set nocount on
         Set @message = 'Error creating FileSystemObject, cannot create trigger file'
         goto Done
     END
-    
+
     -- Make sure @triggerFolderPath exists
     EXEC @hr = sp_OAMethod  @fso, 'FolderExists', @result OUT, @triggerFolderPath
     IF @hr <> 0
@@ -99,22 +100,22 @@ set nocount on
             Set @message = 'Error verifying that the trigger folder exists at ' + IsNull(@triggerFolderPath, '??')
         goto DestroyFSO
     END
-    
+
     If @result = 0
     Begin
         set @myError = 74
-        Set @message = 'Trigger folder not found at ' + IsNull(@triggerFolderPath, '??') + '; update T_MiscPaths'        
+        Set @message = 'Trigger folder not found at ' + IsNull(@triggerFolderPath, '??') + '; update T_MiscPaths'
         goto DestroyFSO
     End
-    
+
     Declare @filePath varchar(150) = dbo.udfCombinePaths(@triggerFolderPath, 'man_' + @Dataset_Name + '.xml')
 
     Declare @xmlLine varchar(50)
     set @xmlLine = ''
-    
+
     Set @Capture_Subfolder = IsNull(@Capture_Subfolder, '')
     Set @LC_Cart_Config = IsNull(@LC_Cart_Config, '')
-    
+
     set @message = ''
 
     ---------------------------------------------------
@@ -126,7 +127,7 @@ set nocount on
     --
     Declare @tmpXmlLine varchar(4000)
     Declare @newLine varchar(2) = char(13) + char(10)
-    
+
     --XML Header
     set @tmpXmlLine = '<?xml version="1.0" ?>' + @newLine
 
@@ -139,7 +140,7 @@ set nocount on
     set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Name" Value="' +       dbo.XMLQuoteCheck(@LC_Cart_Name) + '"/>' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Config" Value="' +     dbo.XMLQuoteCheck(@LC_Cart_Config) + '"/>' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Column" Value="' +          dbo.XMLQuoteCheck(@LC_Column) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Wellplate Number" Value="' +   dbo.XMLQuoteCheck(@Wellplate_Number) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Wellplate Number" Value="' +   dbo.XMLQuoteCheck(@Wellplate) + '"/>' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Well Number" Value="' +        dbo.XMLQuoteCheck(@Well_Number) + '"/>' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Type" Value="' +       dbo.XMLQuoteCheck(@Dataset_Type) + '"/>' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Operator (PRN)" Value="' +     dbo.XMLQuoteCheck(@Operator_PRN) + '"/>' + @newLine
@@ -160,7 +161,7 @@ set nocount on
     ---------------------------------------------------
     -- write XML dataset trigger file
     ---------------------------------------------------
-    
+
     Declare @ts int
     Declare @property varchar(255)
     Declare @return varchar(255)
@@ -220,13 +221,13 @@ set nocount on
             Set @message = 'Error closing the trigger file at ' + IsNull(@filePath, '??')
         goto DestroyFSO
     END
-    
+
     return 0
 
     -----------------------------------------------
     -- clean up file system object
     -----------------------------------------------
-  
+
 DestroyFSO:
     -- Destroy the FileSystemObject object.
     --
@@ -242,17 +243,17 @@ DestroyFSO:
     -----------------------------------------------
     -- Exit
     -----------------------------------------------
-    
+
 Done:
     If @myError <> 0
     Begin
         If IsNull(@message, '') = ''
             Set @message = 'Error code ' + Cast(@myError as varchar(9)) + ' in CreateXmlDatasetTriggerFile'
 
-        If @logErrors > 0            
+        If @logErrors > 0
             Exec PostLogEntry 'Error', @message, 'CreateXmlDatasetTriggerFile'
     End
-    
+
     return @myError
 
 

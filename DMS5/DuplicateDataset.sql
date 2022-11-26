@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          11/25/2022 mem - Rename variable and update call to AddUpdateRequestedRun to use new parameter name
 **
 *****************************************************/
 (
@@ -109,7 +110,7 @@ As
     Declare @experimentID int
     Declare @ratingID int
     Declare @columnID int
-    Declare @wellplateNum varchar(64)
+    Declare @wellplate varchar(64)
     Declare @intStdID Int
     Declare @captureSubfolder varchar(255)
     Declare @cartConfigID int
@@ -129,7 +130,7 @@ As
            @experimentID = D.Exp_ID,
            @ratingID = D.DS_rating,
            @columnID = D.DS_LC_column_ID,
-           @wellplateNum = D.DS_wellplate_num,
+           @wellplate = D.DS_wellplate_num,
            @intStdID = D.DS_internal_standard_ID,
            @captureSubfolder = D.Capture_Subfolder,
            @cartConfigID = D.Cart_Config_ID,
@@ -249,7 +250,7 @@ As
                @experimentID AS ExperimentID,
                @ratingID AS RatingID,
                @columnID AS ColumnID,
-               @wellplateNum AS WellplateNum,
+               @wellplate AS WellplateNum,
                @intStdID AS InternalStandardID,
                @captureSubfolder AS Capture_SubFolder,
                @cartConfigID AS CartConfigID
@@ -263,7 +264,7 @@ As
                                 @msType As MSType,
                                 @separationGroup As SeparationGroup,
                                 @instrumentSettings As Instrument_Settings,
-                                @wellplateNum As WellplateNum,
+                                @wellplate As WellplateNum,
                                 @wellNum As WellNum,
                                 'na' As InternalStandard,
                                 'Automatically created by Dataset entry' As [Comment],
@@ -321,7 +322,7 @@ As
             @experimentID,
             @ratingID,
             @columnID,
-            @wellplateNum,
+            @wellplate,
             @intStdID,
             @captureSubfolder,
             @cartConfigID
@@ -356,7 +357,7 @@ As
                                 @workPackage = @workPackage,
                                 @msType = @msType,
                                 @instrumentSettings = @instrumentSettings,
-                                @wellplateNum = @wellplateNum,
+                                @wellplate = @wellplate,
                                 @wellNum = @wellNum,
                                 @internalStandard = 'na',
                                 @comment = 'Automatically created by Dataset entry',

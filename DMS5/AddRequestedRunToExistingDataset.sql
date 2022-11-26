@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunToExistingDataset]
 **          01/31/2020 mem - Display all of the values sent to AddUpdateRequestedRun when mode is 'preview'
 **          02/04/2020 mem - Add mode 'add-debug', which will associate the requested run with the dataset, but will also print out debug statements
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **    
 *****************************************************/
 (
@@ -290,7 +291,7 @@ AS
                             @workPackage = @workPackage,
                             @msType = @msType,
                             @instrumentSettings = 'na',
-                            @wellplateNum = NULL,
+                            @wellplate = NULL,
                             @wellNum = NULL,
                             @internalStandard = 'na',
                             @comment = @comment,
@@ -355,7 +356,6 @@ AS
     End CATCH
     
     return @myError
-
 
 
 GO

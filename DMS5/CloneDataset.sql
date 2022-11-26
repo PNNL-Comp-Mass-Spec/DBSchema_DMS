@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[CloneDataset]
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **    
 *****************************************************/
 (
@@ -50,7 +51,7 @@ AS
 	Declare @workPackage varchar(50)
 	Declare @DatasetType varchar(50)
 	Declare @instrumentSettings varchar(1024)
-	Declare @wellplateNum varchar(64)
+	Declare @wellplate varchar(64)
 	Declare @wellNum varchar(64)
 	Declare @internalStandard varchar(64)
 	Declare @comment varchar(512)
@@ -141,7 +142,7 @@ AS
 		       @workPackage = RR.RDS_WorkPackage,
 		       @DatasetType = DTN.DST_name,						-- Aka @msType
 		       @instrumentSettings = RR.RDS_instrument_setting,
-		       @wellplateNum = RR.RDS_Well_Plate_Num,
+		       @wellplate = RR.RDS_Well_Plate_Num,
 		       @wellNum = RR.RDS_Well_Num,
 		       @internalStandard = RR.RDS_internal_standard,
 		       @comment = 'Automatically created by Dataset entry',
@@ -184,7 +185,7 @@ AS
 			       @workPackage AS WorkPackage,
 			       @DatasetType AS Dataset_Type,
 			       @instrumentSettings AS Instrument_Settings,
-			       @wellplateNum AS Well_Plate_Num,
+			       @wellplate AS Well_Plate_Num,
 			       @wellNum AS Well_Num,
 			       @internalStandard AS Internal_standard,
 			       @comment AS [Comment],
@@ -256,7 +257,7 @@ AS
 									@workPackage = @workPackage,
 									@msType = @datasetType,
 									@instrumentSettings = @instrumentSettings,
-									@wellplateNum = @wellplateNum,
+									@wellplate = @wellplate,
 									@wellNum = @wellNum,
 									@internalStandard = @internalStandard,
 									@comment = @comment,
@@ -528,7 +529,6 @@ AS
 Done:
 
 	return @myError
-
 
 
 GO

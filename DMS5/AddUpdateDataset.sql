@@ -114,6 +114,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          05/27/2022 mem - Expand @msg to varchar(1024)
 **          08/22/2022 mem - Do not log EUS Usage validation errors to T_Log_Entries
+**          11/25/2022 mem - Rename parameter to @wellplate
 **
 *****************************************************/
 (
@@ -123,7 +124,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @instrumentName varchar(64),
     @msType varchar(50),                        -- Dataset Type
     @lcColumnNum varchar(64),
-    @wellplateNum varchar(64) = 'na',
+    @wellplate varchar(64) = 'na',              -- Wellplate name
     @wellNum varchar(64) = 'na',
     @secSep varchar(64) = 'na',
     @internalStandards varchar(64) = 'none',
@@ -282,8 +283,8 @@ As
         RAISERROR (@msg, 11, 15)
     End
 
-    If IsNull(@wellplateNum, '') IN ('', 'na')
-        Set @wellplateNum = NULL
+    If IsNull(@wellplate, '') IN ('', 'na')
+        Set @wellplate = NULL
 
     If IsNull(@wellNum, '') IN ('', 'na')
         Set @wellNum = NULL
@@ -1102,7 +1103,7 @@ As
                         @secSep,
                         @lcCartName,
                         @lcColumnNum,
-                        @wellplateNum,
+                        @wellplate,
                         @wellNum,
                         @msType,
                         @operPRN,
@@ -1218,7 +1219,7 @@ As
             @experimentID,
             @ratingID,
             @columnID,
-            @wellplateNum,
+            @wellplate,
             @intStdID,
             @captureSubfolder,
             @cartConfigID
@@ -1308,7 +1309,7 @@ As
                                     @workPackage = @workPackage,
                                     @msType = @msType,
                                     @instrumentSettings = 'na',
-                                    @wellplateNum = NULL,
+                                    @wellplate = NULL,
                                     @wellNum = NULL,
                                     @internalStandard = 'na',
                                     @comment = 'Automatically created by Dataset entry',
@@ -1450,7 +1451,7 @@ As
                 Exp_ID = @experimentID,
                 DS_rating = @ratingID,
                 DS_LC_column_ID = @columnID,
-                DS_wellplate_num = @wellplateNum,
+                DS_wellplate_num = @wellplate,
                 DS_internal_standard_ID = @intStdID,
                 Capture_Subfolder = @captureSubfolder,
                 Cart_Config_ID = @cartConfigID
@@ -1474,7 +1475,7 @@ As
                @reqName = RR.RDS_Name,
                @reqRunInstSettings = RR.RDS_instrument_setting,
                @workPackage = RR.RDS_WorkPackage,
-               @wellplateNum = RR.RDS_Well_Plate_Num,
+               @wellplate = RR.RDS_Well_Plate_Num,
                @wellNum = RR.RDS_Well_Num,
                @reqRunComment = RDS_comment,
                @reqRunInternalStandard = RDS_internal_standard,
@@ -1545,7 +1546,7 @@ As
                                     @workPackage = @workPackage,
                                     @msType = @msType,
                                     @instrumentSettings = @reqRunInstSettings,
-                                    @wellplateNum = @wellplateNum,
+                                    @wellplate = @wellplate,
                                     @wellNum = @wellNum,
                                     @internalStandard = @reqRunInternalStandard,
                                     @comment = @reqRunComment,

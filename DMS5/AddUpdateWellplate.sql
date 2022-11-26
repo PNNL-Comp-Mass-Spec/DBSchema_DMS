@@ -14,12 +14,13 @@ CREATE PROCEDURE [dbo].[AddUpdateWellplate]
 **  Date:   07/23/2009
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          11/25/2022 mem - Rename parameter to @wellplate
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @wellplateNum varchar(64) output,
+    @wellplate varchar(64) output,      -- Wellplate name
     @description varchar(512),
     @mode varchar(12) = 'add', -- or 'update' or 'assure'
     @message varchar(512) output,
@@ -40,15 +41,16 @@ As
     Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateWellplate', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     ---------------------------------------------------
     -- optionally generate name
     ---------------------------------------------------
     declare @idx int
-    if @wellplateNum = '(generate name)'
+
+    If @wellplate = '(generate name)'
     begin
         --
         SELECT @idx = MAX(ID) + 1
@@ -63,9 +65,12 @@ As
             return 51000
         end
 
-        if @idx < 1000
+        If @idx < 1000
+        Begin
             set @idx = 1000
-        set @wellplateNum = 'WP-' + cast(@idx as varchar(12))
+        End
+
+        set @wellplate = 'WP-' + cast(@idx as varchar(12))
     end
 
     ---------------------------------------------------
@@ -76,7 +81,7 @@ As
     --
     SELECT @tmp = ID
     FROM  T_Wellplates
-    WHERE(WP_Well_Plate_Num = @wellplateNum)
+    WHERE(WP_Well_Plate_Num = @wellplate)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -125,7 +130,7 @@ As
         WP_Well_Plate_Num,
         WP_Description
     ) VALUES (
-        @wellplateNum,
+        @wellplate,
         @description
     )
     --
@@ -150,21 +155,22 @@ As
         --
         UPDATE T_Wellplates
         SET
-        WP_Well_Plate_Num = @wellplateNum,
+        WP_Well_Plate_Num = @wellplate,
         WP_Description = @description
-        WHERE(WP_Well_Plate_Num = @wellplateNum)
+        WHERE(WP_Well_Plate_Num = @wellplate)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
-            set @message = 'Update operation failed: "' + @wellplateNum + '"'
+            set @message = 'Update operation failed: "' + @wellplate + '"'
             RAISERROR (@message, 10, 1)
             return 51004
         end
     end -- update mode
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateWellplate] TO [DDL_Viewer] AS [dbo]

@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          06/01/2021 mem - Raise an error if @mode is invalid
 **          04/12/2022 mem - Do not log data validation errors to T_Log_Entries
 **          11/18/2022 mem - Rename parameter to @groupName
+**          11/25/2022 mem - Rename parameter to @wellplate
 **
 *****************************************************/
 (
@@ -69,7 +70,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
     @internalStandard varchar(50) = 'parent',
     @postdigestIntStd varchar(50) = 'parent',
     @researcher varchar(50) = 'parent',
-    @wellplateNum varchar(64) output,
+    @wellplate varchar(64) output,
     @wellNum varchar(8) output,
     @container varchar(128) = 'na',             -- na, "parent", "-20", or actual container ID
     @prepLCRunID int,
@@ -288,7 +289,7 @@ AS
     --
     Declare @wellIndex int
     exec @myError = ValidateWellplateLoading
-                        @wellplateNum output,
+                        @wellplate output,
                         @wellNum output,
                         @totalCount,
                         @wellIndex output,
@@ -304,11 +305,11 @@ AS
     -- Assure that wellplate is in wellplate table (if set)
     ---------------------------------------------------
     --
-    If Not @wellplateNum Is Null
+    If Not @wellplate Is Null
     Begin
-        If @wellplateNum = 'new'
+        If @wellplate = 'new'
         Begin
-            Set @wellplateNum = '(generate name)'
+            Set @wellplate = '(generate name)'
             Set @wellPlateMode = 'add'
         End
         Else
@@ -318,7 +319,7 @@ AS
         --
         Declare @note varchar(128) = 'Created by experiment fraction entry (' + @parentExperiment + ')'
         exec @myError = AddUpdateWellplate
-                            @wellplateNum output,
+                            @wellplate output,
                             @note,
                             @wellPlateMode,
                             @message output,
@@ -618,7 +619,7 @@ AS
                 @samplePrepRequest,
                 @internalStandardID,
                 @postdigestIntStdID,
-                @wellplateNum,
+                @wellplate,
                 @wn,
                 @alkylation,
                 @tissueID
