@@ -4,10 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Wellplate_List_Report] AS 
- SELECT
+CREATE VIEW [dbo].[V_Wellplate_List_Report] AS
+SELECT
     ID,
-	WP_Well_Plate_Num AS [Well Plate Number],
+	WP_Well_Plate_Num AS [Wellplate_Name],
 	WP_Description AS [Description],
 	Created AS [Created]
 FROM T_Wellplates
