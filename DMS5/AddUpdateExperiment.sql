@@ -37,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
 **          03/26/2012 mem - Now validating @container
 **                         - Updated to validate additional terms when @mode = 'check_add'
-**          11/15/2012 mem - Now updating @cellCultureList to replace commas with semicolons
+**          11/15/2012 mem - Now updating @biomaterialList to replace commas with semicolons
 **          04/03/2013 mem - Now requiring that the experiment name be at least 6 characters in length
 **          05/09/2014 mem - Expanded @campaignName from varchar(50) to varchar(64)
 **          09/09/2014 mem - Added @barcode
@@ -53,13 +53,13 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          01/24/2017 mem - Fix validation of @labelling to raise an error when the label name is unknown
 **          01/27/2017 mem - Change @internalStandard and @postdigestIntStd to 'none' if empty
-**          03/17/2017 mem - Only call MakeTableFromListDelim if @cellCultureList contains a semicolon
+**          03/17/2017 mem - Only call MakeTableFromListDelim if @biomaterialList contains a semicolon
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/18/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **          09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
 **          11/29/2017 mem - Call udfParseDelimitedList instead of MakeTableFromListDelim
 **                           Rename #CC to #Tmp_ExpToCCMap
-**                           No longer pass @cellCultureList to AddExperimentCellCulture since it uses #Tmp_ExpToCCMap
+**                           No longer pass @biomaterialList to AddExperimentCellCulture since it uses #Tmp_ExpToCCMap
 **                           Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
 **                           Add argument @referenceCompoundList
 **          01/04/2018 mem - Entries in @referenceCompoundList are now assumed to be in the form Compound_ID:Compound_Name, though we also support only Compound_ID or only Compound_Name
@@ -75,6 +75,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          09/30/2021 mem - Allow renaming an experiment if it does not have an associated requested run or dataset
 **                         - Move argument @experimentID, making it the first argument
 **                         - Rename the Experiment, Campaign, and Wellplate name arguments
+**          11/26/2022 mem - Rename parameter to @biomaterialList
 **
 *****************************************************/
 (
@@ -89,7 +90,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
     @enzymeName varchar(50) = 'Trypsin',
     @labNotebookRef varchar(128) = 'na',
     @labelling varchar(64) = 'none',
-    @cellCultureList varchar(2048) = '',
+    @biomaterialList varchar(2048) = '',
     @referenceCompoundList varchar(2048) = '',        -- Semicolon separated list of reference compound IDs; supports integers, or names of the form 3311:ANFTSQETQGAGK
     @samplePrepRequest int = 0,
     @internalStandard varchar(50),
@@ -152,7 +153,7 @@ As
     Set @comment = LTrim(RTrim(IsNull(@comment, '')))
     Set @enzymeName = LTrim(RTrim(IsNull(@enzymeName, '')))
     Set @labelling = LTrim(RTrim(IsNull(@labelling, '')))
-    Set @cellCultureList = LTrim(RTrim(IsNull(@cellCultureList, '')))
+    Set @biomaterialList = LTrim(RTrim(IsNull(@biomaterialList, '')))
     Set @referenceCompoundList = LTrim(RTrim(IsNull(@referenceCompoundList, '')))
     Set @internalStandard = LTrim(RTrim(IsNull(@internalStandard, '')))
     Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, '')))
@@ -523,25 +524,25 @@ As
     -- Auto-switch from 'none' or 'na' or '(none)' to ''
     ---------------------------------------------------
 
-    If @cellCultureList IN ('none', 'na', '(none)')
-        Set @cellCultureList = ''
+    If @biomaterialList IN ('none', 'na', '(none)')
+        Set @biomaterialList = ''
 
     -- Replace commas with semicolons
-    If @cellCultureList Like '%,%'
-        Set @cellCultureList = Replace(@cellCultureList, ',', ';')
+    If @biomaterialList Like '%,%'
+        Set @biomaterialList = Replace(@biomaterialList, ',', ';')
 
     -- Get names of cell cultures from list argument into table
     --
-    If @cellCultureList Like '%;%'
+    If @biomaterialList Like '%;%'
     Begin
         INSERT INTO #Tmp_ExpToCCMap (CC_Name)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@cellCultureList, ';', 'AddUpdateExperiment')
+        FROM dbo.udfParseDelimitedList(@biomaterialList, ';', 'AddUpdateExperiment')
     End
-    Else If @cellCultureList <> ''
+    Else If @biomaterialList <> ''
     Begin
         INSERT INTO #Tmp_ExpToCCMap (CC_Name)
-        VALUES (@cellCultureList)
+        VALUES (@biomaterialList)
     End
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
