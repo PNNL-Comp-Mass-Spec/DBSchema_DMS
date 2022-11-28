@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          11/18/2022 mem - Use new column name in V_Requested_Run_Detail_Report
 **          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          11/27/2022 mem - Remove query artifact that was used for debugging
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -514,16 +515,6 @@ As
 
 
         -- Call AddUpdateRequestedRun if the EUS info has changed
-        SELECT TOP 1 @reqName = RR.RDS_Name,
-                     @existingEusProposal = RR.RDS_EUS_Proposal_ID,
-                     @existingEusUsageType = RR.RDS_EUS_UsageType,
-                     @existingEusUser = U.EUS_Person_ID
-        FROM T_Dataset AS DS
-             INNER JOIN T_Requested_Run AS RR
-               ON DS.Dataset_ID = RR.DatasetID
-             LEFT OUTER JOIN T_Requested_Run_EUS_Users U
-               ON RR.ID = U.Request_ID
-        WHERE (DS.Dataset_Num = 'LTQ_2_01Nov15')
 
         SELECT @reqName = RR.RDS_Name,
                @existingEusProposal = RR.RDS_EUS_Proposal_ID,
