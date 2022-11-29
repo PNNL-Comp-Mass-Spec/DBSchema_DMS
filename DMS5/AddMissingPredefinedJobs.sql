@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddMissingPredefinedJobs]
+CREATE PROCEDURE [dbo].[AddMissingPredefinedJobs]
 /****************************************************
 **
 **  Desc:   Looks for Datasets that don't have predefined analysis jobs
@@ -30,6 +30,7 @@ CREATE Procedure [dbo].[AddMissingPredefinedJobs]
 **                         - Exclude datasets of type Tracking
 **          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **          03/25/2020 mem - Add parameter @datasetIDFilterList and add support for @infoOnly = 2
+**          11/28/2022 mem - Always log an error if SchedulePredefinedAnalyses has a non-zero return code
 **
 *****************************************************/
 (
@@ -87,7 +88,9 @@ As
     Set @datasetIDFilterList = IsNull(@datasetIDFilterList, '')
 
     If @dayCountForRecentDatasets < 1
+    Begin
         Set @dayCountForRecentDatasets = 1
+    End
 
     If @infoOnly <> 0 And (Not @previewOutputType IN ('Show Rules', 'Show Jobs'))
     Begin
@@ -376,7 +379,9 @@ As
     Begin
         Set @message = 'All recent (valid) datasets with potential predefined jobs already have existing analysis jobs'
         If @infoOnly <> 0
-            SELECT @message AS Message
+        Begin
+            SELECT @message AS message
+        End
     End
     Else
     Begin -- <a>
@@ -413,7 +418,9 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount < 1
+            Begin
                 Set @continue = 0
+            End
             Else
             Begin -- <c>
                 Begin Try
@@ -461,7 +468,9 @@ As
 
                             Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job'
                             If @jobCountAdded <> 1
+                            Begin
                                 Set @message = @message + 's'
+                            End
 
                             Set @message = @message + ' for dataset ' + @datasetName
 
@@ -472,10 +481,7 @@ As
                     End -- </e1>
                     Else
                     Begin -- <e2>
-                        -- Error code 1 means no matching rules; that's OK
-                        -- Log an error for any other error codes
-
-                        If @myError <> 1 And @infoOnly = 0
+                        If @infoOnly = 0
                         Begin
                             Set @message = 'Error calling SchedulePredefinedAnalyses for dataset ' + @datasetName + '; error code ' + Convert(varchar(12), @myError)
                             Exec PostLogEntry 'Error', @message, 'AddMissingPredefinedJobs'
@@ -497,24 +503,31 @@ As
             End -- </c>
 
             If @maxDatasetsToProcess > 0 And @datasetsProcessed >= @maxDatasetsToProcess
+            Begin
                 Set @continue = 0
+            End
         End -- </b>
 
         If @datasetsProcessed > 0 And @infoOnly = 0
         Begin
             Set @message = 'Added predefined analysis jobs for ' + Convert(varchar(12), @datasetsWithNewJobs) + ' dataset'
             If @datasetsWithNewJobs <> 1
+            Begin
                 Set @message = @message + 's'
+            End
 
             Set @message = @message + ' (processed ' + Convert(varchar(12), @datasetsProcessed) + ' dataset'
             If @datasetsProcessed <> 1
+            Begin
                 Set @message = @message + 's'
+            End
 
             Set @message = @message + ')'
 
             If @datasetsWithNewJobs > 0 And @infoOnly = 0
+            Begin
                 Exec PostLogEntry 'Normal', @message, 'AddMissingPredefinedJobs'
-
+            End
         End
 
     End -- </a>
