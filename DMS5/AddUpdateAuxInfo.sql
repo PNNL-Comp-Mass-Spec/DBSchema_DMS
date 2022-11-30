@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
 **          11/21/2022 mem - Use new aux info table and column names
+**          11/29/2022 mem - Require that @targetEntityName be an integer when @targetName is SamplePrepRequest
 **
 *****************************************************/
 (
@@ -83,7 +84,7 @@ As
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
-
+    
     Set @targetName = Ltrim(Rtrim(Coalesce(@targetName, '')))
     Set @targetEntityName = Ltrim(Rtrim(Coalesce(@targetEntityName, '')))
     Set @categoryName = Ltrim(Rtrim(Coalesce(@categoryName, '')))
@@ -97,14 +98,21 @@ As
     End
 
     ---------------------------------------------------
-    -- Has ID been supplied as target name?
+    -- For sample prep requests, @targetEntityName should have a sample prep request ID
+    -- For experiments and biomaterial, it can have experiment name, experiment ID, biomaterial name, or biomaterial ID
+    -- If the value is an integer, we will assume it is experiment ID or biomaterial ID, since experiment names and biomaterial names should not be integers
     ---------------------------------------------------
 
     Declare @targetID int = 0
-
+    
     Set @targetID = Try_Parse(@targetEntityName as int)
 
-    If @targetID IS NULL
+    If @targetName = 'SamplePrepRequest' And @targetID Is Null
+    Begin
+        Set @msg = 'Cannot update aux info for the sample prep request since argument @targetEntityName is not an integer: ' + @targetEntityName
+        RAISERROR (@msg, 11, 1)
+    End 
+    Else If @targetID Is Null
     Begin -- <a1>
         ---------------------------------------------------
         -- Resolve target name to target table criteria
@@ -154,8 +162,8 @@ As
                         ' WHERE ' + @tgtTableNameCol +
                           ' = ''' + @targetEntityName + ''''
 
-            exec sp_executesql @sql, N'@targetID int output', @targetID = @targetID output
-            --
+            exec sp_executesql @sql, N'@targetID  int output', @targetID = @targetID  output
+
             If @targetID = 0
             Begin
                 Set @msg = 'Could not resolve target name and entity name to entity ID: "' + @targetEntityName + '" '
