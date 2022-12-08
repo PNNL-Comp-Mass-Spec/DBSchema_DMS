@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[AddMACJob]
 /****************************************************
 **
 **  Desc: 
-**  Add a MAC job from job template 
+**      Add a MAC job from job template; used by the mac_jobs page family on the DMS website
 **	
 **  Return values: 0: success, otherwise, error code
 **
@@ -81,7 +81,7 @@ AS
 	 
 		If @pkgJobCount = 0	 			
 			RAISERROR('Data package has no analysis jobs', 11, 21)
-												
+											
 		---------------------------------------------------
 		-- Get script
 		---------------------------------------------------
@@ -118,7 +118,7 @@ AS
 								@tool output,
 								'validate', 
 								@msg output
-		
+
 		If @result <> 0
 		Begin
 			-- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
@@ -153,6 +153,9 @@ AS
 		---------------------------------------------------
 		-- Parameter overrides for job
 		-- (directly modifies #MACJobParams)
+        --
+        -- @jobParam should be of the form:
+        -- <Param Name="Experiment_Labelling" Value="8plex" /><Param Name="Ape_Workflow_FDR" Value="default" />
 		---------------------------------------------------
 		
 		Set @result = 0
@@ -172,6 +175,32 @@ AS
 						
 		---------------------------------------------------
 		-- Build final job param XML for creating job
+        --
+        -- Example XML in @jobParamXML:
+        --   <Param Section="1_AScore" Name="AScoreParamFilename" Value="" Reqd="No" Step="1"/>
+        --   <Param Section="1_AScore" Name="AScoreSearchType" Value="msgfplus" Reqd="No" Step="1"/>
+        --   <Param Section="1_AScore" Name="ExtractionType" Value="MSGF+ Synopsis All Proteins" Reqd="No" Step="1"/>
+        --   <Param Section="2_Mage" Name="MageOperations" Value="GetFactors, ImportDataPackageFiles, ImportRawFileList, ImportJobList, GetFDRTables, ExtractFromJobs, ImportReporterIons" Reqd="Yes" Step="2"/>
+        --   <Param Section="2_Mage" Name="DataPackageSourceFolderName" Value="ImportFiles" Reqd="Yes" Step="2"/>
+        --   <Param Section="2_Mage" Name="ExtractionSource" Value="JobsFromDataPackageID" Reqd="Yes" Step="2"/>
+        --   <Param Section="2_Mage" Name="ExtractionType" Value="MSGF+ Synopsis All Proteins" Reqd="No" Step="2"/>
+        --   <Param Section="2_Mage" Name="KeepAllResults" Value="Yes" Reqd="No" Step="2"/>
+        --   <Param Section="2_Mage" Name="MSGFcutoff" Value="All Pass" Reqd="No" Step="2"/>
+        --   <Param Section="2_Mage" Name="ResultFilterSetID" Value="All Pass" Reqd="No" Step="2"/>
+        --   <Param Section="2_Mage" Name="FactorsSource" Value="FactorsFromDataPackageID" Reqd="Yes" Step="2"/>
+        --   <Param Section="2_Mage" Name="ReporterIonSource" Value="JobsFromDataPackageIDForTool" Reqd="Yes" Step="2"/>
+        --   <Param Section="2_Mage" Name="MageFDRFiles" Value="t_iteration1.txt, t_iteration2_1.txt" Reqd="No" Step="2"/>
+        --   <Param Section="4_Ape" Name="ApeOperations" Value="RunWorkflow" Reqd="Yes" Step="4"/>
+        --   <Param Section="4_Ape" Name="ApeWorkflowName" Value="MasterWorkflowSyn.xml" Reqd="Yes" Step="4"/>
+        --   <Param Section="4_Ape" Name="ApeWorkflowStepList" Value="msgfplus, 8plex, 1pctFDR, default, no_ascore, no_precursor_filter, keep_nonquant" Reqd="Yes" Step="4"/>
+        --   <Param Section="4_Ape" Name="ApeCompactDatabase" Value="True" Reqd="Yes" Step="4"/>
+        --   <Param Section="5_Cyclops" Name="CyclopsWorkflowName" Value="ITQ_ExportOperation.xml" Reqd="Yes" Step="5"/>
+        --   <Param Section="5_Cyclops" Name="RunProteinProphet" Value="False" Reqd="Yes" Step="5"/>
+        --   <Param Section="5_Cyclops" Name="Consolidation_Factor" Value="" Reqd="No" Step="5"/>
+        --   <Param Section="5_Cyclops" Name="Fixed_Effect" Value="" Reqd="No" Step="5"/>
+        --   <Param Section="JobParameters" Name="transferFolderPath" Value=""/>
+        --   <Param Section="JobParameters" Name="AnalysisType" Value="iTRAQ" Reqd="Yes"/>
+        --   <Param Section="JobParameters" Name="ResultsBaseName" Value="Results" Reqd="Yes"/>
 		---------------------------------------------------
 		
 		Declare @jobParamXML XML
@@ -184,15 +213,27 @@ AS
 				FROM #MACJobParams Param
 				ORDER BY [Section]
 				FOR XML AUTO )
-		
+
 		If @mode = 'debug'	
-		Begin --<debug>
-			Declare @s varchar(8000) = convert(varchar(8000), @jobParamXML)
-			PRINT 	@s	 
+		Begin -- <debug>
+
+            Declare @s varchar(8000)
+
+            Set @s = '@jobParam: ' + @jobParam
+			Print @s	 
+
+            -- Uncomment to log the contents of @jobParam
+            -- Exec PostLogEntry 'Debug', @s, 'AddMACJob'		
+
+            Set @s = 'XML: ' + convert(varchar(8000), @jobParamXML)
+			Print @s	 
+
+            -- Uncomment to log the contents of @jobParamXML
+            -- Exec PostLogEntry 'Debug', @s, 'AddMACJob'		
 			
 			SELECT * FROM #MACJobParams
 									
-		End --<debug>               
+		End -- </debug>               
 
 		---------------------------------------------------
 		-- Add mode

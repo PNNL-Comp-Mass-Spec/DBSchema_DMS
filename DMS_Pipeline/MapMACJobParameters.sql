@@ -8,13 +8,11 @@ CREATE PROCEDURE [dbo].[MapMACJobParameters]
 /****************************************************
 **
 **  Desc:
-**  Verify configuration and contents of a data package
-**  suitable for running a given MAC job from job template
+**      Verify configuration and contents of a data package suitable for running a given MAC job from job template
 **
-**  Uses temp table #MACJobParams created by caller
+**      Uses temp table #MACJobParams created by caller
 **
 **  Return values: 0: success, otherwise, error code
-**
 **
 **  Auth:   grk
 **  Date:   10/29/2012 grk - Initial release
@@ -56,7 +54,10 @@ AS
     Declare @msg varchar(256)
 
     ---------------------------------------------------
-    -- map entry fields to table
+    -- Map entry fields to table
+    --
+    -- @jobParam should be of the form:
+    -- <Param Name="Experiment_Labelling" Value="8plex" /><Param Name="Ape_Workflow_FDR" Value="default" />
     ---------------------------------------------------
 
     Declare @entryValuesXML XML = CONVERT(XML, @jobParam)
