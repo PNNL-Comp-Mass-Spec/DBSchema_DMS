@@ -12,6 +12,8 @@ CREATE PROCEDURE [dbo].[MapMACJobParameters]
 **
 **      Uses temp table #MACJobParams created by caller
 **
+**      Deprecated in December 2022 when procedure AddMACJob was deprecated (since the mac_jobs page family was deprecated)
+**      
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk

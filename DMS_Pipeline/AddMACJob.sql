@@ -9,6 +9,9 @@ CREATE PROCEDURE [dbo].[AddMACJob]
 **
 **  Desc: 
 **      Add a MAC job from job template; used by the mac_jobs page family on the DMS website
+**
+**      Deprecated in December 2022 when the mac_jobs page family was deprecated,
+**      since superseded by https://dms2.pnl.gov/pipeline_jobs/create
 **	
 **  Return values: 0: success, otherwise, error code
 **
