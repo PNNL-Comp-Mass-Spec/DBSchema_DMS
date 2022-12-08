@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          08/26/2021 mem - Add support for MSFragger
 **          10/02/2021 mem - No longer require that DeconTools jobs exist for MAC_iTRAQ jobs (similarly, MAC_TMT10Plex jobs don't need DeconTools)
 **          06/30/2022 mem - Use new parameter file column name
+**          12/07/2022 mem - Include script name in the error message
 **
 *****************************************************/
 (
@@ -143,7 +144,7 @@ AS
         Begin
             If @datasetCount = 0
             Begin
-                Set @errMsg = 'Data package currently does not have any datasets'
+                Set @errMsg = 'Data package currently does not have any datasets (script ' + @scriptName + ')';
             End
         End
 
@@ -167,7 +168,7 @@ AS
                         -- Allow multiple MSGF+ jobs for each dataset
                         Set @tool = 'msgfplus'
                     Else
-                        Set @errMsg = 'Data package does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @msgfPlusCountNotOne) + ' invalid datasets)' 
+                        Set @errMsg = 'Data package does not have exactly one MSGFPlus job for each dataset (' + Convert(varchar(12), @msgfPlusCountNotOne) + ' invalid datasets); script ' + @scriptName
                 End
             End
 
@@ -181,13 +182,13 @@ AS
                         -- Allow multiple Sequest jobs for each dataset
                         Set @tool = 'sequest'
                     Else
-                        Set @errMsg = 'Data package does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @sequestCountNotOne) + ' invalid datasets)' 
+                        Set @errMsg = 'Data package does not have exactly one Sequest job for each dataset (' + Convert(varchar(12), @sequestCountNotOne) + ' invalid datasets); script ' + @scriptName
                 End
             End
 
             If @tool = ''
             Begin
-                Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs', 0, '; ', 1024)
+                Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs; error validating script ' + @scriptName, 0, '; ', 1024)
             End
         End
         
@@ -199,22 +200,22 @@ AS
         If @scriptName IN ('Isobaric_Labeling')
         Begin 
             If @deconToolsCountNotOne > 0 
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
             
             If @masicCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ', 1024)
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
         End 
 
         If @scriptName IN ('MAC_iTRAQ', 'MAC_TMT10Plex')
         Begin 
             If @masicCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name)', 0, '; ', 1024)
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
         End 
 
         If @scriptName IN ('Global_Label-Free_AMT_Tag')
         Begin 
             If @deconToolsCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset', 0, '; ', 1024)
+                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
         End
         
         If @errMsg <> ''
