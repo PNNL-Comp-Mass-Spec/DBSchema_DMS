@@ -19,12 +19,13 @@ SELECT DS.Dataset_ID AS ID,
        DSN.DSS_name AS State,
        DSRating.DRN_name AS Rating,
        DS.Acq_Length_Minutes AS [Acq Length],
-       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
+       ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS [Acq Start],
+       ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq End],
        DTN.DST_name AS [Dataset Type],
        DS.DS_Oper_PRN AS Operator,
        LC.SC_Column_Number AS [LC Column],
-       RRH.ID AS Request,
-       ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq End],
+       RR.ID AS Request,
+       RR.RDS_BatchID AS Batch,
        DS.DS_sec_sep AS [Separation Type]
 FROM T_DatasetStateName AS DSN
      INNER JOIN T_Dataset AS DS
@@ -43,12 +44,10 @@ FROM T_DatasetStateName AS DSN
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
      INNER JOIN T_LC_Column AS LC
        ON DS.DS_LC_column_ID = LC.ID
-     LEFT OUTER JOIN T_Requested_Run AS RRH
-       ON DS.Dataset_ID = RRH.DatasetID
+     LEFT OUTER JOIN T_Requested_Run AS RR
+       ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER Join T_Analysis_Job As J
        ON DS.DeconTools_Job_for_QC = J.AJ_jobID
-
-
 
 
 GO
