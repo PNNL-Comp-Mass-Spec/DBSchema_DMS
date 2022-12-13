@@ -10,8 +10,9 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **  Desc:
 **      Update requested run factors from input XML list
 **
-**      @factorList will look like this if it comes from web page http://dms2.pnl.gov/requested_run_factors/param
-**      - the "type" attribute of the <id> tag defines what the "i" attributes map to
+**      @factorList will look like this if it comes from web page https://dms2.pnl.gov/requested_run_factors/param
+**                                                             or https://dms2.pnl.gov/requested_run_batch_blocking/grid
+**      The "type" attribute of the <id> tag defines what the "i" attributes map to
 **
 **      <id type="Request" />
 **      <r i="193911" f="Factor1" v="Aa" />
@@ -20,7 +21,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **      <r i="194113" f="Factor2" v="Bb" />
 **
 **
-**      Second example for web page http://dms2.pnl.gov/requested_run_factors/param
+**      Second example for web page https://dms2.pnl.gov/requested_run_factors/param
 **
 **      <id type="Dataset" />
 **      <r i="OpSaliva_009_a_7Mar11_Phoenix_11-01-17" f="Factor1" v="Aa" />
@@ -66,6 +67,8 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/12/2022 mem - Trim leading and trailing whitespace when storing factors
 **          11/11/2022 mem - Trim whitespace when checking for unnamed factors
+**          12/13/2022 mem - Ignore factors named 'Dataset ID'
+**                         - Rename temp table
 **
 *****************************************************/
 (
@@ -110,13 +113,14 @@ As
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     -- Uncomment to log the XML for debugging purposes
-    -- exec PostLogEntry 'Debug', Cast(@factorList As varchar(4096)), 'UpdateRequestedRunFactors'
+    -- Declare @debugMessage Varchar(4096) = Cast(@factorList As varchar(4096))
+    -- exec PostLogEntry 'Debug', @debugMessage, 'UpdateRequestedRunFactors'
 
     -----------------------------------------------------------
     -- Temp table to hold factors
     -----------------------------------------------------------
     --
-    CREATE TABLE #TMP (
+    CREATE TABLE #Tmp_FactorInfo (
         Entry_ID int Identity(1,1),
         Identifier varchar(128) null,   -- Could be RequestID or DatasetName
         Factor varchar(128) null,
@@ -157,12 +161,11 @@ As
     If @IDType = 'DatasetName' OR @IDType Like 'Dataset_Name' OR @IDType Like 'Dataset_Num'
         Set @IDType = 'Dataset'
 
-
     -----------------------------------------------------------
     -- Populate temp table with new parameters
     -----------------------------------------------------------
     --
-    INSERT INTO #TMP
+    INSERT INTO #Tmp_FactorInfo
         (Identifier, Factor, Value, DatasetID, UpdateSkipCode)
     SELECT
         LTrim(RTrim(xmlNode.value('@i', 'nvarchar(256)'))) As Identifier,
@@ -184,36 +187,36 @@ As
     -- If table contains DatasetID values, then auto-populate the Identifier column with RequestIDs
     -----------------------------------------------------------
 
-    IF EXISTS (SELECT * FROM #TMP WHERE Not DatasetID IS NULL)
+    IF EXISTS (SELECT * FROM #Tmp_FactorInfo WHERE Not DatasetID IS NULL)
     Begin -- <a>
-        IF Exists (SELECT * FROM #TMP WHERE DatasetID IS NULL)
+        IF Exists (SELECT * FROM #Tmp_FactorInfo WHERE DatasetID IS NULL)
         Begin
             set @message = 'Encountered a mix of XML tag attributes; if using the "d" attribute for DatasetID, then all entries must have "d" defined'
             IF @infoOnly <> 0
-                SELECT * FROM #Tmp
+                SELECT * FROM #Tmp_FactorInfo
             return 51016
         End
 
-        UPDATE #TMP
+        UPDATE #Tmp_FactorInfo
         SET Identifier = RR.ID
-        FROM #TMP
+        FROM #Tmp_FactorInfo
             INNER JOIN dbo.T_Requested_Run RR
-            ON #TMP.DatasetID = RR.DatasetID
-        WHERE #TMP.Identifier IS NULL
+            ON #Tmp_FactorInfo.DatasetID = RR.DatasetID
+        WHERE #Tmp_FactorInfo.Identifier IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         -- The identifier column now contains RequestID values
         Set @IDType = 'RequestID'
 
-        IF Exists (SELECT * FROM #TMP WHERE Identifier IS NULL)
+        IF Exists (SELECT * FROM #Tmp_FactorInfo WHERE Identifier IS NULL)
         begin
             set @message = 'Unable to resolve DatasetID to RequestID for one or more entries (DatasetID not found in Requested Run table)'
 
             -- Construct a list of DatasetIDs that are not present in T_Requested_Run
             Set @Msg2 = ''
-            Select @Msg2 = @Msg2 + #TMP.DatasetID + ', '
-            FROM #TMP
+            Select @Msg2 = @Msg2 + #Tmp_FactorInfo.DatasetID + ', '
+            FROM #Tmp_FactorInfo
             WHERE Identifier Is Null
 
             If IsNull(@Msg2, '') <> ''
@@ -223,13 +226,12 @@ As
             End
 
             IF @infoOnly <> 0
-                SELECT * FROM #Tmp
+                SELECT * FROM #Tmp_FactorInfo
 
             return 51017
         end
 
     End -- </a>
-
 
     -----------------------------------------------------------
     -- Validate @IDType
@@ -239,7 +241,7 @@ As
     Begin
         set @message = 'Identifier type "' + @IDTypeOriginal + '" was not recognized in the header row; should be Request, RequestID, DatasetID, Job, or Dataset (i.e. Dataset Name)'
         IF @infoOnly <> 0
-            SELECT * FROM #Tmp
+            SELECT * FROM #Tmp_FactorInfo
         return 51018
     End
 
@@ -252,7 +254,7 @@ As
         Set @Msg2 = ''
 
         SELECT @Msg2 = @Msg2 + Identifier + ','
-        FROM #Tmp
+        FROM #Tmp_FactorInfo
         WHERE Try_Parse(Identifier as int) Is Null
         --
         If IsNull(@Msg2, '') <> ''
@@ -260,7 +262,7 @@ As
             -- One or more entries is non-numeric
             set @message = 'Identifier keys must all be integers when Identifier column contains ' + @IDTypeOriginal + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
             IF @infoOnly <> 0
-                SELECT * FROM #Tmp
+                SELECT * FROM #Tmp_FactorInfo
             return 51019
         End
     End
@@ -272,45 +274,44 @@ As
     If @IDType = 'RequestID'
     Begin
         -- Identifier is Requestid
-        UPDATE #Tmp
+        UPDATE #Tmp_FactorInfo
         SET RequestID = Convert(int, Identifier)
     End
 
     If @IDType = 'DatasetID'
     Begin
         -- Identifier is DatasetID
-        UPDATE #Tmp
+        UPDATE #Tmp_FactorInfo
         SET RequestID = RR.ID,
-            DatasetID = Convert(int, #Tmp.Identifier)
-        FROM #Tmp
+            DatasetID = Convert(int, #Tmp_FactorInfo.Identifier)
+        FROM #Tmp_FactorInfo
              INNER JOIN T_Requested_Run RR
-               ON Convert(int, #Tmp.Identifier) = RR.DatasetID
+               ON Convert(int, #Tmp_FactorInfo.Identifier) = RR.DatasetID
 
     End
 
     If @IDType = 'Dataset'
     Begin
         -- Identifier is Dataset Name
-        UPDATE #Tmp
+        UPDATE #Tmp_FactorInfo
         SET RequestID = RR.ID,
             DatasetID = DS.Dataset_ID
-        FROM #Tmp
+        FROM #Tmp_FactorInfo
              INNER JOIN T_Dataset DS
-               ON #Tmp.Identifier = DS.Dataset_Num
+               ON #Tmp_FactorInfo.Identifier = DS.Dataset_Num
              INNER JOIN T_Requested_Run RR
                ON RR.DatasetID = DS.Dataset_ID
-
     End
 
     If @IDType = 'Job'
     Begin
         -- Identifier is Job
-        UPDATE #Tmp
+        UPDATE #Tmp_FactorInfo
         SET RequestID = RR.ID,
             DatasetID = DS.Dataset_ID
-        FROM #Tmp
+        FROM #Tmp_FactorInfo
              INNER JOIN T_Analysis_Job AJ
-               ON Convert(int, #Tmp.Identifier) = AJ.AJ_jobID
+               ON Convert(int, #Tmp_FactorInfo.Identifier) = AJ.AJ_jobID
              INNER JOIN T_Dataset DS
                ON DS.Dataset_ID = AJ.AJ_datasetID
              INNER JOIN T_Requested_Run RR
@@ -329,7 +330,7 @@ As
            @invalidCount = Sum(CASE WHEN RequestID IS NULL THEN 1 ELSE 0 END)
     FROM ( SELECT DISTINCT Identifier,
                            RequestID
-           FROM #TMP ) InnerQ
+           FROM #Tmp_FactorInfo ) InnerQ
 
     IF @invalidCount > 0
     begin
@@ -341,7 +342,7 @@ As
         Set @message = @message + '; treating the Identifier column as ' + @IDType
 
         IF @infoOnly <> 0
-            SELECT * FROM #Tmp
+            SELECT * FROM #Tmp_FactorInfo
 
         return 51020
     end
@@ -350,7 +351,7 @@ As
     -- Validate factor names
     -----------------------------------------------------------
     --
-    DECLARE    @badFactorNames VARCHAR(8000) = ''
+    DECLARE @badFactorNames VARCHAR(8000) = ''
     --
     SELECT
         @badFactorNames = @badFactorNames +
@@ -360,7 +361,8 @@ As
             ELSE ''
             END
     FROM ( SELECT DISTINCT Factor
-           FROM #TMP
+           FROM #Tmp_FactorInfo
+           WHERE Not Factor In ('Dataset ID')      -- Note that factors named 'Dataset ID' and 'Dataset_ID' are removed later in this procedure
           ) LookupQ
 
     IF @badFactorNames <> ''
@@ -371,7 +373,7 @@ As
             set @message = 'Unacceptable characters in factor names "' + LEFT(@badFactorNames, 256) + '..."'
 
         IF @infoOnly <> 0
-            SELECT * FROM #Tmp
+            SELECT * FROM #Tmp_FactorInfo
 
         return 51027
     end
@@ -379,13 +381,13 @@ As
     -----------------------------------------------------------
     -- Auto-delete data that cannot be a factor
     -- These column names could be present if the user
-    -- saved the results of a list report (or of http://dms2.pnl.gov/requested_run_factors/param)
+    -- saved the results of a list report (or of http://dms2.pnl.gov/requested_run_factors/param )
     -- to a text file, then edited the data in Excel, then included the extra columns when copying from Excel
     --
     -- Name is not a valid factor name since it is used to label the Requested Run Name column at http://dms2.pnl.gov/requested_run_factors/param
     -----------------------------------------------------------
 
-    UPDATE #TMP
+    UPDATE #Tmp_FactorInfo
     Set UpdateSkipCode = 2
     WHERE Factor IN ('BatchID', 'Experiment', 'Dataset', 'Status', 'Request', 'Name')
     --
@@ -394,7 +396,7 @@ As
     IF @myRowCount > 0 And @infoOnly <> 0
     Begin
         SELECT *, Case When UpdateSkipCode = 2 Then 'Yes' Else 'No' End As AutoSkip_Invalid_Factor
-        FROM #TMP
+        FROM #Tmp_FactorInfo
 
     End
 
@@ -408,7 +410,7 @@ As
 
     SELECT @badFactorNames = @badFactorNames + Factor  + ', '
     FROM ( SELECT DISTINCT Factor
-           FROM #TMP
+           FROM #Tmp_FactorInfo
            WHERE Factor IN ('Block', 'Run Order', 'Type')
          ) LookupQ
     --
@@ -425,7 +427,7 @@ As
             set @message = 'Invalid factor names: ' + @badFactorNames
 
         IF @infoOnly <> 0
-            SELECT * FROM #Tmp
+            SELECT * FROM #Tmp_FactorInfo
 
         return 51015
     end
@@ -434,8 +436,8 @@ As
     -- Auto-remove standard DMS names from the factor table
     -----------------------------------------------------------
     --
-    DELETE FROM #Tmp
-    WHERE Factor IN ('Dataset_ID', 'Dataset', 'Experiment')
+    DELETE FROM #Tmp_FactorInfo
+    WHERE Factor IN ('Dataset_ID', 'Dataset ID', 'Dataset', 'Experiment')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -447,9 +449,9 @@ As
     DECLARE    @InvalidRequestIDs VARCHAR(8000) = ''
     --
     SELECT @InvalidRequestIDs = @InvalidRequestIDs + Convert(varchar(12), RequestID) + ', '
-    FROM #TMP
+    FROM #Tmp_FactorInfo
          LEFT OUTER JOIN T_Requested_Run RR
-           ON #Tmp.RequestID = RR.ID
+           ON #Tmp_FactorInfo.RequestID = RR.ID
     WHERE UpdateSkipCode = 0 And RR.ID IS NULL
 
     --
@@ -460,7 +462,7 @@ As
 
         set @message =  'Invalid Requested Run IDs: ' + @InvalidRequestIDs
         IF @infoOnly <> 0
-            SELECT * FROM #Tmp
+            SELECT * FROM #Tmp_FactorInfo
         return 51013
     end
 
@@ -469,23 +471,23 @@ As
     -- Flag values that are unchanged
     -----------------------------------------------------------
     --
-    UPDATE #TMP
+    UPDATE #Tmp_FactorInfo
     SET UpdateSkipCode = 1
     WHERE UpdateSkipCode = 0 AND
           EXISTS ( SELECT *
                    FROM T_Factor
                    WHERE T_Factor.Type = 'Run_Request' AND
-                         #tmp.RequestID = T_Factor.TargetID AND
-                         #tmp.Factor = T_Factor.Name AND
-                         #tmp.Value = T_Factor.Value )
+                         #Tmp_FactorInfo.RequestID = T_Factor.TargetID AND
+                         #Tmp_FactorInfo.Factor = T_Factor.Name AND
+                         #Tmp_FactorInfo.Value = T_Factor.Value )
 
 
 
     IF @infoOnly <> 0
     Begin
-        -- Preview the contents of the #Tmp table
+        -- Preview the contents of the #Tmp_FactorInfo table
         SELECT *
-        FROM #Tmp
+        FROM #Tmp_FactorInfo
     End
     Else
     Begin -- <CommitChanges>
@@ -497,11 +499,11 @@ As
         DELETE FROM T_Factor
         WHERE T_Factor.Type = 'Run_Request' AND
               EXISTS ( SELECT *
-                       FROM #TMP
+                       FROM #Tmp_FactorInfo
                        WHERE UpdateSkipCode = 0 AND
-                             #tmp.RequestID = T_Factor.TargetID AND
-                             #tmp.Factor = T_Factor.Name AND
-                             LTrim(RTrim(#tmp.Value)) = '' )
+                             #Tmp_FactorInfo.RequestID = T_Factor.TargetID AND
+                             #Tmp_FactorInfo.Factor = T_Factor.Name AND
+                             LTrim(RTrim(#Tmp_FactorInfo.Value)) = '' )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -516,15 +518,15 @@ As
         -----------------------------------------------------------
         --
         UPDATE T_Factor
-        SET Value = #TMP.Value,
+        SET Value = #Tmp_FactorInfo.Value,
             Last_Updated = GetDate()
         FROM T_Factor AS TF
-             INNER JOIN #TMP
-               ON #TMP.RequestID = TF.TargetID AND
-                  #TMP.Factor = TF.Name AND
+             INNER JOIN #Tmp_FactorInfo
+               ON #Tmp_FactorInfo.RequestID = TF.TargetID AND
+                  #Tmp_FactorInfo.Factor = TF.Name AND
               TF.Type = 'Run_Request'
         WHERE UpdateSkipCode = 0 AND
-              #tmp.Value <> TF.Value
+              #Tmp_FactorInfo.Value <> TF.Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -548,13 +550,13 @@ As
                Factor AS FactorName,
                Value,
                GetDate()
-        FROM #TMP
+        FROM #Tmp_FactorInfo
         WHERE UpdateSkipCode = 0 AND
-              LTrim(RTrim(#tmp.Value)) <> '' AND
+              LTrim(RTrim(#Tmp_FactorInfo.Value)) <> '' AND
               NOT EXISTS ( SELECT *
                            FROM T_Factor
-                           WHERE #tmp.RequestID = T_Factor.TargetID AND
-                                 #tmp.Factor = T_Factor.Name AND
+                           WHERE #Tmp_FactorInfo.RequestID = T_Factor.TargetID AND
+                                 #Tmp_FactorInfo.Factor = T_Factor.Name AND
                                  T_Factor.Type = 'Run_Request' )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -572,7 +574,7 @@ As
         DECLARE @changeSummary varchar(max) = ''
         --
         SELECT @changeSummary = @changeSummary + '<r i="' + CONVERT(varchar(12), RequestID) + '" f="' + Factor + '" v="' + Value + '" />'
-        FROM #TMP
+        FROM #Tmp_FactorInfo
         WHERE UpdateSkipCode = 0
 
         -----------------------------------------------------------
@@ -598,6 +600,7 @@ As
     Exec PostUsageLogEntry 'UpdateRequestedRunFactors', @UsageMessage
 
     return @myError
+
 
 
 GO
