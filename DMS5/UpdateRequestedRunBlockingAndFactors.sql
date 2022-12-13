@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[UpdateRequestedRunBlockingAndFactors]
+CREATE PROCEDURE [dbo].[UpdateRequestedRunBlockingAndFactors]
 /****************************************************
 **
 **  Desc: 
@@ -30,6 +30,7 @@ CREATE Procedure [dbo].[UpdateRequestedRunBlockingAndFactors]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/04/2019 mem - Tabs to spaces
+**          12/13/2022 mem - Log stored procedure usage even if UpdateRequestedRunBatchParameters returns a non-zero return code
 **    
 *****************************************************/
 (
@@ -95,28 +96,21 @@ As
                             'update',
                             @message OUTPUT,
                             @callingUser
-        IF @myError <> 0
-        BEGIN
-            GOTO Done
-        END
     END
 
+    If @myError = 0
+    Begin
+        -----------------------------------------------------------
+        -- Update the factors
+        -----------------------------------------------------------
+        --
 
-    -----------------------------------------------------------
-    -- Update the factors
-    -----------------------------------------------------------
-    --
+        EXEC @myError = UpdateRequestedRunFactors
+                                @factorList,
+                                @message OUTPUT,
+                                @callingUser 
+    End
 
-    EXEC @myError = UpdateRequestedRunFactors
-                            @factorList,
-                            @message  OUTPUT,
-                            @callingUser 
-    IF @myError <> 0
-    BEGIN
-        GOTO Done
-    END
-
-Done:
     ---------------------------------------------------
     -- Log SP usage
     ---------------------------------------------------
@@ -124,7 +118,6 @@ Done:
     Declare @UsageMessage varchar(512) = ''
     Set @UsageMessage = ''
     Exec PostUsageLogEntry 'UpdateRequestedRunBlockingAndFactors', @UsageMessage
-
 
     return @myError
 
