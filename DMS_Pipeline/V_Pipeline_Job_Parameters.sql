@@ -14,8 +14,6 @@ SELECT J.Job,
 FROM T_Jobs J
      INNER JOIN T_Scripts S
        ON J.Script = S.Script
-     INNER JOIN V_Job_Processing_Time JPT
-       ON J.Job = JPT.Job
      CROSS Apply dbo.GetJobParamTableLocal(J.Job) JobParams
 
 
