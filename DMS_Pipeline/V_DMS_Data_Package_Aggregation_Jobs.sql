@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
-As
+AS
 -- This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
 SELECT Src.Data_Package_ID,
        Src.Job,
@@ -38,7 +38,7 @@ SELECT Src.Data_Package_ID,
        Src.Experiment_NEWT_ID,
        Src.Experiment_NEWT_Name
 FROM dbo.S_Data_Package_Aggregation_Jobs Src
-     LEFT OUTER JOIN S_Production_Pipeline_Job_Steps_History JSH
+     LEFT OUTER JOIN dbo.T_Job_Steps_History JSH
        ON Src.Job = JSH.Job AND
           JSH.Most_Recent_Entry = 1 AND
           JSH.Shared_Result_Version > 0 AND
