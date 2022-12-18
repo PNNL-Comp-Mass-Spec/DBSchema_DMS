@@ -8,16 +8,16 @@ CREATE VIEW [dbo].[V_DMS_Data_Package_Datasets]
 AS
 -- This view is used by function LoadDataPackageDatasetInfo in the DMS Analysis Manager
 SELECT Data_Package_ID,
-       DatasetID,
+       Dataset_ID,
        Dataset,
        Dataset_Folder_Path,
        Archive_Folder_Path,
-       InstrumentName AS Instrument,
-       InstrumentGroup,
-       InstrumentClass,
-       RawDataType,
+       Instrument_Name,
+       Instrument_Group,
+       Instrument_Class,
+       Raw_Data_Type,
        Acq_Time_Start,
-       DS_Created,
+       Dataset_Created,
        Organism,
        Experiment_NEWT_ID,
        Experiment_NEWT_Name,
@@ -26,7 +26,7 @@ SELECT Data_Package_ID,
        Experiment_Comment,
        Experiment_Tissue_ID,
        Experiment_Tissue_Name,
-       ISNULL(PackageComment, '') AS PackageComment
+       ISNULL(Package_Comment, '') AS Package_Comment
 FROM S_Data_Package_Aggregation_Datasets
 
 

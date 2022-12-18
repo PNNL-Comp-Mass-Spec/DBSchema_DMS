@@ -5,27 +5,27 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Datasets]
-As
+AS
 -- Note that this view is used by V_DMS_Data_Package_Datasets in DMS_Pipeline
 -- and the PRIDE converter plugin uses that view to retrieve metadata for data package datasets
 SELECT TPD.Data_Package_ID,
-       DS.Dataset_ID AS DatasetID,
+       DS.Dataset_ID AS Dataset_ID,
        DS.Dataset_Num AS Dataset,
        DFP.Dataset_Folder_Path,
        DFP.Archive_Folder_Path,
-       InstName.IN_name AS InstrumentName,
-       InstName.IN_Group AS InstrumentGroup,
-       InstName.IN_class AS InstrumentClass,
-       InstClass.raw_data_type AS RawDataType,
+       InstName.IN_name AS Instrument_Name,
+       InstName.IN_Group AS Instrument_Group,
+       InstName.IN_class AS Instrument_Class,
+       InstClass.raw_data_type AS Raw_Data_Type,
        DS.Acq_Time_Start AS Acq_Time_Start,
-       DS.DS_Created AS DS_Created,
+       DS.DS_Created AS Dataset_Created,
        Org.Name AS Organism,
        Org.NEWT_ID AS Experiment_NEWT_ID,
        Org.NEWT_Name AS Experiment_NEWT_Name,
        E.Experiment_Num AS Experiment,
        E.EX_reason AS Experiment_Reason,
        E.EX_comment AS Experiment_Comment,
-       TPD.Package_Comment AS PackageComment,
+       TPD.Package_Comment,
        E.EX_Tissue_ID As Experiment_Tissue_ID,
        BTOInfo.Tissue As Experiment_Tissue_Name
 FROM T_Data_Package_Datasets TPD
