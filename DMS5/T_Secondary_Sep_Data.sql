@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 123 ******/
+/****** RowCount: 128 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -39,6 +39,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_2hr',117,'Dionex LC, for
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_30min',115,'Dionex LC, formic acid, 30 minute separation',1,'LC-Formic_30min',1,'2/27/2020 10:00:00 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_3hr',104,'Dionex LC, formic acid, 180 minute (3 hr) separation',1,'LC-Formic_3hr',1,'8/31/2017 4:34:20 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_5hr',88,'Dionex LC, formic acid, 300 minute (5 hr) separation',1,'LC-Formic_5hr',1,'1/28/2016 9:28:29 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_90min',125,'Dionex, formic acid, 90 minute separation',1,'LC-Formic_90min',1,'12/20/2022 12:43:14 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_100min',109,'',1,'LC-NanoPot_2hr',0,'9/2/2018 8:12:29 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_150min',110,'',1,'LC-NanoPot_3hr',0,'10/19/2018 8:56:42 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_1hr',108,'',1,'LC-NanoPot_1hr',0,'9/4/2018 11:36:14 AM')
@@ -75,6 +76,10 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-JCVI-Standard',77,'Datasets acquired a
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-JHU-Standard',62,'Datasets acquired at Johns Hopkins University',0,'Other',0,'6/5/2012 9:52:40 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-KoreaU-Standard',21,'Datasets acquired at Korea University',0,'Other',0,'7/28/2009 6:58:49 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-MIT-Standard',63,'Datasets acquired at Forest White''s lab at MIT',0,'Other',0,'6/5/2012 9:52:46 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_1hr',127,'Neo, formic acid, 1 hour separation',1,'LC-Formic_1hr',1,'12/20/2022 12:46:10 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_2hr',128,'Neo, formic acid, 2 hour separation',1,'LC-Formic_2hr',1,'12/20/2022 12:46:28 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_3hr',129,'Neo, formic acid, 3 hour separation',1,'LC-Formic_3hr',1,'12/20/2022 12:46:45 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_90min',126,'Neo, formic acid, 90 minute separation',1,'LC-Formic_90min',1,'12/20/2022 12:45:52 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-NU-Standard',94,'Datasets acquired in the Kelleher lab at Northwestern',0,'Other',0,'11/5/2015 11:10:50 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ORNL-Standard',7,'Datasets acquired at Oak Ridge National Lab',0,'Other',0,'9/27/2004 4:26:09 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-PCR-Tube_2hr',124,'LC-PCR-Tube_2hr',1,'LC-PCR-Tube',1,'11/15/2022 8:29:27 AM')
@@ -106,7 +111,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_4hr',48,'Waters constant
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_52min',36,'Waters constant flow, formic acid, 52 minute separation',0,'LC-Formic_1hr',0,'8/23/2010 11:24:50 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_5hr',56,'Waters constant flow, formic acid, 300 minute (5 hr) separation',1,'LC-Formic_5hr',1,'4/25/2012 10:36:56 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_60min',40,'Waters constant flow, formic acid, 60 minute separation',1,'LC-Formic_1hr',1,'10/7/2010 1:46:25 PM')
-INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_90min',119,'Waters constant flow, formic acid, 90 minute separation',1,'LC-Formic_1hr',0,'10/9/2020 11:18:56 AM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_90min',119,'Waters constant flow, formic acid, 90 minute separation',1,'LC-Formic_90min',1,'10/9/2020 11:18:56 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-GlcNAc',95,'GlcNAc separations using a Waters LC pump',1,'LC-GlcNAc',0,'11/15/2015 11:10:50 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-HC-Lipids_35min',99,'Waters constant flow,optimized for lipids, 35 minute separation',1,'LC-Metabolomics_LipidSoluble',4,'8/30/2016 9:26:58 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-IntactProtein_200min',41,'Waters constant flow, 200 minute separation, high molecular weight analytes',1,'LC-IntactProtein_200min',2,'11/30/2010 9:25:31 AM')

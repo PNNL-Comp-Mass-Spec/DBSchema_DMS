@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 61 ******/
+/****** RowCount: 62 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
@@ -20,6 +20,7 @@ INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_45min','',0,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_4hr','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_5hr','',1,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_80min','',0,0,0)
+INSERT INTO [T_Separation_Group] VALUES ('LC-Formic_90min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-GlcNAc','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-HiFlow','High flow LC (analytical LC)',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('LC-HILIC','',1,1,0)
