@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **          11/18/2022 mem - Use new column name in V_Requested_Run_Detail_Report
 **          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **          11/27/2022 mem - Remove query artifact that was used for debugging
+**          12/24/2022 mem - Fix logic error evaluating @runDuration
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -38,12 +39,12 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
     @operPRN varchar(64) = 'D3J410',
     @instrumentName varchar(64),
     @runStart VARCHAR(32) = '6/1/2012',
-    @runDuration VARCHAR(16) = '10',
+    @runDuration VARCHAR(16) = '10',            -- Acquisition length, in minutes (as text)
     @comment varchar(512) = 'na',
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50) = 'CAP_DEV',
-    @eusUsersList varchar(1024) = '',         -- EUS User ID (only a single person is allowed, though long ago multiple people could be listed)
-    @mode varchar(12) = 'add',                -- Can be 'add', 'update', 'bad', 'check_update', 'check_add'
+    @eusUsersList varchar(1024) = '',           -- EUS User ID (only a single person is allowed, though long ago multiple people could be listed)
+    @mode varchar(12) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
@@ -98,7 +99,7 @@ As
     Declare @acqStart DATETIME = @runStart
     Declare @acqEnd DATETIME = DATEADD(MINUTE, 10, @acqStart) -- default
 
-    If @runDuration <> '' OR @runDuration < 1
+    If @runDuration <> ''
     BEGIN
         SET @acqEnd = DATEADD(MINUTE, CONVERT(INT, @runDuration), @acqStart)
     END
