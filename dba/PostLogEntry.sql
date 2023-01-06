@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[PostLogEntry]
+CREATE PROCEDURE [dbo].[PostLogEntry]
 /****************************************************
 **
 **	Desc: Put new entry into the main log table or the
@@ -68,5 +68,6 @@ As
 	End
 
 	return 0
+
 
 GO
