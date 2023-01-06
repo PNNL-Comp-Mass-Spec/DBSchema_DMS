@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Ontology_List_Report]
 AS
-SELECT Source,
-       Term_Name,
+SELECT source,
+       term_name,
        identifier,
-       Is_Leaf,
-       Parent_term_name,
-       Parent_term_ID,
-       Grandparent_term_name,
-       Grandparent_term_ID,
-       Term_PK
+       is_leaf,
+       parent_term_name,
+       parent_term_id,
+       grandparent_term_name,
+       grandparent_term_id,
+       term_pk
 FROM V_CV_Union
 
 

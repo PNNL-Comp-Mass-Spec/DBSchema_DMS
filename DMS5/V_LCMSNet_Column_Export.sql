@@ -6,13 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_LCMSNet_Column_Export]
 AS
-SELECT LC.SC_Column_Number AS ColumnNumber,
-       LC.SC_State AS StateID,
+SELECT LC.SC_Column_Number AS Column_Number,
+       LC.SC_State AS State_ID,
        LCSN.LCS_Name AS State,
        LC.SC_Created AS Created,
        LC.SC_Operator_PRN AS Operator,
        LC.SC_Comment AS [Comment],
-       LC.ID
+       LC.ID,
+       -- The following are old column names, included for compatibility with older versions of Buzzard
+       LC.SC_Column_Number AS ColumnNumber,
+       LC.SC_State AS StateID
 FROM T_LC_Column LC
      INNER JOIN T_LC_Column_State_Name LCSN
        ON LC.SC_State = LCSN.LCS_ID

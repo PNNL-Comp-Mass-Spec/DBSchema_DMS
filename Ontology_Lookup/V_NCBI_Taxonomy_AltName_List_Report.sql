@@ -6,14 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_NCBI_Taxonomy_AltName_List_Report]
 AS
-SELECT PrimaryName.Tax_ID,
-       PrimaryName.Name AS Scientific_Name,
-       NameList.Name_Class AS Synonym_Type,
-       NameList.Name AS Synonym,
-       Nodes.Rank,
-       Nodes.Parent_Tax_ID,
-       ParentNodeName.Name AS Parent_Name,
-       Division.Division_Name AS Division
+SELECT PrimaryName.tax_id,
+       PrimaryName.Name AS scientific_name,
+       NameList.Name_Class AS synonym_type,
+       NameList.Name AS synonym,
+       Nodes.rank,
+       Nodes.parent_tax_id,
+       ParentNodeName.Name AS parent_name,
+       Division.Division_Name AS division
 FROM T_NCBI_Taxonomy_Names NameList
      INNER JOIN T_NCBI_Taxonomy_Names PrimaryName
        ON NameList.Tax_ID = PrimaryName.Tax_ID AND

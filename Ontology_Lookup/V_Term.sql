@@ -15,8 +15,8 @@ SELECT T.term_pk,
        T.is_root_term,
        T.is_leaf,
        T.ontology_id,
-       O.shortName AS Ontology_ShortName,
-       O.fullName AS Ontology_FullName
+       O.shortName AS ontology_short_name,
+       O.fullName AS ontology_full_name
 FROM T_Ontology O
      INNER JOIN T_Term T
        ON O.ontology_id = T.ontology_id

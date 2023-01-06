@@ -7,9 +7,16 @@ GO
 CREATE VIEW [dbo].[V_Instrument_Info_LCMSNet] 
 AS 
 SELECT TIN.IN_name AS Instrument,
+       TIN.IN_name + CASE WHEN IN_usage = '' THEN '' ELSE + ' ' + IN_usage END AS Name_And_Usage,
+       TIN.IN_Group AS Instrument_Group,
+       TIN.IN_status AS Status,
+       TP.SP_machine_name AS Host_Name,
+       TP.SP_vol_name_server AS Server_Path,
+       TP.SP_path AS Share_Path,
+       TIN.IN_capture_method AS Capture_Method,
+        -- The following are old column names, included for compatibility with older versions of Buzzard
        TIN.IN_name + CASE WHEN IN_usage = '' THEN '' ELSE + ' ' + IN_usage END AS NameAndUsage,
        TIN.IN_Group AS InstrumentGroup,
-       TIN.IN_status AS Status,
        TP.SP_machine_name AS HostName,
        TP.SP_vol_name_server AS ServerPath,
        TP.SP_path AS SharePath,

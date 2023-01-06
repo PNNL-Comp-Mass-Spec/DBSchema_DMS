@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Ontology_Detail_Report]
 AS
 SELECT T.term_pk,
@@ -16,14 +15,14 @@ SELECT T.term_pk,
        T.is_root_term,
        T.is_leaf,
        T.ontology_id,
-       T.Ontology_ShortName,
-       T.Ontology_FullName,
-       L.Parent_term_name,
-       L.Parent_term_identifier,
-       L.Parent_term_pk,
-       L.Grandparent_term_name,
-       L.Grandparent_term_identifier,
-       L.Grandparent_term_pk,
+       T.ontology_short_name,
+       T.ontology_full_name,
+       L.parent_term_name,
+       L.parent_term_identifier,
+       L.parent_term_pk,
+       L.grandparent_term_name,
+       L.grandparent_term_identifier,
+       L.grandparent_term_pk,
        L.predicate_term_pk
 FROM V_Term T
      INNER JOIN V_Term_Lineage L

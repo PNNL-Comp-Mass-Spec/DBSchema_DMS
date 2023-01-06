@@ -14,8 +14,8 @@ SELECT DISTINCT PC.Protein_Collection_ID,
                 PCS.State AS State_Name,
                 PC.Collection_Type_ID,
                 PCTypes.[Type],
-                PC.NumProteins,
-                PC.NumResidues,
+                PC.NumProteins AS Num_Proteins,
+                PC.NumResidues AS Num_Residues,
                 PC.Authentication_Hash,
                 PC.Collection_Name,
                 OrgXref.Organism_ID,
@@ -23,7 +23,9 @@ SELECT DISTINCT PC.Protein_Collection_ID,
                 OrgList.[Name] AS Organism_Name,
                 PC.Contents_Encrypted,
                 PC.Includes_Contaminants,
-                AOF.Filesize AS File_Size
+                AOF.Filesize AS File_Size,
+                PC.NumProteins,
+                PC.NumResidues
 FROM T_Protein_Collections PC
      INNER JOIN T_Collection_Organism_Xref OrgXref
        ON PC.Protein_Collection_ID = OrgXref.Protein_Collection_ID
@@ -35,6 +37,7 @@ FROM T_Protein_Collections PC
        ON PC.Collection_State_ID = PCS.Collection_State_ID
      LEFT OUTER JOIN dbo.T_Archived_Output_Files AS AOF
        ON PC.Authentication_Hash = AOF.Authentication_Hash
+
 
 
 GO

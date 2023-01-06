@@ -7,10 +7,10 @@ GO
 CREATE VIEW [dbo].[V_Helper_NEWT_List_Report]
 AS
 SELECT identifier,
-       Term_Name,
+       term_name,
        Parent_term_name AS Parent,
        Grandparent_term_name AS Grandparent,
-       Is_Leaf
+       is_leaf
 FROM V_CV_NEWT
 
 

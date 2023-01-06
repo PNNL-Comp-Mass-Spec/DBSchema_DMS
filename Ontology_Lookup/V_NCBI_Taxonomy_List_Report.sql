@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_NCBI_Taxonomy_List_Report]
 AS
-SELECT Nodes.Tax_ID,
-       NodeNames.Name,
-       Nodes.Rank,
-       Nodes.Parent_Tax_ID,
-       dbo.GetTaxIDChildCount(Nodes.Tax_ID) AS Children,
-       ParentNodeName.Name AS Parent_Name,
-       Nodes.EMBL_Code,
-       Division.Division_Name AS Division,
-       GenCode.Genetic_Code_Name,
-       GenCodeMit.Genetic_Code_Name AS Mito_GenCodeName,
-       SynonymStats.Synonyms,
-       Nodes.GenBank_Hidden
+SELECT Nodes.tax_id,
+       NodeNames.name,
+       Nodes.rank,
+       Nodes.parent_tax_id,
+       dbo.GetTaxIDChildCount(Nodes.Tax_ID) AS children,
+       ParentNodeName.Name AS parent_name,
+       Nodes.embl_code,
+       Division.Division_Name AS division,
+       GenCode.genetic_code_name,
+       GenCodeMit.Genetic_Code_Name AS mito_gen_code_name,
+       SynonymStats.synonyms,
+       Nodes.genbank_hidden
 FROM T_NCBI_Taxonomy_Names NodeNames
      INNER JOIN T_NCBI_Taxonomy_Nodes Nodes
        ON NodeNames.Tax_ID = Nodes.Tax_ID

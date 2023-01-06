@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_Helper_NCBI_Taxonomy_Report]
 AS
-SELECT Nodes.Tax_ID,
-       NodeNames.Name,
-       Nodes.Rank,
-       Nodes.Parent_Tax_ID,
-       dbo.GetTaxIDChildCount(Nodes.Tax_ID) AS Children,
-       ParentNodeName.Name AS Parent_Name,
-       Division.Division_Name AS Division
+SELECT Nodes.tax_id,
+       NodeNames.name,
+       Nodes.rank,
+       Nodes.parent_tax_id,
+       dbo.GetTaxIDChildCount(Nodes.Tax_ID) AS children,
+       ParentNodeName.Name AS parent_name,
+       Division.Division_Name AS division
 FROM T_NCBI_Taxonomy_Names NodeNames
      INNER JOIN T_NCBI_Taxonomy_Nodes Nodes
        ON NodeNames.Tax_ID = Nodes.Tax_ID
