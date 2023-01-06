@@ -48,6 +48,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          05/18/2022 mem - Use new EUS Proposal column name
 **          06/08/2022 mem - Rename package comment field to Package_Comment
 **          07/08/2022 mem - Use new synonym name for experiment biomaterial view
+**          01/04/2023 mem - Update to use S_V_Biomaterial_List_Report_2
 **
 *****************************************************/
 (
@@ -504,7 +505,7 @@ As
                                 TX.Created,
                                 TX.[Type]
                 FROM #TPI
-                     INNER JOIN S_V_Cell_Culture_List_Report_2 TX
+                     INNER JOIN S_V_Biomaterial_List_Report_2 TX
                        ON #TPI.Identifier = Name
 
                 WHERE #TPI.[Type] = 'Biomaterial'
@@ -532,7 +533,7 @@ As
                     TX.[Type]
                 FROM
                     #TPI
-                    INNER JOIN S_V_Cell_Culture_List_Report_2 TX
+                    INNER JOIN S_V_Biomaterial_List_Report_2 TX
                     ON #TPI.Identifier = Name
                 WHERE #TPI.[Type] = 'Biomaterial'
                 --
@@ -1141,6 +1142,7 @@ As
     -- Exit
     ---------------------------------------------------
     return @myError
+
 
 
 GO
