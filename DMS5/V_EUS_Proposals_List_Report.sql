@@ -6,22 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Proposals_List_Report]
 AS
-SELECT DISTINCT EUP.Proposal_ID AS ID,
-                S.Name AS State,
-                dbo.GetProposalEUSUsersList(EUP.Proposal_ID, 'N', 125) AS Users,
-                EUP.Title,
-                EUP.Import_Date AS [Import_Date],
-                EUP.Proposal_Start_Date AS [Start_Date],
-                EUP.Proposal_End_Date AS [End_Date],
-                EPT.Proposal_Type_Name AS [Proposal_Type],
-                EPT.Abbreviation,
-                EUP.Numeric_ID,
-                EUP.Proposal_ID_AutoSupersede As [Superseded_By]
+SELECT DISTINCT EUP.Proposal_ID AS id,
+                S.Name AS state,
+                dbo.GetProposalEUSUsersList(EUP.proposal_id, 'N', 125) AS users,
+                EUP.title,
+                EUP.Import_Date AS import_date,
+                EUP.Proposal_Start_Date AS start_date,
+                EUP.Proposal_End_Date AS end_date,
+                EPT.Proposal_Type_Name AS proposal_type,
+                EPT.abbreviation,
+                EUP.numeric_id,
+                EUP.Proposal_ID_AutoSupersede As superseded_by
 FROM T_EUS_Proposals EUP
      INNER JOIN T_EUS_Proposal_State_Name S
        ON EUP.State_ID = S.ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Proposals_List_Report] TO [DDL_Viewer] AS [dbo]

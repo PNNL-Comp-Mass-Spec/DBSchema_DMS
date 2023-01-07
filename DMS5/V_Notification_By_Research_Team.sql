@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Notification_By_Research_Team]
 AS
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, entity_type, prn
+SELECT seq, event, entity, name, campaign, person, person_role, entered, entity_type, prn
 FROM V_Notification_Requested_Run_Batches_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 UNION
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, entity_type, prn
+SELECT seq, event, entity, name, campaign, person, person_role, entered, entity_type, prn
 FROM V_Notification_Analysis_Job_Request_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 UNION
-SELECT Src.Seq, Src.Event, Src.Entity, Src.Name, Src.Campaign, Src.[User], Src.[Role], Src.Entered, Src.entity_type, Src.prn
+SELECT Src.seq, Src.event, Src.entity, Src.name, Src.campaign, Src.person, Src.person_role, Src.entered, Src.entity_type, Src.prn
 FROM V_Notification_Analysis_Job_Request_By_Request_Owner Src
      LEFT OUTER JOIN ( SELECT Event, Entity, prn
                        FROM V_Notification_Analysis_Job_Request_By_Research_Team
@@ -26,11 +26,11 @@ FROM V_Notification_Analysis_Job_Request_By_Request_Owner Src
 WHERE Entered > DATEADD(HOUR, -24, GETDATE()) AND
       FilterQ.prn IS NULL
 UNION
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, entity_type, prn
+SELECT seq, event, entity, name, campaign, person, person_role, entered, entity_type, prn
 FROM V_Notification_Sample_Prep_Request_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE())
 UNION
-SELECT Seq, Event, Entity, Name, Campaign, [User], Role, Entered, entity_type, prn
+SELECT seq, event, entity, name, campaign, person, person_role, entered, entity_type, prn
 FROM V_Notification_Datasets_By_Research_Team
 WHERE Entered > DATEADD(HOUR, -24, GETDATE());
 

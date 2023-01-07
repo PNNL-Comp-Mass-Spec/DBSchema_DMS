@@ -6,35 +6,35 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_Plex_Members_Detail_Report]
 AS
-SELECT PlexMembers.Plex_Exp_ID AS [Exp_ID],
-       E.Experiment_Num AS [Experiment],
-       U.Name_with_PRN AS Researcher,
-       Org.OG_name AS Organism,
-       E.EX_reason AS [Reason for Experiment],
-       E.EX_comment AS [Comment],
-       C.Campaign_Num AS Campaign,
-       BTO.Tissue AS [Plant/Animal Tissue],
-       E.EX_Labelling AS Labelling,
-       Min(PlexMembers.Entered) AS Created,
-       E.EX_Alkylation AS Alkylated,
-       E.EX_sample_prep_request_ID AS Request,
-       E.EX_created AS [Plex Exp Created],
-	   BTO.Identifier AS [Tissue ID],
-       dbo.GetExperimentPlexMembers(PlexMembers.Plex_Exp_ID) AS [Plex Members],
-       ISNULL(DSCountQ.Datasets, 0) AS Datasets,
-       DSCountQ.Most_Recent_Dataset AS [Most Recent Dataset],
-       ISNULL(FC.Factor_Count, 0) AS Factors,
-       E.Exp_ID AS ID,
-       MC.Tag AS Container,
-       ML.Tag AS Location,
-       E.Ex_Material_Active AS [Material Status],
-       E.Last_Used AS [Last Used],
-       E.EX_Barcode AS Barcode
+SELECT PlexMembers.Plex_Exp_ID AS exp_id,
+       E.Experiment_Num AS experiment,
+       U.Name_with_PRN AS researcher,
+       Org.OG_name AS organism,
+       E.EX_reason AS reason_for_experiment,
+       E.EX_comment AS comment,
+       C.Campaign_Num AS campaign,
+       BTO.Tissue AS plant_or_animal_tissue,
+       E.EX_Labelling AS labelling,
+       Min(PlexMembers.Entered) AS created,
+       E.EX_Alkylation AS alkylated,
+       E.EX_sample_prep_request_ID AS request,
+       E.EX_created AS plex_exp_created,
+	   BTO.Identifier AS tissue_id,
+       dbo.GetExperimentPlexMembers(PlexMembers.Plex_Exp_ID) AS plex_members,
+       ISNULL(DSCountQ.datasets, 0) AS datasets,
+       DSCountQ.Most_Recent_Dataset AS most_recent_dataset,
+       ISNULL(FC.factor_count, 0) AS factors,
+       E.Exp_ID AS id,
+       MC.Tag AS container,
+       ML.Tag AS location,
+       E.Ex_Material_Active AS material_status,
+       E.Last_Used AS last_used,
+       E.EX_Barcode AS barcode
 FROM T_Experiment_Plex_Members PlexMembers
      INNER JOIN dbo.T_Experiments E
-       ON PlexMembers.Plex_Exp_ID = E.Exp_ID
+       ON PlexMembers.Plex_Exp_ID = E.exp_id
      INNER JOIN dbo.T_Experiments ChannelExperiment
-       ON PlexMembers.Exp_ID = ChannelExperiment.Exp_ID
+       ON PlexMembers.Exp_ID = ChannelExperiment.exp_id
      INNER JOIN dbo.T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN dbo.T_Campaign C
@@ -44,10 +44,10 @@ FROM T_Experiment_Plex_Members PlexMembers
        ON E.EX_Tissue_ID = BTO.Identifier
  INNER JOIN T_Material_Containers AS MC ON E.EX_Container_ID = MC.ID
         INNER JOIN T_Material_Locations AS ML ON MC.Location_ID = ML.ID
-        LEFT OUTER JOIN ( SELECT    COUNT(*) AS Datasets ,
-                                    MAX(DS_created) AS Most_Recent_Dataset ,
+        LEFT OUTER JOIN ( SELECT COUNT(*) AS Datasets,
+                                    MAX(DS_created) AS Most_Recent_Dataset,
                                     Exp_ID
-                          FROM      T_Dataset
+                          FROM T_Dataset
                           GROUP BY  Exp_ID
                         ) AS DSCountQ ON DSCountQ.Exp_ID = E.Exp_ID
         LEFT OUTER JOIN V_Factor_Count_By_Experiment AS FC ON FC.Exp_ID = E.Exp_ID

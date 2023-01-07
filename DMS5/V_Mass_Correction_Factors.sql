@@ -6,16 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Mass_Correction_Factors]
 AS
-SELECT Mass_Correction_ID,
-       Mass_Correction_Tag,
-       Description,
-       Monoisotopic_Mass,
-       Average_Mass,
-       ISNULL(Empirical_Formula, '') AS Empirical_Formula,
-       Affected_Atom,
-       Original_Source,
-       Original_Source_Name,
-       Alternative_Name
+SELECT mass_correction_id,
+       mass_correction_tag,
+       description,
+       monoisotopic_mass,
+       average_mass,
+       ISNULL(Empirical_Formula, '') AS empirical_formula,
+       affected_atom,
+       original_source,
+       original_source_name,
+       alternative_name
 FROM dbo.T_Mass_Correction_Factors
 
 

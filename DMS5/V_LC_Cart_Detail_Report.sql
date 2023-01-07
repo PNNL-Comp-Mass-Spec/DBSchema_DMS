@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_LC_Cart_Detail_Report]
 AS
-SELECT T.ID AS ID,
-       T.Cart_Name AS [Cart Name],
-       T.Cart_Description AS Descripton,
-       S.Name AS State,
-       IsNull(CartConfigQ.ConfigCount, 0) AS [Configuration Count]
+SELECT T.ID AS id,
+       T.Cart_Name AS cart_name,
+       T.Cart_Description AS description,
+       S.Name AS state,
+       IsNull(CartConfigQ.configcount, 0) AS configuration_count
 FROM T_LC_Cart T
      INNER JOIN T_LC_Cart_State_Name S
        ON T.Cart_State_ID = S.ID

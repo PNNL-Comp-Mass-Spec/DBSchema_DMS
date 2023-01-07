@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Users_List_Report]
 AS
-SELECT U.PERSON_ID AS ID,
-       U.NAME_FM AS Name,
-       SS.Name AS [Site Status],
-       dbo.GetEUSUsersProposalList(U.PERSON_ID) AS Proposals,
-       U.HID AS Hanford_ID,
-       U.Valid As Valid_EUS_ID,
-       U.Last_Affected
+SELECT U.PERSON_ID AS id,
+       U.NAME_FM AS name,
+       SS.Name AS site_status,
+       dbo.GetEUSUsersProposalList(U.PERSON_ID) AS proposals,
+       U.HID AS hanford_id,
+       U.Valid As valid_eus_id,
+       U.last_affected
 FROM T_EUS_Users U
      INNER JOIN T_EUS_Site_Status SS
        ON U.Site_Status = SS.ID

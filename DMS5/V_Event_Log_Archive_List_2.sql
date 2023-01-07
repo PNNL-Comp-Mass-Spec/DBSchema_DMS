@@ -4,15 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Event_Log_Archive_List_2] 
+CREATE VIEW [dbo].[V_Event_Log_Archive_List_2]
 as
-SELECT EL.Event_ID,
-       EL.Target_ID AS [Dataset ID],
-       T_Dataset.Dataset_Num AS Dataset,
-       'Update' AS [Type],
-       OldState.AUS_name AS [Old State],
-       NewState.AUS_name AS [New State],
-       EL.Entered AS [Date]
+SELECT EL.event_id,
+       EL.Target_ID AS dataset_id,
+       T_Dataset.Dataset_Num AS dataset,
+       'Update' AS type,
+       OldState.AUS_name AS old_state,
+       NewState.AUS_name AS new_state,
+       EL.Entered AS date
 FROM T_Event_Log EL
      INNER JOIN T_Dataset
        ON EL.Target_ID = T_Dataset.Dataset_ID
@@ -23,13 +23,13 @@ FROM T_Event_Log EL
 WHERE EL.Target_Type = 7 AND
       EL.Entered > DateAdd(day, -4, GetDate())
 UNION
-SELECT EL.Event_ID,
-       EL.Target_ID AS [Dataset ID],
-       T_Dataset.Dataset_Num AS Dataset,
-       'Archive' AS [Type],
-       OldState.DASN_StateName AS [Old State],
-       NewState.DASN_StateName AS [New State],
-       EL.Entered AS [Date]
+SELECT EL.event_id,
+       EL.Target_ID AS dataset_id,
+       T_Dataset.Dataset_Num AS dataset,
+       'Archive' AS type,
+       OldState.DASN_StateName AS old_state,
+       NewState.DASN_StateName AS new_state,
+       EL.Entered AS date
 FROM T_Event_Log EL
      INNER JOIN T_Dataset
        ON EL.Target_ID = T_Dataset.Dataset_ID

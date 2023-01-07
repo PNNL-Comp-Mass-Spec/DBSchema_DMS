@@ -6,22 +6,22 @@ GO
 
 CREATE VIEW [dbo].[V_Pipeline_Jobs_List_Report]
 AS
-SELECT J.Job,
-       J.Priority,
-       J.Script,
-       JSN.Name AS Job_State_B,
-       'Steps' AS Steps,
-       J.Dataset,
-       J.Results_Folder_Name,
-       J.Imported,
-       J.Start,
-       J.Finish,
-       J.Runtime_Minutes,
-       J.DataPkgID,
-       J.Owner,
-       J.Transfer_Folder_Path,
-       J.Archive_Busy,
-       J.[Comment]
+SELECT J.job,
+       J.priority,
+       J.script,
+       JSN.Name AS job_state_b,
+       'Steps' AS steps,
+       J.dataset,
+       J.results_folder_name,
+       J.imported,
+       J.start,
+       J.finish,
+       J.runtime_minutes,
+       J.DataPkgID AS data_pkg_id,
+       J.owner,
+       J.transfer_folder_path,
+       J.archive_busy,
+       J.comment
 FROM dbo.T_Jobs J
      INNER JOIN dbo.T_Job_State_Name JSN
        ON J.State = JSN.ID

@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Pipeline_Jobs_History_Detail_Report]
 AS
-SELECT J.Job,
-       J.Priority,
-       J.Script,
-       JSN.Name AS Job_State,
-       J.State AS Job_State_ID,
-       ISNULL(JS.Steps, 0) AS Steps,
-       J.Dataset,
-       J.Results_Folder_Name,
-       J.Imported,
-       J.Start,
-       J.Finish,
-       CONVERT(varchar(MAX), JP.Parameters) AS Parameters
+SELECT J.job,
+       J.priority,
+       J.script,
+       JSN.Name AS job_state,
+       J.State AS job_state_id,
+       ISNULL(JS.Steps, 0) AS steps,
+       J.dataset,
+       J.results_folder_name,
+       J.imported,
+       J.start,
+       J.finish,
+       CONVERT(varchar(MAX), JP.Parameters) AS parameters
 FROM dbo.T_Jobs_History AS J
      INNER JOIN dbo.T_Job_State_Name AS JSN
        ON J.State = JSN.ID
@@ -30,6 +30,7 @@ FROM dbo.T_Jobs_History AS J
                        GROUP BY Job ) JS
        ON J.Job = JS.Job
 WHERE J.Most_Recent_Entry = 1
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Jobs_History_Detail_Report] TO [DDL_Viewer] AS [dbo]

@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Freezer_List_Report]
 AS
-SELECT F.Freezer_ID,
-       F.Freezer,
-       F.Freezer_Tag,
-       F.[Comment],
-       COUNT(MC.ID) AS Containers
+SELECT F.freezer_id,
+       F.freezer,
+       F.freezer_tag,
+       F.comment,
+       COUNT(MC.ID) AS containers
 FROM T_Material_Containers MC
      INNER JOIN T_Material_Locations ML
        ON MC.Location_ID = ML.ID
@@ -18,7 +18,7 @@ FROM T_Material_Containers MC
        ON ML.Freezer_Tag = F.Freezer_Tag AND
           ML.Status <> 'Inactive' AND
           MC.Status <> 'Inactive'
-GROUP BY F.Freezer_ID, F.Freezer, F.Freezer_Tag, F.[Comment], ML.Status
+GROUP BY F.Freezer_ID, F.Freezer, F.Freezer_Tag, F.Comment, ML.Status
 
 
 GO

@@ -16,14 +16,14 @@ SELECT PivotData.Posting_Time,
        IsNull([LTQ_FTPek], 0) AS [LTQ_FTPek],
        IsNull([TIC_ICR], 0) AS [TIC_ICR],
        IsNull([AgilentTOFPek], 0) AS [AgilentTOFPek],
-       IsNull([MSClusterDAT_Gen], 0) AS [MSClusterDAT_Gen]       
-FROM ( SELECT AJT_ToolName,
+       IsNull([MSClusterDAT_Gen], 0) AS [MSClusterDAT_Gen]
+FROM ( SELECT Tool_Name,
               Convert(smalldatetime, Posting_time) AS Posting_time,
               Backlog_Count
        FROM V_Analysis_Job_Backlog_History ) AS SourceTable
      PIVOT ( Sum(Backlog_Count)
-             FOR AJT_ToolName
-             IN ( [Sequest], [XTandem], [Decon2LS], [MASIC_Finnigan], [Inspect], [ICR2LS], [LTQ_FTPek], 
+             FOR Tool_Name
+             IN ( [Sequest], [XTandem], [Decon2LS], [MASIC_Finnigan], [Inspect], [ICR2LS], [LTQ_FTPek],
              [TIC_ICR], [AgilentTOFPek], [MSClusterDAT_Gen] ) ) AS PivotData
 
 

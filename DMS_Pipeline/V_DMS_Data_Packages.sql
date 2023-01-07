@@ -3,32 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_DMS_Data_Packages]
 AS
-SELECT 	ID,
-		Name,
-		[Package Type],
-		Description,
-		Comment,
-		Owner,
-		Requester,
-		Team,
-		Created,
-		[Last Modified],
-		State,
-		[Package File Folder],
-		[Share Path],
-		[Web Path],
-		[MyEMSL URL],
-		[AMT Tag Database],
-		[Biomaterial Item Count],
-		[Experiment Item Count],
-		[EUS Proposals Count],
-		[Dataset Item Count],
-		[Analysis Job Item Count],
-		[Total Item Count],
-		[PRISM Wiki]
+SELECT id,
+       name,
+       package_type,
+       description,
+       comment,
+       owner,
+       requester,
+       team,
+       created,
+       last_modified,
+       state,
+       package_file_folder,
+       share_path,
+       web_path,
+       myemsl_url,
+       amt_tag_database,
+       biomaterial_item_count,
+       experiment_item_count,
+       eus_proposal_item_count,
+       dataset_item_count,
+       analysis_job_item_count,
+       total_item_count,
+       prism_wiki
 FROM S_Data_Package_Details
 
 

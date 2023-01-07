@@ -6,29 +6,29 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Move_Containers_List_Report]
 AS
-SELECT MC.Tag AS Container,
-       '' AS [Sel],
-       MC.Type,
-       ML.Tag AS Location,
-       COUNT(ContentsQ.Material_ID) AS Items,
-       MC.Comment,
-       -- Unused: MC.Barcode,
-       MC.Created,
+SELECT MC.Tag AS container,
+       '' AS sel,
+       MC.type,
+       ML.Tag AS location,
+       COUNT(ContentsQ.Material_ID) AS items,
+       MC.comment,
+       -- Unused: MC.barcode,
+       MC.created,
        MC.ID AS id
 FROM dbo.T_Material_Containers MC
      INNER JOIN dbo.T_Material_Locations ML
        ON MC.Location_ID = ML.ID
-     LEFT OUTER JOIN ( SELECT   CC_Container_ID AS Container_ID ,
+     LEFT OUTER JOIN ( SELECT CC_Container_ID AS Container_ID,
                                 CC_ID AS Material_ID
-                       FROM     T_Cell_Culture
+                       FROM T_Cell_Culture
                        UNION
-                       SELECT   EX_Container_ID AS Container_ID ,
+                       SELECT EX_Container_ID AS Container_ID,
                                 Exp_ID AS Material_ID
-                       FROM     T_Experiments
+                       FROM T_Experiments
                        UNION
-                       SELECT   Container_ID AS Container_ID ,
+                       SELECT Container_ID AS Container_ID,
                                 Compound_ID AS Material_ID
-                       FROM     T_Reference_Compound
+                       FROM T_Reference_Compound
                     ) AS ContentsQ
        ON ContentsQ.Container_ID = MC.ID
 WHERE (MC.Status = 'Active')

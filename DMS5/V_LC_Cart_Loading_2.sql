@@ -7,19 +7,19 @@ GO
 CREATE VIEW  V_LC_Cart_Loading_2
 AS
 SELECT
-  T_LC_Cart.Cart_Name AS Cart,
-  T_Requested_Run.RDS_Name AS Name,
-  T_Requested_Run.ID AS Request,
-  T_Requested_Run.RDS_Cart_Col AS Column_Number,
-  T_Experiments.Experiment_Num AS Experiment,
-  T_Requested_Run.RDS_priority AS Priority,
-  T_DatasetTypeName.DST_Name AS Type,
-  T_Requested_Run.RDS_BatchID AS Batch,
-  T_Requested_Run.RDS_Block AS Block,
-  T_Requested_Run.RDS_Run_Order AS [Run Order],
-  T_EUS_UsageType.Name AS [EMSL Usage Type],
-  T_Requested_Run.RDS_EUS_Proposal_ID AS [EMSL Proposal ID],
-  dbo.GetRequestedRunEUSUsersList(T_Requested_Run.ID, 'I') AS [EMSL User List]
+  T_LC_Cart.Cart_Name AS cart,
+  T_Requested_Run.RDS_Name AS name,
+  T_Requested_Run.ID AS request,
+  T_Requested_Run.RDS_Cart_Col AS column_number,
+  T_Experiments.Experiment_Num AS experiment,
+  T_Requested_Run.RDS_priority AS priority,
+  T_DatasetTypeName.DST_Name AS type,
+  T_Requested_Run.RDS_BatchID AS batch,
+  T_Requested_Run.RDS_Block AS block,
+  T_Requested_Run.RDS_Run_Order AS run_order,
+  T_EUS_UsageType.Name AS emsl_usage_type,
+  T_Requested_Run.RDS_EUS_Proposal_ID AS emsl_proposal_id,
+  dbo.GetRequestedRunEUSUsersList(T_Requested_Run.id, 'I') AS emsl_user_list
 FROM
   T_Requested_Run
   INNER JOIN T_LC_Cart ON T_Requested_Run.RDS_Cart_ID = T_LC_Cart.ID

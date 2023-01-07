@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Experiments_List_Report]
 AS
-SELECT E.Experiment_Num AS Experiment,
-       E.EX_researcher_PRN AS Researcher,
-       O.OG_name AS Organism,
-       E.EX_reason AS Reason,
-       E.EX_comment AS [Comment],
-       E.EX_created AS Created,
-       C.Campaign_Num AS Campaign,
+SELECT E.Experiment_Num AS experiment,
+       E.EX_researcher_PRN AS researcher,
+       O.OG_name AS organism,
+       E.EX_reason AS reason,
+       E.EX_comment AS comment,
+       E.EX_created AS created,
+       C.Campaign_Num AS campaign,
        E.EX_sample_prep_request_ID AS id
 FROM dbo.T_Experiments E
      INNER JOIN dbo.T_Campaign C

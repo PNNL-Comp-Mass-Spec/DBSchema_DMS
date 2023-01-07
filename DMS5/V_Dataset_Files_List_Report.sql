@@ -6,14 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Files_List_Report]
 AS
-SELECT DF.Dataset_ID,
-       DS.Dataset_Num AS Dataset,
-       DF.File_Path,
-       DF.File_Size_Bytes,
-       DF.File_Hash,
-       DF.File_Size_Rank,
-       InstName.IN_name AS Instrument,
-       DF.Dataset_File_ID
+SELECT DF.dataset_id,
+       DS.Dataset_Num AS dataset,
+       DF.file_path,
+       DF.file_size_bytes,
+       DF.file_hash,
+       DF.file_size_rank,
+       InstName.IN_name AS instrument,
+       DF.dataset_file_id
 FROM T_Dataset_Files DF
      INNER JOIN T_Dataset DS
        ON DF.Dataset_ID = DS.Dataset_ID

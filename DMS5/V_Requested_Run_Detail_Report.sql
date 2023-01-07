@@ -6,58 +6,58 @@ GO
 
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
-SELECT RR.ID AS Request,
-       RR.RDS_Name AS Name,
-       RR.RDS_Status AS Status,
-       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0): RR.RDS_priority AS Pri,
-       C.Campaign_Num AS Campaign,
-       E.Experiment_Num AS Experiment,
-       DS.Dataset_Num AS Dataset,
-       -- Deprecated in December 2017 since no longer used: dbo.ExpSampleLocation(RR.Exp_ID) AS [Sample Storage],
-       ML.Tag AS Staging_Location,
-       InstName.IN_Name AS Instrument_Used,
-       RR.RDS_instrument_group AS Instrument_Group,
-       DTN.DST_Name AS Run_Type,
-       RR.RDS_Sec_Sep AS Separation_Group,
-       U.Name_with_PRN AS Requester,
-       RR.RDS_Requestor_PRN As Username,
-       RR.RDS_created AS Created,
-       QT.[Days In Queue] As Days_In_Queue,
-       QS.Queue_State_Name AS Queue_State,
-       ISNULL(AssignedInstrument.IN_name, '') AS Queued_Instrument,
-       RR.RDS_Origin AS Origin,
-       RR.RDS_instrument_setting AS Instrument_Settings,
-       RR.RDS_Well_Plate_Num AS Wellplate,
-       RR.RDS_Well_Num AS Well,
-       RR.Vialing_Conc AS Vialing_Concentration,
-       RR.Vialing_Vol AS Vialing_Volume,
-       RR.RDS_comment AS Comment,
-       ISNULL(FC.Factor_Count, 0) AS Factors,
-       RRB.Batch AS Batch_Name,
-       RR.RDS_BatchID AS Batch,
-       -- Deprecated in 2021 since no longer used: RR.RDS_Blocking_Factor AS [Blocking Factor],
-       RR.RDS_Block AS [Block],
-       RR.RDS_Run_Order AS Run_Order,
-       LC.Cart_Name AS Cart,
-       CartConfig.Cart_Config_Name AS Cart_Config,
-       RR.RDS_Cart_Col AS Column_Name,
+SELECT RR.ID AS request,
+       RR.RDS_Name AS name,
+       RR.RDS_Status AS status,
+       -- Priority is a legacy field; do not show it (All requests since January 2011 have had Priority = 0): RR.RDS_priority AS pri,
+       C.Campaign_Num AS campaign,
+       E.Experiment_Num AS experiment,
+       DS.Dataset_Num AS dataset,
+       -- Deprecated in December 2017 since no longer used: dbo.ExpSampleLocation(RR.Exp_ID) AS sample_storage,
+       ML.Tag AS staging_location,
+       InstName.IN_Name AS instrument_used,
+       RR.RDS_instrument_group AS instrument_group,
+       DTN.DST_Name AS run_type,
+       RR.RDS_Sec_Sep AS separation_group,
+       U.Name_with_PRN AS requester,
+       RR.RDS_Requestor_PRN As username,
+       RR.RDS_created AS created,
+       QT.Days_In_Queue As days_in_queue,
+       QS.Queue_State_Name AS queue_state,
+       ISNULL(AssignedInstrument.in_name, '') AS queued_instrument,
+       RR.RDS_Origin AS origin,
+       RR.RDS_instrument_setting AS instrument_settings,
+       RR.RDS_Well_Plate_Num AS wellplate,
+       RR.RDS_Well_Num AS well,
+       RR.Vialing_Conc AS vialing_concentration,
+       RR.Vialing_Vol AS vialing_volume,
+       RR.RDS_comment AS comment,
+       ISNULL(FC.factor_count, 0) AS factors,
+       RRB.Batch AS batch_name,
+       RR.RDS_BatchID AS batch,
+       -- Deprecated in 2021 since no longer used: RR.RDS_Blocking_Factor AS blocking_factor,
+       RR.RDS_Block AS block,
+       RR.RDS_Run_Order AS run_order,
+       LC.Cart_Name AS cart,
+       CartConfig.Cart_Config_Name AS cart_config,
+       RR.RDS_Cart_Col AS column_name,
        RR.RDS_WorkPackage Work_Package,
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
-            ELSE ISNULL(CC.Activation_State_Name, 'Invalid')
-            END AS Work_Package_State,
-       EUT.Name AS EUS_Usage_Type,
-       RR.RDS_EUS_Proposal_ID AS EUS_Proposal,
-       EPT.Proposal_Type_Name AS EUS_Proposal_Type,
-       CAST(EUP.Proposal_End_Date AS DATE) AS EUS_Proposal_End_Date,
-       PSN.Name AS EUS_Proposal_State,
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS EUS_User,
-       dbo.T_Attachments.Attachment_Name AS MRM_Transition_List,
-       RR.RDS_note AS Note,
-       RR.RDS_special_instructions AS Special_Instructions,
+            ELSE ISNULL(CC.activation_state_name, 'Invalid')
+            END AS work_package_state,
+       EUT.Name AS eus_usage_type,
+       RR.RDS_EUS_Proposal_ID AS eus_proposal,
+       EPT.Proposal_Type_Name AS eus_proposal_type,
+       CAST(EUP.Proposal_End_Date AS DATE) AS eus_proposal_end_date,
+       PSN.Name AS eus_proposal_state,
+       dbo.GetRequestedRunEUSUsersList(RR.id, 'V') AS eus_user,
+       dbo.T_Attachments.Attachment_Name AS mrm_transition_list,
+       RR.RDS_note AS note,
+       RR.RDS_special_instructions AS special_instructions,
        Case
            When RR.RDS_Status = 'Active' AND
                 CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for wp_activation_state
-           Else CC.Activation_State
+           Else CC.activation_state
        End AS wp_activation_state
 FROM dbo.T_DatasetTypeName AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
@@ -87,7 +87,7 @@ FROM dbo.T_DatasetTypeName AS DTN
      LEFT OUTER JOIN T_Instrument_Name AS AssignedInstrument
        ON RR.Queue_Instrument_ID = AssignedInstrument.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times QT
-       ON RR.ID = QT.RequestedRun_ID
+       ON RR.ID = QT.Requested_Run_ID
      LEFT OUTER JOIN dbo.V_Factor_Count_By_Requested_Run FC
        ON FC.RR_ID = RR.ID
      LEFT OUTER JOIN V_Charge_Code_Status CC

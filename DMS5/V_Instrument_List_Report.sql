@@ -6,36 +6,36 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_List_Report]
 AS
-SELECT InstName.Instrument_ID AS ID,
-       InstName.IN_name AS Name,
-       InstName.IN_Description AS Description,
-       InstName.IN_class AS Class,
-       InstName.IN_group AS [Group],
-       InstName.IN_status AS Status,
-       InstName.IN_usage AS [Usage],
-       InstName.IN_operations_role AS [Ops Role],
-       Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No' End AS [Scan Source],
-       InstGroup.Allocation_Tag AS [Allocation Tag],
-       InstName.Percent_EMSL_Owned AS [Percent EMSL Owned],
-       InstName.IN_capture_method AS Capture,
-       InstName.IN_Room_Number AS Room,
-       SPath.SP_vol_name_client + SPath.SP_path AS [Assigned Storage],
-       S.Source AS [Assigned Source],
-       DefineStorageYesNo.Description AS [Auto Define Storage],
-       InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS [Auto Storage Path],
-       dbo.[GetInstrumentDatasetTypeList](InstName.Instrument_ID) AS [Allowed Dataset Types],
-       InstName.IN_Created AS Created,
-       EUSMapping.EUS_Instrument_ID AS [EUS Instrument ID],
-       EUSMapping.EUS_Display_Name AS [EUS Display Name],
-       EUSMapping.EUS_Instrument_Name AS [EUS Instrument Name],
-       EUSMapping.Local_Instrument_Name AS [Local Instrument Name],
+SELECT InstName.Instrument_ID AS id,
+       InstName.IN_name AS name,
+       InstName.IN_Description AS description,
+       InstName.IN_class AS class,
+       InstName.IN_group AS [group],
+       InstName.IN_status AS status,
+       InstName.IN_usage AS usage,
+       InstName.IN_operations_role AS ops_role,
+       Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No' End AS scan_source,
+       InstGroup.Allocation_Tag AS allocation_tag,
+       InstName.Percent_EMSL_Owned AS percent_emsl_owned,
+       InstName.IN_capture_method AS capture,
+       InstName.IN_Room_Number AS room,
+       SPath.SP_vol_name_client + SPath.SP_path AS assigned_storage,
+       S.Source AS assigned_source,
+       DefineStorageYesNo.Description AS auto_define_storage,
+       InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS auto_storage_path,
+       dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS allowed_dataset_types,
+       InstName.IN_Created AS created,
+       EUSMapping.EUS_Instrument_ID AS eus_instrument_id,
+       EUSMapping.EUS_Display_Name AS eus_display_name,
+       EUSMapping.EUS_Instrument_Name AS eus_instrument_name,
+       EUSMapping.Local_Instrument_Name AS local_instrument_name,
        Case When InstTracking.Reporting Like '%E%' Then 'EUS Primary Instrument'
             When InstTracking.Reporting Like '%P%' Then 'Production operations role'
             When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'
             Else ''
-       End As [Usage Tracking Status],
-       TrackingYesNo.Description AS [Track When Inactive],
-       InstName.Storage_Purge_Holdoff_Months AS [Storage Purge Holdoff Months]
+       End As usage_tracking_status,
+       TrackingYesNo.Description AS track_when_inactive,
+       InstName.Storage_Purge_Holdoff_Months AS storage_purge_holdoff_months
 FROM dbo.T_Instrument_Name InstName
      INNER JOIN T_YesNo DefineStorageYesNo
        ON InstName.Auto_Define_Storage_Path = DefineStorageYesNo.Flag
@@ -60,11 +60,13 @@ FROM dbo.T_Instrument_Name InstName
                             INNER JOIN T_EMSL_Instruments EMSLInst
                               ON InstMapping.EUS_Instrument_ID = EMSLInst.EUS_Instrument_ID
                             INNER JOIN T_Instrument_Name InstName
-                              ON InstMapping.DMS_Instrument_ID = InstName.Instrument_ID ) AS
+                              ON InstMapping.DMS_Instrument_ID = InstName.Instrument_ID )
+AS
                        EUSMapping
        ON InstName.Instrument_ID = EUSMapping.Instrument_ID
      LEFT OUTER JOIN V_Instrument_Tracked InstTracking
-       ON InstName.IN_name = InstTracking.[Name]
+       ON InstName.IN_name = InstTracking.Name
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Report] TO [DDL_Viewer] AS [dbo]

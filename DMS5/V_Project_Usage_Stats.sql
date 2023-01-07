@@ -4,32 +4,31 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Project_Usage_Stats]
 AS
-SELECT Stats.Entry_ID,
-       Stats.StartDate,
-       Stats.EndDate,
-       Stats.TheYear as [Year],
-       Stats.WeekOfYear as [Week],
-       Stats.Proposal_ID,
-       Stats.RDS_WorkPackage as Work_Package,
-       Stats.Proposal_Active,
-       ProjectTypes.Project_Type_Name as Project_Type,
-	   Stats.Samples,
-       Stats.Datasets,
-       Stats.Jobs,
-       EUSUsage.Name AS Usage_Type,
-       Stats.Proposal_User,
-       Proposals.Title AS Proposal_Title,
-       Stats.Instrument_First,
-       Stats.Instrument_Last,
-       Stats.JobTool_First,
-       Stats.JobTool_Last,
-       Cast(Proposals.Proposal_Start_Date AS date) AS Proposal_Start_Date,
-       Cast(Proposals.Proposal_End_Date AS date) AS Proposal_End_Date,
-       Stats.Proposal_Type,
-       Stats.SortKey
+SELECT Stats.entry_id,
+       Stats.StartDate AS start_date,
+       Stats.EndDate AS end_date,
+       Stats.TheYear As year,
+       Stats.WeekOfYear As week,
+       Stats.proposal_id,
+       Stats.RDS_WorkPackage AS work_package,
+       Stats.proposal_active,
+       ProjectTypes.Project_Type_Name AS project_type,
+	   Stats.samples,
+       Stats.datasets,
+       Stats.jobs,
+       EUSUsage.Name AS usage_type,
+       Stats.proposal_user,
+       Proposals.Title AS proposal_title,
+       Stats.instrument_first,
+       Stats.instrument_last,
+       Stats.JobTool_First AS job_tool_first,
+       Stats.JobTool_Last  AS job_tool_last,
+       Cast(Proposals.Proposal_Start_Date AS date) AS proposal_start_date,
+       Cast(Proposals.Proposal_End_Date AS date) AS proposal_end_date,
+       Stats.proposal_type,
+       Stats.SortKey AS sort_key
 FROM T_Project_Usage_Stats Stats
      INNER JOIN T_Project_Usage_Types ProjectTypes
        ON Stats.Project_Type_ID = ProjectTypes.Project_Type_ID
@@ -37,8 +36,6 @@ FROM T_Project_Usage_Stats Stats
        ON Stats.EUS_UsageType = EUSUsage.ID
      LEFT OUTER JOIN T_EUS_Proposals Proposals
        ON Stats.Proposal_ID = Proposals.Proposal_ID
-
-
 
 
 GO

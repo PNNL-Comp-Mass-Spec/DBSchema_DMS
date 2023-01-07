@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Proposal_Users_List_Report]
 AS
-SELECT PU.Person_ID AS [EUS Person ID],
-       PU.Of_DMS_Interest AS [DMS Interest],
-       U.NAME_FM AS Name,
-       SS.Name AS [Site Status],
-       PU.Proposal_ID AS [EUS Proposal ID],
-       U.First_Name AS [First Name],
-       U.Last_Name AS [Last Name]
+SELECT PU.Person_ID AS eus_person_id,
+       PU.Of_DMS_Interest AS dms_interest,
+       U.NAME_FM AS name,
+       SS.Name AS site_status,
+       PU.Proposal_ID AS eus_proposal_id,
+       U.First_Name AS first_name,
+       U.Last_Name AS last_name
 FROM dbo.T_EUS_Proposal_Users PU
      INNER JOIN dbo.T_EUS_Users U
        ON PU.Person_ID = U.PERSON_ID

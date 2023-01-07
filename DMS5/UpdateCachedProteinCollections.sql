@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedProteinCollections]
 **          10/23/2017 mem - Use S_V_Protein_Collections_by_Organism instead of S_V_Protein_Collection_Picker since S_V_Protein_Collection_Picker only includes active protein collections
 **          08/30/2021 mem - Populate field State_Name
 **          07/27/2022 mem - Use new field names when querying S_V_Protein_Collections_by_Organism (Collection_Name instead of FileName and File_Size instead of Filesize)
+**          01/06/2023 mem - Use new colunmn name in view
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
         USING (SELECT Protein_Collection_ID AS ID, Organism_ID,
                       Collection_Name AS [Name], [Description], State_Name,
                       NumProteins AS Entries, NumResidues AS Residues,
-                      [Type], File_Size
+                      [Type], File_Size_Bytes
                FROM dbo.S_V_Protein_Collections_by_Organism) as s
         ON ( t.[ID] = s.[ID] AND t.[Organism_ID] = s.[Organism_ID])
         WHEN MATCHED AND (
@@ -57,8 +58,8 @@ AS
                     NULLIF(s.[Residues], t.[Residues])) IS NOT NULL OR
             ISNULL( NULLIF(t.[Type], s.[Type]),
                     NULLIF(s.[Type], t.[Type])) IS NOT NULL OR
-            ISNULL( NULLIF(t.[Filesize], s.[File_Size]),
-                    NULLIF(s.[File_Size], t.[Filesize])) IS NOT NULL
+            ISNULL( NULLIF(t.[Filesize], s.[File_Size_Bytes]),
+                    NULLIF(s.[File_Size_Bytes], t.[Filesize])) IS NOT NULL
             )
         THEN UPDATE Set
             [Name] = s.[Name],
@@ -67,11 +68,11 @@ AS
             [Entries] = s.[Entries],
             [Residues] = s.[Residues],
             [Type] = s.[Type],
-            [Filesize] = s.[File_Size],
+            [Filesize] = s.[File_Size_Bytes],
             [Last_Affected] = GetDate()
         WHEN NOT MATCHED BY TARGET THEN
             INSERT([ID], [Organism_ID], [Name], [Description], [State_Name], [Entries], [Residues], [Type], [Filesize], [Created], [Last_Affected])
-            VALUES(s.[ID], s.[Organism_ID], s.[Name], s.[Description], s.[State_Name], s.[Entries], s.[Residues], s.[Type], s.[File_Size], GetDate(), GetDate())
+            VALUES(s.[ID], s.[Organism_ID], s.[Name], s.[Description], s.[State_Name], s.[Entries], s.[Residues], s.[Type], s.[File_Size_Bytes], GetDate(), GetDate())
         WHEN NOT MATCHED BY SOURCE THEN DELETE
         ;
 

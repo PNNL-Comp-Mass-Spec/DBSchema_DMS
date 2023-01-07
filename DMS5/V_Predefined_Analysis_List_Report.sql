@@ -6,47 +6,47 @@ GO
 
 CREATE VIEW [dbo].[V_Predefined_Analysis_List_Report]
 AS
-SELECT PA.AD_ID AS ID,
-       PA.AD_instrumentClassCriteria AS [Instrument Class],
-       PA.AD_level AS [Level],
-       PA.AD_sequence AS [Seq.],
-       PA.AD_nextLevel AS [Next Lvl.],
-	   PA.AD_enabled AS Enabled,
-       PA.AD_analysisToolName AS [Analysis Tool],
+SELECT PA.AD_ID AS id,
+       PA.AD_instrumentClassCriteria AS instrument_class,
+       PA.AD_level AS level,
+       PA.AD_sequence AS seq,
+       PA.AD_nextLevel AS next_lvl,
+	   PA.AD_enabled AS enabled,
+       PA.AD_analysisToolName AS analysis_tool,
        CASE WHEN PA.Trigger_Before_Disposition = 1
-            THEN 'Before Disposition' 
-            ELSE 'Normal' 
-            END AS [Trigger Mode],
-       CASE PA.Propagation_Mode
+            THEN 'Before Disposition'
+            ELSE 'Normal'
+            END AS trigger_mode,
+       CASE PA.propagation_mode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
-       END AS [Export Mode],
-       PA.AD_instrumentNameCriteria AS [Instrument Crit.],
-	   PA.AD_instrumentExclCriteria AS [Instrument Excl.],
-       PA.AD_organismNameCriteria AS [Organism Crit.],
-       PA.AD_campaignNameCriteria AS [Campaign Crit.],
-       PA.AD_experimentNameCriteria AS [Experiment Crit.],
-       PA.AD_labellingInclCriteria AS [ExpLabelingCrit.],
-       PA.AD_labellingExclCriteria AS [ExpLabeling Excl.],
-       PA.AD_datasetNameCriteria AS [DatasetCrit.],
-       PA.AD_expCommentCriteria AS [ExpCommentCrit.],
-       PA.AD_separationTypeCriteria AS [Separation Crit.],
-       PA.AD_campaignExclCriteria AS [Campaign Excl. Crit.],
-       PA.AD_experimentExclCriteria AS [Experiment Excl. Crit.],
-       PA.AD_datasetExclCriteria AS [Dataset Excl. Crit.],
-       PA.AD_datasetTypeCriteria AS [Dataset Type Crit.],
-	   PA.AD_scanCountMinCriteria AS [ScanCount Min],
-	   PA.AD_scanCountMaxCriteria AS [ScanCount Max],
-       PA.AD_parmFileName AS [Param File],
-       PA.AD_settingsFileName AS [Settings File],
-       Org.OG_name AS Organism,
-       PA.AD_organismDBName AS [Organism DB],
-       PA.AD_proteinCollectionList AS [Prot. Coll. List],
-       PA.AD_proteinOptionsList AS [Prot. Opts. List],
-       PA.AD_specialProcessing AS [Special Proc.],
-       PA.AD_description AS Description,
+       END AS export_mode,
+       PA.AD_instrumentNameCriteria AS instrument_crit,
+	   PA.AD_instrumentExclCriteria AS instrument_excl,
+       PA.AD_organismNameCriteria AS organism_crit,
+       PA.AD_campaignNameCriteria AS campaign_crit,
+       PA.AD_experimentNameCriteria AS experiment_crit,
+       PA.AD_labellingInclCriteria AS exp_labeling_crit,
+       PA.AD_labellingExclCriteria AS exp_labeling_excl,
+       PA.AD_datasetNameCriteria AS dataset_crit,
+       PA.AD_expCommentCriteria AS exp_comment_crit,
+       PA.AD_separationTypeCriteria AS separation_crit,
+       PA.AD_campaignExclCriteria AS campaign_excl_crit,
+       PA.AD_experimentExclCriteria AS experiment_excl_crit,
+       PA.AD_datasetExclCriteria AS dataset_excl_crit,
+       PA.AD_datasetTypeCriteria AS dataset_type_crit,
+	   PA.AD_scanCountMinCriteria AS scan_count_min,
+	   PA.AD_scanCountMaxCriteria AS scan_count_max,
+       PA.AD_parmFileName AS param_file,
+       PA.AD_settingsFileName AS settings_file,
+       Org.OG_name AS organism,
+       PA.AD_organismDBName AS organism_db,
+       PA.AD_proteinCollectionList AS prot_coll_list,
+       PA.AD_proteinOptionsList AS prot_opts_list,
+       PA.AD_specialProcessing AS special_proc,
+       PA.AD_description AS description,
        PA.AD_priority AS priority,
-       PA.Last_Affected
+       PA.last_affected
 FROM dbo.T_Predefined_Analysis AS PA
      INNER JOIN dbo.T_Organisms AS Org
        ON PA.AD_organism_ID = Org.Organism_ID

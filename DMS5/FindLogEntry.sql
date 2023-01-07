@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[FindLogEntry]
 **          03/23/2017 mem - Use Try_Convert instead of Convert
 **                         - Use sp_executesql
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          01/05/2023 mem - Use new column names in V_Log_Report
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -35,15 +36,13 @@ CREATE PROCEDURE [dbo].[FindLogEntry]
 As
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     set @message = ''
 
-    declare @sql nvarchar(4000)
-    declare @W nvarchar(3800)
+    Declare @sql nvarchar(4000)
+    Declare @W nvarchar(3800)
 
     ---------------------------------------------------
     -- Validate input fields
@@ -71,11 +70,11 @@ As
     If Len(@Entry) > 0
         Set @W = @W + ' AND ([Entry] = @entryID)'
     If Len(@PostedBy) > 0
-        Set @W = @W + ' AND ([Posted By] LIKE @postedByWildcard )'
+        Set @W = @W + ' AND ([Posted_By] LIKE @postedByWildcard )'
     If Len(@PostingTime_After) > 0
-        Set @W = @W + ' AND ([Posting Time] >= @earlistPostingTime )'
+        Set @W = @W + ' AND ([Entered] >= @earlistPostingTime )'
     If Len(@PostingTime_Before) > 0
-        Set @W = @W + ' AND ([Posting Time] < @latestPostingTime )'
+        Set @W = @W + ' AND ([Entered] < @latestPostingTime )'
     If Len(@EntryType) > 0
         Set @W = @W + ' AND ([Type] LIKE @typeWildcard )'
     If Len(@MessageText) > 0

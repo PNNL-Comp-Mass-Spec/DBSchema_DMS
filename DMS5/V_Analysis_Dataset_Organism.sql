@@ -6,10 +6,10 @@ GO
 
 CREATE VIEW [dbo].[V_Analysis_Dataset_Organism]
 AS
-SELECT DS.Dataset_Num,
+SELECT DS.Dataset_Num AS Dataset,
        Org.OG_name AS Organism,
-       Org.OG_organismDBPath AS ClientPath,
-       '' AS ServerPath
+       Org.OG_organismDBPath AS Client_Path,
+       '' AS Server_Path
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_Experiments
        ON DS.Exp_ID = dbo.T_Experiments.Exp_ID

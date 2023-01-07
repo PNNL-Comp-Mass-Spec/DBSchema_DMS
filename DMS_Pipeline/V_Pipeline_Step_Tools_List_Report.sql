@@ -4,17 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Pipeline_Step_Tools_List_Report]
 AS
-SELECT Name AS [Name],
-       Type AS [Type],
-       Description AS [Description],
-       Shared_Result_Version AS [Shared Result Version],
-       Filter_Version AS [Filter Version],
-       CPU_Load AS [CPU Load],
-       Memory_Usage_MB AS [Memory Usage MB],
-       ID
+SELECT name,
+       type,
+       description,
+       shared_result_version,
+       filter_version,
+       cpu_load,
+       memory_usage_mb,
+       id
 FROM dbo.T_Step_Tools
 
 

@@ -4,13 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Manager_Type_Report]
 AS
-SELECT MT.MT_TypeName AS Manager_Type,
-       MT.MT_TypeID AS ID,
-       ISNULL(ActiveManagersQ.ManagerCountActive, 0) AS Manager_Count_Active,
-       ISNULL(ActiveManagersQ.ManagerCountInactive, 0) AS Manager_Count_Inactive
+SELECT MT.MT_TypeName AS manager_type,
+       MT.MT_TypeID AS id,
+       ISNULL(ActiveManagersQ.managercountactive, 0) AS manager_count_active,
+       ISNULL(ActiveManagersQ.managercountinactive, 0) AS manager_count_inactive
 FROM dbo.T_MgrTypes AS MT
      LEFT OUTER JOIN ( SELECT Mgr_Type_ID,
                               Manager_Type,
@@ -22,5 +21,6 @@ FROM dbo.T_MgrTypes AS MT
 WHERE (MT.MT_TypeID IN ( SELECT M_TypeID
                          FROM dbo.T_Mgrs
                          WHERE (M_ControlFromWebsite > 0) ))
+
 
 GO

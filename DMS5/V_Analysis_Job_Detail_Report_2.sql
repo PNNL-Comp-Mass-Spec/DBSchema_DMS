@@ -4,30 +4,31 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2] AS
-SELECT AJ.AJ_jobID AS Job,
-       DS.Dataset_Num AS Dataset,
-       E.Experiment_Num AS Experiment,
-       DS.DS_folder_name AS [Dataset Folder],
-       DFP.Dataset_Folder_Path AS [Dataset Folder Path],
-       CASE 
+CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2]
+AS
+SELECT AJ.AJ_jobID AS job,
+       DS.Dataset_Num AS dataset,
+       E.Experiment_Num AS experiment,
+       DS.DS_folder_name AS dataset_folder,
+       DFP.Dataset_Folder_Path AS dataset_folder_path,
+       CASE
            WHEN ISNULL(DA.MyEmslState, 0) > 1 THEN ''
-           ELSE DFP.Archive_Folder_Path 
-       END AS [Archive Folder Path],
-       InstName.IN_name AS Instrument,
-       AnalysisTool.AJT_toolName AS [Tool Name],
-       AJ.AJ_parmFileName AS [Param File],
-       AnalysisTool.AJT_parmFileStoragePath AS [Param File Storage Path],
-       AJ.AJ_settingsFileName AS [Settings File],
-       ExpOrg.OG_Name As [Organism],
-       BTO.Tissue AS [Experiment Tissue],
-       JobOrg.OG_name AS [Job Organism],
-       AJ.AJ_organismDBName AS [Organism DB],
-       dbo.GetFASTAFilePath(AJ.AJ_organismDBName, JobOrg.OG_name) AS [Organism DB Storage Path],
-       AJ.AJ_proteinCollectionList AS [Protein Collection List],
-       AJ.AJ_proteinOptionsList AS [Protein Options List],
-       CASE WHEN AJ.AJ_StateID = 2 THEN ASN.AJS_name + ': ' + 
-              CAST(CAST(IsNull(AJ.Progress, 0) AS DECIMAL(9,2)) AS VARCHAR(12)) + '%, ETA ' + 
+           ELSE DFP.Archive_Folder_Path
+       END AS archive_folder_path,
+       InstName.IN_name AS instrument,
+       AnalysisTool.AJT_toolName AS tool_name,
+       AJ.AJ_parmFileName AS param_file,
+       AnalysisTool.AJT_parmFileStoragePath AS param_file_storage_path,
+       AJ.AJ_settingsFileName AS settings_file,
+       ExpOrg.OG_Name As organism,
+       BTO.Tissue AS experiment_tissue,
+       JobOrg.OG_name AS job_organism,
+       AJ.AJ_organismDBName AS organism_db,
+       dbo.GetFASTAFilePath(AJ.AJ_organismDBName, JobOrg.OG_name) AS organism_db_storage_path,
+       AJ.AJ_proteinCollectionList AS protein_collection_list,
+       AJ.AJ_proteinOptionsList AS protein_options_list,
+       CASE WHEN AJ.AJ_StateID = 2 THEN ASN.AJS_name + ': ' +
+              CAST(CAST(IsNull(AJ.Progress, 0) AS DECIMAL(9,2)) AS VARCHAR(12)) + '%, ETA ' +
               CASE
                 WHEN AJ.ETA_Minutes IS NULL THEN '??'
                 WHEN AJ.ETA_Minutes > 3600 THEN CAST(CAST(AJ.ETA_Minutes/1440.0 AS DECIMAL(18,1)) AS VARCHAR(12)) + ' days'
@@ -36,41 +37,41 @@ SELECT AJ.AJ_jobID AS Job,
               END
            ELSE ASN.AJS_name
            END AS State,
-       CONVERT(decimal(9, 2), AJ.AJ_ProcessingTimeMinutes) AS [Runtime Minutes],
+       CONVERT(decimal(9, 2), AJ.AJ_ProcessingTimeMinutes) AS runtime_minutes,
        AJ.AJ_owner AS Owner,
-       AJ.AJ_comment AS [Comment],
-       AJ.AJ_specialProcessing AS [Special Processing],
-       CASE 
-           WHEN AJ.AJ_Purged = 0 THEN dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName) 
+       AJ.AJ_comment AS Comment,
+       AJ.AJ_specialProcessing AS Special_Processing,
+       CASE
+           WHEN AJ.AJ_Purged = 0 THEN dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
            ELSE 'Purged: ' + dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
-       END AS [Results Folder Path],
+       END AS Results_Folder_Path,
        CASE
            WHEN AJ.AJ_MyEMSLState > 0 OR ISNULL(DA.MyEmslState, 0) > 1 THEN ''
-           ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName) 
-       END AS [Archive Results Folder Path],
-       CASE 
-           WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/' 
+           ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName)
+       END AS Archive_Results_Folder_Path,
+       CASE
+           WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/'
            ELSE DFP.Dataset_URL
-       END AS [Data Folder Link],
-       dbo.GetJobPSMStats(AJ.AJ_JobID) AS [PSM Stats],
-       ISNULL(MTSPT.PT_DB_Count, 0) AS [MTS PT DB Count],
-       ISNULL(MTSMT.MT_DB_Count, 0) AS [MTS MT DB Count],
-       ISNULL(PMTaskCountQ.PMTasks, 0) AS [Peak Matching Results],
+       END AS Data_Folder_Link,
+       dbo.GetJobPSMStats(AJ.AJ_JobID) AS PSM_Stats,
+       ISNULL(MTSPT.PT_DB_Count, 0) AS MTS_PT_DB_Count,
+       ISNULL(MTSMT.MT_DB_Count, 0) AS MTS_MT_DB_Count,
+       ISNULL(PMTaskCountQ.PMTasks, 0) AS Peak_Matching_Results,
        AJ.AJ_created AS Created,
-       AJ.AJ_start AS [Started],
+       AJ.AJ_start AS Started,
        AJ.AJ_finish AS Finished,
        AJ.AJ_requestID AS Request,
-       AJ.AJ_priority AS [Priority],
-       AJ.AJ_assignedProcessorName AS [Assigned Processor],
-       AJ.AJ_Analysis_Manager_Error AS [AM Code],
-       dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) AS [DEM Code],
+       AJ.AJ_priority AS Priority,
+       AJ.AJ_assignedProcessorName AS Assigned_Processor,
+       AJ.AJ_Analysis_Manager_Error AS AM_Code,
+       dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) AS DEM_Code,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
-       END AS [Export Mode],
-       T_YesNo.Description AS [Dataset Unreviewed],
-       T_MyEMSLState.StateName AS [MyEMSL State],
-      AJPG.Group_Name AS [Processor Group]       
+       END AS Export_Mode,
+       T_YesNo.Description AS Dataset_Unreviewed,
+       T_MyEMSLState.StateName AS MyEMSL_State,
+      AJPG.Group_Name AS Processor_Group
 FROM S_V_BTO_ID_to_Name AS BTO
      RIGHT OUTER JOIN T_Analysis_Job AS AJ
                       INNER JOIN T_Dataset AS DS

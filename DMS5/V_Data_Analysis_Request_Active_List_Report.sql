@@ -6,41 +6,41 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Active_List_Report]
 AS
-SELECT R.ID,
-       R.Request_Name AS [Request Name],
-       R.Analysis_Type AS [Analysis Type],
-       R.Created,
-       R.Estimated_Analysis_Time_Days AS [Est. Analysis Time],
-       R.Priority,
-       TA.Attachments AS Files,
-       SN.State_Name AS State,
-       R.State_Comment AS [State Comment],
-       U.Name_with_PRN AS Requester,
-       R.Description,
-       QT.[Days In Queue],
-       R.Requested_Personnel AS [Requested Personnel],
-       R.Assigned_Personnel AS [Assigned Personnel],
-       R.Representative_Batch_ID As Batch,
-       R.Data_Package_ID As [Data Package],
-       R.Exp_Group_ID As [Exp. Group],
-       R.Campaign,
-       R.Organism,
-       R.Dataset_Count As [Dataset Count],
-       R.Work_Package AS [Work Package],
-       ISNULL(CC.Activation_State_Name, 'Invalid') AS [WP State],
-       R.EUS_Proposal_ID AS [EUS Proposal],
-       EPT.Proposal_Type_Name AS [EUS Proposal Type],
+SELECT R.id,
+       R.Request_Name AS request_name,
+       R.Analysis_Type AS analysis_type,
+       R.created,
+       R.Estimated_Analysis_Time_Days AS est_analysis_time,
+       R.priority,
+       TA.Attachments AS files,
+       SN.State_Name AS state,
+       R.State_Comment AS state_comment,
+       U.Name_with_PRN AS requester,
+       R.description,
+       QT.days_in_queue,
+       R.Requested_Personnel AS requested_personnel,
+       R.Assigned_Personnel AS assigned_personnel,
+       R.Representative_Batch_ID As batch,
+       R.Data_Package_ID As data_package,
+       R.Exp_Group_ID As exp_group,
+       R.campaign,
+       R.organism,
+       R.Dataset_Count As dataset_count,
+       R.Work_Package AS work_package,
+       ISNULL(CC.activation_state_name, 'Invalid') AS wp_state,
+       R.EUS_Proposal_ID AS eus_proposal,
+       EPT.Proposal_Type_Name AS eus_proposal_type,
        CASE
            WHEN R.State = 4 THEN 0                  -- Request is closed
-           WHEN QT.[Days In Queue] <= 30 THEN 30    -- Request is 0 to 30 days old
-           WHEN QT.[Days In Queue] <= 60 THEN 60    -- Request is 30 to 60 days old
-           WHEN QT.[Days In Queue] <= 90 THEN 90    -- Request is 60 to 90 days old
+           WHEN QT.Days_In_Queue <= 30 THEN 30    -- Request is 0 to 30 days old
+           WHEN QT.Days_In_Queue <= 60 THEN 60    -- Request is 30 to 60 days old
+           WHEN QT.Days_In_Queue <= 90 THEN 90    -- Request is 60 to 90 days old
            ELSE 120                                 -- Request is over 90 days old
        END AS days_in_queue_bin,
        CASE
        WHEN R.State <> 4 AND
             CC.Activation_State >= 3 THEN 10    -- If the analysis request is not closed, but the charge code is inactive, return 10 for wp_activation_state
-       ELSE CC.Activation_State
+       ELSE CC.activation_state
        END AS wp_activation_state
 FROM T_Data_Analysis_Request AS R
      INNER JOIN T_Data_Analysis_Request_State_Name AS SN

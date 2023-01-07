@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Aux_Info_Experiment_Values]
 AS
-SELECT T_Experiments.Experiment_Num AS Experiment,
-       T_Experiments.Exp_ID AS ID,
-       T_Aux_Info_Category.Aux_Category AS Category,
-       T_Aux_Info_Subcategory.Aux_Subcategory AS Subcategory,
-       T_Aux_Info_Description.Aux_Description AS Item,
-       T_Aux_Info_Value.Value
+SELECT T_Experiments.Experiment_Num AS experiment,
+       T_Experiments.Exp_ID AS id,
+       T_Aux_Info_Category.Aux_Category AS category,
+       T_Aux_Info_Subcategory.Aux_Subcategory AS subcategory,
+       T_Aux_Info_Description.Aux_Description AS item,
+       T_Aux_Info_Value.value
 FROM T_Aux_Info_Category
      INNER JOIN T_Aux_Info_Subcategory
        ON T_Aux_Info_Category.Aux_Category_ID = T_Aux_Info_Subcategory.Aux_Category_ID

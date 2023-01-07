@@ -5,9 +5,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_MRM_List_Attachment_List_Report
 AS
-SELECT     ID, Attachment_Name AS Name, Attachment_Description AS Description, Owner_PRN AS Owner, Active, Created
-FROM         dbo.T_Attachments
-WHERE     (Attachment_Type = 'MRM Transition List')
+SELECT id, attachment_name as name, attachment_description as description, owner_prn as owner, active, created
+FROM dbo.T_Attachments
+WHERE Attachment_Type = 'MRM Transition List'
 
 
 GO

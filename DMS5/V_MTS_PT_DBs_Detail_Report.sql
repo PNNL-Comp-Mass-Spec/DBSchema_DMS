@@ -6,19 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_MTS_PT_DBs_Detail_Report]
 AS
-SELECT PTDBs.Peptide_DB_Name,
-       PTDBs.Peptide_DB_ID,
-       PTDBs.Description,
-       PTDBs.Organism,
-       PTDBs.MSMS_Jobs,       
-       PTDBs.SIC_Jobs,
-       dbo.GetMTDBsForPeptideDB(PTDBs.Peptide_DB_Name) AS Mass_Tag_DBs,
-       PTDBs.Server_Name,
-       PTDBs.State,
-       PTDBs.State_ID,
-       PTDBs.Last_Affected
+SELECT PTDBs.peptide_db_name,
+       PTDBs.peptide_db_id,
+       PTDBs.description,
+       PTDBs.organism,
+       PTDBs.msms_jobs,
+       PTDBs.sic_jobs,
+       dbo.GetMTDBsForPeptideDB(PTDBs.Peptide_DB_Name) AS mass_tag_dbs,
+       PTDBs.server_name,
+       PTDBs.state,
+       PTDBs.state_id,
+       PTDBs.last_affected
 FROM T_MTS_PT_DBs_Cached PTDBs
-
 
 
 GO

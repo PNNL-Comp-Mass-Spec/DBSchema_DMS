@@ -6,19 +6,19 @@ GO
 
 CREATE VIEW [dbo].[V_MTS_PT_DB_Jobs]
 AS
-SELECT JM.Job,
-       DS.Dataset_Num AS Dataset,
-       JM.Server_Name,
-       JM.Peptide_DB_Name,
-       JM.ResultType,
-       JM.Last_Affected,
-       JM.Process_State,
-       Inst.IN_name AS Instrument,
-       C.Campaign_Num AS Campaign,
-       AnTool.AJT_toolName as [Tool],
-       AJ.AJ_parmFileName as [Param File],
-       AJ.AJ_settingsFileName as [Settings File],
-       AJ.AJ_proteinCollectionList as [Protein Collection List],
+SELECT JM.job,
+       DS.Dataset_Num AS dataset,
+       JM.server_name,
+       JM.peptide_db_name,
+       JM.ResultType AS result_type,
+       JM.last_affected,
+       JM.process_state,
+       Inst.IN_name AS instrument,
+       C.Campaign_Num AS campaign,
+       AnTool.AJT_toolName AS tool,
+       AJ.AJ_parmFileName AS param_file,
+       AJ.AJ_settingsFileName AS settings_file,
+       AJ.AJ_proteinCollectionList AS protein_collection_list,
        JM.SortKey AS sort_key
 FROM T_MTS_PT_DB_Jobs_Cached JM
      LEFT OUTER JOIN T_Dataset DS

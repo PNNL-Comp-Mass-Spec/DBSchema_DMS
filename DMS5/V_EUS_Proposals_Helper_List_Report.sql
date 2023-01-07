@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Proposals_Helper_List_Report]
 AS
-SELECT P.Proposal_ID AS [Proposal ID],
-       P.Title,
-       ISNULL(CONVERT(varchar(16), RR.ID), '(none yet)') AS Request,
-       ISNULL(DS.Dataset_Num, '(none yet)') AS Dataset,
-       P.Proposal_Type,
+SELECT P.Proposal_ID AS proposal_id,
+       P.title,
+       ISNULL(CONVERT(varchar(16), RR.ID), '(none yet)') AS request,
+       ISNULL(DS.dataset_num, '(none yet)') AS dataset,
+       P.proposal_type,
        CASE
-           WHEN SN.ID = 5 THEN SN.Name
+           WHEN SN.ID = 5 THEN SN.name
            ELSE CASE
                     WHEN P.Proposal_End_Date < GETDATE() THEN 'Closed'
-                    ELSE SN.Name
+                    ELSE SN.name
                 END
-       END AS Proposal_State
+       END AS proposal_state
 FROM T_EUS_Proposals P
      INNER JOIN T_EUS_Proposal_State_Name SN
        ON P.State_ID = SN.ID

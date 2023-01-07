@@ -6,16 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Queue_Times]
 AS
-SELECT Request_ID,
-       Created,
-       State,
-       Closed,
+SELECT request_id,
+       created,
+       state,
+       closed,
        CASE
            WHEN State = 0 THEN NULL
            WHEN State IN (4) THEN DateDiff(DAY, Created, Closed)
            ELSE DateDiff(DAY, Created, ISNULL(Closed, GETDATE()))
-       END AS [Days In Queue],
-       DateDiff(DAY, StateFirstEntered, GETDATE()) AS [Days In State]
+       END AS days_in_queue,
+       DateDiff(DAY, StateFirstEntered, GETDATE()) AS days_in_state
 FROM ( SELECT R.ID AS Request_ID,
               R.Created,
               R.State,

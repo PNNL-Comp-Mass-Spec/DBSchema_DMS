@@ -6,28 +6,28 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Queue_Times]
 AS
-SELECT Request_ID,
-       Created,
-       [State],
-       [Complete or Closed],
+SELECT request_id,
+       created,
+       state_id,
+       complete_or_closed,
        CASE
-           WHEN State = 0 THEN NULL
-           WHEN State IN (4, 5) THEN DateDiff(DAY, Created, [Complete or Closed])
-           ELSE DateDiff(DAY, Created, ISNULL([Complete or Closed], GETDATE()))
-       END AS [Days In Queue],
+           WHEN state_id = 0 THEN NULL
+           WHEN state_id IN (4, 5) THEN DateDiff(DAY, Created, Complete_or_Closed)
+           ELSE DateDiff(DAY, Created, ISNULL(Complete_or_Closed, GETDATE()))
+       END AS days_in_queue,
        CASE
-           WHEN State = 5 THEN NULL 
+           WHEN state_id = 5 THEN NULL
            Else DateDiff(DAY, StateFirstEntered, GETDATE())
-       End AS [Days In State]
+       End AS days_in_state
 FROM ( SELECT SPR.ID AS Request_ID,
               SPR.Created,
-              SPR.[State],
+              SPR.[state] AS state_id,
               CASE
                   WHEN PrepComplete IS NULL THEN Closed
                   WHEN Closed IS NULL THEN PrepComplete
                   WHEN PrepComplete < Closed THEN PrepComplete
                   ELSE Closed
-              END AS [Complete or Closed],
+              END AS Complete_or_Closed,
               ChangeQ.PrepComplete,
               ChangeQ.Closed,
               StateEnteredQ.StateFirstEntered
@@ -49,19 +49,19 @@ FROM ( SELECT SPR.ID AS Request_ID,
                                     FROM T_Sample_Prep_Request_Updates
                                     WHERE (End_State_ID = 5 AND
                                            Beginning_State_ID <> 5) -- Closed
-                                    GROUP BY Request_ID, End_State_ID 
+                                    GROUP BY Request_ID, End_State_ID
                                    ) Src
                                    PIVOT ( MAX(Entered)
                                            FOR State_ID
-                                           IN ( [4], [5] ) 
-                                   ) AS pvt 
+                                           IN ( [4], [5] )
+                                   ) AS pvt
                             ) ChangeQ
-              ON ChangeQ.Request_ID = SPR.ID 
+              ON ChangeQ.Request_ID = SPR.ID
             LEFT OUTER JOIN ( SELECT Request_ID, End_State_ID As State_ID, MIN(Date_of_Change) As StateFirstEntered
                               FROM T_Sample_Prep_Request_Updates
                               GROUP BY Request_ID, End_State_ID
                             ) StateEnteredQ
-              ON StateEnteredQ.Request_ID = SPR.ID And StateEnteredQ.State_ID = SPR.[State]
+              ON StateEnteredQ.Request_ID = SPR.ID And StateEnteredQ.State_ID = SPR.[state]
        ) OuterQ
 
 

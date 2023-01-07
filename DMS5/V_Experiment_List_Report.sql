@@ -6,16 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_List_Report]
 AS
-SELECT E.Experiment_Num AS Experiment,
-       U.Name_with_PRN AS Researcher,
-       Org.OG_name AS Organism,
-       E.EX_reason AS Reason,
-       E.EX_comment AS [Comment],
-       E.EX_sample_concentration AS Concentration,
-       E.EX_created AS Created,
-       Campaign.Campaign_Num AS Campaign,
-       CEC.Cell_Culture_List AS [Cell Cultures],
-       CEC.Reference_Compound_List AS [Ref Compounds],
+SELECT E.Experiment_Num AS experiment,
+       U.Name_with_PRN AS researcher,
+       Org.OG_name AS organism,
+       E.EX_reason AS reason,
+       E.EX_comment AS comment,
+       E.EX_sample_concentration AS concentration,
+       E.EX_created AS created,
+       Campaign.Campaign_Num AS campaign,
+       CEC.Cell_Culture_List AS biomaterial_list,
+       CEC.Reference_Compound_List AS ref_compounds,
        E.Exp_ID AS id
 FROM T_Experiments E
      INNER JOIN T_Campaign Campaign

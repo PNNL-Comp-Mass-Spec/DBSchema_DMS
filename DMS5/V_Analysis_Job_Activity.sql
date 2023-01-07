@@ -12,7 +12,7 @@ SELECT J.AJ_batchID AS Batch,
        J.Dataset_Num AS Dataset,
        J.AJ_priority AS Priority,
        J.AJ_StateID AS State,
-       J.AJS_Name AS StateName,
+       J.AJS_Name AS State_Name,
        J.AJT_toolName AS Tool,
        J.AJ_parmFileName AS Param_File,
        J.AJ_proteinCollectionList AS Protein_Collection,
@@ -49,10 +49,10 @@ FROM dbo.T_Analysis_Job_Processor_Group_Associations AJPGA
                               (AJ.AJ_StateID IN (1, 2, 8) OR
                                AJ.AJ_StateID = 5 AND AJ_Start > DateAdd(DAY, - 14, GetDate())
 							  )
-                        GROUP BY AJ.AJ_jobID, Tool.AJT_toolName, Tool.AJT_toolID, AJ.AJ_batchID, 
+                        GROUP BY AJ.AJ_jobID, Tool.AJT_toolName, Tool.AJT_toolID, AJ.AJ_batchID,
 						         DS.Dataset_Num, AJ.AJ_parmFileName, AJ.AJ_proteinCollectionList,
                                  AJ.AJ_proteinOptionsList, AJR.AJR_workPackage, AJ.AJ_priority,
-                                 AJ.AJ_StateID, AJ.AJ_created, ASN.AJS_Name 
+                                 AJ.AJ_StateID, AJ.AJ_created, ASN.AJS_Name
 					) J
        ON AJPGA.Job_ID = J.AJ_jobID
 

@@ -6,24 +6,24 @@ GO
 
 CREATE VIEW [dbo].[V_Run_Interval_Detail_Report]
 AS
-SELECT R.ID,
-       R.Instrument,
-       R.Start,
-       R.[Interval],
-       R.[Comment],
-       'UserRemote:' + U.[UserRemote] + '%' + Case When U.[UserRemote] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
-       'UserOnsite:' + U.[UserOnsite] + '%' + Case When U.[UserOnsite] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
-       'User:' + U.[User] + '%' + Case When U.[User] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
+SELECT R.id,
+       R.instrument,
+       R.start,
+       R.interval,
+       R.comment,
+       'UserRemote:' + U.User_Remote + '%' + Case When U.User_Remote <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
+       'UserOnsite:' + U.User_Onsite + '%' + Case When U.User_Onsite <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
+       'User:' + U.[user] + '%' + Case When U.[user] <> '0' Then ' (Proposal ' + U.User_Proposal + ')' Else '' End  + '|' +
        'Broken:' + U.Broken + '%|' +
        'Maintenance:' + U.Maintenance + '%|' +
-       'StaffNotAvailable:' + U.StaffNotAvailable + '%|' +
-       'CapDev:' + U.CapDev + '%|' +
-       'InstrumentAvailable:' + U.InstrumentAvailable + '%' AS Usage,
-       R.Entered,
-	   R.Last_Affected AS [Last Affected],
-       R.Entered_By
-FROM dbo.T_Run_Interval R 
-     LEFT OUTER JOIN V_Run_Interval_Usage U 
+       'StaffNotAvailable:' + U.Staff_Not_Available + '%|' +
+       'CapDev:' + U.Cap_Dev + '%|' +
+       'InstrumentAvailable:' + U.Instrument_Available + '%' AS usage,
+       R.entered,
+	   R.Last_Affected AS last_affected,
+       R.entered_by
+FROM dbo.T_Run_Interval R
+     LEFT OUTER JOIN V_Run_Interval_Usage U
        ON R.ID = U.ID
 
 

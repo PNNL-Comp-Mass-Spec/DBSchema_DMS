@@ -6,9 +6,9 @@ GO
 
 CREATE VIEW [dbo].[V_Processor_Tool_Crosstab]
 AS
-SELECT PivotData.Processor_Name, 
-       PivotData.Group_Name,
-       PivotData.Group_ID,
+SELECT PivotData.processor_name,
+       PivotData.group_name,
+       PivotData.group_id,
        IsNull([DTA_Gen], '') AS [DTA_Gen],
        IsNull([Sequest], '') AS [Sequest],
        IsNull([XTandem], '') AS [XTandem],
@@ -31,7 +31,7 @@ FROM ( SELECT LP.Processor_Name,
               PTG.Group_Name,
               PTG.Group_ID,
               PTGD.Tool_Name,
-              Convert(varchar(12), PTGD.Priority) as Priority
+              Convert(varchar(12), PTGD.Priority) AS Priority
 		FROM T_Machines M
 			 INNER JOIN T_Local_Processors LP
 			   ON M.Machine = LP.Machine
@@ -44,9 +44,9 @@ FROM ( SELECT LP.Processor_Name,
        ) AS SourceTable
      PIVOT ( MIN(Priority)
              FOR Tool_Name
-             IN ( [DTA_Gen], [DTA_Split], [DataExtractor], [Results_Transfer], [Sequest], [XTandem], [Inspect], 
-             [InspectResultsAssembly], [Decon2LS], [Decon2LS_V2], [MASIC_Finnigan], [MASIC_Agilent], 
-             [MSXML_Gen], [MSMSSpectraPreprocessor], [MSGF], [MSGFDB], [MSDeconv], [MSAlign] ) 
+             IN ( [DTA_Gen], [DTA_Split], [DataExtractor], [Results_Transfer], [Sequest], [XTandem], [Inspect],
+             [InspectResultsAssembly], [Decon2LS], [Decon2LS_V2], [MASIC_Finnigan], [MASIC_Agilent],
+             [MSXML_Gen], [MSMSSpectraPreprocessor], [MSGF], [MSGFDB], [MSDeconv], [MSAlign] )
            ) AS PivotData
 
 

@@ -5,22 +5,20 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Dataset_QC_Metric_Definitions]
-AS 
-SELECT Metric,
-       Short_Description,
-	   Source,
-       Category,
-       Metric_Group,
-       Metric_Value,
-       Units,
-       Optimal,
-       Purpose,
-       Description,       
-       SortKey
+AS
+SELECT metric,
+       short_description,
+	   source,
+       category,
+       metric_group,
+       metric_value,
+       units,
+       optimal,
+       purpose,
+       description,
+       sortkey as sort_key
 FROM T_Dataset_QC_Metric_Names
 WHERE Ignored = 0
--- Order By SortKey
-
 
 
 GO

@@ -4,16 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_EUS_Users_Detail_Report]
 AS
-SELECT EU.PERSON_ID AS ID,
-       EU.NAME_FM AS Name,
-       EU.HID AS Hanford_ID,
-       SS.Name AS [Site Status],
-       EU.Last_Affected,
-       U.U_PRN AS PRN,
-       U.ID AS DMS_User_ID
+SELECT EU.PERSON_ID AS id,
+       EU.NAME_FM AS name,
+       EU.HID AS hanford_id,
+       SS.Name AS site_status,
+       EU.last_affected,
+       U.U_PRN AS prn,
+       U.ID AS dms_user_id
 FROM T_EUS_Users EU
      INNER JOIN T_EUS_Site_Status SS
        ON EU.Site_Status = SS.ID

@@ -6,17 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Settings_Files_Detail_Report]
 AS
-SELECT ID,
-       Analysis_Tool AS [Analysis Tool],
-       File_Name AS [File Name],
-       Description,
-       Active,
-	   Job_Usage_Count,
-	   MSGFPlus_AutoCentroid,
-       HMS_AutoSupersede,
-       dbo.[XmlToHTML](contents) AS Contents
+SELECT id,
+       analysis_tool,
+       file_name,
+       description,
+       active,
+	   job_usage_count,
+	   msgfplus_autocentroid AS msgfplus_auto_centroid,
+       hms_autosupersede AS hms_auto_supersede,
+       dbo.XmlToHTML(contents) AS contents
 FROM dbo.T_Settings_Files
-
 
 
 GO

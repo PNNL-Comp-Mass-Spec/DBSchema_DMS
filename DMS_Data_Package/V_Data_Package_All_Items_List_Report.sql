@@ -6,21 +6,21 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_All_Items_List_Report]
 AS
-SELECT     Data_Package_ID AS ID, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Job" id="' + CONVERT(varchar(128), Job) + '"/>' AS [Sel],
-                      'Job' AS Item_Type, CONVERT(varchar(128), Job) AS Item, Dataset AS Parent_Entity, Tool AS Info, Item_Added, Package_Comment, 1 AS SortKey
-FROM         dbo.T_Data_Package_Analysis_Jobs
+SELECT Data_Package_ID AS id, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Job" id="' + CONVERT(varchar(128), Job) + '"/>' AS sel,
+                      'Job' AS item_type, CONVERT(varchar(128), Job) AS item, Dataset AS parent_entity, Tool AS info, Item_Added, Package_Comment, 1 AS sort_key
+FROM dbo.t_data_package_analysis_jobs
 UNION
-SELECT     Data_Package_ID AS ID, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Dataset" id="' + Dataset + '"/>' AS [Sel],
-                      'Dataset' AS Item_Type, Dataset AS Item, Experiment AS Parent_Entity, Instrument AS Info, Item_Added, Package_Comment, 2 AS SortKey
-FROM         dbo.T_Data_Package_Datasets
+SELECT Data_Package_ID AS id, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Dataset" id="' + Dataset + '"/>' AS sel,
+                      'Dataset' AS item_type, Dataset AS item, Experiment AS parent_entity, Instrument AS info, Item_Added, Package_Comment, 2 AS sort_key
+FROM dbo.t_data_package_datasets
 UNION
-SELECT     Data_Package_ID AS ID, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Experiment" id="' + Experiment + '"/>' AS [Sel],
-                      'Experiment' AS Item_Type, Experiment AS Item, '' AS Parent_Entity, '' AS Info, Item_Added, Package_Comment, 3 AS SortKey
-FROM         dbo.T_Data_Package_Experiments
+SELECT Data_Package_ID AS id, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Experiment" id="' + Experiment + '"/>' AS sel,
+                      'Experiment' AS item_type, Experiment AS item, '' AS parent_entity, '' AS info, Item_Added, Package_Comment, 3 AS sort_key
+FROM dbo.t_data_package_experiments
 UNION
-SELECT     Data_Package_ID AS ID, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Biomaterial" id="' + Name + '"/>' AS [Sel],
-                      'Biomaterial' AS Item_Type, Name AS Item, Campaign AS Parent_Entity, Type AS Info, Item_Added, Package_Comment, 4 AS SortKey
-FROM         dbo.T_Data_Package_Biomaterial
+SELECT Data_Package_ID AS id, '<item pkg="' + CONVERT(varchar(12), Data_Package_ID) + '" type="Biomaterial" id="' + Name + '"/>' AS sel,
+                      'Biomaterial' AS item_type, Name AS item, Campaign AS parent_entity, Type AS info, Item_Added, Package_Comment, 4 AS sort_key
+FROM dbo.T_Data_Package_Biomaterial
 
 
 GO

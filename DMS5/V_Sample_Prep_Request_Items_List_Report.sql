@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Items_List_Report]
 AS
-SELECT  ID AS [ID] ,
-        Item_ID AS [Item ID] ,
-        Item_Name AS [Item Name] ,
-        Item_Type AS [Item Type] ,
-        Status AS [Status] ,
-        Created AS [Created] ,
-        Item_Added AS [Item Added] ,
+SELECT ID AS id,
+        Item_ID AS item_id,
+        Item_Name AS item_name,
+        Item_Type AS item_type,
+        Status AS status,
+        Created AS created,
+        Item_Added AS item_added,
         CASE WHEN Item_Type = 'dataset' THEN Item_Name
                 WHEN Item_Type = 'experiment' THEN Item_Name
                 WHEN Item_Type = 'experiment_group' THEN Cast(Item_ID As Varchar(128))
@@ -21,7 +21,7 @@ SELECT  ID AS [ID] ,
                 WHEN Item_Type = 'requested_run' THEN Cast(Item_ID As Varchar(128))
                 ELSE ''
         END AS link
-FROM    T_Sample_Prep_Request_Items
+FROM T_Sample_Prep_Request_Items
 
 
 GO

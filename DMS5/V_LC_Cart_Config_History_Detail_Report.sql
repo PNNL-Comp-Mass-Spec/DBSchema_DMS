@@ -5,8 +5,15 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_LC_Cart_Config_History_Detail_Report
 AS
-SELECT        ID, Cart, Date_Of_Change AS [Date Of Change], Description, Note, Entered, EnteredBy
-FROM            dbo.T_LC_Cart_Config_History
+SELECT id,
+       cart,
+       date_of_change,
+       description,
+       note,
+       entered,
+       enteredby AS entered_by
+FROM dbo.T_LC_Cart_Config_History
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Config_History_Detail_Report] TO [DDL_Viewer] AS [dbo]

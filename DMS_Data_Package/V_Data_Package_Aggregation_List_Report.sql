@@ -5,25 +5,25 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Data_Package_Aggregation_List_Report]
-As
-SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS [Sel],
-       TM.Job,
-       TM.State,
-       TM.Tool,
-       TD.Dataset,
-       TD.Dataset_ID,
+AS
+SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS sel,
+       TM.job,
+       TM.state,
+       TM.tool,
+       TD.dataset,
+       TD.dataset_id,
        CASE
            WHEN TJ.Job IS NULL THEN 'No'
            ELSE 'Yes'
-       END AS In_Package,
-       TM.[Param File],
-       TM.Settings_File,
-       TD.Data_Package_ID,
-       TM.[Organism DB],
-       TM.[Protein Collection List],
-       TM.[Protein Options],
-       DS.Rating,
-	   DS.Instrument
+       END AS in_package,
+       TM.param_file,
+       TM.settings_file,
+       TD.data_package_id,
+       TM.organism_db,
+       TM.protein_collection_list,
+       TM.protein_options,
+       DS.rating,
+	   DS.instrument
 FROM T_Data_Package_Datasets AS TD
      LEFT OUTER JOIN S_V_Dataset_List_Report_2 AS DS
        ON TD.Dataset_ID = DS.ID

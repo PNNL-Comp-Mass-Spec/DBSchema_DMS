@@ -6,17 +6,17 @@ GO
 
 CREATE VIEW [dbo].[V_Analysis_Tool_Report]
 AS
-SELECT Tool.AJT_toolName AS Name,
-       Tool.AJT_toolID as ID,
-       Tool.AJT_resultType AS ResultType,
-       Tool.AJT_parmFileStoragePath AS [Param file storage (client)],
-       Tool.AJT_parmFileStoragePathLocal AS [Param file storage (server)],
-       InstClasses.AllowedInstrumentClasses AS [Allowed Inst. Classes],
-       Tool.AJT_defaultSettingsFileName AS [Default Settings File],
-       Tool.AJT_active AS Active,
-       AJT_orgDbReqd AS [OrgDB Req],
-       Tool.AJT_extractionRequired AS [Extract Req],
-       DSTypes.AllowedDatasetTypes AS [Allowed DS Types]
+SELECT Tool.AJT_toolName AS name,
+       Tool.AJT_toolID AS id,
+       Tool.AJT_resultType AS result_type,
+       Tool.AJT_parmFileStoragePath AS param_file_storage_client,
+       Tool.AJT_parmFileStoragePathLocal AS param_file_storage_server,
+       InstClasses.AllowedInstrumentClasses AS allowed_inst_classes,
+       Tool.AJT_defaultSettingsFileName AS default_settings_file,
+       Tool.AJT_active AS active,
+       AJT_orgDbReqd AS org_db_req,
+       Tool.AJT_extractionRequired AS extract_req,
+       DSTypes.AllowedDatasetTypes AS allowed_ds_types
 FROM T_Analysis_Tool Tool
      CROSS APPLY dbo.GetAnalysisToolAllowedDSTypeList ( Tool.AJT_toolID ) DSTypes
      CROSS APPLY dbo.GetAnalysisToolAllowedInstClassList ( Tool.AJT_toolID ) InstClasses

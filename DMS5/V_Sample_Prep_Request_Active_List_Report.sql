@@ -6,44 +6,44 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Active_List_Report]
 AS
-SELECT SPR.ID,
-       SPR.Request_Name AS RequestName,
-       SPR.Created,
-       SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],
-       SPR.Priority,
-       TA.Attachments AS Files,
-       SN.State_Name AS [State],
-       SPR.State_Comment AS [State Comment],
-       SPR.Reason,
-       SPR.Number_of_Samples AS NumSamples,
-       SPR.Estimated_MS_runs AS [MS Runs TBG],
-       QT.[Days In Queue],
-       SPR.Prep_Method AS PrepMethod,
-       SPR.Requested_Personnel AS RequestedPersonnel,
-       SPR.Assigned_Personnel AS AssignedPersonnel,
-       QP.Name_with_PRN AS Requester,
-       SPR.Organism,
-       BTO.Tissue,
-       SPR.Biohazard_Level AS BiohazardLevel,
-       SPR.Campaign,
-       SPR.[Comment],
-       SPR.Work_Package_Number AS [Work Package],
-       ISNULL(CC.Activation_State_Name, '') AS [WP State],
-       SPR.EUS_Proposal_ID AS [EUS Proposal],
-       EPT.Proposal_Type_Name AS [EUS Proposal Type],
-       SPR.Instrument_Group AS [Inst. Group],
-       SPR.Instrument_Analysis_Specifications AS [Inst. Analysis],
+SELECT SPR.id,
+       SPR.Request_Name AS request_name,
+       SPR.created,
+       SPR.Estimated_Prep_Time_Days AS est_prep_time,
+       SPR.priority,
+       TA.Attachments AS files,
+       SN.State_Name AS state,
+       SPR.State_Comment AS state_comment,
+       SPR.reason,
+       SPR.Number_of_Samples AS num_samples,
+       SPR.Estimated_MS_runs AS ms_runs_tbg,
+       QT.days_in_queue,
+       SPR.Prep_Method AS prep_method,
+       SPR.Requested_Personnel AS requested_personnel,
+       SPR.Assigned_Personnel AS assigned_personnel,
+       QP.Name_with_PRN AS requester,
+       SPR.organism,
+       BTO.tissue,
+       SPR.Biohazard_Level AS biohazard_level,
+       SPR.campaign,
+       SPR.comment,
+       SPR.Work_Package_Number AS work_package,
+       ISNULL(CC.activation_state_name, '') AS wp_state,
+       SPR.EUS_Proposal_ID AS eus_proposal,
+       EPT.Proposal_Type_Name AS eus_proposal_type,
+       SPR.Instrument_Group AS inst_group,
+       SPR.Instrument_Analysis_Specifications AS inst_analysis,
        Case
             When SPR.State In (4,5) Then 0          -- Request is complete or closed
-            When QT.[Days In Queue] <= 30 Then 30   -- Request is 0 to 30 days old
-            When QT.[Days In Queue] <= 60 Then 60   -- Request is 30 to 60 days old
-            When QT.[Days In Queue] <= 90 Then 90   -- Request is 60 to 90 days old
+            When QT.Days_In_Queue <= 30 Then 30   -- Request is 0 to 30 days old
+            When QT.Days_In_Queue <= 60 Then 60   -- Request is 30 to 60 days old
+            When QT.Days_In_Queue <= 90 Then 90   -- Request is 60 to 90 days old
             Else 120                                -- Request is over 90 days old
         END AS days_in_queue_bin,
        CASE
            WHEN SPR.State <> 5 AND
                 CC.Activation_State >= 3 THEN 10    -- If the request is not closed, but the charge code is inactive, then return 10 for wp_activation_state
-           ELSE CC.Activation_State
+           ELSE CC.activation_state
        END AS wp_activation_state
 FROM T_Sample_Prep_Request SPR
      INNER JOIN T_Sample_Prep_Request_State_Name SN

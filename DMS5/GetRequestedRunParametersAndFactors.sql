@@ -4,19 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE dbo.GetRequestedRunParametersAndFactors
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **		Returns the run parameters and factors associated with the run requests in the input list
 **
 **		This is used by http://dms2.pnl.gov/requested_run_batch_blocking/grid
 **
-**  Auth: grk 
-**  Date: 03/28/2013
-**        03/28/2013 grk - cloned from GetFactorCrosstabByBatch
-**    
+**  Auth:   grk
+**  Date:   03/28/2013 grk - Cloned from GetFactorCrosstabByBatch
+**          01/05/2023 mem - Add view name to comment
+**
 *****************************************************/
 (
 	@itemList TEXT,
@@ -26,13 +25,11 @@ CREATE PROCEDURE dbo.GetRequestedRunParametersAndFactors
 AS
 	Set NoCount On
 
-	Declare @myRowCount int	
-	Declare @myError int
-	Set @myRowCount = 0
-	Set @myError = 0
-	
+	Declare @myRowCount int	= 0
+	Declare @myError int	= 0
+
 	Declare @msg varchar(256)
-	
+
 	Declare @Sql varchar(max)
 	Declare @CrossTabSql varchar(max)
 	Declare @FactorNameList varchar(max)
@@ -48,7 +45,7 @@ AS
 	--
 	CREATE Table #FACTORS (
 		FactorID INT,
-		FactorName VARCHAR(128) NULL 
+		FactorName VARCHAR(128) NULL
 	)
 
 	-----------------------------------------
@@ -56,7 +53,7 @@ AS
 	-----------------------------------------
 	--
 	INSERT INTO #REQS (Request)
-	SELECT Item 
+	SELECT Item
 	FROM dbo.MakeTableFromList(@itemList)
 
 /*
@@ -65,7 +62,7 @@ AS
 		-----------------------------------------
 		-- filter by request name
 		-----------------------------------------
-		-- 
+		--
 		DELETE FROM
 			#REQS
 		WHERE
@@ -79,21 +76,22 @@ AS
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 	End
-*/	
+*/
 
 	-----------------------------------------
-	-- Build the Sql for obtaining the factors 
-	-- for the requests
+	-- Build the Sql for obtaining the factors for the requests
+	--
+	-- These columns correspond to view V_Requested_Run_Unified_List_Ex
 	-----------------------------------------
-	--	N'Request, Name, Status, Batch, Experiment, Experiment_ID, Instrument, Dataset, Dataset_ID, Block, Run_Order, Cart, LC_Col'
+	--
 	EXEC @myError = MakeFactorCrosstabSQL_Ex
 					@colList = N'Request, Name, Status, Batch, Experiment, Dataset, Instrument, Cart, LC_Col, Block, Run_Order',
 					@Sql = @Sql OUTPUT,
-					@message = @message OUTPUT						
+					@message = @message OUTPUT
 	--
 	IF @myError <> 0
 		RETURN @myError
-	
+
 	-----------------------------------------
 	-- run dynamic SQL, or dump it
 	-----------------------------------------
@@ -102,12 +100,9 @@ AS
 		Print @Sql
 	Else
 		Exec (@Sql)
-	
+
 	--
 	return @myError
-
-
-
 
 
 GO

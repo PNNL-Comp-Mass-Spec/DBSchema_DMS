@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Analysis_Job_Processor_Group_Association_List_Report]
 AS
-SELECT dbo.T_Analysis_Job_Processor_Group_Associations.Job_ID
-     AS Job, dbo.T_Analysis_State_Name.AJS_name AS State,
-    dbo.T_Dataset.Dataset_Num AS Dataset,
-    dbo.T_Analysis_Tool.AJT_toolName AS Tool,
-    dbo.T_Analysis_Job.AJ_parmFileName AS [Param File],
-    dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File],
+SELECT dbo.T_Analysis_Job_Processor_Group_Associations.job_id
+     AS job, dbo.T_Analysis_State_Name.AJS_name AS state,
+    dbo.T_Dataset.Dataset_Num AS dataset,
+    dbo.T_Analysis_Tool.AJT_toolName AS tool,
+    dbo.T_Analysis_Job.AJ_parmFileName AS param_file,
+    dbo.T_Analysis_Job.AJ_settingsFileName AS settings_file,
     dbo.T_Analysis_Job_Processor_Group_Associations.Group_ID AS group_id
 FROM dbo.T_Analysis_Job_Processor_Group_Associations INNER JOIN
     dbo.T_Analysis_Job ON
@@ -25,8 +25,7 @@ FROM dbo.T_Analysis_Job_Processor_Group_Associations INNER JOIN
      INNER JOIN
     dbo.T_Analysis_State_Name ON
     dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID
-WHERE (dbo.T_Analysis_Job.AJ_StateID IN (1, 2, 3, 8, 9, 10, 11, 16,
-    17))
+WHERE (dbo.T_Analysis_Job.AJ_StateID IN (1, 2, 3, 8, 9, 10, 11, 16, 17))
 
 
 GO

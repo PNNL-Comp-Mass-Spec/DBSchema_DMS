@@ -7,15 +7,15 @@ GO
 CREATE VIEW [dbo].[V_Material_Move_Items_List_Report]
 As
 -- This view shows active items in containers
-SELECT ContentsQ.Item,
-       ContentsQ.Item_Type,      -- Note that this field needs to be Item_Type, and not [Item Type]
-       ContentsQ.Material_ID AS ID,
-       MC.Tag AS Container,
-       MC.[Type],
-       SUBSTRING(ContentsQ.Item_Type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS item_id,
-       ML.Tag AS [Location],
-       MC.[Status] As [Container Status],
-       ContentsQ.Request_ID AS [Prep Request]
+SELECT ContentsQ.item,
+       ContentsQ.item_type,      -- Note that this field needs to be Item_Type, and not Item_Type
+       ContentsQ.Material_ID AS id,
+       MC.Tag AS container,
+       MC.type,
+       SUBSTRING(ContentsQ.item_type, 1, 1) + ':' + CONVERT(varchar, ContentsQ.Material_ID) AS item_id,
+       ML.Tag AS location,
+       MC.Status As container_status,
+       ContentsQ.Request_ID AS prep_request
 FROM dbo.T_Material_Containers AS MC
      INNER JOIN (SELECT Experiment_Num AS Item,
                         'Experiment' AS Item_Type,

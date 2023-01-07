@@ -4,26 +4,25 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Biomaterial_List_Report_2]
 AS
-SELECT U.CC_ID AS ID,
-       U.CC_Name AS Name,
-       U.CC_Source_Name AS Source,
-       ISNULL(U_Contact.U_Name, U.CC_Contact_PRN) AS [Contact], 
-       CTN.Name AS [Type],
-       U.CC_Reason AS Reason,
-       U.CC_Created AS Created,
-       ISNULL(U_PI.U_Name, U.CC_PI_PRN) AS PI,
-       U.CC_Comment AS Comment,
-       C.Campaign_Num AS Campaign,
-       MC.Tag AS Container,
-       ML.Tag AS Location,
-       Cached_Organism_List AS Organisms,
-       U.Mutation,
-       U.Plasmid,
-       U.Cell_Line As [Cell Line],
-       U.CC_Material_Active AS [Material Status]
+SELECT U.CC_ID AS id,
+       U.CC_Name AS name,
+       U.CC_Source_Name AS source,
+       ISNULL(U_Contact.u_name, U.CC_Contact_PRN) AS contact,
+       CTN.Name AS type,
+       U.CC_Reason AS reason,
+       U.CC_Created AS created,
+       ISNULL(U_PI.U_Name, U.CC_PI_PRN) AS pi,
+       U.CC_Comment AS comment,
+       C.Campaign_Num AS campaign,
+       MC.Tag AS container,
+       ML.Tag AS location,
+       Cached_Organism_List AS organisms,
+       U.mutation,
+       U.plasmid,
+       U.Cell_Line As cell_line,
+       U.CC_Material_Active AS material_status
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID

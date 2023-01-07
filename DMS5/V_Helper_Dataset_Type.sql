@@ -6,9 +6,9 @@ GO
 
 CREATE VIEW [dbo].[V_Helper_Dataset_Type]
 AS
-SELECT DST_Name AS Dataset_Type,
-       DST_Description AS Description,
-       T_YesNo.Description AS Active
+SELECT DST_Name AS dataset_type,
+       DST_Description AS description,
+       T_YesNo.Description AS active
 FROM dbo.T_DatasetTypeName D
      INNER JOIN dbo.T_YesNo
        ON D.DST_Active = T_YesNo.Flag

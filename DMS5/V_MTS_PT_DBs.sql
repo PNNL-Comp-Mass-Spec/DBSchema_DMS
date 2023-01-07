@@ -4,21 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_MTS_PT_DBs]
 AS
 
-SELECT PTDBs.Peptide_DB_ID,
-       PTDBs.Peptide_DB_Name,
-       PTDBs.State,
-       PTDBs.Description,
-       PTDBs.Organism,
-       PTDBs.MSMS_Jobs,       
-       PTDBs.SIC_Jobs,
-       PTDBs.Server_Name,
-       PTDBs.State_ID     
+SELECT PTDBs.peptide_db_id,
+       PTDBs.peptide_db_name,
+       PTDBs.state,
+       PTDBs.description,
+       PTDBs.organism,
+       PTDBs.msms_jobs,
+       PTDBs.sic_jobs,
+       PTDBs.server_name,
+       PTDBs.state_id
 FROM T_MTS_PT_DBs_Cached PTDBs
-
 
 
 GO

@@ -15,8 +15,9 @@ CREATE PROCEDURE UpdateRequestedRunStatusHistory
 **
 **	Parameters: 
 **
-**		Auth: mem
-**		Date: 09/25/2012 mem - Initial Version
+**	Auth:   mem
+**	Date:   09/25/2012 mem - Initial Version
+**          01/05/2023 mem - Use new column names in V_Requested_Run_Queue_Times    
 **    
 *****************************************************/
 (
@@ -72,12 +73,12 @@ AS
 		FROM ( SELECT DISTINCT RRSN.State_ID,
 		                       RR.RDS_Origin AS Origin,
 		                       RR.ID,
-		                       QT.[Days In Queue] AS DaysInQueue
+		                       QT.Days_In_Queue AS DaysInQueue
 		       FROM T_Requested_Run RR
 		            INNER JOIN T_Requested_Run_State_Name RRSN
 		              ON RR.RDS_Status = RRSN.State_Name
 		            LEFT OUTER JOIN V_Requested_Run_Queue_Times QT
-		              ON RR.ID = QT.RequestedRun_ID 
+		              ON RR.ID = QT.Requested_Run_ID 
 		     ) SourceQ
 		GROUP BY State_ID, Origin
 		ORDER BY State_ID, Origin
@@ -92,6 +93,7 @@ AS
 Done:
 
 	Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunStatusHistory] TO [DDL_Viewer] AS [dbo]

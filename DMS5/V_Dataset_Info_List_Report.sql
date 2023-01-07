@@ -6,39 +6,39 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Info_List_Report]
 AS
-SELECT DS.Dataset_ID AS ID,
-       DS.Dataset_Num AS Dataset,
-       InstName.IN_name AS Instrument,
-       DTN.DST_name AS [Dataset Type],
-       DSInfo.Scan_Types AS [Scan Types],
-       DS.Scan_Count AS [Scan Count Total],
-       DSInfo.ScanCountMS AS [Scan Count MS],
-       DSInfo.ScanCountMSn AS [Scan Count MSn],
-       CONVERT(decimal(9, 2), 
-         CASE WHEN ISNULL(DSInfo.Elution_Time_Max, 0) < 1E6 
-              THEN DSInfo.Elution_Time_Max
+SELECT DS.Dataset_ID AS id,
+       DS.Dataset_Num AS dataset,
+       InstName.IN_name AS instrument,
+       DTN.DST_name AS dataset_type,
+       DSInfo.Scan_Types AS scan_types,
+       DS.Scan_Count AS scan_count_total,
+       DSInfo.ScanCountMS AS scan_count_ms,
+       DSInfo.ScanCountMSn AS scan_count_msn,
+       CONVERT(decimal(9, 2),
+         CASE WHEN ISNULL(DSInfo.elution_time_max, 0) < 1E6
+              THEN DSInfo.elution_time_max
               ELSE 1E6
-         END) AS [Elution Time Max],
-       DS.Acq_Length_Minutes AS [Acq Length],
-       -- DATEDIFF(MINUTE, ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start), ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish)) AS [Acq Length],
-       CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
-       DSInfo.TIC_Max_MS,
-       DSInfo.TIC_Max_MSn,
-       DSInfo.BPI_Max_MS,
-       DSInfo.BPI_Max_MSn,
-       DSInfo.TIC_Median_MS,
-       DSInfo.TIC_Median_MSn,
-       DSInfo.BPI_Median_MS,
-       DSInfo.BPI_Median_MSn,
-       DS.DS_sec_sep AS [Separation Type],
-       LC.SC_Column_Number AS [LC Column],
-       DS.Acq_Time_Start AS [Acquisition Start],
-       DS.Acq_Time_End AS [Acquisition End],
-       DSN.DSS_name AS State,
-       DSRating.DRN_name AS Rating,
-       DS.DS_comment AS Comment,
-       DS.DS_created AS Created,
-       DSInfo.Last_Affected AS [DSInfo Updated]
+         END) AS elution_time_max,
+       DS.Acq_Length_Minutes AS acq_length,
+       -- DATEDIFF(MINUTE, ISNULL(DS.acq_time_start, RR.RDS_Run_Start), ISNULL(DS.acq_time_end, RR.RDS_Run_Finish)) AS acq_length,
+       CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS file_size_mb,
+       DSInfo.tic_max_ms,
+       DSInfo.tic_max_msn,
+       DSInfo.bpi_max_ms,
+       DSInfo.bpi_max_msn,
+       DSInfo.tic_median_ms,
+       DSInfo.tic_median_msn,
+       DSInfo.bpi_median_ms,
+       DSInfo.bpi_median_msn,
+       DS.DS_sec_sep AS separation_type,
+       LC.SC_Column_Number AS lc_column,
+       DS.Acq_Time_Start AS acquisition_start,
+       DS.Acq_Time_End AS acquisition_end,
+       DSN.DSS_name AS state,
+       DSRating.DRN_name AS rating,
+       DS.DS_comment AS comment,
+       DS.DS_created AS created,
+       DSInfo.Last_Affected AS dsinfo_updated
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
@@ -54,7 +54,6 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DSInfo.Dataset_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
-
 
 
 GO

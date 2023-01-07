@@ -5,23 +5,22 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW [dbo].[V_OSM_Package_Detail_Report]
 AS
-    SELECT  DP.ID ,
-            DP.Name ,
-            DP.Package_Type AS [Package Type] ,
-            DP.Description ,
-            DP.Keywords ,
-            ISNULL(U1.U_Name, DP.Owner) AS Owner ,
-            DP.Created ,
-            DP.Last_Modified AS [Last Modified] ,
-            DP.Sample_Prep_Requests AS [Sample Prep Requests] ,
-            DP.State ,
-            DP.Wiki_Page_Link AS [Wiki Page Link] ,
-            DP.User_Folder_Path AS [User Folder],
-            DPS.Share_Path AS [Managed Folder]
-    FROM    dbo.T_OSM_Package AS DP
-            LEFT OUTER JOIN dbo.S_V_Users AS U1 ON DP.Owner = U1.U_PRN
-            LEFT OUTER JOIN V_OSM_Package_Paths DPS ON dp.ID = dps.ID
-
+SELECT DP.id,
+        DP.name,
+        DP.package_type,
+        DP.description,
+        DP.keywords,
+        ISNULL(U1.u_name, DP.Owner) AS owner,
+        DP.created,
+        DP.last_modified,
+        DP.sample_prep_requests,
+        DP.state,
+        DP.wiki_page_link,
+        DP.User_Folder_Path AS user_folder,
+        DPS.Share_Path AS managed_folder
+FROM dbo.T_OSM_Package AS DP
+        LEFT OUTER JOIN dbo.S_V_Users AS U1 ON DP.Owner = U1.U_PRN
+        LEFT OUTER JOIN V_OSM_Package_Paths DPS ON dp.ID = dps.ID
 
 
 GO

@@ -4,23 +4,22 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Bionet_Detail_Report]
 AS
-SELECT H.Host,
-       H.IP,
-       '255.255.254.0' AS [Subnet Mask],
-       '(leave blank)' AS [Default Gateway],
-       '192.168.30.68' AS [DNS Server],
-       H.Alias,
-       H.Tag,
-       H.Entered,
-       H.Last_Online AS [Last Online],
-       H.Comment,
-       H.Instruments,
-       H.Instruments AS [Instrument Datasets],
-       InstName.IN_Room_Number AS [Room],
-       T_YesNo.Description AS Active
+SELECT H.host,
+       H.ip,
+       '255.255.254.0' AS subnet_mask,
+       '(leave blank)' AS default_gateway,
+       '192.168.30.68' AS dns_server,
+       H.alias,
+       H.tag,
+       H.entered,
+       H.Last_Online AS last_online,
+       H.comment,
+       H.instruments,
+       H.Instruments AS instrument_datasets,
+       InstName.IN_Room_Number AS room,
+       T_YesNo.Description AS active
 FROM T_Bionet_Hosts H
      INNER JOIN T_YesNo
        ON H.Active = T_YesNo.Flag

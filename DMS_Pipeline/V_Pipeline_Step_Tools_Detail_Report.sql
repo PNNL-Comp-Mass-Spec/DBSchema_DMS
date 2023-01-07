@@ -6,25 +6,26 @@ GO
 
 CREATE VIEW [dbo].[V_Pipeline_Step_Tools_Detail_Report]
 AS
-SELECT ID AS [ID],
-       Name AS [Name],
-       TYPE AS [Type],
-       Description AS [Description],
-       [Comment],
-       Shared_Result_Version AS [Shared Result Version],
-       Filter_Version AS [Filter Version],
-       CPU_Load AS [CPU Load],
-       Uses_All_Cores,
-       Memory_Usage_MB AS [Memory Usage MB],
-       Available_For_General_Processing,
-       Param_File_Storage_Path AS [Param File Storage Path],
-       Parameter_Template AS [Parameter Template],
-       Tag,
-       AvgRuntime_Minutes,
-       Disable_Output_Folder_Name_Override_on_Skip,
-       Primary_Step_Tool,
-       Holdoff_Interval_Minutes
+SELECT id,
+       name,
+       type,
+       description,
+       comment,
+       shared_result_version,
+       filter_version,
+       cpu_load,
+       uses_all_cores,
+       memory_usage_mb,
+       available_for_general_processing,
+       param_file_storage_path,
+       parameter_template,
+       tag,
+       avgruntime_minutes as avg_runtime_minutes,
+       disable_output_folder_name_override_on_skip,
+       primary_step_tool,
+       holdoff_interval_minutes
 FROM T_Step_Tools
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Step_Tools_Detail_Report] TO [DDL_Viewer] AS [dbo]

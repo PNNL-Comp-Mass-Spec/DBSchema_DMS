@@ -6,28 +6,27 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Experiments_List_Report]
 AS
-SELECT DPE.Data_Package_ID AS ID,
-       DPE.Experiment,
-       EL.[Campaign],
-       DPE.Package_Comment,
-       EL.[Researcher],
-       EL.[Organism],
-       EL.[Reason],
-       EL.[Comment],
-       EL.[Concentration],
-       EL.[Created],
-       EL.[Cell Cultures],
-       EL.Tissue,
-       EL.[Enzyme],
-       EL.[Labelling],
-       EL.[Predigest],
-       EL.[Postdigest],
-       EL.[Request],
-       DPE.Item_Added
+SELECT DPE.Data_Package_ID AS id,
+       DPE.experiment,
+       EL.campaign,
+       DPE.package_comment,
+       EL.researcher,
+       EL.organism,
+       EL.reason,
+       EL.comment,
+       EL.concentration,
+       EL.created,
+       EL.biomaterial_list,
+       EL.tissue,
+       EL.enzyme,
+       EL.labelling,
+       EL.predigest,
+       EL.postdigest,
+       EL.request,
+       DPE.item_added
 FROM dbo.T_Data_Package_Experiments DPE
      INNER JOIN S_V_Experiment_List_Report_2 EL
        ON EL.ID = DPE.Experiment_ID
-
 
 
 GO

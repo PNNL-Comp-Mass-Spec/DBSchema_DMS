@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_Group_Members_List_Report]
 AS
-SELECT E.Experiment_Num AS Experiment,
-       E.Exp_ID AS ID,
+SELECT E.Experiment_Num AS experiment,
+       E.Exp_ID AS id,
        CASE
            WHEN EG.Parent_Exp_ID = E.Exp_ID THEN 'Parent'
            ELSE 'Child'
-       END AS Member,
-       E.EX_researcher_PRN AS Researcher,
-       Org.OG_name AS Organism,
-       E.EX_reason AS Reason,
-       E.EX_comment AS [Comment],
-       Count(DISTINCT DS.Dataset_ID) AS Datasets,
-       EG.Group_ID AS Group_ID
+       END AS member,
+       E.EX_researcher_PRN AS researcher,
+       Org.OG_name AS organism,
+       E.EX_reason AS reason,
+       E.EX_comment AS comment,
+       Count(DISTINCT DS.Dataset_ID) AS datasets,
+       EG.Group_ID AS group_id
 FROM dbo.T_Experiments E
      INNER JOIN dbo.T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
@@ -29,8 +29,8 @@ FROM dbo.T_Experiments E
        ON EGM.Group_ID = EG.Group_ID
      LEFT OUTER JOIN dbo.T_Dataset DS
        ON EGM.Exp_ID = DS.Exp_ID
-GROUP BY E.Experiment_Num, E.Exp_ID, EG.Parent_Exp_ID, 
-         E.EX_researcher_PRN, Org.OG_name, 
+GROUP BY E.Experiment_Num, E.Exp_ID, EG.Parent_Exp_ID,
+         E.EX_researcher_PRN, Org.OG_name,
          E.EX_reason, E.EX_comment, EG.Group_ID
 
 

@@ -8,21 +8,21 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Report]
 AS
-SELECT DS.Dataset_Num AS Dataset,
-       DS.Dataset_ID AS ID,
-       DSN.DSS_name AS State,
-       DSR.DRN_name AS Rating,
-       InstName.IN_name AS Instrument,
-       DS.DS_created AS Created,
-       DS.DS_comment AS [Comment],
-       DS.DateSortKey AS Acq_Start,           -- Use DateSortKey here for speed, since it is indexed (and updated via a trigger); in contrast, the dataset list report and detail report use "ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS Acq_Start"	   
-       DS.Acq_Length_Minutes AS Acq_Length,
-       DTN.DST_Name AS Dataset_Type,
-       E.Experiment_Num AS Experiment,
-	   C.Campaign_Num AS Campaign,
-       RR.ID AS Request,
-	   RR.RDS_BatchID AS Batch,
-       ISNULL(SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.DS_folder_name, DS.Dataset_Num), '') AS Dataset_Folder_Path
+SELECT DS.Dataset_Num AS dataset,
+       DS.Dataset_ID AS id,
+       DSN.DSS_name AS state,
+       DSR.DRN_name AS rating,
+       InstName.IN_name AS instrument,
+       DS.DS_created AS created,
+       DS.DS_comment AS comment,
+       DS.DateSortKey AS acq_start,           -- Use DateSortKey here for speed, since it is indexed (and updated via a trigger); in contrast, the dataset list report and detail report use "ISNULL(DS.acq_time_start, RR.RDS_Run_Start) AS Acq_Start"
+       DS.Acq_Length_Minutes AS acq_length,
+       DTN.DST_Name AS dataset_type,
+       E.Experiment_Num AS experiment,
+	   C.Campaign_Num AS campaign,
+       RR.ID AS request,
+	   RR.RDS_BatchID AS batch,
+       ISNULL(SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.ds_folder_name, DS.Dataset_Num), '') AS dataset_folder_path
 FROM dbo.T_DatasetStateName AS DSN
      INNER JOIN dbo.T_Dataset AS DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID

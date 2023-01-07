@@ -8,7 +8,7 @@ GO
 CREATE VIEW [dbo].[V_Legacy_Static_File_Locations]
 AS
 SELECT OrgDBInfo.ID,
-       OrgDBInfo.FileName,
+       OrgDBInfo.FileName As File_Name,
        dbo.udfCombinePaths(Org.OrganismDBPath, OrgDBInfo.FileName) AS Full_Path,
        Org.Organism_ID,
        Org.Name AS Organism_Name,

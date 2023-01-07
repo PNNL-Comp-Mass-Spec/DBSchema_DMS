@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Aux_Info_Allowed_Values]
 AS
-SELECT Category_Target.Target_Type_Name AS Target,
-       Category.Aux_Category AS Category,
-       Subcategory.Aux_Subcategory AS Subcategory,
-       Item.Aux_Description AS Item,
-       AllowedVals.[Value] AS AllowedValue
+SELECT Category_Target.Target_Type_Name AS target,
+       Category.Aux_Category AS category,
+       Subcategory.Aux_Subcategory AS subcategory,
+       Item.Aux_Description AS item,
+       AllowedVals.[Value] AS allowed_value
 FROM T_Aux_Info_Category Category
      INNER JOIN T_Aux_Info_Subcategory Subcategory
        ON Category.Aux_Category_ID = Subcategory.Aux_Category_ID

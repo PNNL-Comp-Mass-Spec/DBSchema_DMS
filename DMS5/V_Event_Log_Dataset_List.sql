@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_Event_Log_Dataset_List]
 As
-SELECT EL.Event_ID,
-       EL.Target_ID AS [Dataset ID],
-       T_Dataset.Dataset_Num AS Dataset,
-       S2.DSS_name AS [Old State],
-       S1.DSS_name AS [New State],
-       EL.Entered AS [Date],
-       T_Instrument_Name.IN_name AS Instrument
+SELECT EL.event_id,
+       EL.Target_ID AS dataset_id,
+       T_Dataset.Dataset_Num AS dataset,
+       S2.DSS_name AS old_state,
+       S1.DSS_name AS new_state,
+       EL.Entered AS date,
+       T_Instrument_Name.IN_name AS instrument
 FROM T_Event_Log EL
      INNER JOIN T_Dataset
        ON EL.Target_ID = T_Dataset.Dataset_ID

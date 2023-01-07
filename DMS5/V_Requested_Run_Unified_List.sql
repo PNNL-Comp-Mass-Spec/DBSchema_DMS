@@ -4,19 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Requested_Run_Unified_List] 
+CREATE VIEW [dbo].[V_Requested_Run_Unified_List]
 AS
-SELECT RR.ID AS Request,
-       RR.RDS_Name AS Name,
-       RR.RDS_BatchID AS BatchID,
-       RRB.Batch AS [Batch Name],
-       RR.DatasetID AS Dataset_ID,
-       D.Dataset_Num AS Dataset,
-       RR.Exp_ID AS Experiment_ID,
-       E.Experiment_Num AS Experiment,
-       RR.RDS_Status AS Status,
-       RR.RDS_Block AS [Block],
-       RR.RDS_Run_Order AS [Run Order]
+SELECT RR.ID AS request,
+       RR.RDS_Name AS name,
+       RR.RDS_BatchID AS batch_id,
+       RRB.Batch AS batch_name,
+       RR.DatasetID AS dataset_id,
+       D.Dataset_Num AS dataset,
+       RR.Exp_ID AS experiment_id,
+       E.Experiment_Num AS experiment,
+       RR.RDS_Status AS status,
+       RR.RDS_Block AS block,
+       RR.RDS_Run_Order AS run_order
 FROM T_Requested_Run RR
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID

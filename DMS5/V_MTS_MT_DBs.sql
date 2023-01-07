@@ -4,22 +4,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_MTS_MT_DBs]
 AS
 
-SELECT MTDBs.MT_DB_ID,
-       MTDBs.MT_DB_Name,
-       MTDBs.State,
-       MTDBs.Description,
-       MTDBs.Organism,
-       MTDBs.Campaign,
-       MTDBs.MSMS_Jobs,
-       MTDBs.MS_Jobs,
-       MTDBs.Peptide_DB,
-       MTDBs.Server_Name,
-       MTDBs.State_ID
+SELECT MTDBs.mt_db_id,
+       MTDBs.mt_db_name,
+       MTDBs.state,
+       MTDBs.description,
+       MTDBs.organism,
+       MTDBs.campaign,
+       MTDBs.msms_jobs,
+       MTDBs.ms_jobs,
+       MTDBs.peptide_db,
+       MTDBs.server_name,
+       MTDBs.state_id
 FROM T_MTS_MT_DBs_Cached MTDBs
 --WHERE NOT MTDBs.State IN ('Deleted', 'Frozen', 'Unused')
 

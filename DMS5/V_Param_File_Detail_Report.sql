@@ -6,22 +6,22 @@ GO
 
 CREATE VIEW [dbo].[V_Param_File_Detail_Report]
 AS
-SELECT PF.Param_File_ID AS ID,
-       PF.Param_File_Name AS [Name],
-       PFT.Param_File_Type AS [Type],
-       PFT.Param_File_Type_ID AS [Type_ID],
-       PF.Param_File_Description AS Description,
-       Tool.AJT_toolName AS [Primary Tool],
-       PF.Date_Created AS Created,
-       PF.Date_Modified AS Modified,
-       PF.Job_Usage_Count AS [Job Usage Count],
-       PF.Job_Usage_Last_Year AS [Job Usage Last Year],
-       dbo.udfCombinePaths(Tool.AJT_parmFileStoragePath, PF.Param_File_Name) AS File_Path,
-       PF.Valid,
-       dbo.GetParamFileMassModsTableCode(PF.Param_File_ID) AS Mass_Mods,
-       dbo.GetMaxQuantMassModsList(PF.Param_File_ID) AS MaxQuant_Mods,
-       PF.Mod_List As [Mod Code List],
-       dbo.GetParamFileMassModCodeList(PF.Param_File_ID, 1) As [Mod Codes With Symbols]
+SELECT PF.Param_File_ID AS id,
+       PF.Param_File_Name AS name,
+       PFT.Param_File_Type AS type,
+       PFT.Param_File_Type_ID AS type_id,
+       PF.Param_File_Description AS description,
+       Tool.AJT_toolName AS primary_tool,
+       PF.Date_Created AS created,
+       PF.Date_Modified AS modified,
+       PF.Job_Usage_Count AS job_usage_count,
+       PF.Job_Usage_Last_Year AS job_usage_last_year,
+       dbo.udfCombinePaths(Tool.ajt_parmfilestoragepath, PF.Param_File_Name) AS file_path,
+       PF.valid,
+       dbo.GetParamFileMassModsTableCode(PF.Param_File_ID) AS mass_mods,
+       dbo.GetMaxQuantMassModsList(PF.Param_File_ID) AS maxquant_mods,
+       PF.Mod_List As mod_code_list,
+       dbo.GetParamFileMassModCodeList(PF.param_file_id, 1) As mod_codes_with_symbols
 FROM T_Param_Files PF
      INNER JOIN T_Param_File_Types PFT
        ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID

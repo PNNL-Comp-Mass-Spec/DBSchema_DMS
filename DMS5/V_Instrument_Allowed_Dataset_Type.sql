@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Allowed_Dataset_Type]
 AS
-SELECT GT.Dataset_Type As [Dataset Type],
-       CachedUsage.Dataset_Usage_Count As [Dataset Count],
-       CachedUsage.Dataset_Usage_Last_Year As [Dataset Count Last Year],
-       DTN.DST_Description As [Type Description],
-       GT.Comment As [Usage For This Instrument],
-       InstName.IN_name As Instrument
+SELECT GT.dataset_type,
+       CachedUsage.Dataset_Usage_Count As dataset_usage_count,
+       CachedUsage.Dataset_Usage_Last_Year As dataset_usage_last_year,
+       DTN.DST_Description As type_description,
+       GT.Comment As usage_for_this_instrument,
+       InstName.IN_name As instrument
 FROM t_instrument_group_allowed_ds_type GT
      INNER JOIN T_DatasetTypeName  DTN
        ON GT.Dataset_Type = DTN.DST_name

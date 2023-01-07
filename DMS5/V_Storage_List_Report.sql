@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Storage_List_Report]
 AS
-SELECT SPath.SP_path_ID AS ID,
-       SPath.SP_path AS [Path],
-       SPath.SP_vol_name_client AS [Vol Client],
-       SPath.SP_vol_name_server AS [Vol Server],
-       SPath.SP_function AS [Function],
-       SPath.SP_instrument_name AS Instrument,
-       COUNT(DS.Dataset_ID) AS Datasets,
-       SPath.SP_description AS Description,
-       SPath.SP_Created as Created
+SELECT SPath.SP_path_ID AS id,
+       SPath.SP_path AS storage_path,
+       SPath.SP_vol_name_client AS vol_client,
+       SPath.SP_vol_name_server AS vol_server,
+       SPath.SP_function AS storage_path_function,
+       SPath.SP_instrument_name AS instrument,
+       COUNT(DS.Dataset_ID) AS datasets,
+       SPath.SP_description AS description,
+       SPath.SP_Created AS created
 FROM dbo.t_storage_path SPath
      LEFT OUTER JOIN dbo.T_Dataset DS
        ON SPath.SP_path_ID = DS.DS_storage_path_ID

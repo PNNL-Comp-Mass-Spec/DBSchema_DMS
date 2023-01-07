@@ -4,18 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Instrument_Actual_List_Report] as
-SELECT UsageQ.Fiscal_Year,
-       ISNULL(UsageQ.Proposal_ID, 0) AS Proposal_ID,
-       ISNULL(CONVERT(varchar(32), T_EUS_Proposals.Title) + '...', '-No Proposal-') AS Title,
-       T_EUS_Proposal_State_Name.Name AS Status,
-       UsageQ.FT_Usage, UsageQ.IMS_Usage, UsageQ.ORB_Usage, UsageQ.EXA_Usage, UsageQ.LTQ_Usage, UsageQ.GC_Usage, UsageQ.QQQ_Usage,
-       UsageQ.FT_Alloc, UsageQ.IMS_Alloc, UsageQ.ORB_Alloc, UsageQ.EXA_Alloc, UsageQ.LTQ_Alloc, UsageQ.GC_Alloc, UsageQ.QQQ_Alloc, 
-       UsageQ.FT_Actual + UsageQ.IMS_Actual + UsageQ.ORB_Actual + UsageQ.EXA_Actual + UsageQ.LTQ_Actual + UsageQ.GC_Actual + UsageQ.QQQ_Actual AS Total_Actual,
-       UsageQ.FT_Actual, UsageQ.IMS_Actual, UsageQ.ORB_Actual, UsageQ.EXA_Actual, UsageQ.LTQ_Actual, UsageQ.GC_Actual, UsageQ.QQQ_Actual,
-       UsageQ.Campaigns, UsageQ.Campaign_First, UsageQ.Campaign_Last,
-       UsageQ.FT_EMSL_Actual + UsageQ.IMS_EMSL_Actual + UsageQ.ORB_EMSL_Actual + UsageQ.EXA_EMSL_Actual + UsageQ.LTQ_EMSL_Actual + UsageQ.GC_EMSL_Actual + UsageQ.QQQ_EMSL_Actual AS Total_EMSL_Actual,
-       UsageQ.FT_EMSL_Actual, UsageQ.IMS_EMSL_Actual, UsageQ.ORB_EMSL_Actual, UsageQ.EXA_EMSL_Actual, UsageQ.LTQ_EMSL_Actual, UsageQ.GC_EMSL_Actual, UsageQ.QQQ_EMSL_Actual
+CREATE VIEW [dbo].[V_Instrument_Actual_List_Report]
+AS
+SELECT UsageQ.fiscal_year,
+       ISNULL(UsageQ.proposal_id, 0) AS proposal_id,
+       ISNULL(CONVERT(varchar(32), T_EUS_Proposals.Title) + '...', '-No Proposal-') AS title,
+       T_EUS_Proposal_State_Name.Name AS status,
+       UsageQ.ft_usage, UsageQ.ims_usage, UsageQ.orb_usage, UsageQ.exa_usage, UsageQ.ltq_usage, UsageQ.gc_usage, UsageQ.qqq_usage,
+       UsageQ.ft_alloc, UsageQ.ims_alloc, UsageQ.orb_alloc, UsageQ.exa_alloc, UsageQ.ltq_alloc, UsageQ.gc_alloc, UsageQ.qqq_alloc,
+       UsageQ.FT_Actual + UsageQ.IMS_Actual + UsageQ.ORB_Actual + UsageQ.EXA_Actual + UsageQ.LTQ_Actual + UsageQ.GC_Actual + UsageQ.QQQ_Actual AS total_actual,
+       UsageQ.ft_actual, UsageQ.ims_actual, UsageQ.orb_actual, UsageQ.exa_actual, UsageQ.ltq_actual, UsageQ.gc_actual, UsageQ.qqq_actual,
+       UsageQ.campaigns, UsageQ.campaign_first, UsageQ.campaign_last,
+       UsageQ.FT_EMSL_Actual + UsageQ.IMS_EMSL_Actual + UsageQ.ORB_EMSL_Actual + UsageQ.EXA_EMSL_Actual + UsageQ.LTQ_EMSL_Actual + UsageQ.GC_EMSL_Actual + UsageQ.QQQ_EMSL_Actual AS total_emsl_actual,
+       UsageQ.ft_emsl_actual, UsageQ.ims_emsl_actual, UsageQ.orb_emsl_actual, UsageQ.exa_emsl_actual, UsageQ.ltq_emsl_actual, UsageQ.gc_emsl_actual, UsageQ.qqq_emsl_actual
 FROM T_EUS_Proposal_State_Name
      INNER JOIN T_EUS_Proposals
        ON T_EUS_Proposal_State_Name.ID = T_EUS_Proposals.State_ID
@@ -59,7 +60,7 @@ FROM T_EUS_Proposal_State_Name
                TAC.EXA_EMSL_Actual,
                TAC.LTQ_EMSL_Actual,
                TAC.GC_EMSL_Actual,
-               TAC.QQQ_EMSL_Actual               
+               TAC.QQQ_EMSL_Actual
         FROM ( SELECT dbo.GetFYFromDate(TD.Acq_Time_Start) AS FY,
                       TRR.RDS_EUS_Proposal_ID AS Proposal,
                       COUNT(DISTINCT C.Campaign_Num) AS Campaigns,
@@ -72,15 +73,15 @@ FROM T_EUS_Proposal_State_Name
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'LTQ' THEN TD.Acq_Length_Minutes ELSE 0 END) / 60.0) AS LTQ_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'GC' THEN TD.Acq_Length_Minutes ELSE 0 END) / 60.0) AS GC_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'QQQ' THEN TD.Acq_Length_Minutes ELSE 0 END) / 60.0) AS QQQ_Actual,
-                      
+
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'FT' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS FT_EMSL_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'IMS' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS IMS_EMSL_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'ORB' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS ORB_EMSL_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'EXA' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS EXA_EMSL_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'LTQ' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS LTQ_EMSL_Actual,
                       CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'GC' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS GC_EMSL_Actual,
-                      CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'QQQ' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS QQQ_EMSL_Actual                      
-                      
+                      CONVERT(decimal(10, 1), SUM( CASE WHEN InstGroup.Allocation_Tag = 'QQQ' THEN TD.Acq_Length_Minutes * C.CM_Fraction_EMSL_Funded ELSE 0 END) / 60.0) AS QQQ_EMSL_Actual
+
                FROM T_Dataset AS TD
                     INNER JOIN T_Requested_Run AS TRR
                       ON TD.Dataset_ID = TRR.DatasetID
@@ -88,9 +89,9 @@ FROM T_EUS_Proposal_State_Name
                       ON TIN.Instrument_ID = TD.DS_instrument_name_ID
                     INNER JOIN T_Instrument_Group InstGroup
                       ON TIN.IN_Group = InstGroup.IN_Group
-                    INNER JOIN T_Experiments E 
-                      ON TD.Exp_ID = E.Exp_ID 
-                    INNER JOIN T_Campaign C 
+                    INNER JOIN T_Experiments E
+                      ON TD.Exp_ID = E.Exp_ID
+                    INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
                WHERE (TD.DS_rating > 1) AND
                      (TRR.RDS_EUS_UsageType NOT IN (10, 12, 13)) AND
@@ -111,10 +112,10 @@ FROM T_EUS_Proposal_State_Name
 		                SUM(CASE WHEN Allocation_Tag = 'GC' THEN Allocated_Hours ELSE 0 END) AS GC_Alloc,
 		                SUM(CASE WHEN Allocation_Tag = 'QQQ' THEN Allocated_Hours ELSE 0 END) AS QQQ_Alloc
 		         FROM T_Instrument_Allocation
-		         GROUP BY Proposal_ID, Fiscal_Year 
+		         GROUP BY Proposal_ID, Fiscal_Year
 		     ) TAL
                ON TAC.Proposal = TAL.Proposal_ID AND
-                  TAC.FY = TAL.Fiscal_Year 
+                  TAC.FY = TAL.Fiscal_Year
      ) UsageQ
        ON T_EUS_Proposals.PROPOSAL_ID = UsageQ.Proposal_ID
 

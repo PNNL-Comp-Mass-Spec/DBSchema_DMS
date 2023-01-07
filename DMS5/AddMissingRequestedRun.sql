@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
 **			06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          01/05/2023 mem - Use new column name in V_Dataset_Detail_Report_Ex
 **
 *****************************************************/
 (
@@ -43,10 +44,8 @@ CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
 As
 	Set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	Declare @experimentNum varchar(256),
 			@operPRN varchar(64),
@@ -72,7 +71,7 @@ As
 	       @operPRN = D.DS_Oper_PRN,
 	       @instrumentName = v.Instrument,
 	       @msType = v.Type,
-	       @secSep = v.[Separation Type],
+	       @secSep = v.Separation_Type,
 	       @DatasetID = D.Dataset_ID
 	FROM V_Dataset_Detail_Report_Ex V
 	     INNER JOIN T_Dataset D

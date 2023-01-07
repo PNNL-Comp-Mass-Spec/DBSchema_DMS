@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Operation_History_List_Report]
 AS
-SELECT H.ID,
-       H.Instrument,
-       H.Entered,
-       H.Note,
-       U.Name_with_PRN AS Posted_By
+SELECT H.id,
+       H.instrument,
+       H.entered,
+       H.note,
+       U.Name_with_PRN AS posted_by
 FROM dbo.T_Instrument_Operation_History H
      LEFT OUTER JOIN dbo.T_Users U
        ON H.EnteredBy = U.U_PRN

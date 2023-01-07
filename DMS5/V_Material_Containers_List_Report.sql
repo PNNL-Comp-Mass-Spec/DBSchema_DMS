@@ -4,25 +4,26 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Material_Containers_List_Report] AS
-SELECT Container,
-       [Type],
-       [Location],
-       Items,
-       FileCount AS Files,
-       [Comment],
-       [Status],
-       'New Biomaterial' AS [Action],
-       Created,
-       dbo.GetMaterialContainerCampaignList(id, Items) AS Campaigns,
-       Researcher,
+CREATE VIEW [dbo].[V_Material_Containers_List_Report]
+AS
+SELECT container,
+       type,
+       location,
+       items,
+       filecount as files,
+       comment,
+       status,
+       'New Biomaterial' AS action,
+       created,
+       dbo.GetMaterialContainerCampaignList(id, Items) AS campaigns,
+       researcher,
        id
 FROM ( SELECT MC.Tag AS Container,
-              MC.[Type],
-              ML.Tag AS [Location],
+              MC.Type,
+              ML.Tag AS Location,
               COUNT(ContentsQ.Material_ID) AS Items,
-              MC.[Comment],
-              MC.[Status],
+              MC.Comment,
+              MC.Status,
               -- Unused: MC.Barcode,
               MC.Created,
               MC.ID AS id,
@@ -56,7 +57,7 @@ FROM ( SELECT MC.Tag AS Container,
                               GROUP BY Entity_ID
                              ) AS TFA
               ON TFA.Entity_ID = MC.Tag
-       GROUP BY MC.Tag, MC.[Type], ML.Tag, MC.[Comment], MC.Created, MC.[Status],
+       GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, MC.Created, MC.Status,
                 MC.ID, MC.Researcher, TFA.FileCount
      ) AS ContainerQ
 

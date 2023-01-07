@@ -7,23 +7,23 @@ GO
 CREATE VIEW [dbo].[V_Param_File_Mass_Mods_List_Report]
 AS
 (
-SELECT PFMM.Mod_Entry_ID,
-       PFMM.Param_File_ID,
-       PFMM.Mod_Type_Symbol AS Mod_Type,
-       R.Residue_Symbol AS Residue,
-       R.Description AS Residue_Desc,
-       -- PFMM.Local_Symbol_ID,
-       SLS.Local_Symbol AS Symbol,
-       PFMM.Mass_Correction_ID as Mod_ID,
-       MCF.Mass_Correction_Tag,
-       MCF.Monoisotopic_Mass AS Mono_Mass,
-       MCF.Description AS Mod_Description,
-       ISNULL(MCF.Empirical_Formula, '') AS Empirical_Formula,
-       MCF.Original_Source,
-       MCF.Original_Source_Name,
-       PF.Param_File_Name,
-       PF.Param_File_Description,
-       Tool.AJT_toolName AS Primary_Tool
+SELECT PFMM.mod_entry_id,
+       PFMM.param_file_id,
+       PFMM.Mod_Type_Symbol AS mod_type,
+       R.Residue_Symbol AS residue,
+       R.Description AS residue_desc,
+       -- PFMM.local_symbol_id,
+       SLS.Local_Symbol AS symbol,
+       PFMM.Mass_Correction_ID AS mod_id,
+       MCF.mass_correction_tag,
+       MCF.Monoisotopic_Mass AS mono_mass,
+       MCF.Description AS mod_description,
+       ISNULL(MCF.empirical_formula, '') AS empirical_formula,
+       MCF.original_source,
+       MCF.original_source_name,
+       PF.param_file_name,
+       PF.param_file_description,
+       Tool.AJT_toolName AS primary_tool
 FROM T_Param_File_Mass_Mods PFMM
      INNER JOIN T_Residues R
        ON PFMM.Residue_ID = R.Residue_ID
@@ -35,7 +35,7 @@ FROM T_Param_File_Mass_Mods PFMM
        ON PFMM.Param_File_ID = PF.Param_File_ID
      INNER JOIN T_Param_File_Types PFT
        ON PF.Param_File_Type_ID = PFT.Param_File_Type_ID
-     INNER JOIN T_Analysis_Tool Tool       
+     INNER JOIN T_Analysis_Tool Tool
        ON PFT.Primary_Tool_ID = Tool.AJT_toolID
 )
 

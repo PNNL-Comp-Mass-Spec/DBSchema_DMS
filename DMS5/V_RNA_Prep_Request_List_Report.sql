@@ -14,7 +14,7 @@ SELECT SPR.id,
        SN.State_Name AS state,
        SPR.reason,
        SPR.Number_of_Samples AS num_samples,
-	   QT.[Days In Queue] As days_in_queue,
+	   QT.days_in_queue,
        SPR.Prep_Method AS prep_method,
        QP.Name_with_PRN AS requester,
        SPR.organism,
@@ -32,9 +32,9 @@ SELECT SPR.id,
        SUM (Case When Not E.EX_created Is Null Then 1 Else 0 End) AS experiments_total,
        Case
 			When SPR.State In (4,5) Then 0			-- Request is complete or closed
-			When QT.[Days In Queue] <= 30 Then	30	-- Request is 0 to 30 days old
-			When QT.[Days In Queue] <= 60 Then	60	-- Request is 30 to 60 days old
-			When QT.[Days In Queue] <= 90 Then	90	-- Request is 60 to 90 days old
+			When QT.Days_In_Queue <= 30 Then	30	-- Request is 0 to 30 days old
+			When QT.Days_In_Queue <= 60 Then	60	-- Request is 30 to 60 days old
+			When QT.Days_In_Queue <= 90 Then	90	-- Request is 60 to 90 days old
 			Else 120								-- Request is over 90 days old
 		END AS days_in_queue_bin,
 	   CASE
@@ -57,7 +57,7 @@ FROM T_Sample_Prep_Request AS SPR
 WHERE (SPR.State > 0) And SPR.Request_Type = 'RNA'
 GROUP BY SPR.ID, SPR.Request_Name, SPR.Created, SPR.Estimated_Completion, TA.Attachments,
          SPR.State, SN.State_Name, SPR.Reason, SPR.Number_of_Samples,
-		 QT.[Days In Queue], SPR.Prep_Method,
+		 QT.Days_In_Queue, SPR.Prep_Method,
          QP.Name_with_PRN, SPR.Organism, SPR.Biohazard_Level, SPR.Campaign,
          SPR.Work_Package_Number, SPR.Instrument_Name,
          SPR.Instrument_Analysis_Specifications,  SPR.EUS_Proposal_ID,

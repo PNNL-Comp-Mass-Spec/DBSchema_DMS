@@ -5,11 +5,11 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW [dbo].[V_Instrument_Config_List_Report]
 AS
-SELECT IN_name AS Instrument,
-       IN_status AS Status,
-       IN_Description AS Description,
-       IN_usage AS [Usage],
-       IN_operations_role AS Operations
+SELECT IN_name AS instrument,
+       IN_status AS status,
+       IN_Description AS description,
+       IN_usage AS usage,
+       IN_operations_role AS operations
 FROM T_Instrument_Name
 
 

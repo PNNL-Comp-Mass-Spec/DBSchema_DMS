@@ -6,14 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Separation_Type_Usage_2]
 AS
-SELECT 'x' AS Sel,
-       U.Usage_Last12Months AS [Usage Last 12 Months],
-       SS.SS_name AS [Separation Type],
-       SS.Sep_Group AS [Separation Group],
-       SS.SS_comment AS [Separation Type Comment],
-       SampType.Name AS [Sample Type],
-       U.Usage_AllYears AS [Dataset Usage All Years],
-       U.Most_Recent_Use AS [Most Recent Use]
+SELECT 'x' AS sel,
+       U.Usage_Last12Months AS usage_last_12_months,
+       SS.SS_name AS separation_type,
+       SS.Sep_Group AS separation_group,
+       SS.SS_comment AS separation_type_comment,
+       SampType.Name AS sample_type,
+       U.Usage_AllYears AS dataset_usage_all_years,
+       U.Most_Recent_Use AS most_recent_use
 FROM T_Secondary_Sep SS
      INNER JOIN T_Secondary_Sep_SampleType SampType
        ON SS.SampleType_ID = SampType.SampleType_ID

@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Submission_Detail_Report]
 AS
-SELECT SS.ID,
-       C.Campaign_Num AS Campaign,
-       U.Name_with_PRN AS [Received By],
-       SS.Description,
-       SS.Container_List AS [Container List],
-       SS.Created
+SELECT SS.id,
+       C.Campaign_Num AS campaign,
+       U.Name_with_PRN AS received_by,
+       SS.description,
+       SS.Container_List AS container_list,
+       SS.created
 FROM dbo.T_Sample_Submission AS SS
      INNER JOIN dbo.T_Campaign AS C
        ON SS.Campaign_ID = C.Campaign_ID
@@ -19,7 +19,6 @@ FROM dbo.T_Sample_Submission AS SS
        ON SS.Received_By_User_ID = U.ID
      LEFT OUTER JOIN dbo.T_Prep_File_Storage AS PFS
        ON SS.Storage_Path = PFS.ID
-
 
 
 GO

@@ -6,26 +6,26 @@ GO
 
 CREATE VIEW [dbo].[V_Analysis_Job_Check_Report]
 AS
-SELECT dbo.T_Analysis_Job.AJ_jobID AS Job,
-       dbo.T_Analysis_State_Name.AJS_name AS State,
-       dbo.T_Analysis_Job.AJ_start AS Started,
-       dbo.T_Analysis_Job.AJ_finish AS Finished,
-       ISNULL(dbo.T_Analysis_Job.AJ_assignedProcessorName, '(none)') AS CPU,
-       dbo.T_Analysis_Tool.AJT_toolName AS [Tool Name],
-       dbo.T_Dataset.Dataset_Num AS Dataset,
-       dbo.T_Analysis_Job.AJ_comment AS Comment,
-       dbo.T_Analysis_Job.AJ_priority AS [Pri.],
-       dbo.t_storage_path.SP_machine_name AS Storage,
-       dbo.t_storage_path.SP_path AS PATH,
-       dbo.T_Analysis_Job.AJ_parmFileName AS [Param File],
-       dbo.T_Analysis_Job.AJ_settingsFileName AS [Settings File],
-       dbo.T_Analysis_Job.AJ_organismDBName AS [Organism DB],
-       dbo.T_Analysis_Job.AJ_proteinCollectionList AS [Protein Collection List],
-       dbo.T_Analysis_Job.AJ_proteinOptionsList AS [Protein Options],
-       ISNULL(dbo.T_Analysis_Job.AJ_resultsFolderName, '(none)') AS [Results Folder],
-       dbo.T_Analysis_Job.AJ_batchID AS Batch,
-       dbo.T_Organisms.OG_name AS Organism,
-       ISNULL(DATEDIFF(HOUR, dbo.T_Analysis_Job.AJ_start, GETDATE()), 0) AS Elapsed
+SELECT dbo.T_Analysis_Job.AJ_jobID AS job,
+       dbo.T_Analysis_State_Name.AJS_name AS state,
+       dbo.T_Analysis_Job.AJ_start AS started,
+       dbo.T_Analysis_Job.AJ_finish AS finished,
+       ISNULL(dbo.T_Analysis_Job.aj_assignedprocessorname, '(none)') AS cpu,
+       dbo.T_Analysis_Tool.AJT_toolName AS tool_name,
+       dbo.T_Dataset.Dataset_Num AS dataset,
+       dbo.T_Analysis_Job.AJ_comment AS comment,
+       dbo.T_Analysis_Job.AJ_priority AS priority,
+       dbo.t_storage_path.SP_machine_name AS storage,
+       dbo.t_storage_path.SP_path AS path,
+       dbo.T_Analysis_Job.AJ_parmFileName AS param_file,
+       dbo.T_Analysis_Job.AJ_settingsFileName AS settings_file,
+       dbo.T_Analysis_Job.AJ_organismDBName AS organism_db,
+       dbo.T_Analysis_Job.AJ_proteinCollectionList AS protein_collection_list,
+       dbo.T_Analysis_Job.AJ_proteinOptionsList AS protein_options,
+       ISNULL(dbo.T_Analysis_Job.aj_resultsfoldername, '(none)') AS results_folder,
+       dbo.T_Analysis_Job.AJ_batchID AS batch,
+       dbo.T_Organisms.OG_name AS organism,
+       ISNULL(DATEDIFF(HOUR, dbo.T_Analysis_Job.aj_start, GETDATE()), 0) AS elapsed_hours
 FROM dbo.T_Analysis_Job
      INNER JOIN dbo.T_Dataset
        ON dbo.T_Analysis_Job.AJ_datasetID = dbo.T_Dataset.Dataset_ID
@@ -38,6 +38,7 @@ FROM dbo.T_Analysis_Job
      INNER JOIN dbo.T_Analysis_State_Name
        ON dbo.T_Analysis_Job.AJ_StateID = dbo.T_Analysis_State_Name.AJS_stateID
 WHERE (NOT (dbo.T_Analysis_Job.AJ_StateID IN (1, 4)))
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Check_Report] TO [DDL_Viewer] AS [dbo]

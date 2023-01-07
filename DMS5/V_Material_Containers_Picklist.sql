@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Containers_Picklist]
 AS
-SELECT MC.Tag AS Container,
-       MC.[Type],
-       MC.Status,
-       MC.[Comment],
-       L.Tag AS Location,
+SELECT MC.Tag AS container,
+       MC.type,
+       MC.status,
+       MC.comment,
+       L.Tag AS location,
        MC.SortKey AS sort_key
 FROM T_Material_Containers MC
      INNER JOIN T_Material_Locations L

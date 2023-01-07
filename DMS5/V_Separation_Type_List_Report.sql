@@ -4,20 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Separation_Type_List_Report]
 AS
 
-SELECT SS.SS_name AS [Separation Type],
-       SS.Sep_Group AS [Separation Group],
-       SS.SS_comment AS [Separation Type Comment],
-       SampType.Name AS [Sample Type],
-       U.Usage_Last12Months AS [Usage Last 12 Months],
-       U.Usage_AllYears AS [Dataset Usage All Years],
-       U.Most_Recent_Use AS [Most Recent Use],
-       SS.SS_active As Active,
-       SS.SS_ID As ID,
-	   SS.Created As Created
+SELECT SS.SS_name AS separation_type,
+       SS.Sep_Group AS separation_group,
+       SS.SS_comment AS separation_type_comment,
+       SampType.Name AS sample_type,
+       U.Usage_Last12Months AS usage_last_12_months,
+       U.Usage_AllYears AS dataset_usage_all_years,
+       U.Most_Recent_Use AS most_recent_use,
+       SS.SS_active As active,
+       SS.SS_ID As id,
+	   SS.Created As created
 FROM T_Secondary_Sep SS
      INNER JOIN T_Secondary_Sep_SampleType SampType
        ON SS.SampleType_ID = SampType.SampleType_ID

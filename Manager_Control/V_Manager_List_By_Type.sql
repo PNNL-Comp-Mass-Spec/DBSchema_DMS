@@ -4,17 +4,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Manager_List_By_Type]
 AS
-SELECT M.M_ID AS ID,
-       M.M_Name AS Manager_Name,
-       MT.MT_TypeName AS Manager_Type,
-       ISNULL(ActiveQ.Active, 'not defined') AS Active,
-       M.M_TypeID As Mgr_Type_ID,
-       ActiveQ.Last_Affected AS State_Last_Changed,
-       ActiveQ.Entered_By AS Changed_By,
-       M.M_Comment AS Comment
+SELECT M.M_ID AS id,
+       M.M_Name AS manager_name,
+       MT.MT_TypeName AS manager_type,
+       ISNULL(ActiveQ.active, 'not defined') AS active,
+       M.M_TypeID As mgr_type_id,
+       ActiveQ.Last_Affected AS state_last_changed,
+       ActiveQ.Entered_By AS changed_by,
+       M.M_Comment AS comment
 FROM dbo.T_Mgrs AS M
      INNER JOIN dbo.T_MgrTypes AS MT
        ON M.M_TypeID = MT.MT_TypeID

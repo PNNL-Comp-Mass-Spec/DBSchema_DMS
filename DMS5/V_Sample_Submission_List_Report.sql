@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Submission_List_Report]
 AS
-SELECT SS.ID,
-       C.Campaign_Num AS Campaign,
-       U.Name_with_PRN AS Received_By,
-       SS.Description,
-       SS.Container_List,
-       SS.Created
+SELECT SS.id,
+       C.Campaign_Num AS campaign,
+       U.Name_with_PRN AS received_by,
+       SS.description,
+       SS.container_list,
+       SS.created
 FROM dbo.T_Sample_Submission SS
      INNER JOIN dbo.T_Campaign C
        ON SS.Campaign_ID = C.Campaign_ID

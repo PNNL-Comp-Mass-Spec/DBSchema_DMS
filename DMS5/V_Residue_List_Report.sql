@@ -6,19 +6,19 @@ GO
 
 CREATE VIEW [dbo].[V_Residue_List_Report]
 AS
-SELECT Residue_ID,
-       Residue_Symbol As Symbol,
-       Description As Abbreviation,
-       Amino_Acid_Name As [Amino Acid],
-       Monoisotopic_Mass As [Monoisotopic Mass],
-       Average_Mass As [Average Mass],
-       Empirical_Formula As [Empirical Formula],
-       Num_C As [Num C],
-       Num_H As [Num H],
-       Num_N As [Num N],
-       Num_O As [Num O],
-       Num_S As [Num S]
-FROM dbo.T_Residues
+SELECT residue_id,
+       residue_symbol as symbol,
+       description as abbreviation,
+       amino_acid_name as amino_acid,
+       monoisotopic_mass,
+       average_mass,
+       empirical_formula,
+       num_c,
+       num_h,
+       num_n,
+       num_o,
+       num_s
+FROM dbo.t_residues
 
 
 GO

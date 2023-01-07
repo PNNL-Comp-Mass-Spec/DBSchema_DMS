@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_MaxQuant_Mods_List_Report]
 AS
-SELECT ModInfo.Mod_ID as ID,
-       ModInfo.Mod_Title,
-       ModInfo.Mod_Position,
-       R.Residue_Symbol,
-       R.Residue_ID,
-       MCF.Mass_Correction_ID as Mod_ID,
-       MCF.Mass_Correction_Tag
+SELECT ModInfo.Mod_ID AS id,
+       ModInfo.mod_title,
+       ModInfo.mod_position,
+       R.residue_symbol,
+       R.residue_id,
+       MCF.Mass_Correction_ID AS mod_id,
+       MCF.mass_correction_tag
 FROM T_MaxQuant_Mod_Residues AS ModResidues
      INNER JOIN T_MaxQuant_Mods AS ModInfo
        ON ModResidues.Mod_ID = ModInfo.Mod_ID

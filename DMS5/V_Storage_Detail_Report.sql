@@ -4,15 +4,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
 CREATE VIEW [dbo].[V_Storage_Detail_Report]
 AS
-SELECT SP_path_ID AS ID, SP_path AS Path, 
-   SP_vol_name_client AS [Vol Client], 
-   SP_vol_name_server AS [Vol Server], 
-   SP_function AS [Function], SP_instrument_name AS Instrument, 
-   SP_description AS Description
+SELECT SP_path_ID AS id, SP_path AS path,
+   SP_vol_name_client AS vol_client,
+   SP_vol_name_server AS vol_server,
+   SP_function AS storage_path_function,
+   SP_instrument_name AS instrument,
+   SP_description AS description
 FROM dbo.t_storage_path
 
 

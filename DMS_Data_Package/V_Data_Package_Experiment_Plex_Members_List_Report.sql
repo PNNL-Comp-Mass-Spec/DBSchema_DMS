@@ -6,25 +6,25 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Experiment_Plex_Members_List_Report]
 AS
-SELECT DPE.Data_Package_ID AS ID,
-       DPE.Experiment,
-       PM.Plex_Exp_ID,
-       PM.Organism,
-       PM.Channel,
-       PM.Tag,
-       PM.Exp_ID,
-       PM.[Channel Experiment],
-       PM.[Channel Type],
-       PM.Comment,
-       PM.Created,
-       PM.Campaign,
-       PM.Tissue,
-       PM.Labelling,
-       PM.MASIC_Name,
+SELECT DPE.Data_Package_ID AS id,
+       DPE.experiment,
+       PM.plex_exp_id,
+       PM.organism,
+       PM.channel,
+       PM.tag,
+       PM.exp_id,
+       PM.channel_experiment,
+       PM.channel_type,
+       PM.comment,
+       PM.created,
+       PM.campaign,
+       PM.tissue,
+       PM.labelling,
+       PM.masic_name,
        Item_Added
 FROM dbo.T_Data_Package_Experiments DPE
-     Inner Join [S_V_Experiment_Plex_Members_List_Report] PM
-       ON PM.Plex_Exp_ID = DPE.Experiment_ID
+     Inner Join S_V_Experiment_Plex_Members_List_Report PM
+       ON PM.Plex_Exp_ID = DPE.experiment_id
 
 
 GO

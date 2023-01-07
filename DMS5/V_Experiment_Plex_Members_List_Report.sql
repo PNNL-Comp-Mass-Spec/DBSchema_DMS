@@ -6,23 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_Plex_Members_List_Report]
 As
-SELECT PlexMembers.Plex_Exp_ID AS Plex_Exp_ID,
-       E.Experiment_Num AS [Plex Experiment],
-       Org.OG_name AS Organism,
-       PlexMembers.Channel,
-       ReporterIons.Tag_Name As [Tag],
-       PlexMembers.Exp_ID AS Exp_ID,
-       ChannelExperiment.Experiment_Num AS [Channel Experiment],
-       ChannelTypeName.Channel_Type_Name [Channel Type],
-       PlexMembers.[Comment],
-       E.Ex_Created AS Created,
-       C.Campaign_Num AS Campaign,
-       BTO.Tissue,
-       E.EX_Labelling AS Labelling,
-       ReporterIons.MASIC_Name
+SELECT PlexMembers.Plex_Exp_ID AS plex_exp_id,
+       E.Experiment_Num AS plex_experiment,
+       Org.OG_name AS organism,
+       PlexMembers.channel,
+       ReporterIons.Tag_Name As tag,
+       PlexMembers.Exp_ID AS exp_id,
+       ChannelExperiment.Experiment_Num AS channel_experiment,
+       ChannelTypeName.Channel_Type_Name Channel_Type,
+       PlexMembers.comment,
+       E.Ex_Created AS created,
+       C.Campaign_Num AS campaign,
+       BTO.tissue,
+       E.EX_Labelling AS labelling,
+       ReporterIons.masic_name
 FROM T_Experiment_Plex_Members PlexMembers
      INNER JOIN dbo.T_Experiment_Plex_Channel_Type_Name ChannelTypeName
-       ON PlexMembers.Channel_Type_ID = ChannelTypeName.Channel_Type_ID
+       ON PlexMembers.Channel_Type_ID = ChannelTypeName.channel_type_id
      INNER JOIN dbo.T_Experiments E
        ON PlexMembers.Plex_Exp_ID = E.Exp_ID
      INNER JOIN dbo.T_Experiments ChannelExperiment
@@ -30,10 +30,10 @@ FROM T_Experiment_Plex_Members PlexMembers
      INNER JOIN dbo.T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID
      INNER JOIN dbo.T_Campaign C
-       ON E.EX_campaign_ID = C.Campaign_ID     
+       ON E.EX_campaign_ID = C.Campaign_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON E.EX_Tissue_ID = BTO.Identifier
-     LEFT OUTER JOIN T_Sample_Labelling_Reporter_Ions ReporterIons 
+     LEFT OUTER JOIN T_Sample_Labelling_Reporter_Ions ReporterIons
        ON PlexMembers.Channel = ReporterIons.Channel AND
          E.EX_Labelling = ReporterIons.Label
 

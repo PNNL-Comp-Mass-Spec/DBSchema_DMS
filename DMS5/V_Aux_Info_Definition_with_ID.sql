@@ -4,22 +4,21 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Aux_Info_Definition_with_ID]
 AS
-SELECT Category_Target.Target_Type_Name AS Target,
-       Category.Target_Type_ID AS TargT_ID,
-       Category.Aux_Category AS Category,
-       Category.Aux_Category_ID AS Cat_ID,
-       Subcategory.Aux_Subcategory AS Subcategory,
-       Subcategory.Aux_Subcategory_ID AS Sub_ID,
-       Item.Aux_Description AS Item,
-       Item.Aux_Description_ID AS Item_ID,
-       Category.[Sequence] AS Cat_Seq,
-       Subcategory.[Sequence] AS Sub_Seq,
-       Item.[Sequence] AS Item_Seq,
-       Item.DataSize,
-       Item.HelperAppend
+SELECT Category_Target.Target_Type_Name AS target,
+       Category.Target_Type_ID AS target_type_id,
+       Category.Aux_Category AS category,
+       Category.Aux_Category_ID AS cat_id,
+       Subcategory.Aux_Subcategory AS subcategory,
+       Subcategory.Aux_Subcategory_ID AS sub_id,
+       Item.Aux_Description AS item,
+       Item.Aux_Description_ID AS item_id,
+       Category.[Sequence] AS cat_seq,
+       Subcategory.[Sequence] AS sub_seq,
+       Item.[Sequence] AS item_seq,
+       Item.DataSize as data_size,
+       Item.HelperAppend as helper_append
 FROM T_Aux_Info_Category Category
      INNER JOIN T_Aux_Info_Subcategory Subcategory
        ON Category.Aux_Category_ID = Subcategory.Aux_Category_ID

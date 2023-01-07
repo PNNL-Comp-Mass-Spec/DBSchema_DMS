@@ -10,13 +10,13 @@ SELECT DISTINCT TNE.ID AS Seq,
                 T_Sample_Prep_Request.ID AS Entity,
                 T_Sample_Prep_Request.Request_Name AS Name,
                 T.Campaign,
-                T.[User],
-                T.[Role],
+                Person,
+                Person_Role,
                 TNE.Entered,
                 TET.Target_Entity_Type AS entity_type,
                 T.prn,
-                TET.ID AS EventType,
-                TNE.Event_Type AS EventTypeID,
+                TET.ID AS Event_Type,
+                TNE.Event_Type AS Event_Type_ID,
                 TET.Link_Template
 FROM T_Notification_Event TNE
      INNER JOIN T_Notification_Event_Type AS TET
@@ -26,8 +26,8 @@ FROM T_Notification_Event TNE
      INNER JOIN T_Sample_Prep_Request_State_Name
        ON T_Sample_Prep_Request.State = T_Sample_Prep_Request_State_Name.State_ID
      INNER JOIN ( SELECT T_Campaign.Campaign_Num AS Campaign,
-                         T_Users.U_Name AS [User],
-                         dbo.GetResearchTeamUserRoleList(SRTM.Team_ID, SRTM.User_ID) AS [Role],
+                         T_Users.U_Name AS Person,
+                         dbo.GetResearchTeamUserRoleList(SRTM.Team_ID, SRTM.User_ID) AS Person_Role,
                          T_Users.U_PRN AS prn
                   FROM T_Campaign
                        INNER JOIN T_Research_Team

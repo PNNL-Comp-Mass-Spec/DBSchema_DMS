@@ -6,23 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_Capture_Jobs_Detail_Report]
 AS
-SELECT J.Job,
-       J.Priority,
-       J.Script,
-       JSN.Name AS Job_State_B,
-       'Steps' AS Steps,
-       J.Dataset,
-       J.Dataset_ID AS [Dataset ID],
-       J.Results_Folder_Name,
-       J.Imported,
-       J.Finish,
-       J.Storage_Server,
-       J.Instrument,
-       J.Instrument_Class,
-       J.Max_Simultaneous_Captures,
-       J.[Comment],
-	   J.Capture_Subfolder,
-       dbo.GetJobParamList(J.Job) AS Parameters
+SELECT J.job,
+       J.priority,
+       J.script,
+       JSN.Name AS job_state_b,
+       'Steps' AS steps,
+       J.dataset,
+       J.Dataset_ID AS dataset_id,
+       J.results_folder_name,
+       J.imported,
+       J.finish,
+       J.storage_server,
+       J.instrument,
+       J.instrument_class,
+       J.max_simultaneous_captures,
+       J.comment,
+	   J.capture_subfolder,
+       dbo.GetJobParamList(J.Job) AS parameters
 FROM dbo.T_Jobs AS J
      INNER JOIN dbo.T_Job_State_Name AS JSN
        ON J.State = JSN.ID

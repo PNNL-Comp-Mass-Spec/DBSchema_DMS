@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_LC_Cart_Request_Loading_List_Report]
 AS
-SELECT RR.RDS_BatchID AS BatchID,
-       RRB.Locked,
-       RR.ID AS Request,
-       RR.RDS_Name AS [Name],
-       RR.RDS_Status AS [Status],
-       RR.RDS_instrument_group AS Instrument,
-       RR.RDS_Sec_Sep AS Separation_Type,
-       E.Experiment_Num AS Experiment,
-       RR.RDS_Block AS [Block],
-       LCCart.Cart_Name AS Cart,       
-       CartConfig.Cart_Config_Name AS Cart_Config,
-	   RR.RDS_Cart_Col AS Col
+SELECT RR.RDS_BatchID AS batch_id,
+       RRB.locked,
+       RR.ID AS request,
+       RR.RDS_Name AS name,
+       RR.RDS_Status AS status,
+       RR.RDS_instrument_group AS instrument,
+       RR.RDS_Sec_Sep AS separation_type,
+       E.Experiment_Num AS experiment,
+       RR.RDS_Block AS block,
+       LCCart.Cart_Name AS cart,
+       CartConfig.Cart_Config_Name AS cart_config,
+	   RR.RDS_Cart_Col AS col
 FROM T_Requested_Run RR
      INNER JOIN T_LC_Cart LCCart
        ON RR.RDS_Cart_ID = LCCart.ID

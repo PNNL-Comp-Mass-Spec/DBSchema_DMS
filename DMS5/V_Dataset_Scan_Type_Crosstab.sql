@@ -5,10 +5,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Dataset_Scan_Type_Crosstab]
-AS (
-SELECT PivotData.Dataset_ID,
-       PivotData.Dataset,
-       PivotData.ScanCountTotal,
+AS
+SELECT PivotData.dataset_id,
+       PivotData.dataset,
+       PivotData.scan_count_total,
        IsNull([HMS], 0) AS [HMS],
        IsNull([MS], 0) AS [MS],
        IsNull([CID-HMSn], 0) AS [CID-HMSn],
@@ -41,7 +41,7 @@ SELECT PivotData.Dataset_ID,
        IsNull([Zoom-MS], 0) AS [Zoom-MS]                -- Last used in 2015
 FROM ( SELECT DS.Dataset_ID,
               DS.Dataset_Num AS Dataset,
-              DS.Scan_Count AS ScanCountTotal,
+              DS.Scan_Count AS Scan_Count_Total,
               DST.ScanType,
               DST.ScanCount
        FROM T_Dataset DS
@@ -51,25 +51,23 @@ FROM ( SELECT DS.Dataset_ID,
      PIVOT ( SUM(ScanCount)
              FOR ScanType
              IN ( [HMS], [MS],
-                  [CID-HMSn], [CID-MSn], [SA_CID-HMSn], 
-                  [HCD-HMSn], [HCD-MSn], [SA_HCD-HMSn], 
-                  [EThcD-HMSn], 
-                  [ETD-HMSn], [SA_ETD-HMSn],  
-                  [ETD-MSn], [SA_ETD-MSn], 
-                  [HMSn], [MSn], 
-                  [GC-MS], 
-                  [SRM], [CID-SRM], 
-                  [MALDI-HMS], 
-                  [PTR-HMSn], [PTR-MSn], 
+                  [CID-HMSn], [CID-MSn], [SA_CID-HMSn],
+                  [HCD-HMSn], [HCD-MSn], [SA_HCD-HMSn],
+                  [EThcD-HMSn],
+                  [ETD-HMSn], [SA_ETD-HMSn],
+                  [ETD-MSn], [SA_ETD-MSn],
+                  [HMSn], [MSn],
+                  [GC-MS],
+                  [SRM], [CID-SRM],
+                  [MALDI-HMS],
+                  [PTR-HMSn], [PTR-MSn],
                   [PQD-HMSn], [PQD-MSn],
-                  [Q1MS], [Q3MS], 
-                  [SIM ms], 
+                  [Q1MS], [Q3MS],
+                  [SIM ms],
                   [UVPD-HMSn], [UVPD-MSn],
                   [Zoom-MS]
-                 ) 
+                 )
            ) AS PivotData
-
-)
 
 
 GO

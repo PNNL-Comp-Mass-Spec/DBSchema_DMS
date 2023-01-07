@@ -3,16 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Helper_Prep_LC_Column_List_Report AS 
- SELECT 
-	Column_Name AS [Column Name],
-	Mfg_Name AS [Mfg Name],
-	Mfg_Model AS [Mfg Model],
-	Mfg_Serial_Number AS [Mfg Serial Number],
-	Comment AS [Comment],
-	Created AS [Created]
+CREATE VIEW V_Helper_Prep_LC_Column_List_Report
+AS
+SELECT
+	Column_Name,
+	Mfg_Name,
+	Mfg_Model,
+	Mfg_Serial_Number,
+	Comment,
+	Created
 FROM T_Prep_LC_Column
 WHERE State = 'Active'
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Helper_Prep_LC_Column_List_Report] TO [DDL_Viewer] AS [dbo]

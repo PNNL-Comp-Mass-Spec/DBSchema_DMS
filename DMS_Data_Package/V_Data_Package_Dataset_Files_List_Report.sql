@@ -6,31 +6,31 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Dataset_Files_List_Report]
 AS
-SELECT DPD.Data_Package_ID AS ID,
-       DPD.Dataset,
-       DPD.Dataset_ID,
-       DF.File_Path AS [File Path],
-       DF.File_Size_Bytes AS [File Size Bytes],
-       DF.File_Hash AS [File Hash],
-       DF.File_Size_Rank AS [File Size Rank],
-       DPD.Experiment,
-       DPD.Instrument,
-       DPD.Package_Comment,
-       DL.Campaign,
-       DL.[State],
-       DL.Created,
-       DL.Rating,
-       DL.[Dataset Folder Path],
-       DL.[Acq Start],
-       DL.[Acq End],
-       DL.[Acq Length],
-       DL.[Scan Count],
-       DL.[LC Column],
-       DL.[Separation Type],
-       DL.Request,
-       DPD.Item_Added,
-       DL.[Comment],
-       DL.[Dataset Type] AS [Type]
+SELECT DPD.Data_Package_ID AS id,
+       DPD.dataset,
+       DPD.dataset_id,
+       DF.file_path,
+       DF.file_size_bytes,
+       DF.file_hash,
+       DF.file_size_rank,
+       DPD.experiment,
+       DPD.instrument,
+       DPD.package_comment,
+       DL.campaign,
+       DL.state,
+       DL.created,
+       DL.rating,
+       DL.dataset_folder_path,
+       DL.acq_start,
+       DL.acq_end,
+       DL.acq_length,
+       DL.scan_count,
+       DL.lc_column,
+       DL.separation_type,
+       DL.request,
+       DPD.item_added,
+       DL.comment,
+       DL.dataset_type
 FROM dbo.T_Data_Package_Datasets AS DPD
      INNER JOIN dbo.S_V_Dataset_List_Report_2 AS DL
        ON DPD.Dataset_ID = DL.ID
@@ -44,8 +44,6 @@ FROM dbo.T_Data_Package_Datasets AS DPD
         FROM dbo.S_Dataset_Files
         WHERE Deleted = 0
      ) DF ON DPD.Dataset_ID = DF.Dataset_ID
-
-
 
 
 GO

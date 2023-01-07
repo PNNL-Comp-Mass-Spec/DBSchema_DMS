@@ -6,21 +6,21 @@ GO
 
 CREATE VIEW [dbo].[V_Requested_Run_Batch_Detail_Report]
 AS
-SELECT RRB.ID,
-       RRB.Batch AS Name,
-       RRB.Description,
-       dbo.GetBatchRequestedRunList(RRB.ID) AS Requests,
-       ISNULL(FC.Factor_Count, 0) AS Factors,
-       U.Name_with_PRN AS [Owner],
-       RRB.Created,
-       RRB.Locked,
-       RRB.Last_Ordered AS [Last Ordered],
-       RRB.Requested_Batch_Priority AS [Requested Batch Priority],
-       RRB.Requested_Completion_Date AS [Requested Completion Date],
-       RRB.Justification_for_High_Priority AS [Justification for High Priority],
-       dbo.GetBatchDatasetInstrumentList(RRB.ID) AS [Instrument Used],
-       RRB.Requested_Instrument AS [Instrument Group],
-       RRB.[Comment]
+SELECT RRB.id,
+       RRB.Batch AS name,
+       RRB.description,
+       dbo.GetBatchRequestedRunList(RRB.ID) AS requests,
+       ISNULL(FC.factor_count, 0) AS factors,
+       U.Name_with_PRN AS owner,
+       RRB.created,
+       RRB.locked,
+       RRB.Last_Ordered AS last_ordered,
+       RRB.Requested_Batch_Priority AS requested_batch_priority,
+       RRB.Requested_Completion_Date AS requested_completion_date,
+       RRB.Justification_for_High_Priority AS justification_for_high_priority,
+       dbo.GetBatchDatasetInstrumentList(RRB.ID) AS instrument_used,
+       RRB.Requested_Instrument AS instrument_group,
+       RRB.comment
 FROM dbo.T_Requested_Run_Batches RRB
      INNER JOIN dbo.T_Users U
        ON RRB.Owner = U.ID

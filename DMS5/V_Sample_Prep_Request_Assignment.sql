@@ -6,35 +6,35 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Assignment]
 AS
-SELECT '' AS [Sel],
-       SPR.ID,
-       SPR.Created,
-       SPR.Estimated_Prep_Time_Days AS [Est. Prep Time],
-       SN.State_Name AS [State],
-       SPR.State_Comment AS [State Comment],
-       SPR.Request_Name AS Name,
-       QP.Name_with_PRN AS Requester,
-       SPR.Priority,
-       QT.[Days In Queue],
-       SPR.Requested_Personnel AS Requested,
-       SPR.Assigned_Personnel AS Assigned,
-       SPR.Organism,
-       BTO.Tissue,
-       SPR.Biohazard_Level AS Biohazard,
-       SPR.Campaign,
-       SPR.Number_of_Samples AS Samples,
-       SPR.Sample_Type AS [Sample Type],
-       SPR.Prep_Method AS [Prep Method],
-       -- Deprecated in June 2017: SPR.Replicates_of_Samples AS Replicates,
-       SPR.[Comment],
-       SPR.[Reason],
-       SPR.EUS_Proposal_ID AS [EUS Proposal],
-       EPT.Proposal_Type_Name AS [EUS Proposal Type],
+SELECT '' AS sel,
+       SPR.id,
+       SPR.created,
+       SPR.Estimated_Prep_Time_Days AS est_prep_time,
+       SN.State_Name AS state,
+       SPR.State_Comment AS state_comment,
+       SPR.Request_Name AS name,
+       QP.Name_with_PRN AS requester,
+       SPR.priority,
+       QT.days_in_queue,
+       SPR.Requested_Personnel AS requested,
+       SPR.Assigned_Personnel AS assigned,
+       SPR.organism,
+       BTO.tissue,
+       SPR.Biohazard_Level AS biohazard,
+       SPR.campaign,
+       SPR.Number_of_Samples AS samples,
+       SPR.Sample_Type AS sample_type,
+       SPR.Prep_Method AS prep_method,
+       -- Deprecated in June 2017: SPR.Replicates_of_Samples AS replicates,
+       SPR.comment,
+       SPR.reason,
+       SPR.EUS_Proposal_ID AS eus_proposal,
+       EPT.Proposal_Type_Name AS eus_proposal_type,
        Case
             When SPR.State In (4,5) Then 0          -- Request is complete or closed
-            When QT.[Days In Queue] <= 30 Then 30   -- Request is 0 to 30 days old
-            When QT.[Days In Queue] <= 60 Then 60   -- Request is 30 to 60 days old
-            When QT.[Days In Queue] <= 90 Then 90   -- Request is 60 to 90 days old
+            When QT.Days_In_Queue <= 30 Then 30   -- Request is 0 to 30 days old
+            When QT.Days_In_Queue <= 60 Then 60   -- Request is 30 to 60 days old
+            When QT.Days_In_Queue <= 90 Then 90   -- Request is 60 to 90 days old
             Else 120                                -- Request is over 90 days old
         End
         AS days_in_queue_bin

@@ -6,14 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_Helper_Prep_LC_Run_List_Report]
 AS
-SELECT ID,
-       Prep_Run_Name,
-       Instrument,
-       [Type],
-       LC_Column AS [LC Column],
-       [Comment],
-       Created,
-       Number_Of_Runs AS [Number Of Runs]
+SELECT id,
+       prep_run_name,
+       instrument,
+       type,
+       lc_column,
+       comment,
+       created,
+       number_of_runs
 FROM T_Prep_LC_Run
 
 

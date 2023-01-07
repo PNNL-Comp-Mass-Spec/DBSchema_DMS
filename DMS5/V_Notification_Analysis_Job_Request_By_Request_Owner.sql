@@ -10,13 +10,13 @@ SELECT DISTINCT TNE.ID AS Seq,
                 AJR.AJR_requestID AS Entity,
                 AJR.AJR_requestName AS Name,
                 C.Campaign_Num AS Campaign,
-                U.U_Name AS [User],
-                'Request Owner' AS [Role],
+                U.U_Name AS Person,
+                'Request Owner' AS Person_Role,
                 TNE.Entered,
                 TET.Target_Entity_Type AS entity_type,
                 U.U_PRN AS prn,
-                TET.ID AS EventType,
-                TNE.Event_Type AS EventTypeID,
+                TET.ID AS Event_Type,
+                TNE.Event_Type AS Event_Type_ID,
                 TET.Link_Template
 FROM T_Notification_Event TNE
      INNER JOIN T_Notification_Event_Type TET

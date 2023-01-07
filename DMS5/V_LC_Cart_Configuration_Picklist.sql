@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_LC_Cart_Configuration_Picklist]
 AS
-SELECT Config.Cart_Config_Name AS [Name],
-       Config.Description AS [Desc],
-       ISNULL(Config.Dataset_Usage_Last_Year, 0) AS [Dataset Count],
-	   ISNULL(Config.Dataset_Usage_Count, 0) AS [Datasets (all time)],
-       Cart.Cart_Name AS Cart,
-	   Config.Cart_Config_ID AS ID,
-	   CASE WHEN ISNULL(Config.Dataset_Usage_Count, 0) > 0 THEN Config.Dataset_Usage_Count + 1000000 ELSE ISNULL(Config.Dataset_Usage_Last_Year, 0) END as SortKey
+SELECT Config.Cart_Config_Name AS name,
+       Config.description,
+       ISNULL(Config.dataset_usage_last_year, 0) AS dataset_count,
+	   ISNULL(Config.dataset_usage_count, 0) AS datasets_all_time,
+       Cart.Cart_Name AS cart,
+	   Config.Cart_Config_ID AS id,
+	   CASE WHEN ISNULL(Config.dataset_usage_count, 0) > 0 THEN Config.Dataset_Usage_Count + 1000000 ELSE ISNULL(Config.dataset_usage_last_year, 0) END AS sort_key
 FROM dbo.T_LC_Cart_Configuration Config
       INNER JOIN T_LC_Cart Cart
        ON Config.Cart_ID = Cart.ID

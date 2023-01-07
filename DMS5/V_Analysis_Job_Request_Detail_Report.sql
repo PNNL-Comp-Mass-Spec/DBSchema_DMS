@@ -6,26 +6,26 @@ GO
 
 CREATE VIEW [dbo].[V_Analysis_Job_Request_Detail_Report]
 AS
-SELECT AJR.AJR_requestID AS Request,
-       AJR.AJR_requestName AS Name,
-       AJR.AJR_created AS Created,
-       AJR.AJR_analysisToolName AS Tool,
-       AJR.AJR_parmFileName AS [Parameter File],
-       AJR.AJR_settingsFileName AS [Settings File],
-       Org.OG_name AS Organism,
-       AJR.AJR_proteinCollectionList AS [Protein Collection List],
-       AJR.AJR_proteinOptionsList AS [Protein Options],
-       AJR.AJR_organismDBName AS [Legacy Fasta],
-       dbo.GetJobRequestDatasetNameList(AJR.AJR_requestID) As Datasets,
-       AJR.Data_Package_ID AS [Data Package ID],
-       AJR.AJR_comment AS [Comment],
-       AJR.AJR_specialProcessing AS [Special Processing],
-       U.U_Name AS [Requester Name],
-       U.U_PRN AS Requester,
-       ARS.StateName AS State,
-       dbo.GetJobRequestInstrList(AJR.AJR_requestID) AS Instruments,
-       dbo.GetJobRequestExistingJobList(AJR.AJR_requestID) AS [Pre-existing Jobs],
-       IsNull(JobsQ.Jobs, 0) AS Jobs
+SELECT AJR.AJR_requestID AS request,
+       AJR.AJR_requestName AS name,
+       AJR.AJR_created AS created,
+       AJR.AJR_analysisToolName AS tool,
+       AJR.AJR_parmFileName AS parameter_file,
+       AJR.AJR_settingsFileName AS settings_file,
+       Org.OG_name AS organism,
+       AJR.AJR_proteinCollectionList AS protein_collection_list,
+       AJR.AJR_proteinOptionsList AS protein_options,
+       AJR.AJR_organismDBName AS legacy_fasta,
+       dbo.GetJobRequestDatasetNameList(AJR.AJR_requestID) As datasets,
+       AJR.Data_Package_ID AS data_package_id,
+       AJR.AJR_comment AS comment,
+       AJR.AJR_specialProcessing AS special_processing,
+       U.U_Name AS requester_name,
+       U.U_PRN AS requester,
+       ARS.StateName AS state,
+       dbo.GetJobRequestInstrList(AJR.AJR_requestID) AS instruments,
+       dbo.GetJobRequestExistingJobList(AJR.AJR_requestID) AS pre_existing_jobs,
+       IsNull(JobsQ.Jobs, 0) AS jobs
 FROM dbo.T_Analysis_Job_Request AS AJR
      INNER JOIN dbo.T_Users AS U
        ON AJR.AJR_requestor = U.ID

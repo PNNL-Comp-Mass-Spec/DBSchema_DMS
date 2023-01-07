@@ -6,16 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Instrument_List_Report]
 AS
-SELECT InstName.IN_name AS Instrument,
-       DS.Dataset_Num AS Dataset,
-       DS.Dataset_ID AS ID,
-       DS.DS_created AS Created,
-       RR.ID AS Request,
-       RR.RDS_Requestor_PRN AS Requester,
-       E.Experiment_Num AS Experiment,
-       E.EX_researcher_PRN AS Researcher,
-       C.Campaign_Num AS Campaign,
-       InstName.Instrument_ID
+SELECT InstName.IN_name AS instrument,
+       DS.Dataset_Num AS dataset,
+       DS.Dataset_ID AS id,
+       DS.DS_created AS created,
+       RR.ID AS request,
+       RR.RDS_Requestor_PRN AS requester,
+       E.Experiment_Num AS experiment,
+       E.EX_researcher_PRN AS researcher,
+       C.Campaign_Num AS campaign,
+       InstName.instrument_id
 FROM T_Dataset DS
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID

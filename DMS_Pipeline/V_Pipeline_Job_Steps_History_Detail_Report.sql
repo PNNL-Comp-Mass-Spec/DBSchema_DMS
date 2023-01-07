@@ -6,34 +6,34 @@ GO
 
 CREATE VIEW [dbo].[V_Pipeline_Job_Steps_History_Detail_Report]
 AS
-SELECT JS.JobStepSavedCombo AS ID,
-       JS.Job,
-       JS.Step_Number AS Step,
-       J.Dataset,
-       J.Script,
-       JS.Step_Tool AS Tool,
-       SSN.Name AS Step_State,
-       JSN.Name as Job_State_B,
-       JS.State AS StateID,
-       JS.Start,
-       JS.Finish,
-       Convert(decimal(9,2), DATEDIFF(second, JS.Start, IsNull(JS.Finish, GetDate())) / 60.0) as Runtime_Minutes,
-       JS.Processor,
-       JS.Input_Folder_Name AS Input_Folder,
-       JS.Output_Folder_Name AS Output_Folder,
-       J.Priority,
-       JS.Signature,
-       0 AS CPU_Load,
-	   0 AS Actual_CPU_Load,
+SELECT JS.JobStepSavedCombo AS id,
+       JS.job,
+       JS.Step_Number AS step,
+       J.dataset,
+       J.script,
+       JS.Step_Tool AS tool,
+       SSN.Name AS step_state,
+       JSN.Name AS job_state_b,
+       JS.State AS state_id,
+       JS.start,
+       JS.finish,
+       Convert(decimal(9,2), DATEDIFF(second, JS.start, IsNull(JS.finish, GetDate())) / 60.0) AS runtime_minutes,
+       JS.processor,
+       JS.Input_Folder_Name AS input_folder,
+       JS.Output_Folder_Name AS output_folder,
+       J.priority,
+       JS.signature,
+       0 AS cpu_load,
+	   0 AS actual_cpu_load,
        Memory_Usage_MB,
-       JS.Tool_Version_ID,
-       STV.Tool_Version,
-       JS.Completion_Code,
-       JS.Completion_Message,
-       JS.Evaluation_Code,
-       JS.Evaluation_Message,
-       ParamQ.Dataset_Storage_Path + Dataset AS [Dataset Folder Path],
-       J.Transfer_Folder_Path
+       JS.tool_version_id,
+       STV.tool_version,
+       JS.completion_code,
+       JS.completion_message,
+       JS.evaluation_code,
+       JS.evaluation_message,
+       ParamQ.Dataset_Storage_Path + Dataset AS dataset_folder_path,
+       J.transfer_folder_path
 FROM dbo.T_Job_Steps_History AS JS
      INNER JOIN dbo.T_Job_Step_State_Name AS SSN
        ON JS.State = SSN.ID
@@ -46,18 +46,15 @@ FROM dbo.T_Job_Steps_History AS JS
        ON J.State = JSN.ID
    LEFT OUTER JOIN (
           SELECT Job,
-				 Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Settings_File,
-				 Parameters.query('Param[@Name = "ParamFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') as Parameter_File,
-				 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') as Dataset_Storage_Path
-		  FROM [T_Job_Parameters_History]
+				 Parameters.query('Param[@Name = "SettingsFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') ASWSettings_File,
+				 Parameters.query('Param[@Name = "ParamFileName"]').value('(/Param/@Value)[1]', 'varchar(256)') AS Parameter_File,
+				 Parameters.query('Param[@Name = "DatasetStoragePath"]').value('(/Param/@Value)[1]', 'varchar(256)') AS Dataset_Storage_Path
+		  FROM T_Job_Parameters_History
 		  WHERE Most_Recent_Entry = 1
      ) ParamQ ON ParamQ.Job = JS.Job
      LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
 WHERE Most_Recent_Entry = 1
-
-
-
 
 
 GO

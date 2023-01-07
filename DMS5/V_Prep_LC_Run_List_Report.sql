@@ -4,22 +4,23 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Prep_LC_Run_List_Report as
-SELECT ID,
-       Prep_Run_Name AS Name,
-       Instrument,
-       Type,
-       LC_Column AS [LC Column],
+CREATE VIEW V_Prep_LC_Run_List_Report
+AS
+SELECT id,
+       Prep_Run_Name AS name,
+       instrument,
+       type,
+       LC_Column AS lc_column,
        Comment,
-       Guard_Column AS [Guard Column],
-       Quality_Control AS QC,
+       Guard_Column AS guard_column,
+       Quality_Control AS qc,
        Created,
-       OperatorPRN,
-       Digestion_Method AS [Digestion Method],
-       Sample_Type AS [Sample Type],
-       SamplePrepRequest AS [Sample Prep Request],
-       Number_Of_Runs AS [Number Of Runs],
-       Instrument_Pressure AS [Instrument Pressure]
+       OperatorPRN AS operator_prn,
+       Digestion_Method AS digestion_method,
+       Sample_Type AS sample_type,
+       SamplePrepRequest AS sample_prep_request,
+       Number_Of_Runs AS number_of_runs,
+       Instrument_Pressure AS instrument_pressure
 FROM T_Prep_LC_Run
 
 

@@ -7,9 +7,9 @@ GO
 CREATE VIEW [dbo].[V_Operations_User_List_Report]
 As
 -- Note that GetOperationDMSUsersNameList only includes Active users
-SELECT Operation,
-       Operation_Description,
-       dbo.GetOperationDMSUsersNameList(ID, 0) AS [Assigned Users]
+SELECT operation,
+       operation_description,
+       dbo.GetOperationDMSUsersNameList(ID, 0) AS assigned_users
 FROM dbo.T_User_Operations
 
 

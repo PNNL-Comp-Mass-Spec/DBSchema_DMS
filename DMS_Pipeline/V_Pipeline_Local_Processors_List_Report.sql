@@ -5,15 +5,16 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW V_Pipeline_Local_Processors_List_Report
 AS
-SELECT 
-    Processor_Name AS [Processor Name], 
-    State AS [State], 
-    Groups AS [Groups], 
-    GP_Groups AS [GP Groups], 
-    Machine AS [Machine], 
-    Latest_Request AS [Latest Request],
-    ID AS [ID]
+SELECT
+    processor_name,
+    state,
+    groups,
+    gp_groups,
+    machine,
+    latest_request,
+    id
 FROM T_Local_Processors
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Local_Processors_List_Report] TO [DDL_Viewer] AS [dbo]

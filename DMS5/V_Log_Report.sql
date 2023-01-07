@@ -3,11 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Log_Report
+CREATE VIEW [dbo].[V_Log_Report]
 AS
-SELECT Entry_ID AS Entry, posted_by AS [Posted By],
-   Entered, type AS Type,
-   message AS Message
+SELECT Entry_ID AS entry, posted_by AS posted_by,
+   entered, type AS type,
+   message AS message
 FROM T_Log_Entries
 
 

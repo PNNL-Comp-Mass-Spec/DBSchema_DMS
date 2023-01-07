@@ -6,9 +6,10 @@ GO
 
 CREATE VIEW [dbo].[V_Capture_Local_Processors_Detail_Report]
 AS
-SELECT     Processor_Name AS [Processor Name], State, Machine, Latest_Request AS [Latest Request], Manager_Version, 
-                      dbo.GetProcessorStepToolList(Processor_Name) AS Tools, dbo.GetProcessorAssignedInstrumentList(Processor_Name) AS Instruments
-FROM         dbo.T_Local_Processors
+SELECT processor_name, state, machine, latest_request, manager_version,
+      dbo.GetProcessorStepToolList(Processor_Name) AS tools,
+      dbo.GetProcessorAssignedInstrumentList(Processor_Name) AS instruments
+FROM dbo.T_Local_Processors
 
 
 GO

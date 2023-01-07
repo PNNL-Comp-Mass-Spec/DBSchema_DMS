@@ -11,14 +11,11 @@ CREATE PROCEDURE AddLegacyFileUploadRequest
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
-**	
-**
 **	Auth:	kja
 **	Date:	01/11/2006
 **			02/11/2009 mem - Added parameter @AuthenticationHash
 **			09/03/2010 mem - Now updating the stored Authentication_Hash value if @AuthenticationHash differs from the stored value
+**          01/06/2023 mem - Use new column name in view
 **    
 *****************************************************/
 (	
@@ -72,7 +69,7 @@ As
 
 	SELECT @legacy_File_ID = ID
 	FROM V_Legacy_Static_File_Locations
-	WHERE Filename = @legacy_File_name
+	WHERE File_Name = @legacy_File_name
 	
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -119,6 +116,7 @@ As
 	commit transaction @transName
 		
 	return @request_ID
+
 
 GO
 GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [DMS_Analysis_Job_Runner] AS [dbo]

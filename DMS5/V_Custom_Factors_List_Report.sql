@@ -4,17 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Custom_Factors_List_Report] as
-SELECT RR.RDS_BatchID AS Batch,
-       RR.ID AS Request,
-       F.Name AS Factor,
-       F.Value AS [Value],
-       RR.DatasetID AS Dataset_ID,
-       DS.Dataset_Num AS Dataset,
-       COALESCE(DSExp.Exp_ID, RRExp.Exp_ID) AS Experiment_ID,
-       COALESCE(DSExp.Experiment_Num, RRExp.Experiment_Num) AS Experiment,
-       COALESCE(DSCampaign.Campaign_Num, RRCampaign.Campaign_Num) AS Campaign
-FROM T_Requested_Run AS RR
+CREATE VIEW [dbo].[V_Custom_Factors_List_Report]
+AS
+SELECT RR.RDS_BatchID AS batch,
+       RR.ID AS request,
+       F.Name AS factor,
+       F.Value AS value,
+       RR.DatasetID AS dataset_id,
+       DS.Dataset_Num AS dataset,
+       COALESCE(DSExp.exp_id, RRExp.Exp_ID) AS experiment_id,
+       COALESCE(DSExp.experiment_num, RRExp.Experiment_Num) AS experiment,
+       COALESCE(DSCampaign.campaign_num, RRCampaign.Campaign_Num) AS campaign
+FROM T_Requested_Run AS rr
      INNER JOIN T_Factor AS F
        ON F.TargetID = RR.ID AND
           F.Type = 'Run_Request'

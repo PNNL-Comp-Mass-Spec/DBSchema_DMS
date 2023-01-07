@@ -6,28 +6,25 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Biomaterial_List_Report]
 AS
-SELECT DPB.Data_Package_ID AS ID,
-       DPB.Name AS Biomaterial,
-       DPB.Campaign,
-       DPB.Type,
-       DPB.Package_Comment,
-       CL.[Source],
-       CL.[Contact],
-       CL.[Reason],
-       CL.[Created],
-       CL.[PI],
-       CL.[Comment],
-       CL.[Container],
-       CL.[Location],
-       CL.[Material Status],
-       CL.ID AS [Cell Culture ID],
-       DPB.Item_Added
+SELECT DPB.Data_Package_ID AS id,
+       DPB.Name AS biomaterial,
+       DPB.campaign,
+       DPB.type,
+       DPB.package_comment,
+       CL.source,
+       CL.contact,
+       CL.reason,
+       CL.created,
+       CL.pi,
+       CL.comment,
+       CL.container,
+       CL.location,
+       CL.material_status,
+       CL.ID AS biomaterial_id,
+       DPB.item_added
 FROM dbo.T_Data_Package_Biomaterial DPB
-     INNER JOIN S_V_Cell_Culture_List_Report_2 CL
+     INNER JOIN S_V_Biomaterial_List_Report_2 CL
        ON DPB.Biomaterial_ID = CL.ID
-
-
-
 
 
 GO

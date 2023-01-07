@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetInstrument]
 ** 
 **  Auth:   mem
 **  Date:   04/30/2019 mem - Initial Version
+**          01/05/2023 mem - Use new column names in V_Storage_List_Report
 **    
 *****************************************************/
 (
@@ -143,17 +144,17 @@ AS
     Exec @storagePathIdNew = GetInstrumentStoragePathForNewDatasets @instrumentIdNew, @datasetCreated, @AutoSwitchActiveStorage=0, @infoOnly=0
 
     
-    SELECT @storagePathNew = dbo.udfCombinePaths([Vol Client], [Path])
+    SELECT @storagePathNew = dbo.udfCombinePaths(vol_client, storage_path)
     FROM V_Storage_List_Report
     WHERE ID = @storagePathIdNew
 
     If @infoOnly > 0
     Begin
-        SELECT @storagePathOld = dbo.udfCombinePaths([Vol Client], [Path])
+        SELECT @storagePathOld = dbo.udfCombinePaths(vol_client, storage_path)
         FROM V_Storage_List_Report
         WHERE ID = @storagePathIdOld
 
-        SELECT @storagePathNew = dbo.udfCombinePaths([Vol Client], [Path])
+        SELECT @storagePathNew = dbo.udfCombinePaths(vol_client, storage_path)
         FROM V_Storage_List_Report
         WHERE ID = @storagePathIdNew
         
@@ -281,5 +282,6 @@ Done:
     End
 
     Return @myError
+
 
 GO

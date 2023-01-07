@@ -4,29 +4,28 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Biomaterial_Detail_Report]
 AS
-SELECT U.CC_Name AS [Name],
-       U.CC_Source_Name AS Supplier,
+SELECT U.CC_Name AS name,
+       U.CC_Source_Name AS supplier,
        CASE
-           WHEN U_Contact.U_Name IS NULL THEN U.CC_Contact_PRN
-           ELSE U_Contact.Name_with_PRN
-       END AS [Contact (usually PNNL Staff)],
-       CTN.Name AS [Type],
-       U.CC_Reason AS Reason,
-       U.CC_Created AS Created,
-       U_PI.Name_with_PRN AS PI,
-       U.CC_Comment AS [Comment],
-       C.Campaign_Num AS Campaign,
-       U.CC_ID AS ID,
-       MC.Tag AS Container,
-       ML.Tag AS [Location],
-       dbo.GetBiomaterialOrganismList(U.CC_ID) AS Organism_List,
-       U.Mutation,
-       U.Plasmid,
-       U.Cell_Line As [Cell Line],
-       U.CC_Material_Active AS [Material Status]
+           WHEN U_Contact.U_Name IS NULL THEN U.cc_contact_prn
+           ELSE U_Contact.name_with_prn
+       END AS contact_usually_pnnl_staff,
+       CTN.Name AS type,
+       U.CC_Reason AS reason,
+       U.CC_Created AS created,
+       U_PI.Name_with_PRN AS pi,
+       U.CC_Comment AS comment,
+       C.Campaign_Num AS campaign,
+       U.CC_ID AS id,
+       MC.Tag AS container,
+       ML.Tag AS location,
+       dbo.GetBiomaterialOrganismList(U.CC_ID) AS organism_list,
+       U.mutation,
+       U.plasmid,
+       U.Cell_Line As cell_line,
+       U.CC_Material_Active AS material_status
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN
        ON U.CC_Type = CTN.ID

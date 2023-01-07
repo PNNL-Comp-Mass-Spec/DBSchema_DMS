@@ -7,10 +7,10 @@ GO
 CREATE VIEW V_Notification_Event_List_Report
 AS
 SELECT
-  T_Notification_Event.ID,
-  T_Notification_Event_Type.Name AS Event,
-  T_Notification_Event.Target_ID AS Entity,
-  T_Notification_Event.Entered,
+  T_Notification_Event.id,
+  T_Notification_Event_Type.Name AS event,
+  T_Notification_Event.Target_ID AS entity,
+  T_Notification_Event.entered,
   T_Notification_Event_Type.Target_Entity_Type AS entity_type
 FROM
   T_Notification_Event

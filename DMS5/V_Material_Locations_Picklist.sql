@@ -6,16 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Material_Locations_Picklist]
 AS
-SELECT [Location],
-       [Comment],
-       Freezer,
-       Shelf,
-       Rack,
-       [Row],
-       Col,
-       Container_Limit,
-       Containers,
-       Available
+SELECT location,
+       comment,
+       freezer,
+       shelf,
+       rack,
+       row,
+       col,
+       container_limit,
+       containers,
+       available
 FROM dbo.V_Material_Location_List_Report
 WHERE (Status = 'Active') AND
       (Available > 0)

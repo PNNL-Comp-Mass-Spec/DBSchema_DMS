@@ -6,27 +6,27 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_QC_List_Report]
 AS
-SELECT DS.Dataset_ID AS ID,
-       DS.Dataset_Num AS Dataset,
-       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS QC_Link,
-       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_HighAbu_LCMS.png' AS QC_2D,
-       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' + J.AJ_resultsFolderName + '/' + DS.Dataset_Num + '_HighAbu_LCMS_zoom.png' AS QC_DeconTools,
-       Exp.Experiment_Num AS Experiment,
-       C.Campaign_Num AS Campaign,
-       InstName.IN_name AS Instrument,
-       DS.DS_created AS Created,
-       DS.DS_comment AS [Comment],
-       DSN.DSS_name AS State,
-       DSRating.DRN_name AS Rating,
-       DS.Acq_Length_Minutes AS [Acq Length],
-       ISNULL(DS.Acq_Time_Start, RR.RDS_Run_Start) AS [Acq Start],
-       ISNULL(DS.Acq_Time_End, RR.RDS_Run_Finish) AS [Acq End],
-       DTN.DST_name AS [Dataset Type],
-       DS.DS_Oper_PRN AS Operator,
-       LC.SC_Column_Number AS [LC Column],
-       RR.ID AS Request,
-       RR.RDS_BatchID AS Batch,
-       DS.DS_sec_sep AS [Separation Type]
+SELECT DS.Dataset_ID AS id,
+       DS.Dataset_Num AS dataset,
+       SPath.SP_URL_HTTPS + ISNULL(DS.ds_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS qc_link,
+       SPath.SP_URL_HTTPS + ISNULL(DS.ds_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_HighAbu_LCMS.png' AS qc_2d,
+       SPath.SP_URL_HTTPS + ISNULL(DS.ds_folder_name, DS.Dataset_Num) + '/' + J.AJ_resultsFolderName + '/' + DS.Dataset_Num + '_HighAbu_LCMS_zoom.png' AS qc_decontools,
+       Exp.Experiment_Num AS experiment,
+       C.Campaign_Num AS campaign,
+       InstName.IN_name AS instrument,
+       DS.DS_created AS created,
+       DS.DS_comment AS comment,
+       DSN.DSS_name AS state,
+       DSRating.DRN_name AS rating,
+       DS.Acq_Length_Minutes AS acq_length,
+       ISNULL(DS.acq_time_start, RR.RDS_Run_Start) AS acq_start,
+       ISNULL(DS.acq_time_end, RR.RDS_Run_Finish) AS acq_end,
+       DTN.DST_name AS dataset_type,
+       DS.DS_Oper_PRN AS operator,
+       LC.SC_Column_Number AS lc_column,
+       RR.ID AS request,
+       RR.RDS_BatchID AS batch,
+       DS.DS_sec_sep AS separation_type
 FROM T_DatasetStateName AS DSN
      INNER JOIN T_Dataset AS DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID

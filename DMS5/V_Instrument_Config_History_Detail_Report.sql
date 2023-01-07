@@ -4,17 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Instrument_Config_History_Detail_Report] as
-SELECT TIH.ID,
-       TIH.Instrument,
-       Cast(TIH.Date_Of_Change AS date) AS [Date of Change],
+CREATE VIEW [dbo].[V_Instrument_Config_History_Detail_Report]
+AS
+SELECT TIH.id,
+       TIH.instrument,
+       Cast(TIH.Date_Of_Change AS date) AS date_of_change,
        CASE
-           WHEN TU.U_PRN IS NULL THEN TIH.EnteredBy
-           ELSE TU.Name_with_PRN
-       END AS [Entered By],
-       TIH.Entered,
-       TIH.Description,
-       TIH.Note
+           WHEN TU.U_PRN IS NULL THEN TIH.enteredby
+           ELSE TU.name_with_prn
+       END AS entered_by,
+       TIH.entered,
+       TIH.description,
+       TIH.note
 FROM T_Instrument_Config_History AS TIH
      LEFT OUTER JOIN T_Users AS TU
        ON TIH.EnteredBy = TU.U_PRN

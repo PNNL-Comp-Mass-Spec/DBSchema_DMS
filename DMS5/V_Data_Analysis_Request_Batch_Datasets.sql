@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Batch_Datasets]
 AS
-SELECT R.ID AS [Request ID],
-       DS.Dataset_ID AS [Dataset ID],
-       DS.Dataset_Num AS Dataset,
-       E.Experiment_Num AS Experiment,
-       InstName.IN_name AS Instrument,
-       DFP.Dataset_Folder_Path AS [Dataset Folder Path],
-       DS.Acq_Time_Start AS [Acq Start],
-       BatchIDs.Batch_ID AS [Batch ID],
-       R.Campaign,
-       R.Organism,
-       R.Request_Name AS [Request Name],
-       R.Analysis_Type AS [Analysis Type]
+SELECT R.ID AS request_id,
+       DS.Dataset_ID AS dataset_id,
+       DS.Dataset_Num AS dataset,
+       E.Experiment_Num AS experiment,
+       InstName.IN_name AS instrument,
+       DFP.Dataset_Folder_Path AS dataset_folder_path,
+       DS.Acq_Time_Start AS acq_start,
+       BatchIDs.Batch_ID AS batch_id,
+       R.campaign,
+       R.organism,
+       R.Request_Name AS request_name,
+       R.Analysis_Type AS analysis_type
 FROM T_Dataset AS DS
      INNER JOIN T_Requested_Run AS RR
        ON DS.Dataset_ID = RR.DatasetID

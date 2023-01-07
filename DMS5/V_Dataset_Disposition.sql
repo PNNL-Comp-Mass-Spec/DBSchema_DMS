@@ -4,22 +4,22 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Dataset_Disposition] 
+CREATE VIEW [dbo].[V_Dataset_Disposition]
 AS
-SELECT DS.Dataset_ID AS ID,
-       '' AS [Sel],
-       DS.Dataset_Num AS Dataset,
-       SPath.SP_URL_HTTPS + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS QC_Link,
-       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + InstName.In_Name AS SMAQC,
-       LCC.Cart_Name AS [LC Cart],
-       RRH.RDS_BatchID AS Batch,
-       RRH.ID AS Request,
-       DRN.DRN_name AS Rating,
-       DS.DS_comment AS [Comment],
-       DSN.DSS_name AS State,
-       InstName.IN_name AS Instrument,
-       DS.DS_created AS Created,
-       DS.DS_Oper_PRN AS [Oper.]
+SELECT DS.Dataset_ID AS id,
+       '' AS sel,
+       DS.Dataset_Num AS dataset,
+       SPath.SP_URL_HTTPS + ISNULL(DS.ds_folder_name, DS.Dataset_Num) + '/QC/' + DS.Dataset_Num + '_BPI_MS.png' AS qc_link,
+       'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + InstName.In_Name AS smaqc,
+       LCC.Cart_Name AS lc_cart,
+       RRH.RDS_BatchID AS batch,
+       RRH.ID AS request,
+       DRN.DRN_name AS rating,
+       DS.DS_comment AS comment,
+       DSN.DSS_name AS state,
+       InstName.IN_name AS instrument,
+       DS.DS_created AS created,
+       DS.DS_Oper_PRN AS operator
 FROM T_LC_Cart AS LCC
      INNER JOIN T_Requested_Run AS RRH
        ON LCC.ID = RRH.RDS_Cart_ID

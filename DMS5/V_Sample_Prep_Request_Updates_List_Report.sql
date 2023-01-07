@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Updates_List_Report]
 AS
-SELECT Updates.Date_of_Change,
-       Updates.System_Account,
-       U.U_Name AS Name,
-       BSN.State_Name AS [Beginning State],
-       ESN.State_Name AS [End State],
-       Updates.Request_ID
+SELECT Updates.date_of_change,
+       Updates.system_account,
+       U.U_Name AS name,
+       BSN.State_Name AS beginning_state,
+       ESN.State_Name AS end_state,
+       Updates.request_id
 FROM dbo.T_Sample_Prep_Request_Updates AS Updates
      INNER JOIN dbo.T_Sample_Prep_Request_State_Name AS BSN
        ON Updates.Beginning_State_ID = BSN.State_ID

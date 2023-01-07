@@ -13,7 +13,7 @@ SELECT ID,
        Enabled_Campaign,
        Enabled_Prep_Request
 FROM T_EUS_UsageType
-     
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Usage_Type_List_Report] TO [DDL_Viewer] AS [dbo]

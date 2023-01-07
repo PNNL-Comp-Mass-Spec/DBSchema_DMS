@@ -5,8 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_Capture_Log_List_Report
 AS
-SELECT     Entry_ID AS ID, posted_by AS Posted_By, Entered AS Time, type AS Type, message AS Message, Entered_By
-FROM         dbo.T_Log_Entries
+SELECT entry_id as id, posted_by, entered as time, type, message, entered_by
+FROM dbo.T_Log_Entries
 
 
 GO

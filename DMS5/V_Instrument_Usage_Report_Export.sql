@@ -6,23 +6,23 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Usage_Report_Export]
 AS
-SELECT InstUsage.EMSL_Inst_ID,
-       InstName.IN_Name AS [Instrument],
-       InstUsage.[Type],
-       InstUsage.[Start],
-       InstUsage.[Minutes],
+SELECT InstUsage.emsl_inst_id,
+       InstName.IN_Name AS instrument,
+       InstUsage.type,
+       InstUsage.start,
+       InstUsage.minutes,
        InstUsage.Proposal,
-       InstUsageType.[Name] AS [Usage],
-       InstUsage.Users,
+       InstUsageType.Name AS usage,
+       InstUsage.users,
        InstUsage.Operator,
-       IsNull(U.U_Name, EU.NAME_FM) AS Operator_Name,
-       InstUsage.[Comment],
-       InstUsage.[Year],
-       InstUsage.[Month],
-       InstUsage.Dataset_ID,
-       InstUsage.Seq,
-       InstUsage.Updated,
-       InstUsage.UpdatedBy
+       IsNull(U.U_Name, EU.NAME_FM) AS operator_name,
+       InstUsage.comment,
+       InstUsage.year,
+       InstUsage.month,
+       InstUsage.dataset_id,
+       InstUsage.seq,
+       InstUsage.updated,
+       InstUsage.updatedby
 FROM T_EMSL_Instrument_Usage_Report InstUsage
      INNER JOIN T_Instrument_Name InstName
        ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
@@ -33,5 +33,6 @@ FROM T_EMSL_Instrument_Usage_Report InstUsage
      LEFT OUTER JOIN T_Users U
        ON EU.HID = U.U_HID
 WHERE InstUsage.Dataset_ID_Acq_Overlap Is Null
+
 
 GO

@@ -4,75 +4,76 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex] AS
+CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex]
+AS
 -- Note: this view is intended to be used for retrieving information for a single dataset
 -- Performance will be poor if used to query multiple datasets because it references several scalar-valued functions
 -- For changes, see https://github.com/PNNL-Comp-Mass-Spec/DBSchema_DMS/commit/e843c6bb52
-SELECT DS.Dataset_Num AS Dataset,
-       E.Experiment_Num AS Experiment,
-       OG.OG_name AS Organism,
-       BTO.Tissue AS [Experiment Tissue],
-       TIN.IN_name AS Instrument,
-       DS.DS_sec_sep AS [Separation Type],
-       LCCart.Cart_Name AS [LC Cart],
-       CartConfig.Cart_Config_Name AS [LC Cart Config],
-       LCCol.SC_Column_Number AS [LC Column],
-       DS.DS_wellplate_num AS [Wellplate_Name],
-       DS.DS_well_num AS [Well Number],
-       DST.DST_Name AS [Type],
-       U.Name_with_PRN AS Operator,
-       DS.DS_comment AS [Comment],
-       TDRN.DRN_name AS Rating,
-       TDSN.DSS_name AS State,
-       DS.Dataset_ID AS ID,
-       DS.DS_created AS Created,
-       RR.ID AS Request,
-       RR.RDS_BatchID AS Batch,
-       DL.Dataset_Folder_Path AS [Dataset Folder Path],
-       DL.Archive_Folder_Path AS [Archive Folder Path],
-       DL.MyEMSL_URL AS [MyEMSL URL],
-       dbo.GetMyEMSLTransactionIdURLs(DS.Dataset_ID) As [MyEMSL Upload IDs],    
-       DFP.Dataset_URL AS [Data Folder Link],
-       DL.QC_Link AS [QC Link],
-       DL.QC_2D AS [QC 2D],
+SELECT DS.Dataset_Num AS dataset,
+       E.Experiment_Num AS experiment,
+       OG.OG_name AS organism,
+       BTO.Tissue AS experiment_tissue,
+       TIN.IN_name AS instrument,
+       DS.DS_sec_sep AS separation_type,
+       LCCart.Cart_Name AS lc_cart,
+       CartConfig.Cart_Config_Name AS lc_cart_config,
+       LCCol.SC_Column_Number AS lc_column,
+       DS.DS_wellplate_num AS wellplate,
+       DS.DS_well_num AS well,
+       DST.DST_Name AS type,
+       U.Name_with_PRN AS operator,
+       DS.DS_comment AS comment,
+       TDRN.DRN_name AS rating,
+       TDSN.DSS_name AS state,
+       DS.Dataset_ID AS id,
+       DS.DS_created AS created,
+       RR.ID AS request,
+       RR.RDS_BatchID AS batch,
+       DL.dataset_folder_path,
+       DL.archive_folder_path,
+       DL.myemsl_url,
+       dbo.GetMyEMSLTransactionIdURLs(DS.Dataset_ID) AS myemsl_upload_ids,
+       DFP.Dataset_URL AS data_folder_link,
+       DL.QC_Link AS qc_link,
+       DL.QC_2D AS qc_2d,
        CASE
-         WHEN IsNull(DL.MASIC_Directory_Name, '') = '' THEN ''
+         WHEN IsNull(DL.masic_directory_name, '') = '' THEN ''
          ELSE DFP.Dataset_URL + MASIC_Directory_Name
-       END AS [MASIC QC Link],
-       DL.QC_Metric_Stats AS [QC Metric Stats],
-       ISNULL(JobCountQ.Jobs, 0) AS Jobs,
-       ISNULL(PSMJobsQ.Jobs, 0) AS [PSM Jobs],
-       dbo.GetDatasetPMTaskCount(DS.Dataset_ID) AS [Peak Matching Results],
-       dbo.GetDatasetFactorCount(DS.Dataset_ID) AS Factors,
-       dbo.GetDatasetPredefineJobCount (DS.Dataset_ID) AS [Predefines Triggered],
-       DS.Acq_Time_Start AS [Acquisition Start],
-       DS.Acq_Time_End AS [Acquisition End],
-       RR.RDS_Run_Start AS [Run Start],
-       RR.RDS_Run_Finish AS [Run Finish],
-       DS.Scan_Count AS [Scan Count],
-       dbo.GetDatasetScanTypeList(DS.Dataset_ID) AS [Scan Types],
-       DS.Acq_Length_Minutes AS [Acq Length],
-       CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS [File Size (MB)],
-       DS.File_Info_Last_Modified AS [File Info Updated],
-       DF.File_Path AS [Dataset File],
-       DF.File_Hash AS [SHA1 Hash],
-       DS.DS_folder_name AS [Folder Name],
-       DS.Capture_Subfolder AS [Capture Subfolder],
-       TDASN.DASN_StateName AS [Archive State],
-       DA.AS_state_Last_Affected AS [Archive State Last Affected],
-       AUSN.AUS_name AS [Archive Update State],
-       DA.AS_update_state_Last_Affected AS [Archive Update State Last Affected],
-       RR.RDS_WorkPackage [Work Package],
+       END AS masic_qc_link,
+       DL.QC_Metric_Stats AS qc_metric_stats,
+       ISNULL(JobCountQ.jobs, 0) AS jobs,
+       ISNULL(PSMJobsQ.jobs, 0) AS psm_jobs,
+       dbo.GetDatasetPMTaskCount(DS.Dataset_ID) AS peak_matching_results,
+       dbo.GetDatasetFactorCount(DS.Dataset_ID) AS factors,
+       dbo.GetDatasetPredefineJobCount (DS.Dataset_ID) AS predefines_triggered,
+       DS.Acq_Time_Start AS acquisition_start,
+       DS.Acq_Time_End AS acquisition_end,
+       RR.RDS_Run_Start AS run_start,
+       RR.RDS_Run_Finish AS run_finish,
+       DS.Scan_Count AS scan_count,
+       dbo.GetDatasetScanTypeList(DS.Dataset_ID) AS scan_types,
+       DS.Acq_Length_Minutes AS acq_length,
+       CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS file_size_mb,
+       DS.File_Info_Last_Modified AS file_info_updated,
+       DF.File_Path AS dataset_file,
+       DF.File_Hash AS sha1_hash,
+       DS.DS_folder_name AS folder_name,
+       DS.Capture_Subfolder AS capture_subfolder,
+       TDASN.DASN_StateName AS archive_state,
+       DA.AS_state_Last_Affected AS archive_state_last_affected,
+       AUSN.AUS_name AS archive_update_state,
+       DA.AS_update_state_Last_Affected AS archive_update_state_last_affected,
+       RR.RDS_WorkPackage Work_Package,
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
-            ELSE ISNULL(CC.Activation_State_Name, 'Invalid') 
-            END AS [Work Package State],
-       EUT.Name AS [EUS Usage Type],
-       RR.RDS_EUS_Proposal_ID AS [EUS Proposal],
-       EPT.Proposal_Type_Name AS [EUS Proposal Type],
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'V') AS [EUS User],
-       TIS_1.Name AS [Predigest Int Std],
-       TIS_2.Name AS [Postdigest Int Std],
-       T_MyEMSLState.StateName AS [MyEMSL State]
+            ELSE ISNULL(CC.activation_state_name, 'Invalid')
+            END AS work_package_state,
+       EUT.Name AS eus_usage_type,
+       RR.RDS_EUS_Proposal_ID AS eus_proposal,
+       EPT.Proposal_Type_Name AS eus_proposal_type,
+       dbo.GetRequestedRunEUSUsersList(RR.id, 'V') AS eus_user,
+       TIS_1.Name AS predigest_int_std,
+       TIS_2.Name AS postdigest_int_std,
+       T_MyEMSLState.StateName AS myemsl_state
 FROM S_V_BTO_ID_to_Name AS BTO
      RIGHT OUTER JOIN T_Dataset AS DS
                       INNER JOIN T_DatasetStateName AS TDSN
@@ -123,7 +124,7 @@ FROM S_V_BTO_ID_to_Name AS BTO
                             INNER JOIN T_Analysis_Job AS J
                               ON PSMs.Job = J.AJ_jobID
                        GROUP BY J.AJ_datasetID ) AS PSMJobsQ
-       ON PSMJobsQ.DatasetID = DS.Dataset_ID    
+       ON PSMJobsQ.DatasetID = DS.Dataset_ID
      LEFT OUTER JOIN T_Dataset_Archive AS DA
                      INNER JOIN T_MyEMSLState
                        ON DA.MyEMSLState = T_MyEMSLState.MyEMSLState

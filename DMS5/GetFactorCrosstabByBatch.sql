@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE dbo.GetFactorCrosstabByBatch
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **		Returns the factors associated with the
 **		run requests in the specified batch
 **
@@ -17,7 +17,8 @@ CREATE PROCEDURE dbo.GetFactorCrosstabByBatch
 **			03/17/2010 grk - added filtering for request name contains
 **			03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
 **			02/17/2012 mem - Updated to delete data from #REQS only if @NameContains is not blank
-**    
+**          01/05/2023 mem - Use new column names in V_Requested_Run_Unified_List
+**
 *****************************************************/
 (
 	@BatchID int,
@@ -28,13 +29,13 @@ CREATE PROCEDURE dbo.GetFactorCrosstabByBatch
 AS
 	Set NoCount On
 
-	Declare @myRowCount int	
+	Declare @myRowCount int
 	Declare @myError int
 	Set @myRowCount = 0
 	Set @myError = 0
-	
+
 	Declare @msg varchar(256)
-	
+
 	Declare @Sql varchar(max)
 	Declare @CrossTabSql varchar(max)
 	Declare @FactorNameList varchar(max)
@@ -50,7 +51,7 @@ AS
 	--
 	CREATE Table #FACTORS (
 		FactorID INT,
-		FactorName VARCHAR(128) NULL 
+		FactorName VARCHAR(128) NULL
 	)
 
 	If IsNull(@BatchID, 0) > 0
@@ -69,13 +70,13 @@ AS
 		IF @myError <> 0
 			RETURN @myError
 	End
-	
+
 	If IsNull(@NameContains, '') <> ''
 	Begin
 		-----------------------------------------
 		-- filter by request name
 		-----------------------------------------
-		-- 
+		--
 		DELETE FROM
 			#REQS
 		WHERE
@@ -89,14 +90,15 @@ AS
 		--
 		SELECT @myRowCount = @@rowcount, @myError = @@error
 	End
-	
+
 	-----------------------------------------
-	-- Build the Sql for obtaining the factors 
-	-- for the requests
+	-- Build the Sql for obtaining the factors for the requests
+	--
+	-- These columns correspond to view V_Requested_Run_Unified_List
 	-----------------------------------------
 	--
 	DECLARE @colList VARCHAR(256)
-	SET @colList = ' ''x'' as Sel, BatchID, Name, Status, Dataset_ID, Request, Block, [Run Order]'
+	SET @colList = ' ''x'' as Sel, Batch_ID, Name, Status, Dataset_ID, Request, Block, Run_Order'
 	--
 	DECLARE @FactorNameContains VARCHAR(48)
 	SET @FactorNameContains = ''
@@ -109,7 +111,7 @@ AS
 	--
 	IF @myError <> 0
 		RETURN @myError
-	
+
 	-----------------------------------------
 	-- run dynamic SQL, or dump it
 	-----------------------------------------
@@ -118,9 +120,10 @@ AS
 		Print @Sql
 	Else
 		Exec (@Sql)
-	
+
 	--
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByBatch] TO [DDL_Viewer] AS [dbo]

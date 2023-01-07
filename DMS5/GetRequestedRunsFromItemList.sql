@@ -12,9 +12,9 @@ CREATE PROCEDURE GetRequestedRunsFromItemList
 **      item list
 **
 **	Auth:	grk
-**	Date:	03/22/2010
-**	03/22/2010 grk - initial release
-**	03/12/2012 grk - added 'Data_Package_ID' mode
+**	Date:	03/22/2010 grk - initial release
+**	        03/12/2012 grk - added 'Data_Package_ID' mode
+**          01/05/2023 mem - Use new column name in V_Requested_Run_Unified_List
 **    
 *****************************************************/
 (
@@ -121,7 +121,7 @@ AS
 			( Request )
 		SELECT Request 
 		FROM V_Requested_Run_Unified_List
-		WHERE BatchID IN (SELECT Item FROM #ITEMS)
+		WHERE Batch_ID IN (SELECT Item FROM #ITEMS)
 	END 
 	ELSE
 	IF @itemType = 'Requested_Run_ID'
@@ -178,6 +178,7 @@ AS
 			INNER join  S_V_Data_Package_Datasets_Export SE ON TR.DatasetID = SE.Dataset_ID
 			WHERE   Data_Package_ID IN (SELECT CONVERT(INT, Item) FROM #ITEMS) 
 	END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [DDL_Viewer] AS [dbo]

@@ -6,18 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Archive_List_Report_2]
 AS
-SELECT DA.AS_Dataset_ID AS ID,
-       DS.Dataset_Num AS Dataset,
-       TIN.IN_name AS Instrument,
-       DASN.DASN_StateName AS State,
-       AUS.AUS_name AS [Update State],
-       DA.AS_datetime AS Entered,
-       DA.AS_state_Last_Affected AS [State Last Affected],
-       DA.AS_update_state_Last_Affected AS [Update State Last Affected],
-       TAP.AP_archive_path AS [Archive Path],
-       TAP.AP_Server_Name AS [Archive Server],
-       SPath.SP_machine_name AS [Storage Server],
-       DA.AS_instrument_data_purged AS [Instrument Data Purged]     
+SELECT DA.AS_Dataset_ID AS id,
+       DS.Dataset_Num AS dataset,
+       TIN.IN_name AS instrument,
+       DASN.DASN_StateName AS state,
+       AUS.AUS_name AS update_state,
+       DA.AS_datetime AS entered,
+       DA.AS_state_Last_Affected AS state_last_affected,
+       DA.AS_update_state_Last_Affected AS update_state_last_affected,
+       TAP.AP_archive_path AS archive_path,
+       TAP.AP_Server_Name AS archive_server,
+       SPath.SP_machine_name AS storage_server,
+       DA.AS_instrument_data_purged AS instrument_data_purged
 FROM dbo.T_Dataset_Archive AS DA
      INNER JOIN dbo.T_Dataset AS DS
        ON DA.AS_Dataset_ID = DS.Dataset_ID

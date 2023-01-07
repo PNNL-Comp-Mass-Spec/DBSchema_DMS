@@ -6,19 +6,18 @@ GO
 
 CREATE VIEW [dbo].[V_Settings_File_Picklist]
 AS
-SELECT File_Name,
-       Description,
-       [Job Count],
-       [Jobs (all time)],
-       Analysis_Tool,
-       CASE WHEN [Job Count] > 0 THEN [Job Count] + 1000000 ELSE [Jobs (all time)] END as SortKey
+SELECT file_name,
+       description,
+       job_count,
+       jobs_all_time,
+       analysis_tool,
+       CASE WHEN Job_Count > 0 THEN Job_Count + 1000000 ELSE Jobs_all_time END AS sort_key
 FROM (
     SELECT SF.File_Name,
            SF.Description,
-           ISNULL(SF.Job_Usage_Last_Year, 0) AS [Job Count],
-           ISNULL(SF.Job_Usage_Count, 0) AS [Jobs (all time)],
-           SF.Analysis_Tool,
-           CASE WHEN ISNULL(SF.Job_Usage_Last_Year, 0) > 0 THEN SF.Job_Usage_Last_Year ELSE ISNULL(SF.Job_Usage_Count, 0) - 100000000 END as SortKey
+           ISNULL(SF.Job_Usage_Last_Year, 0) AS Job_Count,
+           ISNULL(SF.Job_Usage_Count, 0) AS Jobs_all_time,
+           SF.Analysis_Tool
     FROM dbo.T_Settings_Files SF
          INNER JOIN dbo.T_Analysis_Tool AnTool
            ON SF.Analysis_Tool = AnTool.AJT_toolName
@@ -26,10 +25,9 @@ FROM (
     UNION
     SELECT SF.File_Name,
            SF.Description,
-           ISNULL(SF.Job_Usage_Last_Year, 0) AS [Job Count],
-           ISNULL(SF.Job_Usage_Count, 0) AS [Jobs (all time)],
-           AnTool.AJT_toolName AS Analysis_Tool,
-           CASE WHEN ISNULL(SF.Job_Usage_Last_Year, 0) > 0 THEN SF.Job_Usage_Last_Year ELSE ISNULL(SF.Job_Usage_Count, 0) - 100000000 END as SortKey
+           ISNULL(SF.Job_Usage_Last_Year, 0) AS Job_Count,
+           ISNULL(SF.Job_Usage_Count, 0) AS Jobs_all_time,
+           AnTool.AJT_toolName AS Analysis_Tool
     FROM T_Settings_Files SF
          INNER JOIN T_Analysis_Tool AnTool
            ON SF.Analysis_Tool = AnTool.AJT_toolBasename

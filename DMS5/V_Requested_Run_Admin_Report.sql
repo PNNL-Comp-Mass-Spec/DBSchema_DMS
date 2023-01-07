@@ -6,42 +6,42 @@ GO
 
 CREATE VIEW [dbo].[V_Requested_Run_Admin_Report]
 AS
-SELECT RR.ID AS Request,
-       RR.RDS_Name AS Name,
-       C.Campaign_Num AS Campaign,
-       E.Experiment_Num AS Experiment,
-       DS.Dataset_Num AS Dataset,
-       ISNULL(DatasetInstrument.IN_name, '') AS Instrument,
-       RR.RDS_instrument_group AS [Inst. Group],
-       DTN.DST_name AS [Type],
-       RR.RDS_Sec_Sep AS [Separation Group],
-       RR.RDS_Origin AS Origin,
-       RR.RDS_Status AS Status,
-       U.U_Name AS Requester,
-       RR.RDS_WorkPackage AS WPN,
-       ISNULL(CC.Activation_State_Name, '') AS [WP_State],
-       QT.[Days In Queue],
-       QS.Queue_State_Name AS [Queue State],
-       ISNULL(AssignedInstrument.IN_name, '') AS [Queued Instrument],
-       RR.Queue_Date AS [Queue Date],
-       RR.RDS_priority AS Pri,
-       RR.RDS_BatchID AS Batch,
-       RR.RDS_Block AS [Block],
-       RR.RDS_Run_Order AS [Run Order],
-       RR.RDS_comment AS [Comment],
-       DS.DS_Comment AS [Dataset Comment],
-       RR.RDS_NameCode AS [Request Name Code],
+SELECT RR.ID AS request,
+       RR.RDS_Name AS name,
+       C.Campaign_Num AS campaign,
+       E.Experiment_Num AS experiment,
+       DS.Dataset_Num AS dataset,
+       ISNULL(DatasetInstrument.in_name, '') AS instrument,
+       RR.RDS_instrument_group AS inst_group,
+       DTN.DST_name AS type,
+       RR.RDS_Sec_Sep AS separation_group,
+       RR.RDS_Origin AS origin,
+       RR.RDS_Status AS status,
+       U.U_Name AS requester,
+       RR.RDS_WorkPackage AS wpn,
+       ISNULL(CC.activation_state_name, '') AS wp_state,
+       QT.days_in_queue,
+       QS.Queue_State_Name AS queue_state,
+       ISNULL(AssignedInstrument.in_name, '') AS queued_instrument,
+       RR.Queue_Date AS queue_date,
+       RR.RDS_priority AS priority,
+       RR.RDS_BatchID AS batch,
+       RR.RDS_Block AS block,
+       RR.RDS_Run_Order AS run_order,
+       RR.RDS_comment AS comment,
+       DS.DS_Comment AS dataset_comment,
+       RR.RDS_NameCode AS request_name_code,
        CASE
            WHEN RR.RDS_Status <> 'Active' THEN 0
-           WHEN QT.[Days In Queue] <= 30 THEN 30
-           WHEN QT.[Days In Queue] <= 60 THEN 60
-           WHEN QT.[Days In Queue] <= 90 THEN 90
+           WHEN QT.Days_In_Queue <= 30 THEN 30
+           WHEN QT.Days_In_Queue <= 60 THEN 60
+           WHEN QT.Days_In_Queue <= 90 THEN 90
            ELSE 120
        END AS days_in_queue_bin,
        CASE
            WHEN RR.RDS_Status = 'Active' AND
                 CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for wp_activation_state
-           ELSE CC.Activation_State
+           ELSE CC.activation_state
        END AS wp_activation_state
 FROM T_Requested_Run AS RR
      INNER JOIN T_DatasetTypeName AS DTN
@@ -61,7 +61,7 @@ FROM T_Requested_Run AS RR
      LEFT OUTER JOIN T_Instrument_Name AS AssignedInstrument
        ON RR.Queue_Instrument_ID = AssignedInstrument.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
-       ON RR.ID = QT.RequestedRun_ID
+       ON RR.ID = QT.Requested_Run_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
 

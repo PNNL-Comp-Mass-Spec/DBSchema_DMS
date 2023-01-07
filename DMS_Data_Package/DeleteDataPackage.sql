@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[DeleteDataPackage]
 **          05/18/2016 mem - Log errors to T_Log_Entries
 **          04/05/2019 mem - Log the data package ID, Name, first dataset, and last dataset associated with a data package
 **                         - Change the default for @infoOnly to 1
+**          01/05/2023 mem - Use new column names in V_Data_Package_Detail_Report
 **
 *****************************************************/
 (
@@ -51,14 +52,14 @@ As
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 1)
 
-    BEGIN TRY 
+    BEGIN TRY
 
         If Not Exists (SELECT * FROM T_Data_Package WHERE ID = @packageID)
         Begin
             Set @message = 'Data package ' + Cast(@packageID as varchar(9)) + ' not found in T_Data_Package'
             If @infoOnly <> 0
                 Select @message AS Warning
-            Else            
+            Else
                 Print @message
         End
         Else
@@ -69,29 +70,29 @@ As
                 -- Preview the data package to be deleted
                 ---------------------------------------------------
                 --
-                SELECT [ID],
-                       [Name],
-                       [Package Type],
-                       [Biomaterial Item Count],
-                       [Experiment Item Count],
-                       [EUS Proposals Count],
-                       [Dataset Item Count],
-                       [Analysis Job Item Count],
-                       [Campaign Count],
-                       [Total Item Count],
-                       [State],
-                       [Share Path],
-                       [Description],
-                       [Comment],
-                       [Owner],
+                SELECT ID,
+                       Name,
+                       Package_Type,
+                       Biomaterial_Item_Count,
+                       Experiment_Item_Count,
+                       EUS_Proposal_Item_Count,
+                       Dataset_Item_Count,
+                       Analysis_Job_Item_Count,
+                       Campaign_Count,
+                       Total_Item_Count,
+                       State,
+                       Share_Path,
+                       Description,
+                       Comment,
+                       Owner,
                        Requester,
                        Created,
-                       [Last Modified]
+                       Last_Modified
                 FROM V_Data_Package_Detail_Report
                 WHERE ID = @packageID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
             End
             Else
             Begin
@@ -101,7 +102,7 @@ As
                 ---------------------------------------------------
                 --
                 SELECT @dataPackageName = [Name]
-                FROM T_Data_Package 
+                FROM T_Data_Package
                 WHERE ID = @packageID
 
                 ---------------------------------------------------
@@ -141,35 +142,35 @@ As
                 ---------------------------------------------------
                 --
                 Declare @sharePath varchar(1024) = ''
-            
+
                 SELECT @sharePath = Share_Path
                 FROM V_Data_Package_Paths
                 WHERE ID = @packageID
 
                 Begin Tran
-                
+
                 ---------------------------------------------------
                 -- Delete the associated items
                 ---------------------------------------------------
                 --
                 exec DeleteAllItemsFromDataPackage @packageID=@packageID, @mode='delete', @message=@message output
-                
+
                 If @message <> ''
                 Begin
                     Print @message
                     Set @message = ''
                 End
-                
+
                 DELETE FROM T_Data_Package
                 WHERE ID = @packageID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
                 If @myRowCount = 0
-                    Set @message = 'No rows were deleted from T_Data_Package for data package ' + Cast(@packageID as varchar(9)) + '; this is unexpected'                    
+                    Set @message = 'No rows were deleted from T_Data_Package for data package ' + Cast(@packageID as varchar(9)) + '; this is unexpected'
                 Else
-                    set @message = 'Deleted data package ' + Cast(@packageID as varchar(9)) + ' and all associated metadata'    
-                
+                    set @message = 'Deleted data package ' + Cast(@packageID as varchar(9)) + ' and all associated metadata'
+
 
                 -- Log the deletion
                 -- First append the data package name
@@ -178,12 +179,12 @@ As
                 If @datasetOrExperimentCount > 0
                 Begin
                     -- Next append the dataset or experiment names
-                    Set @logMessage = @logMessage + 
-                            '; Included ' + Cast(@datasetOrExperimentCount As Varchar(12)) + ' ' + @datasetOrExperiment + ': ' + 
+                    Set @logMessage = @logMessage +
+                            '; Included ' + Cast(@datasetOrExperimentCount As Varchar(12)) + ' ' + @datasetOrExperiment + ': ' +
                             IsNull(@firstDatasetOrExperiment, '') + ' - ' + IsNull(@lastDatasetOrExperiment, '')
                 End
-                
-                Exec PostLogEntry 'Normal', @logMessage, 'DeleteDataPackage'                        
+
+                Exec PostLogEntry 'Normal', @logMessage, 'DeleteDataPackage'
 
                 Commit
 
@@ -195,23 +196,23 @@ As
                 Print @message
                 Print ''
                 Print 'Be sure to delete directory ' + @sharePath
-                
+
             End
         End
-        
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         Exec PostLogEntry 'Error', @msgForLog, 'DeleteDataPackage'
     END CATCH
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

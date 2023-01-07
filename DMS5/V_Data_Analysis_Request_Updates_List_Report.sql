@@ -6,14 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Updates_List_Report]
 AS
-SELECT Updates.Entered,
-       Updates.Entered_By,
-       U.U_Name AS Name,
-       Updates.Old_State_ID,
-       Updates.New_State_ID,
-       OldState.State_Name AS [Old State],
-       NewState.State_Name AS [New State],
-       Updates.Request_ID
+SELECT Updates.entered,
+       Updates.entered_by,
+       U.U_Name AS name,
+       Updates.old_state_id,
+       Updates.new_state_id,
+       OldState.State_Name AS old_state,
+       NewState.State_Name AS new_state,
+       Updates.request_id
 FROM dbo.T_Data_Analysis_Request_Updates AS Updates
      INNER JOIN dbo.T_Data_Analysis_Request_State_Name AS OldState
        ON Updates.Old_State_ID = OldState.State_ID

@@ -6,24 +6,24 @@ GO
 
 CREATE VIEW [dbo].[V_Operations_Tasks_Detail_Report]
 AS
-SELECT OpsTask.ID,
-       TaskType.Task_Type_Name As [Task Type],
-       OpsTask.Task,
-       OpsTask.Description,
-       OpsTask.Requester,
-       OpsTask.Requested_Personnel AS [Requested Personnel],
-       OpsTask.Assigned_Personnel AS [Assigned Personnel],
-       OpsTask.Comments,
-       L.Lab_Name AS Lab,
-       OpsTask.Status,
-       OpsTask.Priority,
-       OpsTask.Work_Package,
+SELECT OpsTask.id,
+       TaskType.Task_Type_Name As task_type,
+       OpsTask.task,
+       OpsTask.description,
+       OpsTask.requester,
+       OpsTask.Requested_Personnel AS requested_personnel,
+       OpsTask.Assigned_Personnel AS assigned_personnel,
+       OpsTask.comments,
+       L.Lab_Name AS lab,
+       OpsTask.status,
+       OpsTask.priority,
+       OpsTask.work_package,
        CASE
-           WHEN OpsTask.Status IN ('Completed', 'Not Implemented') THEN DATEDIFF(DAY, OpsTask.Created, OpsTask.Closed)
-           ELSE DATEDIFF(DAY, OpsTask.Created, GETDATE())
-       END AS Days_In_Queue,
-       OpsTask.Created,
-       OpsTask.Closed
+           WHEN OpsTask.Status IN ('Completed', 'Not Implemented') THEN DATEDIFF(DAY, OpsTask.created, OpsTask.Closed)
+           ELSE DATEDIFF(DAY, OpsTask.created, GETDATE())
+       END AS days_in_queue,
+       OpsTask.created,
+       OpsTask.closed
 FROM T_Operations_Tasks OpsTask
      INNER JOIN T_Operations_Task_Type TaskType
        ON OpsTask.Task_Type_ID = TaskType.Task_Type_ID

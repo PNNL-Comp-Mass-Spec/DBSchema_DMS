@@ -6,34 +6,33 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Analysis_Jobs_List_Report]
 AS
-SELECT DPJ.Data_Package_ID AS ID,
-       DPJ.Job,
-       DPJ.Dataset,
-       DPJ.Dataset_ID,
-       DPJ.Tool,
-       DPJ.Package_Comment,
-       AJL.Campaign,
-       AJL.Experiment,
-       AJL.Instrument,
-       AJL.[Param File],
-       AJL.Settings_File,
-       AJL.Organism,
-       AJL.[Organism DB],
-       AJL.[Protein Collection List],
-       AJL.[Protein Options],
-	   AJL.State,
-       AJL.Finished,
-       AJL.Runtime,
-       AJL.[Job Request],
-       AJL.[Results Folder],
-       AJL.[Results Folder Path],
-       AJL.[Results URL],
-       DPJ.Item_Added,
-       AJL.Comment AS [Comment]
+SELECT DPJ.Data_Package_ID AS id,
+       DPJ.job,
+       DPJ.dataset,
+       DPJ.dataset_id,
+       DPJ.tool,
+       DPJ.package_comment,
+       AJL.campaign,
+       AJL.experiment,
+       AJL.instrument,
+       AJL.param_file,
+       AJL.settings_file,
+       AJL.organism,
+       AJL.organism_db,
+       AJL.protein_collection_list,
+       AJL.protein_options,
+	   AJL.state,
+       AJL.finished,
+       AJL.runtime_minutes,
+       AJL.job_request,
+       AJL.results_folder,
+       AJL.results_folder_path,
+       AJL.results_url,
+       DPJ.item_added,
+       AJL.comment
 FROM dbo.T_Data_Package_Analysis_Jobs AS DPJ
      INNER JOIN dbo.S_V_Analysis_Job_List_Report_2 AS AJL
        ON DPJ.Job = AJL.Job
-
 
 
 GO

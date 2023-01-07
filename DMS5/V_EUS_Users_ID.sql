@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_EUS_Users_ID]
 AS
-SELECT PERSON_ID AS [User ID],
-       NAME_FM AS [User Name],
-       HID AS Hanford_ID,
-       Name AS [Site Status],
-       Valid As Valid_EUS_ID
+SELECT PERSON_ID AS user_id,
+       NAME_FM AS user_name,
+       HID AS hanford_id,
+       Name AS site_status,
+       Valid As valid_eus_id
 FROM T_EUS_Users U
      INNER JOIN T_EUS_Site_Status S
        ON U.Site_Status = S.ID

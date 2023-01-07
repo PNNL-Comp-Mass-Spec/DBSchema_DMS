@@ -5,8 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW dbo.V_AJ_Batch_List_Report
 AS
-SELECT     Batch_ID AS Batch, Batch_Description AS Description, Batch_Created AS Created
-FROM         dbo.T_Analysis_Job_Batches
+SELECT Batch_ID AS batch, Batch_Description AS description, Batch_Created AS created
+FROM dbo.T_Analysis_Job_Batches
 
 
 GO

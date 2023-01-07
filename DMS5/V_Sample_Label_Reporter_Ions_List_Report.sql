@@ -6,11 +6,11 @@ GO
 
 CREATE VIEW [dbo].[V_Sample_Label_Reporter_Ions_List_Report]
 As
-SELECT Label,
-       Channel,
-       Tag_Name,
-       MASIC_Name,
-       Reporter_Ion_Mz
+SELECT label,
+       channel,
+       tag_name,
+       masic_name,
+       reporter_ion_mz
 FROM T_Sample_Labelling_Reporter_Ions
 
 
