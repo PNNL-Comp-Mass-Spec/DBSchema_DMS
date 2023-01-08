@@ -41,7 +41,7 @@ SELECT RR.ID AS request,
        LC.Cart_Name AS cart,
        CartConfig.Cart_Config_Name AS cart_config,
        RR.RDS_Cart_Col AS column_name,
-       RR.RDS_WorkPackage Work_Package,
+       RR.RDS_WorkPackage AS work_package,
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
             ELSE ISNULL(CC.activation_state_name, 'Invalid')
             END AS work_package_state,

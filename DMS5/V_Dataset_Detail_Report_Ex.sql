@@ -63,7 +63,7 @@ SELECT DS.Dataset_Num AS dataset,
        DA.AS_state_Last_Affected AS archive_state_last_affected,
        AUSN.AUS_name AS archive_update_state,
        DA.AS_update_state_Last_Affected AS archive_update_state_last_affected,
-       RR.RDS_WorkPackage Work_Package,
+       RR.RDS_WorkPackage AS work_package,
        CASE WHEN RR.RDS_WorkPackage IN ('none', '') THEN ''
             ELSE ISNULL(CC.activation_state_name, 'Invalid')
             END AS work_package_state,
