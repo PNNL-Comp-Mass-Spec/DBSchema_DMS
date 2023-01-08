@@ -13,20 +13,20 @@ AS
 SELECT MU.Entry_ID,
        MU.Data_Package_ID,
        MU.Subfolder,
-       MU.FileCountNew,
-       MU.FileCountUpdated,
-       CONVERT(decimal(9,3), MU.Bytes / 1024.0 / 1024.0) as MB,
-       CONVERT(decimal(9,1), MU.UploadTimeSeconds) AS UploadTimeSeconds,
-       MU.StatusURI_PathID,
-       MU.StatusNum,
-       MU.ErrorCode,
-	   StatusU.URI_Path + CONVERT(varchar(12), MU.StatusNum) + CASE WHEN StatusU.URI_Path LIKE '%/status/%' Then '/xml' ELSE '' End AS Status_URI,
+       MU.FileCountNew As File_Count_New,
+       MU.FileCountUpdated As File_Count_Updated,
+       CONVERT(decimal(9,3), MU.Bytes / 1024.0 / 1024.0) AS MB,
+       CONVERT(decimal(9,1), MU.UploadTimeSeconds) AS Upload_Time_Seconds,
+       MU.StatusURI_PathID As Status_URI_Path_ID,
+       MU.StatusNum As Status_Num,
+       MU.ErrorCode As Error_Code,
+	   P.URI_Path + CONVERT(varchar(12), MU.StatusNum) + CASE WHEN P.URI_Path LIKE '%/status/%' Then '/xml' ELSE '' End AS Status_URI,
        MU.Available,
        MU.Verified,
        MU.Entered
 FROM T_MyEMSL_Uploads MU
-     LEFT OUTER JOIN T_URI_Paths StatusU
-       ON MU.StatusURI_PathID = StatusU.URI_PathID     
+     LEFT OUTER JOIN T_URI_Paths P
+       ON MU.StatusURI_PathID = P.URI_PathID     
 
 
 GO

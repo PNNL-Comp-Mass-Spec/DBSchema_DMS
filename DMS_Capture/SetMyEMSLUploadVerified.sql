@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[SetMyEMSLUploadVerified]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          07/13/2017 mem - Add parameter @statusURIList (required to avoid conflicts between StatusNums from the old MyEMSL backend vs. transaction IDs from the new backend)
 **          08/01/2017 mem - Use THROW if not authorized
+**          01/07/2023 mem - Use new column names in view
 **    
 *****************************************************/
 (
@@ -79,17 +80,17 @@ As
         Goto Done
     End
     
-    Declare @StatusNumListTable as Table(StatusNum int NOT NULL)
+    Declare @StatusNumListTable AS Table(Status_Num int NOT NULL)
     
-    Declare @StatusURIListTable as Table(StatusURI varchar(255) NOT NULL)
+    Declare @StatusURIListTable AS Table(Status_URI varchar(255) NOT NULL)
     
-    Declare @StatusEntryIDsTable as Table(Entry_ID int NOT NULL, Dataset_ID int NOT NULL)
+    Declare @StatusEntryIDsTable AS Table(Entry_ID int NOT NULL, Dataset_ID int NOT NULL)
     
     ---------------------------------------------------
     -- Split StatusNumList and StatusURIList on commas
     ---------------------------------------------------
     
-    INSERT INTO @StatusNumListTable (StatusNum)
+    INSERT INTO @StatusNumListTable (Status_Num)
     SELECT DISTINCT Value
     FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
     ORDER BY Value
@@ -105,7 +106,7 @@ As
         Goto Done
     End
     
-    INSERT INTO @StatusURIListTable (StatusURI)
+    INSERT INTO @StatusURIListTable (Status_URI)
     SELECT DISTINCT Value
     FROM dbo.udfParseDelimitedList(@statusURIList, ',')
     ORDER BY Value
@@ -132,7 +133,7 @@ As
     -- Make sure the transaction IDs in @StatusNumListTable exist in T_MyEMSL_Uploads
     ---------------------------------------------------
     
-    If Exists (SELECT * FROM @StatusNumListTable SL LEFT OUTER JOIN T_MyEMSL_Uploads MU ON MU.StatusNum = SL.StatusNum WHERE MU.Entry_ID IS NULL)
+    If Exists (SELECT * FROM @StatusNumListTable SL LEFT OUTER JOIN T_MyEMSL_Uploads MU ON MU.StatusNum = SL.Status_Num WHERE MU.Entry_ID IS NULL)
     Begin
         Set @message = 'One or more Status Nums in @StatusNumList were not found in T_MyEMSL_Uploads: ' + @StatusNumList
         Set @myError = 60003
@@ -146,8 +147,8 @@ As
     INSERT INTO @StatusEntryIDsTable (Entry_ID, Dataset_ID)
     SELECT Entry_ID, Dataset_ID
     FROM V_MyEMSL_Uploads
-    WHERE StatusNum  IN (Select StatusNum From @StatusNumListTable) AND
-          Status_URI IN (Select StatusURI From @StatusURIListTable)
+    WHERE Status_Num  IN (Select Status_Num From @StatusNumListTable) AND
+          Status_URI IN (Select Status_URI From @StatusURIListTable)
 
     Declare @EntryIDCount int
     SELECT @EntryIDCount = COUNT(*) FROM @StatusEntryIDsTable
@@ -190,7 +191,7 @@ As
     If @myError > 0
     Begin
         Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 1 in StatusURIs ' + 
-                       'for StatusURI: ' + @statusURIList + ', dataset ID ' + Cast(@datasetID as varchar(12))
+                       'for StatusURI: ' + @statusURIList + ', dataset ID ' + Cast(@datasetID AS varchar(12))
         Set @myError = 60006
         Goto Done
     End
@@ -208,7 +209,7 @@ As
     If @myError > 0
     Begin
         Set @message = 'Error updating Ingest_Steps_Completed for entries with Verified = 0 in T_MyEMSL_Uploads ' + 
-                       'for StatusURI: ' + @statusURIList + ', dataset ID ' + Cast(@datasetID as varchar(12))
+                       'for StatusURI: ' + @statusURIList + ', dataset ID ' + Cast(@datasetID AS varchar(12))
         Set @myError = 60007
         Goto Done
     End
@@ -226,6 +227,7 @@ Done:
     End    
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadVerified] TO [DDL_Viewer] AS [dbo]
