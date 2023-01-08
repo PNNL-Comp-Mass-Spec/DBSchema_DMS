@@ -23,7 +23,7 @@ SELECT DS.Dataset_Num AS dataset,
        DSN.DSS_name AS state,
        DS.DS_created AS created,
        DS.DS_folder_name AS folder_name,
-	   DFPCache.Dataset_Folder_Path As dataset_folder_path,
+       DFPCache.Dataset_Folder_Path As dataset_folder_path,
        SPath.SP_path AS storage_path,
        SPath.SP_vol_name_client + SPath.SP_path AS storage,
        DS.Dataset_ID AS id,
@@ -33,9 +33,9 @@ SELECT DS.Dataset_Num AS dataset,
        PreDigest.Name AS predigest_int_std,
        PostDigest.Name AS postdigest_int_std,
        DS.File_Size_Bytes / 1024.0 / 1024.0 AS file_size_mb,
-       ISNULL(DA.AS_instrument_data_purged, 0) AS instrument_data_purged,	   
+       ISNULL(DA.AS_instrument_data_purged, 0) AS instrument_data_purged,
        DFPCache.Archive_Folder_Path As archive_folder_path,
-	   IsNull(DA.MyEMSLState, 0) As myemsl_state,
+       IsNull(DA.MyEMSLState, 0) As myemsl_state,
        -- The following are old column names, included for compatibility with the DMS Dataset Retriever
        DS.DS_sec_sep AS [Separation Type],
        LC.SC_Column_Number AS [LC Column],
@@ -43,7 +43,7 @@ SELECT DS.Dataset_Num AS dataset,
        DS.DS_well_num AS [Well Number],
        DSIntStd.Name AS [Dataset Int Std],
        DS.DS_folder_name AS [Folder Name],
-	   DFPCache.Dataset_Folder_Path As [Dataset Folder Path],
+       DFPCache.Dataset_Folder_Path As [Dataset Folder Path],
        SPath.SP_path AS [Storage Folder],
        DS.DS_Comp_State AS [Compressed State],
        DS.DS_Compress_Date AS [Compressed Date],
@@ -54,7 +54,7 @@ SELECT DS.Dataset_Num AS dataset,
        PostDigest.Name AS [PostDigest Int Std],
        DS.File_Size_Bytes / 1024.0 / 1024.0 AS [File Size MB],
        DFPCache.Archive_Folder_Path As [Archive Folder Path],
-	   IsNull(DA.MyEMSLState, 0) As MyEMSLState
+       IsNull(DA.MyEMSLState, 0) As MyEMSLState
 FROM T_Dataset DS
      INNER JOIN T_DatasetStateName DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
@@ -80,7 +80,7 @@ FROM T_Dataset DS
        ON E.EX_postdigest_internal_std_ID = PostDigest.Internal_Std_Mix_ID
      INNER JOIN T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID
-	 INNER JOIN T_Cached_Dataset_Folder_Paths DFPCache
+     INNER JOIN T_Cached_Dataset_Folder_Paths DFPCache
        ON DS.Dataset_ID = DFPCache.Dataset_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
