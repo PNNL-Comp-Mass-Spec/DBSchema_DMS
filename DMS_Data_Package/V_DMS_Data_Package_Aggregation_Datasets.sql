@@ -45,8 +45,6 @@ FROM T_Data_Package_Datasets TPD
        ON E.EX_campaign_ID = Campaign.Campaign_ID
      INNER JOIN S_V_Organism Org
        ON E.EX_organism_ID = Org.Organism_ID
-     INNER JOIN S_V_Dataset_Archive_Path DSArch
-       ON DS.Dataset_ID = DSArch.Dataset_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTOInfo
        On E.EX_Tissue_ID = BTOInfo.Identifier
 
