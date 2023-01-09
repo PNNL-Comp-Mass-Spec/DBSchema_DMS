@@ -8,8 +8,8 @@ CREATE VIEW [dbo].[V_Helper_NEWT_List_Report]
 AS
 SELECT identifier,
        term_name,
-       Parent_term_name AS Parent,
-       Grandparent_term_name AS Grandparent,
+       Parent_term_name AS parent,
+       Grandparent_term_name AS grandparent,
        is_leaf
 FROM V_CV_NEWT
 

@@ -5,19 +5,19 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Notification_Analysis_Job_Request_By_Request_Owner] AS
-SELECT DISTINCT TNE.ID AS Seq,
-                TET.Name AS Event,
-                AJR.AJR_requestID AS Entity,
-                AJR.AJR_requestName AS Name,
-                C.Campaign_Num AS Campaign,
-                U.U_Name AS Person,
-                'Request Owner' AS Person_Role,
-                TNE.Entered,
+SELECT DISTINCT TNE.ID AS seq,
+                TET.Name AS event,
+                AJR.AJR_requestID AS entity,
+                AJR.AJR_requestName AS name,
+                C.Campaign_Num AS campaign,
+                U.U_Name AS person,
+                'Request Owner' AS person_role,
+                TNE.entered,
                 TET.Target_Entity_Type AS entity_type,
                 U.U_PRN AS prn,
-                TET.ID AS Event_Type,
-                TNE.Event_Type AS Event_Type_ID,
-                TET.Link_Template
+                TET.ID AS event_type,
+                TNE.Event_Type AS event_type_id,
+                TET.link_template
 FROM T_Notification_Event TNE
      INNER JOIN T_Notification_Event_Type TET
        ON TET.ID = TNE.Event_Type

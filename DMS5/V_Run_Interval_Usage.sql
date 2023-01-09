@@ -6,16 +6,16 @@ GO
 
 CREATE VIEW [dbo].[V_Run_Interval_Usage]
 AS
-SELECT ID,
-       ISNULL(xmlNode.value('@UserRemote', 'nvarchar(256)'), 0) User_Remote,
-       ISNULL(xmlNode.value('@UserOnsite', 'nvarchar(256)'), 0) User_Onsite,
+SELECT id,
+       ISNULL(xmlNode.value('@UserRemote', 'nvarchar(256)'), 0) user_remote,
+       ISNULL(xmlNode.value('@UserOnsite', 'nvarchar(256)'), 0) user_onsite,
        ISNULL(xmlNode.value('@User', 'nvarchar(256)'), 0) [user],
-       ISNULL(xmlNode.value('@Proposal', 'nvarchar(256)'), '') User_Proposal,
-       ISNULL(xmlNode.value('@Broken', 'nvarchar(256)'), 0) Broken,
-       ISNULL(xmlNode.value('@Maintenance', 'nvarchar(256)'), 0) Maintenance,
-       ISNULL(xmlNode.value('@StaffNotAvailable', 'nvarchar(256)'), 0) Staff_Not_Available,
-       ISNULL(xmlNode.value('@CapDev', 'nvarchar(256)'), 0) Cap_Dev,
-       ISNULL(xmlNode.value('@InstrumentAvailable', 'nvarchar(256)'), 0) Instrument_Available
+       ISNULL(xmlNode.value('@Proposal', 'nvarchar(256)'), '') user_proposal,
+       ISNULL(xmlNode.value('@Broken', 'nvarchar(256)'), 0) broken,
+       ISNULL(xmlNode.value('@Maintenance', 'nvarchar(256)'), 0) maintenance,
+       ISNULL(xmlNode.value('@StaffNotAvailable', 'nvarchar(256)'), 0) staff_not_available,
+       ISNULL(xmlNode.value('@CapDev', 'nvarchar(256)'), 0) cap_dev,
+       ISNULL(xmlNode.value('@InstrumentAvailable', 'nvarchar(256)'), 0) instrument_available
 FROM T_Run_Interval cross apply Usage.nodes('//u') AS R(xmlNode)
 
 

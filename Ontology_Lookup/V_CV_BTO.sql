@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_CV_BTO]
 AS
-SELECT Entry_ID,
-       Term_Name,
+SELECT entry_id,
+       term_name,
        identifier,
-       Is_Leaf,
-       Parent_term_name,
-       Parent_term_ID,
-       Grandparent_term_name,
-       Grandparent_term_ID,
-       Synonyms AS Synonyms
+       is_leaf,
+       parent_term_name,
+       parent_term_id,
+       grandparent_term_name,
+       grandparent_term_id,
+       synonyms as synonyms
 FROM T_CV_BTO
 
 

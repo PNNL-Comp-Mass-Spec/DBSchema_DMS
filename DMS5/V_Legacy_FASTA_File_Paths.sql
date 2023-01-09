@@ -3,13 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW dbo.V_Legacy_FASTA_File_Paths
 AS
 SELECT OrgDB.FileName AS file_name,
        Org.OG_organismDBPath + OrgDB.FileName AS file_path,
        Org.Organism_ID AS organism_id,
-       OrgDB.FileName,
-       Org.OG_organismDBPath + OrgDB.FileName AS FilePath
+       OrgDB.filename,
+       Org.OG_organismDBPath + OrgDB.FileName AS filepath
 FROM dbo.T_Organism_DB_File OrgDB
      INNER JOIN dbo.T_Organisms Org
        ON OrgDB.Organism_ID = Org.Organism_ID

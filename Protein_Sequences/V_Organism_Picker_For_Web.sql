@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Organism_Picker_For_Web]
 AS
 
-SELECT ID,
+SELECT id,
        Short_Name AS dms_name,
        Display_Name AS display_name,
        Storage_Location AS storage_location,

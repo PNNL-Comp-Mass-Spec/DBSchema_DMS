@@ -14,7 +14,7 @@ SELECT project_id,
        actual_start_date,
        actual_end_date,
        project_uuid,
-       Row_Number() Over (Partition By project_id Order By actual_start_date Desc, actual_end_date Desc) As IdRank
+       Row_Number() Over (Partition By project_id Order By actual_start_date Desc, actual_end_date Desc) As idrank
 FROM openquery ( NEXUS, 'SELECT * FROM proteomics_views.vw_proposals' )
 )
 

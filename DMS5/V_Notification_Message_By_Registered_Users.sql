@@ -6,19 +6,19 @@ GO
 
 CREATE VIEW V_Notification_Message_By_Registered_Users AS
 SELECT
-  VNMRT.Event,
-  VNMRT.Entity,
-  VNMRT.Link,
-  VNMRT.Name,
-  VNMRT.Campaign,
-  VNMRT.Person_Role,
-  VNMRT.Event_Type_ID,
-  VNMRT.Entity_Type,
+  VNMRT.event,
+  VNMRT.entity,
+  VNMRT.link,
+  VNMRT.name,
+  VNMRT.campaign,
+  VNMRT.person_role,
+  VNMRT.event_type_id,
+  VNMRT.entity_type,
   VNMRT.prn,
-  VNMRT.Person,
-  TNER.User_ID,
-  VNMRT.Entered,
-  TU.U_email AS Email
+  VNMRT.person,
+  TNER.user_id,
+  VNMRT.entered,
+  TU.U_email AS email
 FROM
   T_Notification_Entity_User AS TNER
   INNER JOIN T_Users AS TU ON TNER.User_ID = TU.ID

@@ -9,18 +9,18 @@ AS
 SELECT Child.term_pk,
        Child.term_name,
        Child.identifier,
-       Parent.term_name AS Parent_term_name,
-       Parent.identifier AS Parent_term_identifier,
-       Grandparent.term_name AS Grandparent_term_name,
-       Grandparent.identifier AS Grandparent_term_identifier,
+       Parent.term_name AS parent_term_name,
+       Parent.identifier AS parent_term_identifier,
+       Grandparent.term_name AS grandparent_term_name,                
+       Grandparent.identifier AS grandparent_term_identifier,         
        Child.is_leaf,
        Child.is_obsolete,
        Child.[namespace],
        Child.ontology_id,
-       O.shortName AS Ontology,
+       O.shortName AS ontology,
        ParentChildRelationship.predicate_term_pk,
-       Parent.term_pk AS Parent_term_pk,
-       Grandparent.term_pk AS Grandparent_term_pk
+       Parent.term_pk AS parent_term_pk,
+       Grandparent.term_pk AS grandparent_term_pk
 FROM T_Ontology O
      INNER JOIN T_Term Child
        ON O.ontology_id = Child.ontology_id

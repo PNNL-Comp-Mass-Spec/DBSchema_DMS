@@ -6,14 +6,14 @@ GO
 
 CREATE VIEW [dbo].[V_CV_PRIDE]
 AS
-SELECT Entry_ID,
-       Term_Name,
+SELECT entry_id,
+       term_name,
        identifier,
-       Is_Leaf,
-       Parent_term_name,
-       Parent_term_ID,
-       Grandparent_term_name,
-       Grandparent_term_ID
+       is_leaf,
+       parent_term_name,
+       parent_term_id,
+       grandparent_term_name,
+       grandparent_term_id
 FROM T_CV_PRIDE
 
 

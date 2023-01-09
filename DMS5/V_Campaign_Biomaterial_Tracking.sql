@@ -6,9 +6,9 @@ GO
 
 CREATE VIEW dbo.V_Campaign_Biomaterial_Tracking
 AS
-SELECT dbo.T_Cell_Culture.CC_Name AS Biomaterial,
-       dbo.T_Cell_Culture.CC_Reason AS Reason,
-       dbo.T_Cell_Culture.CC_Created AS Created,
+SELECT dbo.T_Cell_Culture.CC_Name AS biomaterial,
+       dbo.T_Cell_Culture.CC_Reason AS reason,
+       dbo.T_Cell_Culture.CC_Created AS created,
        dbo.T_Campaign.Campaign_Num AS campaign
 FROM dbo.T_Campaign
      INNER JOIN dbo.T_Cell_Culture

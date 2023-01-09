@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_Dataset_Tracking]
 AS
-SELECT DS.Dataset_Num AS Dataset,
-       DSN.DSS_name AS State,
-       DS.DS_created AS Created,
-       E.Experiment_Num AS Experiment,
-       E.EX_created AS [Created (Ex)],
-       CCE.Cell_Culture_List AS [Cell Cultures],
-       C.Campaign_Num AS Campaign,
+SELECT DS.Dataset_Num AS dataset,
+       DSN.DSS_name AS state,
+       DS.DS_created AS created,
+       E.Experiment_Num AS experiment,
+       E.EX_created AS [created (ex)],
+       CCE.Cell_Culture_List AS [cell cultures],
+       C.Campaign_Num AS campaign,
        DS.Dataset_ID AS id
 FROM T_Dataset DS
      INNER JOIN T_Experiments E

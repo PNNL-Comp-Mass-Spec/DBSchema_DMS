@@ -17,8 +17,8 @@ AS (
            Child.term_pk,
            Child.is_obsolete,
            Child.is_leaf,
-           CAST (null AS varchar(1000)) AS Parent_Name,
-           CAST (null AS varchar(255)) AS Parent_Identifier,
+           CAST (null AS varchar(1000)) AS parent_name,
+           CAST (null AS varchar(255)) AS parent_identifier,
            CAST (NULL AS varchar(255)) AS parent_pk,
            0 AS Level
     FROM T_Term Child
@@ -33,8 +33,8 @@ AS (
            Child.term_pk,
            Child.is_obsolete,
            Child.is_leaf,
-           TermHierarchy.term_name AS Parent_Name,
-           TermHierarchy.identifier AS Parent_Identifier,
+           TermHierarchy.term_name AS parent_name,
+           TermHierarchy.identifier AS parent_identifier,
            T_Term_Relationship.object_term_pk AS parent_pk,
            TermHierarchy.Level + 1 AS Level
     FROM T_Term Child

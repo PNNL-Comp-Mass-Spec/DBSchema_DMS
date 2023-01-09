@@ -10,12 +10,12 @@ SELECT term_name,
        identifier,
        term_pk,
        is_leaf,
-       Parent_term_name,
-       Parent_term_Identifier,
-       Grandparent_term_name,
-       Grandparent_term_identifier
+       parent_term_name,
+       parent_term_identifier,
+       grandparent_term_name,
+       grandparent_term_identifier
 FROM V_Term_Lineage
-WHERE Ontology = 'NEWT' AND
+WHERE ontology = 'NEWT' AND
       is_obsolete = 0 AND
       identifier LIKE '[0-9]%'
 

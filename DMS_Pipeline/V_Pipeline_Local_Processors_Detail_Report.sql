@@ -3,17 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW V_Pipeline_Local_Processors_Detail_Report
 AS
 SELECT
-    Processor_Name,
-    State,
-    Groups,
-    GP_Groups,
-    Machine,
-    Latest_Request,
-    id
+    processor_name,     
+    state,              
+    groups,             
+    gp_groups,          
+    machine,            
+    latest_request,     
+    id                  
 FROM T_Local_Processors
 
 

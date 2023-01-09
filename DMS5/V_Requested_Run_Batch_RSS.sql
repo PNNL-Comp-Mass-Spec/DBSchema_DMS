@@ -10,7 +10,7 @@ SELECT TS.ID AS url_title,
        TS.post_date,
        CONVERT(varchar(12), TS.ID) + '_' + CONVERT(varchar(12), TS.num) AS guid,
        TU.U_Name + '|' + TS.Description + '|' + CONVERT(varchar(12), TS.num) + ' datasets' AS post_body,
-       TU.U_PRN
+       TU.u_prn
 FROM ( SELECT TB.ID,
               TB.Batch,
               MAX(TD.DS_created) AS post_date,

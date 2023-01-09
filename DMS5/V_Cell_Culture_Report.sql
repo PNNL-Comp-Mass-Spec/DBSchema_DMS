@@ -7,15 +7,15 @@ GO
 CREATE VIEW [dbo].[V_Cell_Culture_Report]
 AS
 
-SELECT U.CC_Name AS Name,
-       U.CC_Source_Name AS Source,
-       U.CC_Contact_PRN AS Contact,
-       CTN.Name AS [Type],
-       U.CC_Reason AS Reason,
-       U.CC_Created AS Created,
-       U.CC_PI_PRN AS PI,
-       U.CC_Comment AS [Comment],
-       C.Campaign_Num AS Campaign,
+SELECT U.CC_Name AS name,
+       U.CC_Source_Name AS source,
+       U.CC_Contact_PRN AS contact,
+       CTN.Name AS [type],
+       U.CC_Reason AS reason,
+       U.CC_Created AS created,
+       U.CC_PI_PRN AS pi,
+       U.CC_Comment AS [comment],
+       C.Campaign_Num AS campaign,
        U.CC_ID AS id
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN

@@ -6,10 +6,10 @@ GO
 
 CREATE VIEW [dbo].[V_Experiment_Biomaterial_Report]
 AS
-SELECT E.Experiment_Num AS Experiment,
-       E.EX_researcher_PRN AS Researcher,
-       Org.OG_name AS Organism,
-       E.EX_comment AS [Comment],
+SELECT E.Experiment_Num AS experiment,
+       E.EX_researcher_PRN AS researcher,
+       Org.OG_name AS organism,
+       E.EX_comment AS [comment],
        CC.CC_Name AS biomaterial
 FROM T_Experiment_Cell_Cultures ECC
      INNER JOIN T_Experiments E

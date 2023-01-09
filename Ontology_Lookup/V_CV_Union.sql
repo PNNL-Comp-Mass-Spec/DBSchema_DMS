@@ -6,114 +6,114 @@ GO
 
 CREATE VIEW [dbo].[V_CV_Union]
 AS
-    SELECT 'BTO' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'BTO' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_BTO
     UNION
-    SELECT 'ENVO' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'ENVO' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_ENVO
     UNION
-    SELECT 'CL' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'CL' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_CL
     UNION
-    SELECT 'GO' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'GO' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_GO
     UNION
-    SELECT 'PSI-MI' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'PSI-MI' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_MI
     UNION
-    SELECT 'PSI-Mod' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'PSI-Mod' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_MOD
     UNION
-    SELECT 'PSI-MS' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'PSI-MS' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_MS
     UNION
-    SELECT 'NEWT' AS Source,
-           Term_PK,
-           Term_Name,
-           Cast(identifier as varchar(24)),
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+    SELECT 'NEWT' AS source,
+           term_pk,
+           term_name,
+           Cast(identifier as varchar(24)) AS identifier,
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_NEWT
     UNION
-    SELECT 'PRIDE' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'PRIDE' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_PRIDE
     UNION
-    SELECT 'DOID' AS Source,
-           Term_PK,
-           Term_Name,
+    SELECT 'DOID' AS source,
+           term_pk,
+           term_name,
            identifier,
-           Is_Leaf,
-           Parent_term_name,
-           Parent_term_ID,
-           Grandparent_term_name,
-           Grandparent_term_ID
+           is_leaf,
+           parent_term_name,
+           parent_term_id,
+           grandparent_term_name,
+           grandparent_term_id
     FROM T_CV_DOID
 
 
