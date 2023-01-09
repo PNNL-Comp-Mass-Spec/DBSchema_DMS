@@ -36,42 +36,42 @@ SELECT AJ.AJ_jobID AS job,
                 ELSE CAST(CAST(AJ.ETA_Minutes AS DECIMAL(18,1)) AS VARCHAR(12)) + ' minutes'
               END
            ELSE ASN.AJS_name
-           END AS State,
+           END AS state,
        CONVERT(decimal(9, 2), AJ.AJ_ProcessingTimeMinutes) AS runtime_minutes,
-       AJ.AJ_owner AS Owner,
-       AJ.AJ_comment AS Comment,
-       AJ.AJ_specialProcessing AS Special_Processing,
+       AJ.AJ_owner AS owner,
+       AJ.AJ_comment AS comment,
+       AJ.AJ_specialProcessing AS special_processing,
        CASE
            WHEN AJ.AJ_Purged = 0 THEN dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
            ELSE 'Purged: ' + dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
-       END AS Results_Folder_Path,
+       END AS results_folder_path,
        CASE
            WHEN AJ.AJ_MyEMSLState > 0 OR ISNULL(DA.MyEmslState, 0) > 1 THEN ''
            ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName)
-       END AS Archive_Results_Folder_Path,
+       END AS archive_results_folder_path,
        CASE
            WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/'
            ELSE DFP.Dataset_URL
-       END AS Data_Folder_Link,
-       dbo.GetJobPSMStats(AJ.AJ_JobID) AS PSM_Stats,
-       ISNULL(MTSPT.PT_DB_Count, 0) AS MTS_PT_DB_Count,
-       ISNULL(MTSMT.MT_DB_Count, 0) AS MTS_MT_DB_Count,
-       ISNULL(PMTaskCountQ.PMTasks, 0) AS Peak_Matching_Results,
-       AJ.AJ_created AS Created,
-       AJ.AJ_start AS Started,
-       AJ.AJ_finish AS Finished,
-       AJ.AJ_requestID AS Request,
-       AJ.AJ_priority AS Priority,
-       AJ.AJ_assignedProcessorName AS Assigned_Processor,
-       AJ.AJ_Analysis_Manager_Error AS AM_Code,
-       dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) AS DEM_Code,
+       END AS data_folder_link,
+       dbo.GetJobPSMStats(AJ.AJ_JobID) AS psm_stats,
+       ISNULL(MTSPT.PT_DB_Count, 0) AS mts_pt_db_count,
+       ISNULL(MTSMT.MT_DB_Count, 0) AS mts_mt_db_count,
+       ISNULL(PMTaskCountQ.PMTasks, 0) AS peak_matching_results,
+       AJ.AJ_created AS created,
+       AJ.AJ_start AS started,
+       AJ.AJ_finish AS finished,
+       AJ.AJ_requestID AS request,
+       AJ.AJ_priority AS priority,
+       AJ.AJ_assignedProcessorName AS assigned_processor,
+       AJ.AJ_Analysis_Manager_Error AS am_code,
+       dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) AS dem_code,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
-       END AS Export_Mode,
-       T_YesNo.Description AS Dataset_Unreviewed,
-       T_MyEMSLState.StateName AS MyEMSL_State,
-      AJPG.Group_Name AS Processor_Group
+       END AS export_mode,
+       T_YesNo.Description AS dataset_unreviewed,
+       T_MyEMSLState.StateName AS myemsl_state,
+      AJPG.Group_Name AS processor_group
 FROM S_V_BTO_ID_to_Name AS BTO
      RIGHT OUTER JOIN T_Analysis_Job AS AJ
                       INNER JOIN T_Dataset AS DS

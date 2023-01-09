@@ -5,10 +5,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Sample_Prep_Request_State_Picklist]
-AS 
+AS
 SELECT State_Name AS val,
        State_Name AS ex,
-       State_ID
+       State_ID AS state_id
 FROM T_Sample_Prep_Request_State_Name
 WHERE (Active = 1)
 -- Deprecated:

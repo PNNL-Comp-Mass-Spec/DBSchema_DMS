@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Experiment_Plex_Members_List_Report]
-As
+AS
 SELECT PlexMembers.Plex_Exp_ID AS plex_exp_id,
        E.Experiment_Num AS plex_experiment,
        Org.OG_name AS organism,
@@ -13,7 +13,7 @@ SELECT PlexMembers.Plex_Exp_ID AS plex_exp_id,
        ReporterIons.Tag_Name As tag,
        PlexMembers.Exp_ID AS exp_id,
        ChannelExperiment.Experiment_Num AS channel_experiment,
-       ChannelTypeName.Channel_Type_Name Channel_Type,
+       ChannelTypeName.Channel_Type_Name AS channel_type,
        PlexMembers.comment,
        E.Ex_Created AS created,
        C.Campaign_Num AS campaign,

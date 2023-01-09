@@ -4,20 +4,21 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Instrument_Allocation_List_Report] as
-SELECT  TAL.Fiscal_Year ,
-        TAL.Proposal_ID ,
-        CONVERT(VARCHAR(32), T_EUS_Proposals.TITLE) + '...' AS Title ,
-        T_EUS_Proposal_State_Name.Name AS Status ,
-        TZ.General ,
-        TAL.FT ,
-        TAL.IMS ,
-        TAL.ORB ,
-        TAL.EXA ,
-        TAL.LTQ ,
-        TAL.GC ,
-        TAL.QQQ ,
-        TAL.Last_Affected AS Last_Updated ,
+CREATE VIEW [dbo].[V_Instrument_Allocation_List_Report]
+AS
+SELECT  TAL.fiscal_year,
+        TAL.proposal_id,
+        CONVERT(VARCHAR(32), T_EUS_Proposals.TITLE) + '...' AS title,
+        T_EUS_Proposal_State_Name.Name AS status,
+        TZ.general,
+        TAL.ft,
+        TAL.ims,
+        TAL.orb,
+        TAL.exa,
+        TAL.ltq,
+        TAL.gc,
+        TAL.qqq,
+        TAL.Last_Affected AS last_updated,
         TAL.FY_Proposal AS fy_proposal
 FROM    ( SELECT    Fiscal_Year ,
                     Proposal_ID ,
@@ -51,13 +52,13 @@ FROM    ( SELECT    Fiscal_Year ,
         ) AS TAL
         LEFT OUTER JOIN T_EUS_Proposal_State_Name
         INNER JOIN T_EUS_Proposals ON T_EUS_Proposal_State_Name.ID = T_EUS_Proposals.State_ID ON TAL.Proposal_ID = T_EUS_Proposals.PROPOSAL_ID
-        LEFT OUTER JOIN ( SELECT    Comment AS General,
-                                    Fiscal_Year ,
-                                    Proposal_ID
-                          FROM      T_Instrument_Allocation AS TIA
-                          WHERE     ( Allocation_Tag = 'General' )
-                        ) AS TZ ON TZ.Fiscal_Year = TAL.Fiscal_Year
-                                   AND TZ.Proposal_ID = TAL.Proposal_ID
+        LEFT OUTER JOIN ( SELECT Comment AS General,
+                                 Fiscal_Year ,
+                                 Proposal_ID
+                          FROM T_Instrument_Allocation AS TIA
+                          WHERE Allocation_Tag = 'General'
+                        ) AS TZ ON TZ.Fiscal_Year = TAL.Fiscal_Year AND
+                                   TZ.Proposal_ID = TAL.Proposal_ID
 
 
 GO

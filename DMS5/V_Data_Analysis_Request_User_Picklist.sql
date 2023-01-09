@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_Data_Analysis_Request_User_Picklist]
 AS
 SELECT U.U_Name AS val,
        U.Name_with_PRN AS ex,
-       U.U_PRN As PRN
+       U.U_PRN AS prn
 FROM dbo.T_Users U
      INNER JOIN dbo.T_User_Operations_Permissions UOP
        ON U.ID = UOP.U_ID

@@ -3,12 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW dbo.V_Log_Report_RSS
 AS
-SELECT     Entry AS url_title, CONVERT(VARCHAR(12), Entry) + ' - ' + Message AS post_title, CONVERT(VARCHAR(12), Entry) AS guid,
-                      [Posted By] + ' ' + Message AS post_body, 'na' AS U_PRN, Entered AS post_date
-FROM         dbo.V_Log_Report
-WHERE     (Type = 'Error') AND (NOT (Message LIKE '%Error posting xml%'))
+SELECT Entry AS url_title,
+       CONVERT(varchar(12), Entry) + ' - ' + Message AS post_title,
+       CONVERT(varchar(12), Entry) AS guid,
+       [Posted_By] + ' ' + Message AS post_body,
+       'na' AS u_prn,
+       Entered AS post_date
+FROM dbo.V_Log_Report
+WHERE (TYPE = 'Error') AND
+      (NOT (Message LIKE '%Error posting xml%'))
 
 
 GO

@@ -67,7 +67,7 @@ SELECT AJ.AJ_jobID AS job,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
-       END AS Export_Mode,
+       END AS export_mode,
        T_YesNo.Description AS dataset_unreviewed
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
