@@ -5,20 +5,33 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW [dbo].[V_Dataset_Archive_Ex]
 AS
-SELECT     dbo.T_Dataset.Dataset_ID, dbo.T_Dataset.Dataset_Num AS Dataset_Number, dbo.T_Dataset.DS_folder_name AS Folder_Name, 
-                      dbo.t_storage_path.SP_vol_name_server + dbo.t_storage_path.SP_path AS ServerPath, 
-                      dbo.t_storage_path.SP_vol_name_client + dbo.t_storage_path.SP_path AS ClientPath, dbo.T_Archive_Path.AP_archive_path AS Archive_Path, 
-                      dbo.T_Archive_Path.AP_Server_Name AS Archive_Server, dbo.T_Instrument_Name.IN_class AS Instrument_Class, 
-                      dbo.T_Dataset_Archive.AS_last_update AS Last_Update, dbo.T_Dataset_Archive.AS_state_ID AS Archive_State, 
-                      dbo.T_Dataset_Archive.AS_update_state_ID AS Update_State, dbo.T_Instrument_Name.IN_name AS Instrument_Name, 
-                      dbo.T_Dataset_Archive.AS_last_verify AS Last_Verify, dbo.T_Instrument_Class.requires_preparation AS Requires_Prep, 
-                      dbo.T_Instrument_Class.is_purgable AS Is_Purgeable
-FROM         dbo.T_Dataset INNER JOIN
-                      dbo.T_Dataset_Archive ON dbo.T_Dataset.Dataset_ID = dbo.T_Dataset_Archive.AS_Dataset_ID INNER JOIN
-                      dbo.t_storage_path ON dbo.T_Dataset.DS_storage_path_ID = dbo.t_storage_path.SP_path_ID INNER JOIN
-                      dbo.T_Instrument_Name ON dbo.T_Dataset.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID INNER JOIN
-                      dbo.T_Archive_Path ON dbo.T_Dataset_Archive.AS_storage_path_ID = dbo.T_Archive_Path.AP_path_ID INNER JOIN
-                      dbo.T_Instrument_Class ON dbo.T_Instrument_Name.IN_class = dbo.T_Instrument_Class.IN_class
+SELECT DS.Dataset_ID,
+       DS.Dataset_Num AS Dataset,
+       DS.DS_folder_name AS Folder_Name,
+       SPath.SP_vol_name_server + SPath.SP_path AS Server_Path,
+       SPath.SP_vol_name_client + SPath.SP_path AS Client_Path,
+       dbo.T_Archive_Path.AP_archive_path AS Archive_Path,
+       dbo.T_Archive_Path.AP_Server_Name AS Archive_Server,
+       InstName.IN_class AS Instrument_Class,
+       DA.AS_last_update AS Last_Update,
+       DA.AS_state_ID AS Archive_State,
+       DA.AS_update_state_ID AS Update_State,
+       InstName.IN_name AS Instrument_Name,
+       DA.AS_last_verify AS Last_Verify,
+       InstClass.requires_preparation AS Requires_Prep,
+       InstClass.is_purgable AS Is_Purgeable
+FROM dbo.T_Dataset DS
+     INNER JOIN dbo.T_Dataset_Archive DA
+       ON DS.Dataset_ID = DA.AS_Dataset_ID
+     INNER JOIN dbo.t_storage_path SPath
+       ON DS.DS_storage_path_ID = SPath.SP_path_ID
+     INNER JOIN dbo.T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     INNER JOIN dbo.T_Archive_Path
+       ON DA.AS_storage_path_ID = dbo.T_Archive_Path.AP_path_ID
+     INNER JOIN dbo.T_Instrument_Class InstClass
+       ON InstName.IN_class = InstClass.IN_class
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Archive_Ex] TO [DDL_Viewer] AS [dbo]
