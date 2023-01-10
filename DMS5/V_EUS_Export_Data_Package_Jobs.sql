@@ -1,9 +1,10 @@
-/****** Object:  View [dbo].[V_EUS_Export_JobMetadata] ******/
+/****** Object:  View [dbo].[V_EUS_Export_Data_Package_Jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_EUS_Export_JobMetadata
+
+CREATE VIEW [dbo].[V_EUS_Export_Data_Package_Jobs]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
        D.Dataset_Num AS Dataset,
@@ -17,9 +18,10 @@ SELECT D.Dataset_ID AS Dataset_ID,
        AnTool.AJT_toolName AS Analysis_Tool,
        AnTool.AJT_resultType AS Analysis_Result_Type,
        AJ.AJ_proteinCollectionList AS Protein_Collection_List,
-       AJ.AJ_resultsFolderName AS Analysis_Job_Results_Folder,
-       dbo.udfCombinePaths(V_Dataset_Folder_Paths.Archive_Folder_Path, AJ.AJ_resultsFolderName) AS 
-         Folder_Path_Aurora
+       DP.ID AS Data_Package_ID,
+       DP.Name AS Data_Package_Name,
+       dbo.udfCombinePaths('\\aurora.emsl.pnl.gov\archive\prismarch\DataPkgs', DP.Storage_Path_Relative) AS 
+         Data_Package_Path_Aurora
 FROM T_Dataset D
      INNER JOIN T_Instrument_Name Inst
        ON D.DS_instrument_name_ID = Inst.Instrument_ID
@@ -37,10 +39,13 @@ FROM T_Dataset D
        ON D.Dataset_ID = AJ.AJ_datasetID
      INNER JOIN T_Analysis_Tool AnTool
        ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
-     INNER JOIN V_Dataset_Folder_Paths
-       ON D.Dataset_ID = V_Dataset_Folder_Paths.Dataset_ID
+     LEFT OUTER JOIN S_V_Data_Package_Analysis_Jobs_Export DPJ
+       ON AJ.AJ_jobID = DPJ.Job
+     INNER JOIN S_V_Data_Package_Export DP
+       ON DP.ID = DPJ.Data_Package_ID
 WHERE (AJ.AJ_StateID = 4)
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_JobMetadata] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_Data_Package_Jobs] TO [DDL_Viewer] AS [dbo]
 GO

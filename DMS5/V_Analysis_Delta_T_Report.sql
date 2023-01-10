@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Analysis_DeltaT_Report] ******/
+/****** Object:  View [dbo].[V_Analysis_Delta_T_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Analysis_DeltaT_Report]
+CREATE VIEW [dbo].[V_Analysis_Delta_T_Report]
 AS
 SELECT CONVERT(varchar(32), T_Analysis_Job.AJ_jobID) AS job,
        DATEDIFF(mi, T_Analysis_Job.AJ_start, T_Analysis_Job.AJ_finish) AS delta_t,
@@ -38,5 +38,5 @@ FROM dbo.T_Analysis_Job
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_DeltaT_Report] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Delta_T_Report] TO [DDL_Viewer] AS [dbo]
 GO

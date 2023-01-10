@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Analysis_Job_Use_MonoMass] ******/
+/****** Object:  View [dbo].[V_Analysis_Job_Use_Mono_Mass] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Analysis_Job_Use_MonoMass]
+CREATE VIEW [dbo].[V_Analysis_Job_Use_Mono_Mass]
 AS
 -- This view is used by the ParamFileGenerator to determine whether to auto-enable monoisotopic masses when generating Sequest param files
 SELECT dbo.T_Dataset.Dataset_ID,
@@ -21,5 +21,5 @@ FROM dbo.T_Dataset
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Use_MonoMass] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Use_Mono_Mass] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_EUS_Export_DataPackageDatasets] ******/
+/****** Object:  View [dbo].[V_EUS_Export_Data_Package_Datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_EUS_Export_DataPackageDatasets]
+CREATE VIEW [dbo].[V_EUS_Export_Data_Package_Datasets]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
        D.Dataset_Num AS Dataset,
@@ -22,5 +22,5 @@ FROM T_Dataset D
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_DataPackageDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_Data_Package_Datasets] TO [DDL_Viewer] AS [dbo]
 GO

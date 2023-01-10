@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_EUS_Export_DatasetMetadata] ******/
+/****** Object:  View [dbo].[V_EUS_Export_Dataset_Metadata] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_EUS_Export_DatasetMetadata]
+CREATE VIEW [dbo].[V_EUS_Export_Dataset_Metadata]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
        D.Dataset_Num AS Dataset,
@@ -76,5 +76,5 @@ WHERE D.DS_State_ID=3 AND D.DS_Rating NOT IN (-1, -2, -5)
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_DatasetMetadata] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_Dataset_Metadata] TO [DDL_Viewer] AS [dbo]
 GO
