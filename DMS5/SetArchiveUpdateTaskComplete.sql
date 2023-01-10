@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[SetArchiveUpdateTaskComplete]
+CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskComplete]
 /****************************************************
 **
 **  Desc:
-**      Sets status of task to successful completion or to failed 
+**      Sets status of task to successful completion or to failed
 **      (according to value of input argument)
 **
 **  Return values: 0: success, otherwise, error code
@@ -24,6 +24,7 @@ CREATE Procedure [dbo].[SetArchiveUpdateTaskComplete]
 **          09/02/2011 mem - Now calling PostUsageLogEntry
 **          04/16/2014 mem - Now changing archive state to 3 if it is 14
 **          07/09/2022 mem - Tabs to spaces
+**          01/10/2023 mem - Rename view to V_Dataset_Archive_Ex and use new column name
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     Declare @datasetID int
@@ -49,11 +50,10 @@ As
     set @datasetID = 0
     set @updateState = 0
     --
-    SELECT     
-        @datasetID = Dataset_ID, 
-        @updateState = Update_State
-    FROM V_DatasetArchive_Ex
-    WHERE Dataset_Number = @datasetNum
+    SELECT @datasetID = Dataset_ID,
+           @updateState = Update_State
+    FROM V_Dataset_Archive_Ex
+    WHERE Dataset = @datasetNum
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -75,11 +75,11 @@ As
     end
 
     Set @completionCode = IsNull(@completionCode, 0)
-    
+
     ---------------------------------------------------
-    -- Update dataset archive state 
+    -- Update dataset archive state
     ---------------------------------------------------
-    
+
     If @completionCode = 0
     Begin
         -- Success
@@ -130,6 +130,7 @@ Done:
     Exec PostUsageLogEntry 'SetArchiveUpdateTaskComplete', @UsageMessage
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [DDL_Viewer] AS [dbo]

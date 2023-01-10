@@ -4,21 +4,22 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[SetArchiveUpdateRequired]
+CREATE PROCEDURE [dbo].[SetArchiveUpdateRequired]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Sets archive status of dataset to update required
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   12/3/2002   
+**  Date:   12/3/2002
 **          03/06/2007 grk - add changes for deep purge (ticket #403)
 **          03/07/2007 dac - fixed incorrect check for "in progress" update states (ticket #408)
 **          09/02/2011 mem - Now calling PostUsageLogEntry
 **          07/09/2022 mem - Tabs to spaces
-**    
+**          01/10/2023 mem - Rename view to V_Dataset_Archive_Ex and use new column name
+**
 *****************************************************/
 (
     @datasetNum varchar(128),
@@ -29,7 +30,7 @@ As
 
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
-    
+
     set @message = ''
 
     Declare @datasetID int
@@ -43,12 +44,11 @@ As
     set @datasetID = 0
     set @updateState = 0
     --
-    SELECT     
-        @datasetID = Dataset_ID, 
-        @updateState = Update_State,
-        @archiveState = Archive_State
-    FROM V_DatasetArchive_Ex
-    WHERE Dataset_Number = @datasetNum
+    SELECT @datasetID = Dataset_ID,
+           @updateState = Update_State,
+           @archiveState = Archive_State
+    FROM V_Dataset_Archive_Ex
+    WHERE Dataset = @datasetNum
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -79,9 +79,9 @@ As
     end
 
     ---------------------------------------------------
-    -- Update dataset archive state 
+    -- Update dataset archive state
     ---------------------------------------------------
-    
+
     UPDATE T_Dataset_Archive
     SET AS_update_state_ID = 2,  AS_state_ID = @archiveState
     WHERE     (AS_Dataset_ID = @datasetID)

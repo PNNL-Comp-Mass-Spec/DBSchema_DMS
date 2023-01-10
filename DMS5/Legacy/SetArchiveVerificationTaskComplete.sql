@@ -21,7 +21,7 @@ CREATE Procedure [dbo].[SetArchiveVerificationTaskComplete]
 **	 @completionCode	0->success, 1->failure, anything else ->no intermediate files
 **
 **	Auth:	jds
-**	Date:	06/27/2005   
+**	Date:	06/27/2005
 **			10/26/2007 dac - Removed @processorName parameter, which is no longer used
 **			03/23/2009 mem - Now updating AS_Last_Successful_Archive when the archive state is 3=Complete (Ticket #726)
 **			09/02/2011 mem - Now calling PostUsageLogEntry
@@ -40,7 +40,7 @@ As
 
 	declare @myRowCount int
 	set @myRowCount = 0
-	
+
 	set @message = ''
 
 	declare @datasetID int
@@ -53,8 +53,8 @@ As
 	set @datasetID = 0
 	set @archiveState = 0
 	--
-	SELECT     
-		@datasetID = Dataset_ID, 
+	SELECT
+		@datasetID = Dataset_ID,
 		@archiveState = Archive_State
 	FROM         V_DatasetArchive_Ex
 	WHERE     (Dataset_Number = @datasetNum)
@@ -79,14 +79,14 @@ As
 	end
 
    	---------------------------------------------------
-	-- Update dataset archive state 
+	-- Update dataset archive state
 	---------------------------------------------------
-	
+
 	if @completionCode = 0  -- task completed sat
 		begin
 			UPDATE    T_Dataset_Archive
 			SET
-				AS_state_ID = 3, 
+				AS_state_ID = 3,
 				AS_last_update = GETDATE(),
 				AS_last_verify = GETDATE(),
 				AS_Last_Successful_Archive = GETDATE()

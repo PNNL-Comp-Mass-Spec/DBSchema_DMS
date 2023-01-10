@@ -4,11 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[SetArchiveTaskComplete]
+CREATE PROCEDURE [dbo].[SetArchiveTaskComplete]
 /****************************************************
 **
-**  Desc: 
-**      Sets status of task to successful completion or to failed 
+**  Desc:
+**      Sets status of task to successful completion or to failed
 **      (according to value of input argument)
 **
 **  Return values: 0: success, otherwise, error code
@@ -18,14 +18,15 @@ CREATE Procedure [dbo].[SetArchiveTaskComplete]
 **    @completionCode            0->success, 1->failure, anything else ->no intermediate files
 **
 **  Auth:   grk
-**  Date:   09/26/2002   
-**          06/21/2005 grk - added handling for "requires_preparation" 
+**  Date:   09/26/2002
+**          06/21/2005 grk - added handling for "requires_preparation"
 **          11/27/2007 dac - removed @processorname param, which is no longer required
 **          03/23/2009 mem - Now updating AS_Last_Successful_Archive when the archive state is 3=Complete (Ticket #726)
-**          12/17/2009 grk - added special success code '100' for use by capture broker 
+**          12/17/2009 grk - added special success code '100' for use by capture broker
 **          09/02/2011 mem - Now calling PostUsageLogEntry
 **          07/09/2022 mem - Tabs to spaces
-**    
+**          01/10/2023 mem - Rename view to V_Dataset_Archive_Ex and use new column name
+**
 *****************************************************/
 (
     @datasetNum varchar(128),
@@ -37,7 +38,7 @@ As
 
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
-    
+
     set @message = ''
 
     Declare @datasetID int
@@ -51,12 +52,11 @@ As
     set @datasetID = 0
     set @archiveState = 0
     --
-    SELECT     
-        @datasetID = Dataset_ID, 
-        @archiveState = Archive_State,
-        @doPrep = Requires_Prep
-    FROM V_DatasetArchive_Ex
-    WHERE Dataset_Number = @datasetNum
+    SELECT @datasetID = Dataset_ID,
+           @archiveState = Archive_State,
+           @doPrep = Requires_Prep
+    FROM V_Dataset_Archive_Ex
+    WHERE Dataset = @datasetNum
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -78,38 +78,38 @@ As
     end
 
     ---------------------------------------------------
-    -- Update dataset archive state 
-    ---------------------------------------------------    
-    
+    -- Update dataset archive state
+    ---------------------------------------------------
+
     if @completionCode = 0 OR @completionCode = 100 -- task completed successfully
     begin
-        -- decide what state is next 
+        -- decide what state is next
         --
         DECLARE @tmpState INT
-        IF @completionCode = 100 
+        IF @completionCode = 100
         SET @tmpState = 3
-        ELSE 
-        IF @doPrep = 0 
+        ELSE
+        IF @doPrep = 0
             SET @tmpState = 3
-        ELSE 
+        ELSE
             SET @tmpState = 11
         --
         -- update the state
         --
         UPDATE T_Dataset_Archive
         SET
-            AS_state_ID = @tmpState, 
-            AS_update_state_ID = 4, 
+            AS_state_ID = @tmpState,
+            AS_update_state_ID = 4,
             AS_last_update = GETDATE(),
             AS_last_verify = GETDATE(),
-            AS_Last_Successful_Archive = 
-                    CASE WHEN @tmpState = 3 
-                    THEN GETDATE() 
-                    ELSE AS_Last_Successful_Archive 
+            AS_Last_Successful_Archive =
+                    CASE WHEN @tmpState = 3
+                    THEN GETDATE()
+                    ELSE AS_Last_Successful_Archive
                     END
         WHERE (AS_Dataset_ID = @datasetID)
         --
-        SELECT @myError = @@error, @myRowCount = @@rowcount            
+        SELECT @myError = @@error, @myRowCount = @@rowcount
     end
     else   -- task completed unsuccessfully
     begin
