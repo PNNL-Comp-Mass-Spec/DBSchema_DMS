@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_DatasetArchive_Ex] ******/
+/****** Object:  View [dbo].[V_Dataset_Archive_Ex] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_DatasetArchive_Ex
+CREATE VIEW [dbo].[V_Dataset_Archive_Ex]
 AS
 SELECT     dbo.T_Dataset.Dataset_ID, dbo.T_Dataset.Dataset_Num AS Dataset_Number, dbo.T_Dataset.DS_folder_name AS Folder_Name, 
                       dbo.t_storage_path.SP_vol_name_server + dbo.t_storage_path.SP_path AS ServerPath, 
@@ -21,5 +21,5 @@ FROM         dbo.T_Dataset INNER JOIN
                       dbo.T_Instrument_Class ON dbo.T_Instrument_Name.IN_class = dbo.T_Instrument_Class.IN_class
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_DatasetArchive_Ex] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Archive_Ex] TO [DDL_Viewer] AS [dbo]
 GO

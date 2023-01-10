@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_Dataset_ScanTypes] ******/
+/****** Object:  View [dbo].[V_Dataset_Scan_Types] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Dataset_ScanTypes
+CREATE VIEW [dbo].[V_Dataset_Scan_Types]
 AS
 SELECT DST.Entry_ID,
        DST.Dataset_ID,
@@ -21,5 +21,5 @@ FROM T_Dataset_ScanTypes DST
        ON DST.Dataset_ID = DS.Dataset_ID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Dataset_ScanTypes] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scan_Types] TO [DDL_Viewer] AS [dbo]
 GO
