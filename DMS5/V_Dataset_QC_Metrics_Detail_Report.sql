@@ -12,6 +12,8 @@ SELECT DISTINCT
     acq_time_start,
     dataset_id,
     dataset,
+    dataset_rating,
+    dataset_rating_id,
     dataset_folder_path,
     qc_metric_stats,
     quameter_job,
@@ -117,18 +119,22 @@ SELECT DISTINCT
 	MS2_RepIon_2Missing + '| Number of peptides (PSMs) where all but 2 of the reporter ions were seen' AS ms2_rep_ion_2missing,
 	MS2_RepIon_3Missing + '| Number of peptides (PSMs) where all but 3 of the reporter ions were seen' AS ms2_rep_ion_3missing,
     smaqc_last_affected,
+    psm_source_job,
     QCDM + '| Overall confidence using model developed by Brett Amidan' AS qcdm,
     qcdm_last_affected,
     mass_error_ppm,
     mass_error_ppm_refined,
     mass_error_ppm_viper,
     amts_10pct_fdr,
+    amts_25pct_fdr,
     QCART + '| Overall confidence using model developed by Allison Thompson and Ryan Butner' AS qcart
 	FROM (SELECT InstName.IN_Group AS Instrument_Group,
 		   InstName.IN_name AS Instrument,
 		   DS.Acq_Time_Start,
 		   DQC.Dataset_ID,
 		   DS.Dataset_Num AS Dataset,
+           DRN.DRN_name AS dataset_rating,
+           DS.DS_rating AS dataset_rating_id,
 		   DFP.Dataset_Folder_Path AS Dataset_Folder_Path,
 		   'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/instrument/' + IN_Name AS QC_Metric_Stats,
 		   DQC.Quameter_Job,
@@ -236,16 +242,20 @@ SELECT DISTINCT
 			DQC.Last_Affected AS SMAQC_Last_Affected,
 			dbo.NumberToString(DQC.QCDM, 3) AS QCDM,
 			DQC.QCDM_Last_Affected,
+			DQC.psm_source_job,
 			dbo.NumberToString(DQC.MassErrorPPM, 3) AS Mass_Error_PPM,
 			dbo.NumberToString(DQC.MassErrorPPM_Refined, 3) AS Mass_Error_PPM_Refined,
 			dbo.NumberToString(DQC.MassErrorPPM_VIPER, 3) AS Mass_Error_PPM_VIPER,
 			DQC.AMTs_10pct_FDR,
+			DQC.AMTs_25pct_FDR,
 			dbo.NumberToString(DQC.QCART, 3) AS QCART
 	FROM T_Dataset_QC DQC
 		 INNER JOIN T_Dataset DS
 		   ON DQC.Dataset_ID = DS.Dataset_ID
 		 INNER JOIN T_Instrument_Name InstName
 		   ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+         INNER JOIN T_DatasetRatingName DRN
+           ON DS.DS_rating = DRN.DRN_state_ID
 		 LEFT OUTER JOIN dbo.V_Dataset_Folder_Paths DFP
 		   ON DQC.Dataset_ID = DFP.Dataset_ID
 	) DataQ
