@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
 **  Date:   06/16/2016 mem - Initial version
 **          06/09/2021 mem - Tabs to spaces
 **          06/24/2012 mem - Add parameter DataPackagePath
+**          01/09/2023 mem - Use new column name in view
 **
 *****************************************************/
 (
@@ -79,7 +80,7 @@ As
     If @DataPackageID <> 0 
     Begin 
         SELECT 
-            @dataPkgSharePath = [Share Path],
+            @dataPkgSharePath = Share_Path,
             @dataPkgName = Name
         FROM S_Data_Package_Details 
         WHERE ID = @DataPackageID
@@ -164,6 +165,7 @@ As
     
 Done:
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg] TO [DDL_Viewer] AS [dbo]
