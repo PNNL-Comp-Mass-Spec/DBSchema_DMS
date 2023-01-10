@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_MyEMSL_Uploads] ******/
+/****** Object:  View [dbo].[V_MyEMSL_Data_Package_Uploads] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_MyEMSL_Uploads]
+CREATE VIEW [dbo].[V_MyEMSL_Data_Package_Uploads]
 AS
 /*
 ** Note that this view is used by clsDataPackageArchiver in the DataPackage Archive Manager
@@ -30,5 +30,5 @@ FROM T_MyEMSL_Uploads MU
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Uploads] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Data_Package_Uploads] TO [DDL_Viewer] AS [dbo]
 GO
