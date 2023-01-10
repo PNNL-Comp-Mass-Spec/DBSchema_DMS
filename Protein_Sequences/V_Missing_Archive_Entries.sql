@@ -6,14 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Missing_Archive_Entries]
 AS
-SELECT Protein_Collection_ID,
-       Collection_Name,
-       Authentication_Hash,
-       DateModified,
-       Collection_Type_ID,
-       NumProteins
+SELECT protein_collection_id,
+       collection_name,
+       authentication_hash,
+       DateModified As date_modified,
+       collection_type_id,
+       NumProteins As num_proteins
 FROM dbo.T_Protein_Collections
 WHERE (NOT (Authentication_Hash IN ( SELECT Authentication_Hash
                                      FROM T_Archived_Output_Files )))
+
 
 GO

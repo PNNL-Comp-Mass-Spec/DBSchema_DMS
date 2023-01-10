@@ -6,14 +6,17 @@ GO
 
 CREATE VIEW [dbo].[V_Protein_Collections]
 AS
-SELECT DISTINCT Protein_Collection_ID,
-                Collection_Name + ' (' + CAST(NumProteins AS varchar) + ' Entries)' AS Display,
-                Collection_Name,
-                Primary_Annotation_Type_ID,
-                Description,
-                Contents_Encrypted,
-                Collection_Type_ID,
-                Collection_State_ID
+SELECT protein_collection_id,
+       Collection_Name + ' (' + CAST(NumProteins AS varchar) + ' Entries)' AS display,
+       collection_name,
+       primary_annotation_type_id,
+       description,
+       contents_encrypted,
+       collection_type_id,
+       collection_state_id,
+       NumProteins As num_proteins,
+       NumResidues As num_residues
 FROM dbo.T_Protein_Collections
+
 
 GO
