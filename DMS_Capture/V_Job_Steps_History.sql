@@ -30,7 +30,8 @@ SELECT JS.Job,
        STV.Tool_Version,
        DI.SP_vol_name_client + DI.SP_path + DI.DS_folder_name AS Dataset_Folder_Path,
        DI.SP_vol_name_server + DI.SP_path + DI.DS_folder_name AS Server_Folder_Path,
-       J.State AS Job_State
+       J.State AS Job_State,
+       JS.Saved
 FROM T_Job_Steps_History JS
      INNER JOIN T_Job_Step_State_Name SSN
        ON JS.State = SSN.ID
