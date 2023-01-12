@@ -4,6 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Protein_Collection_List_Report]
 AS
 SELECT LookupQ.id,
@@ -65,7 +66,7 @@ FROM ( SELECT Name,
                      Protein_Collection_ID As ID,
                      State_Name As State,
                      Includes_Contaminants,
-                     Cast(File_Size / 1024.0 / 1024 As Decimal(9,2)) As FileSizeMB
+                     Cast(File_Size_Bytes / 1024.0 / 1024 As Decimal(9,2)) As FileSizeMB
               FROM S_V_Protein_Collections_by_Organism
             ) AS CP
      ) AS LookupQ
