@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure dbo.DoRequestedRunBatchOperation
+
+CREATE Procedure [dbo].[DoRequestedRunBatchOperation]
 /****************************************************
 **
 **  Desc:
