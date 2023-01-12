@@ -19,8 +19,6 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **
 **	Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
-**
 **	Auth:	grk
 **	Date:	01/26/2003
 **			12/11/2003 grk - removed LCMS cart modes
@@ -64,7 +62,7 @@ As
 	Declare @myError int = 0
 	Declare @myRowCount int = 0
 
-	Declare @msg varchar(512)
+	Declare @msg varchar(1024)
 	Declare @continue int
 	Declare @requestID int
 
@@ -102,7 +100,12 @@ As
 	End;
 
 	BEGIN TRY 
-	
+
+    -- Uncomment to log the values of the procedure arguments in T_Log_Entries
+    --
+    -- Set @msg = 'Procedure called with @mode=' + Coalesce(@mode, '??') + ', @newValue=' + Coalesce(@newValue, '??') + ', @reqRunIDList=' + Coalesce(@reqRunIDList, '??')
+    -- exec PostLogEntry 'Debug', @msg, 'UpdateRequestedRunAssignments'
+
 	---------------------------------------------------
 	-- Populate a temporary table with the values in @reqRunIDList
 	---------------------------------------------------
@@ -521,13 +524,14 @@ As
 	
 		If @logErrors > 0
 		Begin
-			Declare @logMessage varchar(1024) = @message + '; Requests '
+			Set @msg = @message + '; Requests '
+
 			If Len(@reqRunIDList) < 128
-				Set @logMessage = @logMessage + @reqRunIDList
+				Set @msg = @msg + @reqRunIDList
 			Else
-				Set @logMessage = @logMessage + Substring(@reqRunIDList, 1, 128) + ' ...'
+				Set @msg = @msg + Substring(@reqRunIDList, 1, 128) + ' ...'
 				
-			exec PostLogEntry 'Error', @logMessage, 'UpdateRequestedRunAssignments'
+			exec PostLogEntry 'Error', @msg, 'UpdateRequestedRunAssignments'
 		End
 
 	END CATCH
@@ -543,6 +547,7 @@ As
 	Exec PostUsageLogEntry 'UpdateRequestedRunAssignments', @usageMessage
 
 	return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [DDL_Viewer] AS [dbo]
