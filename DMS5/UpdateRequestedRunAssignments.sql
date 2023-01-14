@@ -465,10 +465,11 @@ As
                         End
 
                         Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @requestID) + ': ' + @message
-                        RAISERROR (@msg, 11, 5)
                         Set @returnCode = 'U5107'
-
                         Set @logErrors = 1
+
+                        RAISERROR (@msg, 11, 5)
+
                     End    -- </d>
 
                     Set @countDeleted = @countDeleted + 1
