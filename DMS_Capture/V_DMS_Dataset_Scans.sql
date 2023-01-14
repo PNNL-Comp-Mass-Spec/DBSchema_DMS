@@ -14,8 +14,6 @@ SELECT Dataset_ID,
        Scan_Count,
        Scan_Filter,
        Scan_Count_Total,
-       Elution_Time_Max,
-       File_Size_MB,
        Entry_ID
 FROM S_DMS_V_Dataset_Scans
 
