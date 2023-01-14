@@ -9,6 +9,7 @@ AS
 SELECT PF.Param_File_Name,
        PFMM.Param_File_ID,
        S.Local_Symbol,
+       PFMM.Local_Symbol_ID,
        PFMM.Mod_Type_Symbol,
        R.Residue_Symbol,
        MCF.Affected_Atom,
@@ -48,6 +49,7 @@ FROM dbo.T_Mass_Correction_Factors MCF
        ON PFMM.Param_File_ID = PF.Param_File_ID
      LEFT OUTER JOIN dbo.T_MaxQuant_Mods MQM
        ON MQM.Mod_ID = PFMM.MaxQuant_Mod_ID
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Param_File_Mass_Mod_Info] TO [DDL_Viewer] AS [dbo]
