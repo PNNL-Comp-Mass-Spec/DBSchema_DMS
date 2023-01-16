@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Log_Errors_ProductionDBs] ******/
+/****** Object:  View [dbo].[V_Log_Errors_Production_DBs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Log_Errors_ProductionDBs]
+CREATE VIEW [dbo].[V_Log_Errors_Production_DBs]
 AS
 SELECT 'DMS_Capture' AS DB, Entry_ID, posted_by, Entered, type, message, Entered_By
 FROM DMS_Capture.dbo.V_Log_Errors
@@ -20,5 +20,5 @@ FROM DMS_Data_Package.dbo.V_Log_Errors
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors_ProductionDBs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Log_Errors_Production_DBs] TO [DDL_Viewer] AS [dbo]
 GO

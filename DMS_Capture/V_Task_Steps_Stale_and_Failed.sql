@@ -1,11 +1,10 @@
-/****** Object:  View [dbo].[V_Job_Steps_Stale_and_Failed] ******/
+/****** Object:  View [dbo].[V_Task_Steps_Stale_and_Failed] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE VIEW [dbo].[V_Job_Steps_Stale_and_Failed] 
+CREATE VIEW [dbo].[V_Task_Steps_Stale_and_Failed] 
 AS
 SELECT Warning_Message,
        Dataset,
@@ -16,8 +15,8 @@ SELECT Warning_Message,
        CONVERT(int, RunTime_Minutes) AS RunTime_Minutes,
        CONVERT(decimal(9, 1), Job_Progress) AS Job_Progress,
        RunTime_Predicted_Hours,
-       StateName,
-       CONVERT(decimal(9, 1), LastCPUStatus_Minutes / 60.0) AS LastCPUStatus_Hours,
+       StateName As State_Name,
+       CONVERT(decimal(9, 1), LastCPUStatus_Minutes / 60.0) AS Last_CPU_Status_Hours,
        Processor,
        Start,
        Step,
@@ -75,7 +74,6 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND DATEDIFF(hour, JS.Start, GetDate()) >
 WHERE Warning_Message <> ''
 
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_Stale_and_Failed] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Task_Steps_Stale_and_Failed] TO [DDL_Viewer] AS [dbo]
 GO
