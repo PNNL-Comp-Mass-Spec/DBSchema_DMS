@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Processor_Status_Warnings] ******/
+/****** Object:  View [dbo].[V_Processor_Status_Warnings_CTM] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Processor_Status_Warnings]
+CREATE VIEW [dbo].[V_Processor_Status_Warnings_CTM]
 AS
 SELECT PS.Processor_Name,
        ISNULL(PS.Mgr_Status, 'Unknown_Status') AS Mgr_Status,
@@ -30,5 +30,5 @@ WHERE PS.Monitor_Processor <> 0 AND
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Processor_Status_Warnings] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Processor_Status_Warnings_CTM] TO [DDL_Viewer] AS [dbo]
 GO

@@ -6,10 +6,11 @@ GO
 CREATE PROCEDURE dbo.ResetFailedManagers
 /****************************************************
 **
-**	Desc:	Resets managers that report "flag file" in V_Processor_Status_Warnings
+**	Desc:	Resets managers that report "flag file" in V_Processor_Status_Warnings_CTM
 **
 **	Auth:	mem
 **			10/20/2016 mem - Ported from DMS_Pipeline
+**          01/16/2023 mem - Use new view name
 **    
 *****************************************************/
 (
@@ -20,10 +21,8 @@ As
 
 	set nocount on
 	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+	Declare @myError Int = 0
+	Declare @myRowCount Int = 0
 	
 	-- Temp table for managers
 	CREATE TABLE #Tmp_ManagersToReset (
@@ -46,7 +45,7 @@ As
 	INSERT INTO #Tmp_ManagersToReset (Processor_Name, Status_Date)
 	SELECT Processor_Name,
 	       Status_Date
-	FROM V_Processor_Status_Warnings
+	FROM V_Processor_Status_Warnings_CTM
 	WHERE (Most_Recent_Log_Message Like '%Flag file%') AND
 	      (Status_Date > DATEADD(hour, -6, GETDATE()))
 	--	
