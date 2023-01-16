@@ -13,7 +13,7 @@ SELECT PS.Processor_Name,
              ELSE '; ' + NodeCountErrorQ.Status_State
          END AS Mgr_Status,
        ISNULL(PS.Task_Status, 'Unknown_Status') AS Task_Status,
-       CONVERT(decimal(9, 2), DATEDIFF(MINUTE, PS.Status_Date, GETDATE()) / 60.0) AS LastStatus_Hours,
+       CONVERT(decimal(9, 2), DATEDIFF(MINUTE, PS.Status_Date, GETDATE()) / 60.0) AS Last_Status_Hours,
        PS.Status_Date,
        PS.Most_Recent_Job_Info,
        PS.Most_Recent_Log_Message,
