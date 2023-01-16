@@ -18,24 +18,24 @@ AS (
 )
 SELECT *
 FROM (
-	SELECT JSF.Warning_Message,
+	SELECT TSF.Warning_Message,
 		   DS.Dataset_Num AS Dataset,
 		   DS.Dataset_ID as Dataset_ID,
 		   DS.DS_created AS Dataset_Created,
 		   Instrument.IN_name AS Instrument,
 		   CONVERT(varchar(64), DSN.DSS_name + ' (dataset)') AS State,
 		   DS.DS_Last_Affected AS State_Date,
-		   JSF.Script,
-	       JSF.Tool,
-	       JSF.RunTime_Minutes,
-	       JSF.StateName AS Step_State,
-	       JSF.Processor,
-	       JSF.Start,
-	       JSF.Step,
+		   TSF.Script,
+	       TSF.Tool,
+	       TSF.RunTime_Minutes,
+	       TSF.State_Name AS Step_State,
+	       TSF.Processor,
+	       TSF.Start,
+	       TSF.Step,
 		   Spath.SP_vol_name_client + Spath.SP_path AS Storage_Path
-	FROM DMS_Capture.dbo.V_Job_Steps_Stale_and_Failed JSF 
+	FROM DMS_Capture.dbo.V_Task_Steps_Stale_and_Failed TSF 
 	     INNER JOIN dbo.T_Dataset DS
-	       ON JSF.Dataset_ID = DS.Dataset_ID
+	       ON TSF.Dataset_ID = DS.Dataset_ID
 		 INNER JOIN dbo.T_DatasetStateName DSN
 		   ON DS.DS_state_ID = DSN.Dataset_state_ID
 		 INNER JOIN dbo.T_Instrument_Name Instrument
