@@ -11,9 +11,11 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **      Update the specified requested runs to change priority, instrument group, separation group, dataset type, or assigned instrument
 **
 **      This procedure is called via two mechanisms:
+**
 **      1) Via POST calls to requested_run/operation/ , originating from https://dms2.pnl.gov/requested_run_admin/report
 **         - See file requested_run_admin_cmds.php at https://github.com/PNNL-Comp-Mass-Spec/DMS-Website/blob/master/application/views/cmd/requested_run_admin_cmds.php
 **           and file lcmd.js at https://github.com/PNNL-Comp-Mass-Spec/DMS-Website/blob/d2eab881133cfe4c71f17b06b09f52fc4e61c8fb/javascript/lcmd.js#L225
+**
 **      2) When the user clicks "Delete this request" or "Convert Request Into Fractions" at the bottom of a Requested Run Detail report
 **         - See the detail_report_commands and sproc_args sections at https://dms2.pnl.gov/config_db/show_db/requested_run.db
 **
@@ -48,6 +50,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **          02/04/2021 mem - Provide a delimiter when calling GetInstrumentGroupDatasetTypeList
 **          01/13/2023 mem - Refactor instrument group validation code into ValidateInstrumentGroupForRequestedRuns
 **                         - Validate the instrument group for modes 'instrumentGroup' and 'assignedInstrument'
+**          01/15/2023 mem - Fix variable usage typo
 **
 *****************************************************/
 (
@@ -466,7 +469,6 @@ As
 
                         Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @requestID) + ': ' + @message
                         Set @returnCode = 'U5107'
-                        Set @logErrors = 1
 
                         RAISERROR (@msg, 11, 5)
 
@@ -477,8 +479,10 @@ As
             End -- </b>
 
             Set @message = 'Deleted ' + Convert(varchar(12), @countDeleted) + ' requested run'
-            If @myRowcount > 1
+            
+            If @countDeleted > 1
                 Set @message = @message + 's'
+
         End -- </a>
 
     END TRY
@@ -509,8 +513,10 @@ As
 
     Declare @usageMessage varchar(512)
     Set @usageMessage = 'Updated ' + Convert(varchar(12), @requestCount) + ' requested run'
+    
     If @requestCount <> 1
         Set @usageMessage = @usageMessage + 's'
+
     Exec PostUsageLogEntry 'UpdateRequestedRunAssignments', @usageMessage
 
     If @returnCode <> ''
