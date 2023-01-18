@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Mage_Analysis_Jobs]
 AS
 SELECT AJ.AJ_jobID AS Job,
-       AJ.AJ_StateNameCached AS [State],
+       AJ.AJ_StateNameCached AS State,
        DS.Dataset_Num AS Dataset,
        DS.Dataset_ID,
        AnalysisTool.AJT_toolName AS Tool,
@@ -17,11 +17,11 @@ SELECT AJ.AJ_jobID AS Job,
        E.Experiment_Num AS Experiment,
        C.Campaign_Num AS Campaign,
        Org.OG_name AS Organism,
-       AJ.AJ_organismDBName AS [Organism DB],
-       AJ.AJ_proteinCollectionList AS [Protein Collection List],
-       AJ.AJ_proteinOptionsList AS [Protein Options],
-       AJ.AJ_comment AS [Comment],
-       ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder],
+       AJ.AJ_organismDBName AS Organism_DB,
+       AJ.AJ_proteinCollectionList AS Protein_Collection_List,
+       AJ.AJ_proteinOptionsList AS Protein_Options,
+       AJ.AJ_comment AS Comment,
+       ISNULL(AJ.AJ_resultsFolderName, '(none)') AS Results_Folder,
        CASE
            WHEN AJ.AJ_Purged = 0 THEN ISNULL(DFP.Dataset_Folder_Path + '\' + AJ.AJ_resultsFolderName, '')
            ELSE CASE
@@ -34,7 +34,11 @@ SELECT AJ.AJ_jobID AS Job,
        DR.DRN_name AS Dataset_Rating,
        DS.DS_Sec_Sep AS Separation_Type,
        DTN.DST_name AS Dataset_Type,
-       AJ.AJ_requestID AS Request_ID
+       AJ.AJ_requestID AS Request_ID,
+       AJ.AJ_organismDBName AS [Organism DB],                           -- Included for compatibility with older versions of Mage
+       AJ.AJ_proteinCollectionList AS [Protein Collection List],        -- Included for compatibility with older versions of Mage
+       AJ.AJ_proteinOptionsList AS [Protein Options],                   -- Included for compatibility with older versions of Mage
+       ISNULL(AJ.AJ_resultsFolderName, '(none)') AS [Results Folder]    -- Included for compatibility with older versions of Mage
 FROM T_Analysis_Job AJ
      INNER JOIN T_Dataset DS
        ON AJ.AJ_datasetID = DS.Dataset_ID

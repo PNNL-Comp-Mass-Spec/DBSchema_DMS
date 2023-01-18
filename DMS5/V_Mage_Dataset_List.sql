@@ -4,15 +4,15 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Mage_Dataset_List] AS 
+CREATE VIEW [dbo].[V_Mage_Dataset_List] AS
 SELECT DS.Dataset_ID AS Dataset_ID,
        DS.Dataset_Num AS Dataset,
        E.Experiment_Num AS Experiment,
        C.Campaign_Num AS Campaign,
-       DSN.DSS_name AS [State],
+       DSN.DSS_name AS State,
        InstName.IN_name AS Instrument,
        DS.DS_created AS Created,
-       DTN.DST_name AS [Type],
+       DTN.DST_name AS Dataset_Type,
        CASE
            WHEN ISNULL(DA.AS_instrument_data_purged, 0) = 0 THEN DFP.Dataset_Folder_Path
            ELSE CASE
@@ -20,8 +20,10 @@ SELECT DS.Dataset_ID AS Dataset_ID,
                     ELSE DFP.Archive_Folder_Path
                 END
        END AS Folder,
-       DS.DS_comment AS [Comment],
-	   Org.OG_name AS Organism
+       DS.DS_comment AS Comment,
+	   Org.OG_name AS Organism,
+       DTN.DST_name AS [Type],              -- Included for compatibility with older versions of Mage
+       DTN.DST_name AS [Dataset Type]       -- Included for compatibility with older versions of Mage
 FROM T_Dataset DS
      INNER JOIN T_DatasetStateName DSN
        ON DSN.Dataset_state_ID = DS.DS_state_ID

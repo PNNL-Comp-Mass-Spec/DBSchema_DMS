@@ -4,7 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Mage_FPkg_Dataset_List] as
+CREATE VIEW [dbo].[V_Mage_FPkg_Dataset_List]
+AS
 /*
  * This view was used by the File Packager tool written by Gary Kiebel in 2012
  * As of September 2013 this tool is not in use and thus this view could likely be deleted in the future
@@ -18,10 +19,10 @@ SELECT DL.Dataset_ID,
        DL.Experiment,
        DL.Campaign,
        DL.Instrument,
-       DL.[State],
+       DL.State,
        DL.Created,
-       DL.[Comment],
-       DL.[Type]
+       DL.Comment,
+       DL.Dataset_Type
 FROM T_Dataset DS
      INNER JOIN V_Mage_Dataset_List DL
        ON DS.Dataset_ID = DL.Dataset_ID

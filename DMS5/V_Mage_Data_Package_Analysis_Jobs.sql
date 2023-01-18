@@ -16,16 +16,20 @@ SELECT VMA.Job,
        VMA.Experiment,
        VMA.Campaign,
        VMA.Organism,
-       VMA.[Organism DB],
-       VMA.[Protein Collection List],
-       VMA.[Protein Options],
+       VMA.[Organism DB] AS Organism_DB,
+       VMA.[Protein Collection List] AS Protein_Collection_List,
+       VMA.[Protein Options] AS Protein_Options,
        VMA.Comment,
-       VMA.[Results Folder],
+       VMA.[Results Folder] AS Results_Folder,
        VMA.Folder,
        DPJ.Data_Package_ID,
        DPJ.Package_Comment,
        InstName.IN_class AS Instrument_Class,
-       DTN.DST_name AS Dataset_Type
+       DTN.DST_name AS Dataset_Type,
+       VMA.[Organism DB],               -- Included for compatibility with older versions of Mage
+       VMA.[Protein Collection List],   -- Included for compatibility with older versions of Mage
+       VMA.[Protein Options],           -- Included for compatibility with older versions of Mage
+       VMA.[Results Folder]             -- Included for compatibility with older versions of Mage
 FROM V_Mage_Analysis_Jobs VMA
      INNER JOIN S_V_Data_Package_Analysis_Jobs_Export DPJ
        ON VMA.Job = DPJ.Job
