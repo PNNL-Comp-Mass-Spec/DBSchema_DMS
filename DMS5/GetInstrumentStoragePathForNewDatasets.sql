@@ -206,3 +206,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetInstrumentStoragePathForNewDatasets] TO [DDL_Viewer] AS [dbo]
 GO
+GRANT EXECUTE ON [dbo].[GetInstrumentStoragePathForNewDatasets] TO [svc-dms] AS [dbo]
+GO
