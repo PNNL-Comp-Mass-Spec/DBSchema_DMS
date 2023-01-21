@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[DeleteDataPackage]
 **          04/05/2019 mem - Log the data package ID, Name, first dataset, and last dataset associated with a data package
 **                         - Change the default for @infoOnly to 1
 **          01/05/2023 mem - Use new column names in V_Data_Package_Detail_Report
+**          01/20/2023 mem - Use new column names in V_Data_Package_Detail_Report
 **
 *****************************************************/
 (
@@ -73,11 +74,11 @@ As
                 SELECT ID,
                        Name,
                        Package_Type,
-                       Biomaterial_Item_Count,
-                       Experiment_Item_Count,
-                       EUS_Proposal_Item_Count,
-                       Dataset_Item_Count,
-                       Analysis_Job_Item_Count,
+                       Biomaterial_Count,
+                       Experiment_Count,
+                       EUS_Proposal_Count,
+                       Dataset_Count,
+                       Analysis_Job_Count,
                        Campaign_Count,
                        Total_Item_Count,
                        State,
