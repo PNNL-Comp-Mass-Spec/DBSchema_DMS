@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE  VIEW [dbo].[V_Mage_Dataset_Factor_Metadata] AS 
+CREATE VIEW [dbo].[V_Mage_Dataset_Factor_Metadata] AS 
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
        Exp.Experiment_Num AS Experiment,
@@ -12,15 +12,15 @@ SELECT DS.Dataset_ID AS ID,
        DSN.DSS_name AS State,
        DSRating.DRN_name AS Rating,
        InstName.IN_name AS Instrument,
-       DS.DS_comment AS [Comment],
-       DTN.DST_name AS [Dataset Type],
-       LC.SC_Column_Number AS [LC Column],
-       DS.DS_sec_sep AS [Separation Type],
+       DS.DS_comment AS Comment,
+       DTN.DST_name AS Dataset_Type,
+       LC.SC_Column_Number AS LC_Column,
+       DS.DS_sec_sep AS Separation_Type,
        RRH.ID AS Request,
-       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS [Acq Start],
-       ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS [Acq End],
-       DS.Acq_Length_Minutes AS [Acq Length],
-       DS.Scan_Count AS [Scan Count],
+       ISNULL(DS.Acq_Time_Start, RRH.RDS_Run_Start) AS Acq_Start,
+       ISNULL(DS.Acq_Time_End, RRH.RDS_Run_Finish) AS Acq_End,
+       DS.Acq_Length_Minutes AS Acq_Length,
+       DS.Scan_Count AS Scan_Count,
        DS.DS_created AS Created
 FROM T_DatasetStateName AS DSN
      INNER JOIN T_Dataset AS DS
@@ -47,6 +47,7 @@ WHERE EXISTS ( SELECT FactorID,
                FROM T_Factor
                WHERE (RRH.ID = TargetID) AND
                      (TYPE = 'Run_Request') )
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_Factor_Metadata] TO [DDL_Viewer] AS [dbo]
