@@ -8,7 +8,8 @@ CREATE PROCEDURE [dbo].[MakeFactorCrosstabSQL]
 /****************************************************
 **
 **  Desc:
-**      Returns dynamic SQL for a requested run factors crosstab query
+**      Returns dynamic SQL for a requested run factors crosstab query,
+**      using view V_Requested_Run_Unified_List
 **
 **      The calling procedure must create temporary tables #REQS and #FACTORS
 **
@@ -24,10 +25,11 @@ CREATE PROCEDURE [dbo].[MakeFactorCrosstabSQL]
 **  Auth:   grk
 **  Date:   03/22/2010 grk - Initial release
 **          11/11/2022 mem - Exclude unnamed factors when querying T_Factor
+**          01/23/2023 mem - Add example value for @colList
 **
 *****************************************************/
 (
-    @colList varchar(256),
+    @colList varchar(256),              -- Example: ' ''x'' as Sel, Batch_ID AS BatchID, Experiment, Dataset, Name, Status, Request'
     @FactorNameContains varchar(48) = '',
     @Sql varchar(max) OUTPUT,
     @message varchar(512) = '' OUTPUT

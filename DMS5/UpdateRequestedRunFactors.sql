@@ -602,7 +602,6 @@ As
     return @myError
 
 
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [DDL_Viewer] AS [dbo]
 GO
