@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Dataset_QC_Metrics_Export
+CREATE VIEW dbo.V_Dataset_QC_Metrics_Export
 AS
 SELECT InstName.IN_Group AS instrument_group,
        InstName.IN_name AS instrument,
@@ -124,7 +124,8 @@ SELECT InstName.IN_Group AS instrument_group,
        DQC.psm_source_job,
        DQC.qcdm,
        DQC.qcdm_last_affected,
-       DQC.qcart
+       DQC.qcart,
+       DS.DS_sec_sep As separation_type         -- This is used by LLRC
 FROM T_Dataset_QC DQC
      INNER JOIN T_Dataset DS
        ON DQC.Dataset_ID = DS.Dataset_ID
