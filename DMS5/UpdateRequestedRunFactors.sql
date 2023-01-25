@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **
 **      @factorList will look like this if it comes from web page https://dms2.pnl.gov/requested_run_factors/param
 **                                                             or https://dms2.pnl.gov/requested_run_batch_blocking/grid
+**
 **      The "type" attribute of the <id> tag defines what the "i" attributes map to
 **
 **      <id type="Request" />
@@ -39,7 +40,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **
 **
 **      One other supported format uses DatasetID
-**      - If any records contain "d" attributes, then the "type" attribute of the <id> tag is ignored
+**      - If any records contain "d" attributes, the "type" attribute of the <id> tag is ignored
 **
 **      <r d="214536" f="Factor1" v="Aa" />
 **      <r d="214003" f="Factor1" v="Bb" />
@@ -69,6 +70,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          11/11/2022 mem - Trim whitespace when checking for unnamed factors
 **          12/13/2022 mem - Ignore factors named 'Dataset ID'
 **                         - Rename temp table
+**          01/25/2023 mem - Block factors named 'Run_Order'
 **
 *****************************************************/
 (
@@ -80,13 +82,13 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 As
     SET NOCOUNT ON
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @Msg2 varchar(512)
     Declare @invalidCount int
 
-    DECLARE @xml AS xml
+    Declare @xml AS xml
     SET CONCAT_NULL_YIELDS_NULL ON
     SET ANSI_PADDING ON
 
@@ -177,22 +179,22 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         set @message = 'Error trying to convert list'
         return 51009
-    end
+    End
 
     -----------------------------------------------------------
     -- If table contains DatasetID values, then auto-populate the Identifier column with RequestIDs
     -----------------------------------------------------------
 
-    IF EXISTS (SELECT * FROM #Tmp_FactorInfo WHERE Not DatasetID IS NULL)
+    If Exists (SELECT * FROM #Tmp_FactorInfo WHERE Not DatasetID IS NULL)
     Begin -- <a>
-        IF Exists (SELECT * FROM #Tmp_FactorInfo WHERE DatasetID IS NULL)
+        If Exists (SELECT * FROM #Tmp_FactorInfo WHERE DatasetID IS NULL)
         Begin
             set @message = 'Encountered a mix of XML tag attributes; if using the "d" attribute for DatasetID, then all entries must have "d" defined'
-            IF @infoOnly <> 0
+            If @infoOnly <> 0
                 SELECT * FROM #Tmp_FactorInfo
             return 51016
         End
@@ -209,8 +211,8 @@ As
         -- The identifier column now contains RequestID values
         Set @IDType = 'RequestID'
 
-        IF Exists (SELECT * FROM #Tmp_FactorInfo WHERE Identifier IS NULL)
-        begin
+        If Exists (SELECT * FROM #Tmp_FactorInfo WHERE Identifier IS NULL)
+        Begin
             set @message = 'Unable to resolve DatasetID to RequestID for one or more entries (DatasetID not found in Requested Run table)'
 
             -- Construct a list of DatasetIDs that are not present in T_Requested_Run
@@ -225,11 +227,11 @@ As
                 set @message = @message + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
             End
 
-            IF @infoOnly <> 0
+            If @infoOnly <> 0
                 SELECT * FROM #Tmp_FactorInfo
 
             return 51017
-        end
+        End
 
     End -- </a>
 
@@ -240,7 +242,7 @@ As
     If Not @IDType IN ('RequestID', 'DatasetID', 'Job', 'Dataset')
     Begin
         set @message = 'Identifier type "' + @IDTypeOriginal + '" was not recognized in the header row; should be Request, RequestID, DatasetID, Job, or Dataset (i.e. Dataset Name)'
-        IF @infoOnly <> 0
+        If @infoOnly <> 0
             SELECT * FROM #Tmp_FactorInfo
         return 51018
     End
@@ -261,7 +263,7 @@ As
         Begin
             -- One or more entries is non-numeric
             set @message = 'Identifier keys must all be integers when Identifier column contains ' + @IDTypeOriginal + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
-            IF @infoOnly <> 0
+            If @infoOnly <> 0
                 SELECT * FROM #Tmp_FactorInfo
             return 51019
         End
@@ -332,8 +334,8 @@ As
                            RequestID
            FROM #Tmp_FactorInfo ) InnerQ
 
-    IF @invalidCount > 0
-    begin
+    If @invalidCount > 0
+    Begin
         If @invalidCount = @myRowCount
             Set @message = 'Unable to determine RequestID for all ' + Convert(varchar(12), @myRowCount) + ' items'
         Else
@@ -341,11 +343,11 @@ As
 
         Set @message = @message + '; treating the Identifier column as ' + @IDType
 
-        IF @infoOnly <> 0
+        If @infoOnly <> 0
             SELECT * FROM #Tmp_FactorInfo
 
         return 51020
-    end
+    End
 
     -----------------------------------------------------------
     -- Validate factor names
@@ -365,35 +367,35 @@ As
            WHERE Not Factor In ('Dataset ID')      -- Note that factors named 'Dataset ID' and 'Dataset_ID' are removed later in this procedure
           ) LookupQ
 
-    IF @badFactorNames <> ''
-    begin
+    If @badFactorNames <> ''
+    Begin
         If Len(@badFactorNames) < 256
             set @message = 'Unacceptable characters in factor names "' + @badFactorNames + '"'
         Else
             set @message = 'Unacceptable characters in factor names "' + LEFT(@badFactorNames, 256) + '..."'
 
-        IF @infoOnly <> 0
+        If @infoOnly <> 0
             SELECT * FROM #Tmp_FactorInfo
 
         return 51027
-    end
+    End
 
     -----------------------------------------------------------
     -- Auto-delete data that cannot be a factor
     -- These column names could be present if the user
-    -- saved the results of a list report (or of http://dms2.pnl.gov/requested_run_factors/param )
+    -- saved the results of a list report (or of https://dms2.pnl.gov/requested_run_factors/param )
     -- to a text file, then edited the data in Excel, then included the extra columns when copying from Excel
     --
-    -- Name is not a valid factor name since it is used to label the Requested Run Name column at http://dms2.pnl.gov/requested_run_factors/param
+    -- Name is not a valid factor name since it is used to label the Requested Run Name column at https://dms2.pnl.gov/requested_run_factors/param
     -----------------------------------------------------------
 
     UPDATE #Tmp_FactorInfo
     Set UpdateSkipCode = 2
-    WHERE Factor IN ('BatchID', 'Experiment', 'Dataset', 'Status', 'Request', 'Name')
+    WHERE Factor IN ('Batch_ID', 'BatchID', 'Experiment', 'Dataset', 'Status', 'Request', 'Name')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    IF @myRowCount > 0 And @infoOnly <> 0
+    If @myRowCount > 0 And @infoOnly <> 0
     Begin
         SELECT *, Case When UpdateSkipCode = 2 Then 'Yes' Else 'No' End As AutoSkip_Invalid_Factor
         FROM #Tmp_FactorInfo
@@ -402,8 +404,8 @@ As
 
     -----------------------------------------------------------
     -- Make sure factor name is not in blacklist
-    -- Note that Javascript code behind http://dms2.pnl.gov/requested_run_factors/param
-    --  auto-removes column "Block" if it is present
+    -- Note that Javascript code behind http://dms2.pnl.gov/requested_run_factors/param and https://dms2.pnl.gov/requested_run_batch_blocking/grid
+    --  should auto-remove factors "Block" and "Run_Order" if it is present
     -----------------------------------------------------------
     --
     Set @badFactorNames = ''
@@ -411,13 +413,13 @@ As
     SELECT @badFactorNames = @badFactorNames + Factor  + ', '
     FROM ( SELECT DISTINCT Factor
            FROM #Tmp_FactorInfo
-           WHERE Factor IN ('Block', 'Run Order', 'Type')
+           WHERE Factor IN ('Block', 'Run_Order', 'Run Order', 'Type')
          ) LookupQ
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    IF @badFactorNames <> ''
-    begin
+    If @badFactorNames <> ''
+    Begin
         -- Remove the trailing comma
         Set @badFactorNames = Substring(@badFactorNames, 1, Len(@badFactorNames)-1)
 
@@ -426,11 +428,11 @@ As
         Else
             set @message = 'Invalid factor names: ' + @badFactorNames
 
-        IF @infoOnly <> 0
+        If @infoOnly <> 0
             SELECT * FROM #Tmp_FactorInfo
 
         return 51015
-    end
+    End
 
     -----------------------------------------------------------
     -- Auto-remove standard DMS names from the factor table
@@ -446,7 +448,7 @@ As
     -- Check for invalid Request IDs in the factors table
     -----------------------------------------------------------
     --
-    DECLARE    @InvalidRequestIDs VARCHAR(8000) = ''
+    DECLARE @InvalidRequestIDs VARCHAR(8000) = ''
     --
     SELECT @InvalidRequestIDs = @InvalidRequestIDs + Convert(varchar(12), RequestID) + ', '
     FROM #Tmp_FactorInfo
@@ -455,16 +457,16 @@ As
     WHERE UpdateSkipCode = 0 And RR.ID IS NULL
 
     --
-    IF @InvalidRequestIDs <> ''
-    begin
+    If @InvalidRequestIDs <> ''
+    Begin
         -- Remove the trailing comma
         Set @InvalidRequestIDs = Substring(@InvalidRequestIDs, 1, Len(@InvalidRequestIDs)-1)
 
         set @message =  'Invalid Requested Run IDs: ' + @InvalidRequestIDs
-        IF @infoOnly <> 0
+        If @infoOnly <> 0
             SELECT * FROM #Tmp_FactorInfo
         return 51013
-    end
+    End
 
 
     -----------------------------------------------------------
@@ -483,7 +485,7 @@ As
 
 
 
-    IF @infoOnly <> 0
+    If @infoOnly <> 0
     Begin
         -- Preview the contents of the #Tmp_FactorInfo table
         SELECT *
@@ -507,11 +509,11 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             set @message = 'Error removing blank values from factors table'
             return 51001
-        end
+        End
 
         -----------------------------------------------------------
         -- Update existing items in factors tables
@@ -530,11 +532,11 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             set @message = 'Error updating changed values in factors table'
             return 51002
-        end
+        End
 
         -----------------------------------------------------------
         -- Add new factors
@@ -561,11 +563,11 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             set @message = 'Error adding new factors to factors table'
             return 51003
-        end
+        End
 
         -----------------------------------------------------------
         -- Convert changed items to XML for logging
@@ -581,13 +583,13 @@ As
         -- Log changes
         -----------------------------------------------------------
         --
-        IF @changeSummary <> ''
-        BEGIN
+        If @changeSummary <> ''
+        Begin
             INSERT INTO T_Factor_Log
                 (changed_by, changes)
             VALUES
                 (@callingUser, @changeSummary)
-        END
+        End
 
     End -- </CommitChanges>
 
