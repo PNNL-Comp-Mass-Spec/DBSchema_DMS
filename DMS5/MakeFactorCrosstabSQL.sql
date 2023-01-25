@@ -25,11 +25,11 @@ CREATE PROCEDURE [dbo].[MakeFactorCrosstabSQL]
 **  Auth:   grk
 **  Date:   03/22/2010 grk - Initial release
 **          11/11/2022 mem - Exclude unnamed factors when querying T_Factor
-**          01/23/2023 mem - Add example value for @colList
+**          01/24/2023 mem - Add example value for @colList
 **
 *****************************************************/
 (
-    @colList varchar(256),              -- Example: ' ''x'' as Sel, Batch_ID AS BatchID, Experiment, Dataset, Name, Status, Request'
+    @colList varchar(256),              -- Example: ' ''x'' as sel, batch_id, experiment, dataset, name, status, request'
     @FactorNameContains varchar(48) = '',
     @Sql varchar(max) OUTPUT,
     @message varchar(512) = '' OUTPUT

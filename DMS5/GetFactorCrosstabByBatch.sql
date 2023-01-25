@@ -7,8 +7,9 @@ CREATE PROCEDURE dbo.GetFactorCrosstabByBatch
 /****************************************************
 **
 **	Desc:
-**		Returns the factors associated with the
-**		run requests in the specified batch
+**		Returns the factors associated with the run requests in the specified batch
+**
+**      This is used by https://dms2.pnl.gov/requested_run_batch_blocking/param
 **
 **	Auth:	mem
 **	Date:	02/18/2010
@@ -18,6 +19,7 @@ CREATE PROCEDURE dbo.GetFactorCrosstabByBatch
 **			03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
 **			02/17/2012 mem - Updated to delete data from #REQS only if @NameContains is not blank
 **          01/05/2023 mem - Use new column names in V_Requested_Run_Unified_List
+**          01/24/2023 mem - Use lowercase column names in @colList
 **
 *****************************************************/
 (
@@ -97,11 +99,9 @@ AS
 	-- These columns correspond to view V_Requested_Run_Unified_List
 	-----------------------------------------
 	--
-	DECLARE @colList VARCHAR(256)
-	SET @colList = ' ''x'' as Sel, Batch_ID, Name, Status, Dataset_ID, Request, Block, Run_Order'
+	DECLARE @colList VARCHAR(256) = ' ''x'' as sel, batch_id, name, status, dataset_id, request, block, run_order'
 	--
-	DECLARE @FactorNameContains VARCHAR(48)
-	SET @FactorNameContains = ''
+	DECLARE @FactorNameContains VARCHAR(48) = ''
 	--
 	EXEC @myError = MakeFactorCrosstabSQL
 						@colList,
