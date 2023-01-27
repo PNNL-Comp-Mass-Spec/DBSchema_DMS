@@ -6,14 +6,14 @@ GO
 CREATE VIEW V_Helper_Prep_LC_Column_List_Report
 AS
 SELECT
-	Column_Name,
-	Mfg_Name,
-	Mfg_Model,
-	Mfg_Serial_Number,
-	Comment,
-	Created
+	column_name,
+	mfg_name,
+	mfg_model,
+	mfg_serial_number,
+	comment,
+	created
 FROM T_Prep_LC_Column
-WHERE State = 'Active'
+WHERE state = 'Active'
 
 
 GO
