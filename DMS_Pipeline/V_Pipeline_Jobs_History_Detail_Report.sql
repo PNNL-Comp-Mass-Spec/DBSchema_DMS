@@ -6,26 +6,26 @@ GO
 
 CREATE VIEW [dbo].[V_Pipeline_Jobs_History_Detail_Report]
 AS
-SELECT J.Job,
-       J.Priority,
-       J.Script,
-       JSN.Name AS Job_State,
-       J.State AS Job_State_ID,
-       ISNULL(JS.Steps, 0) AS Steps,
-       J.Dataset,
-       AJ.AJ_settingsFileName AS Settings_File,
-       AJ.AJ_parmFileName AS Parameter_File,
-       J.Comment,
-       J.Owner,
-       J.Special_Processing,
-       J.DataPkgID AS Data_Package_ID,
-       J.Results_Folder_Name,
-       J.Imported,
-       J.Start,
-       J.Finish,
-       J.Runtime_Minutes,
-       J.Transfer_Folder_Path,
-       CONVERT(varchar(MAX), JP.Parameters) AS Parameters
+SELECT J.job,
+       J.priority,
+       J.script,
+       JSN.Name AS job_state,
+       J.State AS job_state_id,
+       ISNULL(JS.Steps, 0) AS steps,
+       J.dataset,
+       AJ.AJ_settingsFileName AS settings_file,
+       AJ.AJ_parmFileName AS parameter_file,
+       J.comment,
+       J.owner,
+       J.special_processing,
+       J.DataPkgID AS data_package_id,
+       J.results_folder_name,
+       J.imported,
+       J.start,
+       J.finish,
+       J.runtime_minutes,
+       J.transfer_folder_path,
+       CONVERT(varchar(MAX), JP.Parameters) AS parameters
 FROM dbo.T_Jobs_History AS J
      INNER JOIN dbo.T_Job_State_Name AS JSN
        ON J.State = JSN.ID

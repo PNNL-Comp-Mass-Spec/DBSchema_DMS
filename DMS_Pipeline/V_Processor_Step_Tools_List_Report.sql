@@ -6,25 +6,25 @@ GO
 
 CREATE VIEW [dbo].[V_Processor_Step_Tools_List_Report]
 AS
-SELECT LP.Processor_Name,
-       PTGD.Tool_Name,
-       PTGD.Priority,
-       PTGD.Enabled,
-       PTGD.[Comment],
-       ST.CPU_Load As Tool_CPU_Load,
-       LP.Latest_Request,
-       LP.Manager_Version,
-       LP.ID As Proc_ID,
-       LP.State AS Processor_State,
-       M.Machine,
-       M.Total_CPUs,
-       M.CPUs_Available,
-       M.Total_Memory_MB,
-       M.Memory_Available,
-       M.[Comment] AS Machine_Comment,
-       PTG.Group_ID,
-       PTG.Group_Name,
-       PTG.Enabled AS Group_Enabled
+SELECT LP.processor_name,
+       PTGD.tool_name,
+       PTGD.priority,
+       PTGD.enabled,
+       PTGD.comment,
+       ST.CPU_Load AS tool_cpu_load,
+       LP.latest_request,
+       LP.manager_version,
+       LP.ID AS proc_id,
+       LP.State AS processor_state,
+       M.machine,
+       M.total_cpus,
+       M.cpus_available,
+       M.total_memory_mb,
+       M.memory_available,
+       M.Comment AS machine_comment,
+       PTG.group_id,
+       PTG.group_name,
+       PTG.Enabled AS group_enabled
 FROM T_Machines AS M
      INNER JOIN T_Local_Processors AS LP
        ON M.Machine = LP.Machine
