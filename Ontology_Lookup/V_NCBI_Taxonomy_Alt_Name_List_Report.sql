@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_NCBI_Taxonomy_AltName_List_Report] ******/
+/****** Object:  View [dbo].[V_NCBI_Taxonomy_Alt_Name_List_Report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_NCBI_Taxonomy_AltName_List_Report]
+CREATE VIEW [dbo].[V_NCBI_Taxonomy_Alt_Name_List_Report]
 AS
 SELECT PrimaryName.tax_id,
        PrimaryName.Name AS scientific_name,
@@ -31,5 +31,5 @@ WHERE (NameClass.Sort_Weight BETWEEN 2 AND 19)
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_NCBI_Taxonomy_AltName_List_Report] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_NCBI_Taxonomy_Alt_Name_List_Report] TO [DDL_Viewer] AS [dbo]
 GO
