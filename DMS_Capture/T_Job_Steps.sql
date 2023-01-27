@@ -24,6 +24,8 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Next_Try] [datetime] NULL,
 	[Retry_Count] [smallint] NULL,
 	[Tool_Version_ID] [int] NULL,
+	[Step]  AS ([Step_Number]),
+	[Tool]  AS ([Step_Tool]),
  CONSTRAINT [PK_T_Job_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,

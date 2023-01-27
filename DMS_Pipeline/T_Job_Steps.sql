@@ -32,6 +32,8 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Remote_Start] [smalldatetime] NULL,
 	[Remote_Finish] [smalldatetime] NULL,
 	[Remote_Progress] [real] NULL,
+	[Step]  AS ([Step_Number]),
+	[Tool]  AS ([Step_Tool]),
  CONSTRAINT [PK_T_Job_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,
