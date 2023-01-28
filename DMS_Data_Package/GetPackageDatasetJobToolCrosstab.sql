@@ -13,147 +13,148 @@ CREATE PROCEDURE [dbo].[GetPackageDatasetJobToolCrosstab]
 **
 **  Parameters:
 **
-**	Auth:	grk
-**	Date:	05/26/2010 grk - Initial release
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			05/18/2016 mem - Log errors to T_Log_Entries
+**  Auth:   grk
+**  Date:   05/26/2010 grk - Initial release
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          05/18/2016 mem - Log errors to T_Log_Entries
 **          10/26/2022 mem - Change column #id to lowercase
 **          10/31/2022 mem - Use new column name id in the temp table
+**          01/27/2023 mem - Change column names to lowercase
 **
 *****************************************************/
 (
-	@DataPackageID INT,
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @DataPackageID int,
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
 As
-	Set XACT_ABORT, nocount on
+    Set XACT_ABORT, nocount on
 
-	declare @myError int
-	set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+    set @message = ''
 
-	set @message = ''
+    ---------------------------------------------------
+    ---------------------------------------------------
+    BEGIN TRY
 
-	---------------------------------------------------
-	---------------------------------------------------
-	BEGIN TRY
+        ---------------------------------------------------
+        -- Create temp tables
+        ---------------------------------------------------
+        --
+        CREATE TABLE #Tools (
+            Tool varchar(128)
+        )
 
-		---------------------------------------------------
-		-- temp tables
-		---------------------------------------------------
-		--
-		Create TABLE #Tools (
-		Tool varchar(128)
-		)
-		--
-		CREATE TABLE #Scratch  (
-			Dataset VARCHAR(128),
-			Total INT
-		)
-		--
-		CREATE TABLE #Datasets (
-			Dataset VARCHAR(128),
-			Jobs INT NULL,
-			id INT
-		)
-		---------------------------------------------------
-		-- get list of package datasets
-		---------------------------------------------------
-		--
-		INSERT INTO #Datasets
-			( Dataset, id)
-		SELECT DISTINCT Dataset, @DataPackageID
-		FROM T_Data_Package_Datasets
-		WHERE Data_Package_ID = @DataPackageID
+        CREATE TABLE #Scratch  (
+            Dataset varchar(128),
+            Total int
+        )
 
-		-- update job counts
-		UPDATE #Datasets
-		SET Jobs = TX.Total
-		FROM #Datasets
-		INNER JOIN
-		(
-				SELECT Dataset, COUNT(*) AS Total
-				FROM T_Data_Package_Analysis_Jobs
-				WHERE Data_Package_ID = @DataPackageID
-				GROUP BY Dataset
-		)TX ON TX.Dataset = #Datasets.Dataset
+        CREATE TABLE #Datasets (
+            dataset varchar(128),
+            jobs int NULL,
+            id int
+        )
 
-		---------------------------------------------------
-		-- get list of tools covered by package jobs
-		---------------------------------------------------
-		--
-		INSERT INTO #Tools
-		( Tool )
-		SELECT DISTINCT
-		  Tool
-		FROM
-		  T_Data_Package_Analysis_Jobs
-		WHERE
-		  Data_Package_ID = @DataPackageID
+        ---------------------------------------------------
+        -- Get list of package datasets
+        ---------------------------------------------------
+        --
+        INSERT INTO #Datasets( Dataset,
+                               id )
+        SELECT DISTINCT Dataset,
+                        @DataPackageID
+        FROM T_Data_Package_Datasets
+        WHERE Data_Package_ID = @DataPackageID
+
+        -- Update job counts
+        UPDATE #Datasets
+        SET Jobs = TX.Total
+        FROM #Datasets
+             INNER JOIN ( SELECT Dataset,
+                                 COUNT(*) AS Total
+                          FROM T_Data_Package_Analysis_Jobs
+                          WHERE Data_Package_ID = @DataPackageID
+                          GROUP BY Dataset ) TX
+               ON TX.Dataset = #Datasets.Dataset
+
+        ---------------------------------------------------
+        -- get list of tools covered by package jobs
+        ---------------------------------------------------
+        --
+        INSERT INTO #Tools ( Tool )
+        SELECT DISTINCT Tool
+        FROM T_Data_Package_Analysis_Jobs
+        WHERE Data_Package_ID = @DataPackageID
 
 
-		---------------------------------------------------
-		-- add cols to temp dataset table for each tool
-		-- and update it with package job count
-		---------------------------------------------------
-		DECLARE
-		@colName VARCHAR(128) = 0,
-		@done TINYINT = 0,
-		@s NVARCHAR(1000)
+        ---------------------------------------------------
+        -- Add columns to temp dataset table for each tool
+        -- and update it with package job count
+        ---------------------------------------------------
+        Declare @colName varchar(128) = 0
+        Declare @done tinyint = 0
+        Declare @s nvarchar(1000)
 
-		WHILE @done = 0
-		BEGIN --<a>
-		SET @colName = ''
-			SELECT TOP 1 @colName = Tool FROM #Tools
-			IF @colName = ''
-				SET @done = 1
-			ELSE
-			BEGIN --<b>
-				DELETE FROM #Tools WHERE Tool = @colName
+        WHILE @done = 0
+        BEGIN --<a>
+        SET @colName = ''
+            SELECT TOP 1 @colName = Tool 
+            FROM #Tools
 
-				SET @s = REPLACE('ALTER TABLE #Datasets ADD @col@ INT NULL', '@col@', @colName)
-				EXEC(@s)
+            IF @colName = ''
+            Begin
+                SET @done = 1
+            End
+            ELSE
+            BEGIN --<b>
+                DELETE FROM #Tools WHERE Tool = @colName
 
-				DELETE FROM #Scratch
-				--
-				INSERT INTO #Scratch
-				( Dataset, Total )
-				SELECT Dataset, COUNT(*) AS Total
-				FROM T_Data_Package_Analysis_Jobs
-				WHERE Data_Package_ID = @DataPackageID AND Tool = @colName
-				GROUP BY Dataset
+                SET @s = REPLACE('ALTER TABLE #Datasets ADD @col@ int NULL', '@col@', @colName)
+                EXEC(@s)
 
-				SET @s = REPLACE('UPDATE #Datasets SET @col@ = TX.Total FROM #Datasets INNER JOIN #Scratch TX ON TX.Dataset = #Datasets.Dataset', '@col@', @colName)
-				EXEC(@s)
+                DELETE FROM #Scratch
+                --
+                INSERT INTO #Scratch( Dataset,
+                                      Total )
+                SELECT Dataset,
+                       COUNT(*) AS Total
+                FROM T_Data_Package_Analysis_Jobs
+                WHERE Data_Package_ID = @DataPackageID AND
+                      Tool = @colName
+                GROUP BY Dataset
 
-			END --<b>
-		END --<a>
+                SET @s = REPLACE('UPDATE #Datasets SET @col@ = TX.Total FROM #Datasets INNER JOIN #Scratch TX ON TX.Dataset = #Datasets.Dataset', '@col@', @colName)
+                EXEC(@s)
 
-		SELECT * FROM #Datasets
+            END --<b>
+        END --<a>
 
-		---------------------------------------------------
-		--
-		---------------------------------------------------
-		--
-		DROP TABLE #Tools
-		DROP TABLE #Scratch
-		DROP TABLE #Datasets
+        SELECT * FROM #Datasets
 
-	---------------------------------------------------
-	---------------------------------------------------
-	END TRY
-	BEGIN CATCH
-		EXEC FormatErrorMessage @message output, @myError output
+        ---------------------------------------------------
+        --
+        ---------------------------------------------------
+        --
+        DROP TABLE #Tools
+        DROP TABLE #Scratch
+        DROP TABLE #Datasets
 
-		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
-		Exec PostLogEntry 'Error', @msgForLog, 'GetPackageDatasetJobToolCrosstab'
+    ---------------------------------------------------
+    ---------------------------------------------------
+    END TRY
+    BEGIN CATCH
+        EXEC FormatErrorMessage @message output, @myError output
 
-	END CATCH
+        Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+        Exec PostLogEntry 'Error', @msgForLog, 'GetPackageDatasetJobToolCrosstab'
 
-	RETURN @myError
+    END CATCH
+
+    RETURN @myError
+
 
 
 GO
