@@ -75,6 +75,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          01/26/2023 mem - Show the predefine ID when mode is 'Show Jobs'
 **                         - Use lowercase column names when mode is 'Show Jobs'
 **          01/27/2023 mem - Rename dataset argument to @datasetName
+**                         - No longer show processor group for mode 'Show Jobs'
 **
 *****************************************************/
 (
@@ -879,21 +880,20 @@ As
         SELECT
             'Entry' AS job,
             predefineID AS predefine_id,
-            datasetNum AS dataset,
+            dataset,
             numJobs AS jobs,
             analysisToolName AS tool,
             priority AS pri,
-            associatedProcessorGroup AS processor_group,
             comment AS comment,
             paramFileName AS param_file,
             settingsFileName AS settings_file,
-            organismDBName AS organismdb_file,
             organismName AS organism,
             proteinCollectionList AS protein_collections,
             proteinOptionsList AS protein_options,
+            organismDBName AS organism_db_name,
+            specialProcessing AS special_processing,
             ownerPRN AS owner,
-            CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS export_mode,
-            specialProcessing AS special_processing
+            CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS export_mode
         FROM #JB
         --
         goto Done
