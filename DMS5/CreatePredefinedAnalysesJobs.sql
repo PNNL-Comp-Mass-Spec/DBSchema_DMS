@@ -12,10 +12,10 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **  Return values: 0: success, otherwise, error code
 ** 
 **  Auth:   grk
-**  Date:   06/29/2005 grk - supersedes "ScheduleDefaultAnalyses"
-**          03/28/2006 grk - added protein collection fields
-**          04/04/2006 grk - increased sized of param file name
-**          06/01/2006 grk - fixed calling sequence to AddUpdateAnalysisJob
+**  Date:   06/29/2005 grk - Supersedes "ScheduleDefaultAnalyses"
+**          03/28/2006 grk - Added protein collection fields
+**          04/04/2006 grk - Increased sized of param file name
+**          06/01/2006 grk - Fixed calling sequence to AddUpdateAnalysisJob
 **          03/15/2007 mem - Updated call to AddUpdateAnalysisJob (Ticket #394)
 **                         - Replaced processor name with associated processor group (Ticket #388)
 **          02/29/2008 mem - Added optional parameter @callingUser; If provided, then will call AlterEventLogEntryUser (Ticket #644)
@@ -39,10 +39,12 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **          06/14/2022 mem - Send procedure name to PostLogEntry
 **          06/30/2022 mem - Rename parameter file column
 **          06/30/2022 mem - Rename parameter file argument
+**          01/27/2023 mem - Rename dataset argument to @datasetName
+**                         - Rename columns in temp table #JX
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @callingUser varchar(128) = '',
     @AnalysisToolNameFilter varchar(128) = '',      -- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
     @ExcludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
@@ -80,7 +82,8 @@ As
     ---------------------------------------------------
     
     CREATE TABLE #JX (
-        datasetNum varchar(128),
+        predefine_id int,
+        dataset varchar(128),
         priority varchar(8),
         analysisToolName varchar(64),
         paramFileName varchar(255),
@@ -111,7 +114,7 @@ As
     ---------------------------------------------------
     Declare @result int
 
-    exec @result = EvaluatePredefinedAnalysisRules @datasetNum, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
+    exec @result = EvaluatePredefinedAnalysisRules @datasetName, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
     --
     If @result <> 0
     Begin
@@ -173,7 +176,7 @@ As
             @organismName = organismName,
             @proteinCollectionList = proteinCollectionList,
             @proteinOptionsList = proteinOptionsList,
-            @ownerPRN  = ownerPRN,
+            @ownerPRN = ownerPRN,
             @comment = comment,
             @associatedProcessorGroup = associatedProcessorGroup,
             @propagationMode = propagationMode,
@@ -227,14 +230,14 @@ As
                 If @infoOnly <> 0
                 Begin
                     Print ''
-                    Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetNum + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@paramFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
+                    Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetName + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@paramFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
                 End
 
                 ---------------------------------------------------
                 -- create the job
                 ---------------------------------------------------
                 execute @result = AddUpdateAnalysisJob
-                            @datasetNum = @datasetNum,
+                            @datasetNum = @datasetName,
                             @priority = @priority,
                             @toolName = @analysisToolName,
                             @paramFileName = @paramFileName,
@@ -292,9 +295,9 @@ As
                         
                         Set @logMessage = @NewMessage
                         
-                        If CharIndex(@datasetNum, @logMessage) < 1
+                        If CharIndex(@datasetName, @logMessage) < 1
                         Begin
-                            Set @logMessage = @logMessage + '; Dataset ' + @datasetNum + ', '
+                            Set @logMessage = @logMessage + '; Dataset ' + @datasetName + ', '
                         End
                         Else
                         Begin
@@ -326,7 +329,7 @@ As
         -- @message might look like this: Dataset rating (-10) does not allow creation of jobs: 47538_Pls_FF_IGT_23_25Aug10_Andromeda_10-07-10
         -- If it does, update @message to remove the dataset name
         
-        Set @message = Replace(@message, 'does not allow creation of jobs: ' + @datasetNum, 'does not allow creation of jobs')
+        Set @message = Replace(@message, 'does not allow creation of jobs: ' + @datasetName, 'does not allow creation of jobs')
         
         Set @NewMessage = @NewMessage + '; ' + @message
     End

@@ -14,7 +14,8 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **      When @outputType is 'Export Jobs', the calling procedure must create table #JX
 **
 **      CREATE TABLE #JX (
-**          datasetNum varchar(128),
+**          predefine_id int
+**          dataset varchar(128),
 **          priority varchar(8),
 **          analysisToolName varchar(64),
 **          paramFileName varchar(255),
@@ -73,10 +74,11 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          11/09/2022 mem - Replace % signs with %% in the text sent to RAISERROR()
 **          01/26/2023 mem - Show the predefine ID when mode is 'Show Jobs'
 **                         - Use lowercase column names when mode is 'Show Jobs'
+**          01/27/2023 mem - Rename dataset argument to @datasetName
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
     @message varchar(512) = '' output,
     @RaiseErrorMessages tinyint = 1,
@@ -91,7 +93,7 @@ As
     Declare @myRowCount int = 0
 
     Set @message = ''
-    Set @datasetNum = IsNull(@datasetNum, '')
+    Set @datasetName = IsNull(@datasetName, '')
     Set @RaiseErrorMessages = IsNull(@RaiseErrorMessages, 1)
     Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
     Set @CreateJobsForUnreviewedDatasets = IsNull(@CreateJobsForUnreviewedDatasets, 1)
@@ -156,14 +158,13 @@ As
         @ScanCount = Scan_Count,
         @ID = ID
     FROM V_Predefined_Analysis_Dataset_Info
-    WHERE
-        (Dataset = @datasetNum)
+    Where Dataset = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0 or @ID = 0
     Begin
-        Set @message = 'Dataset name not found in DMS: ' + @datasetNum
+        Set @message = 'Dataset name not found in DMS: ' + @datasetName
 
         If @RaiseErrorMessages <> 0
         Begin
@@ -207,7 +208,7 @@ As
                     -- Note that SP CreatePredefinedAnalysesJobs expects the format of @message to be something like:
                     --   Dataset rating (-10) does not allow creation of jobs: 47538_Pls_FF_IGT_23_25Aug10_Andromeda_10-07-10
                     -- Thus, be sure to update CreatePredefinedAnalysesJobs if you change the following line
-                    Set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetNum
+                    Set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetName
 
                     If @RaiseErrorMessages <> 0
                     Begin
@@ -431,7 +432,7 @@ As
 
         If @outputType = 'Show Rules' Or @OutputType = 'Show Jobs'
         Begin
-            SELECT @datasetNum AS Dataset, 'No matching rules were found' as Message
+            SELECT @datasetName AS Dataset, 'No matching rules were found' as Message
             --
             goto Done
         End
@@ -514,7 +515,7 @@ As
     ---------------------------------------------------
 
     CREATE TABLE #JB (
-        datasetNum varchar(128),
+        dataset varchar(128),
         priority varchar(8),
         analysisToolName varchar(64),
         paramFileName varchar(255),
@@ -701,7 +702,7 @@ As
                     (SR_enabled > 0) AND
                     (@InstrumentClass LIKE SR_instrumentClass   OR SR_instrumentClass = '') AND
                     (@InstrumentName LIKE SR_instrument_Name    OR SR_instrument_Name = '') AND
-                    (@datasetNum LIKE SR_dataset_Name           OR SR_dataset_Name = '') AND
+                    (@datasetName LIKE SR_dataset_Name          OR SR_dataset_Name = '') AND
                     (@analysisToolName LIKE SR_analysisToolName OR SR_analysisToolName = '')
                 ORDER BY SR_evaluationOrder
                 --
@@ -753,7 +754,7 @@ As
                 If Len(@proteinCollectionListValidated) > 0 And dbo.ValidateNAParameter(@proteinCollectionListValidated, 1) <> 'na'
                 Begin
                     exec @result = ValidateProteinCollectionListForDatasets
-                                        @datasetNum,
+                                        @datasetName,
                                         @protCollNameList=@proteinCollectionListValidated output,
                                         @ShowMessages=@RaiseErrorMessages,
                                         @message=@message output
@@ -789,7 +790,7 @@ As
                 Set @jobsCreated = @jobsCreated + 1
                 --
                 INSERT INTO #JB (
-                    datasetNum,
+                    dataset,
                     priority,
                     analysisToolName,
                     paramFileName,
@@ -806,7 +807,7 @@ As
                     specialProcessing,
                     predefineID
                 ) VALUES (
-                    @datasetNum,
+                    @datasetName,
                     @priority,
                     @analysisToolName,
                     @paramFileName,
