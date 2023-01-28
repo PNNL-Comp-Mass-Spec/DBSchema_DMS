@@ -76,6 +76,8 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **                         - Use lowercase column names when mode is 'Show Jobs'
 **          01/27/2023 mem - Rename dataset argument to @datasetName
 **                         - No longer show processor group for mode 'Show Jobs'
+**                         - Remove periods from output columns for mode 'Show Rules' (and change to lowercase)
+**                         - Rename columns in temporary table #JX, and add column predefine_id
 **
 *****************************************************/
 (
@@ -864,9 +866,46 @@ As
     ---------------------------------------------------
     If @outputType = 'Show Rules'
     Begin
-        SELECT *
+        SELECT [Step] AS step,
+               [Level] AS [level],
+               [Seq.] AS seq,
+               Predefine_ID AS predefine_id,
+               [Next Lvl.] AS next_lvl,
+               [Trigger Mode] AS trigger_mode,
+               [Export Mode] AS export_mode,
+               [Action] AS [action],
+               [Reason] AS reason,
+               [Notes] AS notes,
+               [Analysis Tool] AS analysis_tool,
+               [Instrument Class Crit.] AS instrument_class_criteria,
+               [Instrument Crit.] AS instrument_criteria,
+               [Instrument Exclusion] AS instrument_exclusion,
+               [Campaign Crit.] AS campaign_criteria,
+               [Campaign Exclusion] AS campaign_exclusion,
+               [Experiment Crit.] AS experiment_criteria,
+               [Experiment Exclusion] AS experiment_exclusion,
+               [Organism Crit.] AS organism_criteria,
+               [Dataset Crit.] AS dataset_criteria,
+               [Dataset Exclusion] AS dataset_exclusion,
+               [Dataset Type] AS dataset_type,
+               [Exp. Comment Crit.] AS exp_comment_criteria,
+               [Labelling Incl.] AS labelling_inclusion,
+               [Labelling Excl.] AS labelling_exclusion,
+               [Separation Type Crit.] AS separation_type_criteria,
+               [ScanCount Min] AS scan_count_min,
+               [ScanCount Max] AS scan_count_max,
+               [Param File] AS param_file,
+               [Settings File] AS settings_file,
+               Organism AS organism,
+               [Prot. Coll.] AS protein_collections,
+               [Prot. Opts.] AS protein_options,
+               [Organism DB] AS organism_db,
+               [Special Proc.] AS special_processing,
+               Priority AS priority,
+               [Processor Group] AS processor_group
         FROM #RuleEval
         ORDER BY [Step]
+
         --
         goto Done
     End
