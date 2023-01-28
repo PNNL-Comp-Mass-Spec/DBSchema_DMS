@@ -6,13 +6,13 @@ GO
 
 CREATE PROCEDURE [dbo].[predefined_analysis_jobs_mds_proc]
 /****************************************************
-** 
-**	Desc: 
+**
+**	Desc:
 **      Evaluate predefined analysis rules for given list of datasets
 **      Return a table of the jobs that would be created
 **
 **	Return values: 0: success, otherwise, error code
-** 
+**
 **	Auth:	grk
 **	Date:	06/23/2005
 **			03/28/2006 grk - added protein collection fields
@@ -28,7 +28,8 @@ CREATE PROCEDURE [dbo].[predefined_analysis_jobs_mds_proc]
 **			03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **          06/30/2022 mem - Rename parameter file column
 **          11/09/2022 mem - Rename stored procedure from EvaluatePredefinedAnalysisRulesMDS to predefined_analysis_jobs_mds_proc
-**    
+**          01/26/2023 mem - Add predefine_id to the output table, remove Processor_Group, and change names to lowercase
+**
 *****************************************************/
 (
     @datasetList varchar(3500),
@@ -36,7 +37,7 @@ CREATE PROCEDURE [dbo].[predefined_analysis_jobs_mds_proc]
 )
 As
 	set nocount on
-	
+
 	Declare @myError int = 0
 	Declare @myRowCount int = 0
 
@@ -44,7 +45,7 @@ As
 	Declare @jobID int
 	Declare @DatasetName varchar(128)
 	Declare @result int
-	
+
 	Set @datasetList = IsNull(@datasetList, '')
 	set @message = ''
 
@@ -52,9 +53,10 @@ As
 	-- Temporary job holding table to receive created jobs
 	-- This table is populated in EvaluatePredefinedAnalysisRules
 	---------------------------------------------------
-	
+
 	CREATE TABLE #JX (
-		datasetNum varchar(128),
+	    predefine_id int,
+		dataset varchar(128),
 		priority varchar(8),
 		analysisToolName varchar(64),
 		paramFileName varchar(255),
@@ -62,7 +64,7 @@ As
 		organismDBName varchar(128),
 		organismName varchar(128),
 		proteinCollectionList varchar(512),
-		proteinOptionsList varchar(256), 
+		proteinOptionsList varchar(256),
 		ownerPRN varchar(128),
 		comment varchar(128),
 		associatedProcessorGroup varchar(64),
@@ -109,8 +111,8 @@ As
 
 	while @done = 0 and @myError = 0
 	begin
-		
-		SELECT TOP 1 @EntryID = EntryID, 
+
+		SELECT TOP 1 @EntryID = EntryID,
 					 @DatasetName = Dataset
 		FROM @tblDatasetsToProcess
 		WHERE EntryID > @EntryID
@@ -124,13 +126,13 @@ As
 		Else
 		Begin
 			---------------------------------------------------
-			-- Add jobs created for the dataset to the 
+			-- Add jobs created for the dataset to the
 			-- job holding table (#JX)
 			---------------------------------------------------
 			set @message = ''
-			exec @result = EvaluatePredefinedAnalysisRules 
-									@DatasetName, 
-									'Export Jobs', 
+			exec @result = EvaluatePredefinedAnalysisRules
+									@DatasetName,
+									'Export Jobs',
 									@message output,
 									@RaiseErrorMessages=0,
 									@ExcludeDatasetsNotReleased=0,
@@ -140,28 +142,28 @@ As
 
 		End
 	end
-	
+
 	---------------------------------------------------
 	-- Dump contents of job holding table
 	---------------------------------------------------
 
 	SELECT
-		ID,
-		'Entry' as Job,
-		datasetNum as Dataset,
-		numJobs as Jobs,
-		analysisToolName as Tool,
-		priority as Pri,
-		associatedProcessorGroup as Processor_Group,
-		comment as Comment,
-		paramFileName as [Param_File],
-		settingsFileName as [Settings_File],
-		organismDBName as [OrganismDB_File],
-		organismName as Organism,
-		proteinCollectionList as [Protein_Collections],
-		proteinOptionsList as [Protein_Options], 
-		specialProcessing AS [Special_Processing],
-		ownerPRN as Owner,
+		id,
+		'Entry' AS job,
+		predefine_id,
+		dataset AS dataset,
+		numJobs AS jobs,
+		analysistoolname AS tool,
+		priority AS pri,
+		comment AS comment,
+		paramFileName AS param_file,
+		settingsFileName AS settings_file,
+		organismName AS Organism,
+		proteinCollectionList AS protein_collections,
+		proteinOptionsList AS protein_options,
+		organismDBName AS organism_db_name,
+		specialProcessing AS special_processing,
+		ownerPRN AS owner,
 		CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode
 	FROM #JX
 

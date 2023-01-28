@@ -907,7 +907,8 @@ As
     If @outputType = 'Export Jobs'
     Begin
         INSERT INTO #JX (
-            datasetNum,
+            predefine_id,
+            dataset,
             priority,
             analysisToolName,
             paramFileName,
@@ -924,7 +925,8 @@ As
             specialProcessing
         )
         SELECT
-            datasetNum,
+            predefineID,
+            dataset,
             priority,
             analysisToolName,
             paramFileName,
