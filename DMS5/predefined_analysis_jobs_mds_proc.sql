@@ -158,13 +158,13 @@ As
 		comment AS comment,
 		paramFileName AS param_file,
 		settingsFileName AS settings_file,
-		organismName AS Organism,
+		organismName AS organism,
 		proteinCollectionList AS protein_collections,
 		proteinOptionsList AS protein_options,
 		organismDBName AS organism_db_name,
 		specialProcessing AS special_processing,
 		ownerPRN AS owner,
-		CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS Export_Mode
+		CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS export_mode
 	FROM #JX
 
 	---------------------------------------------------
