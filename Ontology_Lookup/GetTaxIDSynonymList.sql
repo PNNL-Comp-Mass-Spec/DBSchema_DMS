@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[GetTaxIDSynonymList]
 **
 **	Auth:	mem
 **	Date:	03/01/2016 mem - Initial version
+**          01/30/2023 mem - Use new view name
 **    
 *****************************************************/
 (
@@ -26,7 +27,7 @@ AS
 		declare @list varchar(4000) = null
 		
 		SELECT @list = Coalesce(@list + ', ' + [Synonym], [Synonym])
-		FROM V_NCBI_Taxonomy_AltName_List_Report
+		FROM V_NCBI_Taxonomy_Alt_Name_List_Report
 		WHERE Tax_ID = @TaxonomyID
 		ORDER BY [Synonym]
 		
