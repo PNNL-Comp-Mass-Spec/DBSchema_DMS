@@ -8,15 +8,14 @@ CREATE PROCEDURE [dbo].[UpdateCachedManagerWorkDirs]
 /****************************************************
 **
 **	Desc:
-**  Update the cached working directory for each manager
+**      Update the cached working directory for each manager
 **
 **	Return values: 0: success, otherwise, error code
-**
-**	Parameters:
 **
 **	Auth:	mem
 **	Date:	10/05/2016 mem - Initial release
 **          02/17/2020 mem - Update the Mgr_Name column in S_Manager_Control_V_MgrWorkDir
+**          01/30/2023 mem - Use new synonym name with renamed columns
 **
 *****************************************************/
 (    
@@ -55,15 +54,15 @@ As
 
 	 	---------------------------------------------------
 		-- Populate a temporary table with the new information
-		-- Date in S_Manager_Control_V_MgrWorkDir will be of the form
+		-- Data in S_Manager_Control_V_Mgr_Work_Dir will be of the form
 		-- \\ServerName\C$\DMS_WorkDir1
 		---------------------------------------------------
 		--
 		INSERT INTO #Tmp_MgrWorkDirs (ID, Processor_Name, MgrWorkDir)
 		SELECT ID,
 		       Processor_Name,
-		       Replace(MgrWorkDirs.WorkDir_AdminShare, '\\ServerName\', '\\' + Machine + '\') AS MgrWorkDir
-		FROM [S_Manager_Control_V_MgrWorkDir] MgrWorkDirs
+		       Replace(MgrWorkDirs.Work_Dir_Admin_Share, '\\ServerName\', '\\' + Machine + '\') AS MgrWorkDir
+		FROM S_Manager_Control_V_Mgr_Work_Dir MgrWorkDirs
 		     INNER JOIN T_Local_Processors LP
 		       ON MgrWorkDirs.Mgr_Name = LP.Processor_Name
 		--
@@ -117,6 +116,7 @@ As
 Done:
 		
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedManagerWorkDirs] TO [DDL_Viewer] AS [dbo]
