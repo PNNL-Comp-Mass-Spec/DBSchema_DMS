@@ -6,11 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Manager_List_By_Type_Picklist]
 AS
-SELECT M.M_ID AS ID,
-       M.M_Name AS ManagerName,
-       MT.MT_TypeName AS ManagerType
+SELECT M.M_ID AS id,
+       M.M_Name AS manager_name,
+       MT.MT_TypeName AS manager_type
 FROM T_Mgrs AS M
      JOIN T_MgrTypes AS MT
        ON M.M_TypeID = MT.MT_TypeID
+
 
 GO

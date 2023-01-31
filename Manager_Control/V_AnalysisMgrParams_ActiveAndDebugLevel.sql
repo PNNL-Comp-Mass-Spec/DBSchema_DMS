@@ -6,13 +6,13 @@ GO
 
 CREATE VIEW [dbo].[V_AnalysisMgrParams_ActiveAndDebugLevel]
 AS
-SELECT PV.MgrID,
-       M.M_Name as Manager,
-       PT.ParamName,
-       PV.TypeID AS ParamTypeID,
-       PV.Value,
-       PV.Last_Affected,
-       PV.Entered_By
+SELECT PV.MgrID As mgr_id,
+       M.M_Name As manager,
+       PT.ParamName As param_name,
+       PV.TypeID AS param_type_id,
+       PV.value,
+       PV.last_affected,
+       PV.entered_by
 FROM dbo.T_ParamValue AS PV
      INNER JOIN dbo.T_ParamType AS PT
        ON PV.TypeID = PT.ParamID

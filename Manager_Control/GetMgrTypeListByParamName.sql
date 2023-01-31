@@ -6,15 +6,12 @@ GO
 CREATE FUNCTION [dbo].[GetMgrTypeListByParamName]
 /****************************************************
 **
-**	Desc: 
-**  Returns a delimited list of manager types by parameter name
+**  Desc: 
+**      Returns a delimited list of manager types by parameter name
 **
-**	Return values: 
-**
-**	Parameters:
-**
-**		Auth: jds
-**		Date: 3/26/2009
+**  Auth:   jds
+**  Date:   03/26/2009 jds - Initial commit
+**          01/30/2023 mem - Use new view name
 **      
 *****************************************************/
 (
@@ -23,49 +20,41 @@ CREATE FUNCTION [dbo].[GetMgrTypeListByParamName]
 RETURNS varchar(8000)
 AS
 BEGIN
-		declare @delimiter char(1)
-		set @delimiter = ','
+        Declare @delimiter char(1) = ','
+        Declare @mgr_type varchar(128) = ''        
+        Declare @theMgrTypeList varchar(8000) = ''
 
-		declare @mgr_type varchar(128)
-		set @mgr_type = ''
+        Declare @EOL int
+        Declare @count int
 
-		declare @theMgrTypeList varchar(8000)
-		set @theMgrTypeList = ''
+        Declare @myError int = 0
+        Declare @myRowCount int = 0
+        
+        Declare @id int
 
-		declare @EOL int
-		declare @count int
+        Declare manager_type cursor for 
+        Select mgr_type_name
+        From V_Mgr_Types_By_Param
+        Where param_name = @ParamName
 
-		declare @myError int
-		set @myError = 0
+        open manager_type
 
-		declare @myRowCount int
-		set @myRowCount = 0
-		--
-		declare @id int
-		--
+        fetch NEXT from manager_type 
+        into @mgr_type
 
-		declare manager_type cursor for 
-		select MT_TypeName
-		from V_MgrTypesByParam
-		where ParamName = @ParamName
+        while @@FETCH_STATUS = 0
+        begin
+            set @theMgrTypeList = @mgr_type + @delimiter + @theMgrTypeList
+        -- Get the next manager type
+        fetch NEXT from manager_type 
+        into @mgr_type
+        end 
 
-		open manager_type
+        Close manager_type
+        Deallocate manager_type
 
-		fetch NEXT from manager_type 
-		into @mgr_type
-
-		while @@FETCH_STATUS = 0
-		begin
-			set @theMgrTypeList = @mgr_type + @delimiter + @theMgrTypeList
-		-- Get the next manager type
-		fetch NEXT from manager_type 
-		into @mgr_type
-		end 
-
-		close manager_type
-		deallocate manager_type
-
-		return(@theMgrTypeList)
+        return(@theMgrTypeList)
 end
+
 
 GO

@@ -6,9 +6,9 @@ GO
 
 CREATE VIEW [dbo].[V_Manager_Update_Required]
 AS
-SELECT M.M_Name,
-       PT.ParamName,
-       PV.Value
+SELECT M.M_Name As mgr_name,
+       PT.ParamName As param_name,
+       PV.value
 FROM T_Mgrs As M
      INNER JOIN T_ParamValue PV
        ON M.M_ID = PV.MgrID
