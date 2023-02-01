@@ -6,6 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_ParamValue]
 AS
+-- This view has been superseded by V_Param_Value
 SELECT M.M_Name,
        PT.ParamName,
        PV.Entry_ID,

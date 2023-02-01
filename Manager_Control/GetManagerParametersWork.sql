@@ -60,19 +60,23 @@ As
            ParamName,
            Entry_ID,
            TypeID,
+    SELECT mgr_name,
+           param_name,
+           entry_id,
+           param_type_id,
            Value,
-           MgrID,
-           Comment,
-           Last_Affected,
-           Entered_By,
-           M_TypeID,
+           mgr_id,
+           comment,
+           last_affected,
+           entered_by,
+           mgr_type_id,
            CASE
-               WHEN TypeID = 162 THEN 1        -- ParamName 'Default_AnalysisMgr_Params'
+               WHEN mgr_type_id = 162 THEN 1        -- ParamName 'Default_AnalysisMgr_Params'
                ELSE 0
-           End As ParentParamPointerState,
-           M_Name
-    FROM V_ParamValue
-    WHERE (M_Name IN (Select Value From dbo.udfParseDelimitedList(@ManagerNameList, ',')))
+           End As parent_param_pointer_state,
+           mgr_name
+    FROM V_Param_Value
+    WHERE (mgr_name IN (Select Value From dbo.udfParseDelimitedList(@ManagerNameList, ',')))
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -109,49 +113,49 @@ As
                                      M_TypeID,
                                      ParentParamPointerState,
                                      Source )
-        SELECT ValuesToAppend.M_Name,
-               ValuesToAppend.ParamName,
-               ValuesToAppend.Entry_ID,
-               ValuesToAppend.TypeID,
-               ValuesToAppend.Value,
-               ValuesToAppend.MgrID,
-               ValuesToAppend.Comment,
-               ValuesToAppend.Last_Affected,
-               ValuesToAppend.Entered_By,
-               ValuesToAppend.M_TypeID,
+        SELECT ValuesToAppend.mgr_name,
+               ValuesToAppend.param_name,
+               ValuesToAppend.entry_id,
+               ValuesToAppend.param_type_id,
+               ValuesToAppend.value,
+               ValuesToAppend.mgr_id,
+               ValuesToAppend.comment,
+               ValuesToAppend.last_affected,
+               ValuesToAppend.entered_by,
+               ValuesToAppend.mgr_type_id,
                CASE
-                   WHEN ValuesToAppend.TypeID = 162 THEN 1
+                   WHEN ValuesToAppend.param_type_id = 162 THEN 1
                    ELSE 0
                End As ParentParamPointerState,
                ValuesToAppend.Source
         FROM #Tmp_Mgr_Params Target
-             RIGHT OUTER JOIN ( SELECT FilterQ.M_Name,
-                                       PV.ParamName,
-                                       PV.Entry_ID,
-                                       PV.TypeID,
-                                       PV.Value,
-                                       PV.MgrID,
-                                       PV.Comment,
-                                       PV.Last_Affected,
-                                       PV.Entered_By,
-                                       PV.M_TypeID,
-                                       PV.M_Name AS Source
-                                FROM V_ParamValue PV
+             RIGHT OUTER JOIN ( SELECT FilterQ.M_Name as mgr_name,
+                                       PV.param_name,
+                                       PV.entry_id,
+                                       PV.param_type_id,
+                                       PV.value,
+                                       PV.mgr_id,
+                                       PV.comment,
+                                       PV.last_affected,
+                                       PV.entered_by,
+                                       PV.mgr_type_id,
+                                       PV.mgr_name AS Source
+                                FROM V_Param_Value PV
                                      INNER JOIN ( SELECT M_Name,
                                                          Group_Name
                                                   FROM #Tmp_Manager_Group_Info ) FilterQ
-                                       ON PV.M_Name = FilterQ.Group_Name ) ValuesToAppend
-               ON Target.M_Name = ValuesToAppend.M_Name AND
-                  Target.TypeID = ValuesToAppend.TypeID
-        WHERE (Target.TypeID IS NULL Or ValuesToAppend.typeID = 162)
+                                       ON PV.mgr_name = FilterQ.Group_Name ) ValuesToAppend
+               ON Target.mgr_name = ValuesToAppend.mgr_name AND
+                  Target.param_type_id = ValuesToAppend.param_type_id
+        WHERE (Target.param_type_id IS NULL Or ValuesToAppend.param_type_id = 162)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         -- This is a safety check in case a manager has a Default_AnalysisMgr_Params value pointing to itself
         Set @iterations = @iterations + 1
-        
+
     End
-    
+
     Drop Table #Tmp_Manager_Group_Info
 
 Done:

@@ -6,12 +6,12 @@ GO
 
 CREATE VIEW [dbo].[V_Param_Name_Picklist]
 AS
-SELECT ParamName AS val,
-       ParamName AS ex,
-       MgrTypeID AS m_typeid
-FROM T_ParamType
-     Inner JOIN T_MgrType_ParamType_Map
-       ON ParamID = ParamTypeID
+SELECT ParamName As val,
+       ParamName As ex,
+       MgrTypeID As mgr_type_id
+FROM T_ParamType pt
+     INNER JOIN T_MgrType_ParamType_Map mtpm
+       ON pt.ParamID = mtpm.ParamTypeID
 
 
 GO

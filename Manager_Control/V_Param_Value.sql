@@ -9,7 +9,7 @@ AS
 SELECT M.M_Name AS mgr_name,
        PT.ParamName As param_name,
        PV.entry_id,
-       PV.TypeID As type_id,
+       PV.TypeID As param_type_id,
        PV.value,
        PV.MgrID As mgr_id,
        PV.comment,
