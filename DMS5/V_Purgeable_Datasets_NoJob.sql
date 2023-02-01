@@ -1,11 +1,10 @@
-/****** Object:  View [dbo].[V_Purgable_Datasets_NoJob] ******/
+/****** Object:  View [dbo].[V_Purgeable_Datasets_NoJob] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE VIEW [dbo].[V_Purgable_Datasets_NoJob]
+CREATE VIEW [dbo].[V_Purgeable_Datasets_NoJob]
 AS
 SELECT DS.Dataset_ID,
        SPath.SP_machine_name AS StorageServerName,
@@ -42,7 +41,6 @@ WHERE (InstClass.is_purgable > 0) AND
                               FROM dbo.T_Analysis_Job ))
 
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets_NoJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Purgeable_Datasets_NoJob] TO [DDL_Viewer] AS [dbo]
 GO

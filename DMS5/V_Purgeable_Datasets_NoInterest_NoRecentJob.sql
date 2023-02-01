@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Purgable_Datasets_NoInterest_NoRecentJob] ******/
+/****** Object:  View [dbo].[V_Purgeable_Datasets_NoInterest_NoRecentJob] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Purgable_Datasets_NoInterest_NoRecentJob]
+CREATE VIEW [dbo].[V_Purgeable_Datasets_NoInterest_NoRecentJob]
 AS
 SELECT Dataset_ID,
        StorageServerName,
@@ -15,9 +15,10 @@ SELECT Dataset_ID,
        MostRecentJob,
        Purge_Priority,
        Archive_State_ID
-FROM V_Purgable_Datasets_NoInterest
+FROM V_Purgeable_Datasets_NoInterest
 WHERE MostRecentJob < DateAdd(day, -60, GetDate())
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Purgable_Datasets_NoInterest_NoRecentJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Purgeable_Datasets_NoInterest_NoRecentJob] TO [DDL_Viewer] AS [dbo]
 GO
