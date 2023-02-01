@@ -4,12 +4,34 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[AddUpdateInstrumentClass]
+CREATE PROCEDURE [dbo].[AddUpdateInstrumentClass]
 /****************************************************
 **
 **  Desc:   Updates existing Instrument Class in database
 **
-**  Return values: 0: success, otherwise, error code
+**  Arguments:
+**    @instrumentClass  Instrument class name
+**    @isPurgeable      1 if datasets can be purged for this instrument class, 0 if purging is disabled
+**    @rawDataType      Instrument data type; see table T_Instrument_Data_Type_Name
+**    @params           XML parameters with DatasetQC options (see below)
+**    @comment          Instrument class comment
+**    @mode             The only valid mode is 'update', since 'add' is not allowed in this procedure; instead directly edit table T_Instrument_Class
+**
+**  Example value for @params
+**
+**      <sections>
+**        <section name="DatasetQC">
+**          <item key="SaveTICAndBPIPlots" value="True" />
+**          <item key="SaveLCMS2DPlots" value="True" />
+**          <item key="ComputeOverallQualityScores" value="True" />
+**          <item key="CreateDatasetInfoFile" value="True" />
+**          <item key="LCMS2DPlotMZResolution" value="0.4" />
+**          <item key="LCMS2DPlotMaxPointsToPlot" value="200000" />
+**          <item key="LCMS2DPlotMinPointsPerSpectrum" value="2" />
+**          <item key="LCMS2DPlotMinIntensity" value="0" />
+**          <item key="LCMS2DOverviewPlotDivisor" value="10" />
+**        </section>
+**      </sections>
 **
 **  Auth:   jds
 **  Date:   07/06/2006
@@ -20,13 +42,14 @@ CREATE Procedure [dbo].[AddUpdateInstrumentClass]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/06/2018 mem - Add try/catch handling and disallow @mode = 'add'
-**    
+**          02/01/2023 mem - Rename argument to @isPurgeable and switch from text to int
+**                         - Remove argument @requiresPreparation
+**
 *****************************************************/
 (
-    @instrumentClass varchar(32), 
-    @isPurgable varchar(1), 
-    @rawDataType varchar(32), 
-    @requiresPreparation varchar(1), 
+    @instrumentClass varchar(32),
+    @isPurgeable tinyint,
+    @rawDataType varchar(32),
     @params text,
     @comment varchar(255),
     @mode varchar(12) = 'update',       -- Note that 'add' is not allowed in this procedure; instead directly edit table T_Instrument_Class
@@ -37,57 +60,51 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @msg varchar(256)
 
     Declare @xmlParams xml
 
     Set @message = ''
-    
+
     Declare @logErrors tinyint = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentClass', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-          
+
     BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
 
-    Set @myError = 0
     If LEN(@instrumentClass) < 1
     Begin;
         THROW 51000, 'Instrument Class Name cannot be blank', 1;
     End;
 
-    If LEN(@isPurgable) < 1
+    If @isPurgeable Is Null
     Begin;
-        THROW 51001, 'Is Purgable cannot be blank', 1;
+        THROW 51001, 'Is Purgeable cannot be null', 1;
     End;
-    --
+
     If LEN(@rawDataType) < 1
     Begin;
         THROW 51002, 'Raw Data Type cannot be blank', 1;
     End;
-    --
-    If LEN(@requiresPreparation) < 1
-    Begin;
-        THROW 51003, 'Requires Preparation cannot be blank', 1;
-    End;
-    --
+
     If @myError <> 0
         return @myError
 
-    
+
     Set @params = IsNull(@params, '')
     If DataLength(@params) > 0
     Begin
@@ -111,21 +128,18 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Set @logErrors = 1
 
-        Set @myError = 0
-        --
         UPDATE T_Instrument_Class
-        SET 
-            is_purgable = @isPurgable, 
-            raw_data_type = @rawDataType, 
-            requires_preparation = @requiresPreparation,
+        SET
+            is_purgable = @isPurgeable,
+            raw_data_type = @rawDataType,
             Params = @xmlParams,
             Comment = @comment
-        WHERE (IN_class = @instrumentClass)
-        --
+        WHERE IN_class = @instrumentClass;
+
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
@@ -136,11 +150,11 @@ As
         End;
 
     End -- update mode
-    
+
     END Try
     BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError Output
-        
+
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
@@ -154,6 +168,7 @@ As
     END Catch
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [DDL_Viewer] AS [dbo]
