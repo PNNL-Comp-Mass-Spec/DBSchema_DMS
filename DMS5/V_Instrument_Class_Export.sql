@@ -6,10 +6,10 @@ GO
 
 CREATE VIEW [dbo].[V_Instrument_Class_Export]
 AS
-SELECT IN_class AS Instrument_Class,
-       is_purgable AS Is_Purgable,
-       raw_data_type AS Raw_Data_Type,
-       Comment
+SELECT IN_class AS instrument_class,
+       is_purgable AS is_purgeable,
+       raw_data_type AS raw_data_type,
+       comment
 FROM dbo.T_Instrument_Class
 
 

@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Instrument_Class_List_Report]
 AS
 SELECT IN_class AS instrument_class,
-       is_purgable AS is_purgable,
+       is_purgable AS is_purgeable,
        raw_data_type AS raw_data_type,
        requires_preparation AS requires_preparation,
        comment
