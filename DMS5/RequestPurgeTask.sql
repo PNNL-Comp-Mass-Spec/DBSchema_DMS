@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[RequestPurgeTask]
+CREATE PROCEDURE [dbo].[RequestPurgeTask]
 /****************************************************
 **
 **  Desc: 
@@ -38,7 +38,7 @@ CREATE Procedure [dbo].[RequestPurgeTask]
 **          01/11/2011 dac/mem - Modified for use with new space manager
 **          01/11/2011 dac - Added samba path for dataset as return param
 **          02/01/2011 mem - Added parameter @ExcludeStageMD5RequiredDatasets
-**          01/10/2012 mem - Now using V_Purgable_Datasets_NoInterest_NoRecentJob instead of V_Purgable_Datasets_NoInterest
+**          01/10/2012 mem - Now using V_Purgeable_Datasets_NoInterest_NoRecentJob instead of V_Purgeable_Datasets_NoInterest
 **          01/16/2012 mem - Now returning Instrument, Dataset_Created, and Dataset_YearQuarter when @PreviewSql > 0
 **          01/18/2012 mem - Now including Instrument, DatasetCreated, and DatasetYearQuarter when requesting an actual purge task (@infoOnly = 0)
 **                         - Using @infoOnly = -1 will now show the parameter table that would be returned if an actual purge task were assigned
@@ -48,6 +48,7 @@ CREATE Procedure [dbo].[RequestPurgeTask]
 **          06/07/2013 mem - Now sorting by Archive_State_ID, Purge_Priority, then OrderByCol
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/02/2018 mem - Change the return code for "dataset not found" to 53000
+**          02/01/2023 mem - Use new view names
 **    
 *****************************************************/
 (
@@ -131,7 +132,7 @@ As
     
 
     --------------------------------------------------
-    -- temporary table to hold candidate purgable datasets
+    -- Temporary table to hold candidate purgeable datasets
     ---------------------------------------------------
 
     CREATE TABLE #PD (
@@ -172,7 +173,7 @@ As
 
     ---------------------------------------------------
     -- populate temporary table with a small pool of 
-    -- purgable datasets for given storage server
+    -- purgeable datasets for given storage server
     ---------------------------------------------------
     
     -- The candidates come from three separate views, which we define in #TmpPurgeViews
@@ -184,22 +185,22 @@ As
     -- If we still don't have enough candidates, we query the views again to start purging newer datasets
     
     INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-    VALUES ('V_Purgable_Datasets_NoInterest_NoRecentJob', 120, 'Created')
+    VALUES ('V_Purgeable_Datasets_NoInterest_NoRecentJob', 120, 'Created')
     
     INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-    VALUES ('V_Purgable_Datasets_NoJob',                  180, 'Created')
+    VALUES ('V_Purgeable_Datasets_NoJob',                  180, 'Created')
 
     INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-    VALUES ('V_Purgable_Datasets',                        365, 'MostRecentJob')
+    VALUES ('V_Purgeable_Datasets',                        365, 'MostRecentJob')
 
     INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-    VALUES ('V_Purgable_Datasets_NoInterest_NoRecentJob', 21,  'Created')
+    VALUES ('V_Purgeable_Datasets_NoInterest_NoRecentJob', 21,  'Created')
 
     INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-    VALUES ('V_Purgable_Datasets_NoJob',                  21,  'Created')
+    VALUES ('V_Purgeable_Datasets_NoJob',                  21,  'Created')
     
     INSERT INTO #TmpPurgeViews (PurgeViewName, HoldoffDays, OrderByCol)
-    VALUES ('V_Purgable_Datasets',     21,  'MostRecentJob')
+    VALUES ('V_Purgeable_Datasets',     21,  'MostRecentJob')
     
     ---------------------------------------------------
     -- Process each of the views in #TmpPurgeViews
@@ -421,7 +422,7 @@ As
     Begin transaction @transName
 
     ---------------------------------------------------
-    -- Select and lock a specific purgable dataset by joining
+    -- Select and lock a specific purgeable dataset by joining
     -- from the local pool to the actual archive table
     ---------------------------------------------------
     
@@ -554,6 +555,7 @@ As
     --
 Done:
     return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [D3L243] AS [dbo]
