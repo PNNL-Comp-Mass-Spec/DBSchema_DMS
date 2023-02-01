@@ -9,7 +9,7 @@ AS
 SELECT IN_class AS instrument_class,
        is_purgable AS is_purgeable,
        raw_data_type AS raw_data_type,
-       requires_preparation AS requires_preparation,
+       -- Obsolete: requires_preparation,
        comment
 FROM dbo.T_Instrument_Class
 

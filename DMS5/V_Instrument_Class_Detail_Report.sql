@@ -7,9 +7,9 @@ GO
 CREATE VIEW [dbo].[V_Instrument_Class_Detail_Report]
 AS
 SELECT IN_class AS instrument_class,
-       requires_preparation AS requires_preparation,
        is_purgable AS is_purgeable,
        raw_data_type,
+       -- Obsolete: requires_preparation,
        comment,
        dbo.XmlToHTML(Params) AS params
 FROM dbo.T_Instrument_Class
