@@ -6,7 +6,7 @@ GO
 
 CREATE PROCEDURE [dbo].[GetManagerParameters]
 /****************************************************
-** 
+**
 **  Desc:   Gets the parameters for the given analysis manager(s)
 **          Uses MgrSettingGroupName to lookup parameters from the parent group, if any
 **
@@ -17,7 +17,8 @@ CREATE PROCEDURE [dbo].[GetManagerParameters]
 **          08/10/2015 mem - Add @SortMode=3
 **          09/02/2016 mem - Increase the default for parameter @MaxRecursion from 5 to 50
 **          03/14/2018 mem - Refactor actual parameter lookup into stored procedure GetManagerParametersWork
-**    
+**          01/31/2023 mem - Rename columns in #Tmp_Mgr_Params
+**
 *****************************************************/
 (
     @ManagerNameList varchar(4000) = '',
@@ -27,41 +28,39 @@ CREATE PROCEDURE [dbo].[GetManagerParameters]
 )
 As
     Set NoCount On
-    
-    Declare @myRowCount int
-    Declare @myError int
-    Set @myRowCount = 0
-    Set @myError = 0
-    
+
+    Declare @myRowCount int = 0
+    Declare @myError int = 0
+
     -----------------------------------------------
     -- Validate the inputs
     -----------------------------------------------
     --
     Set @ManagerNameList = IsNull(@ManagerNameList, '')
-    
+
     Set @SortMode = IsNull(@SortMode, 0)
-    
+
     If @MaxRecursion > 10
         Set @MaxRecursion = 10
-        
+
     -----------------------------------------------
     -- Create the Temp Table to hold the manager parameters
     -----------------------------------------------
-       
+
     CREATE TABLE #Tmp_Mgr_Params (
-        M_Name varchar(50) NOT NULL,
-        ParamName varchar(50) NOT NULL,
-        Entry_ID int NOT NULL,
-        TypeID int NOT NULL,
-        Value varchar(128) NOT NULL,
-        MgrID int NOT NULL,
-        Comment varchar(255) NULL,
-        Last_Affected datetime NULL,
-        Entered_By varchar(128) NULL,
-        M_TypeID int NOT NULL,
-        ParentParamPointerState tinyint,
-        Source varchar(50) NOT NULL
-    ) 
+        mgr_name varchar(50) NOT NULL,
+        param_name varchar(50) NOT NULL,
+        entry_id int NOT NULL,
+        param_type_id int NOT NULL,
+        value varchar(128) NOT NULL,
+        mgr_id int NOT NULL,
+        comment varchar(255) NULL,
+        last_affected datetime NULL,
+        entered_by varchar(128) NULL,
+        mgr_type_id int NOT NULL,
+        parent_param_pointer_state tinyint,
+        source varchar(50) NOT NULL
+    )
 
     -- Populate the temporary table with the manager parameters
     Exec @myError = GetManagerParametersWork @ManagerNameList, @SortMode, @MaxRecursion, @message = @message Output
@@ -71,22 +70,22 @@ As
     If @SortMode = 0
         SELECT *
         FROM #Tmp_Mgr_Params
-        ORDER BY TypeID, M_Name
-    
+        ORDER BY param_type_id, mgr_name
+
     If @SortMode = 1
         SELECT *
         FROM #Tmp_Mgr_Params
-        ORDER BY ParamName, M_Name
+        ORDER BY param_name, mgr_name
 
     If @SortMode = 2
         SELECT *
         FROM #Tmp_Mgr_Params
-        ORDER BY M_Name, ParamName
+        ORDER BY mgr_name, param_name
 
     If @SortMode Not In (0,1,2)
         SELECT *
         FROM #Tmp_Mgr_Params
-        ORDER BY Value, ParamName
+        ORDER BY value, param_name
 
      Drop Table #Tmp_Mgr_Params
 

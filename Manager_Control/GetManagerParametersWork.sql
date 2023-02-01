@@ -6,15 +6,31 @@ GO
 
 CREATE PROCEDURE [dbo].[GetManagerParametersWork]
 /****************************************************
-** 
+**
 **  Desc:   Populates temporary tables with the parameters for the given analysis manager(s)
 **          Uses MgrSettingGroupName to lookup parameters from the parent group, if any
 **
 **  Requires that the calling procedure create temporary table #Tmp_Mgr_Params
 **
+**      CREATE TABLE #Tmp_Mgr_Params (
+**          mgr_name varchar(50) NOT NULL,
+**          param_name varchar(50) NOT NULL,
+**          entry_id int NOT NULL,
+**          param_type_id int NOT NULL,
+**          value varchar(128) NOT NULL,
+**          mgr_id int NOT NULL,
+**          comment varchar(255) NULL,
+**          last_affected datetime NULL,
+**          entered_by varchar(128) NULL,
+**          mgr_type_id int NOT NULL,
+**          parent_param_pointer_state tinyint,
+**          source varchar(50) NOT NULL
+**      )
+**
 **  Auth:   mem
 **  Date:   03/14/2018 mem - Initial version (code refactored from GetManagerParameters)
-**    
+**          01/31/2023 mem - Use new view name
+**
 *****************************************************/
 (
     @ManagerNameList varchar(4000) = '',
@@ -24,11 +40,9 @@ CREATE PROCEDURE [dbo].[GetManagerParametersWork]
 )
 As
     Set NoCount On
-    
-    Declare @myRowCount int
-    Declare @myError int
-    Set @myRowCount = 0
-    Set @myError = 0
+
+    Declare @myRowCount Int = 0
+    Declare @myError Int = 0
 
     -----------------------------------------------
     -- Create the Temp Table to hold the manager group information
@@ -37,29 +51,25 @@ As
     CREATE TABLE #Tmp_Manager_Group_Info (
         M_Name varchar(50) NOT NULL,
         Group_Name varchar(128) NOT NULL
-    ) 
-  
+    )
+
     -----------------------------------------------
     -- Lookup the initial manager parameters
     -----------------------------------------------
     --
 
-    INSERT INTO #Tmp_Mgr_Params( M_Name,
-                                 ParamName,
-                                 Entry_ID,
-                                 TypeID,
-                                 Value,
-                                 MgrID,
-                                 Comment,
-                                 Last_Affected,
-                                 Entered_By,
-                                 M_TypeID,
-                                 ParentParamPointerState,
-                                 Source )
-    SELECT M_Name,
-           ParamName,
-           Entry_ID,
-           TypeID,
+    INSERT INTO #Tmp_Mgr_Params( mgr_name,
+                                 param_name,
+                                 entry_id,
+                                 param_type_id,
+                                 value,
+                                 mgr_id,
+                                 comment,
+                                 last_affected,
+                                 entered_by,
+                                 mgr_type_id,
+                                 parent_param_pointer_state,
+                                 source )
     SELECT mgr_name,
            param_name,
            entry_id,
@@ -87,31 +97,31 @@ As
     -----------------------------------------------
     --
     Declare @iterations tinyint = 0
-    
-    While Exists (Select * from #Tmp_Mgr_Params Where ParentParamPointerState = 1) And @iterations < @MaxRecursion
+
+    While Exists (Select * from #Tmp_Mgr_Params Where parent_param_pointer_state = 1) And @iterations < @MaxRecursion
     Begin
         Truncate table #Tmp_Manager_Group_Info
-        
-        INSERT INTO #Tmp_Manager_Group_Info (M_Name, Group_Name)
-        SELECT M_Name, Value
-        FROM #Tmp_Mgr_Params
-        WHERE (ParentParamPointerState = 1)
-         
-        UPDATE #Tmp_Mgr_Params
-        Set ParentParamPointerState = 2
-        WHERE (ParentParamPointerState = 1)
 
-        INSERT INTO #Tmp_Mgr_Params( M_Name,
-                                     ParamName,
+        INSERT INTO #Tmp_Manager_Group_Info (M_Name, Group_Name)
+        SELECT mgr_name, value
+        FROM #Tmp_Mgr_Params
+        WHERE parent_param_pointer_state = 1
+
+        UPDATE #Tmp_Mgr_Params
+        Set parent_param_pointer_state = 2
+        WHERE parent_param_pointer_state = 1
+
+        INSERT INTO #Tmp_Mgr_Params( mgr_name,
+                                     param_name,
                                      Entry_ID,
-                                     TypeID,
-                                     Value,
-                                     MgrID,
-                                     Comment,
-                                     Last_Affected,
-                                     Entered_By,
-                                     M_TypeID,
-                                     ParentParamPointerState,
+                                     param_type_id,
+                                     value,
+                                     mgr_id,
+                                     comment,
+                                     last_affected,
+                                     entered_by,
+                                     mgr_type_id,
+                                     parent_param_pointer_state,
                                      Source )
         SELECT ValuesToAppend.mgr_name,
                ValuesToAppend.param_name,
