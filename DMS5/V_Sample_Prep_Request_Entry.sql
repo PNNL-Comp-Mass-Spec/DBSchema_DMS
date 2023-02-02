@@ -4,9 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Entry]
 AS
-SELECT  SPR.request_name,
+SELECT  SPR.id,
+        SPR.request_name,
         SPR.requester_prn,
         SPR.Reason + '__NoCopy__' As reason,
         SPR.organism,
@@ -30,7 +32,6 @@ SELECT  SPR.request_name,
         SPR.priority,
         SN.State_Name AS state,
         SPR.state_comment,
-        SPR.id,
         SPR.EUS_UsageType AS eus_usage_type,
         SPR.EUS_Proposal_ID AS eus_proposal_id,
         SPR.eus_user_id,

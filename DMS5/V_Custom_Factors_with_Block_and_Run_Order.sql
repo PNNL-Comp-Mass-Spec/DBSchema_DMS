@@ -4,11 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Custom_Factors_with_Block_and_Run_Order] as
-SELECT RR.RDS_BatchID AS Batch,
-       RR.ID AS Request,       
-       F.Factor,
+SELECT F.Factor,
        F.Value AS [Value],
+       RR.ID AS Request,
+       RR.RDS_BatchID AS Batch,
        RR.DatasetID As Dataset_ID,
        DS.Dataset_Num AS Dataset,
        COALESCE(DSExp.Exp_ID, RRExp.Exp_ID) AS Experiment_ID,

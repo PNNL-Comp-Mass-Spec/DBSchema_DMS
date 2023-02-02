@@ -4,10 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Dataset]
 AS
 SELECT DS.dataset_id,
-       DS.dataset_num,
+       DS.dataset_num AS dataset,
        DS.ds_comment,
        DS.ds_created,
        DS.ds_state_id,
@@ -36,7 +37,7 @@ SELECT DS.dataset_id,
        DS.scan_count,
        DS.file_size_bytes,
        DS.file_info_last_modified,
-       DS.Dataset_Num AS dataset,
+       DS.dataset_num,
 	   DS.DateSortKey AS date_sort_key
 FROM T_DatasetStateName DSN
      INNER JOIN T_Dataset DS
