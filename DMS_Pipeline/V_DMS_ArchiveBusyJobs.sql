@@ -5,8 +5,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW V_DMS_ArchiveBusyJobs
 AS
-SELECT AJ_jobID AS Job
-FROM S_DMS_V_GetAnalysisJobsForArchiveBusy
+SELECT Job
+FROM S_DMS_V_Get_Analysis_Jobs_For_Archive_Busy
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_ArchiveBusyJobs] TO [DDL_Viewer] AS [dbo]

@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE VIEW [dbo].[V_Jobs_Active] 
+CREATE VIEW [dbo].[V_Jobs_Active]
 AS
 SELECT J.Job,
        J.Priority,
@@ -49,7 +48,7 @@ SELECT D.Job,
        '' AS Results_Folder_Name,
        D.Transfer_Folder_Path,
        0 AS SortOrder
-FROM V_DMS_PipelineJobs D
+FROM V_DMS_Pipeline_Jobs D
      LEFT OUTER JOIN T_Jobs J
        ON D.Job = J.Job
 WHERE D.State IN (1, 8) AND

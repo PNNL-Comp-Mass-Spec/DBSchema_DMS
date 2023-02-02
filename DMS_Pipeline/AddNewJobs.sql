@@ -20,25 +20,25 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 **  -----     ------           ---------------------------------------
 **  New       (job not         Import job:
 **             in broker)      - Add it to local job table
-**                             - Set local job state to freshly imported 
+**                             - Set local job state to freshly imported
 **                               (CreateJobSteps will set local state to New)
-**  
+**
 **  New       failed           Resume job:
 **            holding          - Reset any failed/holding job steps to waiting
 **                             - Reset Evaluated and Triggered to 0 in T_Job_Step_Dependencies for the affected steps
-**                             - Set local job state to "resuming" 
+**                             - Set local job state to "resuming"
 **                               (UpdateJobState will handle final job state update)
 **                               (UpdateDependentSteps will handle final job step state updates)
-**  
+**
 **  New       complete         Reset job:
 **                             - Delete entries from job, steps, parameters, and dependencies tables
 **                             - Set local job state to freshly imported (see import job above)
-**  
+**
 **  New       holding          Resume job: (see description above)
-**  
+**
 **  holding   (any state)      Suspend Job:
 **                            - Set local job state to holding
-** 
+**
 **
 **  Auth:   grk
 **          08/25/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
@@ -72,8 +72,9 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 **          11/07/2014 mem - No longer performing a full job reset for ICR2LS or LTQ_FTPek jobs where the job state is failed but the DMS state is new
 **          01/04/2016 mem - Truncate the job comment at the first semicolon for failed jobs being reset
 **          05/12/2017 mem - Update Next_Try and Remote_Info_ID
-**`         03/30/2018 mem - Add support for job step states 9=Running_Remote, 10=Holding_Staging, and 16=Failed_Remote
-**    
+**          03/30/2018 mem - Add support for job step states 9=Running_Remote, 10=Holding_Staging, and 16=Failed_Remote
+**          02/01/2023 mem - Use new view name
+**
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
@@ -88,39 +89,37 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 As
 
     set nocount on
-    
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
 
-    declare @currJob int
-    declare @Dataset varchar(128)
-    declare @FailedJob tinyint
-    declare @continue tinyint
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @JobsProcessed int
+    Declare @currJob int
+    Declare @Dataset varchar(128)
+    Declare @FailedJob tinyint
+    Declare @continue tinyint
+
+    Declare @JobsProcessed int
     Declare @JobCountToResume int
-    declare @JobCountToReset int
+    Declare @JobCountToReset int
 
     Declare @ResumeUpdatesRequired tinyint
     Set @ResumeUpdatesRequired = 0
-    
+
     Declare @MaxJobsToAddResetOrResume int
 
-    declare @StartTime datetime
-    declare @LastLogTime datetime
-    declare @StatusMessage varchar(512)    
-        
+    Declare @StartTime datetime
+    Declare @LastLogTime datetime
+    Declare @StatusMessage varchar(512)
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
     --
     Set @infoOnly = IsNull(@infoOnly, 0)
-    Set @bypassDMS = IsNull(@bypassDMS, 0)    
+    Set @bypassDMS = IsNull(@bypassDMS, 0)
     Set @DebugMode = IsNull(@DebugMode, 0)
     Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
-    
+
     set @message = ''
     if @bypassDMS <> 0
         goto Done
@@ -134,13 +133,13 @@ As
     Set @LoggingEnabled = IsNull(@LoggingEnabled, 0)
     Set @LogIntervalThreshold = IsNull(@LogIntervalThreshold, 15)
     Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
-    
+
     If @LogIntervalThreshold = 0
         Set @LoggingEnabled = 1
-        
+
     If @LoopingUpdateInterval < 2
         Set @LoopingUpdateInterval = 2
-    
+
     ---------------------------------------------------
     -- table variable to hold jobs from DMS to process
     ---------------------------------------------------
@@ -160,7 +159,7 @@ As
     )
 
     CREATE INDEX #IX_Tmp_DMSJobs_Job ON #Tmp_DMSJobs (Job)
-    
+
     -- Additional Table Variables
     CREATE TABLE #Tmp_ResetJobs (
         Job int
@@ -192,22 +191,22 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(32) = 'AddNewJobs'
-        
+
     ---------------------------------------------------
     -- Get list of new or held jobs from DMS
-    -- Data comes from view V_DMS_PipelineJobs, which pulls from
-    --   synonym S_DMS_V_GetPipelineJobs, which pulls from
-    --   view V_GetPipelineJobs in DMS5
+    -- Data comes from view V_DMS_Pipeline_Jobs, which pulls from
+    --   synonym S_DMS_V_Get_Pipeline_Jobs, which pulls from
+    --   view V_Get_Pipeline_Jobs in DMS5
     -- That view shows new jobs in state 1 or 8
     --   but it excludes jobs that have recently been archived
     ---------------------------------------------------
     --
     INSERT INTO #Tmp_DMSJobs
         (Job, Priority, Script, Dataset, Dataset_ID, State, Transfer_Folder_Path, Comment, Special_Processing, Owner)
-    SELECT 
+    SELECT
         Job, Priority, Tool, Dataset, Dataset_ID, State, Transfer_Folder_Path, Comment, Special_Processing, Owner
-    FROM 
-        V_DMS_PipelineJobs AS VGP
+    FROM
+        V_DMS_Pipeline_Jobs AS VGP
     WHERE Tool IN (SELECT Script FROM T_Scripts WHERE Enabled = 'Y')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -221,7 +220,7 @@ As
     if @myRowCount = 0
     begin
         -- No new or held jobs were found in DMS
-        
+
         If @DebugMode <> 0
             INSERT INTO #Tmp_JobDebugMessages (Message, Job)
             VALUES ('No New or held jobs found in DMS', 0)
@@ -231,7 +230,7 @@ As
     end
     else
     begin
-        -- New or held jobs are available        
+        -- New or held jobs are available
         If @DebugMode <> 0
             INSERT INTO #Tmp_JobDebugMessages (Message, Job, Script, DMS_State, PipelineState)
             SELECT 'New or Held Jobs', J.Job, J.Script, J.State, T.State
@@ -251,7 +250,7 @@ As
         Set @StatusMessage = 'Finding jobs to reset'
         exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
     End
-        
+
     -- Start transaction #1
     --
     begin transaction @transName
@@ -290,12 +289,12 @@ As
             Set @StatusMessage = @StatusMessage + 's'
         exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
     end
-    
-    -- Also look for jobs where the DMS state is "New", the broker state is 2, 5, or 8 (In Progress, Failed, or Holding), 
+
+    -- Also look for jobs where the DMS state is "New", the broker state is 2, 5, or 8 (In Progress, Failed, or Holding),
     --  and none of the jobs Steps have completed or are running
     -- It is typically safer to perform a full reset on these jobs (rather than a resume) in case an admin changed the settings file for the job
     -- Exception: LTQ_FTPek and ICR2LS jobs because ICR-2LS runs as the first step and we create checkpoint copies of the .PEK files to allow for a resume
-    -- 
+    --
     INSERT INTO #Tmp_ResetJobs (Job)
     SELECT T.Job
     FROM #Tmp_DMSJobs T
@@ -325,16 +324,16 @@ As
     If @myRowCount > 0
     Begin
         set @JobCountToReset = @JobCountToReset + @myRowCount
-    
+
         Set @StatusMessage = 'Resetting ' + Convert(varchar(12), @myRowCount) + ' job'
         If @myRowCount <> 1
             Set @StatusMessage = @StatusMessage + 's that are In Progress, Failed, or Holding and have no completed or running job steps'
         Else
             Set @StatusMessage = @StatusMessage + ' that is In Progress, Failed, or Holding and has no completed or running job steps'
-        
+
         exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
     end
-    
+
     --
     if @JobCountToReset = 0
     Begin
@@ -344,7 +343,7 @@ As
     End
     Else
     begin --<Reset>
-        
+
         If @MaxJobsToProcess > 0
         Begin
             -- Limit the number of jobs to reset
@@ -371,7 +370,7 @@ As
             ---------------------------------------------------
             --
             CREATE TABLE #SJL (Job INT)
-            
+
             CREATE INDEX #IX_SJL_Job ON #SJL (Job)
             --
             INSERT INTO #SJL (Job)
@@ -405,10 +404,10 @@ As
         ---------------------------------------------------
         --
         INSERT INTO T_Jobs
-            (Job, Priority, Script, State, Dataset, Dataset_ID, Transfer_Folder_Path, 
+            (Job, Priority, Script, State, Dataset, Dataset_ID, Transfer_Folder_Path,
             Comment, Special_Processing, Storage_Server, Owner, DataPkgID)
         SELECT TOP (@MaxJobsToAddResetOrResume)
-            DJ.Job, DJ.Priority, DJ.Script, 0 as State, DJ.Dataset, DJ.Dataset_ID, DJ.Transfer_Folder_Path, 
+            DJ.Job, DJ.Priority, DJ.Script, 0 as State, DJ.Dataset, DJ.Dataset_ID, DJ.Transfer_Folder_Path,
             DJ.Comment, DJ.Special_Processing, dbo.udfExtractServerName(DJ.Transfer_Folder_Path) AS Storage_Server, DJ.Owner, 0 AS DataPkgID
         FROM #Tmp_DMSJobs DJ
              INNER JOIN T_Scripts S
@@ -434,7 +433,7 @@ As
     -- Jobs that are reset in DMS will be in "new" state, but
     -- there will be a entry for the job in the local
     -- table that is in the "failed" or "holding" state.
-    -- For all such jobs, set all steps that are in "failed" 
+    -- For all such jobs, set all steps that are in "failed"
     -- state to the "waiting" state and set the job
     -- state to "resuming".
     ---------------------------------------------------
@@ -447,7 +446,7 @@ As
     End
 
     INSERT INTO #Tmp_JobsToResumeOrReset (Job, Dataset, FailedJob)
-    SELECT TOP ( @MaxJobsToAddResetOrResume ) 
+    SELECT TOP ( @MaxJobsToAddResetOrResume )
            J.Job,
            J.Dataset,
            CASE WHEN J.State = 5 THEN 1 ELSE 0 END AS FailedJob
@@ -473,7 +472,7 @@ As
     End
     Else
     begin --<ResumeOrReset>
-        
+
         If @DebugMode <> 0
         Begin
             INSERT INTO #Tmp_JobDebugMessages (Message, Job, Script, DMS_State, PipelineState)
@@ -487,20 +486,20 @@ As
         End
         Else
         Begin
-        
+
             ---------------------------------------------------
-            -- Note: 
+            -- Note:
             --   In order to avoid cross-server distributed transactions, the updates for jobs in #Tmp_JobsToResumeOrReset
-            --   will occur after the transaction is committed.  This is required because 
+            --   will occur after the transaction is committed.  This is required because
             --   UpdateJobParameters calls CreateParametersForJob, which calls GetJobParamTable, and if a transaction
-            --   is in progress and GetJobParamTable accesses another server (via V_DMS_PipelineJobParameters), we may get these errors:
+            --   is in progress and GetJobParamTable accesses another server (via V_DMS_Pipeline_Job_Parameters), we may get these errors:
             --     OLE DB provider "SQLNCLI10" for linked server "Gigasax" returned message "The transaction manager has disabled its support for remote/network transactions.".
             --     Msg 7391, Level 16, State 2, Procedure CreateParametersForJob, Line 46
             --     The operation could not be performed because OLE DB provider "SQLNCLI10" for linked server "Gigasax" was unable to begin a distributed transaction.
             --
             --   Delaying the updates will also avoid running a potentially long While loop in the middle of a transaction
-            --------------------------------------------------- 
-            
+            ---------------------------------------------------
+
             Set @ResumeUpdatesRequired = 1
 
         End
@@ -518,14 +517,14 @@ As
             (T.Job IN (SELECT Job FROM #Tmp_DMSJobs WHERE State = 8))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
             INSERT INTO #Tmp_JobDebugMessages (Message, Job)
             VALUES ('No Jobs to Suspend', 0)
     End
     Else
     Begin -- <SuspendUpdates>
-            
+
         ---------------------------------------------------
         -- Find jobs to suspend
         ---------------------------------------------------
@@ -564,12 +563,12 @@ As
             exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
         End
     End -- </SuspendUpdates>
-    
+
     -- Commit the changes for Transaction #1
     --
     commit transaction @transName
 
-    
+
     If @ResumeUpdatesRequired <> 0
     Begin -- <ResumeUpdates>
 
@@ -618,8 +617,8 @@ As
                     set @message = 'Error updating parameters for job ' + Convert(varchar(12), @currJob)
                     exec PostLogEntry 'Error', @message, 'AddNewJobs'
                     goto Done
-                end                
-                
+                end
+
                 ---------------------------------------------------
                 -- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
                 ---------------------------------------------------
@@ -628,12 +627,12 @@ As
 
                 Set @JobsProcessed = @JobsProcessed + 1
             end
-            
+
             If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
             Begin
                 -- Make sure @LoggingEnabled is 1
                 Set @LoggingEnabled = 1
-                
+
                 Set @StatusMessage = '... Updating parameters for resumed jobs: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToResume)
                 exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
                 Set @LastLogTime = GetDate()
@@ -655,8 +654,8 @@ As
         WHERE FilterQ.MatchIndex > 0
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
-        
+
+
         -- Make sure the job Comment and Special_Processing fields are up-to-date in T_Jobs
         --
         UPDATE T_Jobs
@@ -677,7 +676,7 @@ As
             Set @StatusMessage = '... Updated the job comment or special_processing data in T_Jobs for ' + Convert(varchar(12), @myRowCount) + ' resumed job'
             If @myRowCount > 1
                 Set @StatusMessage = @StatusMessage + 's'
-                
+
             exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
         End
 
@@ -687,11 +686,11 @@ As
             Set @StatusMessage = 'Updating T_Job_Steps, T_Job_Step_Dependencies, and T_Jobs for resumed jobs'
             exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
         End
-        
+
         -- Start transaction #2
         --
         begin transaction @transName
-        
+
         ---------------------------------------------------
         -- Set any failed or holding job steps to waiting
         ---------------------------------------------------
@@ -705,7 +704,7 @@ As
             Remote_Timestamp = Null,
             Remote_Start = Null,
             Remote_Finish = Null,
-            Remote_Progress = Null            
+            Remote_Progress = Null
         WHERE
             State IN (6, 7, 10, 16) AND          -- 6=Failed, 7=Holding, 10=Holding_Staging, 16=Failed_Remote
             Job IN (SELECT Job From #Tmp_JobsToResumeOrReset)
@@ -727,8 +726,8 @@ As
         SET Evaluated = 0,
             Triggered = 0
         FROM T_Job_Step_Dependencies JSD INNER JOIN
-            T_Job_Steps JS ON 
-            JSD.Job = JS.Job AND 
+            T_Job_Steps JS ON
+            JSD.Job = JS.Job AND
             JSD.Step_Number = JS.Step_Number
         WHERE
             JS.State = 1 AND            -- 1=Waiting
@@ -742,7 +741,7 @@ As
             set @message = 'Error updating Resume job step dependencies'
             goto Done
         end
-            
+
         ---------------------------------------------------
         -- Set job state to "resuming"
         ---------------------------------------------------
@@ -759,13 +758,13 @@ As
             set @message = 'Error updating Resume jobs'
             goto Done
         end
-        
+
         ---------------------------------------------------
         -- Commit the changes for Transaction #2
         ---------------------------------------------------
         --
         commit transaction @transName
-        
+
     End -- </ResumeUpdates>
 
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
@@ -774,7 +773,7 @@ As
         Set @StatusMessage = 'AddNewJobs Complete'
         exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
@@ -786,6 +785,7 @@ Done:
         ORDER BY EntryID
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewJobs] TO [DDL_Viewer] AS [dbo]

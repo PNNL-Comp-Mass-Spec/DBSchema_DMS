@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[DoDatasetOperation]
+CREATE PROCEDURE [dbo].[DoDatasetOperation]
 /****************************************************
 **
 **  Desc:   Perform dataset operation defined by 'mode'
@@ -22,10 +22,10 @@ CREATE Procedure [dbo].[DoDatasetOperation]
 **          08/19/2010 grk - try-catch for error handling
 **          05/25/2011 mem - Fixed bug that reported "mode was unrecognized" for valid modes
 **                         - Removed 'restore' mode
-**          01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_ActiveOrComplete
+**          01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_Active_Or_Complete
 **          11/14/2013 mem - Now preventing reset if the first step of dataset capture succeeded
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          01/10/2017 mem - Add @mode 'createjobs' which adds the dataset to T_Predefined_Analysis_Scheduling_Queue so that default jobs will be created 
+**          01/10/2017 mem - Add @mode 'createjobs' which adds the dataset to T_Predefined_Analysis_Scheduling_Queue so that default jobs will be created
 **                           (duplicate jobs are not created)
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/04/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
@@ -37,7 +37,8 @@ CREATE Procedure [dbo].[DoDatasetOperation]
 **                         - Rename @datasetNum to @datasetNameOrID
 **          09/27/2018 mem - Use named parameter names when calling DeleteDataset
 **          11/16/2018 mem - Pass @infoOnly to DeleteDataset
-**    
+**          02/01/2023 mem - Use new synonym names
+**
 *****************************************************/
 (
     @datasetNameOrID varchar(128),          -- Dataset name or dataset ID
@@ -50,30 +51,30 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     Declare @msg varchar(256)
     Declare @logMsg varchar(256)
-    
+
     Declare @datasetID int = 0
-    
+
     Declare @currentState int
     Declare @NewState int
 
     Declare @currentComment varchar(512)
-    
+
     Declare @result int
     Declare @ValidMode tinyint = 0
     Declare @logErrors tinyint = 0
-    
-    Begin TRY 
+
+    Begin TRY
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoDatasetOperation', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -89,24 +90,24 @@ As
 
     If IsNull(@candidateDatasetID, 0) > 0
     Begin
-        SELECT  
+        SELECT
             @currentState = DS_state_ID,
             @currentComment = DS_Comment,
             @datasetID = Dataset_ID,
             @datasetName = Dataset_Num
-        FROM T_Dataset 
+        FROM T_Dataset
         WHERE (Dataset_ID = @candidateDatasetID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     End
     Else
     Begin
-        SELECT  
+        SELECT
             @currentState = DS_state_ID,
             @currentComment = DS_Comment,
             @datasetID = Dataset_ID,
             @datasetName = Dataset_Num
-        FROM T_Dataset 
+        FROM T_Dataset
         WHERE (Dataset_Num = @datasetNameOrID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -120,7 +121,7 @@ As
     End
 
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- Schedule the dataset for predefined job processing
     ---------------------------------------------------
@@ -133,15 +134,15 @@ As
         If Exists (SELECT * FROM T_Predefined_Analysis_Scheduling_Queue WHERE Dataset_ID = @datasetID AND State = 'New')
         Begin
             Declare @enteredMax datetime
-            
-            SELECT @enteredMax = Max(Entered) 
-            FROM T_Predefined_Analysis_Scheduling_Queue 
+
+            SELECT @enteredMax = Max(Entered)
+            FROM T_Predefined_Analysis_Scheduling_Queue
             WHERE Dataset_ID = @datasetID AND State = 'New'
-            
+
             Declare @elapsedHours float = DateDiff(minute, IsNull(@enteredMax, GetDate()), GetDate()) / 60.0
-            
+
             Set @logErrors = 0
-            
+
             If @elapsedHours >= 0.5
             Begin
                 -- Round @elapsedHours to one digit, then convert to a string
@@ -152,7 +153,7 @@ As
             Begin
                 RAISERROR ('Dataset ID %d is already scheduled to have default jobs created; please wait at least 5 minutes', 11, 2, @datasetID)
             End
-            
+
         End
 
         INSERT INTO T_Predefined_Analysis_Scheduling_Queue (Dataset_ID, CallingUser)
@@ -164,7 +165,7 @@ As
         Begin
             RAISERROR ('Error adding "%s" to T_Predefined_Analysis_Scheduling_Queue, error code %d', 11, 2, @datasetName, @myError)
         End
-        
+
         set @ValidMode = 1
 
     End -- </createjobs>
@@ -186,24 +187,24 @@ As
             set @msg = 'Dataset "' + @datasetName + '" must be in "new" state to be deleted by user'
             RAISERROR (@msg, 11, 3)
         End
-        
+
         ---------------------------------------------------
         -- Verify that the dataset does not have an active or completed capture job
         ---------------------------------------------------
 
-        If Exists (SELECT * FROM S_V_Capture_Jobs_ActiveOrComplete WHERE Dataset_ID = @datasetID And State <= 2)
+        If Exists (SELECT * FROM S_V_Capture_Jobs_Active_Or_Complete WHERE Dataset_ID = @datasetID And State <= 2)
         Begin
             set @msg = 'Dataset "' + @datasetName + '" is being processed by the DMS_Capture database; unable to delete'
             RAISERROR (@msg, 11, 3)
-        End        
+        End
 
-        If Exists (SELECT * FROM S_V_Capture_Jobs_ActiveOrComplete WHERE Dataset_ID = @datasetID And State > 2)
+        If Exists (SELECT * FROM S_V_Capture_Jobs_Active_Or_Complete WHERE Dataset_ID = @datasetID And State > 2)
         Begin
             set @msg = 'Dataset "' + @datasetName + '" has been processed by the DMS_Capture database; unable to delete'
             RAISERROR (@msg, 11, 3)
-        End        
-        
-        
+        End
+
+
         ---------------------------------------------------
         -- Delete the dataset
         ---------------------------------------------------
@@ -214,13 +215,13 @@ As
         Begin
             RAISERROR ('Could not delete dataset "%s"', 11, 4, @datasetName)
         End
-        
+
         set @ValidMode = 1
 
     End -- </delete>
-    
+
     ---------------------------------------------------
-    -- Reset state of failed dataset to 'new' 
+    -- Reset state of failed dataset to 'new'
     -- This is used by the "Retry Capture" button on the dataset detail report page
     ---------------------------------------------------
     --
@@ -240,7 +241,7 @@ As
         If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (1,2,4,5))
         Begin
             Declare @allowReset tinyint = 0
-            
+
             If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetIntegrity' AND State = 6) AND
                Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State = 5)
             Begin
@@ -249,14 +250,14 @@ As
                 If Exists (SELECT * FROM T_Log_Entries WHERE message LIKE @msg + '%')
                 Begin
                     Set @msg = 'Dataset "' + @datasetName + '" cannot be reset because it has already been reset once'
-                    
+
                     If @callingUser = ''
                         Set @logMsg = @msg + '; user ' + SUSER_SNAME()
                     Else
                         Set @logMsg = @msg + '; user ' + @callingUser
-                        
+
                     Exec PostLogEntry 'Error', @logMsg, 'DoDatasetOperation'
-                    
+
                     Set @msg = @msg + '; please contact a system administrator for further assistance'
                 End
                 Else
@@ -269,13 +270,13 @@ As
 
                     Exec PostLogEntry 'Warning', @msg, 'DoDatasetOperation'
                 End
-                
+
             End
             Else
             Begin
                 Set @msg = 'Dataset "' + @datasetName + '" cannot be reset because it has already been successfully captured; please contact a system administrator for further assistance'
             End
-            
+
             If @allowReset = 0
             Begin
                 Set @logErrors = 0
@@ -287,7 +288,7 @@ As
         --
         Set @NewState = 1         -- "new' state
 
-        UPDATE T_Dataset 
+        UPDATE T_Dataset
         SET DS_state_ID = @NewState,
             DS_Comment = dbo.RemoveCaptureErrorsFromString(DS_Comment)
         WHERE Dataset_ID = @datasetID
@@ -307,34 +308,35 @@ As
         set @ValidMode = 1
 
     End -- </reset>
-    
-    
+
+
     If @ValidMode = 0
     Begin
         ---------------------------------------------------
         -- Mode was unrecognized
         ---------------------------------------------------
-        
+
         set @msg = 'Mode "' + @mode +  '" was unrecognized'
         RAISERROR (@msg, 11, 10)
     End
-    
+
     END TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNameOrID
             Exec PostLogEntry 'Error', @logMessage, 'DoDatasetOperation'
         End
     END CATCH
-    
+
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoDatasetOperation] TO [DDL_Viewer] AS [dbo]

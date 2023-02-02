@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
 /****************************************************
 **
 **  Desc:
-**      Create or update entries for OrganismName, LegacyFastaFileName, 
+**      Create or update entries for OrganismName, LegacyFastaFileName,
 **      ProteinOptions, and ProteinCollectionList in T_Job_Parameters
 **      for the specified job using the specified data package
 **
@@ -19,7 +19,8 @@ CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
 **          03/09/2021 mem - Add support for MaxQuant
 **          01/31/2022 mem - Add support for MSFragger
 **                         - Add parameters @debugMode and @scriptNameForDebug
-**    
+**          02/01/2023 mem - Use new synonym name
+**
 *****************************************************/
 (
     @job int,
@@ -32,10 +33,10 @@ CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @messageAddon varchar(256)
 
     Declare @orgDBInfo table (
@@ -46,7 +47,7 @@ As
         ProteinOptions varchar(256) NULL,
         UseCount int NOT NULL
     )
-    
+
     Declare @scriptName varchar(64) = ''
     Declare @organismName varchar(128) = ''
     Declare @legacyFastaFileName varchar(128) = ''
@@ -57,17 +58,17 @@ As
     -- Validate the inputs
     ---------------------------------------------------
     --
-    
+
     If @job Is Null Or @dataPackageID Is Null
     Begin
         Set @message = '@job and @dataPackageID are required'
         Return 50000
     End
-    
+
     Set @deleteIfInvalid = IsNull(@deleteIfInvalid, 0)
     Set @debugMode = IsNull(@debugMode, 0)
     Set @message = ''
-    
+
     If @debugMode > 0
     Begin
         Print ''
@@ -84,18 +85,18 @@ As
         SELECT @scriptName = Script
         FROM T_Jobs
         WHERE Job = @job
-    
+
         Set @scriptName = IsNull(@scriptName, '??')
     End
 
     ---------------------------------------------------
     -- Validate @dataPackageID
     ---------------------------------------------------
-    --    
-    
+    --
+
     Declare @matchCount int = 0
-    
-    SELECT @matchCount = COUNT(*) 
+
+    SELECT @matchCount = COUNT(*)
     FROM S_Data_Package_Details
     WHERE ID = @dataPackageID
     --
@@ -110,7 +111,7 @@ As
             Print 'UpdateJobParamOrgDbInfoUsingDataPkg: ' + @message
     End
 
-    If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%' AND NOT @scriptName LIKE 'MSFragger%' 
+    If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%' AND NOT @scriptName LIKE 'MSFragger%'
     Begin -- <a>
         If @debugMode > 0
             Print 'UpdateJobParamOrgDbInfoUsingDataPkg: Looking update OrgDB info for jobs associated with data package ' + Cast(@dataPackageID As Varchar(12)) + ' for script ' + @scriptName
@@ -124,26 +125,26 @@ As
                                 ProteinCollectionList,
                                 ProteinOptions,
                                 UseCount )
-        SELECT Organism,
+        SELECT organism,
                CASE
-                   WHEN IsNull(ProteinCollectionList, 'na') <> 'na' AND
-                        IsNull(ProteinOptionsList, 'na')    <> 'na' THEN 'na'
-                   ELSE OrganismDBName
-               END AS LegacyFastaFileName,
-               ProteinCollectionList,
-               ProteinOptionsList,
+                   WHEN IsNull(protein_collection_list, 'na') <> 'na' AND
+                        IsNull(protein_options_list, 'na')    <> 'na' THEN 'na'
+                   ELSE organism_db_name
+               END AS Legacy_Fasta_File_Name,
+               protein_collection_list,
+               protein_options_list,
                COUNT(*) AS UseCount
-        FROM dbo.S_DMS_V_GetPipelineJobParameters J
+        FROM dbo.S_DMS_V_Get_Pipeline_Job_Parameters J
         WHERE Job IN ( SELECT Job
                        FROM [S_Data_Package_Analysis_Jobs]
-                       WHERE Data_Package_ID = @dataPackageID 
+                       WHERE Data_Package_ID = @dataPackageID
                      ) AND
-              J.OrgDBRequired <> 0
-        GROUP BY Organism, OrganismDBName, ProteinCollectionList, ProteinOptionsList
+              J.Org_DB_Required <> 0
+        GROUP BY organism, organism_db_name, protein_collection_list, protein_options_list
         ORDER BY COUNT(*) DESC
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         ---------------------------------------------------
         -- Check for invalid data
         ---------------------------------------------------
@@ -152,7 +153,7 @@ As
         Begin
             if @scriptName Not In ('Global_Label-Free_AMT_Tag', 'MultiAlign', 'MultiAlign_Aggregator')
                 Set @message = 'Note: Data package ' + Convert(varchar(12), @dataPackageID) + ' either has no jobs or has no jobs with a protein collection or legacy fasta file; pipeline job parameters will not contain organism, fasta file, or protein collection'
-                
+
             Set @dataPackageID = -1
         End
         Else
@@ -160,25 +161,25 @@ As
             If @myRowCount > 1
             Begin
                 -- Mix of protein collections / fasta files defined
-                
+
                 Set @organismName = 'InvalidData'
                 Set @legacyFastaFileName = 'na'
-                Set @proteinCollectionList = 'MixOfOrgDBs_DataPkg_' + Convert(varchar(12), @dataPackageID) + '_UniqueComboCount_' + Convert(varchar(12), @myRowCount) 
+                Set @proteinCollectionList = 'MixOfOrgDBs_DataPkg_' + Convert(varchar(12), @dataPackageID) + '_UniqueComboCount_' + Convert(varchar(12), @myRowCount)
                 Set @proteinOptions = 'seq_direction=forward,filetype=fasta'
-    
+
             End
-            Else    
+            Else
             Begin
                 -- @myRowCount is 1
-            
+
                 SELECT @organismName = OrganismName,
                        @legacyFastaFileName = LegacyFastaFileName,
                        @proteinCollectionList = ProteinCollectionList,
                        @proteinOptions = ProteinOptions
                 FROM @orgDBInfo
-            
+
             End
-            
+
             If @debugMode > 0
             Begin
                 Print ''
@@ -195,11 +196,11 @@ As
                 Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value=@proteinCollectionList, @DeleteParam=0
                 Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value=@proteinOptions,        @DeleteParam=0
             End
-            
+
             Set @message = 'Defined OrgDb related parameters for job ' + Convert(varchar(12), @job)
-        
+
         End -- </b>
-        
+
     End -- </a>
 
     If @dataPackageID <= 0
@@ -207,11 +208,11 @@ As
         ---------------------------------------------------
         -- One of the following is tue:
         --   Data package ID was invalid
-        --   For MAC jobs, the data package does not have any jobs with a protein collection or legacy fasta file 
+        --   For MAC jobs, the data package does not have any jobs with a protein collection or legacy fasta file
         --   For MaxQuant or MSFragger jobs, the data package does not have any datasets
         ---------------------------------------------------
         --
-        
+
         If @deleteIfInvalid <> 0
         Begin
             If @debugMode > 0
@@ -232,21 +233,22 @@ As
             End
 
             Set @messageAddon = 'Deleted OrgDb related parameters from the PeptideSearch section of the job parameters for job ' + Convert(varchar(12), @job)
-            
+
             If IsNull(@message, '') = ''
                 Set @message = @messageAddon
             Else
                 Set @message = @message + '; ' + @messageAddon
-                
+
         End
     End
-        
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg] TO [DDL_Viewer] AS [dbo]

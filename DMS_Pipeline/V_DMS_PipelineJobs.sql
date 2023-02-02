@@ -17,8 +17,8 @@ SELECT Job,
        Transfer_Folder_Path,
        Comment,
        Special_Processing,
-       Owner       
-FROM S_DMS_V_GetPipelineJobs
+       Owner
+FROM S_DMS_V_Get_Pipeline_Jobs
 
 
 GO

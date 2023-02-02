@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **                         - Add parameter SHA1_Hash
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
+**          02/01/2023 mem - Use new synonym name
 **
 *****************************************************/
 (
@@ -232,7 +233,7 @@ AS
                            dbo.udfCombinePaths(TStor.SP_vol_name_client, Xfer.Client) AS Transfer_Directory_Path
            FROM S_DMS_t_storage_path AS TStor
                 CROSS JOIN ( SELECT TOP 1 Client
-                             FROM S_DMS_V_MiscPaths
+                             FROM S_DMS_V_Misc_Paths
                              WHERE [Function] = 'AnalysisXfer' ) AS Xfer
            WHERE ISNULL(TStor.SP_vol_name_client, '') <> '' AND
                  TStor.SP_vol_name_client <> '(na)'

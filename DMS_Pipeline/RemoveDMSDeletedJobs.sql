@@ -3,13 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RemoveDMSDeletedJobs
+CREATE PROCEDURE [dbo].[RemoveDMSDeletedJobs]
 /****************************************************
 **
 **	Desc:
 **  Delete failed jobs that have been removed from DMS
 **  from the main tables in the database
-**	
+**
 **	Return values: 0: success, otherwise, error code
 **
 **	Auth:	grk
@@ -18,6 +18,7 @@ CREATE PROCEDURE RemoveDMSDeletedJobs
 **			06/01/2009 mem - Added parameter @MaxJobsToProcess (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **			04/13/2010 grk - don't delete jobs where dataset ID = 0
 **			05/26/2017 mem - Treat state 9 (Running_Remote) as an active job
+**          02/01/2023 mem - Use new view name
 **
 *****************************************************/
 (
@@ -27,17 +28,17 @@ CREATE PROCEDURE RemoveDMSDeletedJobs
 )
 As
 	set nocount on
-	
+
 	declare @myError int
 	set @myError = 0
 
 	declare @myRowCount int
 	set @myRowCount = 0
-	
+
  	---------------------------------------------------
  	-- Create table to track the list of affected jobs
  	---------------------------------------------------
-	--	
+	--
 	CREATE TABLE #SJL (
 		Job INT,
 		State INT
@@ -45,13 +46,13 @@ As
 
 	---------------------------------------------------
 	-- Find all jobs present in the Pipeline DB but not present in DMS
-	-- V_DMS_PipelineExistingJob returns a list of all jobs in DMS (regardless of state)
+	-- V_DMS_Pipeline_Existing_Jobs returns a list of all jobs in DMS (regardless of state)
  	---------------------------------------------------
 	--
 	INSERT INTO #SJL (Job, State)
 	SELECT Job, State
 	FROM dbo.T_Jobs
-	WHERE Dataset_ID <> 0 AND NOT Job IN (SELECT Job FROM V_DMS_PipelineExistingJobs)
+	WHERE Dataset_ID <> 0 AND NOT Job IN (SELECT Job FROM V_DMS_Pipeline_Existing_Jobs)
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	 --
@@ -60,7 +61,7 @@ As
 		set @message = 'Error finding non-existent jobs in DMS'
 		goto Done
 	end
-	
+
 	if @myRowCount = 0
 		goto Done
 
@@ -75,7 +76,7 @@ As
 	WHERE JS.State IN (4,9) AND JS.Start >= DateAdd(hour, -48, GetDate())
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
+
 	If Not Exists (SELECT * FROM #SJL)
 		Goto Done
 
@@ -109,6 +110,7 @@ As
 	--
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [DDL_Viewer] AS [dbo]

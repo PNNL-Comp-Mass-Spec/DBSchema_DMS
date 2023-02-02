@@ -7,7 +7,8 @@ CREATE VIEW V_DMS_PipelineJobPriority
 AS
 SELECT Job,
        Priority
-FROM S_DMS_V_GetPipelineJobPriority
+FROM S_DMS_V_Get_Pipeline_Job_Priority
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineJobPriority] TO [DDL_Viewer] AS [dbo]

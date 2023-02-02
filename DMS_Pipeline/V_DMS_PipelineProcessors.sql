@@ -11,7 +11,8 @@ SELECT ID,
        Groups,
        GP_Groups,
        Machine
-FROM S_DMS_V_GetPipelineProcessors
+FROM S_DMS_V_Get_Pipeline_Processors
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineProcessors] TO [DDL_Viewer] AS [dbo]

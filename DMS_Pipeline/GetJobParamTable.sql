@@ -21,7 +21,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          07/29/2009 mem - Updated to look in T_Jobs.Comment for the 'DTA:' tag when 'ExternalDTAFolderName' is defined in the script
 **          01/05/2010 mem - Added parameter @settingsFileOverride
 **          02/23/2010 mem - Updated to not return any debug info using SELECT statements; required since CreateParametersForJob calls this SP using the notation: INSERT INTO ... exec GetJobParamTable ...
-**          04/04/2011 mem - Updated to support V_DMS_SettingsFiles returning true XML for the Contents column (using S_DMS_V_GetPipelineSettingsFiles)
+**          04/04/2011 mem - Updated to support V_DMS_SettingsFiles returning true XML for the Contents column (using S_DMS_V_Get_Pipeline_Settings_Files)
 **                         - Added support for field Special_Processing
 **          04/20/2011 mem - Now calling CheckAddSpecialProcessingParam to look for an AMTDB entry in the Special_Processing parameter
 **                         - Additionally, adding parameter AMTDBServer if the AMTDB entry is present
@@ -40,6 +40,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **                           (previously looked for tag AMTDB in the Special_Processing field for MultiAlign jobs; 
 **                            given the AMT tag DB name, the code used a view to determine the server on which the MT DB resides)
 **                         - Remove check for DataImportFolder in the Special_Processing field
+**          02/01/2023 mem - Use new column names
 **
 *****************************************************/
 (
@@ -70,7 +71,7 @@ AS
 
     ---------------------------------------------------
     -- Get job parameters that are table columns
-    -- Note that V_DMS_PipelineJobParameters uses S_DMS_V_GetPipelineJobParameters which uses V_GetPipelineJobParameters in DMS5
+    -- Note that V_DMS_PipelineJobParameters uses S_DMS_V_Get_Pipeline_Job_Parameters which uses V_Get_Pipeline_Job_Parameters in DMS5
     ---------------------------------------------------
     --
     INSERT INTO #T_Tmp_ParamTab ([Step_Number], [Section], [Name], [Value])
@@ -84,25 +85,25 @@ AS
           CAST(Archive_Folder_Path As varchar(4000))            AS DatasetArchivePath,
           CAST(Dataset_Storage_Path As varchar(4000))           AS DatasetStoragePath,
           CAST(Transfer_Folder_Path As varchar(4000))           AS transferFolderPath,
-          CAST(InstrumentDataPurged As varchar(4000))           AS InstrumentDataPurged,
-          CAST(ParamFileName As varchar(4000))                  AS ParamFileName,
-          CAST(SettingsFileName As varchar(4000))               AS SettingsFileName,
+          CAST(Instrument_Data_Purged As varchar(4000))         AS InstrumentDataPurged,
+          CAST(Param_File_Name As varchar(4000))                AS ParamFileName,
+          CAST(Settings_File_Name As varchar(4000))             AS SettingsFileName,
           CAST(Special_Processing As varchar(4000))             AS Special_Processing,
-          CAST(ParamFileStoragePath As varchar(4000))           AS ParamFileStoragePath,     -- Storage path for the primary tool of the script
-          CAST(OrganismDBName As varchar(4000))                 AS legacyFastaFileName,
-          CAST(ProteinCollectionList As varchar(4000))          AS ProteinCollectionList,
-          CAST(ProteinOptionsList As varchar(4000))             AS ProteinOptions,
-          CAST(InstrumentClass As varchar(4000))                AS InstClass,
-          CAST(InstrumentGroup As varchar(4000))                AS InstrumentGroup,
+          CAST(Param_File_Storage_Path As varchar(4000))        AS ParamFileStoragePath,     -- Storage path for the primary tool of the script
+          CAST(Organism_DB_Name As varchar(4000))               AS legacyFastaFileName,
+          CAST(Protein_Collection_List As varchar(4000))        AS ProteinCollectionList,
+          CAST(Protein_Options_List As varchar(4000))           AS ProteinOptions,
+          CAST(Instrument_Class As varchar(4000))               AS InstClass,
+          CAST(Instrument_Group As varchar(4000))               AS InstrumentGroup,
           CAST(Instrument As varchar(4000))                     AS Instrument,
-          CAST(RawDataType As varchar(4000))                    AS RawDataType,
-          CAST(DatasetType As varchar(4000))                    AS DatasetType,
+          CAST(Raw_Data_Type As varchar(4000))                  AS RawDataType,
+          CAST(Dataset_Type As varchar(4000))                   AS DatasetType,
           CAST(Experiment As varchar(4000))                     AS Experiment,
-          CAST(SearchEngineInputFileFormats As varchar(4000))   AS SearchEngineInputFileFormats,
+          CAST(Search_Engine_Input_File_Formats As varchar(4000))   AS SearchEngineInputFileFormats,
           CAST(Organism As varchar(4000))                       AS OrganismName,
-          CAST(OrgDBRequired As varchar(4000))                  AS OrgDbReqd,
-          CAST(ToolName As varchar(4000))                       AS ToolName,
-          CAST(ResultType As varchar(4000))                     AS ResultType
+          CAST(Org_DB_Required As varchar(4000))                AS OrgDbReqd,
+          CAST(Tool_Name As varchar(4000))                      AS ToolName,
+          CAST(Result_Type As varchar(4000))                    AS ResultType
         FROM V_DMS_PipelineJobParameters
         WHERE Job = @job
     ) TD

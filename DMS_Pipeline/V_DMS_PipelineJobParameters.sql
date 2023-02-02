@@ -7,35 +7,34 @@ GO
 
 CREATE VIEW [dbo].[V_DMS_PipelineJobParameters]
 AS
-SELECT Job
-      ,Dataset
-      ,Dataset_Folder_Name
-      ,Archive_Folder_Path
-      ,ParamFileName
-      ,SettingsFileName
-      ,ParamFileStoragePath
-      ,OrganismDBName
-      ,ProteinCollectionList
-      ,ProteinOptionsList
-      ,InstrumentClass
-      ,InstrumentGroup
-      ,Instrument
-      ,RawDataType
-      ,SearchEngineInputFileFormats
-      ,Organism
-      ,OrgDBRequired
-      ,ToolName
-      ,ResultType
-      ,Dataset_ID
-      ,Dataset_Storage_Path
-      ,Transfer_Folder_Path
-      ,Special_Processing
-      ,DatasetType
-      ,Experiment
-	  ,InstrumentDataPurged
-  FROM S_DMS_V_GetPipelineJobParameters
-
-
+SELECT job,
+       dataset,
+       dataset_folder_name,
+       archive_folder_path,
+       param_file_name,
+       settings_file_name,
+       param_file_storage_path,
+       organism_db_name,
+       protein_collection_list,
+       protein_options_list,
+       instrument_class,
+       instrument_group,
+       instrument,
+       raw_data_type,
+       search_engine_input_file_formats,
+       organism,
+       org_db_required,
+       tool_name,
+       result_type,
+       dataset_id,
+       dataset_storage_path,
+       transfer_folder_path,
+       results_folder_name,
+       special_processing,
+       dataset_type,
+       experiment,
+       instrument_data_purged
+FROM S_DMS_V_Get_Pipeline_Job_Parameters
 
 
 GO

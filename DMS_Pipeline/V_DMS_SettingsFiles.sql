@@ -13,7 +13,8 @@ SELECT ID,
        Last_Updated,
        Contents,
        Job_Usage_Count
-FROM S_DMS_V_GetPipelineSettingsFiles
+FROM S_DMS_V_Get_Pipeline_Settings_Files
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_SettingsFiles] TO [DDL_Viewer] AS [dbo]

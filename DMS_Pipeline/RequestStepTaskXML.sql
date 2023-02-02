@@ -550,7 +550,7 @@ As
                 WHEN (J.Archive_Busy = 1) 
                     -- Transfer tool steps for jobs that are in the midst of an archive operation
                     -- The Archive_Busy flag in T_Jobs is updated by SyncJobInfo
-                    -- It uses V_DMS_ArchiveBusyJobs (which uses V_GetAnalysisJobsForArchiveBusy) to look for jobs that have an archive in progress
+                    -- It uses V_DMS_ArchiveBusyJobs (which uses V_Get_Analysis_Jobs_For_Archive_Busy) to look for jobs that have an archive in progress
                     -- However, if the dataset has been in state "Archive In Progress" for over 90 minutes, Archive_Busy will be changed back to 0 (false)
                     THEN 102                
                 WHEN J.Storage_Server Is Null

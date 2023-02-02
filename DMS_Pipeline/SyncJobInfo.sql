@@ -8,7 +8,7 @@ CREATE PROCEDURE SyncJobInfo
 /****************************************************
 **
 **	Desc:
-**		Synchronizes job info with DMS, including 
+**		Synchronizes job info with DMS, including
 **		updating priorities and assigned processor groups
 **
 **	Auth:	mem
@@ -20,7 +20,7 @@ CREATE PROCEDURE SyncJobInfo
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			05/28/2015 mem - No longer updating T_Local_Job_Processors since we have deprecated processor groups
 **			02/15/2016 mem - Re-enabled use of T_Local_Job_Processors
-**    
+**
 *****************************************************/
 (
 	@bypassDMS tinyint = 0,
@@ -28,44 +28,42 @@ CREATE PROCEDURE SyncJobInfo
 )
 As
 	set nocount on
-	
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
 
 	Declare @JobUpdateCount int
-	
+
 	Set @message = ''
-	
+
 	if @bypassDMS <> 0
 		goto Done
 
 	---------------------------------------------------
 	-- Create the temporary table that will be used to
-	-- track the number of inserts, updates, and deletes 
+	-- track the number of inserts, updates, and deletes
 	-- performed by the MERGE statement
 	---------------------------------------------------
-	
+
 	CREATE TABLE #Tmp_UpdateSummary (
 		UpdateAction varchar(32)
 	)
-	
+
 	CREATE CLUSTERED INDEX #IX_Tmp_UpdateSummary ON #Tmp_UpdateSummary (UpdateAction)
 
 	---------------------------------------------------
 	-- Update archive busy flag for active jobs according to state in DMS
-	--  
-	-- Use V_DMS_ArchiveBusyJobs (which uses V_GetAnalysisJobsForArchiveBusy in the primary DMS DB) 
-	-- to look for jobs that have dataset archive state: 
+	--
+	-- Use V_DMS_ArchiveBusyJobs (which uses V_Get_Analysis_Jobs_For_Archive_Busy in the primary DMS DB)
+	-- to look for jobs that have dataset archive state:
 	--  1=New, 2=Archive In Progress, 6=Operation Failed, 7=Purge In Progress, or 12=Verification In Progress
 	-- Jobs matching this criterion are deemed "busy" and thus will get Archive_Busy set to 1 in T_Jobs
 	--
 	-- However, if the dataset has been in state "Archive In Progress" for over 90 minutes, then we do not set Archive_Busy to true
 	-- This is required because MyEMSL can be quite slow at verifying that the uploaded data has been copied to tape
-	-- This logic is defined in view V_GetAnalysisJobsForArchiveBusy
+	-- This logic is defined in view V_Get_Analysis_Jobs_For_Archive_Busy
 	--
-	-- For QC_Shew datasets, we only exclude jobs if the dataset archive state is 7=Purge In Progress	
+	-- For QC_Shew datasets, we only exclude jobs if the dataset archive state is 7=Purge In Progress
 	--
 	-- Prior to May 2012 we also excluded datasets with archive update state: 3=Update In Progress
 	-- However, we now allow jobs to run if a dataset has an archive update job running
@@ -109,7 +107,7 @@ As
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
 	Set @JobUpdateCount = @myRowCount
-	
+
 	If @JobUpdateCount > 0
 	Begin
 		Set @message = 'Job priorities changed: updated ' + Convert(varchar(12), @JobUpdateCount) + ' job(s) in T_Jobs'
@@ -123,7 +121,7 @@ As
 	-- Update the processor groups that jobs belong to,
 	--  based on the group membership defined in DMS
 	---------------------------------------------------
-	
+
 	-- Use a MERGE Statement to synchronize T_Local_Job_Processors with V_DMS_PipelineJobProcessors
 	--
 	MERGE T_Local_Job_Processors AS target
@@ -131,17 +129,17 @@ As
 	        FROM V_DMS_PipelineJobProcessors AS VGP
 	        WHERE Job IN ( SELECT Job
 	                       FROM T_Jobs
-	                       WHERE State NOT IN (4) 
+	                       WHERE State NOT IN (4)
 	                     )
 	      ) AS Source (Job, Processor, General_Processing)
-	       ON (target.Job = source.Job And 
+	       ON (target.Job = source.Job And
 	           target.Processor = source.Processor)
-	WHEN Matched AND target.General_Processing <> source.General_Processing THEN 
+	WHEN Matched AND target.General_Processing <> source.General_Processing THEN
 		UPDATE set General_Processing = source.General_Processing
 	WHEN Not Matched THEN
 		INSERT (Job, Processor, General_Processing)
 		VALUES (source.Job, source.Processor, source.General_Processing)
-	WHEN NOT MATCHED BY SOURCE THEN 
+	WHEN NOT MATCHED BY SOURCE THEN
 		DELETE
 	OUTPUT $action INTO #Tmp_UpdateSummary
 	;
@@ -171,8 +169,8 @@ As
 	FROM #Tmp_UpdateSummary
 	WHERE UpdateAction = 'DELETE'
 
-	
---	If @MergeUpdateCount > 0 Or @MergeInsertCount > 0 Or @MergeDeleteCount > 0 
+
+--	If @MergeUpdateCount > 0 Or @MergeInsertCount > 0 Or @MergeDeleteCount > 0
 --	Begin
 --		Set @message = 'Updated T_Local_Job_Processors; UpdateCount=' + Convert(varchar(12), @MergeUpdateCount) + '; InsertCount=' + Convert(varchar(12), @MergeInsertCount) + '; DeleteCount=' + Convert(varchar(12), @MergeDeleteCount)
 --		execute PostLogEntry 'Normal', @message, 'SyncJobInfo'
@@ -185,6 +183,7 @@ As
 	--
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [DDL_Viewer] AS [dbo]

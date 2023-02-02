@@ -8,7 +8,8 @@ AS
 SELECT Job,
        Processor,
        General_Processing
-FROM S_DMS_V_GetPipelineJobProcessors
+FROM S_DMS_V_Get_Pipeline_Job_Processors
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_PipelineJobProcessors] TO [DDL_Viewer] AS [dbo]
