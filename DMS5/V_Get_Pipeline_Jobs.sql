@@ -1,23 +1,23 @@
-/****** Object:  View [dbo].[V_GetPipelineJobs] ******/
+/****** Object:  View [dbo].[V_Get_Pipeline_Jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_GetPipelineJobs]
+CREATE VIEW [dbo].[V_Get_Pipeline_Jobs]
 AS
-SELECT AJ.AJ_jobID AS Job,
-       AJ.AJ_priority AS Priority,
-       AnTool.AJT_toolName AS Tool,
-       DS.Dataset_Num AS Dataset,
-       DS.Dataset_ID,
-       AJ.AJ_settingsFileName AS Settings_File_Name,
-       AJ.AJ_parmFileName AS Parameter_File_Name,
-       AJ.AJ_StateID AS State,
-       SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS Transfer_Folder_Path,
-       AJ.AJ_Comment AS Comment,
-       AJ.AJ_specialProcessing as Special_Processing,
-       AJ.AJ_Owner AS Owner       
+SELECT AJ.AJ_jobID AS job,
+       AJ.AJ_priority AS priority,
+       AnTool.AJT_toolName AS tool,
+       DS.Dataset_Num AS dataset,
+       DS.dataset_id,
+       AJ.AJ_settingsFileName AS settings_file_name,
+       AJ.AJ_parmFileName AS parameter_file_name,
+       AJ.AJ_StateID AS state,
+       SPath.SP_vol_name_client + 'DMS3_XFER\' + DS.Dataset_Num + '\' AS transfer_folder_path,
+       AJ.AJ_Comment AS comment,
+       AJ.AJ_specialProcessing as special_processing,
+       AJ.AJ_Owner AS owner
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID
@@ -45,13 +45,13 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
 		Or
 		-- Lastly, let QC_Shew and QC_Mam datasets start if they have been dispositioned (DS_Rating >= 1) and the archive state changed more than 15 minutes ago
 		-- However, exclude QC datasets with an archive state of 6 (Operation Failed) or 7 (Purge In Progress)
-		((Dataset_Num Like 'QC_Shew%' Or Dataset_Num Like 'QC_Mam%') AND 
-         DS.DS_Rating >= 1 AND 
-         NOT DA.AS_state_ID IN (6,7) AND 
+		((Dataset_Num Like 'QC_Shew%' Or Dataset_Num Like 'QC_Mam%') AND
+         DS.DS_Rating >= 1 AND
+         NOT DA.AS_state_ID IN (6,7) AND
          DA.AS_state_Last_Affected < DateAdd(minute, -15, GetDate()))
       )
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Get_Pipeline_Jobs] TO [DDL_Viewer] AS [dbo]
 GO

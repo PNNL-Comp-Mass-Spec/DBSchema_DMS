@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Processor_StepTool_Stats] ******/
+/****** Object:  View [dbo].[V_Processor_Step_Tool_Stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Processor_StepTool_Stats]
+CREATE VIEW [dbo].[V_Processor_Step_Tool_Stats]
 AS
 SELECT JS.Processor,
        JS.Step_Tool,
@@ -25,6 +25,4 @@ WHERE (ISNULL(JS.Processor, '') <> '')
 GROUP BY JS.Processor, JS.Step_Tool, DATEPART(YEAR, JS.Start), DATEPART(MONTH, JS.Start), DateQ.Start_Max
 
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Processor_StepTool_Stats] TO [DDL_Viewer] AS [dbo]
 GO

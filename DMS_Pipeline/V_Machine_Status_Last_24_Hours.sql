@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_Machine_Status_Last24Hours] ******/
+/****** Object:  View [dbo].[V_Machine_Status_Last_24_Hours] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Machine_Status_Last24Hours]
+CREATE VIEW [dbo].[V_Machine_Status_Last_24_Hours]
 AS
 SELECT StatusQ.*,
        ISNULL(ActiveToolQ.JobCount, 0) AS Active_Tool_Count,
@@ -36,6 +36,5 @@ FROM ( SELECT PTG.Group_Name,
                        GROUP BY LP.Machine ) ActiveToolQ
        ON StatusQ.Machine = ActiveToolQ.Machine
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[V_Machine_Status_Last24Hours] TO [DDL_Viewer] AS [dbo]
+
 GO

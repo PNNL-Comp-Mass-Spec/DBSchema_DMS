@@ -1,17 +1,17 @@
-/****** Object:  View [dbo].[V_GetPipelineJobProcessors] ******/
+/****** Object:  View [dbo].[V_Get_Pipeline_Job_Processors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_GetPipelineJobProcessors]
+CREATE view [dbo].[V_Get_Pipeline_Job_Processors]
 AS
-SELECT TAJ.AJ_jobID AS Job,
-       P.Processor_Name AS Processor,
-	   1 AS General_Processing
+SELECT TAJ.AJ_jobID AS job,
+       P.Processor_Name AS processor,
+	   1 AS general_processing
 	   /*
 	    * Deprecated in February 2015; now always reports 1 for General_Processing
-       SUM(CASE WHEN PG.Available_For_General_Processing = 'Y' 
+       SUM(CASE WHEN PG.Available_For_General_Processing = 'Y'
                 THEN 1
                 ELSE 0
            END) AS General_Processing
@@ -35,5 +35,5 @@ GROUP BY TAJ.AJ_jobID, P.Processor_Name
 
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_GetPipelineJobProcessors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Get_Pipeline_Job_Processors] TO [DDL_Viewer] AS [dbo]
 GO
