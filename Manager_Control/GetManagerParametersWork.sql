@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[GetManagerParametersWork]
 /****************************************************
 **
-**  Desc:   Populates temporary tables with the parameters for the given analysis manager(s)
+**  Desc:   Populates a temporary table with the parameters for the given analysis manager(s)
 **          Uses MgrSettingGroupName to lookup parameters from the parent group, if any
 **
 **  Requires that the calling procedure create temporary table #Tmp_Mgr_Params
@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[GetManagerParametersWork]
 **  Auth:   mem
 **  Date:   03/14/2018 mem - Initial version (code refactored from GetManagerParameters)
 **          01/31/2023 mem - Use new view name
+**          02/01/2023 mem - Fix typo in column name
 **
 *****************************************************/
 (
@@ -81,7 +82,7 @@ As
            entered_by,
            mgr_type_id,
            CASE
-               WHEN mgr_type_id = 162 THEN 1        -- ParamName 'Default_AnalysisMgr_Params'
+               WHEN param_type_id = 162 THEN 1        -- ParamName 'Default_AnalysisMgr_Params'
                ELSE 0
            End As parent_param_pointer_state,
            mgr_name
@@ -93,14 +94,14 @@ As
 
     -----------------------------------------------
     -- Append parameters for parent groups, which are
-    -- defined by parameter Default_AnalysisMgr_Params (TypeID 162)
+    -- defined by parameter Default_AnalysisMgr_Params (param_type_id 162)
     -----------------------------------------------
     --
     Declare @iterations tinyint = 0
 
     While Exists (Select * from #Tmp_Mgr_Params Where parent_param_pointer_state = 1) And @iterations < @MaxRecursion
     Begin
-        Truncate table #Tmp_Manager_Group_Info
+        DELETE FROM #Tmp_Manager_Group_Info;
 
         INSERT INTO #Tmp_Manager_Group_Info (M_Name, Group_Name)
         SELECT mgr_name, value
