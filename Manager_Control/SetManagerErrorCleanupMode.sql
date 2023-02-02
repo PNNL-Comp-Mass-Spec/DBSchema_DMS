@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[SetManagerErrorCleanupMode]
 **          09/29/2014 mem - Expanded @ManagerList to varchar(max) and added parameters @showTable and @infoOnly
 **                         - Fixed where clause bug in final update query
 **          01/30/2023 mem - Use new column name in view
+**          02/01/2023 mem - Use new view name
 **
 *****************************************************/
 (
@@ -144,7 +145,7 @@ AS
     If @infoOnly <> 0
     Begin
         SELECT MP.*, @CleanupMode As NewCleanupMode
-        FROM V_AnalysisMgrParams_ActiveAndDebugLevel MP
+        FROM V_Analysis_Mgr_Params_Active_And_Debug_Level MP
             INNER JOIN #TmpManagerList
             ON MP.Mgr_ID = #TmpManagerList.MgrID
         WHERE MP.Param_Type_ID = 120
@@ -180,7 +181,7 @@ AS
     If @infoOnly = 0 And @showTable <> 0
     Begin
         SELECT MP.*
-        FROM V_AnalysisMgrParams_ActiveAndDebugLevel MP
+        FROM V_Analysis_Mgr_Params_Active_And_Debug_Level MP
             INNER JOIN #TmpManagerList
             ON MP.Mgr_ID = #TmpManagerList.MgrID
         WHERE MP.Param_Type_ID = 120
@@ -192,6 +193,7 @@ AS
     ---------------------------------------------------
 Done:
     return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [Mgr_Config_Admin] AS [dbo]
