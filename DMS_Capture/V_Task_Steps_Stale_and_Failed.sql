@@ -6,51 +6,51 @@ GO
 
 CREATE VIEW [dbo].[V_Task_Steps_Stale_and_Failed] 
 AS
-SELECT Warning_Message,
-       Dataset,
-       Dataset_ID,
-       Job,
-       Script,
-       Tool,
-       CONVERT(int, RunTime_Minutes) AS RunTime_Minutes,
-       CONVERT(decimal(9, 1), Job_Progress) AS Job_Progress,
-       RunTime_Predicted_Hours,
-       StateName As State_Name,
-       CONVERT(decimal(9, 1), LastCPUStatus_Minutes / 60.0) AS Last_CPU_Status_Hours,
-       Processor,
-       Start,
-       Step,
-       Completion_Message,
-       Evaluation_Message
+SELECT warning_message,
+       dataset,
+       dataset_id,
+       job,
+       script,
+       tool,
+       CONVERT(int, runtime_minutes) AS runtime_minutes,
+       CONVERT(decimal(9, 1), job_progress) AS job_progress,
+       runtime_predicted_hours,
+       state_name As state_name,
+       CONVERT(decimal(9, 1), last_cpu_status_minutes / 60.0) AS last_cpu_status_hours,
+       processor,
+       start,
+       step,
+       completion_message,
+       evaluation_message
 FROM ( SELECT  CASE WHEN (JS.State = 4 AND DATEDIFF(hour, JS.Start, GetDate()) >= 5 )                               THEN 'Job step running over 5 hours'
                     WHEN (JS.State = 6 AND JS.Start >= DATEADD(day, -14, GETDATE()) AND JS.Job_State <> 101 )       THEN 'Job step failed within the last 14 days'
                     WHEN (NOT FailedJobQ.Job IS Null)                                                               THEN 'Overall job state is "failed"'
                     ELSE ''
-                    END AS Warning_Message,
-              JS.Job,
-              JS.Dataset,
-              JS.Dataset_ID,
-              JS.Step,
-              JS.Script,
-              JS.Tool,
-              JS.State,
+                    END AS warning_message,
+              JS.job,
+              JS.dataset,
+              JS.dataset_id,
+              JS.step,
+              JS.script,
+              JS.tool,
+              JS.state,
               CASE
                   WHEN JS.State = 4 THEN 'Stale'
                   ELSE CASE WHEN FailedJobQ.Job IS NULL OR JS.State = 6
-                       THEN JS.StateName
-                       ELSE JS.StateName + ' (Failed in T_Jobs)'
+                       THEN JS.state_name
+                       ELSE JS.state_name + ' (Failed in T_Jobs)'
                        END
-              END AS StateName,
-              JS.Start,
-              JS.RunTime_Minutes,
-              JS.LastCPUStatus_Minutes,
-              JS.Job_Progress,
-              JS.RunTime_Predicted_Hours,
-              JS.Processor,
-              JS.Priority,
-              ISNULL(JS.Completion_Message, '') AS Completion_Message,
-              ISNULL(JS.Evaluation_Message, '') AS Evaluation_Message
-       FROM V_Job_Steps JS
+              END AS state_name,
+              JS.start,
+              JS.runtime_minutes,
+              JS.last_cpu_status_minutes,
+              JS.job_progress,
+              JS.runtime_predicted_hours,
+              JS.processor,
+              JS.priority,
+              ISNULL(JS.Completion_Message, '') AS completion_message,
+              ISNULL(JS.Evaluation_Message, '') AS evaluation_message
+       FROM V_Task_Steps JS
             LEFT OUTER JOIN (
                 -- Look for jobs that are failed and started within the last 14 days
                 -- The subquery is used to find the highest step state for each job
