@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_AnalysisMgrParams_ActiveAndDebugLevel] ******/
+/****** Object:  View [dbo].[V_Analysis_Mgr_Params_Active_And_Debug_Level] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_AnalysisMgrParams_ActiveAndDebugLevel]
+CREATE VIEW [dbo].[V_Analysis_Mgr_Params_Active_And_Debug_Level]
 AS
 SELECT PV.MgrID As mgr_id,
        M.M_Name As manager,

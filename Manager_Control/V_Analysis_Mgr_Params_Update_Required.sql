@@ -1,10 +1,10 @@
-/****** Object:  View [dbo].[V_AnalysisMgrParams_UpdateRequired] ******/
+/****** Object:  View [dbo].[V_Analysis_Mgr_Params_Update_Required] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_AnalysisMgrParams_UpdateRequired]
+CREATE VIEW [dbo].[V_Analysis_Mgr_Params_Update_Required]
 AS
 SELECT PV.MgrID As mgr_id,
        M.M_Name As manager,
