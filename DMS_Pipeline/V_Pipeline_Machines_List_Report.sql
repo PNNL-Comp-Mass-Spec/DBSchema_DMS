@@ -3,13 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Pipeline_Machines_List_Report
+
+CREATE VIEW [dbo].[V_Pipeline_Machines_List_Report]
 AS
 SELECT 
-    Machine AS [Machine], 
-    Total_CPUs AS [Total CPUs], 
-    CPUs_Available AS [CPUs Available]
+    machine,
+    total_cpus,
+    cpus_available
 FROM T_Machines
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Machines_List_Report] TO [DDL_Viewer] AS [dbo]

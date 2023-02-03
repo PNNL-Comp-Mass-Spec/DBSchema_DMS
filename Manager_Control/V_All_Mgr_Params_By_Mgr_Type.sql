@@ -13,7 +13,7 @@ SELECT DISTINCT TPT.MT_TypeID AS id,
                 END AS selected,
                 TPT.ParamID As param_id,
                 TPT.ParamName As param_name,
-                TPT.Comment
+                TPT.comment
 FROM ( SELECT DISTINCT ParamID,
                        ParamName,
                        Comment,

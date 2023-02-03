@@ -3,9 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW dbo.V_Log_Errors
+
+CREATE VIEW [dbo].[V_Log_Errors]
 AS
-SELECT Entry_ID, posted_by, Entered, type, message, Entered_By
+SELECT entry_id, posted_by, entered, type, message, entered_by
 FROM T_Log_Entries
 WHERE (type = 'error')
 

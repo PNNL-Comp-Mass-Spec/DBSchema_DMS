@@ -7,10 +7,11 @@ GO
 CREATE VIEW [dbo].[V_Organism_Report]
 AS
 SELECT OG_name AS Name,
-       OG_organismDBPath AS [Org. DB File storage path (client)],
-       '' AS [Org. DB File storage path (server)],
-       OG_organismDBName AS [Default Org. DB file name]
+       OG_organismDBPath AS Org_DB_File_storage_path_client,
+       '' AS Org_DB_File_storage_path_server,
+       OG_organismDBName AS Default_Org_DB_file_name
 FROM T_Organisms
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Organism_Report] TO [DDL_Viewer] AS [dbo]

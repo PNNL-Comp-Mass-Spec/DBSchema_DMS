@@ -14,8 +14,7 @@ SELECT dbo.V_Biomaterial_Report.Name,
    dbo.V_Biomaterial_Report.PI,
    dbo.V_Biomaterial_Report.Comment,
    dbo.V_Biomaterial_Report.Campaign,
-   COUNT(dbo.T_Experiment_Cell_Cultures.CC_ID)
-   AS [Exp. Count]
+   COUNT(dbo.T_Experiment_Cell_Cultures.CC_ID) AS Exp_Count
 FROM dbo.V_Biomaterial_Report INNER JOIN
    dbo.T_Experiment_Cell_Cultures ON
    dbo.V_Biomaterial_Report.id = dbo.T_Experiment_Cell_Cultures.CC_ID

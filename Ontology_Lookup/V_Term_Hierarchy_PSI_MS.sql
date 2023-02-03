@@ -20,7 +20,7 @@ AS (
            CAST (null AS varchar(1000)) AS parent_name,
            CAST (null AS varchar(255)) AS parent_identifier,        
            CAST (NULL AS varchar(255)) AS parent_pk,                
-           0 AS Level
+           0 AS level
     FROM T_Term Child
     WHERE (Child.is_root_term = 1) AND
           (Child.namespace = 'MS')        -- Note that namespace 'MS' supersedes namespace 'PSI-MS'
@@ -36,7 +36,7 @@ AS (
            TermHierarchy.term_name AS parent_name,
            TermHierarchy.identifier AS parent_identifier,
            T_Term_Relationship.object_term_pk AS parent_pk,
-           TermHierarchy.Level + 1 AS Level
+           TermHierarchy.Level + 1 AS level
     FROM T_Term Child
          INNER JOIN T_Term_Relationship
            ON Child.term_pk = T_Term_Relationship.subject_term_pk

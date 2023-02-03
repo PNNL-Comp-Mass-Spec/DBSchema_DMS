@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Biomaterial_Metadata]
 AS
 SELECT U.CC_Name AS Name,
@@ -13,11 +12,11 @@ SELECT U.CC_Name AS Name,
        Case When U_Contact.U_Name Is Null 
             Then U.CC_Contact_PRN 
             Else U_Contact.Name_with_PRN
-       END AS [Source Contact],
+       END AS Source_Contact,
        U_PI.Name_with_PRN AS PI,
-       CTN.Name AS [Type],
+       CTN.Name AS Type,
        U.CC_Reason AS Reason,
-       U.CC_Comment AS [Comment],
+       U.CC_Comment AS Comment,
        C.Campaign_Num AS Campaign
 FROM T_Cell_Culture U
      INNER JOIN T_Cell_Culture_Type_Name CTN

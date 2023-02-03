@@ -15,9 +15,10 @@ SELECT C.campaign_id,
        CT.Run_Request_Most_Recent AS most_recent_run_request,
        CT.Dataset_Most_Recent AS most_recent_dataset,
        CT.Job_Most_Recent AS most_recent_analysis_job,
-       C.CM_created AS Created
-   FROM T_Campaign C
-     LEFT JOIN T_Campaign_Tracking CT ON CT.C_ID = C.Campaign_ID
+       C.CM_created AS created
+FROM T_Campaign C LEFT OUTER JOIN 
+     T_Campaign_Tracking CT 
+       ON CT.C_ID = C.Campaign_ID
 WHERE COALESCE(CT.sample_prep_request_most_recent, '1/1/2000') <= DATEADD(MONTH, -18, GETDATE()) AND
       COALESCE(CT.experiment_most_recent, '1/1/2000') <= DATEADD(MONTH, -18, GETDATE()) AND
       COALESCE(CT.run_request_most_recent, '1/1/2000') <= DATEADD(MONTH, -18, GETDATE()) AND
