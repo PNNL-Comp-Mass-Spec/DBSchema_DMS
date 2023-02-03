@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.RetryCaptureForDMSResetJobs
+
+CREATE PROCEDURE [dbo].[RetryCaptureForDMSResetJobs]
 /****************************************************
 **
 **  Desc:	Retry capture for datasets that failed capture
@@ -16,6 +17,7 @@ CREATE PROCEDURE dbo.RetryCaptureForDMSResetJobs
 **  Auth:	mem
 **  Date:	05/25/2011 mem - Initial version
 **			08/16/2017 mem - For jobs with error Error running OpenChrom, only reset the DatasetIntegrity step
+**			02/02/2023 bcg - Changed from V_Jobs and V_Job_Steps to V_Tasks and V_Task_Steps
 **    
 *****************************************************/
 (
@@ -91,13 +93,13 @@ As
 		
 	If @infoOnly <> 0
 	Begin
-		SELECT #SJL.ResetFailedStepsOnly, J.*
-		FROM V_Jobs J INNER JOIN #SJL ON J.Job = #SJL.Job
-		ORDER BY J.Job
+		SELECT #SJL.ResetFailedStepsOnly, T.*
+		FROM V_Tasks T INNER JOIN #SJL ON T.job = #SJL.Job
+		ORDER BY T.job
 		
-		SELECT #SJL.ResetFailedStepsOnly, JS.*
-		FROM V_Job_Steps JS INNER JOIN #SJL ON JS.Job = #SJL.Job
-		ORDER BY JS.Job, JS.Step
+		SELECT #SJL.ResetFailedStepsOnly, TS.*
+		FROM V_Task_Steps TS INNER JOIN #SJL ON TS.job = #SJL.Job
+		ORDER BY TS.job, TS.step
 		
 		Print 'JobList: ' + @jobList		
 	End
@@ -163,6 +165,7 @@ As
 	--
 Done:
 	return @myError
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[RetryCaptureForDMSResetJobs] TO [DDL_Viewer] AS [dbo]
 GO

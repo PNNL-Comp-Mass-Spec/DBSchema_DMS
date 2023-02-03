@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ResetDependentJobSteps
+
+CREATE PROCEDURE [dbo].[ResetDependentJobSteps]
 /****************************************************
 **
 **	Desc:	Resets entries in T_Job_Steps and T_Job_Step_Dependencies for the given jobs
@@ -20,6 +21,7 @@ CREATE PROCEDURE ResetDependentJobSteps
 **			02/23/2016 mem - Add set XACT_ABORT on
 **			04/12/2017 mem - Log exceptions to T_Log_Entries
 **			07/10/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **    
 *****************************************************/
 (
@@ -105,12 +107,12 @@ As
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 
 		If @InfoOnly <> 0
-			SELECT JS.*
-			FROM V_Job_Steps JS
+			SELECT TS.*
+			FROM V_Task_Steps TS
 			     INNER JOIN #Tmp_JobStepsToReset JR
-			       ON JS.Job = JR.Job AND
-			          JS.Step = JR.Step
-			ORDER BY JS.Job, JS.Step
+			       ON TS.job = JR.Job AND
+			          TS.step = JR.Step
+			ORDER BY TS.job, TS.step
 		Else
 		Begin
 			Begin Tran @JobResetTran

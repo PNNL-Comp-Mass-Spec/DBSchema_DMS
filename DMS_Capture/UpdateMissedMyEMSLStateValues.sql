@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateMissedMyEMSLStateValues
+
+CREATE PROCEDURE [dbo].[UpdateMissedMyEMSLStateValues]
 /****************************************************
 **
 **  Desc:
@@ -24,6 +25,7 @@ CREATE PROCEDURE UpdateMissedMyEMSLStateValues
 **			12/13/2013 mem - Tweaked log message
 **			02/27/2014 mem - Now updating the appropriate ArchiveUpdate job if the job steps were skipped
 **			03/25/2014 mem - Changed log message type to be a warning
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **    
 *****************************************************/
 (
@@ -168,24 +170,24 @@ As
 		
 		-- Reset skipped ArchiveVerify steps for the datasets associated with the affected jobs
 		--
-		UPDATE V_Job_Steps
-		SET State = 2
-		FROM V_Job_Steps JS
+		UPDATE V_Task_Steps
+		SET state = 2
+		FROM V_Task_Steps TS
 		     INNER JOIN T_MyEMSL_Uploads U
-		       ON JS.Job = U.Job
-		WHERE JS.Dataset_ID IN ( SELECT J.AJ_DatasetID
+		       ON TS.job = U.Job
+		WHERE TS.dataset_id IN ( SELECT J.AJ_DatasetID
 		                          FROM S_DMS_T_Analysis_Job J
 		                               INNER JOIN #Tmp_IDsToUpdate U
 		                                 ON J.AJ_JobID = U.EntityID ) AND
-		      JS.Tool IN ('ArchiveVerify') AND
-		      JS.State = 3 AND
+		      TS.tool IN ('ArchiveVerify') AND
+		      TS.state = 3 AND
 		      U.ErrorCode = 0
 
 		
 	End
 	
 	return @myError
-	
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMissedMyEMSLStateValues] TO [DDL_Viewer] AS [dbo]
 GO

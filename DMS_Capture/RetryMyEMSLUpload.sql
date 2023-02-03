@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[RetryMyEMSLUpload]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          07/09/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **          02/06/2018 mem - Exclude logging some try/catch errors
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **    
 *****************************************************/
 (
@@ -95,12 +96,12 @@ As
         -----------------------------------------------------------
         --        
         INSERT INTO #Tmp_JobsToReset( Job )
-        SELECT JS.Job
-        FROM V_Job_Steps JS
+        SELECT TS.Job
+        FROM V_Task_Steps TS
              INNER JOIN #Tmp_Jobs JL
-               ON JS.Job = JL.Job
-        WHERE Tool = 'ArchiveVerify' AND
-              State = 6
+               ON TS.job = JL.Job
+        WHERE tool = 'ArchiveVerify' AND
+              state = 6
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -152,17 +153,17 @@ As
         
         If @InfoOnly <> 0
         Begin
-            SELECT JS.Job,
-                   JS.Step,
-                   JS.Tool,
+            SELECT TS.job,
+                   TS.step,
+                   TS.tool,
                    'Step would be reset' AS Message,
-                   JS.State,
-               JS.Start,
-                   JS.Finish
-            FROM V_Job_Steps JS
+                   TS.state,
+                   TS.start,
+                   TS.finish
+            FROM V_Task_Steps TS
                  INNER JOIN #Tmp_JobsToReset JR
-                   ON JS.Job = JR.Job
-            WHERE Tool IN ('ArchiveUpdate', 'DatasetArchive')
+                   ON TS.job = JR.Job
+            WHERE tool IN ('ArchiveUpdate', 'DatasetArchive')
             
             Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @JobList
             print @execMsg
@@ -176,15 +177,15 @@ As
 
             -- Reset the archive step
             --
-            UPDATE V_Job_Steps
-            Set State = 2,
-                Completion_Code = 0, 
-                Completion_Message = Null, 
-                Evaluation_Code = Null, 
-                Evaluation_Message = Null
-            FROM V_Job_Steps JS INNER JOIN #Tmp_JobsToReset JR
-               ON JS.Job = JR.Job
-            WHERE Tool IN ('ArchiveUpdate', 'DatasetArchive')
+            UPDATE V_Task_Steps
+            Set state = 2,
+                completion_code = 0, 
+                completion_message = Null, 
+                evaluation_code = Null, 
+                evaluation_message = Null
+            FROM V_Task_Steps TS INNER JOIN #Tmp_JobsToReset JR
+               ON TS.job = JR.Job
+            WHERE tool IN ('ArchiveUpdate', 'DatasetArchive')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
@@ -194,13 +195,13 @@ As
 
             -- Reset the retry counts for the ArchiveVerify step
             --
-            UPDATE V_Job_Steps
-            SET Retry_Count = 75,
-                Next_Try = DateAdd(minute, 10, GetDate())
-            FROM V_Job_Steps JS
+            UPDATE V_Task_Steps
+            SET retry_count = 75,
+                next_try = DateAdd(minute, 10, GetDate())
+            FROM V_Task_Steps TS
                  INNER JOIN #Tmp_JobsToReset JR
-                   ON JS.Job = JR.Job
-            WHERE Tool = 'ArchiveVerify'
+                   ON TS.job = JR.Job
+            WHERE tool = 'ArchiveVerify'
             
             Commit Tran @JobResetTran
                         

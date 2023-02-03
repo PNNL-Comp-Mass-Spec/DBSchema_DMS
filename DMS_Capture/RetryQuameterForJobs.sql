@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
 **  Auth:   mem
 **  Date:   07/11/2019 mem - Initial version
 **          07/22/2019 mem - When @infoOnly is 0, return a table listing the jobs that were reset
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **    
 *****************************************************/
 (
@@ -85,12 +86,12 @@ As
         -----------------------------------------------------------
         --        
         INSERT INTO #Tmp_JobStepsToReset( Job, Step )
-        SELECT JS.Job, JS.Step
-        FROM V_Job_Steps JS
+        SELECT TS.Job, TS.Step
+        FROM V_Task_Steps TS
              INNER JOIN #Tmp_Jobs JL
-               ON JS.Job = JL.Job
-        WHERE Tool = 'DatasetQuality' AND
-              State = 6
+               ON TS.job = JL.Job
+        WHERE tool = 'DatasetQuality' AND
+              state = 6
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         
@@ -145,17 +146,17 @@ As
 
         If @infoOnly <> 0
         Begin
-            SELECT JS.Job,
-                   JS.Step,
-                   JS.Tool,
+            SELECT TS.job,
+                   TS.step,
+                   TS.tool,
                    'Step would be reset' AS Message,
-                   JS.State,
-                   JS.Start,
-                   JS.Finish
-            FROM V_Job_Steps JS
+                   TS.state,
+                   TS.start,
+                   TS.finish
+            FROM V_Task_Steps TS
                  INNER JOIN #Tmp_JobStepsToReset JR
-                   ON JS.Job = JR.Job AND
-                      JS.Step = JR.Step
+                   ON TS.job = JR.Job AND
+                      TS.step = JR.Step
             
             Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @jobList
             print @execMsg
@@ -169,16 +170,16 @@ As
 
             -- Reset the DatasetQuality step
             --
-            UPDATE V_Job_Steps
-            SET State = 2,
-                Completion_Code = 0,
-                Completion_Message = NULL,
-                Evaluation_Code = NULL,
-                Evaluation_Message = NULL
-            FROM V_Job_Steps JS
+            UPDATE V_Task_Steps
+            SET state = 2,
+                completion_code = 0,
+                completion_message = NULL,
+                evaluation_code = NULL,
+                evaluation_message = NULL
+            FROM V_Task_Steps TS
                  INNER JOIN #Tmp_JobStepsToReset JR
-                   ON JS.Job = JR.Job AND
-                      JS.Step = JR.Step
+                   ON TS.job = JR.Job AND
+                      TS.step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             
@@ -188,17 +189,17 @@ As
                         
             Commit Tran @jobResetTran
 
-             SELECT JS.Job,
-                    JS.Step,
-                    JS.Tool,
+             SELECT TS.job,
+                    TS.step,
+                    TS.tool,
                     'Job step has been reset' AS Message,
-                    JS.State,
-                    JS.Start,
-                    JS.Finish
-             FROM V_Job_Steps JS
+                    TS.state,
+                    TS.start,
+                    TS.finish
+             FROM V_Task_Steps TS
                   INNER JOIN #Tmp_JobStepsToReset JR
-                    ON JS.Job = JR.Job AND
-                       JS.Step = JR.Step
+                    ON TS.job = JR.Job AND
+                       TS.step = JR.Step
         End    
         
     END TRY

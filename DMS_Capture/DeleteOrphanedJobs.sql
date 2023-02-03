@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[DeleteOrphanedJobs]
 **
 **  Auth:   mem
 **          05/22/2019 mem - Initial version
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **
 *****************************************************/
 (
@@ -76,11 +77,11 @@ As
         -- Preview the jobs
         ---------------------------------------------------
         --
-        SELECT D.HasDependencies, J.*
-        FROM V_Jobs J
+        SELECT D.HasDependencies, T.*
+        FROM V_Tasks T
              INNER JOIN #Tmp_JobsToDelete D
-               ON J.Job = D.Job
-        ORDER BY J.Job
+               ON T.job = D.Job
+        ORDER BY T.job
 
     End
     Else

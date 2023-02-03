@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 /****************************************************
 **
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 **          08/01/2017 mem - Reset steps with message 'Connection aborted.', error(32, 'Broken pipe')
 **          12/15/2017 mem - Reset steps with message 'ingest/backend/tasks.py'
 **          03/07/2018 mem - Do not reset the same job/subfolder ingest task more than once
-**          04/29/2020 bcg - Reset steps with message 'ingest/backend/tasks.py'
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **
 *****************************************************/
 (
@@ -75,7 +74,7 @@ As
 
         INSERT INTO #Tmp_FailedJobs( Job, Dataset_ID, Subfolder, [Error_Message], SkipReset )
         SELECT Job, Dataset_ID, IsNull(Output_Folder, Input_Folder), Max(Completion_Message), 0 AS SkipReset
-        FROM V_Job_Steps
+        FROM V_Task_Steps
         WHERE Tool = 'ArchiveVerify' AND
               State = 6 AND
               (Completion_Message LIKE '%ConnectionTimeout%' OR
@@ -83,8 +82,7 @@ As
                Completion_Message LIKE '%Internal Server Error%' OR
                Completion_Message LIKE '%Connection aborted%BadStatusLine%' OR
                Completion_Message LIKE '%Connection aborted%Broken pipe%' OR
-               Completion_Message LIKE '%ingest/backend/tasks.py%' OR
-               Completion_Message LIKE '%pacifica/ingest/tasks.py%') AND
+               Completion_Message LIKE '%ingest/backend/tasks.py%') AND
               Job_State = 5 AND
               Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
         GROUP BY Job, Dataset_ID, Output_Folder, Input_Folder
@@ -94,14 +92,14 @@ As
         If @jobListOverride <> ''
         Begin
             INSERT INTO #Tmp_FailedJobs( Job, Dataset_ID, Subfolder, [Error_Message], SkipReset )
-            SELECT DISTINCT Value, JS.Dataset_ID, JS.Output_Folder, JS.Completion_Message, 0 AS SkipReset
+            SELECT DISTINCT Value, TS.Dataset_ID, TS.Output_Folder, TS.Completion_Message, 0 AS SkipReset
             FROM dbo.udfParseDelimitedIntegerList ( @jobListOverride, ',' ) SrcJobs
-                 INNER JOIN V_Job_Steps JS
-                   ON SrcJobs.VALUE = JS.Job
+                 INNER JOIN V_Task_Steps TS
+                   ON SrcJobs.VALUE = TS.Job
                  LEFT OUTER JOIN #Tmp_FailedJobs Target
-                   ON JS.Job = Target.Job
-            WHERE JS.Tool LIKE '%archive%' AND
-                  JS.State = 6 AND
+                   ON TS.Job = Target.Job
+            WHERE TS.Tool LIKE '%archive%' AND
+                  TS.State = 6 AND
                   Target.Job Is Null
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount

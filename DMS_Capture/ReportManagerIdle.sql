@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[ReportManagerIdle]
 **	Auth:	mem
 **	Date:	08/01/2017 mem - Initial release
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **
 *****************************************************/
 (
@@ -92,9 +93,9 @@ As
 		-- Preview the running tasks
 		--
 		SELECT *
-		FROM V_Job_Steps
-		WHERE Processor = @managerName AND State = 4
-		ORDER BY Job, Step
+		FROM V_Task_Steps
+		WHERE processor = @managerName AND state = 4
+		ORDER BY job, step
 	End
 	Else
 	Begin
