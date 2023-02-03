@@ -8,12 +8,12 @@ CREATE VIEW [dbo].[V_Task_Step_Backlog_Crosstab]
 AS
 SELECT PivotData.posting_time,
 	IsNull([ArchiveStatusCheck], 0) AS archive_status_check,
-	IsNull([ArchiveVerify], 0) AS archive_verify,
 	IsNull([ArchiveUpdate], 0) AS archive_update,
+	IsNull([ArchiveVerify], 0) AS archive_verify,
 	IsNull([DatasetArchive], 0) AS dataset_archive,
 	IsNull([DatasetCapture], 0) AS dataset_capture,
-	IsNull([DatasetIntegrity], 0) AS dataset_integrity,
 	IsNull([DatasetInfo], 0) AS dataset_info,
+	IsNull([DatasetIntegrity], 0) AS dataset_integrity,
 	IsNull([DatasetQuality], 0) AS dataset_quality,
 	IsNull([SourceFileRename], 0) AS source_file_rename,
 	IsNull([ImsDeMultiplex], 0) AS ims_demultiplex
