@@ -12,17 +12,19 @@ SELECT R.Entry_ID,
        R.Subfolder,
        R.Error_Message,
        R.Entered,
-       JS.Step,
-       JS.Tool,
-       JS.StateName,
-       JS.State,
-       JS.Finish,
-       JS.Processor,
-       JS.Dataset
+       TS.Step,
+       TS.Tool,
+       TS.State_Name,
+       TS.State,
+       TS.Finish,
+       TS.Processor,
+       TS.Dataset
 FROM T_MyEMSL_Upload_Resets R
-     INNER JOIN V_Job_Steps JS
-       ON R.Job = JS.Job
-WHERE (JS.Step = 1)
+     INNER JOIN V_Task_Steps TS
+       ON R.Job = TS.Job
+WHERE (TS.Step = 1)
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Upload_Resets] TO [DDL_Viewer] AS [dbo]
 GO
