@@ -27,3 +27,5 @@ FROM V_Task_Steps2 TS
           TS.Tool IN ('ArchiveVerify', 'DatasetArchive', 'ArchiveUpdate')
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Task_Steps3] TO [DDL_Viewer] AS [dbo]
+GO

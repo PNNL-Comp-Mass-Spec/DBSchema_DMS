@@ -30,3 +30,5 @@ FROM T_Jobs_History J
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tasks_History] TO [DDL_Viewer] AS [dbo]
+GO

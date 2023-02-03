@@ -81,3 +81,5 @@ FROM (
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Task_Steps2] TO [DDL_Viewer] AS [dbo]
+GO

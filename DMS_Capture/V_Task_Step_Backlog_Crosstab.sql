@@ -32,3 +32,5 @@ FROM ( SELECT Convert(smalldatetime, posting_time) AS Posting_Time,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Task_Step_Backlog_Crosstab] TO [DDL_Viewer] AS [dbo]
+GO

@@ -104,3 +104,5 @@ FROM ( SELECT JS.Job,
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Task_Steps] TO [DDL_Viewer] AS [dbo]
+GO

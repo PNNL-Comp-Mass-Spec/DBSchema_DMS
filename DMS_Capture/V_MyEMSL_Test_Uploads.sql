@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_MyEMSL_Test_Uploads]
 AS
 SELECT MU.entry_id,
@@ -30,4 +29,6 @@ FROM T_MyEMSL_TestUploads MU
        ON MU.Dataset_ID = DS.Dataset_ID
 
 
+GO
+GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Test_Uploads] TO [DDL_Viewer] AS [dbo]
 GO

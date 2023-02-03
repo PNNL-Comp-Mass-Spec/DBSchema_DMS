@@ -31,3 +31,5 @@ FROM T_Jobs J
 
 
 GO
+GRANT VIEW DEFINITION ON [dbo].[V_Tasks] TO [DDL_Viewer] AS [dbo]
+GO
