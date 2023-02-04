@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 **  Date:   03/28/2018 mem - Initial version
 **          03/29/2018 mem - Add parameter @addMgrParamsIfMissing
 **          02/12/2020 mem - Rename parameter to @infoOnly
+**          02/03/2023 bcg - Use renamed view V_Mgr_Params
 **    
 *****************************************************/
 (
@@ -135,7 +136,7 @@ As
                 Set @continue = 0
             Else
             Begin -- <c>
-                If Not Exists (SELECT * FROM V_MgrParams Where ParameterName = 'RunJobsRemotely' And ManagerName = @mgrName)
+                If Not Exists (SELECT * FROM V_Mgr_Params Where Parameter_Name = 'RunJobsRemotely' And Manager_Name = @mgrName)
                 Begin -- <d1>
                     Set @paramTypeId = null
                     SELECT @paramTypeId = ParamID
@@ -165,7 +166,7 @@ As
                     End
                 End -- </d1>
 
-                If Not Exists (SELECT * FROM V_MgrParams Where ParameterName = 'RemoteHostName' And ManagerName = @mgrName)
+                If Not Exists (SELECT * FROM V_Mgr_Params Where Parameter_Name = 'RemoteHostName' And Manager_Name = @mgrName)
                 Begin -- <d2>
                     Set @paramTypeId = null
                     SELECT @paramTypeId = ParamID
