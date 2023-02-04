@@ -3,14 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.PreviewRequestStepTask
+
+CREATE PROCEDURE [dbo].[PreviewRequestStepTask]
 /****************************************************
 **
-**	Desc: Previews the next step task that would be returned for a given processor
+**  Desc: Previews the next step task that would be returned for a given processor
 **
-**	Auth:	mem
-**			01/06/2011 mem
-**			07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into RequestStepTask
+**  Auth:   mem
+**          01/06/2011 mem
+**          07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into RequestStepTask
+**          02/03/2023 bcg - Use the synonym for Manager_Control.V_Mgr_Params instead of a local view wrapping the synonym
 **
 *****************************************************/
 (
@@ -37,9 +39,9 @@ As
 		Set @infoOnly = 1
 	
 	-- Lookup the value for "perspective" for this manager in the manager control DB
-	SELECT @perspective = ParameterValue
-	FROM V_Mgr_Params
-	WHERE (ManagerName = @processorName) AND (ParameterName = 'perspective')
+	SELECT @perspective = Parameter_Value
+	FROM S_Mgr_Params
+	WHERE (Manager_Name = @processorName) AND (Parameter_Name = 'perspective')
 	
 	If IsNull(@perspective, '') = ''
 	Begin

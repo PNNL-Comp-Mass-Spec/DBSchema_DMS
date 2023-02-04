@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 **          03/06/2018 mem - Also look for ArchiveUpdate jobs on hold when checking for an existing archive update task
 **          05/17/2019 mem - Switch from folder to directory
 **          06/27/2019 mem - Default job priority is now 4; higher priority is now 3
+**          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **    
 *****************************************************/
 (
@@ -88,7 +89,7 @@ As
     Set @DatasetID = 0
     
     SELECT @DatasetID = Dataset_ID
-    FROM V_DMS_Get_Dataset_Info
+    FROM S_DMS_V_DatasetFullDetails
     WHERE Dataset_num = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

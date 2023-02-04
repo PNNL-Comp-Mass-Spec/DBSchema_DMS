@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 /****************************************************
 **
@@ -27,6 +28,7 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **                         - Store dates in ODBC canonical style: yyyy-MM-dd hh:mm:ss
 **          07/28/2020 mem - Add Dataset_ID
 **          03/31/2021 mem - Expand @organismName to varchar(128)
+**          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **    
 *****************************************************/
 (
@@ -105,7 +107,7 @@ AS
            @campaignCreated = CM_created,
            @experimentReason = EX_Reason,
            @cellCultureList = EX_cell_culture_list
-    FROM V_DMS_Get_Dataset_Info
+    FROM S_DMS_V_DatasetFullDetails
     WHERE Dataset_Num = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

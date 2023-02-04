@@ -51,7 +51,7 @@ FROM T_MyEMSL_Uploads MU
                                          WHERE SP_function = 'results_transfer' ) TransferQ
                               ON SPath.SP_machine_name = TransferQ.SP_machine_name ) TF
        ON MU.Dataset_ID = TF.Dataset_ID
-     LEFT OUTER JOIN dbo.V_DMS_Get_Dataset_Info DI
+     LEFT OUTER JOIN dbo.S_DMS_V_DatasetFullDetails DI
        ON MU.Dataset_ID = DI.Dataset_ID
 
 

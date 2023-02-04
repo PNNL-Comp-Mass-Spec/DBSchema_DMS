@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **                         - Add parameter SHA1_Hash
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
 **          02/01/2023 mem - Use new synonym name
+**          02/03/2023 bcg - Use synonym name S_DMS_T_Instrument_Class instead of the view that wraps it
 **
 *****************************************************/
 (
@@ -150,7 +151,7 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ---------------------------------------------------
-    -- Instrument class params from V_DMS_Instrument_Class
+    -- Instrument class params from DMS5.T_Instrument_Class
     --
     -- This includes all of the DatasetQC parameters, typically including:
     --
@@ -173,9 +174,9 @@ AS
         @rawDataType = raw_data_type,
         @paramXML = Params
     FROM
-        V_DMS_Instrument_Class
+        S_DMS_T_Instrument_Class
     WHERE
-        InstrumentClass = @instrument_class
+        IN_class = @instrument_class
 
     INSERT INTO @paramTab
     (Step_Number, [Section], [Name], Value )

@@ -3,16 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeNewQuameterJob
+
+CREATE PROCEDURE [dbo].[MakeNewQuameterJob]
 /****************************************************
 **
-**	Desc: 
-**		Creates a new Quameter job for the specified dataset
+**  Desc: 
+**      Creates a new Quameter job for the specified dataset
 **	
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	mem
-**	Date:	02/22/2013 - Initial version
+**  Auth:   mem
+**  Date:   02/22/2013 - Initial version
+**          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **    
 *****************************************************/
 (
@@ -53,7 +55,7 @@ As
 	Set @DatasetID = 0
 	
 	SELECT @DatasetID = Dataset_ID
-	FROM V_DMS_Get_Dataset_Info
+	FROM S_DMS_V_DatasetFullDetails
 	WHERE Dataset_num = @DatasetName
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount

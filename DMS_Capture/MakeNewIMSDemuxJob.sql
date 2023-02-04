@@ -3,17 +3,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeNewIMSDemuxJob
+
+CREATE PROCEDURE [dbo].[MakeNewIMSDemuxJob]
 /****************************************************
 **
-**	Desc: 
-**		Creates a new IMSDemultiplex job for the specified dataset
-**		This would typically be used to repeat the demultiplexing of a dataset
+**  Desc: 
+**      Creates a new IMSDemultiplex job for the specified dataset
+**      This would typically be used to repeat the demultiplexing of a dataset
 **	
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	mem
-**	Date:	08/29/2012 - Initial version
+**  Auth:   mem
+**  Date:   08/29/2012 - Initial version
+**          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **    
 *****************************************************/
 (
@@ -54,7 +56,7 @@ As
 	Set @DatasetID = 0
 	
 	SELECT @DatasetID = Dataset_ID
-	FROM V_DMS_Get_Dataset_Info
+	FROM S_DMS_V_DatasetFullDetails
 	WHERE Dataset_num = @DatasetName
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount

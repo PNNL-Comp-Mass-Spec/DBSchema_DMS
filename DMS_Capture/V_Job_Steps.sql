@@ -94,7 +94,7 @@ FROM ( SELECT JS.Job,
               ON JS.Job = J.Job
             INNER JOIN dbo.T_Scripts S
               ON J.Script = S.Script
-            LEFT OUTER JOIN dbo.V_DMS_Get_Dataset_Info DI
+            LEFT OUTER JOIN dbo.S_DMS_V_DatasetFullDetails DI
               ON J.Dataset = DI.Dataset_Num
             LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
               ON JS.Tool_Version_ID = STV.Tool_Version_ID

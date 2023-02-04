@@ -25,7 +25,7 @@ SELECT JS.job,
        JS.completion_message,
        JS.evaluation_code,
        JS.evaluation_message,
-       DInst.instrument,
+       InstName.IN_name AS instrument,
        JS.tool_version_id,
        STV.tool_version,
        DI.SP_vol_name_client + DI.SP_path + DI.DS_folder_name AS dataset_folder_path,
@@ -40,9 +40,11 @@ FROM T_Job_Steps_History JS
           JS.Saved = J.Saved
      INNER JOIN T_Scripts S
        ON J.Script = S.Script
-     INNER JOIN V_DMS_Dataset_Instruments DInst
-       ON J.Dataset_ID = DInst.Dataset_ID
-     LEFT OUTER JOIN V_DMS_Get_Dataset_Info DI
+     INNER JOIN S_DMS_T_Dataset DS
+       ON J.Dataset_ID = DS.Dataset_ID
+     INNER JOIN S_DMS_T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
+     LEFT OUTER JOIN S_DMS_V_DatasetFullDetails DI
        ON J.Dataset = DI.Dataset_Num
      LEFT OUTER JOIN T_Step_Tool_Versions STV
        ON JS.Tool_Version_ID = STV.Tool_Version_ID

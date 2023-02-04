@@ -3,7 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeNewDatasetSourceFileRenameJob
+
+CREATE PROCEDURE [dbo].[MakeNewDatasetSourceFileRenameJob]
 /****************************************************
 **
 **  Desc:
@@ -12,6 +13,7 @@ CREATE PROCEDURE MakeNewDatasetSourceFileRenameJob
 **  Auth:   mem
 **  Date:   03/06/2012 mem - Initial version
 **          09/09/2022 mem - Fix typo in message
+**          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **
 *****************************************************/
 (
@@ -50,7 +52,7 @@ As
     Set @DatasetID = 0
 
     SELECT @DatasetID = Dataset_ID
-    FROM V_DMS_Get_Dataset_Info
+    FROM S_DMS_V_DatasetFullDetails
     WHERE Dataset_num = @DatasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
