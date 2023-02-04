@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **          07/28/2020 mem - Add Dataset_ID
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
+**          02/03/2023 bcg - Update column name for V_DMS_Get_Experiment_Metadata
 **    
 *****************************************************/
 (
@@ -161,7 +162,7 @@ AS
     INSERT INTO #ParamTab ([Section], [Name], Value)  
     SELECT @stepParmSectionName AS [Section], 'Meta_Aux_Info:' + Target + ':' + Category + '.' + Subcategory + '.' + Item AS [Name], [Value]
     FROM V_DMS_Get_Experiment_Metadata
-    WHERE Experiment_Num = @experimentName
+    WHERE Experiment = @experimentName
     ORDER BY [Name]
 
     Return 0

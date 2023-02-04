@@ -54,6 +54,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          01/23/2017 mem - Fix logic bug involving call to CopyJobToHistory
 **          06/13/2018 mem - Add comments regarding UpdateDMSFileInfoXML and T_Dataset_Info
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
+**          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
 **
 *****************************************************/
 (
@@ -232,8 +233,8 @@ As
          LEFT OUTER JOIN #Tmp_ChangedJobs TargetTable
            ON J.Job = TargetTable.Job
     WHERE TargetTable.Job Is Null AND
-          ( (J.Script = 'DatasetArchive' AND J.State = 2 AND DAS.AS_state_ID = 6) OR
-            (J.Script = 'ArchiveUpdate'  AND J.State = 2 AND DAS.AS_update_state_ID = 5) )
+          ( (J.Script = 'DatasetArchive' AND J.State = 2 AND DAS.Archive_State_ID = 6) OR
+            (J.Script = 'ArchiveUpdate'  AND J.State = 2 AND DAS.Archive_Update_State_ID = 5) )
      --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --

@@ -43,6 +43,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
 **          02/01/2023 mem - Use new synonym name
 **          02/03/2023 bcg - Use synonym name S_DMS_T_Instrument_Class instead of the view that wraps it
+**          02/03/2023 bcg - Update column names for V_DMS_Dataset_Metadata
 **
 *****************************************************/
 (
@@ -125,8 +126,8 @@ AS
           CONVERT(varchar(2000), Method) AS Method,
           CONVERT(varchar(2000), Capture_Exclusion_Window) AS Capture_Exclusion_Window,
           CONVERT(varchar(2000), Created) AS Created ,
-          CONVERT(varchar(2000), sourceVol) AS Source_Vol,
-          CONVERT(varchar(2000), sourcePath) AS Source_Path,
+          CONVERT(varchar(2000), Source_Vol) AS Source_Vol,
+          CONVERT(varchar(2000), Source_Path) AS Source_Path,
           CONVERT(varchar(2000), Storage_Vol) AS Storage_Vol,
           CONVERT(varchar(2000), Storage_Path) AS Storage_Path,
           CONVERT(varchar(2000), Storage_Vol_External) AS Storage_Vol_External,

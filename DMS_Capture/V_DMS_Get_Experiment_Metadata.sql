@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_DMS_Get_Experiment_Metadata]
 AS
-SELECT T.Experiment_Num,
+SELECT T.Experiment_Num AS Experiment,
        AI.Target,
        AI.Category,
        AI.Subcategory,

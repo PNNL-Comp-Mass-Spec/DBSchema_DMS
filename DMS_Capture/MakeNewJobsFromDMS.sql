@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[MakeNewJobsFromDMS]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/27/2019 mem - Use GetDatasetCapturePriority to determine capture job priority using dataset name and instrument group
+**          02/03/2023 bcg - Update column names for V_DMS_Get_New_Datasets
 **    
 *****************************************************/
 (
@@ -116,13 +117,13 @@ As
                                 Dataset_ID,
                                 Priority)
             SELECT CASE
-                       WHEN Src.IN_Group = 'IMS' THEN 'IMSDatasetCapture'
+                       WHEN Src.Instrument_Group = 'IMS' THEN 'IMSDatasetCapture'
                        ELSE 'DatasetCapture'
                    END AS Script,
                    '' AS [Comment],
                    Src.Dataset,
                    Src.Dataset_ID,
-                   dbo.GetDatasetCapturePriority(Src.Dataset, Src.IN_Group)
+                   dbo.GetDatasetCapturePriority(Src.Dataset, Src.Instrument_Group)
             FROM V_DMS_Get_New_Datasets Src
                  LEFT OUTER JOIN T_Jobs Target
                    ON Src.Dataset_ID = Target.Dataset_ID
@@ -141,13 +142,13 @@ As
         Begin -- <Preview>
 
             SELECT CASE
-                       WHEN Src.IN_Group = 'IMS' THEN 'IMSDatasetCapture'
+                       WHEN Src.Instrument_Group = 'IMS' THEN 'IMSDatasetCapture'
                        ELSE 'DatasetCapture'
                    END AS Script,
                    '' AS [Comment],
                    Src.Dataset,
                    Src.Dataset_ID,
-                   dbo.GetDatasetCapturePriority(Src.Dataset, Src.IN_Group) As Priority
+                   dbo.GetDatasetCapturePriority(Src.Dataset, Src.Instrument_Group) As Priority
             FROM V_DMS_Get_New_Datasets Src
                  LEFT OUTER JOIN T_Jobs Target
                    ON Src.Dataset_ID = Target.Dataset_ID

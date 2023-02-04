@@ -12,6 +12,7 @@ CREATE FUNCTION [dbo].[GetMyEMSLTransactionIdURLs]
 **
 **  Auth:   mem
 **  Date:   02/28/2018 mem - Initial version
+**          02/03/2023 bcg - Update column names for S_V_MyEMSL_DatasetID_TransactionID
 **    
 *****************************************************/
 (
@@ -23,13 +24,13 @@ BEGIN
     DECLARE @list varchar(3500) = ''
 
     SELECT @list = @list + CASE
-                               WHEN @list = '' THEN 'https://status.my.emsl.pnl.gov/view/' + Cast(TransactionID AS varchar(12))
-                               ELSE ', https://status.my.emsl.pnl.gov/view/' + Cast(TransactionID AS varchar(12))
+                               WHEN @list = '' THEN 'https://status.my.emsl.pnl.gov/view/' + Cast(Transaction_ID AS varchar(12))
+                               ELSE ', https://status.my.emsl.pnl.gov/view/' + Cast(Transaction_ID AS varchar(12))
                            END
     FROM S_V_MyEMSL_DatasetID_TransactionID
     WHERE Dataset_ID = @datasetID AND
           Verified > 0
-    ORDER BY TransactionID
+    ORDER BY Transaction_ID
 
     RETURN IsNull(@list, '')
 END

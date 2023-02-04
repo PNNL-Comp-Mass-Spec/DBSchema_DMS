@@ -3,18 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeNewJobsFromDMSArchiveReqd
+
+CREATE PROCEDURE [dbo].[MakeNewJobsFromDMSArchiveReqd]
 /****************************************************
 **
-**	Desc: 
+**  Desc: 
 **    create new jobs from DMS datasets 
 **    that are in archive required state
 **	
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	grk
-**	Date:	12/17/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**			01/30/2017 mem - Switch from DateDiff to DateAdd
+**  Auth:   grk
+**  Date:   12/17/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**          01/30/2017 mem - Switch from DateDiff to DateAdd
+**          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
 **    
 *****************************************************/
 (
@@ -49,9 +51,9 @@ As
 	SELECT Dataset,
 	       Dataset_ID
 	FROM V_DMS_Dataset_Archive_Status
-	WHERE AS_state_ID = 1 AND
-	      DS_state_ID = 3 AND
-	      AS_state_Last_Affected > DateAdd(day, -@ImportWindowDays, GetDate())
+	WHERE Archive_State_ID = 1 AND
+	      Dataset_State_ID = 3 AND
+	      Archive_State_Last_Affected > DateAdd(day, -@ImportWindowDays, GetDate())
 	--
 	SELECT @myError = @@error, @myRowCount = @@rowcount
 	--
