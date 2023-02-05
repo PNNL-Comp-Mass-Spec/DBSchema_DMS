@@ -4,19 +4,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+
 CREATE VIEW [dbo].[V_Protein_Collections_Detail_Report]
 AS
-SELECT PC.Protein_Collection_ID AS [Collection ID],
+SELECT PC.Protein_Collection_ID AS Collection_ID,
        PC.Collection_Name AS Name,
        PC.Description,
-       PC.NumProteins AS [Protein Count],
-       PC.NumResidues AS [Residue Count],
+       PC.NumProteins AS Protein_Count,
+       PC.NumResidues AS Residue_Count,
        PC.DateCreated AS Created,
-       PC.DateModified AS [Last Modified],
+       PC.DateModified AS Last_Modified,
        dbo.T_Protein_Collection_Types.Type,
        PCS.State,
-       PC.Authentication_Hash AS [CRC32 Fingerprint],
-       NameAuth.Name AS [Original Naming Authority]
+       PC.Authentication_Hash AS CRC32_Fingerprint,
+       NameAuth.Name AS Original_Naming_Authority
 FROM dbo.T_Annotation_Types AnType
      INNER JOIN dbo.T_Naming_Authorities NameAuth
        ON AnType.Authority_ID = NameAuth.Authority_ID

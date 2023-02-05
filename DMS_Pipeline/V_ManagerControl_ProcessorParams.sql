@@ -6,9 +6,9 @@ GO
 
 CREATE VIEW [dbo].[V_ManagerControl_ProcessorParams]
 AS
-SELECT MP.ManagerID, MP.ManagerName, MP.ManagerType, 
-    MP.ParameterName, MP.ParameterValue
-FROM ProteinSeqs.Manager_Control.dbo.V_MgrParams MP
+SELECT MP.Manager_ID, MP.Manager_Name, MP.Manager_Type, 
+    MP.Parameter_Name, MP.Parameter_Value
+FROM ProteinSeqs.Manager_Control.dbo.V_Mgr_Params MP
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_ManagerControl_ProcessorParams] TO [DDL_Viewer] AS [dbo]
