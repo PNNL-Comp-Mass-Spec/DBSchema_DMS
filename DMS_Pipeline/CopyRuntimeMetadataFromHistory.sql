@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
 **          04/27/2018 mem - Use T_Job_Steps instead of V_Job_Steps so we can see the Start and Finish times for the job step (and not Remote_Start or Remote_Finish)
 **          01/04/2021 mem - Add support for PRIDE_Converter jobs
 **          11/14/2022 mem - Fix bug referencing the wrong column
+**          02/06/2023 bcg - Update after view column rename
 **    
 *****************************************************/
 (
@@ -282,7 +283,7 @@ As
            JS.Dataset,
            JS.Step,
            JS.Tool,
-           JS.StateName,
+           JS.State_Name,
            JS.State,
            JSH.State as New_State,
            JS.Start,

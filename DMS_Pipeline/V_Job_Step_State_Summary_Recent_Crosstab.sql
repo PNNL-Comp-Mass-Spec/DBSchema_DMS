@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Job_Step_State_Summary_Recent_Crosstab]
 AS
 SELECT PivotData.State,
-       PivotData.StateName AS Job_State,
+       PivotData.State_Name AS Job_State,
        IsNull([DataExtractor], 0) AS [DataExtractor],
        IsNull([Decon2LS_V2], 0) AS [Decon2LS_V2],
        IsNull([DTA_Gen], 0) AS [DTA_Gen],
@@ -24,10 +24,10 @@ SELECT PivotData.State,
        IsNull([SMAQC], 0) AS [SMAQC]
 FROM ( SELECT Step_Tool,
               State,
-              StateName,
-              StepCount
+              State_Name,
+              Step_Count
        FROM V_Job_Step_State_Summary_Recent ) AS SourceTable
-     PIVOT ( Sum(StepCount)
+     PIVOT ( Sum(Step_Count)
              FOR Step_Tool
              IN ( [DataExtractor], [Decon2LS_V2], [DTA_Gen], [DTA_Refinery], [MASIC_Finnigan], 
              [MSGFPlus], [MSPathFinder], [MSXML_Gen], [Mz_Refinery], [PBF_Gen], 

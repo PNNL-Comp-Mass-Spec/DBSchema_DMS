@@ -5,10 +5,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE VIEW [dbo].[V_Job_Processing_Time]
-As
+AS
 SELECT Job,
-       SUM(MaxSecondsElapsedByTool) / 60.0 AS ProcessingTimeMinutes,
-       SUM(MaxSecondsElapsedByTool_CompletedSteps) / 60.0 AS ProcTimeMinutes_CompletedSteps
+       SUM(MaxSecondsElapsedByTool) / 60.0 AS Processing_Time_Minutes,
+       SUM(MaxSecondsElapsedByTool_CompletedSteps) / 60.0 AS Proc_Time_Minutes_Completed_Steps
 FROM ( SELECT Job,
               Step_Tool,
               MAX(ISNULL(SecondsElapsedComplete, 0) + ISNULL(SecondsElapsedInProgress, 0)) AS MaxSecondsElapsedByTool,
@@ -32,11 +32,10 @@ FROM ( SELECT Job,
                               CASE WHEN (NOT Start IS NULL) AND Finish IS NULL 
                               THEN DATEDIFF(second, Start, GetDate())
                               ELSE NULL END
-		           END As SecondsElapsedInProgress
+                     END AS SecondsElapsedInProgress
               FROM dbo.T_Job_Steps ) AS StatsQ
        GROUP BY Job, Step_Tool ) AS StepToolQ
 GROUP BY Job
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Processing_Time] TO [DDL_Viewer] AS [dbo]

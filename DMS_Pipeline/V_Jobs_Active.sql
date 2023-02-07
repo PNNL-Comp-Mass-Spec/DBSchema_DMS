@@ -19,7 +19,7 @@ SELECT J.Job,
        D.AJ_SettingsFileName AS Settings_File_Name,
        J.Results_Folder_Name,
        J.Transfer_Folder_Path,
-       Row_Number() OVER ( ORDER BY CASE WHEN J.Job_State_B = 'Failed' THEN 'a' ELSE J.Job_State_B END DESC, J.Job ) AS SortOrder
+       Row_Number() OVER ( ORDER BY CASE WHEN J.Job_State_B = 'Failed' THEN 'a' ELSE J.Job_State_B END DESC, J.Job ) AS Sort_Order
 FROM V_Pipeline_Jobs_List_Report J
      LEFT OUTER JOIN V_DMS_Analysis_Job_Processor_Group_Association_Recent AJPGA
        ON J.Job = AJPGA.Job
@@ -53,7 +53,6 @@ FROM V_DMS_Pipeline_Jobs D
        ON D.Job = J.Job
 WHERE D.State IN (1, 8) AND
       J.Job IS NULL
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Jobs_Active] TO [DDL_Viewer] AS [dbo]

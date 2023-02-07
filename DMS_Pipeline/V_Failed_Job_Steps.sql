@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_Failed_Job_Steps]
 AS
 SELECT JS.Job, JS.Dataset, JS.Step, JS.Script, JS.Tool, 
-    JS.StateName, JS.State, JS.Start, JS.Finish, 
+    JS.State_Name, JS.State, JS.Start, JS.Finish, 
     JS.RunTime_Minutes, JS.Processor, LocalProcs.Machine, 
     JS.Input_Folder, JS.Output_Folder,
     JS.Completion_Code, JS.Completion_Message, 
@@ -32,7 +32,6 @@ WHERE (JS.State = 6) OR
 		-- Use a Bitwise Or to look for Evaluation_Codes that include Code 2,
 		--  which indicates for Sequest that NodeCountActive is less than the expected value
       (JS.Evaluation_Code & 2) = 2 AND Start >= DATEADD(day, -2, GETDATE())
-  
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Failed_Job_Steps] TO [DDL_Viewer] AS [dbo]

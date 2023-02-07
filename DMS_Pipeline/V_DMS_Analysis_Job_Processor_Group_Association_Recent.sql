@@ -11,8 +11,8 @@ SELECT Group_Name,
        [State],
        Dataset,
        Tool,
-       [Param File],
-       [Settings File]
+       [Param File] AS Param_File,
+       [Settings File] AS Settings_File
 FROM S_DMS_V_Analysis_Job_Processor_Group_Association_Recent
 
 GO

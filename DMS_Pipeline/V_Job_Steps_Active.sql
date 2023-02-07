@@ -10,21 +10,21 @@ SELECT Job,
        Step,
        Script,
        Tool,
-       StateName AS Step_State,
+       State_Name AS Step_State,
        Job_State_Name AS Job_State,
        Dataset,
        Start,
        Finish,
        Runtime_Minutes,
        Processor,
-       CONVERT(decimal(9, 1), LastCPUStatus_Minutes / 60.0) AS LastCPUStatus_Hours,
+       CONVERT(decimal(9, 1), Last_CPU_Status_Minutes / 60.0) AS Last_CPU_Status_Hours,
        Job_Progress,
        RunTime_Predicted_Hours,
        Priority,
        Settings_File,
        Parameter_File,
        State,
-       Row_Number() OVER (ORDER BY Case When State = 4 Then -2 When State = 6 Then -1 Else State End, Job DESC, Step) as SortOrder
+       Row_Number() OVER (ORDER BY Case When State = 4 Then -2 When State = 6 Then -1 Else State End, Job DESC, Step) as Sort_Order
 FROM ( SELECT JS.Job,
               JS.Dataset,
               JS.Step,
@@ -32,15 +32,15 @@ FROM ( SELECT JS.Job,
               JS.Tool,
               JS.State,
               CASE WHEN FailedJobQ.Job IS NULL OR JS.State = 6
-				THEN JS.StateName
-				ELSE JS.StateName + ' (Failed in T_Jobs)'
-              END AS StateName,
+				THEN JS.State_Name
+				ELSE JS.State_Name + ' (Failed in T_Jobs)'
+              END AS State_Name,
               AJ.AJ_SettingsFileName AS Settings_File,
               AJ.AJ_ParmFileName AS Parameter_File,
               JS.Start,
               JS.Finish,
               JS.RunTime_Minutes,
-              JS.LastCPUStatus_Minutes,
+              JS.Last_CPU_Status_Minutes,
               JS.Job_Progress,
               JS.RunTime_Predicted_Hours,
               JS.Processor,
@@ -76,9 +76,6 @@ FROM ( SELECT JS.Job,
              (JS.Start >= DATEADD(day, -1, GETDATE()) ) OR								-- Job started within the last day
              (NOT FailedJobQ.Job IS Null)												-- Job failed in T_Jobs (within the last 21 days)
    ) DataQ
-
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_Active] TO [DDL_Viewer] AS [dbo]

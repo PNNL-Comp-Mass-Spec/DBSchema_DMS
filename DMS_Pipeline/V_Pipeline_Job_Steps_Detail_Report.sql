@@ -53,7 +53,7 @@ SELECT JS.Job_Plus_Step AS id,
        JS.evaluation_message,
        JS2.Dataset_Folder_Path AS dataset_folder_path,
        J.Transfer_Folder_Path AS transfer_folder_path,
-       JS2.LogFilePath AS log_file_path,
+       JS2.Log_File_Path AS log_file_path,
        JS.next_try,
        JS.retry_count,
        JS.Remote_Info_ID As remote_info_id,
@@ -76,7 +76,6 @@ FROM dbo.T_Job_Steps AS JS
        ON JS.Processor = PS.Processor_Name
      LEFT OUTER JOIN dbo.T_Remote_Info RI
        ON RI.Remote_Info_ID = JS.Remote_Info_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Job_Steps_Detail_Report] TO [DDL_Viewer] AS [dbo]

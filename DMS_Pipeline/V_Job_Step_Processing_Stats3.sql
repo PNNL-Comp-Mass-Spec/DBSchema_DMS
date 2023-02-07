@@ -21,10 +21,10 @@ SELECT DataQ.Entered,
        Runtime_Predicted_Hours_Snapshot,
        Current_RunTime_Predicted_Hours,
        Processor,
-       ProgRunner_CoreUsage,
+       Prog_Runner_Core_Usage,
        CPU_Load,
        Actual_CPU_Load,
-       Current_StateName,
+       Current_State_Name,
        Current_State,
        Transfer_Folder_Path,
        LogFolderPath + 
@@ -38,7 +38,7 @@ SELECT DataQ.Entered,
          CASE WHEN LEN(TheDay) = 1 THEN '0' + TheDay
          ELSE TheDay
          END + '-' + 
-         TheYear + '.txt' AS LogFilePath
+         TheYear + '.txt' AS Log_File_Path
 FROM ( SELECT JSPS.Entered,
               JSPS.Job,
               J.Dataset,
@@ -54,10 +54,10 @@ FROM ( SELECT JSPS.Entered,
               JSPS.RunTime_Predicted_Hours AS Runtime_Predicted_Hours_Snapshot,
               JS.RunTime_Predicted_Hours AS Current_RunTime_Predicted_Hours,
               JSPS.Processor,
-              JSPS.ProgRunner_CoreUsage,
+              JSPS.ProgRunner_CoreUsage AS Prog_Runner_Core_Usage,
               JSPS.CPU_Load,
               JSPS.Actual_CPU_Load,
-              JSN.Name AS Current_StateName,
+              JSN.Name AS Current_State_Name,
               JS.State AS Current_State,
               JS.Transfer_Folder_Path,
               '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
@@ -84,7 +84,6 @@ FROM ( SELECT JSPS.Entered,
      WHERE (Entered >= DATEADD(day, - 5, GETDATE()))
      GROUP BY Job, Step
      HAVING (COUNT(*) > 25)) FilterQ ON DataQ.Job = FilterQ.Job AND DataQ.Step = FilterQ.Step
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Step_Processing_Stats3] TO [DDL_Viewer] AS [dbo]

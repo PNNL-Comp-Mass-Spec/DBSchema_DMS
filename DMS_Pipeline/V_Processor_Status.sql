@@ -10,7 +10,7 @@ SELECT PS.Processor_Name,
        ISNULL(PS.Mgr_Status, 'Unknown_Status') AS Mgr_Status,
        ISNULL(PS.Task_Status, 'Unknown_Status') AS Task_Status,
        ISNULL(PS.Task_Detail_Status, 'Unknown_Status') AS Task_Detail_Status,
-       CONVERT(decimal(9, 1), DATEDIFF(second, Status_Date, GETDATE()) / 60.0) AS LastCPUStatus_Minutes,
+       CONVERT(decimal(9, 1), DATEDIFF(second, Status_Date, GETDATE()) / 60.0) AS Last_CPU_Status_Minutes,
        PS.Job,
        PS.Job_Step,
        CONVERT(decimal(9, 2), PS.Progress) AS Progress,
@@ -37,7 +37,6 @@ FROM dbo.T_Processor_Status AS PS
      LEFT OUTER JOIN T_Machines M
        ON LP.Machine = M.Machine          
 WHERE (Monitor_Processor <> 0)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Processor_Status] TO [DDL_Viewer] AS [dbo]

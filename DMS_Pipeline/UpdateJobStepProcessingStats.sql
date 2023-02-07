@@ -3,19 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateJobStepProcessingStats
+
+CREATE PROCEDURE [dbo].[UpdateJobStepProcessingStats]
 /****************************************************
 **
-**	Desc: 
+**  Desc: 
 **		Appends new entries to T_Job_Step_Processing_Stats,
 **		showing details of running job steps
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
+**  Parameters: 
 **
-**		Auth: mem
-**		Date: 11/23/2015
+**  Auth:   mem
+**          11/23/2015 mem - initial release
+**          02/06/2023 bcg - Update after view column rename
 **    
 *****************************************************/
 (
@@ -104,7 +106,7 @@ AS
 		       RunTime_Minutes,
 		       Job_Progress,
 		       RunTime_Predicted_Hours,
-		       ProgRunner_CoreUsage,
+		       Prog_Runner_Core_Usage AS ProgRunner_CoreUsage,
 		       CPU_Load,
 		       Actual_CPU_Load
 		FROM V_Job_Steps

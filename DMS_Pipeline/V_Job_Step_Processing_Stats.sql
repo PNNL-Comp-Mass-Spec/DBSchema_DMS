@@ -22,10 +22,10 @@ SELECT JSPS.Entered,
        JS.RunTime_Predicted_Hours AS Current_RunTime_Predicted_Hours,
        JSPS.Processor,
        LP.Machine,
-       JSPS.ProgRunner_CoreUsage,
+       JSPS.ProgRunner_CoreUsage AS Prog_Runner_Core_Usage,
        JSPS.CPU_Load,
        JSPS.Actual_CPU_Load,
-       JSN.Name AS Current_StateName,
+       JSN.Name AS Current_State_Name,
        JS.State AS Current_State
 FROM T_Job_Step_Processing_Stats JSPS
      LEFT OUTER JOIN V_Job_Steps JS

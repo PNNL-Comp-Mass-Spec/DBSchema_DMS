@@ -13,7 +13,7 @@ SELECT JS.Job,
        JS.Step_Tool AS Tool,
        ParamQ.Settings_File,
        ParamQ.Parameter_File,
-       SSN.Name AS StateName,
+       SSN.Name AS State_Name,
        JS.State,
        JS.Start,
        JS.Finish,
@@ -66,8 +66,6 @@ FROM T_Step_Tool_Versions STV
           WHERE Most_Recent_Entry = 1
      ) ParamQ ON ParamQ.Job = JS.Job
 WHERE J.Most_Recent_Entry = 1
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_History2] TO [DDL_Viewer] AS [dbo]

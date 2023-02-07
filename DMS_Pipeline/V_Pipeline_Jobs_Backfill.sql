@@ -18,15 +18,14 @@ SELECT J.Job,
        J.Transfer_Folder_Path,
        J.[Comment],
        J.Owner,
-       JPT.ProcessingTimeMinutes,
-       J.DataPkgID
+       JPT.Processing_Time_Minutes,
+       J.DataPkgID AS Data_Pkg_ID
 FROM T_Jobs J
      INNER JOIN T_Scripts S
        ON J.Script = S.Script
      INNER JOIN V_Job_Processing_Time JPT
        ON J.Job = JPT.Job
 WHERE (S.Backfill_to_DMS = 1)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Jobs_Backfill] TO [DDL_Viewer] AS [dbo]

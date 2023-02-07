@@ -99,10 +99,11 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          06/15/2017 mem - Expand @comment to varchar(512)
 **          10/16/2017 mem - Remove the leading semicolon from @comment
 **          01/19/2018 mem - Populate column Runtime_Minutes in T_Jobs
-**                         - Use column ProcTimeMinutes_CompletedSteps in V_Job_Processing_Time
+**                         - Use column Proc_Time_Minutes_Completed_Steps in V_Job_Processing_Time
 **          05/10/2018 mem - Append to the job comment, rather than replacing it (provided the job completed successfully)
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          03/12/2021 mem - Expand @comment to varchar(1024)
+**          02/06/2023 bcg - Update column names from views
 **    
 *****************************************************/
 (
@@ -363,7 +364,7 @@ As
             --  therefore, we use a Max(ProcessingTime) on steps with the same Step Tool name
             ---------------------------------------------------
     
-            SELECT @ProcessingTimeMinutes = ProcTimeMinutes_CompletedSteps
+            SELECT @ProcessingTimeMinutes = Proc_Time_Minutes_Completed_Steps
             FROM V_Job_Processing_Time
             WHERE Job = @job
             --

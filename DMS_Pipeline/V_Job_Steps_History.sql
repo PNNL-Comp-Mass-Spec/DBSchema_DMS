@@ -11,7 +11,7 @@ SELECT JS.Job,
        JS.Step_Number AS Step,
        S.Script,
        JS.Step_Tool AS Tool,
-       SSN.Name AS StateName,
+       SSN.Name AS State_Name,
        JS.State,
        JS.Start,
        JS.Finish,
@@ -52,7 +52,6 @@ FROM T_Step_Tool_Versions STV
      LEFT OUTER JOIN T_Remote_Info RI
        ON JS.Remote_Info_ID = RI.Remote_Info_ID
 WHERE J.Most_Recent_Entry = 1
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_History] TO [DDL_Viewer] AS [dbo]

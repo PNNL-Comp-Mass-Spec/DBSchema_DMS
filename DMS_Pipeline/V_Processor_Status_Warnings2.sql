@@ -20,12 +20,12 @@ SELECT Processor_Name,
        Step,
        Script,
        Tool,
-       StateName As State_Name,
+       State_Name,
        State,
        Start,
        Finish,
        RunTime_Minutes,
-       LastCPUStatus_Minutes AS Last_CPU_Status_Minutes,
+       Last_CPU_Status_Minutes,
        Job_Progress,
        RunTime_Predicted_Hours
 FROM ( SELECT *,
@@ -35,7 +35,6 @@ FROM ( SELECT *,
               ON PS.Processor_Name = JS.Processor 
      ) LookupQ
 WHERE StartRank = 1
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Processor_Status_Warnings2] TO [DDL_Viewer] AS [dbo]

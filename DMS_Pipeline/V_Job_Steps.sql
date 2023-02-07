@@ -11,12 +11,12 @@ SELECT  JS.Job,
         JS.Step,
         JS.Script,
         JS.Tool,
-        JS.StateName,
+        JS.State_Name,
         JS.State,
         JS.Start,
         JS.Finish,
         JS.RunTime_Minutes,
-        DATEDIFF(minute, PS.Status_Date, GetDate()) AS LastCPUStatus_Minutes,
+        DATEDIFF(minute, PS.Status_Date, GetDate()) AS Last_CPU_Status_Minutes,
         CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) THEN JS.Remote_Progress
              WHEN JS.State = 4 THEN PS.Progress 
              WHEN JS.State IN (3, 5) THEN 100             
@@ -30,8 +30,8 @@ SELECT  JS.Job,
         END AS RunTime_Predicted_Hours,
         JS.Processor,
         CASE WHEN JS.State = 4 THEN PS.Process_ID ELSE NULL END AS Process_ID,
-        CASE WHEN JS.State = 4 THEN PS.ProgRunner_ProcessID ELSE NULL END AS ProgRunner_ProcessID,
-        CASE WHEN JS.State = 4 THEN PS.ProgRunner_CoreUsage ELSE NULL END AS ProgRunner_CoreUsage,
+        CASE WHEN JS.State = 4 THEN PS.ProgRunner_ProcessID ELSE NULL END AS Prog_Runner_Process_ID,
+        CASE WHEN JS.State = 4 THEN PS.ProgRunner_CoreUsage ELSE NULL END AS Prog_Runner_Core_Usage,
         CASE WHEN JS.State = 4 AND NOT (PS.Job = JS.Job AND PS.Job_Step = JS.Step)
              THEN 'Error, running job ' + Cast(PS.Job as varchar(12)) + ', step ' + Cast(PS.Job_Step as varchar(9))
              ELSE ''
@@ -59,13 +59,13 @@ SELECT  JS.Job,
         JS.Remote_Finish,
         JS.Remote_Progress,
         JS.Dataset_ID,
-        JS.DataPkgID,
+        JS.DataPkgID AS Data_Pkg_ID,
         JS.Transfer_Folder_Path,
         '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
             CASE WHEN JS.Processor LIKE '%-[1-9]' 
             THEN RIGHT(JS.Processor, 1)
             ELSE ''
-            END + '\Logs\' AS LogFilePath
+            END + '\Logs\' AS Log_File_Path
 FROM (
     SELECT JS.Job,
            J.Dataset,
@@ -74,7 +74,7 @@ FROM (
            JS.Step_Number AS Step,
            S.Script,
            JS.Step_Tool AS Tool,
-           SSN.Name AS StateName,
+           SSN.Name AS State_Name,
            JS.State,
            CASE WHEN JS.State <> 4 AND NOT JS.Remote_Start IS NULL
                 THEN JS.Remote_Start

@@ -12,8 +12,8 @@ SELECT Warning_Message,
        CONVERT(int, RunTime_Minutes) AS RunTime_Minutes,
        CONVERT(decimal(9, 1), Job_Progress) AS Job_Progress,
        RunTime_Predicted_Hours,
-       StateName As State_Name,
-       CONVERT(decimal(9, 1), LastCPUStatus_Minutes / 60.0) AS Last_CPU_Status_Hours,
+       State_Name,
+       CONVERT(decimal(9, 1), Last_CPU_Status_Minutes / 60.0) AS Last_CPU_Status_Hours,
        Processor,
        Start,
        Step,
@@ -22,7 +22,7 @@ SELECT Warning_Message,
        Parameter_File,
        Completion_Message,
        Evaluation_Message
-FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.LastCPUStatus_Minutes >= 4*60 )         THEN 'No status update for 4 hours'
+FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.Last_CPU_Status_Minutes >= 4*60 )         THEN 'No status update for 4 hours'
                     WHEN (JS.State = 4 AND RunTime_Predicted_Hours >= 36 )            THEN 'Job predicted to run over 36 hours'
                     WHEN (JS.State = 4 AND DATEDIFF(day, JS.Start, GetDate()) >= 4 )  THEN 'Job step running over 4 days'
                     WHEN (JS.State IN (6, 16) AND JS.Start >= DATEADD(day, -14, GETDATE()) ) THEN 'Job step failed within the last 14 days'
@@ -39,15 +39,15 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.LastCPUStatus_Minutes >= 4*60 )   
               JS.State,
               CASE
                   WHEN JS.State = 4 THEN 'Stale'
-                  ELSE CASE WHEN FailedJobQ.Job IS NULL OR JS.State in (6, 16) THEN JS.StateName
-                       ELSE JS.StateName + ' (Failed in T_Jobs)'
+                  ELSE CASE WHEN FailedJobQ.Job IS NULL OR JS.State in (6, 16) THEN JS.State_Name
+                       ELSE JS.State_Name + ' (Failed in T_Jobs)'
                        END
-              END AS StateName,
+              END AS State_Name,
               AJ.AJ_SettingsFileName AS Settings_File,
               AJ.AJ_ParmFileName AS Parameter_File,
               JS.Start,
               JS.RunTime_Minutes,
-              JS.LastCPUStatus_Minutes,
+              JS.Last_CPU_Status_Minutes,
               JS.Job_Progress,
               JS.RunTime_Predicted_Hours,
               JS.Processor,
@@ -78,7 +78,6 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.LastCPUStatus_Minutes >= 4*60 )   
               ON JS.Job = AJ.AJ_jobID
    ) DataQ
 WHERE Warning_Message <> ''
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_Stale_and_Failed] TO [DDL_Viewer] AS [dbo]

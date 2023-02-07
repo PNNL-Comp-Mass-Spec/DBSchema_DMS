@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
 **          07/01/2022 mem - Use new parameter name for parameter file when querying V_Pipeline_Job_Parameters
 **          07/29/2022 mem - Settings file names can no longer be null
 **          10/04/2022 mem - Assure that auto-generated dataset names only contain alphanumeric characters (plus underscore or dash)
+**          02/06/2023 bcg - Update column names from views
 **
 *****************************************************/
 (
@@ -151,8 +152,8 @@ AS
                PJ.Transfer_Folder_Path,
                PJ.[Comment],
                PJ.Owner,
-               PJ.ProcessingTimeMinutes,
-               PJ.DataPkgID
+               PJ.Processing_Time_Minutes,
+               PJ.Data_Pkg_ID
         FROM S_V_Pipeline_Jobs_Backfill PJ
              LEFT OUTER JOIN T_Analysis_Job J
                ON PJ.Job = J.AJ_jobID
@@ -183,8 +184,8 @@ AS
                      @transferFolderPath = PJ.Transfer_Folder_Path,
                      @comment = PJ.[Comment],
                      @owner = PJ.Owner,
-                     @processingTimeMinutes = PJ.ProcessingTimeMinutes,
-                     @dataPackageID = PJ.DataPkgID
+                     @processingTimeMinutes = PJ.Processing_Time_Minutes,
+                     @dataPackageID = PJ.Data_Pkg_ID
         FROM S_V_Pipeline_Jobs_Backfill PJ
              LEFT OUTER JOIN T_Analysis_Job J
                ON PJ.Job = J.AJ_jobID
@@ -691,7 +692,7 @@ NextJob:
                         PJ.State,
                         PJ.Start,
                         PJ.Finish,
-                        PJ.ProcessingTimeMinutes
+                        PJ.Processing_Time_Minutes AS ProcessingTimeMinutes
                     FROM S_V_Pipeline_Jobs_Backfill PJ
                 ) AS Source ( Job, Priority, State, Start, Finish, ProcessingTimeMinutes )
             ON (target.AJ_JobID = source.Job)
@@ -733,7 +734,6 @@ NextJob:
 Done:
 
     Return @myError
-
 
 
 GO

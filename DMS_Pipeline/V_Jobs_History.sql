@@ -10,7 +10,7 @@ SELECT JH.Job,
        JH.[Priority],
        JH.Script,
        JH.[State],
-       JSN.Name,
+       JSN.Name AS Job_State,
        JH.Dataset,
        JH.Dataset_ID,
        JH.Results_Folder_Name,
@@ -23,13 +23,12 @@ SELECT JH.Job,
        JH.Most_Recent_Entry,
        JH.Transfer_Folder_Path,
        JH.[Owner],
-       JH.DataPkgID,
+       JH.DataPkgID AS Data_Pkg_ID,
        JH.[Comment],
        JH.Special_Processing
 FROM T_Job_State_Name JSN
      INNER JOIN T_Jobs_History JH
        ON JSN.ID = JH.State
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Jobs_History] TO [DDL_Viewer] AS [dbo]

@@ -96,6 +96,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **                         - Update Remote_Info_ID when assigning a new job, both in T_Job_Steps and in T_Job_Step_Processing_Log
 **          02/21/2019 mem - Reset Completion_Code and Completion_Message when a job is assigned
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          02/06/2023 bcg - Update after view column rename
 **
 *****************************************************/
 (
@@ -454,7 +455,7 @@ As
                        RemoteInfo.Max_Running_Job_Steps,
                        JS.Job,
                        JS.Dataset,
-                       JS.StateName,
+                       JS.State_Name,
                        JS.State,
                        JS.Start,
                        JS.Finish

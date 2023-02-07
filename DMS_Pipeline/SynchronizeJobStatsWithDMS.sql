@@ -3,17 +3,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE SynchronizeJobStatsWithDMS
+
+CREATE PROCEDURE [dbo].[SynchronizeJobStatsWithDMS]
 /****************************************************
 **
-**	Desc: 
-**		Makes sure the job start/end times defined in T_Jobs match those in DMS
-**		Only processes jobs with a state of 4 or 5 in T_Jobs
+**  Desc: 
+**      Makes sure the job start/end times defined in T_Jobs match those in DMS
+**      Only processes jobs with a state of 4 or 5 in T_Jobs
 **	
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	mem
-**			02/27/2010 mem - Initial version
+**  Auth:   mem
+**          02/27/2010 mem - Initial version
+**          02/06/2023 bcg - Update column names from views
 **    
 *****************************************************/
 (
@@ -83,10 +85,10 @@ As
 		       Target.AJ_Finish AS Finish,
 		       T_Jobs.Finish AS FinishNew,
 		       Target.AJ_ProcessingTimeMinutes AS ProcTimeMinutes,
-		       JobProcTime.ProcessingTimeMinutes AS ProcTimeMinutesNew,
+		       JobProcTime.Processing_Time_Minutes AS ProcTimeMinutesNew,
 		       Abs(DateDiff(SECOND, AJ_Start, T_Jobs.Start)) AS StartDiffSeconds,
 		       Abs(DateDiff(SECOND, AJ_Finish, T_Jobs.Finish)) AS FinishDiffSeconds,
-		       Convert(decimal(9,2), Abs(IsNull(Target.AJ_ProcessingTimeMinutes, 0) - JobProcTime.ProcessingTimeMinutes)) AS ProcTimeDiffMinutes
+		       Convert(decimal(9,2), Abs(IsNull(Target.AJ_ProcessingTimeMinutes, 0) - JobProcTime.Processing_Time_Minutes)) AS ProcTimeDiffMinutes
 		FROM T_Jobs
 		     INNER JOIN S_DMS_T_Analysis_Job Target
 		       ON T_Jobs.Job = Target.AJ_JobID
@@ -96,7 +98,7 @@ As
 		       ON T_Jobs.Job = JobProcTime.Job
 		WHERE Abs(DateDiff(SECOND, IsNull(AJ_Start, '1/1/2000'), T_Jobs.Start)) > 1 OR
 		      Abs(DateDiff(SECOND, IsNull(AJ_Finish, '1/1/2000'), T_Jobs.Finish)) > 1 OR
-		      Abs(IsNull(Target.AJ_ProcessingTimeMinutes, 0) - JobProcTime.ProcessingTimeMinutes) > 0.1
+		      Abs(IsNull(Target.AJ_ProcessingTimeMinutes, 0) - JobProcTime.Processing_Time_Minutes) > 0.1
 		ORDER BY T_Jobs.Job
 
 	Else
@@ -104,7 +106,7 @@ As
 		UPDATE S_DMS_T_Analysis_Job
 		SET AJ_Start = T_Jobs.Start,
 		    AJ_Finish = T_Jobs.Finish,
-		    AJ_ProcessingTimeMinutes = JobProcTime.ProcessingTimeMinutes
+		    AJ_ProcessingTimeMinutes = JobProcTime.Processing_Time_Minutes
 		FROM T_Jobs
 		     INNER JOIN S_DMS_T_Analysis_Job Target
 		       ON T_Jobs.Job = Target.AJ_JobID
@@ -114,7 +116,7 @@ As
 		       ON T_Jobs.Job = JobProcTime.Job
 		WHERE Abs(DateDiff(SECOND, IsNull(AJ_Start, '1/1/2000'), T_Jobs.Start)) > 1 OR
 		      Abs(DateDiff(SECOND, IsNull(AJ_Finish, '1/1/2000'), T_Jobs.Finish)) > 1 OR
-		      Abs(IsNull(Target.AJ_ProcessingTimeMinutes, 0) - JobProcTime.ProcessingTimeMinutes) > 0.1
+		      Abs(IsNull(Target.AJ_ProcessingTimeMinutes, 0) - JobProcTime.Processing_Time_Minutes) > 0.1
 		--
 		SELECT @myError = @@error, @myRowCount = @@rowcount
 	    

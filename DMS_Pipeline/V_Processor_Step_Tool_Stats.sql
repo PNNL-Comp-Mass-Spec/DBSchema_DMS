@@ -8,9 +8,9 @@ CREATE VIEW [dbo].[V_Processor_Step_Tool_Stats]
 AS
 SELECT JS.Processor,
        JS.Step_Tool,
-       DATEPART(YEAR, JS.Start) AS TheYear,
-       DATEPART(MONTH, JS.Start) AS TheMonth,
-       COUNT(*) AS JobStepCount,
+       DATEPART(YEAR, JS.Start) AS The_Year,
+       DATEPART(MONTH, JS.Start) AS The_Month,
+       COUNT(*) AS Job_Step_Count,
        DateQ.Start_Max
 FROM dbo.T_Job_Steps JS
      INNER JOIN ( SELECT Processor,
@@ -23,6 +23,5 @@ FROM dbo.T_Job_Steps JS
           JS.Step_Tool = DateQ.Step_Tool
 WHERE (ISNULL(JS.Processor, '') <> '')
 GROUP BY JS.Processor, JS.Step_Tool, DATEPART(YEAR, JS.Start), DATEPART(MONTH, JS.Start), DateQ.Start_Max
-
 
 GO
