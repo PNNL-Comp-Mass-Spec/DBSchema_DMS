@@ -3,25 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Analysis_Status_Monitor2
+
+CREATE VIEW [dbo].[V_Analysis_Status_Monitor2]
 AS
-SELECT ISNULL(ASM.ID, LP.ID) AS ID,
-       ISNULL(ASM.Name, PS.Processor_Name) AS Name,
-       CASE
-           WHEN ASM.Name IS NULL THEN dbo.GetProcessorStepToolList(PS.Processor_Name)
-           ELSE CASE
-                    WHEN dbo.GetProcessorStepToolList(ASM.Name) = '' THEN ASM.Tools
-                    ELSE dbo.GetProcessorStepToolList(ASM.Name)
-                END
-       END AS Tools,
-       ISNULL(ASM.EnabledGroups, '') AS EnabledGroups,
-       ISNULL(ASM.DisabledGroups, '') AS DisabledGroups,
-       ISNULL(ASM.StatusFileNamePath, '') AS StatusFileNamePath,
-       ISNULL(ASM.CheckBoxState, 1) AS CheckBoxState,
-       ISNULL(ASM.UseForStatusCheck, 1) AS UseForStatusCheck,
-       ISNULL(PS.Mgr_Status, 'Unknown_Status') AS Mgr_Status_Name,
-       ISNULL(PS.Task_Status, 'Unknown_Status') AS Task_Status_Name,
-       ISNULL(PS.Task_Detail_Status, 'Unknown_Status') AS Task_Detail_Status_Name,
+SELECT LP.ID AS Processor_ID,
+       PS.Processor_Name,
+       dbo.GetProcessorStepToolList(PS.Processor_Name) AS Tools,
+       ISNULL(PS.Mgr_Status, 'Unknown_Status') AS Mgr_Status,
+       ISNULL(PS.Task_Status, 'Unknown_Status') AS Task_Status,
+       ISNULL(PS.Task_Detail_Status, 'Unknown_Status') AS Task_Detail_Status,
        PS.Job,
        PS.Job_Step,
        PS.Step_Tool,
@@ -35,13 +25,11 @@ SELECT ISNULL(ASM.ID, LP.ID) AS ID,
        PS.Most_Recent_Error_Message,
        PS.Status_Date,
        CONVERT(decimal(9, 1), DATEDIFF(SECOND, PS.Status_Date, GETDATE()) / 60.0) AS 
-         LastCPUStatus_Minutes
+         Last_CPU_Status_Minutes
 FROM dbo.T_Local_Processors AS LP
      RIGHT OUTER JOIN dbo.T_Processor_Status AS PS
        ON LP.Processor_Name = PS.Processor_Name
-     FULL OUTER JOIN dbo.S_DMS_Analysis_Status_Monitor AS ASM
-       ON PS.Processor_Name = ASM.Name
-WHERE (ISNULL(ASM.UseForStatusCheck, 1) > 0)
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor2] TO [DDL_Viewer] AS [dbo]
