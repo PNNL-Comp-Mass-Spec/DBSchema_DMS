@@ -8,12 +8,12 @@ CREATE VIEW [dbo].[V_Requested_Run_Batch_List_Report]
 AS
 SELECT RRB.id,
        RRB.Batch AS name,
-       ActiveReqSepGroups.requests,     -- Active requests
+       Active_Req_Runs.requests,        -- Active requests
        CompletedRequests.runs,          -- Completed requests (with datasets)
        SPQ.blocked,                     -- Requests with a block number
        SPQ.block_missing,
-       ActiveReqStats.first_request,
-       ActiveReqStats.last_request,
+       Active_Req_Runs.first_request,
+       Active_Req_Runs.last_request,
        RRB.Requested_Batch_Priority AS req_priority,
        CASE WHEN CompletedRequests.Runs > 0 THEN
                CASE WHEN CompletedRequests.InstrumentFirst = CompletedRequests.instrumentlast
@@ -26,28 +26,28 @@ SELECT RRB.id,
        RRB.description,
        T_Users.U_Name AS owner,
        RRB.created,
-       CASE WHEN ActiveReqSepGroups.Requests IS NULL
+       CASE WHEN Active_Req_Runs.Requests IS NULL
             THEN CompletedRequests.MaxDaysInQueue    -- No active requested runs for this batch
-            ELSE DATEDIFF(DAY, ISNULL(ActiveReqStats.oldest_request_created, CompletedRequests.Oldest_Request_Created), GETDATE())
+            ELSE DATEDIFF(DAY, ISNULL(Active_Req_Runs.oldest_request_created, CompletedRequests.Oldest_Request_Created), GETDATE())
        END AS days_in_queue,
        Cast(RRB.Requested_Completion_Date AS date) AS complete_by,
        SPQ.days_in_prep_queue,
        RRB.justification_for_high_priority,
        RRB.comment,
-       CASE WHEN ActiveReqSepGroups.SeparationGroupFirst = ActiveReqSepGroups.separationgrouplast
-            THEN ActiveReqSepGroups.separationgroupfirst
-            ELSE ActiveReqSepGroups.SeparationGroupFirst + ' - ' + ActiveReqSepGroups.separationgrouplast
+       CASE WHEN Active_Req_Runs.SeparationGroupFirst = Active_Req_Runs.separationgrouplast
+            THEN Active_Req_Runs.separationgroupfirst
+            ELSE Active_Req_Runs.SeparationGroupFirst + ' - ' + Active_Req_Runs.separationgrouplast
        END AS separation_group,
        CASE
-           WHEN ActiveReqSepGroups.Requests IS NULL THEN 0    -- No active requested runs for this batch
-           WHEN DATEDIFF(DAY, ActiveReqStats.oldest_request_created, GETDATE()) <= 30 THEN 30    -- Oldest active request in batch is 0 to 30 days old
-           WHEN DATEDIFF(DAY, ActiveReqStats.oldest_request_created, GETDATE()) <= 60 THEN 60    -- Oldest active request is 30 to 60 days old
-           WHEN DATEDIFF(DAY, ActiveReqStats.oldest_request_created, GETDATE()) <= 90 THEN 90    -- Oldest active request is 60 to 90 days old
+           WHEN Active_Req_Runs.Requests IS NULL THEN 0    -- No active requested runs for this batch
+           WHEN DATEDIFF(DAY, Active_Req_Runs.oldest_request_created, GETDATE()) <= 30 THEN 30    -- Oldest active request in batch is 0 to 30 days old
+           WHEN DATEDIFF(DAY, Active_Req_Runs.oldest_request_created, GETDATE()) <= 60 THEN 60    -- Oldest active request is 30 to 60 days old
+           WHEN DATEDIFF(DAY, Active_Req_Runs.oldest_request_created, GETDATE()) <= 90 THEN 90    -- Oldest active request is 60 to 90 days old
            ELSE 120                                                                              -- Oldest active request is over 90 days old
        END AS days_in_queue_bin
        /*
        CASE
-           WHEN ActiveReqSepGroups.Requests IS NULL OR
+           WHEN Active_Req_Runs.Requests IS NULL OR
                 CompletedRequests.MinDaysInQueue IS NULL THEN 0   -- No active requested runs for this batch
            WHEN CompletedRequests.MinDaysInQueue <= 30   THEN 30  -- Oldest request in batch is 0 to 30 days old
            WHEN CompletedRequests.MinDaysInQueue <= 60   THEN 60  -- Oldest request is 30 to 60 days old
@@ -61,16 +61,19 @@ FROM T_Requested_Run_Batches AS RRB
      LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
                               MIN(RDS_Sec_Sep) AS SeparationGroupFirst,
                               MAX(RDS_Sec_Sep) AS SeparationGroupLast,
-                              COUNT(*) AS Requests
+                              COUNT(*) AS requests,
+                              MIN(ID) AS First_Request,
+                              MAX(ID) AS Last_Request,
+                              MIN(RDS_created) AS Oldest_Request_Created
                        FROM T_Requested_Run AS RR1
                        WHERE (RDS_Status = 'Active')
                        GROUP BY RDS_BatchID
-                     ) AS ActiveReqSepGroups
-       ON ActiveReqSepGroups.BatchID = RRB.ID
+                     ) AS Active_Req_Runs
+       ON Active_Req_Runs.BatchID = RRB.ID
      LEFT OUTER JOIN ( SELECT RR2.RDS_BatchID AS BatchID,
                               COUNT(*) AS Runs,
                               MIN(RR2.RDS_created) AS Oldest_Request_Created,
-                              MIN(QT.Days_In_Queue) AS MinDaysInQueue,
+                              -- MIN(QT.Days_In_Queue) AS MinDaysInQueue,
                               MAX(QT.Days_In_Queue) AS MaxDaysInQueue,
                               MIN(InstName.IN_name) AS InstrumentFirst,
                               MAX(InstName.IN_name) AS InstrumentLast
@@ -85,16 +88,6 @@ FROM T_Requested_Run_Batches AS RRB
                        GROUP BY RR2.RDS_BatchID
                      ) AS CompletedRequests
        ON CompletedRequests.BatchID = RRB.ID
-     LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
-                              MIN(ID) AS First_Request,
-                              MAX(ID) AS Last_Request,
-                              MIN(RDS_created) AS Oldest_Request_Created
-                       FROM T_Requested_Run AS RR3
-                       WHERE (DatasetID IS NULL) AND
-                             (RDS_Status = 'Active')
-                       GROUP BY RDS_BatchID
-                     ) AS ActiveReqStats
-       ON ActiveReqStats.BatchID = RRB.ID
      LEFT OUTER JOIN ( SELECT RR4.RDS_BatchID AS BatchID,
                               MAX(QT.Days_In_Queue) AS Days_in_Prep_Queue,
                               SUM(CASE WHEN ISNULL(SPR.BlockAndRandomizeRuns, '') = 'yes'
