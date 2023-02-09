@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_Campaign_Entry]
 AS
 SELECT C.Campaign_Num AS campaign,
        C.CM_Project_Num AS project,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'PI', 'PRN') AS pi_prn,
+       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'PI', 'PRN') AS pi_username,
        dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Project Mgr', 'PRN') AS project_mgr,
        dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Technical Lead', 'PRN') AS technical_lead,
        dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Sample Preparation', 'PRN') AS sample_preparation_staff,
@@ -33,7 +33,6 @@ FROM T_Campaign C
        ON C.CM_EUS_Usage_Type = EUT.ID
      LEFT OUTER JOIN T_Research_Team
        ON C.CM_Research_Team = T_Research_Team.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Entry] TO [DDL_Viewer] AS [dbo]

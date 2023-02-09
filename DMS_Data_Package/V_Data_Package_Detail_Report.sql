@@ -11,8 +11,8 @@ SELECT DP.id,
        DP.package_type,
        DP.description,
        DP.comment,
-       ISNULL(U1.u_name, DP.Owner) AS owner,
-       ISNULL(U2.u_name, DP.Requester) AS requester,
+       ISNULL(U1.name, DP.Owner) AS owner,
+       ISNULL(U2.name, DP.Requester) AS requester,
        DP.Path_Team AS team,
        DP.created,
        DP.last_modified,
@@ -38,15 +38,14 @@ FROM dbo.T_Data_Package AS DP
      INNER JOIN dbo.V_Data_Package_Paths AS DPP
        ON DP.ID = DPP.ID
      LEFT OUTER JOIN S_V_Users U1
-       ON DP.Owner = U1.U_PRN
+       ON DP.Owner = U1.username
      LEFT OUTER JOIN S_V_Users U2
-       ON DP.Requester = U2.U_PRN
+       ON DP.Requester = U2.username
      LEFT OUTER JOIN ( SELECT ID,
                               Count(*) AS Campaigns
                        FROM V_Data_Package_Campaigns_List_Report
                        GROUP BY ID ) AS CampaignStats
        ON DP.ID = CampaignStats.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Detail_Report] TO [DDL_Viewer] AS [dbo]

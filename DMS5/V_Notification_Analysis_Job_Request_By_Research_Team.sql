@@ -14,7 +14,7 @@ SELECT DISTINCT TNE.ID AS seq,
                 person_role,
                 TNE.entered,
                 TET.Target_Entity_Type AS entity_type,
-                T.prn,
+                T.username,
                 TET.ID AS event_type,
                 TNE.Event_Type AS event_type_id,
                 TET.link_template
@@ -30,7 +30,7 @@ FROM T_Notification_Event TNE
                          T_Campaign.Campaign_Num AS Campaign,
                          T_Users.U_Name AS Person,
                          dbo.GetResearchTeamUserRoleList(SRTM.Team_ID, SRTM.User_ID) AS Person_Role,
-                         T_Users.U_PRN AS prn
+                         T_Users.U_PRN AS username
                   FROM T_Dataset
                        INNER JOIN T_Experiments
                          ON T_Dataset.Exp_ID = T_Experiments.Exp_ID
@@ -50,7 +50,6 @@ FROM T_Notification_Event TNE
        ON T.Dataset_ID = T_Analysis_Job.AJ_datasetID
 WHERE TET.Target_Entity_Type = 2 AND
       TET.Visible = 'Y'
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Notification_Analysis_Job_Request_By_Research_Team] TO [DDL_Viewer] AS [dbo]

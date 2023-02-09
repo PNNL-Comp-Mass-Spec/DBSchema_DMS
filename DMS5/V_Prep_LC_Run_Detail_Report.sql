@@ -16,7 +16,7 @@ SELECT TPR.id,
        TPR.Guard_Column AS guard_column,
        TPR.Quality_Control AS qc,
        TPR.created,
-       TPR.OperatorPRN AS operator_prn,
+       TPR.OperatorPRN AS operator_username,
        TPR.Digestion_Method AS digestion_method,
        TPR.Sample_Type AS sample_type,
        TPR.SamplePrepRequest AS sample_prep_request,
@@ -25,7 +25,6 @@ SELECT TPR.id,
        TPR.Instrument_Pressure AS instrument_pressure,
        dbo.GetHPLCRunDatasetList(TPR.id, 'name') AS datasets
 FROM T_Prep_LC_Run AS TPR
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_Detail_Report] TO [DDL_Viewer] AS [dbo]

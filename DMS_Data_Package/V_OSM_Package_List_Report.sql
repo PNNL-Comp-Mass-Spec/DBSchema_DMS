@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_OSM_Package_List_Report]
 AS
 SELECT TOSM.id,
@@ -11,14 +12,13 @@ SELECT TOSM.id,
        TOSM.description,
        TOSM.keywords,
        TOSM.comment,
-       TONR.U_Name + ' (' + ISNULL(TOSM.owner, '') + ')' AS owner,
+       TONR.name + ' (' + ISNULL(TOSM.owner, '') + ')' AS owner,
        TOSM.created,
        TOSM.state,
        TOSM.Last_Modified AS modified,
        TOSM.Sample_Prep_Requests AS sample_prep
 FROM dbo.T_OSM_Package AS TOSM
-        LEFT OUTER JOIN dbo.S_V_Users AS TONR ON TONR.U_PRN = TOSM.Owner
-
+        LEFT OUTER JOIN dbo.S_V_Users AS TONR ON TONR.username = TOSM.Owner
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_OSM_Package_List_Report] TO [DDL_Viewer] AS [dbo]

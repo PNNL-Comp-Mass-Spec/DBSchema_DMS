@@ -9,7 +9,7 @@ AS
 SELECT R.id,
        R.request_name,
        R.analysis_type,
-       R.requester_prn,
+       R.requester_prn AS requester_username,
        R.description,
        R.analysis_specifications,
        R.comment,
@@ -27,7 +27,6 @@ SELECT R.id,
 FROM T_Data_Analysis_Request AS R
      INNER JOIN T_Data_Analysis_Request_State_Name AS SN
        ON R.State = SN.State_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Analysis_Request_Entry] TO [DDL_Viewer] AS [dbo]

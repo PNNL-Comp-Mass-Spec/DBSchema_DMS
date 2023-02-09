@@ -9,7 +9,7 @@ AS
 SELECT E.Experiment_Num AS experiment,
        E.Exp_ID As id,
        C.Campaign_Num AS campaign,
-       E.EX_researcher_PRN AS researcher_prn,
+       E.EX_researcher_PRN AS researcher_username,
        Org.OG_name AS organism_name,
        E.EX_reason AS reason,
        E.EX_sample_concentration AS sample_concentration,
@@ -43,7 +43,6 @@ FROM T_Experiments E
        ON E.EX_Container_ID = MC.ID
 	LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
 	  ON E.EX_Tissue_ID = BTO.Identifier
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Entry] TO [DDL_Viewer] AS [dbo]

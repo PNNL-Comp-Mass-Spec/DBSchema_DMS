@@ -4,16 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
-
-
-
-CREATE VIEW dbo.V_Users
+CREATE VIEW [dbo].[V_Users]
 AS
-SELECT U_PRN, U_Name, ID
+SELECT U_PRN AS username,
+       U_Name AS name,
+       id
 FROM T_Users
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Users] TO [DDL_Viewer] AS [dbo]
 GO

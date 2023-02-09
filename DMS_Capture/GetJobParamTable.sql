@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          02/01/2023 mem - Use new synonym name
 **          02/03/2023 bcg - Use synonym name S_DMS_T_Instrument_Class instead of the view that wraps it
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Metadata
+**          02/03/2023 bcg - Replace Operator_PRN with Operator_Username
 **
 *****************************************************/
 (
@@ -137,7 +138,7 @@ AS
           CONVERT(varchar(2000), EUS_Instrument_ID) AS EUS_Instrument_ID,
           CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID,
           CONVERT(varchar(2000), EUS_Operator_ID) AS EUS_Operator_ID,
-          CONVERT(varchar(2000), Operator_PRN) AS Operator_PRN
+          CONVERT(varchar(2000), Operator_Username) AS Operator_Username
 
         FROM
           V_DMS_Dataset_Metadata
@@ -146,7 +147,7 @@ AS
       ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Directory, Method, Capture_Exclusion_Window, Created ,
                                            Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External,
                                            Archive_Server, Archive_Path, Archive_Network_Share_Path,
-                                           EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_PRN
+                                           EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_Username
                    ) ) as TP
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -283,7 +284,6 @@ AS
     ORDER BY [Section], [Name]
 
     RETURN @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [DDL_Viewer] AS [dbo]

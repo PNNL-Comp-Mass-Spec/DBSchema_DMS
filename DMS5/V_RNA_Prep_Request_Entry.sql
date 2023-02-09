@@ -7,7 +7,7 @@ GO
 CREATE VIEW [dbo].[V_RNA_Prep_Request_Entry]
 AS
 SELECT SPR.request_name,
-       SPR.requester_prn ,
+       SPR.requester_prn AS requester_username,
        SPR.reason,
        SPR.organism,
        SPR.biohazard_level,
@@ -30,7 +30,6 @@ SELECT SPR.request_name,
 FROM T_Sample_Prep_Request AS SPR
      INNER JOIN T_Sample_Prep_Request_State_Name SN
        ON SPR.State = SN.State_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_RNA_Prep_Request_Entry] TO [DDL_Viewer] AS [dbo]

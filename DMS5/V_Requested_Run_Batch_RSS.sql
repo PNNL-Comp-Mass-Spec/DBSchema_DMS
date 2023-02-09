@@ -10,7 +10,7 @@ SELECT TS.ID AS url_title,
        TS.post_date,
        CONVERT(varchar(12), TS.ID) + '_' + CONVERT(varchar(12), TS.num) AS guid,
        TU.U_Name + '|' + TS.Description + '|' + CONVERT(varchar(12), TS.num) + ' datasets' AS post_body,
-       TU.u_prn
+       TU.u_prn AS username
 FROM ( SELECT TB.ID,
               TB.Batch,
               MAX(TD.DS_created) AS post_date,
@@ -27,7 +27,6 @@ FROM ( SELECT TB.ID,
        HAVING (MAX(TD.DS_created) > DATEADD(DAY, - 30, GETDATE())) ) AS TS
      INNER JOIN T_Users AS TU
        ON TS.Owner = TU.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_RSS] TO [DDL_Viewer] AS [dbo]

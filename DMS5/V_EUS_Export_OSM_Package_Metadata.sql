@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_EUS_Export_OSM_Package_Metadata]
 AS
 SELECT TOSM.ID,
@@ -14,7 +13,7 @@ SELECT TOSM.ID,
        TOSM.Keywords,
        TOSM.Comment AS [Comment],
        TONR.U_Name AS Owner,
-       ISNULL(TOSM.Owner, '') as Owner_PRN,
+       ISNULL(TOSM.Owner, '') as Owner_Username,
        TOSM.Created,
        TOSM.Last_Modified AS Modified,
        TOSM.State,
@@ -22,7 +21,6 @@ SELECT TOSM.ID,
 FROM DMS_Data_Package.dbo.T_OSM_Package AS TOSM
      LEFT OUTER JOIN T_Users AS TONR
        ON TONR.U_PRN = TOSM.Owner
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_OSM_Package_Metadata] TO [DDL_Viewer] AS [dbo]

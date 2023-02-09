@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset]
 AS
 SELECT DS.dataset_id,
@@ -18,9 +17,9 @@ SELECT DS.dataset_id,
        DS.ds_last_affected,
        DS.ds_instrument_name_id,
        InstName.IN_name AS instrument,
-       DS.ds_oper_prn,
+       DS.ds_oper_prn AS operator_username,
        DS.ds_type_id,
-       DTN.DST_name AS [dataset type],
+       DTN.DST_name AS dataset_type,
        DS.ds_sec_sep,
        DS.ds_folder_name,
        DS.ds_storage_path_id,
@@ -54,7 +53,6 @@ FROM T_DatasetStateName DSN
        ON Exp.EX_campaign_ID = C.Campaign_ID
      INNER JOIN V_Dataset_Folder_Paths DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset] TO [DDL_Viewer] AS [dbo]

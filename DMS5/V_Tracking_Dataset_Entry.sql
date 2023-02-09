@@ -8,7 +8,7 @@ CREATE VIEW [dbo].[V_Tracking_Dataset_Entry]
 AS
 SELECT DS.Dataset_Num AS dataset,
        E.Experiment_Num AS experiment,
-       DS.DS_Oper_PRN AS oper_prn,
+       DS.DS_Oper_PRN AS operator_username,
        InstName.IN_name AS instrument_name,
        DS.Acq_Time_Start AS run_start,
        DS.Acq_Length_Minutes AS run_duration,
@@ -25,7 +25,6 @@ FROM T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
      INNER JOIN T_EUS_UsageType EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Tracking_Dataset_Entry] TO [DDL_Viewer] AS [dbo]

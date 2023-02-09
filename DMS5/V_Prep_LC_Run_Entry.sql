@@ -15,7 +15,7 @@ SELECT  id,
         comment,
         guard_column,
         created,
-        OperatorPRN AS operator_prn,
+        OperatorPRN AS operator_username,
         digestion_method,
         sample_type,
         number_of_runs,
@@ -24,7 +24,6 @@ SELECT  id,
         quality_control,
         dbo.GetHPLCRunDatasetList(ID, 'name') AS datasets
 FROM    T_Prep_LC_Run
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_Entry] TO [DDL_Viewer] AS [dbo]

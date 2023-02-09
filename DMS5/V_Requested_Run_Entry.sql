@@ -12,7 +12,7 @@ SELECT RR.ID AS request_id,
        RR.RDS_instrument_group AS instrument_group,
        DTN.DST_Name AS dataset_type,
        RR.RDS_Sec_Sep AS separation_group,
-       RR.RDS_Requestor_PRN AS requester_prn,
+       RR.RDS_Requestor_PRN AS requester_username,
        RR.RDS_instrument_setting AS instrument_settings,
        RR.RDS_Well_Plate_Num AS wellplate,
        RR.RDS_Well_Num AS well,
@@ -41,7 +41,6 @@ FROM T_Requested_Run AS RR
        ON RR.RDS_MRM_Attachment = dbo.T_Attachments.ID
      LEFT OUTER JOIN T_Material_Locations ML
        ON RR.Location_ID = ML.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Entry] TO [DDL_Viewer] AS [dbo]

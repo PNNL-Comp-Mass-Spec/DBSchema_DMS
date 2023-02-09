@@ -4,12 +4,11 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Entry]
 AS
 SELECT  SPR.id,
         SPR.request_name,
-        SPR.requester_prn,
+        SPR.requester_prn AS requester_username,
         SPR.Reason + '__NoCopy__' As reason,
         SPR.organism,
         BTO.tissue,
@@ -46,7 +45,6 @@ FROM T_Sample_Prep_Request AS SPR
        ON SPR.State = SN.State_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON SPR.Tissue_ID = BTO.Identifier
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Entry] TO [DDL_Viewer] AS [dbo]

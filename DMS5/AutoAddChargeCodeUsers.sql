@@ -22,6 +22,7 @@ CREATE Procedure [dbo].[AutoAddChargeCodeUsers]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/17/2022 mem - Tabs to spaces
+**          02/08/2023 bcg - Update view column name
 **
 *****************************************************/
 (
@@ -60,7 +61,7 @@ As
         FROM T_Charge_Code CC
              LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map UMap
                ON CC.Charge_Code = UMap.Charge_Code
-        WHERE UMap.U_PRN IS NULL AND
+        WHERE UMap.Username IS NULL AND
               CC.Charge_Code_State > 0 AND
               (CC.Usage_SamplePrep > 0 OR
                CC.Usage_RequestedRun > 0)

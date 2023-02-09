@@ -17,7 +17,7 @@ SELECT DS.Dataset_Num AS Dataset,
        TIN.IN_Capture_Exclusion_Window AS Capture_Exclusion_Window,
        EUSInst.EUS_Instrument_ID,
        RR.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
-	   DS.DS_Oper_PRN AS Operator_PRN,
+       DS.DS_Oper_PRN AS Operator_Username,
        IsNull(EUSProposalUser.EUS_User_ID, EUSUser.EUS_Person_ID) AS EUS_Operator_ID,
        DS.DS_created AS Created,
        TSrc.SP_path AS source_Path,
@@ -54,9 +54,8 @@ FROM S_DMS_T_Dataset AS DS
 	   ON DS.DS_Oper_PRN = EUSUser.Username
      LEFT OUTER JOIN S_DMS_V_EUS_Proposal_User_Lookup EUSProposalUser
        ON EUSProposalUser.Proposal_ID = RR.RDS_EUS_Proposal_ID And
-          DS.DS_Oper_PRN = EUSProposalUser.User_PRN And 
+          DS.DS_Oper_PRN = EUSProposalUser.Username And 
           EUSProposalUser.Valid_EUS_ID > 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Metadata] TO [DDL_Viewer] AS [dbo]

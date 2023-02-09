@@ -9,11 +9,11 @@ AS
 SELECT DP.id,
        DP.name,
        DP.description,
-       ISNULL(OwnerInfo.u_name, DP.Owner) AS owner,
+       ISNULL(OwnerInfo.name, DP.Owner) AS owner,
        DP.Path_Team AS team,
        DP.state,
        DP.package_type,
-       ISNULL(RequesterInfo.u_name, DP.Requester) AS requester,
+       ISNULL(RequesterInfo.name, DP.Requester) AS requester,
        DP.Total_Item_Count AS total,
        DP.Analysis_Job_Item_Count AS jobs,
        DP.Dataset_Item_Count AS datasets,
@@ -26,10 +26,9 @@ SELECT DP.id,
        DP.manuscript_doi
 FROM dbo.T_Data_Package DP
      LEFT OUTER JOIN S_V_Users OwnerInfo
-       ON DP.Owner = OwnerInfo.U_PRN
+       ON DP.Owner = OwnerInfo.username
      LEFT OUTER JOIN S_V_Users RequesterInfo
-       ON DP.Requester = RequesterInfo.U_PRN
-
+       ON DP.Requester = RequesterInfo.username
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_List_Report] TO [DDL_Viewer] AS [dbo]

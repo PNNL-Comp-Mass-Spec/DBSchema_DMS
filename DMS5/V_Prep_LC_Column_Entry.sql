@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Prep_LC_Column_Entry
+CREATE VIEW [dbo].[V_Prep_LC_Column_Entry]
 AS
 SELECT
 	column_name,
@@ -19,12 +19,11 @@ SELECT
 	column_outer_dia,
 	length,
 	state,
-	operator_prn,
+	operator_prn AS operator_username,
 	comment,
 	created,
 	id
 FROM T_Prep_LC_Column
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Column_Entry] TO [DDL_Viewer] AS [dbo]

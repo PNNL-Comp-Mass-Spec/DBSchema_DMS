@@ -4,18 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
-
-
-
-
-
-
-/****** Object:  View dbo.V_DatasetDetails ******/
-
-/****** Object:  View dbo.V_DatasetDetails    Script Date: 1/17/2001 2:15:34 PM ******/
 CREATE VIEW [dbo].[V_DatasetDetails]
 AS
 SELECT T_Dataset.Dataset_Num, T_Dataset.DS_created, 
@@ -24,7 +12,7 @@ SELECT T_Dataset.Dataset_Num, T_Dataset.DS_created,
    t_storage_path.SP_path, t_storage_path.SP_vol_name_server, 
    t_storage_path.SP_vol_name_client, 
    T_DatasetTypeName.DST_name, T_Dataset.DS_sec_sep, 
-   T_Dataset.DS_well_num, T_Dataset.DS_Oper_PRN, 
+   T_Dataset.DS_well_num, T_Dataset.DS_Oper_PRN AS DS_Oper_Username, 
    T_Dataset.Dataset_ID
 FROM T_DatasetStateName INNER JOIN
    T_Dataset ON 

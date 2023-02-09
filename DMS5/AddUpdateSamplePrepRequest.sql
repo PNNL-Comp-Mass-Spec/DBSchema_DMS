@@ -99,6 +99,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          04/18/2022 mem - Replace tabs in prep request names with spaces
 **          08/08/2022 mem - Update StateChanged when the state changes
 **          08/25/2022 mem - Use view V_Operations_Task_Staff when checking if the user can update a closed prep request item
+**          02/08/2023 bcg - Update view column name
 **
 *****************************************************/
 (
@@ -572,7 +573,7 @@ As
 
         -- Changes not allowed if in "closed" state
         --
-        If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff WHERE PRN = @callingUser)
+        If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff WHERE username = @callingUser)
             RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
         -- Don't allow change to "Prep in Progress" unless someone has been assigned

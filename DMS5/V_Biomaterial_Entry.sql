@@ -8,8 +8,8 @@ CREATE VIEW [dbo].[V_Biomaterial_Entry]
 AS
 SELECT U.CC_Name AS [name],
        U.CC_Source_Name AS source_name,
-       U.CC_Contact_PRN AS contact_prn,
-       U.CC_PI_PRN AS pi_prn,
+       U.CC_Contact_PRN AS contact_username,
+       U.CC_PI_PRN AS pi_username,
        CTN.Name AS biomaterial_type_name,
        U.CC_Reason AS reason,
        U.CC_Comment AS comment,
@@ -26,7 +26,6 @@ FROM T_Cell_Culture U
        ON U.CC_Campaign_ID = C.Campaign_ID
      INNER JOIN T_Material_Containers MC
        ON U.CC_Container_ID = MC.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Biomaterial_Entry] TO [DDL_Viewer] AS [dbo]

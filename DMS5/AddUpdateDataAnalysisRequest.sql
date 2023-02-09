@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 **          03/26/2022 mem - Replace parameter @batchID with @batchIDs
 **                         - Add parameter @comment
 **          08/08/2022 mem - Update State_Changed when the state changes
+**          02/09/2023 bcg - Update view column name
 **
 *****************************************************/
 (
@@ -575,7 +576,7 @@ As
 
         -- Limit who can make changes if in "closed" state
         --
-        If @currentStateID = 4 AND NOT EXISTS (SELECT * FROM V_Data_Analysis_Request_User_Picklist WHERE PRN = @callingUser)
+        If @currentStateID = 4 AND NOT EXISTS (SELECT * FROM V_Data_Analysis_Request_User_Picklist WHERE username = @callingUser)
             RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
         -- Don't allow change to "Analysis in Progress" unless someone has been assigned

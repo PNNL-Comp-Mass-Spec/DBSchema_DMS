@@ -21,13 +21,13 @@ SELECT DS.Dataset_Num,
        CartConfig.Cart_Config_Name AS LC_Cart_Config,
        LCCol.SC_Column_Number AS LC_Column,
        ISNULL(DS.DS_well_num, 'na') AS DS_Well_num,
-       DS.DS_Oper_PRN,
+       DS.DS_Oper_PRN AS DS_Oper_Username,
        DS.Dataset_ID,
        E.Experiment_Num,
        ISNULL(E.EX_reason, '') AS EX_Reason,
        Org.OG_name AS EX_organism_name,
        ISNULL(CCE.Cell_Culture_List, '') AS EX_cell_culture_list,
-       E.EX_researcher_PRN,
+       E.EX_researcher_PRN AS EX_researcher_Username,
        ISNULL(E.EX_comment, '') AS EX_comment,
        ISNULL(E.EX_lab_notebook_ref, 'na') AS EX_lab_notebook_ref,
        C.Campaign_Num,
@@ -65,7 +65,6 @@ FROM T_Dataset DS
        ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DatasetFullDetails] TO [DDL_Viewer] AS [dbo]

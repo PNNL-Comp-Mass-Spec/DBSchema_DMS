@@ -6,15 +6,15 @@ GO
 
 CREATE VIEW [dbo].[V_Notification_Entry]
 AS
-SELECT prn,
+SELECT username,
        name,
        CASE WHEN R1 > 0 THEN 'Yes' ELSE 'No' END AS requested_run_batch,
        CASE WHEN R2 > 0 THEN 'Yes' ELSE 'No' END AS analysis_job_request,
        CASE WHEN R3 > 0 THEN 'Yes' ELSE 'No' END AS sample_prep_request,
        CASE WHEN R4 > 0 THEN 'Yes' ELSE 'No' END AS dataset_not_released,
        CASE WHEN R5 > 0 THEN 'Yes' ELSE 'No' END AS dataset_released
-FROM ( SELECT TU.U_PRN AS PRN,
-              TU.U_Name AS Name,
+FROM ( SELECT TU.U_PRN AS username,
+              TU.U_Name AS name,
               MAX(CASE
                       WHEN ISNULL(TNEU.Entity_Type_ID, 0) = 1 THEN 1
                       ELSE 0
@@ -39,7 +39,6 @@ FROM ( SELECT TU.U_PRN AS PRN,
         RIGHT OUTER JOIN T_Users TU
           ON TNEU.User_ID = TU.ID
     GROUP BY TU.U_PRN, TU.U_Name ) T
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Notification_Entry] TO [DDL_Viewer] AS [dbo]

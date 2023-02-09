@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW V_Notification_Message_By_Registered_Users AS
+CREATE VIEW [dbo].[V_Notification_Message_By_Registered_Users] AS
 SELECT
   VNMRT.event,
   VNMRT.entity,
@@ -14,7 +14,7 @@ SELECT
   VNMRT.person_role,
   VNMRT.event_type_id,
   VNMRT.entity_type,
-  VNMRT.prn,
+  VNMRT.username,
   VNMRT.person,
   TNER.user_id,
   VNMRT.entered,
@@ -23,9 +23,8 @@ FROM
   T_Notification_Entity_User AS TNER
   INNER JOIN T_Users AS TU ON TNER.User_ID = TU.ID
   INNER JOIN V_Notification_Message_By_Research_Team AS VNMRT
-      ON TU.U_PRN = VNMRT.prn AND
+      ON TU.U_PRN = VNMRT.username AND
       TNER.Entity_Type_ID = VNMRT.Entity_Type
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Notification_Message_By_Registered_Users] TO [DDL_Viewer] AS [dbo]

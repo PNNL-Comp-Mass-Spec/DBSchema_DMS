@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
 **          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
 **          08/29/2018 mem - Remove parameters @BiomaterialList,  @ProjectNumber, and @NumberOfBiomaterialRepsReceived
 **                         - Remove call to DoSamplePrepMaterialOperation
+**          02/08/2023 bcg - Update view column name
 **
 *****************************************************/
 (
@@ -282,7 +283,7 @@ As
 
         -- Changes not allowed if in "closed" state
         --
-        If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE PRN = @callingUser)
+        If @currentStateID = 5 AND NOT EXISTS (SELECT * FROM V_Operations_Task_Staff_Picklist WHERE username = @callingUser)
             RAISERROR ('Changes to entry are not allowed if it is in the "Closed" state', 11, 11)
 
         If @RequestTypeExisting <> @RequestType

@@ -11,7 +11,7 @@ SELECT E.Experiment_Num AS experiment,
        DTN.DST_name AS dataset_type,
        DS.Dataset_Num AS dataset,
        DS.DS_folder_name AS folder_name,
-       DS.DS_Oper_PRN AS operator_prn,
+       DS.DS_Oper_PRN AS operator_username,
        DS.DS_wellplate_num AS wellplate,
        DS.DS_well_num AS well,
        DS.DS_sec_sep AS separation_type,
@@ -48,7 +48,6 @@ FROM T_Dataset DS
        ON RR.RDS_EUS_UsageType = EUSUsage.ID
      LEFT OUTER JOIN T_LC_Cart_Configuration CartConfig
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Entry] TO [DDL_Viewer] AS [dbo]

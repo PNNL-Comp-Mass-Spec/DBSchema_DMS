@@ -14,7 +14,7 @@ SELECT RC.compound_id,
        RC.modifications,
        Org.OG_Name AS organism_name,
        RC.PubChem_CID AS pub_chem_cid,
-       RC.contact_prn,
+       RC.contact_prn AS contact_username,
        RC.created,
        C.Campaign_Num AS campaign,
        MC.Tag AS container,
@@ -40,7 +40,6 @@ FROM dbo.T_Reference_Compound RC
        ON RC.Active = YN.Flag
      LEFT OUTER JOIN T_Users U
        ON RC.Contact_PRN = U.U_PRN
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Reference_Compound_Entry] TO [DDL_Viewer] AS [dbo]

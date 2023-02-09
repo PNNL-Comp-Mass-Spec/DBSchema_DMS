@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/03/2023 bcg - Update column name for V_DMS_Get_Experiment_Metadata
+**          02/09/2023 bcg - Update column name for S_DMS_V_DatasetFullDetails
 **    
 *****************************************************/
 (
@@ -94,7 +95,7 @@ AS
            @lcColumn = LC_Column,
            @datasetWellNum = DS_well_num,
            @experimentName = Experiment_Num,
-           @experimentResearcherPRN = EX_researcher_PRN,
+           @experimentResearcherPRN = EX_researcher_Username,
            @organismName = EX_organism_name,
            @experimentComment = EX_comment,
            @experimentSampleConc = EX_sample_concentration,

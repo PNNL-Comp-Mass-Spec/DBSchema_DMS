@@ -13,8 +13,8 @@ SELECT CC.charge_code,
        CC.SubAccount_Title AS sub_account,
        CC.Usage_SamplePrep AS usage_sample_prep,
        CC.Usage_RequestedRun AS usage_requested_run,
-       ISNULL(DMSUser.u_prn, 'D' + CC.Resp_PRN) AS owner_prn,
-       DMSUser.U_Name AS owner_name,
+       ISNULL(DMSUser.username, 'D' + CC.Resp_PRN) AS owner_username,
+       DMSUser.Name AS owner_name,
        CC.setup_date,
        SortKey AS sort_key,
        CC.Activation_State AS activation_state
@@ -23,7 +23,6 @@ FROM T_Charge_Code CC
        ON CC.Activation_State = CCA.Activation_State
      LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map DMSUser
        ON CC.Charge_Code = DMSUser.Charge_Code
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Charge_Code_List_Report] TO [DDL_Viewer] AS [dbo]

@@ -26,11 +26,11 @@ SELECT D.Dataset_ID AS Dataset_ID,
        ISNULL(U_ProjMgr.U_Name, C.CM_Proj_Mgr_PRN) AS Project_Manager,
        ISNULL(U_PI.U_Name, C.CM_PI_PRN) AS Project_PI,
        ISNULL(U_TechLead.U_Name, C.CM_Technical_Lead) AS Project_Technical_Lead,
-       D.DS_Oper_PRN AS Instrument_Operator_PRN,
-       E.EX_researcher_PRN AS Experiment_Researcher_PRN,
-       C.CM_Proj_Mgr_PRN AS Project_Manager_PRN,
-       C.CM_PI_PRN AS Project_PI_PRN,
-       C.CM_Technical_Lead AS Project_Technical_Lead_PRN,
+       D.DS_Oper_PRN AS Instrument_Operator_Username,
+       E.EX_researcher_PRN AS Experiment_Researcher_Username,
+       C.CM_Proj_Mgr_PRN AS Project_Manager_Username,
+       C.CM_PI_PRN AS Project_PI_Username,
+       C.CM_Technical_Lead AS Project_Technical_Lead_Username,
        EUT.Name AS EUS_Usage,
        RR.RDS_EUS_Proposal_ID AS EUS_Proposal,
        APath.AP_archive_path + '/' + D.DS_folder_name AS Dataset_Path_Aurora
@@ -73,7 +73,6 @@ FROM T_Campaign C
      LEFT OUTER JOIN T_Archive_Path APath
        ON APath.AP_path_ID = DA.AS_storage_path_ID
 WHERE D.DS_State_ID=3 AND D.DS_Rating NOT IN (-1, -2, -5)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_Dataset_Metadata] TO [DDL_Viewer] AS [dbo]
