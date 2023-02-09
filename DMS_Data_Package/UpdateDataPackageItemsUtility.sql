@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **      CREATE TABLE #TPI(
 **          DataPackageID int not null,         -- Data package ID
 **          [Type] varchar(50) null,            -- 'Job', 'Dataset', 'Experiment', 'Biomaterial', or 'EUSProposal'
-**          Identifier varchar(256) null        -- Job ID, Dataset Name or ID, Experiment Name, Cell_Culture Name, or EUSProposal ID
+**          Identifier varchar(256) null        -- Job ID, Dataset Name or ID, Experiment Name, Biomaterial Name, or EUSProposal ID
 **      )
 **
 **  Return values: 0: success, otherwise, error code
@@ -49,6 +49,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          06/08/2022 mem - Rename package comment field to Package_Comment
 **          07/08/2022 mem - Use new synonym name for experiment biomaterial view
 **          01/04/2023 mem - Update to use S_V_Biomaterial_List_Report_2
+**          02/08/2023 bcg - Update to use S_V_Experiment_Biomaterial
 **
 *****************************************************/
 (
@@ -357,21 +358,21 @@ As
             -- Find parent biomaterial that will have no jobs or datasets remaining once we remove the jobs in #TPI
             --
             INSERT INTO #TPI (DataPackageID, [Type], Identifier)
-            SELECT ToDelete.DataPackageID, ToDelete.ItemType, ToDelete.Cell_Culture_Name
+            SELECT ToDelete.DataPackageID, ToDelete.ItemType, ToDelete.Biomaterial_Name
             FROM (
                    -- Biomaterial associated with jobs that we are removing
                    SELECT DISTINCT J.DataPackageID,
                                    'Biomaterial' AS ItemType,
-                                   Biomaterial.Cell_Culture_Name
+                                   Biomaterial.Biomaterial_Name
                    FROM #Tmp_JobsToAddOrDelete J
                         INNER JOIN S_V_Analysis_Job_List_Report_2 TX
                           ON J.Job = TX.Job
-                        INNER JOIN S_V_Experiment_Cell_Culture Biomaterial
-                          ON Biomaterial.Experiment_Num = TX.Experiment
+                        INNER JOIN S_V_Experiment_Biomaterial Biomaterial
+                          ON Biomaterial.Experiment = TX.Experiment
                  ) ToDelete
                  LEFT OUTER JOIN (
                         -- Biomaterial associated with the data package; skipping the jobs that we're deleting
-                        SELECT DISTINCT Biomaterial.Name AS Cell_Culture_Name,
+                        SELECT DISTINCT Biomaterial.Name AS Biomaterial_Name,
                                         Datasets.Data_Package_ID
                         FROM T_Data_Package_Analysis_Jobs Jobs
                              INNER JOIN T_Data_Package_Datasets Datasets
@@ -382,9 +383,9 @@ As
                                   Datasets.Data_Package_ID = Experiments.Data_Package_ID
                              INNER JOIN T_Data_Package_Biomaterial Biomaterial
                                ON Experiments.Data_Package_ID = Biomaterial.Data_Package_ID
-                             INNER JOIN S_V_Experiment_Cell_Culture Exp_CC_Map
-                               ON Experiments.Experiment = Exp_CC_Map.Experiment_Num AND
-                                  Exp_CC_Map.Cell_Culture_Name = Biomaterial.Name
+                             INNER JOIN S_V_Experiment_Biomaterial Exp_Biomaterial_Map
+                               ON Experiments.Experiment = Exp_Biomaterial_Map.Experiment AND
+                                  Exp_Biomaterial_Map.Biomaterial_Name = Biomaterial.Name
                              LEFT OUTER JOIN #Tmp_JobsToAddOrDelete ItemsQ
                                ON Jobs.Data_Package_ID = ItemsQ.DataPackageID AND
                                   Jobs.Job = ItemsQ.Job
@@ -392,7 +393,7 @@ As
                               ItemsQ.Job IS NULL
                  ) AS ToKeep
                    ON ToDelete.DataPackageID = ToKeep.Data_Package_ID AND
-                      ToDelete.Cell_Culture_Name = ToKeep.Cell_Culture_Name
+                      ToDelete.Biomaterial_Name = ToKeep.Biomaterial_Name
             WHERE ToKeep.Data_Package_ID IS NULL
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -1142,7 +1143,6 @@ As
     -- Exit
     ---------------------------------------------------
     return @myError
-
 
 
 GO

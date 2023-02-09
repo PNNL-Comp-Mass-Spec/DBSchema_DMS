@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[LoadMetadataForMultipleExperiments]
 **  Auth:   grk
 **  Date:   11/01/2006
 **          07/06/2022 mem - Use new aux info definition view name
+**          02/08/2023 bcg - Update to use V_Biomaterial_Metadata
 **    
 *****************************************************/
  (
@@ -155,63 +156,63 @@ As
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Name', MD.[Name]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'ID', CONVERT(varchar(32), MD.[ID])
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Source', MD.[Source]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Source Contact', MD.[Source Contact]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'PI', MD.[PI]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Type', MD.[Type]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Reason', MD.[Reason]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Comment', MD.[Comment]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
     --
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Campaign', MD.[Campaign]
     FROM T_Experiment_Cell_Cultures INNER JOIN
          T_Experiments EX ON T_Experiment_Cell_Cultures.Exp_ID = EX.Exp_ID INNER JOIN
-         V_Cell_Culture_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
+         V_Biomaterial_Metadata MD ON T_Experiment_Cell_Cultures.CC_ID = MD.ID
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
 
     ---------------------------------------------------

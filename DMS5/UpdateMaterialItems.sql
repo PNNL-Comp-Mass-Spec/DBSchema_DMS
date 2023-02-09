@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[UpdateMaterialItems]
 /****************************************************
 **
@@ -22,6 +23,7 @@ CREATE PROCEDURE [dbo].[UpdateMaterialItems]
 **			11/28/2017 mem - Add support for Reference_Compound
 **			               - Only update Container_ID if @mode is 'move_material'
 **          10/25/2022 mem - Fix logic bug that used row counts from reference compounds instead of experiments
+**          02/08/2023 bcg - Use V_Biomaterial_List_Report_2
 **
 *****************************************************/
 (
@@ -163,7 +165,7 @@ As
 		SET iName = V.Name,
 		    iContainer = V.Container
 		FROM @material_items M
-		     INNER JOIN V_Cell_Culture_List_Report_2 V
+		     INNER JOIN V_Biomaterial_List_Report_2 V
 		       ON V.ID = M.ID
 		WHERE M.iType = 'B'
        	--
