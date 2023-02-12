@@ -14,7 +14,7 @@ SELECT RRB.ID,
        RequestedRunStats.Active_Requests,       -- Active requested runs in batch (no dataset yet)
 	   RRB.Requested_Instrument AS Inst_Group,
        RRB.Created As Created,
-	   HexID
+	   RFID_Hex_ID As HexID
 FROM T_Requested_Run_Batches AS RRB
      INNER JOIN T_Users
        ON RRB.Owner = T_Users.ID

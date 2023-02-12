@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
 	[Justification_for_High_Priority] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requested_Instrument] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[HexID]  AS (left(concat(CONVERT([varchar](24),CONVERT([varbinary],CONVERT([varchar],[ID])),(2)),'000000000000000000000000'),(24))) PERSISTED,
+	[RFID_Hex_ID]  AS (left(concat(CONVERT([varchar](24),CONVERT([varbinary],CONVERT([varchar],[ID])),(2)),'000000000000000000000000'),(24))) PERSISTED,
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
