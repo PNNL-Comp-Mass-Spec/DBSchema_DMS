@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE SyncJobInfo
+CREATE PROCEDURE [dbo].[SyncJobInfo]
 /****************************************************
 **
 **	Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE SyncJobInfo
 **			05/25/2011 mem - Removed priority column from T_Job_Steps
 **			05/28/2015 mem - No longer updating T_Local_Job_Processors since we have deprecated processor groups
 **			02/15/2016 mem - Re-enabled use of T_Local_Job_Processors
+**			02/06/2023 bcg - Use synonym rather than view that simply wraps the synonym
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ As
 	---------------------------------------------------
 	-- Update archive busy flag for active jobs according to state in DMS
 	--
-	-- Use V_DMS_ArchiveBusyJobs (which uses V_Get_Analysis_Jobs_For_Archive_Busy in the primary DMS DB)
+	-- Use S_DMS_V_Get_Analysis_Jobs_For_Archive_Busy (which uses V_Get_Analysis_Jobs_For_Archive_Busy in the primary DMS DB)
 	-- to look for jobs that have dataset archive state:
 	--  1=New, 2=Archive In Progress, 6=Operation Failed, 7=Purge In Progress, or 12=Verification In Progress
 	-- Jobs matching this criterion are deemed "busy" and thus will get Archive_Busy set to 1 in T_Jobs
@@ -74,7 +75,7 @@ As
 	SET Archive_Busy = CASE WHEN TA.Busy = 1 THEN 1 ELSE 0 END
 	FROM T_Jobs AS Target
 	     LEFT OUTER JOIN ( SELECT Job, 1 AS Busy
-	                       FROM V_DMS_ArchiveBusyJobs ) AS TA
+	                       FROM S_DMS_V_Get_Analysis_Jobs_For_Archive_Busy ) AS TA
 	       ON TA.Job = Target.Job
 	WHERE Target.State IN (1, 2) AND
 	      Target.Archive_Busy <> CASE WHEN TA.Busy = 1 THEN 1 ELSE 0 END
