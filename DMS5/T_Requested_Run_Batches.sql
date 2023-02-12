@@ -17,6 +17,8 @@ CREATE TABLE [dbo].[T_Requested_Run_Batches](
 	[Justification_for_High_Priority] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requested_Instrument] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Batch_Group_ID] [int] NULL,
+	[Batch_Group_Order] [int] NULL,
 	[RFID_Hex_ID]  AS (left(concat(CONVERT([varchar](24),CONVERT([varbinary],CONVERT([varchar],[ID])),(2)),'000000000000000000000000'),(24))) PERSISTED,
  CONSTRAINT [PK_T_Requested_Run_Batches] PRIMARY KEY CLUSTERED 
 (
@@ -46,6 +48,12 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Requested_Run_Batches] ON [dbo].[T_Reques
 	[Batch] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Requested_Run_Batches_Batch_Group_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Batches_Batch_Group_ID] ON [dbo].[T_Requested_Run_Batches]
+(
+	[Batch_Group_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Locking]  DEFAULT ('Yes') FOR [Locked]
@@ -55,6 +63,11 @@ GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Actual_Batch_Priority]  DEFAULT ('Normal') FOR [Actual_Batch_Priority]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ADD  CONSTRAINT [DF_T_Requested_Run_Batches_Requested_Instrument]  DEFAULT ('na') FOR [Requested_Instrument]
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Requested_Run_Batch_Group] FOREIGN KEY([Batch_Group_ID])
+REFERENCES [dbo].[T_Requested_Run_Batch_Group] ([Batch_Group_ID])
+GO
+ALTER TABLE [dbo].[T_Requested_Run_Batches] CHECK CONSTRAINT [FK_T_Requested_Run_Batches_T_Requested_Run_Batch_Group]
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batches_T_Users] FOREIGN KEY([Owner])
 REFERENCES [dbo].[T_Users] ([ID])
