@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **          02/17/2022 mem - Update requestor username warning
 **          05/23/2022 mem - Rename requester username argument and update username warning
 **          10/13/2022 mem - Fix bug calling LookupEUSFromExperimentSamplePrep
+**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ As
 
     Declare @sourceRequestName varchar(128) = ''
     Declare @sourceRequestBatchID int = 0
-    
+
     Declare @instrumentGroup varchar(64)
     Declare @targetInstrumentGroup varchar(64)
     Declare @fractionBasedInstrumentGroup varchar(64) = ''
@@ -102,7 +103,7 @@ As
     Declare @lastRequest varchar(128)
 
     Declare @continue tinyint = 0
-    
+
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 
     ---------------------------------------------------
@@ -324,7 +325,7 @@ As
         RAISERROR ('Could not find entry in database for instrument group "%s"', 11, 19, @instrumentGroup)
         return 51020
     End
-    
+
     If IsNull(@targetInstrumentGroup, '') = ''
     Begin
         -- If the user specified the target group instead of the instrument group that ends with _Frac, auto change things
@@ -498,7 +499,7 @@ As
                         @autoPopulateUserListIfBlank,
                         @samplePrepRequest = 0,
                         @experimentID = @experimentID,
-                        @campaignID = 0, 
+                        @campaignID = 0,
                         @addingItem = @addingItem
 
     If @myError <> 0
@@ -683,7 +684,7 @@ As
         FROM #Tmp_NewRequests
         ORDER BY Fraction_Number DESC
 
-        Set @msg = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest + 
+        Set @msg = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest +
                    ' with instrument group ' + @targetInstrumentGroup + ' and separation group ' + @separationGroup
         Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
     End
@@ -865,6 +866,15 @@ As
             Begin
                 exec UpdateCachedRequestedRunEUSUsers @requestID
             End
+        End
+
+        ---------------------------------------------------
+        -- Update stats in T_Cached_Requested_Run_Batch_Stats
+        ---------------------------------------------------
+
+        If @sourceRequestBatchID > 0
+        Begin
+            Exec UpdateCachedRequestedRunBatchStats @sourceRequestBatchID
         End
 
         Set @msg = 'Created new requested runs based on source request ' + CAST(@sourceRequestID as varchar(12)) + ', creating: ' + @requestIdList

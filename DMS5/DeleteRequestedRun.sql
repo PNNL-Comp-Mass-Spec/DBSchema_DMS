@@ -3,15 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure DeleteRequestedRun
+CREATE PROCEDURE [dbo].[DeleteRequestedRun]
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **	Remove a requested run (and all its dependencies)
 **
 **	Return values: 0: success, otherwise, error code
-**
-**	Parameters: 
 **
 **	Auth:	grk
 **	Date:	02/23/2006
@@ -22,7 +20,8 @@ CREATE Procedure DeleteRequestedRun
 **			06/13/2017 mem - Fix typo
 **			06/16/2017 mem - Restrict access using VerifySPAuthorized
 **			08/01/2017 mem - Use THROW if not authorized
-**    
+**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**
 *****************************************************/
 (
 	@requestID int = 0,						-- Requested run ID to delete
@@ -34,42 +33,50 @@ As
 
 	Set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-	
+	Declare @myError int = 0
+	Declare @myRowCount int = 0
+	Declare @batchID int
+
 	set @message = ''
 	Set @skipDatasetCheck = Isnull(@skipDatasetCheck, 0)
 
 	---------------------------------------------------
 	-- Verify that the user can execute this procedure from the given client host
 	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
+
+	Declare @authorized tinyint = 0
 	Exec @authorized = VerifySPAuthorized 'DeleteRequestedRun', @raiseError = 1
+
 	If @authorized = 0
-	Begin
+	Begin;
 		THROW 51000, 'Access denied', 1;
-	End
-	
+	End;
+
 	---------------------------------------------------
-	-- We are done if there is no associated request
+	-- Validate the requested run ID
 	---------------------------------------------------
 	--
-	if @requestID = 0
-	begin
+	If @requestID = 0
+	Begin
 		Set @message = '@requestID is 0; nothing to do'
 		goto Done
-	end
+	End
 
-	If Not Exists (Select * FROM dbo.T_Requested_Run WHERE ID = @requestID)
+    -- Verify that the request exists and check whether the request is in a batch
+    --
+    SELECT @batchID = RDS_BatchID
+    FROM dbo.T_Requested_Run
+    WHERE ID = @requestID;
+	--
+	SELECT @myError = @@error, @myRowCount = @@rowcount
+
+	If @myRowCount = 0
 	Begin
 		Set @message = 'ID ' + Cast(@requestID as varchar(9)) + ' not found in T_Requested_Run; nothing to do'
 		print @message
 		goto Done
 	End
-	
+
 	If @skipDatasetCheck = 0
 	Begin
 		Declare @DatasetID int = 0
@@ -77,31 +84,31 @@ As
 		Select @DatasetID = DatasetID
 		FROM T_Requested_Run
 		WHERE ID = @requestID
-		
+
 		If IsNull(@DatasetID, 0) > 0
 		Begin
 			Declare @Dataset varchar(128)
-			
+
 			Select @Dataset = Dataset_Num
 			FROM T_Dataset
 			Where Dataset_ID = @DatasetID
-			
-			Set @message = 'Cannot delete requested run ' + Cast(@requestID as varchar(9)) + 
-			               ' because it is associated with dataset ' + Coalesce(@Dataset, '??') + 
+
+			Set @message = 'Cannot delete requested run ' + Cast(@requestID as varchar(9)) +
+			               ' because it is associated with dataset ' + Coalesce(@Dataset, '??') +
 			               ' (ID ' + Cast (@DatasetID as varchar(12)) + ')'
-			               
+
 			Set @myError = 75
 			Goto Done
 		End
 	End
-	
+
 	---------------------------------------------------
 	-- Start a transaction
 	---------------------------------------------------
 
 	declare @transName varchar(32) = 'DeleteRequestedRun'
 	begin transaction @transName
-	
+
 	---------------------------------------------------
 	-- delete associated factors
 	---------------------------------------------------
@@ -115,7 +122,7 @@ As
 	begin
 		set @message = 'Failed to delete factors for request'
 		goto Done
-	end		
+	end
 
 	---------------------------------------------------
 	-- delete EUS users associated with request
@@ -130,10 +137,10 @@ As
 	begin
 		set @message = 'Failed to delete EUS users for request'
 		goto Done
-	end		
+	end
 
 	---------------------------------------------------
-	-- delete associated auto-created request
+	-- Delete requested run
 	---------------------------------------------------
 	--
 	DELETE FROM dbo.T_Requested_Run
@@ -145,25 +152,35 @@ As
 	begin
 		set @message = 'Failed to delete request'
 		goto Done
-	end		
+	end
 
 	-- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
 	If Len(@callingUser) > 0
 	Begin
 		Declare @stateID int
 		Set @stateID = 0
-		
+
 		Exec AlterEventLogEntryUser 11, @requestID, @stateID, @callingUser
 	End
 
 	commit transaction @transName
-		
+
+    ---------------------------------------------------
+    -- Update stats in T_Cached_Requested_Run_Batch_Stats
+    ---------------------------------------------------
+
+    If @batchID > 0
+    Begin
+        Exec UpdateCachedRequestedRunBatchStats @batchID
+    End
+
 	---------------------------------------------------
 	-- Complete
 	---------------------------------------------------
 	--
 Done:
 	return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [DDL_Viewer] AS [dbo]

@@ -4,8 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-CREATE Procedure [dbo].[DoRequestedRunBatchOperation]
+CREATE PROCEDURE [dbo].[DoRequestedRunBatchOperation]
 /****************************************************
 **
 **  Desc:
@@ -23,6 +22,7 @@ CREATE Procedure [dbo].[DoRequestedRunBatchOperation]
 **          07/25/2017 mem - Remove mode BatchOrder since unused
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/01/2022 mem - Exit the procedure if @batchID is 0
+**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **
 *****************************************************/
 (
@@ -156,7 +156,16 @@ As
                 return 51001
             End
 
-            If @mode = 'FreeMembers' return 0
+            ---------------------------------------------------
+            -- Update stats in T_Cached_Requested_Run_Batch_Stats
+            ---------------------------------------------------
+
+            Exec UpdateCachedRequestedRunBatchStats @batchID
+
+            If @mode = 'FreeMembers'
+            Begin
+                return 0
+            End
         End
     End
 

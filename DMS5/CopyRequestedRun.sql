@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[CopyRequestedRun]
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          01/19/2021 mem - Add parameters @requestNameOverride and @infoOnly
+**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **
 *****************************************************/
 (
@@ -45,11 +46,14 @@ As
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @stateID int = 0    
+    Declare @stateID int = 0
     Declare @newReqID int
+
     Declare @oldReqName varchar(128)
     Declare @newReqName varchar(128)
-    
+
+    Declare @batchID int
+
     Set @message = ''
 
     Set @requestNameAppendText = LTrim(RTrim(IsNull(@requestNameAppendText, '')))
@@ -116,7 +120,7 @@ As
     --
     Declare @continue tinyint = 1
     Declare @iteration int = 1
-    
+
     If @requestNameOverride = ''
     Begin
         Set @newReqName = @oldReqName + @requestNameAppendText
@@ -125,7 +129,7 @@ As
     Begin
         Set @newReqName = @requestNameOverride
     End
-    
+
     While @continue = 1
     Begin
         If Not Exists (Select * From T_Requested_Run Where RDS_Name = @newReqName)
@@ -137,9 +141,9 @@ As
             Set @iteration = @iteration + 1
             Set @newReqName = @oldReqName + @requestNameAppendText + Cast(@iteration as varchar(9))
         End
-        
+
     End
-    
+
     If @infoOnly <> 0
     Begin
         SELECT
@@ -177,7 +181,7 @@ As
             RDS_MRM_Attachment,
             @status,
             'auto',
-            CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END 
+            CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END
         FROM T_Requested_Run
         WHERE ID = @requestID
 
@@ -259,7 +263,7 @@ As
         RDS_MRM_Attachment,
         @status,
         'auto',
-        CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END 
+        CASE WHEN ISNULL(@datasetID, 0) = 0 THEN NULL ELSE @datasetID END
     FROM T_Requested_Run
     WHERE ID = @requestID
     --
@@ -276,37 +280,37 @@ As
     --
     if @myRowCount = 0
     begin
-        If Not Exists (Select * from T_Requested_Run Where ID = @requestID)        
+        If Not Exists (Select * from T_Requested_Run Where ID = @requestID)
             set @message = 'Problem trying to renumber request in history; RequestID not found: ' + Convert(varchar(12), @requestID)
         else
             Set @message = 'Problem trying to renumber request in history; No rows added for RequestID ' + Convert(varchar(12), @requestID)
-            
+
         exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
         goto Done
     end
-    
+
     If Len(@callingUser) > 0
     Begin
         Exec AlterEventLogEntryUser 11, @newReqID, @stateID, @callingUser
     End
 
     ------------------------------------------------------------
-    -- Copy factors from the request being unconsumed to the 
+    -- Copy factors from the request being unconsumed to the
     -- renumbered copy being retained in the history
     ------------------------------------------------------------
     --
     -- First define the calling user text
     --
     declare @callingUserUnconsume varchar(128)
-    
+
     If IsNull(@callingUser, '') <> ''
         set @callingUserUnconsume = '(unconsume for ' + @callingUser + ')'
     else
         set @callingUserUnconsume = '(unconsume)'
-    
+
     -- Now copy the factors
-    --    
-    EXEC @myError = UpdateRequestedRunCopyFactors 
+    --
+    EXEC @myError = UpdateRequestedRunCopyFactors
                         @requestID,
                         @newReqID,
                         @message OUTPUT,
@@ -324,11 +328,11 @@ As
         -- We don't need that text appearing on the web page, so we'll clear @message
         set @message = ''
     end
-    
+
     ---------------------------------------------------
     -- Copy proposal users for new auto request
     -- from original request
-    ---------------------------------------------------    
+    ---------------------------------------------------
     --
     INSERT INTO T_Requested_Run_EUS_Users
         (EUS_Person_ID, Request_ID)
@@ -337,7 +341,7 @@ As
     FROM
         T_Requested_Run_EUS_Users
     WHERE
-        Request_ID = @requestID        
+        Request_ID = @requestID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -347,19 +351,35 @@ As
         exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
         goto Done
     end
-    
+
+
     ---------------------------------------------------
     -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
     ---------------------------------------------------
-    --
+
     exec UpdateCachedRequestedRunEUSUsers @newReqID
-    
+
+
+    ---------------------------------------------------
+    -- Update stats in T_Cached_Requested_Run_Batch_Stats
+    ---------------------------------------------------
+
+    SELECT @batchID = RDS_BatchID
+    FROM T_Requested_Run
+    WHERE ID = @requestID
+
+    If @batchID > 0
+    Begin
+        Exec UpdateCachedRequestedRunBatchStats @batchID
+    End
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CopyRequestedRun] TO [DDL_Viewer] AS [dbo]

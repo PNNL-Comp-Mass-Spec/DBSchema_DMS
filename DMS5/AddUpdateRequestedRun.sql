@@ -104,6 +104,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          02/17/2022 mem - Update requestor username warning
 **          05/23/2022 mem - Rename requester username argument and update username warning
 **          11/25/2022 mem - Rename parameter to @wellplate
+**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **
 *****************************************************/
 (
@@ -921,12 +922,9 @@ As
     If @mode = 'update'
     Begin -- <update>
 
-        If @batch = 0
-        Begin
-            SELECT @currentBatch = RDS_BatchID
-            FROM T_Requested_Run
-            WHERE ID = @requestID
-        End
+        SELECT @currentBatch = RDS_BatchID
+        FROM T_Requested_Run
+        WHERE ID = @requestID
 
         Begin transaction @transName
 
@@ -1000,6 +998,20 @@ As
             Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
         End
     End -- </update>
+
+    ---------------------------------------------------
+    -- Update stats in T_Cached_Requested_Run_Batch_Stats
+    ---------------------------------------------------
+
+    If @batch > 0
+    Begin
+        Exec UpdateCachedRequestedRunBatchStats @batch
+    End
+
+    If @currentBatch > 0
+    Begin
+        Exec UpdateCachedRequestedRunBatchStats @currentBatch
+    End
 
     END TRY
     BEGIN CATCH

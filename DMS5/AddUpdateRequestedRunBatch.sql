@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          06/02/2021 mem - Expand @requestedRunList to varchar(max)
 **          07/24/2022 mem - Remove trailing tabs from batch name
 **          08/01/2022 mem - If @mode is 'update' and @id is 0, do not set Batch ID to 0 for other requested runs
+**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **
 *****************************************************/
 (
@@ -83,7 +84,7 @@ As
 
     Declare @instrumentGroup varchar(64)
     Declare @userID int = 0
-    
+
     Exec @myError = ValidateRequestedRunBatchParams
             @id,
             @name,
@@ -135,7 +136,7 @@ As
         If @useRaiseError > 0
             RAISERROR (@message, 11, 22)
         Else
-            Return 50002      
+            Return 50002
     End
 
     ---------------------------------------------------
@@ -236,7 +237,7 @@ As
     ---------------------------------------------------
     -- Action for preview mode
     ---------------------------------------------------
-    --    
+    --
     If @mode = 'PreviewAdd'
     Begin
         Set @message = 'Would create batch "' + @name + '" with ' + Cast(@count As Varchar(12)) + ' requested runs'
@@ -397,6 +398,15 @@ As
     End
 
     commit transaction @transName
+
+    ---------------------------------------------------
+    -- Update stats in T_Cached_Requested_Run_Batch_Stats
+    ---------------------------------------------------
+
+    If @id > 0
+    Begin
+        Exec UpdateCachedRequestedRunBatchStats @id
+    End
 
     END TRY
     BEGIN CATCH
