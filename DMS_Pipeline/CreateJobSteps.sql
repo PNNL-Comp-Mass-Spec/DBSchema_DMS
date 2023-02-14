@@ -7,8 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[CreateJobSteps]
 /****************************************************
 **
-**  Desc: 
-**      Make entries in job steps table and job step 
+**  Desc:
+**      Make entries in job steps table and job step
 **      dependency table for each newly added job
 **      according to definition of script for that job
 **
@@ -17,7 +17,6 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 **        DECLARE @message VARCHAR(256)
 **        EXEC CreateJobSteps @message output, 1, 'CreateFromImportedJobs', @existingJob=555225
 **        SELECT @message
-**
 **
 **  Auth:   grk
 **          05/06/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
@@ -45,7 +44,9 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 **          11/09/2015 mem - Assure that Dataset_ID is only if the dataset name is 'Aggregation'
 **          05/12/2017 mem - Verify that T_Remote_Info has Remote_Info_ID 1 (unknown)
 **          03/02/2022 mem - Pass data package ID to CreateSignaturesForJobSteps when dataset ID is 0
-**    
+**          02/13/2023 mem - Show contents of temp table #Jobs when @debugMode is 1
+**                         - Add results folder name comment regarding Special="Job_Results"
+**
 *****************************************************/
 (
     @message varchar(512) output,
@@ -62,24 +63,24 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 )
 As
     Set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @stepCount int = 0
     Declare @stepCountNew int = 0
-    
+
     Declare @maxJobsToAdd int
 
     Declare @startTime datetime
     Declare @lastLogTime datetime
-    Declare @statusMessage varchar(512)    
+    Declare @statusMessage varchar(512)
 
     Declare @jobCountToProcess int
     Declare @jobsProcessed int
 
     Declare @errorMessage varchar(512)
-    
+
     ---------------------------------------------------
     -- Create temporary tables to accumulate job steps
     -- job step dependencies, and job parameters for
@@ -98,7 +99,7 @@ As
     )
 
     CREATE INDEX #IX_Jobs_Job ON #Jobs (Job)
-    
+
     CREATE TABLE #Job_Steps (
         [Job] int NOT NULL,
         [Step_Number] int NOT NULL,
@@ -137,7 +138,7 @@ As
 
     CREATE INDEX #IX_Job_Parameters_Job ON #Job_Parameters (Job)
 
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -147,10 +148,10 @@ As
     Set @existingJob = IsNull(@existingJob, 0)
     Set @extensionScriptName = IsNull(@extensionScriptName, '')
     Set @extensionScriptSettingsFileOverride = IsNull(@extensionScriptSettingsFileOverride, '')
-    
+
     Set @mode = IsNull(@mode, '')
     Set @maxJobsToProcess = IsNull(@maxJobsToProcess, 0)
-    
+
     If @mode Not In ('CreateFromImportedJobs', 'ExtendExistingJob', 'UpdateExistingJob')
     Begin
         Set @message = 'Unknown mode: ' + @mode
@@ -166,7 +167,7 @@ As
             Set @message = 'Error: Parameter @existingJob must contain a valid job number to extend an existing job'
             Set @myError = 50002
             Goto Done
-        End            
+        End
 
         -- Make sure a valid extension script is defined
         If IsNull(@extensionScriptName, '') = ''
@@ -182,31 +183,31 @@ As
             Set @myError = 50003
             Goto Done
         End
-        
+
         -- Make sure there are no conflicts in the step numbers in the extension script vs. the script used for the existing job
-        
+
         Exec @myError = ValidateExtensionScriptForJob @existingJob, @extensionScriptName, @message = @message output
         If @myError <> 0
             Goto Done
-        
+
     End
     Else
     Begin
         Set @extensionScriptName = ''
         Set @extensionScriptSettingsFileOverride = ''
     End
-    
+
     Set @startTime = GetDate()
     Set @loggingEnabled = IsNull(@loggingEnabled, 0)
     Set @logIntervalThreshold = IsNull(@logIntervalThreshold, 15)
     Set @loopingUpdateInterval = IsNull(@loopingUpdateInterval, 5)
-    
+
     If @logIntervalThreshold = 0
         Set @loggingEnabled = 1
-        
+
     If @loopingUpdateInterval < 2
         Set @loopingUpdateInterval = 2
-    
+
     ---------------------------------------------------
     -- Get recently imported jobs that need to be processed
     ---------------------------------------------------
@@ -217,13 +218,13 @@ As
             Set @maxJobsToAdd = @maxJobsToProcess
         Else
             Set @maxJobsToAdd = 1000000
-        
+
         If @debugMode = 0 OR (@debugMode <> 0 And @existingJob = 0)
         Begin
             INSERT INTO #Jobs (Job, Priority, Script, State, Dataset, Dataset_ID, DataPkgID, Results_Folder_Name)
             SELECT TOP (@maxJobsToAdd) Job, Priority, Script, State, Dataset, Dataset_ID, DataPkgID, NULL
             FROM T_Jobs
-            WHERE State = 0    
+            WHERE State = 0
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -251,7 +252,7 @@ As
             End
         End
     End
-    
+
     ---------------------------------------------------
     -- Set up to process extension job
     ---------------------------------------------------
@@ -262,7 +263,7 @@ As
         -- If it only exists in history, restore it to main tables
         exec @myError = SetUpToExtendExistingJob @existingJob, @message
     End
-    
+
     If @mode = 'UpdateExistingJob'
     Begin
         -- Note: As of April 4, 2011, the 'UpdateExistingJob' mode is not used in the DMS_Pipeline database
@@ -273,7 +274,7 @@ As
             Set @myError = 50000
             goto Done
         End
-        
+
         INSERT INTO #Jobs (Job, Priority, Script, State, Dataset, Dataset_ID, DataPkgID, Results_Folder_Name)
         SELECT Job, Priority, Script, State, Dataset, Dataset_ID, DataPkgID, Results_Folder_Name
         FROM T_Jobs
@@ -291,7 +292,7 @@ As
     ---------------------------------------------------
     -- Make sure T_Step_Tool_Versions as the "Unknown" version (ID=1)
     ---------------------------------------------------
-    --    
+    --
     If Not Exists (Select * from T_Step_Tool_Versions WHERE Tool_Version_ID = 1)
     Begin
         Set IDENTITY_INSERT T_Step_Tool_Versions ON
@@ -305,7 +306,7 @@ As
     ---------------------------------------------------
     -- Make sure T_Remote_Info as the "Unknown" version (ID=1)
     ---------------------------------------------------
-    --    
+    --
     If Not Exists (Select * from T_Remote_Info WHERE Remote_Info_ID = 1)
     Begin
         Set IDENTITY_INSERT T_Remote_Info ON
@@ -329,12 +330,12 @@ As
     Declare @datasetOrDataPackageId int
     Declare @continue tinyint
     Declare @jobList varchar(max)
-    
+
     SELECT @jobCountToProcess = COUNT(*)
     FROM #Jobs
     --
     Set @jobCountToProcess = IsNull(@jobCountToProcess, 0)
-    
+
     Set @continue = 1
     Set @prevJob = 0
     Set @jobsProcessed = 0
@@ -344,13 +345,13 @@ As
     While @continue = 1
     Begin -- <a>
         ---------------------------------------------------
-        -- get next unprocessed job and 
+        -- get next unprocessed job and
         -- build it into the temporary tables
         ---------------------------------------------------
-        -- 
+        --
         Set @job = 0
         --
-        SELECT TOP 1 
+        SELECT TOP 1
             @job = Job,
             @scriptName = Script,
             @dataset = Dataset,
@@ -359,7 +360,7 @@ As
             @resultsFolderName = ISNULL(Results_Folder_Name, '')
         FROM #Jobs
         WHERE Job > @prevJob
-        ORDER BY Job        
+        ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -379,10 +380,10 @@ As
         End
         Else
         Begin -- <b>
-        
+
             -- Set up to get next job on next pass
             Set @prevJob = @job
-            
+
             If @datasetID = 0 And @dataset <> 'Aggregation'
             Begin
                 Set @errorMessage = 'Dataset_ID can be 0 only when the Dataset name is "Aggregation"'
@@ -407,42 +408,43 @@ As
                 UPDATE #Jobs
                 SET State = 5
                 WHERE Job = @job
-                                
+
             End
             Else
             Begin -- <c>
-                
+
                 If @jobList = ''
                     Set @jobList = Convert(varchar(12), @job)
                 Else
                     Set @jobList = @jobList + ',' + Convert(varchar(12), @job)
-                
+
                 Declare @pXML xml
                 Declare @scriptXML xml
                 Declare @tag varchar(8)
                 Set @tag = 'unk'
 
                 -- get contents of script and tag for results folder name
-                SELECT @scriptXML = Contents, @tag = Results_Tag 
-                FROM T_Scripts 
+                SELECT @scriptXML = Contents, @tag = Results_Tag
+                FROM T_Scripts
                 WHERE Script = @scriptName
 
                 -- add additional script If extending an existing job
                 If @mode = 'ExtendExistingJob' and @extensionScriptName <> ''
                 Begin
                     Declare @scriptXML2 xml
-                    
-                    SELECT @scriptXML2 = Contents 
-                    FROM T_Scripts 
+
+                    SELECT @scriptXML2 = Contents
+                    FROM T_Scripts
                     WHERE Script = @extensionScriptName
-                    
+
                     Set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
                 End
-                
+
                 If @debugMode <> 0
                     SELECT @scriptXML AS Script_XML
-            
-                -- get results folder name (and store in job)
+
+                -- Get results folder name (and store in job)
+
                 If @mode = 'CreateFromImportedJobs' or @mode = 'UpdateExistingJob'
                 Begin
                     exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
@@ -454,16 +456,16 @@ As
                                         @job,
                                         @pXML output,
                                         @message output,
-                                        @settingsFileOverride = @extensionScriptSettingsFileOverride, 
+                                        @settingsFileOverride = @extensionScriptSettingsFileOverride,
                                         @debugMode = @debugMode
 
                 If @debugMode <> 0
                     SELECT @job AS Job, @pXML as PXML
 
-                -- create the basic job structure (steps and dependencies)
+                -- Create the basic job structure (steps and dependencies)
                 -- Details are stored in #Job_Steps and #Job_Step_Dependencies
                 exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
-                    
+
                 -- Calculate signatures for steps that require them (and also handle shared results folders)
                 -- Details are stored in #Job_Steps
                 exec @myError = CreateSignaturesForJobSteps @job, @pXML, @datasetOrDataPackageId, @message output, @debugMode = @debugMode
@@ -472,45 +474,61 @@ As
                 -- This updates Memory_Usage_MB in #Job_Steps
                 exec @myError = UpdateJobStepMemoryUsage @job, @pXML, @message output
 
+                -- For MSXML_Gen and ProMex jobs, @resultsFolderName will be of the form XML202212141459_Auto2113610 or PMX202301141131_Auto2139566
+                -- We actually want the results folder to be the shared results directory name (e.g. MSXML_Gen_1_194_863076 or ProMex_1_286_1112666)
+                -- This change will be made by FinishJobCreation when it looks for Special="Job_Results" in the pipeline script XML, for example
+                --
+                -- <JobScript Name="ProMex">
+                -- <Step Number="1" Tool="PBF_Gen"/>
+                -- <Step Number="2" Tool="ProMex" Special="Job_Results">
+                -- <Depends_On Step_Number="1"/>
+                -- </Step>
+
                 If @debugMode <> 0
                 Begin
                     SELECT @stepCount = COUNT(*) FROM #Job_Steps
+                    SELECT '#Jobs' as [Table], * FROM #Jobs
                     SELECT '#Job_Steps' as [Table], * FROM #Job_Steps
                     SELECT '#Job_Step_Dependencies' as [Table], * FROM #Job_Step_Dependencies
                 End
 
-                -- handle any step cloning
+                -- Handle any step cloning
                 exec @myError = CloneJobStep @job, @pXML, @message output
 
                 If @debugMode <> 0
                 Begin
                     SELECT @stepCountNew = COUNT(*) FROM #Job_Steps
-                    
+
                     If @stepCountNew <> @stepCount
                     Begin
                         SELECT 'Data after Cloning' as Message, * FROM #Job_Steps
                         SELECT 'Data after Cloning' as Message, * FROM #Job_Step_Dependencies
                     End
                 End
-                
+
                 -- Handle external DTAs If any
                 -- This updates DTA_Gen steps in #Job_Steps for which the job parameters contain parameter 'ExternalDTAFolderName' with value 'DTA_Manual'
                 exec @myError = OverrideDTAGenForExternalDTA @job, @pXML, @message output
 
                 -- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
-                --  copying to the main database tables
+                -- copying to the main database tables
                 exec @myError = FinishJobCreation @job, @message output, @debugMode
-                
+
+                If @debugMode <> 0
+                Begin
+                    SELECT '#Jobs (after FinishJobCreation)' as [Table], * FROM #Jobs
+                End
+
                 -- Do current job parameters conflict with existing job?
                 If @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'
                 Begin -- <d>
                     exec @myError = CrossCheckJobParameters @job, @message output, @ignoreSignatureMismatch=1
-                    
+
                     If @myError <> 0
                     Begin -- <e>
                         If @mode = 'UpdateExistingJob'
                         Begin
-                            -- If None of the job steps has completed yet,  it's OK if there are parameter differences
+                            -- If None of the job steps has completed yet, it's OK if there are parameter differences
                             If Exists (SELECT * FROM T_Job_Steps WHERE Job = @job AND State = 5)
                             Begin
                                 Set @message = 'Conflicting parameters are not allowed when one or more job steps has completed: ' + @message
@@ -521,7 +539,7 @@ As
                                 Set @message = ''
                                 Set @myError = 0
                             End
-                            
+
                         End
                         Else
                         Begin
@@ -530,17 +548,17 @@ As
                         End
                     End -- <e>
                 End -- </d>
-                
+
             End -- </c>
-            
+
             Set @jobsProcessed = @jobsProcessed + 1
         End -- </b>
-        
+
         If DateDiff(second, @lastLogTime, GetDate()) >= @loopingUpdateInterval
         Begin
             -- Make sure @loggingEnabled is 1
             Set @loggingEnabled = 1
-            
+
             Set @statusMessage = '... Creating job steps: ' + Convert(varchar(12), @jobsProcessed) + ' / ' + Convert(varchar(12), @jobCountToProcess)
             exec PostLogEntry 'Progress', @statusMessage, 'CreateJobSteps'
             Set @lastLogTime = GetDate()
@@ -559,7 +577,7 @@ As
             -- Move temp tables to main tables
             exec MoveJobsToMainTables @message output, @debugMode
 
-            -- Possibly update the input folder using the 
+            -- Possibly update the input folder using the
             -- Special_Processing param in the job parameters
             exec UpdateInputFolderUsingSpecialProcessingParam @jobList, @infoOnly=0, @showResults=0
         End
@@ -575,7 +593,7 @@ As
             -- Merge temp tables with existing job
             exec UpdateJobInMainTables @message output
         End
-        
+
     End
     Else
     Begin
@@ -585,14 +603,14 @@ As
             exec MergeJobsToMainTables @message output, @infoOnly = @infoOnly
         End
     End
-    
+
     If @loggingEnabled = 1 Or DateDiff(second, @startTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @loggingEnabled = 1
         Set @statusMessage = 'CreateJobSteps complete'
         exec PostLogEntry 'Progress', @statusMessage, 'CreateJobSteps'
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
@@ -608,6 +626,7 @@ Done:
     End
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateJobSteps] TO [DDL_Viewer] AS [dbo]
