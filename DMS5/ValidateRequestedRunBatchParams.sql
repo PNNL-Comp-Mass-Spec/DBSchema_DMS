@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
 **  Date:   05/29/2021 mem - Refactored code from AddUpdateRequestedRunBatch
 **          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
 **          02/14/2023 mem - Rename username and requested instrument group parameters
+**                         - Update error message
 **
 *****************************************************/
 (
@@ -172,7 +173,7 @@ As
             End
             Else
             Begin
-                Set @message = 'Could not find entry in database for operator PRN "' + @ownerPRN + '"'
+                Set @message = 'Could not find entry in database for username "' + @ownerUsername + '"'
                 Set @myError = 50007
                 return @myError
             End
