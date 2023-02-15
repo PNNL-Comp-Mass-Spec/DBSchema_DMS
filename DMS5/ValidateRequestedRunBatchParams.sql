@@ -14,21 +14,22 @@ CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
 **  Auth:   mem
 **  Date:   05/29/2021 mem - Refactored code from AddUpdateRequestedRunBatch
 **          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
+**          02/14/2023 mem - Rename username and requested instrument group parameters
 **
 *****************************************************/
 (
     @batchID int,                               -- Only used when @mode is 'update'
     @name varchar(50),
     @description varchar(256),
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
-    @requestedInstrument varchar(64),           -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+    @requestedInstrumentGroup varchar(64),      -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
     @comment varchar(512),
-    @mode varchar(12) = 'add',                  -- or 'update' or 'PreviewAdd'
-    @instrumentGroup varchar(64) output,
-    @userID int output,
+    @mode varchar(12) = 'add',                  -- 'add' or 'update' or 'PreviewAdd'
+    @instrumentGroupToUse varchar(64) output,   -- Output: Actual instrument group
+    @userID int output,                         -- Output: user_id for @ownerUsername
     @message varchar(512) = '' output
 )
 As
@@ -70,14 +71,14 @@ As
         ---------------------------------------------------
 
         -- Set the instrument group to @requestedInstrument for now
-        Set @instrumentGroup = @requestedInstrument
+        Set @instrumentGroupToUse = @requestedInstrumentGroup
 
-        If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroup)
+        If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroupToUse)
         Begin
             -- Try to update instrument group using T_Instrument_Name
-            SELECT @instrumentGroup = IN_Group
+            SELECT @instrumentGroupToUse = IN_Group
             FROM T_Instrument_Name
-            WHERE IN_Name = @requestedInstrument
+            WHERE IN_Name = @requestedInstrumentGroup
         End
 
         ---------------------------------------------------
@@ -143,31 +144,31 @@ As
         -- Resolve user ID for owner PRN
         ---------------------------------------------------
 
-        execute @userID = GetUserID @ownerPRN
+        execute @userID = GetUserID @ownerUsername
 
         If @userID > 0
         Begin
             -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
             -- Assure that @ownerPRN contains simply the username
             --
-            SELECT @ownerPRN = U_PRN
+            SELECT @ownerUsername = U_PRN
             FROM T_Users
             WHERE ID = @userID
         End
         Else
         Begin
-            -- Could not find entry in database for PRN @ownerPRN
+            -- Could not find entry in database for username @ownerPRN
             -- Try to auto-resolve the name
 
             Declare @matchCount int
             Declare @newPRN varchar(64)
 
-            exec AutoResolveNameToPRN @ownerPRN, @matchCount output, @newPRN output, @userID output
+            exec AutoResolveNameToPRN @ownerUsername, @matchCount output, @newPRN output, @userID output
 
             If @matchCount = 1
             Begin
                 -- Single match found; update @ownerPRN
-                Set @ownerPRN = @newPRN
+                Set @ownerUsername = @newPRN
             End
             Else
             Begin

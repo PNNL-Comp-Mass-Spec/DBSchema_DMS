@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          07/24/2022 mem - Remove trailing tabs from batch name
 **          08/01/2022 mem - If @mode is 'update' and @id is 0, do not set Batch ID to 0 for other requested runs
 **          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**          02/14/2023 mem - Rename variable and use new parameter names for ValidateRequestedRunBatchParams
 **
 *****************************************************/
 (
@@ -50,7 +51,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
     @justificationHighPriority varchar(512),
     @requestedInstrument varchar(64),               -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
     @comment varchar(512),
-    @mode varchar(12) = 'add',                      -- or 'update' or 'PreviewAdd'
+    @mode varchar(12) = 'add',                      -- 'add' or 'update' or 'PreviewAdd'
     @message varchar(512) Output,
     @useRaiseError tinyint = 1                      -- When 1, use Raiserror; when 0, return a non-zero value if an error
 )
@@ -82,23 +83,23 @@ As
     -- Validate input fields
     ---------------------------------------------------
 
-    Declare @instrumentGroup varchar(64)
+    Declare @instrumentGroupToUse varchar(64)
     Declare @userID int = 0
 
     Exec @myError = ValidateRequestedRunBatchParams
-            @id,
-            @name,
-            @description,
-            @ownerPRN,
-            @requestedBatchPriority,
-            @requestedCompletionDate,
-            @justificationHighPriority,
-            @requestedInstrument,           -- Will typically contain an instrument group, not an instrument name
-            @comment,
-            @mode,
-            @instrumentGroup = @instrumentGroup output,
-            @userID = @userID output,
-            @message = @message output
+            @batchID = @id,
+            @name = @name,
+            @description = @description,
+            @ownerUsername = @ownerPRN,
+            @requestedBatchPriority = @requestedCompletionDate,
+            @requestedCompletionDate = @requestedCompletionDate,
+            @justificationHighPriority = @justificationHighPriority,
+            @requestedInstrumentGroup = @requestedInstrument,              -- Will typically contain an instrument group, not an instrument name
+            @comment = @comment,
+            @mode = @mode,
+            @instrumentGroupToUse = @instrumentGroupToUse output,
+            @userID = @userID Output,
+            @message = @message output;
 
     If @myError > 0
     Begin
@@ -277,7 +278,7 @@ As
             'Normal',
             @requestedCompletionDate,
             @justificationHighPriority,
-            @instrumentGroup,
+            @instrumentGroupToUse,
             @comment
         )
         --
@@ -333,7 +334,7 @@ As
             Requested_Batch_Priority = @requestedBatchPriority,
             Requested_Completion_Date = @requestedCompletionDate,
             Justification_for_High_Priority = @justificationHighPriority,
-            Requested_Instrument = @instrumentGroup,
+            Requested_Instrument = @instrumentGroupToUse,
             Comment = @comment
         WHERE (ID = @id)
         --
@@ -421,6 +422,7 @@ As
     END CATCH
 
     return @myError
+
 
 
 GO

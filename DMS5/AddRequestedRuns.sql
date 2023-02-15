@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          02/17/2022 mem - Update operator username warning
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          02/14/2023 mem - Use new parameter names for ValidateRequestedRunBatchParams
 **
 *****************************************************/
 (
@@ -267,14 +268,14 @@ As
                 @batchID = 0,
                 @name = @batchName,
                 @description = @batchDescription,
-                @ownerPRN = @operPRN,
+                @ownerUsername = @operPRN,
                 @requestedBatchPriority = @batchPriority,
                 @requestedCompletionDate = @batchCompletionDate,
                 @justificationHighPriority = @batchPriorityJustification,
-                @requestedInstrument = @instrumentGroup,              -- Will typically contain an instrument group, not an instrument name
+                @requestedInstrumentGroup = @instrumentGroup,              -- Will typically contain an instrument group, not an instrument name
                 @comment = @batchComment,
                 @mode = @mode,
-                @instrumentGroup = @instrumentGroupToUse output,
+                @instrumentGroupToUse = @instrumentGroupToUse output,
                 @userID = @userID output,
                 @message = @message output
 
@@ -469,6 +470,7 @@ As
     END CATCH
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [DDL_Viewer] AS [dbo]
