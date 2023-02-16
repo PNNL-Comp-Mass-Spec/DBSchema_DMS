@@ -97,7 +97,7 @@ AS
         )
         INSERT INTO #TPI(DataPackageID, Type, Identifier)
         SELECT @packageID, @entityName, Value
-        FROM dbo.udf_parse_delimited_list(@itemList, ',')
+        FROM dbo.parse_delimited_list(@itemList, ',')
 
         ---------------------------------------------------
         -- Apply the changes
@@ -131,6 +131,7 @@ AS
     -- Exit
     ---------------------------------------------------
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_data_package_items] TO [DDL_Viewer] AS [dbo]

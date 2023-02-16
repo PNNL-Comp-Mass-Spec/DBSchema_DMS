@@ -82,7 +82,7 @@ AS
         SELECT ID
         FROM T_Data_Package
         WHERE ID IN ( SELECT [Value]
-                      FROM dbo.udf_parse_delimited_integer_list ( @DataPackageList, ',' ) )
+                      FROM dbo.parse_delimited_integer_list ( @DataPackageList, ',' ) )
     End
 
     Set @myRowCount = 0
@@ -264,6 +264,7 @@ AS
 Done:
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_data_package_eus_info] TO [DDL_Viewer] AS [dbo]

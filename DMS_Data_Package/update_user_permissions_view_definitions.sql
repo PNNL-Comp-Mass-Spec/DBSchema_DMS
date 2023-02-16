@@ -88,7 +88,7 @@ AS
 
         INSERT INTO #TmpLoginsToProcess (LoginName, Action)
         SELECT Value, 'Grant'
-        FROM dbo.udf_parse_delimited_list(@roleOrUserList, ',')
+        FROM dbo.parse_delimited_list(@roleOrUserList, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -98,7 +98,7 @@ AS
 
         INSERT INTO #TmpLoginsToProcess (LoginName, Action)
         SELECT Value, 'Revoke'
-        FROM dbo.udf_parse_delimited_list(@revokeList, ',')
+        FROM dbo.parse_delimited_list(@revokeList, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -293,6 +293,7 @@ Done:
     Print @message
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_user_permissions_view_definitions] TO [DDL_Viewer] AS [dbo]

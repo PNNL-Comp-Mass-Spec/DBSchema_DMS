@@ -109,7 +109,7 @@ AS
         If @logError <> 0
         Begin
             Set @currentLocation = 'Examining @logWarningErrorList'
-            If Exists (SELECT Value FROM dbo.udf_parse_delimited_integer_list(@logWarningErrorList, ',') WHERE Value = @errorNum)
+            If Exists (SELECT Value FROM dbo.parse_delimited_integer_list(@logWarningErrorList, ',') WHERE Value = @errorNum)
                 Set @logErrorType = 'Warning'
             Else
                 Set @logErrorType = 'Error'
@@ -133,6 +133,7 @@ AS
     End Catch
 
     RETURN @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[local_error_handler] TO [DDL_Viewer] AS [dbo]
