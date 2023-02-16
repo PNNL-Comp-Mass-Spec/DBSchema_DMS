@@ -100,11 +100,12 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          08/08/2022 mem - Update StateChanged when the state changes
 **          08/25/2022 mem - Use view V_Operations_Task_Staff when checking if the user can update a closed prep request item
 **          02/08/2023 bcg - Update view column name
+**          02/13/2023 bcg - Rename parameter to requesterUsername
 **
 *****************************************************/
 (
     @requestName varchar(128),
-    @requesterPRN varchar(32),
+    @requesterUsername varchar(32),
     @reason varchar(512),
     @materialContainerList varchar(2048),
     @organism varchar(128),
@@ -666,7 +667,7 @@ As
             Material_Container_List
         ) VALUES (
             @requestName,
-            @requesterPRN,
+            @requesterUsername,
             @reason,
             @organism,
             @tissueIdentifier,
@@ -735,7 +736,7 @@ As
         UPDATE T_Sample_Prep_Request
         SET
             Request_Name = @requestName,
-            Requester_PRN = @requesterPRN,
+            Requester_PRN = @requesterUsername,
             Reason = @reason,
             Material_Container_List = @materialContainerList,
             Organism = @organism,

@@ -41,13 +41,14 @@ CREATE PROCEDURE [dbo].[AddUpdateBiomaterial]
 **                         - Remove deprecated parameters that are now tracked in T_Reference_Compound
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          07/08/2022 mem - Rename procedure from AddUpdateCellCulture to AddUpdateBiomaterial and update argument names
+**          02/13/2023 bcg - Rename parameters to @contactUsername and @piUsername
 **
 *****************************************************/
 (
     @biomaterialName varchar(64),       -- Name of biomaterial (or peptide sequence if tracking an MRM peptide)
     @sourceName varchar(64),            -- Source that the material came from; can be a person (onsite or offsite) or a company
-    @contactPRN varchar(64),            -- Contact for the Source; typically PNNL staff, but can be offsite person
-    @piPRN varchar(32),                 -- Project lead
+    @contactUsername varchar(64),       -- Contact for the Source; typically PNNL staff, but can be offsite person
+    @piUsername varchar(32),            -- Project lead
     @biomaterialType varchar(32),
     @reason varchar(500),
     @comment varchar(500),
@@ -91,8 +92,8 @@ As
 
     Set @biomaterialName = LTrim(RTrim(IsNull(@biomaterialName, '')))
     Set @sourceName = LTrim(RTrim(IsNull(@sourceName, '')))
-    Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))
-    Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))
+    Set @contactUsername = LTrim(RTrim(IsNull(@contactUsername, '')))
+    Set @piUsername = LTrim(RTrim(IsNull(@piUsername, '')))
     Set @biomaterialType = LTrim(RTrim(IsNull(@biomaterialType, '')))
     Set @reason = LTrim(RTrim(IsNull(@reason, '')))
     Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
@@ -109,12 +110,12 @@ As
 
     Set @myError = 0
 
-    If LEN(@contactPRN) < 1
+    If LEN(@contactUsername) < 1
     Begin
         RAISERROR ('Contact Name must be defined', 11, 3)
     End
     --
-    If LEN(@piPRN) < 1
+    If LEN(@piUsername) < 1
     Begin
         RAISERROR ('Principle Investigator PRN must be defined', 11, 3)
     End
@@ -267,28 +268,28 @@ As
     Declare @MatchCount int
     Declare @NewPRN varchar(64)
 
-    execute @userID = GetUserID @contactPRN
+    execute @userID = GetUserID @contactUsername
 
     If @userID > 0
     Begin
         -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @contactPRN contains simply the username
+        -- Assure that @contactUsername contains simply the username
         --
-        SELECT @contactPRN = U_PRN
+        SELECT @contactUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @contactPRN
+        -- Could not find entry in database for Username @contactUsername
         -- Try to auto-resolve the name
 
-        exec AutoResolveNameToPRN @contactPRN, @MatchCount output, @NewPRN output, @userID output
+        exec AutoResolveNameToPRN @contactUsername, @MatchCount output, @NewPRN output, @userID output
 
         If @MatchCount = 1
         Begin
-            -- Single match found; update @contactPRN
-            Set @contactPRN = @NewPRN
+            -- Single match found; update @contactUsername
+            Set @contactUsername = @NewPRN
         End
 
     End
@@ -296,35 +297,35 @@ As
     -- Verify that principle investigator PRN is valid
     -- and get its id number
     --
-    execute @userID = GetUserID @piPRN
+    execute @userID = GetUserID @piUsername
 
     If @userID > 0
     Begin
         -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @piPRN contains simply the username
+        -- Assure that @piUsername contains simply the username
         --
-        SELECT @piPRN = U_PRN
+        SELECT @piUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
         ---------------------------------------------------
-        -- @piPRN did not resolve to a User_ID
+        -- @piUsername did not resolve to a User_ID
         -- In case a name was entered (instead of a PRN),
         --  try to auto-resolve using the U_Name column in T_Users
         ---------------------------------------------------
 
-        exec AutoResolveNameToPRN @piPRN, @MatchCount output, @NewPRN output, @userID output
+        exec AutoResolveNameToPRN @piUsername, @MatchCount output, @NewPRN output, @userID output
 
         If @MatchCount = 1
         Begin
-            -- Single match was found; update @piPRN
-            Set @piPRN = @NewPRN
+            -- Single match was found; update @piUsername
+            Set @piUsername = @NewPRN
         End
         Else
         Begin
-            Set @msg = 'Could not find entry in database for principle investigator PRN "' + @piPRN + '"'
+            Set @msg = 'Could not find entry in database for principle investigator PRN "' + @piUsername + '"'
             RAISERROR (@msg, 11, 17)
         End
     End
@@ -354,8 +355,8 @@ As
         ) VALUES (
             @biomaterialName,
             @sourceName,
-            @contactPRN,
-            @piPRN,
+            @contactUsername,
+            @piUsername,
             @typeID,
             @reason,
             @comment,
@@ -434,8 +435,8 @@ As
         UPDATE T_Cell_Culture
         Set
             CC_Source_Name    = @sourceName,
-            CC_Contact_PRN    = @contactPRN,
-            CC_PI_PRN         = @piPRN,
+            CC_Contact_PRN    = @contactUsername,
+            CC_PI_PRN         = @piUsername,
             CC_Type           = @typeID,
             CC_Reason         = @reason,
             CC_Comment        = @comment,

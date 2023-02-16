@@ -24,12 +24,14 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 **                         - Add parameter @comment
 **          08/08/2022 mem - Update State_Changed when the state changes
 **          02/09/2023 bcg - Update view column name
+**          02/13/2023 bcg - Send the correct procedure name to ValidateRequestUsers
+**                         - Rename parameter to requesterUsername
 **
 *****************************************************/
 (
     @requestName varchar(128),
     @analysisType varchar(16),
-    @requesterPRN varchar(32),
+    @requesterUsername varchar(32),
     @description varchar(1024),
     @analysisSpecifications varchar(2048),
     @comment varchar(2048),
@@ -232,7 +234,7 @@ As
     Declare @result Int
 
     Exec @result = ValidateRequestUsers
-        @requestName, 'AddUpdateSamplePrepRequest',
+        @requestName, 'AddUpdateDataAnalysisRequest',
         @requestedPersonnel = @requestedPersonnel Output,
         @assignedPersonnel = @assignedPersonnel Output,
         @requireValidRequestedPersonnel= 0,
@@ -656,7 +658,7 @@ As
         ) VALUES (
             @requestName,
             @analysisType,
-            @requesterPRN,
+            @requesterUsername,
             @description,
             @analysisSpecifications,
             @comment,
@@ -720,7 +722,7 @@ As
         UPDATE T_Data_Analysis_Request
         SET Request_Name = @requestName,
             Analysis_Type = @analysisType,
-            Requester_PRN = @requesterPRN,
+            Requester_PRN = @requesterUsername,
             Description = @description,
             Analysis_Specifications = @analysisSpecifications,
             Comment = @comment,

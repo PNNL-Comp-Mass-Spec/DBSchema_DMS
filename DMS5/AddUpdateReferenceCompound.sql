@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
 **                         - Properly handle float-based dates (resulting from Excel copy / paste-value issues)
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/13/2023 mem - Rename contact parameter to @contactUsername
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
     @containerName varchar(128) = 'na',
     @wellplateName varchar(64),
     @wellNumber varchar(64),
-    @contactPRN varchar(64),            -- Contact for the Source; typically PNNL staff, but can be offsite person
+    @contactUsername varchar(64),       -- Contact for the Source; typically PNNL staff, but can be offsite person
     @supplier varchar(64),              -- Source that the material came from; can be a person (onsite or offsite) or a company
     @productId varchar(128),
     @purchaseDate varchar(30),          -- Will be converted to a date
@@ -84,7 +85,7 @@ As
     Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
     Set @pubChemID = LTrim(RTrim(IsNull(@pubChemID, '')))
     Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
-    Set @contactPRN = LTrim(RTrim(IsNull(@contactPRN, '')))
+    Set @contactUsername = LTrim(RTrim(IsNull(@contactUsername, '')))
     Set @supplier = LTrim(RTrim(IsNull(@supplier, '')))
     Set @productId = LTrim(RTrim(IsNull(@productId, '')))
     Set @purchaseDate = LTrim(RTrim(IsNull(@purchaseDate, '')))
@@ -121,7 +122,7 @@ As
         RAISERROR ('Campaign Name must be defined', 11, 1)
     End
 
-    If LEN(@contactPRN) < 1
+    If LEN(@contactUsername) < 1
     Begin
         RAISERROR ('Contact Name cannot be blank', 11, 3)
     End
@@ -301,28 +302,28 @@ As
     Declare @MatchCount int
     Declare @NewPRN varchar(64)
 
-    execute @userID = GetUserID @contactPRN
+    execute @userID = GetUserID @contactUsername
 
     If @userID > 0
     Begin
         -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @contactPRN contains simply the username
+        -- Assure that @contactUsername contains simply the username
         --
-        SELECT @contactPRN = U_PRN
+        SELECT @contactUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @contactPRN
+        -- Could not find entry in database for PRN @contactUsername
         -- Try to auto-resolve the name
 
-        exec AutoResolveNameToPRN @contactPRN, @MatchCount output, @NewPRN output, @userID output
+        exec AutoResolveNameToPRN @contactUsername, @MatchCount output, @NewPRN output, @userID output
 
         If @MatchCount = 1
         Begin
-            -- Single match found; update @contactPRN
-            Set @contactPRN = @NewPRN
+            -- Single match found; update @contactUsername
+            Set @contactUsername = @NewPRN
         End
 
     End
@@ -367,7 +368,7 @@ As
             @containerID,
             @wellplateName,
             @wellNumber,
-            @contactPRN,
+            @contactUsername,
             @supplier,
             @productId,
             @purchaseDateValue,
@@ -431,7 +432,7 @@ As
             Container_ID = @containerID,
             Wellplate_Name = @wellplateName,
             Well_Number = @wellNumber,
-            Contact_PRN = @contactPRN,
+            Contact_PRN = @contactUsername,
             Supplier = @supplier,
             Product_ID = @productID,
             Purchase_Date = @purchaseDateValue,

@@ -18,7 +18,7 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **          01/15/2010 grk - Added new fields (http://prismtrac.pnl.gov/trac/ticket/753)
 **          02/05/2010 grk - Split team member field
 **          02/07/2010 grk - Added validation for campaign name
-**          02/07/2010 mem - No longer validating @progmgrPRN or @piPRN in this procedure since this is now handled by UpdateResearchTeamForCampaign
+**          02/07/2010 mem - No longer validating @progmgrUsername or @piUsername in this procedure since this is now handled by UpdateResearchTeamForCampaign
 **          03/17/2010 grk - DataReleaseRestrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
 **          04/21/2010 grk - try-catch for error handling
 **          10/27/2011 mem - Added parameter @fractionEMSLFunded
@@ -44,13 +44,14 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          05/16/2022 mem - Fix potential arithmetic overflow error when parsing @fractionEMSLFunded
+**          02/13/2023 bcg - Rename parameters to progmgrUsername and piUsername
 **
 *****************************************************/
 (
     @campaignNum varchar(64),               -- Campaign name
     @projectNum varchar(64),                -- Project name
-    @progmgrPRN varchar(64),                -- Project Manager PRN (required)
-    @piPRN varchar(64),                     -- Principal Investigator PRN (required)
+    @progmgrUsername varchar(64),           -- Project Manager Username (required)
+    @piUsername varchar(64),                -- Principal Investigator Username (required)
     @technicalLead varchar(256),            -- Technical Lead
     @samplePreparationStaff varchar(256),   -- Sample Prep Staff
     @datasetAcquisitionStaff varchar(256),  -- Dataset acquisition staff
@@ -112,8 +113,8 @@ As
 
     Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
     Set @projectNum = LTrim(RTrim(IsNull(@projectNum, '')))
-    Set @progmgrPRN = LTrim(RTrim(IsNull(@progmgrPRN, '')))
-    Set @piPRN = LTrim(RTrim(IsNull(@piPRN, '')))
+    Set @progmgrUsername = LTrim(RTrim(IsNull(@progmgrUsername, '')))
+    Set @piUsername = LTrim(RTrim(IsNull(@piUsername, '')))
 
     Set @myError = 0
     If LEN(@campaignNum) < 1
@@ -122,11 +123,11 @@ As
     If LEN(@projectNum) < 1
         RAISERROR ('Project Number is blank', 11, 1)
     --
-    If LEN(@progmgrPRN) < 1
-        RAISERROR ('Project Manager PRN is blank', 11, 2)
+    If LEN(@progmgrUsername) < 1
+        RAISERROR ('Project Manager Username is blank', 11, 2)
     --
-    If LEN(@piPRN) < 1
-        RAISERROR ('Principle Investigator PRN is blank', 11, 3)
+    If LEN(@piUsername) < 1
+        RAISERROR ('Principle Investigator Username is blank', 11, 3)
 
     ---------------------------------------------------
     -- Is entry already in database?
@@ -320,8 +321,8 @@ As
         --
         EXEC @myError = UpdateResearchTeamForCampaign
                             @campaignNum,
-                            @progmgrPRN ,
-                            @piPRN,
+                            @progmgrUsername ,
+                            @piUsername,
                             @technicalLead,
                             @samplePreparationStaff,
                             @datasetAcquisitionStaff,
@@ -457,8 +458,8 @@ As
         --
         EXEC @myError = UpdateResearchTeamForCampaign
                             @campaignNum,
-                            @progmgrPRN ,
-                            @piPRN,
+                            @progmgrUsername ,
+                            @piUsername,
                             @technicalLead,
                             @samplePreparationStaff,
                             @datasetAcquisitionStaff,
