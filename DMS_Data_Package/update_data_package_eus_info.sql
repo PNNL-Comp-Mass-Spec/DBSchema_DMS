@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDataPackageEUSInfo] ******/
+/****** Object:  StoredProcedure [dbo].[update_data_package_eus_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDataPackageEUSInfo]
+CREATE PROCEDURE [dbo].[update_data_package_eus_info]
 /****************************************************
 **
 **  Desc:
@@ -17,18 +16,19 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageEUSInfo]
 **  Date:   10/18/2016 mem - Initial version
 **          10/19/2016 mem - Replace parameter @DataPackageID with @DataPackageList
 **          11/04/2016 mem - Exclude proposals that start with EPR
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/07/2017 mem - Now updating Instrument and EUS_Instrument_ID
 **          03/07/2018 mem - Properly handle null values for Best_EUS_Proposal_ID, Best_EUS_Instrument_ID, and Best_Instrument_Name
 **          05/18/2022 mem - Use new EUS Proposal column name
 **          06/08/2022 mem - Use new Item_Added column name
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DataPackageList varchar(max),        -- '' or 0 to update all data packages, otherwise a comma separated list of data package IDs to update
+    @dataPackageList varchar(max),        -- '' or 0 to update all data packages, otherwise a comma separated list of data package IDs to update
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -41,7 +41,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDataPackageEUSInfo', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_data_package_eus_info', @raiseError = 1
     If @authorized = 0
     Begin
         RAISERROR ('Access denied', 11, 3)
@@ -82,7 +82,7 @@ As
         SELECT ID
         FROM T_Data_Package
         WHERE ID IN ( SELECT [Value]
-                      FROM dbo.udfParseDelimitedIntegerList ( @DataPackageList, ',' ) )
+                      FROM dbo.udf_parse_delimited_integer_list ( @DataPackageList, ',' ) )
     End
 
     Set @myRowCount = 0
@@ -133,8 +133,8 @@ As
 
     If @myRowCount > 0 And @DataPackageCount > 1
     Begin
-        Set @message = 'Updated EUS_Person_ID for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' data package', ' data packages')
-        Exec PostLogEntry 'Normal', @message, 'UpdateDataPackageEUSInfo'
+        Set @message = 'Updated EUS_Person_ID for ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' data package', ' data packages')
+        Exec post_log_entry 'Normal', @message, 'update_data_package_eus_info'
     End
 
 
@@ -257,16 +257,14 @@ As
 
     If @myRowCount > 0 And @DataPackageCount > 1
     Begin
-        Set @message = 'Updated EUS_Proposal_ID, EUS_Instrument_ID, and/or Instrument name for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' data package', ' data packages')
-        Exec PostLogEntry 'Normal', @message, 'UpdateDataPackageEUSInfo'
+        Set @message = 'Updated EUS_Proposal_ID, EUS_Instrument_ID, and/or Instrument name for ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' data package', ' data packages')
+        Exec post_log_entry 'Normal', @message, 'update_data_package_eus_info'
     End
 
 Done:
 
     Return @myError
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageEUSInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_data_package_eus_info] TO [DDL_Viewer] AS [dbo]
 GO

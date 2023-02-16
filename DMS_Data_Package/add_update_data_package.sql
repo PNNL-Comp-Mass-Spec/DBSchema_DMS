@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateDataPackage] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_data_package] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AddUpdateDataPackage]
+CREATE PROCEDURE [dbo].[add_update_data_package]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Data_Package
@@ -17,7 +16,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataPackage]
 **  Date:   05/21/2009 grk
 **          05/29/2009 mem - Updated to support Package_File_Folder not allowing null values
 **          06/04/2009 grk - Added parameter @creationParams
-**                         - Updated to call MakeDataPackageStorageFolder
+**                         - Updated to call make_data_package_storage_folder
 **          06/05/2009 grk - Added parameter @prismWikiLink, which is used to populate the Wiki_Page_Link field
 **          06/08/2009 mem - Now validating @team and @packageType
 **          06/09/2009 mem - Now warning user if the team name is changed
@@ -25,17 +24,18 @@ CREATE PROCEDURE [dbo].[AddUpdateDataPackage]
 **          06/11/2009 grk - Added Requester field
 **          07/01/2009 mem - Expanced @massTagDatabase to varchar(1024)
 **          10/23/2009 mem - Expanded @prismWikiLink to varchar(1024)
-**          03/17/2011 mem - Removed extra, unused parameter from MakeDataPackageStorageFolder
-**                         - Now only calling MakeDataPackageStorageFolder when @mode = 'add'
+**          03/17/2011 mem - Removed extra, unused parameter from make_data_package_storage_folder
+**                         - Now only calling make_data_package_storage_folder when @mode = 'add'
 **          08/31/2015 mem - Now replacing the symbol & with 'and' in the name when @mode = 'add'
 **          02/19/2016 mem - Now replacing a semicolon with a comma when @mode = 'add'
-**          10/18/2016 mem - Call UpdateDataPackageEUSInfo
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          10/18/2016 mem - Call update_data_package_eus_info
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          06/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **                         - Validate @state
 **          11/19/2020 mem - Add @dataDOI and @manuscriptDOI
 **          07/05/2022 mem - Include the data package ID when logging errors
-**    
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -58,7 +58,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataPackage]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -75,13 +75,13 @@ As
     Declare @logErrors tinyint = 0
 
     BEGIN TRY
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
-    Exec @authorized = VerifySPAuthorized 'AddUpdateDataPackage', @raiseError = 1
+
+    Declare @authorized tinyint = 0
+    Exec @authorized = verify_sp_authorized 'add_update_data_package', @raiseError = 1
     If @authorized = 0
     Begin
         RAISERROR ('Access denied', 11, 3)
@@ -95,21 +95,21 @@ As
     Set @packageType = IsNull(@packageType, '')
     Set @description = IsNull(@description, '')
     Set @comment = IsNull(@comment, '')
-    
+
     If @team = ''
     Begin
         set @message = 'Data package team cannot be blank'
         RAISERROR (@message, 10, 1)
         return 51005
     End
-    
+
     If @packageType = ''
     Begin
         set @message = 'Data package type cannot be blank'
         RAISERROR (@message, 10, 1)
         return 51006
     End
-    
+
     -- Make sure the team name is valid
     If Not Exists (SELECT * FROM T_Data_Package_Teams WHERE Team_Name = @team)
     Begin
@@ -117,7 +117,7 @@ As
         RAISERROR (@message, 10, 1)
         return 51007
     End
-    
+
     -- Make sure the data package type is valid
     If Not Exists (SELECT * FROM T_Data_Package_Type WHERE Name = @packageType)
     Begin
@@ -139,12 +139,12 @@ As
     ---------------------------------------------------
     -- Validate the state
     ---------------------------------------------------
-    
+
     If Not Exists (SELECT * FROM T_Data_Package_State WHERE [Name] = @state)
     Begin
         set @message = 'Invalid state: ' + @state
         RAISERROR (@message, 11, 32)
-    End    
+    End
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
@@ -169,28 +169,28 @@ As
             RAISERROR (@message, 10, 1)
             return 51009
         end
-        
+
         -- Warn if the user is changing the team
         If IsNull(@teamCurrent, '') <> ''
         Begin
             If @teamCurrent <> @team
                 Set @teamChangeWarning = 'Warning: Team changed from "' + @teamCurrent + '" to "' + @team + '"; the data package files will need to be moved from the old location to the new one'
         End
-        
+
     end -- mode update
 
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
     If @mode = 'add'
     begin
-        
+
         If @name Like '%&%'
         Begin
             -- Replace & with 'and'
-            
+
             If @name Like '%[a-z0-9]&[a-z0-9]%'
             Begin
                 If @name Like '% %'
@@ -198,16 +198,16 @@ As
                 Else
                     Set @name = Replace(@name, '&', '_and_')
             End
-                
+
             Set @name = Replace(@name, '&', 'and')
         End
-        
+
         If @name Like '%;%'
         Begin
             -- Replace each semicolon with a comma
             Set @name = Replace(@name, ';', ',')
         End
-        
+
         -- Make sure the data package name doesn't already exist
         If Exists (SELECT * FROM T_Data_Package WHERE Name = @name)
         Begin
@@ -217,13 +217,13 @@ As
         End
 
         INSERT INTO T_Data_Package (
-            Name, 
-            Package_Type, 
-            Description, 
-            Comment, 
-            Owner, 
+            Name,
+            Package_Type,
+            Description,
+            Comment,
+            Owner,
             Requester,
-            Created, 
+            Created,
             State,
             Package_File_Folder,
             Path_Root,
@@ -233,17 +233,17 @@ As
             Data_DOI,
             Manuscript_DOI
         ) VALUES (
-            @name, 
-            @packageType, 
-            @description, 
-            @comment, 
-            @owner, 
+            @name,
+            @packageType,
+            @description,
+            @comment,
+            @owner,
             @requester,
-            getdate(), 
+            getdate(),
             @state,
-            Convert(varchar(64), NewID()),        -- Package_File_Folder cannot be null and must be unique; this guarantees both.  Also, we'll rename it below using dbo.MakePackageFolderName
+            Convert(varchar(64), NewID()),        -- Package_File_Folder cannot be null and must be unique; this guarantees both.  Also, we'll rename it below using dbo.make_package_folder_name
             @rootPath,
-            @team, 
+            @team,
             @massTagDatabase,
             IsNull(@prismWikiLink, ''),
             @dataDOI,
@@ -267,11 +267,11 @@ As
         -- data package folder and wiki page auto naming
         ---------------------------------------------------
         --
-        set @pkgFileFolder = dbo.MakePackageFolderName(@id, @name)
-        set @prismWikiLink = dbo.MakePRISMWikiPageLink(@id, @name)
+        set @pkgFileFolder = dbo.make_package_folder_name(@id, @name)
+        set @prismWikiLink = dbo.make_prismwiki_page_link(@id, @name)
         --
         UPDATE T_Data_Package
-        SET 
+        SET
             Package_File_Folder = @pkgFileFolder,
             Wiki_Page_Link = @prismWikiLink
         WHERE ID = @id
@@ -291,21 +291,21 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    if @mode = 'update' 
+    if @mode = 'update'
     begin
         set @myError = 0
         --
-        UPDATE T_Data_Package 
-        SET 
-            Name = @name, 
-            Package_Type = @packageType, 
-            Description = @description, 
-            Comment = @comment, 
-            Owner = @owner, 
+        UPDATE T_Data_Package
+        SET
+            Name = @name,
+            Package_Type = @packageType,
+            Description = @description,
+            Comment = @comment,
+            Owner = @owner,
             Requester = @requester,
-            Last_Modified = getdate(), 
+            Last_Modified = getdate(),
             State = @state,
-            Path_Team = @team, 
+            Path_Team = @team,
             Mass_Tag_Database = @massTagDatabase,
             Wiki_Page_Link = @prismWikiLink,
             Data_DOI = @dataDOI,
@@ -320,14 +320,14 @@ As
             RAISERROR (@message, 10, 1)
             return 51013
         end
-                    
+
     end -- update mode
 
     ---------------------------------------------------
     -- Create the data package folder when adding a new data package
     ---------------------------------------------------
     if @mode = 'add'
-        exec @myError = MakeDataPackageStorageFolder @id, @mode, @message=@message output, @callingUser=@callingUser
+        exec @myError = make_data_package_storage_folder @id, @mode, @message=@message output, @callingUser=@callingUser
 
     If @teamChangeWarning <> ''
     Begin
@@ -335,7 +335,7 @@ As
             Set @message = @message + '; '
         Else
             Set @message = ': '
-            
+
         Set @message = @message + @teamChangeWarning
     End
 
@@ -343,17 +343,17 @@ As
     -- Update EUS_Person_ID and EUS_Proposal_ID
     ---------------------------------------------------
     --
-    Exec UpdateDataPackageEUSInfo @id
-    
+    Exec update_data_package_eus_info @id
+
     END TRY
-    BEGIN CATCH 
-        EXEC FormatErrorMessage @message output, @myError output
+    BEGIN CATCH
+        EXEC format_error_message @message output, @myError output
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         If @logErrors > 0
         Begin
             If Not @ID Is Null
@@ -361,15 +361,15 @@ As
                 Set @msgForLog = @msgForLog + '; Data Package ID ' + Cast(@ID As Varchar(12))
             End
 
-            Exec PostLogEntry 'Error', @msgForLog, 'AddUpdateDataPackage'
+            Exec post_log_entry 'Error', @msgForLog, 'add_update_data_package'
         End
-                    
+
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataPackage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_data_package] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateDataPackage] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_data_package] TO [DMS_SP_User] AS [dbo]
 GO

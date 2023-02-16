@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveHistoricLogEntries] ******/
+/****** Object:  StoredProcedure [dbo].[move_historic_log_entries] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
+CREATE PROCEDURE [dbo].[move_historic_log_entries]
 /****************************************************
 **
 **  Desc:   Move log entries from main log into the
@@ -16,12 +15,13 @@ CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
 **  Auth:   mem
 **  Date:   03/07/2018 mem - Initial version
 **          08/26/2022 mem - Use new column name in T_Log_Entries
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoHoldoffWeeks int = 2
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @cutoffDateTime datetime
@@ -34,14 +34,14 @@ As
 
     -- Start transaction
     --
-    declare @transName varchar(64) = 'TRAN_MoveHistoricLogEntries'
+    declare @transName varchar(64) = 'TRAN_move_historic_log_entries'
     begin transaction @transName
 
     -- Delete log entries that we do not want to move to the DMS Historic Log DB
     DELETE FROM dbo.T_Log_Entries
     WHERE Entered < @cutoffDateTime AND
          ( type = 'Normal' AND message Like 'Updated EUS_Proposal_ID, EUS_Instrument_ID, and/or Instrument name for % data packages%' OR
-           posted_by = 'RebuildFragmentedIndices' AND type = 'Normal' AND message LIKE 'Reindexed % due to Fragmentation%'
+           posted_by = 'rebuild_fragmented_indices' AND type = 'Normal' AND message LIKE 'Reindexed % due to Fragmentation%'
            )
     --
     if @@error <> 0
@@ -85,6 +85,5 @@ As
     commit transaction @transName
 
     return 0
-
 
 GO

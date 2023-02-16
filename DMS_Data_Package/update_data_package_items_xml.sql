@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDataPackageItemsXML] ******/
+/****** Object:  StoredProcedure [dbo].[update_data_package_items_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
+CREATE PROCEDURE [dbo].[update_data_package_items_xml]
 /****************************************************
 **
 **  Desc:
@@ -18,13 +17,14 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
 **
 **  Auth:   grk
 **  Date:   06/10/2009 grk - initial release
-**          05/23/2010 grk - factored out grunt work into new sproc UpdateDataPackageItemsUtility
+**          05/23/2010 grk - factored out grunt work into new sproc update_data_package_items_utility
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/18/2016 mem - Log errors to T_Log_Entries
 **          10/19/2016 mem - Update #TPI to use an integer field for data package ID
 **          11/11/2016 mem - Add parameter @removeParents
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          04/25/2018 mem - Assure that @removeParents is not null
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -35,14 +35,14 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsXML]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     set @message = ''
-    
+
     Declare @itemCountChanged int
     set @itemCountChanged = 0
 
@@ -57,14 +57,14 @@ As
     SET ANSI_PADDING ON
     SET ANSI_WARNINGS ON
 
-    BEGIN TRY 
-    
+    BEGIN TRY
+
         ---------------------------------------------------
         -- Verify that the user can execute this procedure from the given client host
         ---------------------------------------------------
-            
-        Declare @authorized tinyint = 0    
-        Exec @authorized = VerifySPAuthorized 'UpdateDataPackageItemsXML', @raiseError = 1
+
+        Declare @authorized tinyint = 0
+        Exec @authorized = verify_sp_authorized 'update_data_package_items_xml', @raiseError = 1
         If @authorized = 0
         Begin
             RAISERROR ('Access denied', 11, 3)
@@ -74,17 +74,17 @@ As
 
         -- Set this to 1 to debug
         Declare @logUsage tinyint = 0
-        
+
         If @logUsage > 0
         Begin
             Declare @logMessage varchar(4000)
-            Set @logMessage = 'Mode: ' + 
-                              IsNull(@mode, 'Null mode') + '; ' + 
-                              'RemoveParents: ' + Cast(@removeParents as varchar(2)) + '; ' + 
+            Set @logMessage = 'Mode: ' +
+                              IsNull(@mode, 'Null mode') + '; ' +
+                              'RemoveParents: ' + Cast(@removeParents as varchar(2)) + '; ' +
                               IsNull(@paramListXML, 'Error: @paramListXML is null')
-            Exec PostLogEntry 'Debug', @logMessage, 'UpdateDataPackageItemsXML'
+            Exec post_log_entry 'Debug', @logMessage, 'update_data_package_items_xml'
         End
-        
+
         ---------------------------------------------------
         -- Create and populate a temporary table using the XML in @paramListXML
         ---------------------------------------------------
@@ -99,14 +99,14 @@ As
         set @xml = @paramListXML
 
         INSERT INTO #TPI (DataPackageID, Type, Identifier)
-        SELECT 
+        SELECT
             xmlNode.value('@pkg', 'int') [Package],
             xmlNode.value('@type', 'varchar(50)') [Type],
             xmlNode.value('@id', 'varchar(256)') [Identifier]
         FROM   @xml.nodes('//item') AS R(xmlNode)
 
         ---------------------------------------------------
-        exec @myError = UpdateDataPackageItemsUtility
+        exec @myError = update_data_package_items_utility
                                 @comment,
                                 @mode,
                                 @removeParents,
@@ -114,29 +114,29 @@ As
                                 @callingUser
         if @myError <> 0
             RAISERROR(@message, 11, 14)
-        
+
      ---------------------------------------------------
      ---------------------------------------------------
     END TRY
-    BEGIN CATCH 
-        EXEC FormatErrorMessage @message output, @myError output
-        
+    BEGIN CATCH
+        EXEC format_error_message @message output, @myError output
+
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
-        Exec PostLogEntry 'Error', @msgForLog, 'UpdateDataPackageItemsXML'
+
+        Exec post_log_entry 'Error', @msgForLog, 'update_data_package_items_xml'
     END CATCH
-    
+
      ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageItemsXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_data_package_items_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDataPackageItemsXML] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_data_package_items_xml] TO [DMS_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeOSMPackageStorageFolder] ******/
+/****** Object:  StoredProcedure [dbo].[make_osm_package_storage_folder] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.MakeOSMPackageStorageFolder
+CREATE PROCEDURE [dbo].[make_osm_package_storage_folder]
 /****************************************************
 **
 **  Desc: Requests creation of data storage folder for OSM Package
@@ -12,79 +12,78 @@ CREATE PROCEDURE dbo.MakeOSMPackageStorageFolder
 **
 **  Parameters:
 **
-**	Auth:	grk
-**  Date:	08/21/2013
-**			05/27/2016 mem - Remove call to CallSendMessage
+**  Auth:   grk
+**  Date:   08/21/2013
+**          05/27/2016 mem - Remove call to CallSendMessage
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int,
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) = '' output,
-	@callingUser varchar(128) = ''
+    @id int,
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) = '' output,
+    @callingUser varchar(128) = ''
 )
-As
-	set nocount on
+AS
+    set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    declare @myError int
+    declare @myRowCount int
+    set @myError = 0
+    set @myRowCount = 0
 
-	set @message = ''
+    set @message = ''
 
-	---------------------------------------------------
-	-- Lookup the parameters needed to call AddDataFolderCreateTask
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Lookup the parameters needed to call add_data_folder_create_task
+    ---------------------------------------------------
 
-	Declare @PackageID int
-	Declare @PathLocalRoot varchar(256) = ''
-	Declare @PathSharedRoot varchar(256) = ''
-	Declare @PathFolder varchar(512) = ''
-	Declare @SourceDB varchar(128) = DB_Name()
+    Declare @PackageID int
+    Declare @PathLocalRoot varchar(256) = ''
+    Declare @PathSharedRoot varchar(256) = ''
+    Declare @PathFolder varchar(512) = ''
+    Declare @SourceDB varchar(128) = DB_Name()
 
-	SELECT 
-		@PackageID = ID, 
-		@PathSharedRoot  = Path_Shared_Root ,
-		@PathFolder = Path_Folder 
-	FROM    V_OSM_Package_Paths
-	WHERE ID = @ID
+    SELECT
+        @PackageID = ID,
+        @PathSharedRoot  = Path_Shared_Root ,
+        @PathFolder = Path_Folder
+    FROM V_OSM_Package_Paths
+    WHERE ID = @ID
 
-	exec @myError = S_AddDataFolderCreateTask 
-					@PathLocalRoot = @PathLocalRoot, 
-					@PathSharedRoot = @PathSharedRoot, 
-					@FolderPath = @PathFolder, 
-					@SourceDB = @SourceDB, 
-					@SourceTable = 'T_OSM_Package', 
-					@SourceID = @PackageID, 
-					@SourceIDFieldName = 'ID', 
-					@Command = 'add'
-
-
-	---------------------------------------------------
-	-- Execute CallSendMessage, which will use xp_cmdshell to run C:\DMS_Programs\DBMessageSender\DBMessageSender.exe
-	-- We stopped doing this in May 2016 because login DMSWebUser no longer has execute privileges on xp_cmdshell
-	---------------------------------------------------
-	--
-	/*
-	EXEC @myError = CallSendMessage @ID, @mode, @message output
-
-	If IsNull(@message, '') = ''
-		Set @message = 'Called SendMessage for OSM Package ID ' + Convert(varchar(12), @PackageID) + ': ' + @PathFolder
-		
-	exec PostLogEntry 'Normal', @message, 'MakeODMPackageStorageFolder', @callingUser=@CallingUser
-	*/
-
-	---------------------------------------------------
-	-- Done
-	---------------------------------------------------
-
-	return @myError
+    exec @myError = S_Add_Data_Folder_Create_Task
+                    @pathLocalRoot = @PathLocalRoot,
+                    @pathSharedRoot = @PathSharedRoot,
+                    @folderPath = @PathFolder,
+                    @sourceDB = @SourceDB,
+                    @sourceTable = 'T_OSM_Package',
+                    @sourceID = @PackageID,
+                    @sourceIDFieldName = 'ID',
+                    @command = 'add'
 
 
+    ---------------------------------------------------
+    -- Execute CallSendMessage, which will use xp_cmdshell to run C:\DMS_Programs\DBMessageSender\DBMessageSender.exe
+    -- We stopped doing this in May 2016 because login DMSWebUser no longer has execute privileges on xp_cmdshell
+    ---------------------------------------------------
+    --
+    /*
+    EXEC @myError = CallSendMessage @ID, @mode, @message output
+
+    If IsNull(@message, '') = ''
+        Set @message = 'Called SendMessage for OSM Package ID ' + Convert(varchar(12), @PackageID) + ': ' + @PathFolder
+
+    exec post_log_entry 'Normal', @message, 'MakeODMPackageStorageFolder', @callingUser=@CallingUser
+    */
+
+    ---------------------------------------------------
+    -- Done
+    ---------------------------------------------------
+
+    return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeOSMPackageStorageFolder] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_osm_package_storage_folder] TO [DDL_Viewer] AS [dbo]
 GO

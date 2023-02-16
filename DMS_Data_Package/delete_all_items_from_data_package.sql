@@ -1,108 +1,108 @@
-/****** Object:  StoredProcedure [dbo].[DeleteAllItemsFromDataPackage] ******/
+/****** Object:  StoredProcedure [dbo].[delete_all_items_from_data_package] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE DeleteAllItemsFromDataPackage
+CREATE PROCEDURE [dbo].[delete_all_items_from_data_package]
 /****************************************************
 **
-**	Desc:
+**  Desc:
 **  removes all existing items from data package
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters:
+**  Parameters:
 **
-**	Auth:	grk
-**	Date:	06/10/2009 grk - initial release
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/05/2016 mem - Add T_Data_Package_EUS_Proposals
-**			05/18/2016 mem - Log errors to T_Log_Entries
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
+**  Auth:   grk
+**  Date:   06/10/2009 grk - initial release
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/05/2016 mem - Add T_Data_Package_EUS_Proposals
+**          05/18/2016 mem - Log errors to T_Log_Entries
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-	@packageID INT,
-	@mode varchar(12) = 'delete',
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @packageID INT,
+    @mode varchar(12) = 'delete',
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
-As
-	Set XACT_ABORT, nocount on
+AS
+    Set XACT_ABORT, nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+    declare @myError int = 0
+    declare @myRowCount int = 0
 
-	set @message = ''
+    set @message = ''
 
-	BEGIN TRY 
+    BEGIN TRY
 
-		---------------------------------------------------
-		-- Verify that the user can execute this procedure from the given client host
-		---------------------------------------------------
-			
-		Declare @authorized tinyint = 0	
-		Exec @authorized = VerifySPAuthorized 'DeleteAllItemsFromDataPackage', @raiseError = 1
-		If @authorized = 0
-		Begin
-			RAISERROR ('Access denied', 11, 3)
-		End
-		
-		declare @transName varchar(32)
-		set @transName = 'DeleteAllItemsFromDataPackage'
-		begin transaction @transName
+        ---------------------------------------------------
+        -- Verify that the user can execute this procedure from the given client host
+        ---------------------------------------------------
 
-		DELETE FROM T_Data_Package_Analysis_Jobs
-		WHERE Data_Package_ID  = @packageID
-		
-		DELETE FROM T_Data_Package_Datasets
-		WHERE Data_Package_ID  = @packageID
+        Declare @authorized tinyint = 0
+        Exec @authorized = verify_sp_authorized 'delete_all_items_from_data_package', @raiseError = 1
+        If @authorized = 0
+        Begin
+            RAISERROR ('Access denied', 11, 3)
+        End
 
-		DELETE FROM T_Data_Package_Experiments
-		WHERE Data_Package_ID  = @packageID
-		
-		DELETE FROM T_Data_Package_Biomaterial 
-		WHERE Data_Package_ID = @packageID
+        declare @transName varchar(32)
+        set @transName = 'delete_all_items_from_data_package'
+        begin transaction @transName
 
-		DELETE FROM T_Data_Package_EUS_Proposals 
-		WHERE Data_Package_ID = @packageID
+        DELETE FROM T_Data_Package_Analysis_Jobs
+        WHERE Data_Package_ID  = @packageID
 
-		---------------------------------------------------
-		commit transaction @transName
+        DELETE FROM T_Data_Package_Datasets
+        WHERE Data_Package_ID  = @packageID
 
- 		---------------------------------------------------
-		-- update item counts
-		---------------------------------------------------
+        DELETE FROM T_Data_Package_Experiments
+        WHERE Data_Package_ID  = @packageID
 
-		exec UpdateDataPackageItemCounts @packageID, @message output, @callingUser
+        DELETE FROM T_Data_Package_Biomaterial
+        WHERE Data_Package_ID = @packageID
 
-		UPDATE T_Data_Package
-		SET Last_Modified = GETDATE()
-		WHERE ID = @packageID
+        DELETE FROM T_Data_Package_EUS_Proposals
+        WHERE Data_Package_ID = @packageID
 
- 	---------------------------------------------------
- 	---------------------------------------------------
-	END TRY
-	BEGIN CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
-		
-		Declare @msgForLog varchar(512) = ERROR_MESSAGE()
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
-		
-		Exec PostLogEntry 'Error', @msgForLog, 'DeleteAllItemsFromDataPackage'
-	END CATCH
-	
- 	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
-	return @myError
+        ---------------------------------------------------
+        commit transaction @transName
 
+        ---------------------------------------------------
+        -- update item counts
+        ---------------------------------------------------
+
+        exec update_data_package_item_counts @packageID, @message output, @callingUser
+
+        UPDATE T_Data_Package
+        SET Last_Modified = GETDATE()
+        WHERE ID = @packageID
+
+    ---------------------------------------------------
+    ---------------------------------------------------
+    END TRY
+    BEGIN CATCH
+        EXEC format_error_message @message output, @myError output
+
+        Declare @msgForLog varchar(512) = ERROR_MESSAGE()
+
+        -- rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+
+        Exec post_log_entry 'Error', @msgForLog, 'delete_all_items_from_data_package'
+    END CATCH
+
+    ---------------------------------------------------
+    -- Exit
+    ---------------------------------------------------
+    return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAllItemsFromDataPackage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_all_items_from_data_package] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteAllItemsFromDataPackage] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_all_items_from_data_package] TO [DMS_SP_User] AS [dbo]
 GO

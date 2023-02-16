@@ -6,7 +6,7 @@ GO
 
 CREATE VIEW [dbo].[V_Data_Package_Aggregation_List_Report]
 AS
-SELECT dbo.GetXMLRow(TD.Data_Package_ID, 'Job', TM.Job) AS sel,
+SELECT dbo.get_xml_row(TD.Data_Package_ID, 'Job', TM.Job) AS sel,
        TM.job,
        TM.state,
        TM.tool,
@@ -33,7 +33,6 @@ FROM T_Data_Package_Datasets AS TD
        ON TJ.Job = TM.Job AND
           TJ.Dataset_ID = TD.Dataset_ID AND
           TJ.Data_Package_ID = TD.Data_Package_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Aggregation_List_Report] TO [DDL_Viewer] AS [dbo]

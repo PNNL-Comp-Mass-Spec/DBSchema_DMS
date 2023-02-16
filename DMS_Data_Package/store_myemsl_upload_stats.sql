@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreMyEMSLUploadStats] ******/
+/****** Object:  StoredProcedure [dbo].[store_myemsl_upload_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[StoreMyEMSLUploadStats]
+CREATE PROCEDURE [dbo].[store_myemsl_upload_stats]
 /****************************************************
 **
 **  Desc:
@@ -18,21 +17,22 @@ CREATE PROCEDURE [dbo].[StoreMyEMSLUploadStats]
 **          06/15/2017 mem - Add support for status URLs of the form https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1305088
 **          05/20/2019 mem - Add Set XACT_ABORT
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DataPackageID int,
-    @Subfolder varchar(128),
-    @FileCountNew int,
-    @FileCountUpdated int,
-    @Bytes bigint,
-    @UploadTimeSeconds real,
-    @StatusURI varchar(255),
-    @ErrorCode int,
+    @dataPackageID int,
+    @subfolder varchar(128),
+    @fileCountNew int,
+    @fileCountUpdated int,
+    @bytes bigint,
+    @uploadTimeSeconds real,
+    @statusURI varchar(255),
+    @errorCode int,
     @message varchar(512)='' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -197,7 +197,7 @@ As
             If @infoOnly = 0
             Begin
                 If @ErrorCode = 0
-                    Exec PostLogEntry 'Error', @LogMsg, 'StoreMyEMSLUploadStats'
+                    Exec post_log_entry 'Error', @LogMsg, 'store_myemsl_upload_stats'
             End
             else
                 Print @LogMsg
@@ -206,14 +206,14 @@ As
         Begin -- <b3>
             -- Resolve @StatusURI_Path to @StatusURI_PathID
 
-            Exec @StatusURI_PathID = GetURIPathID @StatusURI_Path, @infoOnly=@infoOnly
+            Exec @StatusURI_PathID = get_uri_path_id @StatusURI_Path, @infoOnly=@infoOnly
 
             If @StatusURI_PathID <= 1
             Begin
                 Set @LogMsg = 'Unable to resolve StatusURI_Path to URI_PathID for Data Package ' + Convert(varchar(12), @DataPackageID) + ': ' + @StatusURI_Path
 
                 If @infoOnly = 0
-                    Exec PostLogEntry 'Error', @LogMsg, 'StoreMyEMSLUploadStats'
+                    Exec post_log_entry 'Error', @LogMsg, 'store_myemsl_upload_stats'
                 Else
                     Print @LogMsg
             End
@@ -286,12 +286,12 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in StoreMyEMSLUploadStats'
+            Set @message = 'Error in store_myemsl_upload_stats'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @InfoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'StoreMyEMSLUploadStats'
+            Exec post_log_entry 'Error', @message, 'store_myemsl_upload_stats'
     End
 
     If Len(@message) > 0 AND @InfoOnly <> 0
@@ -299,9 +299,8 @@ Done:
 
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreMyEMSLUploadStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[store_myemsl_upload_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreMyEMSLUploadStats] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_myemsl_upload_stats] TO [DMS_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetPackageDatasetJobToolCrosstab] ******/
+/****** Object:  StoredProcedure [dbo].[get_package_dataset_job_tool_crosstab] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetPackageDatasetJobToolCrosstab]
+CREATE PROCEDURE [dbo].[get_package_dataset_job_tool_crosstab]
 /****************************************************
 **
 **  Desc:
@@ -20,14 +20,15 @@ CREATE PROCEDURE [dbo].[GetPackageDatasetJobToolCrosstab]
 **          10/26/2022 mem - Change column #id to lowercase
 **          10/31/2022 mem - Use new column name id in the temp table
 **          01/27/2023 mem - Change column names to lowercase
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DataPackageID int,
+    @dataPackageID int,
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -101,7 +102,7 @@ As
         WHILE @done = 0
         BEGIN --<a>
         SET @colName = ''
-            SELECT TOP 1 @colName = Tool 
+            SELECT TOP 1 @colName = Tool
             FROM #Tools
 
             IF @colName = ''
@@ -146,19 +147,17 @@ As
     ---------------------------------------------------
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
-        Exec PostLogEntry 'Error', @msgForLog, 'GetPackageDatasetJobToolCrosstab'
+        Exec post_log_entry 'Error', @msgForLog, 'get_package_dataset_job_tool_crosstab'
 
     END CATCH
 
     RETURN @myError
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetPackageDatasetJobToolCrosstab] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_package_dataset_job_tool_crosstab] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetPackageDatasetJobToolCrosstab] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_package_dataset_job_tool_crosstab] TO [DMS_SP_User] AS [dbo]
 GO

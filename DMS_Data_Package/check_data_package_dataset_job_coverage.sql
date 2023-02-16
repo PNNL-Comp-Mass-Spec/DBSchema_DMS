@@ -1,22 +1,23 @@
-/****** Object:  UserDefinedFunction [dbo].[CheckDataPackageDatasetJobCoverage] ******/
+/****** Object:  UserDefinedFunction [dbo].[check_data_package_dataset_job_coverage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.CheckDataPackageDatasetJobCoverage
+CREATE FUNCTION [dbo].[check_data_package_dataset_job_coverage]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **  Returns a table of dataset job coverage
 **
-**  Return values: 
+**  Return values:
 **
 **  Parameters:
-**    
+**
 **  Auth:   grk
 **  Date:   05/22/2010
 **          04/25/2018 - Now joining T_Data_Package_Datasets and T_Data_Package_Analysis_Jobs on Dataset_ID
-**    
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**
 *****************************************************/
 (
     @packageID INT,
@@ -30,7 +31,7 @@ BEGIN
     -- Package datasets with no package jobs for tool
     --
     IF @mode = 'NoPackageJobs'
-    BEGIN 
+    BEGIN
         INSERT INTO @table_variable
             ( Dataset, Num )
         SELECT Dataset,
@@ -41,14 +42,14 @@ BEGIN
                             FROM T_Data_Package_Analysis_Jobs AS TA
                             WHERE Tool = @tool AND
                                   TD.Dataset = Dataset AND
-                                  TD.Data_Package_ID = Data_Package_ID 
+                                  TD.Data_Package_ID = Data_Package_ID
                           ))
     END
-          
+
     -- Package datasets with no dms jobs for tool
     --
     IF @mode = 'NoDMSJobs'
-    BEGIN 
+    BEGIN
         INSERT INTO @table_variable
             ( Dataset, Num )
         SELECT Dataset,
@@ -59,12 +60,12 @@ BEGIN
                             FROM S_V_Analysis_Job_List_Report_2 AS TA
                             WHERE Tool = @tool AND
                                   TD.Dataset = Dataset AND
-                                  TD.Data_Package_ID = Data_Package_ID 
+                                  TD.Data_Package_ID = Data_Package_ID
               ))
     END
-  
+
     IF @mode = 'PackageJobCount'
-    BEGIN 
+    BEGIN
         INSERT INTO @table_variable
             ( Dataset, Num )
         SELECT TD.Dataset,
@@ -84,7 +85,6 @@ BEGIN
     RETURN
 END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckDataPackageDatasetJobCoverage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_data_package_dataset_job_coverage] TO [DDL_Viewer] AS [dbo]
 GO

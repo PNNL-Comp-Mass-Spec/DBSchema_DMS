@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteDataPackage] ******/
+/****** Object:  StoredProcedure [dbo].[delete_data_package] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[DeleteDataPackage]
+CREATE PROCEDURE [dbo].[delete_data_package]
 /****************************************************
 **
 **  Desc:   Deletes the data package, including deleting rows in the associated tracking tables:
@@ -23,6 +22,7 @@ CREATE PROCEDURE [dbo].[DeleteDataPackage]
 **                         - Change the default for @infoOnly to 1
 **          01/05/2023 mem - Use new column names in V_Data_Package_Detail_Report
 **          01/20/2023 mem - Use new column names in V_Data_Package_Detail_Report
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[DeleteDataPackage]
     @message varchar(512) = '' output,
     @infoOnly tinyint = 1
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -154,7 +154,7 @@ As
                 -- Delete the associated items
                 ---------------------------------------------------
                 --
-                exec DeleteAllItemsFromDataPackage @packageID=@packageID, @mode='delete', @message=@message output
+                exec delete_all_items_from_data_package @packageID=@packageID, @mode='delete', @message=@message output
 
                 If @message <> ''
                 Begin
@@ -185,7 +185,7 @@ As
                             IsNull(@firstDatasetOrExperiment, '') + ' - ' + IsNull(@lastDatasetOrExperiment, '')
                 End
 
-                Exec PostLogEntry 'Normal', @logMessage, 'DeleteDataPackage'
+                Exec post_log_entry 'Normal', @logMessage, 'delete_data_package'
 
                 Commit
 
@@ -203,7 +203,7 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 
@@ -211,7 +211,7 @@ As
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @msgForLog, 'DeleteDataPackage'
+        Exec post_log_entry 'Error', @msgForLog, 'delete_data_package'
     END CATCH
 
     ---------------------------------------------------
@@ -220,7 +220,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteDataPackage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_data_package] TO [DDL_Viewer] AS [dbo]
 GO

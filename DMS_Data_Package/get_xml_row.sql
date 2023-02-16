@@ -1,20 +1,20 @@
-/****** Object:  UserDefinedFunction [dbo].[GetXMLRow] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_xml_row] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetXMLRow
+CREATE FUNCTION [dbo].[get_xml_row]
 (
-@Data_Package_ID INT,
-@Type VARCHAR(64),
-@ItemID VARCHAR(128)
+    @data_Package_ID INT,
+    @type VARCHAR(64),
+    @itemID VARCHAR(128)
 )
 RETURNS VARCHAR(512)
 AS
-	BEGIN
-	RETURN  '<item pkg="' + CONVERT(VARCHAR(12), @Data_Package_ID) + '" type="' + @Type + '" id="' + @ItemID + '"/>'
-	END
+    BEGIN
+    RETURN  '<item pkg="' + CONVERT(VARCHAR(12), @Data_Package_ID) + '" type="' + @Type + '" id="' + @ItemID + '"/>'
+    END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetXMLRow] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_xml_row] TO [DDL_Viewer] AS [dbo]
 GO

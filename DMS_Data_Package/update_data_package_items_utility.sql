@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDataPackageItemsUtility] ******/
+/****** Object:  StoredProcedure [dbo].[update_data_package_items_utility] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
+CREATE PROCEDURE [dbo].[update_data_package_items_utility]
 /****************************************************
 **
 **  Desc:
@@ -22,10 +21,10 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **  Auth:   grk
 **  Date:   05/23/2010
 **          06/10/2009 grk - changed size of item list to max
-**          06/10/2009 mem - Now calling UpdateDataPackageItemCounts to update the data package item counts
+**          06/10/2009 mem - Now calling update_data_package_item_counts to update the data package item counts
 **          10/01/2009 mem - Now populating Campaign in T_Data_Package_Biomaterial
 **          12/31/2009 mem - Added DISTINCT keyword to the INSERT INTO queries in case the source views include some duplicate rows (in particular, S_V_Experiment_Detail_Report_Ex)
-**          05/23/2010 grk - create this sproc from common function factored out of UpdateDataPackageItems and UpdateDataPackageItemsXML
+**          05/23/2010 grk - create this sproc from common function factored out of update_data_package_items and update_data_package_items_xml
 **          12/31/2013 mem - Added support for EUS Proposals
 **          09/02/2014 mem - Updated to remove non-numeric items when working with analysis jobs
 **          10/28/2014 mem - Added support for adding datasets using dataset IDs; to delete datasets, you must use the dataset name (safety feature)
@@ -34,12 +33,12 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          05/18/2016 mem - Fix bug removing duplicate analysis jobs
 **                         - Add parameter @infoOnly
 **          10/19/2016 mem - Update #TPI to use an integer field for data package ID
-**                         - Call UpdateDataPackageEUSInfo
+**                         - Call update_data_package_eus_info
 **                         - Prevent addition of Biomaterial '(none)'
 **          11/14/2016 mem - Add parameter @removeParents
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          04/25/2018 mem - Populate column Dataset_ID in T_Data_Package_Analysis_Jobs
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          07/17/2019 mem - Remove .raw and .d from the end of dataset names
 **          07/02/2021 mem - Update the package comment for any existing items when @mode is 'add' and @comment is not an empty string
 **          07/02/2021 mem - Change the default value for @mode from undefined mode 'update' to 'add'
@@ -50,6 +49,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
 **          07/08/2022 mem - Use new synonym name for experiment biomaterial view
 **          01/04/2023 mem - Update to use S_V_Biomaterial_List_Report_2
 **          02/08/2023 bcg - Update to use S_V_Experiment_Biomaterial
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -60,7 +60,7 @@ CREATE PROCEDURE [dbo].[UpdateDataPackageItemsUtility]
     @callingUser varchar(128) = '',
     @infoOnly tinyint = 0
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -90,7 +90,7 @@ As
         ---------------------------------------------------
 
         Declare @authorized tinyint = 0
-        Exec @authorized = VerifySPAuthorized 'UpdateDataPackageItemsUtility', @raiseError = 1
+        Exec @authorized = verify_sp_authorized 'update_data_package_items_utility', @raiseError = 1
         If @authorized = 0
         Begin
             RAISERROR ('Access denied', 11, 3)
@@ -445,8 +445,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.check_plural(@myRowCount, ' item', ' items')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete biomaterial>
@@ -478,8 +478,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.check_plural(@myRowCount, ' item', ' items')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment biomaterial>
@@ -543,8 +543,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.CheckPlural(@myRowCount, ' item', ' items')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' biomaterial' + dbo.check_plural(@myRowCount, ' item', ' items')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add biomaterial>
@@ -578,8 +578,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.check_plural(@myRowCount, ' proposal', ' proposals')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete EUS Proposal>
@@ -612,8 +612,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.check_plural(@myRowCount, ' proposal', ' proposals')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment EUS Proposals>
@@ -661,8 +661,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.CheckPlural(@myRowCount, ' proposal', ' proposals')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' EUS' + dbo.check_plural(@myRowCount, ' proposal', ' proposals')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add EUS Proposals>
@@ -697,8 +697,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' experiment', ' experiments')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete experiments>
@@ -732,8 +732,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' experiment', ' experiments')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment experiments>
@@ -792,8 +792,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' experiment', ' experiments')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' experiment', ' experiments')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add experiments>
@@ -828,8 +828,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' dataset', ' datasets')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete datasets>
@@ -863,8 +863,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' dataset', ' datasets')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment datasets>
@@ -923,8 +923,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' dataset', ' datasets')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add datasets>
@@ -956,8 +956,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.check_plural(@myRowCount, ' job', ' jobs')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </delete analysis_jobs>
@@ -988,8 +988,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Updated the comment for ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.check_plural(@myRowCount, ' job', ' jobs')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </comment analysis_jobs>
@@ -1044,8 +1044,8 @@ As
                 If @myRowCount > 0
                 Begin
                     Set @itemCountChanged = @itemCountChanged + @myRowCount
-                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.CheckPlural(@myRowCount, ' job', ' jobs')
-                    Set @message = dbo.AppendToText(@message, @actionMsg, 0, ', ', 512)
+                    Set @actionMsg = 'Added ' + Cast(@myRowCount as varchar(12)) + ' analysis' + dbo.check_plural(@myRowCount, ' job', ' jobs')
+                    Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
         END -- </add analysis_jobs>
@@ -1055,7 +1055,7 @@ As
         ---------------------------------------------------
 
         If @itemCountChanged > 0
-        Begin -- <UpdateDataPackageItemCounts>
+        Begin -- <update_data_package_item_counts>
             CREATE TABLE #TK (ID int)
 
             INSERT INTO #TK (ID)
@@ -1080,11 +1080,11 @@ As
                 End
                 Else
                 Begin
-                    exec UpdateDataPackageItemCounts @packageID, '', @callingUser
+                    exec update_data_package_item_counts @packageID, '', @callingUser
                 End
             End
 
-        End -- </UpdateDataPackageItemCounts>
+        End -- </update_data_package_item_counts>
 
         ---------------------------------------------------
         -- Update EUS Info for all data packages in the list
@@ -1099,7 +1099,7 @@ As
             FROM ( SELECT DISTINCT DataPackageID
                    FROM #TPI ) AS ListQ
 
-            Exec UpdateDataPackageEUSInfo @DataPackageList
+            Exec update_data_package_eus_info @DataPackageList
         End -- </UpdateEUSInfo>
 
         ---------------------------------------------------
@@ -1128,7 +1128,7 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 
@@ -1136,7 +1136,7 @@ As
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @msgForLog, 'UpdateDataPackageItemsUtility'
+        Exec post_log_entry 'Error', @msgForLog, 'update_data_package_items_utility'
     END CATCH
 
     ---------------------------------------------------
@@ -1144,7 +1144,6 @@ As
     ---------------------------------------------------
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDataPackageItemsUtility] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_data_package_items_utility] TO [DDL_Viewer] AS [dbo]
 GO
