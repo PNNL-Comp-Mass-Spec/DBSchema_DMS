@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          08/01/2022 mem - If @mode is 'update' and @id is 0, do not set Batch ID to 0 for other requested runs
 **          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **          02/14/2023 mem - Rename variable and use new parameter names for ValidateRequestedRunBatchParams
+**          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
 **
 *****************************************************/
 (
@@ -51,6 +52,8 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
     @justificationHighPriority varchar(512),
     @requestedInstrument varchar(64),               -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
     @comment varchar(512),
+    @batchGroupID int = Null,
+    @batchGroupOrder Int = Null,
     @mode varchar(12) = 'add',                      -- 'add' or 'update' or 'PreviewAdd'
     @message varchar(512) Output,
     @useRaiseError tinyint = 1                      -- When 1, use Raiserror; when 0, return a non-zero value if an error
@@ -65,6 +68,7 @@ As
     Set @useRaiseError = IsNull(@useRaiseError, 1)
 
     Declare @logErrors tinyint = 0
+    Declare @existingBatchGroupID int = Null
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -85,6 +89,7 @@ As
 
     Declare @instrumentGroupToUse varchar(64)
     Declare @userID int = 0
+    Set @id = IsNull(@id, 0)
 
     Exec @myError = ValidateRequestedRunBatchParams
             @batchID = @id,
@@ -96,6 +101,8 @@ As
             @justificationHighPriority = @justificationHighPriority,
             @requestedInstrumentGroup = @requestedInstrument,              -- Will typically contain an instrument group, not an instrument name
             @comment = @comment,
+            @batchGroupID = @batchGroupID output,
+            @batchGroupOrder = @batchGroupOrder output,
             @mode = @mode,
             @instrumentGroupToUse = @instrumentGroupToUse output,
             @userID = @userID Output,
@@ -123,7 +130,7 @@ As
     -- Create temporary table for requests in list
     ---------------------------------------------------
     --
-    CREATE TABLE #XR (
+    CREATE TABLE #Tmp_RequestedRuns (
         RequestIDText varchar(128) NULL,
         Request_ID [int] NULL
     )
@@ -144,7 +151,7 @@ As
     -- Populate temporary table from list
     ---------------------------------------------------
     --
-    INSERT INTO #XR (RequestIDText)
+    INSERT INTO #Tmp_RequestedRuns (RequestIDText)
     SELECT DISTINCT Value
     FROM dbo.udfParseDelimitedList(@requestedRunList, ',', 'AddUpdateRequestedRunBatch')
     --
@@ -164,15 +171,15 @@ As
     -- Convert Request IDs to integers
     ---------------------------------------------------
     --
-    UPDATE #XR
+    UPDATE #Tmp_RequestedRuns
     SET Request_ID = try_cast(RequestIDText as int)
 
-    If Exists (Select * FROM #XR WHERE Request_ID Is Null)
+    If Exists (Select * FROM #Tmp_RequestedRuns WHERE Request_ID Is Null)
     Begin
         Declare @firstInvalid varchar(128)
 
         SELECT TOP 1 @firstInvalid = RequestIDText
-        FROM #XR
+        FROM #Tmp_RequestedRuns
         WHERE Request_ID Is Null
 
         Set @logErrors = 0
@@ -194,7 +201,7 @@ As
     Set @count = 0
     --
     SELECT @count = count(*)
-    FROM #XR
+    FROM #Tmp_RequestedRuns
     WHERE NOT (Request_ID IN
     (
         SELECT ID
@@ -219,7 +226,7 @@ As
         Declare @invalidIDs varchar(64) = null
 
         SELECT @invalidIDs = Coalesce(@invalidIDs + ', ', '') + RequestIDText
-        FROM #XR
+        FROM #Tmp_RequestedRuns
         WHERE NOT (Request_ID IN
         (
             SELECT ID
@@ -268,7 +275,9 @@ As
             Requested_Completion_Date,
             Justification_for_High_Priority,
             Requested_Instrument,
-            Comment
+            Comment,
+            Batch_Group_ID,
+            Batch_Group_Order
         ) VALUES (
             @name,
             @description,
@@ -279,7 +288,9 @@ As
             @requestedCompletionDate,
             @justificationHighPriority,
             @instrumentGroupToUse,
-            @comment
+            @comment,
+            @batchGroupID,
+            @batchGroupOrder
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -298,7 +309,7 @@ As
         --
         Set @id = SCOPE_IDENTITY()
 
-        -- As a precaution, query T_Requested_Run_Batches using Batch name to make sure we have the correct Exp_ID
+        -- As a precaution, query T_Requested_Run_Batches using Batch name to make sure we have the correct Batch ID
         Declare @batchIDConfirm int = 0
 
         SELECT @batchIDConfirm = ID
@@ -325,8 +336,18 @@ As
     --
     If @mode = 'update'
     Begin
-        Set @myError = 0
+        -- Check whether this batch is currently a member of a batch group
+        SELECT @existingBatchGroupID = Batch_Group_ID
+        FROM T_Requested_Run_Batches
+        WHERE ID = @id
         --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @existingBatchGroupID = Null
+        End
+
         UPDATE T_Requested_Run_Batches
         SET Batch = @name,
             Description = @description,
@@ -335,11 +356,13 @@ As
             Requested_Completion_Date = @requestedCompletionDate,
             Justification_for_High_Priority = @justificationHighPriority,
             Requested_Instrument = @instrumentGroupToUse,
-            Comment = @comment
-        WHERE (ID = @id)
+            Comment = @comment,
+            Batch_Group_ID = @batchGroupID,
+            Batch_Group_Order = @batchGroupOrder
+        WHERE ID = @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @message = 'Update operation failed, Batch ' + Cast(@id As Varchar(12))
@@ -364,7 +387,9 @@ As
             --
             UPDATE T_Requested_Run
             SET RDS_BatchID = 0
-            WHERE RDS_BatchID = @id
+            WHERE RDS_BatchID = @id AND
+                  NOT ID IN ( SELECT Request_ID
+                              FROM #Tmp_RequestedRuns )
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -383,7 +408,9 @@ As
         --
         UPDATE T_Requested_Run
         SET RDS_BatchID = @id
-        WHERE ID IN (Select Request_ID from #XR)
+        WHERE ID IN ( SELECT Request_ID
+                      FROM #Tmp_RequestedRuns ) AND
+              IsNull(RDS_BatchID, 0) <> @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -399,6 +426,47 @@ As
     End
 
     commit transaction @transName
+
+    If @mode = 'update'
+    Begin
+        Set @message = ''
+
+        If Coalesce(@existingBatchGroupID, 0) > 0 And Coalesce(@batchGroupID, 0) <> @existingBatchGroupID
+        Begin
+            If Coalesce(@batchGroupID, 0) = 0
+                Set @message = 'Removed batch from batch group ' + Cast(@existingBatchGroupID As Varchar(12))
+            Else
+                Set @message = 'Moved batch from batch group ' + Cast(@existingBatchGroupID As Varchar(12)) + ' to batch group ' +  + Cast(@batchGroupID As Varchar(12))        
+        End
+
+        If Coalesce(@batchGroupID, 0) > 0
+        Begin  
+            Declare @matchCount Int
+            Declare @duplicateBatchID int
+            Declare @duplicateMessage Varchar(128)
+
+            -- Check for batch group order conflicts
+            SELECT @matchCount = Count(*)
+            FROM T_Requested_Run_Batches
+            WHERE Batch_Group_ID = @batchGroupID AND
+                  Batch_Group_Order = @batchGroupOrder
+
+            If @matchCount > 1
+            Begin
+                SELECT Top 1 @duplicateBatchID = ID
+                FROM T_Requested_Run_Batches
+                WHERE Batch_Group_ID = @batchGroupID AND
+                      Batch_Group_Order = @batchGroupOrder And
+                      ID <> @id
+
+                Set @duplicateMessage = 'Warning, both this batch and batch ' + Cast(@duplicateBatchID AS varchar(12)) + 
+                                        ' have batch group order = ' + Cast(@batchGroupOrder AS varchar(12))
+
+                Set @message = dbo.AppendToText(@message, @duplicateMessage, 0, '; ', 512)
+            End
+        End
+        
+    End 
 
     ---------------------------------------------------
     -- Update stats in T_Cached_Requested_Run_Batch_Stats
@@ -422,7 +490,6 @@ As
     END CATCH
 
     return @myError
-
 
 
 GO
