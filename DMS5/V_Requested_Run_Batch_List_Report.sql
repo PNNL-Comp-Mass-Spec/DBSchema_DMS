@@ -35,6 +35,8 @@ SELECT RRB.id,
             THEN RBS.separation_group_first
             ELSE RBS.separation_group_first + ' - ' + RBS.separation_group_last
        END AS separation_group,
+       RRB.Batch_Group_id AS batch_group,
+       RRB.Batch_Group_Order AS batch_group_order,
        CASE
            WHEN COALESCE(RBS.active_requests, 0) = 0 THEN 0                                 -- No active requested runs for this batch
            WHEN DATEDIFF(DAY, RBS.oldest_active_request_created, GETDATE()) <= 30 THEN 30   -- Oldest active request in batch is 0 to 30 days old
@@ -45,8 +47,8 @@ SELECT RRB.id,
 FROM T_Requested_Run_Batches AS RRB
      LEFT OUTER JOIN T_Users
        ON RRB.Owner = T_Users.ID
-     LEFT JOIN t_cached_requested_run_batch_stats RBS
-       ON rrb.ID = RBS.batch_id
+     LEFT OUTER JOIN T_Cached_Requested_Run_Batch_Stats RBS
+       ON RRB.ID = RBS.batch_id
 WHERE RRB.ID > 0
 
 

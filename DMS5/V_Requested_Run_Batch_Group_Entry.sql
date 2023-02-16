@@ -9,8 +9,8 @@ AS
 SELECT BG.batch_group_id AS id,
        BG.batch_group AS name,
        BG.description,
-       dbo.GetBatchGroupMemberList(BG.batch_group_id) AS batches,
-       U.U_Name AS owner
+       dbo.GetBatchGroupMemberList(BG.batch_group_id) AS requested_run_batch_list,
+       U.U_Name AS owner_username
 FROM T_Requested_Run_Batch_Group BG
       LEFT Outer JOIN T_Users U
         ON BG.owner_user_id = U.ID
