@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udf_parse_delimited_integer_list] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_integer_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udf_parse_delimited_integer_list]
+CREATE FUNCTION [dbo].[parse_delimited_integer_list]
 /****************************************************
 **
 **  Desc:
@@ -91,6 +91,7 @@ BEGIN
     RETURN
 END
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[udf_parse_delimited_integer_list] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_delimited_integer_list] TO [DDL_Viewer] AS [dbo]
 GO

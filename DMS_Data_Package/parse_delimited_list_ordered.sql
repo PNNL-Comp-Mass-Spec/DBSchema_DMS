@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udf_parse_delimited_list_ordered] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_list_ordered] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udf_parse_delimited_list_ordered]
+CREATE FUNCTION [dbo].[parse_delimited_list_ordered]
 /****************************************************
 **  Parses the text in @DelimitedList and returns a table
 **   containing the values.  The table includes column EntryID
@@ -87,6 +87,7 @@ BEGIN
     RETURN
 END
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[udf_parse_delimited_list_ordered] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_delimited_list_ordered] TO [DDL_Viewer] AS [dbo]
 GO

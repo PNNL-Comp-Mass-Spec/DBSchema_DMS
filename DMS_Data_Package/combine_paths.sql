@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udf_combine_paths] ******/
+/****** Object:  UserDefinedFunction [dbo].[combine_paths] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udf_combine_paths]
+CREATE FUNCTION [dbo].[combine_paths]
 /****************************************************
 **  Appends a folder or file name to a path,
 **   assuring that the two names are separated by a \
@@ -48,8 +48,9 @@ BEGIN
     RETURN  @NewPath
 END
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[udf_combine_paths] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[combine_paths] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[udf_combine_paths] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[combine_paths] TO [public] AS [dbo]
 GO
