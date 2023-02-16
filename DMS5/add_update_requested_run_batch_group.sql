@@ -58,7 +58,6 @@ As
     Set @requestedRunBatchList = Coalesce(@requestedRunBatchList, '')
     Set @ownerUsername = Coalesce(@ownerUsername, '')
     Set @mode = Ltrim(Rtrim(Lower(Coalesce(@mode, ''))));
-    Set @message = ''
 
     If Len(@name) < 1
     Begin
