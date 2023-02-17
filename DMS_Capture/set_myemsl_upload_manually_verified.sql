@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetMyEMSLUploadManuallyVerified] ******/
+/****** Object:  StoredProcedure [dbo].[set_myemsl_upload_manually_verified] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.SetMyEMSLUploadManuallyVerified
+CREATE PROCEDURE [dbo].[set_myemsl_upload_manually_verified]
 /****************************************************
 **
 **  Desc:
@@ -20,17 +19,18 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadManuallyVerified
 **
 **  Auth:   mem
 **  Date:   10/03/2013 mem - Initial version
-**          07/13/2017 mem - Pass both StatusNumList and StatusURIList to SetMyEMSLUploadVerified
+**          07/13/2017 mem - Pass both StatusNumList and StatusURIList to set_myemsl_upload_verified
 **          01/07/2023 mem - Use new column names in view
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @StatusNumList varchar(64) = '',        -- Required only if the step tool is ArchiveStatusCheck
+    @job int,
+    @statusNumList varchar(64) = '',        -- Required only if the step tool is ArchiveStatusCheck
     @infoOnly tinyint = 1,
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -144,9 +144,9 @@ As
         Declare @MyEMSLStateNew tinyint = 2
 
         If @infoOnly= 1
-            Select 'exec S_UpdateMyEMSLState @datasetID=' + Convert(varchar(12), @datasetID) + ', @outputFolderName=''' + @outputFolderName + ''', @MyEMSLStateNew=' + Convert(varchar(12), @MyEMSLStateNew) AS Command
+            Select 'exec s_update_myemsl_state @datasetID=' + Convert(varchar(12), @datasetID) + ', @outputFolderName=''' + @outputFolderName + ''', @MyEMSLStateNew=' + Convert(varchar(12), @MyEMSLStateNew) AS Command
         Else
-            exec S_UpdateMyEMSLState @datasetID, @outputFolderName, @MyEMSLStateNew
+            exec s_update_myemsl_state @datasetID, @outputFolderName, @MyEMSLStateNew
     End
 
     If @Tool = 'ArchiveStatusCheck'
@@ -159,7 +159,7 @@ As
 
         INSERT INTO @VerifiedStatusNumTable (Status_Num)
         SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
+        FROM dbo.parse_delimited_integer_list(@StatusNumList, ',')
         ORDER BY Value
 
         Declare @StatusURIList varchar(4000)
@@ -170,12 +170,12 @@ As
                ON MU.Status_Num = SL.Status_Num
 
         If @infoOnly = 1
-            Select 'exec SetMyEMSLUploadVerified @datasetID=' +
+            Select 'exec set_myemsl_upload_verified @datasetID=' +
                    Convert(varchar(12), @datasetID) +
                    ', @StatusNumList=''' + @StatusNumList + '''' +
                    ', @StatusURIList=''' + @StatusURIList + '''' AS Command
         Else
-            exec SetMyEMSLUploadVerified @DatasetID, @StatusNumList, @statusURIList, @ingestStepsCompleted = 0
+            exec set_myemsl_upload_verified @DatasetID, @StatusNumList, @statusURIList, @ingestStepsCompleted = 0
 
     End
 
@@ -188,12 +188,11 @@ Done:
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-        Exec PostLogEntry 'Error', @message, 'SetArchiveVerifyManuallyChecked'
+        Exec post_log_entry 'Error', @message, 'SetArchiveVerifyManuallyChecked'
     End
 
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadManuallyVerified] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_myemsl_upload_manually_verified] TO [DDL_Viewer] AS [dbo]
 GO

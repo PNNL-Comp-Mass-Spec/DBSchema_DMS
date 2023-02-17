@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParams] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobStepParams]
+CREATE PROCEDURE [dbo].[get_job_step_params]
 /****************************************************
 **
 **  Desc:   Populate a temporary table with job step parameters for given job step
@@ -25,15 +24,16 @@ CREATE PROCEDURE [dbo].[GetJobStepParams]
 **          08/30/2013 mem - Added MyEMSL_Status_URI
 **          01/04/2016 mem - Added EUS_InstrumentID, EUS_ProposalID, and EUS_UploaderID
 **          06/15/2017 mem - Only append /xml to the MyEMSL status URI if it contains /status/
-**          06/12/2018 mem - Now calling GetMetadataForDataset
+**          06/12/2018 mem - Now calling get_metadata_for_dataset
 **          05/17/2019 mem - Switch from folder to directory
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @jobNumber int,
     @stepNumber int,
     @message varchar(512) output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
 AS
     set nocount on
@@ -173,7 +173,7 @@ AS
         FROM T_Jobs
         WHERE Job = @jobNumber
 
-        EXEC GetMetadataForDataset @dataset
+        EXEC get_metadata_for_dataset @dataset
     End
 
     ---------------------------------------------------
@@ -185,5 +185,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParams] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params] TO [DDL_Viewer] AS [dbo]
 GO

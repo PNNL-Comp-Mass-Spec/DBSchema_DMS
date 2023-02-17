@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.UpdateUserPermissions
+CREATE PROCEDURE [dbo].[update_user_permissions]
 /****************************************************
 **
 **  Desc: Updates user permissions in the current DB
@@ -15,12 +14,12 @@ CREATE PROCEDURE dbo.UpdateUserPermissions
 **
 **  Auth:   mem
 **  Date:   07/31/2012 mem - Initial Version
-**          11/01/2012 mem - Now updating EnableDisableArchiveStepTools
+**          11/01/2012 mem - Now updating enable_disable_archive_step_tools
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
     Set NoCount On
-
 
     if exists (select * from sys.schemas where name = 'DMSReader')
         drop schema DMSReader
@@ -39,14 +38,13 @@ AS
     -- exec sp_addrolemember 'db_datawriter', 'DMSWebUser'
     exec sp_addrolemember 'DMS_SP_User', 'DMSWebUser'
 
-    grant execute on EnableDisableArchiveStepTools to DMSReader
+    grant execute on enable_disable_archive_step_tools to DMSReader
 
     grant showplan to DMSReader
     grant showplan to DMSWebUser
 
     Return 0
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_user_permissions] TO [DDL_Viewer] AS [dbo]
 GO

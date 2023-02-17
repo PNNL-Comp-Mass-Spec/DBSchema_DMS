@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetURIPathID] ******/
+/****** Object:  StoredProcedure [dbo].[get_uri_path_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetURIPathID
+CREATE PROCEDURE [dbo].[get_uri_path_id]
 /****************************************************
 **
 **  Desc:   Looks for @URIPath in T_URI_Paths
@@ -16,13 +16,14 @@ CREATE PROCEDURE GetURIPathID
 **
 **  Auth:   mem
 **  Date:   04/02/2012 mem - Initial version
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @URIPath varchar(512),
+    @uriPath varchar(512),
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int
@@ -78,5 +79,5 @@ As
     return @URI_PathID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetURIPathID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_uri_path_id] TO [DDL_Viewer] AS [dbo]
 GO

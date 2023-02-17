@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMyEMSLUploadIngestStats] ******/
+/****** Object:  StoredProcedure [dbo].[update_myemsl_upload_ingest_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
+CREATE PROCEDURE [dbo].[update_myemsl_upload_ingest_stats]
 /****************************************************
 **
 **  Desc:   Updates column Ingest_Steps_Completed for the given MyEMSL ingest task
@@ -17,11 +16,12 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
 **  Date:   12/18/2014 mem - Initial version
 **          06/23/2016 mem - Add parameter @fatalError
 **          05/31/2017 mem - Update TransactionID in T_MyEMSL_Uploads using @transactionId
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/12/2017 mem - Update TransactionId if null yet Ingest_Steps_Completed and ErrorCode are unchanged
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          07/15/2019 mem - Filter on both StatusNum and Dataset_ID when updating T_MyEMSL_Uploads
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -33,7 +33,7 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
     @message varchar(512) = '' output,
     @returnCode varchar(64) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -48,7 +48,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateMyEMSLUploadIngestStats', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_myemsl_upload_ingest_stats', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -140,19 +140,18 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in UpdateMyEMSLUploadIngestStats'
+            Set @message = 'Error in update_myemsl_upload_ingest_stats'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-        Exec PostLogEntry 'Error', @message, 'UpdateMyEMSLUploadIngestStats'
+        Exec post_log_entry 'Error', @message, 'update_myemsl_upload_ingest_stats'
     End
 
     Set @returnCode = Cast(@myError As varchar(64))
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMyEMSLUploadIngestStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_myemsl_upload_ingest_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMyEMSLUploadIngestStats] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_myemsl_upload_ingest_stats] TO [DMS_SP_User] AS [dbo]
 GO

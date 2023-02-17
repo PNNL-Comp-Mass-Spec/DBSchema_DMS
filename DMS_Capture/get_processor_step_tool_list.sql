@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetProcessorStepToolList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_processor_step_tool_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[GetProcessorStepToolList]
+CREATE FUNCTION [dbo].[get_processor_step_tool_list]
 /****************************************************
 **
 **  Desc:
@@ -16,10 +15,11 @@ CREATE FUNCTION [dbo].[GetProcessorStepToolList]
 **
 **  Auth:   mem
 **  Date:   03/30/2009
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ProcessorName varchar(256)
+    @processorName varchar(256)
 )
 RETURNS varchar(4000)
 AS
@@ -36,8 +36,6 @@ AS
         RETURN @list
     END
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetProcessorStepToolList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_processor_step_tool_list] TO [DDL_Viewer] AS [dbo]
 GO

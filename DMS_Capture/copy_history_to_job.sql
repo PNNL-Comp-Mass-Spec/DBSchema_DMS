@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyHistoryToJob] ******/
+/****** Object:  StoredProcedure [dbo].[copy_history_to_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CopyHistoryToJob
+CREATE PROCEDURE [dbo].[copy_history_to_job]
 /****************************************************
 **
 **  Desc:
@@ -19,19 +19,20 @@ CREATE PROCEDURE CopyHistoryToJob
 **          03/12/2012 mem - Added column Tool_Version_ID
 **          03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Jobs
 **                         - Fixed bug finding most recent successful job in T_Jobs_History
-**          08/27/2013 mem - Now calling UpdateParametersForJob
+**          08/27/2013 mem - Now calling update_parameters_for_job
 **          10/21/2013 mem - Added @AssignNewJobNumber
 **          03/10/2015 mem - Added T_Job_Step_Dependencies_History
 **          03/10/2015 mem - Now updating T_Job_Steps.Dependencies if it doesn't match the dependent steps listed in T_Job_Step_Dependencies
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @AssignNewJobNumber tinyint = 0,            -- Set to 1 to assign a new job number when copying
+    @assignNewJobNumber tinyint = 0,            -- Set to 1 to assign a new job number when copying
     @message varchar(512) = '' output,
     @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -111,7 +112,7 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(64)
-    set @transName = 'CopyHistoryToJob'
+    set @transName = 'copy_history_to_job'
     begin transaction @transName
 
     Declare @NewJob int = @Job
@@ -419,7 +420,7 @@ As
 
     If Not Exists (SELECT * FROM T_Job_Parameters WHERE Job = @NewJob)
     Begin
-        exec UpdateParametersForJob @NewJob
+        exec update_parameters_for_job @NewJob
     End
 
     ---------------------------------------------------
@@ -428,7 +429,7 @@ As
     --
     Declare @jobList varchar(max) = Cast(@NewJob as varchar(12))
 
-    exec UpdateParametersForJob @jobList
+    exec update_parameters_for_job @jobList
 
     ---------------------------------------------------
     -- Make sure the Dependencies column is up-to-date in T_Job_Steps
@@ -460,5 +461,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyHistoryToJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_history_to_job] TO [DDL_Viewer] AS [dbo]
 GO

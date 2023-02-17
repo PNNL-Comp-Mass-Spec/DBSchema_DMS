@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDependentSteps] ******/
+/****** Object:  StoredProcedure [dbo].[update_dependent_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDependentSteps
+CREATE PROCEDURE [dbo].[update_dependent_steps]
 /****************************************************
 **
 **  Desc:
@@ -22,16 +22,17 @@ CREATE PROCEDURE UpdateDependentSteps
 **          05/25/2011 mem - Now using the Priority column from T_Jobs
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          03/10/2015 mem - Now updating T_Job_Steps.Dependencies if the dependency count listed is lower than that defined in T_Job_Step_Dependencies
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) = '' output,
     @numStepsSkipped int = 0 output,
     @infoOnly tinyint = 0,
-    @MaxJobsToProcess int = 0,
-    @LoopingUpdateInterval int = 5      -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @loopingUpdateInterval int = 5      -- Seconds between detailed logging while looping through the dependencies
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -430,7 +431,7 @@ As
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             Set @StatusMessage = '... Updating dependent steps: ' + Convert(varchar(12), @RowsProcessed) + ' / ' + Convert(varchar(12), @RowCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'UpdateDependentSteps'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_dependent_steps'
             Set @LastLogTime = GetDate()
         End
 
@@ -462,5 +463,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDependentSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dependent_steps] TO [DDL_Viewer] AS [dbo]
 GO

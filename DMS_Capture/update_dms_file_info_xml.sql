@@ -1,15 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDMSFileInfoXML] ******/
+/****** Object:  StoredProcedure [dbo].[update_dms_file_info_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDMSFileInfoXML]
+CREATE PROCEDURE [dbo].[update_dms_file_info_xml]
 /****************************************************
 **
-**  Desc:   Calls synonym S_UpdateDatasetFileInfoXML for the specified DatasetID
+**  Desc:   Calls synonym s_update_dataset_file_info_xml for the specified DatasetID
 **
-**      S_UpdateDatasetFileInfoXML refers to UpdateDatasetFileInfoXML in DMS5
+**      s_update_dataset_file_info_xml refers to UpdateDatasetFileInfoXML in DMS5
 **      UpdateDatasetFileInfoXML uses data in T_Dataset_Info_XML in this database
 **      to populate several dataset related tables
 **      - T_Dataset: Acq_Time_Start, Acq_Time_End, Scan_Count, File_Size_Bytes, File_Info_Last_Modified
@@ -24,16 +23,17 @@ CREATE PROCEDURE [dbo].[UpdateDMSFileInfoXML]
 **  Auth:   mem
 **  Date:   09/01/2010 mem - Initial Version
 **          06/13/2018 mem - Add comment regarding duplicate datasets
-**          08/09/2018 mem - Set Ignore to 1 when the return code from S_UpdateDatasetFileInfoXML is 53600
+**          08/09/2018 mem - Set Ignore to 1 when the return code from s_update_dataset_file_info_xml is 53600
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetID INT,
-    @DeleteFromTableOnSuccess tinyint = 1,
+    @datasetID INT,
+    @deleteFromTableOnSuccess tinyint = 1,
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     declare @myError int = 0
@@ -56,11 +56,11 @@ As
     If Not @DatasetInfoXML Is Null
     Begin
         If @infoOnly > 0
-            Print 'Call S_UpdateDatasetFileInfoXML for DatasetID ' + Cast(@DatasetID as varchar(12))
+            Print 'Call s_update_dataset_file_info_xml for DatasetID ' + Cast(@DatasetID as varchar(12))
 
         -- Note that this procedure will return error code 53600 if this dataset is a duplicate to another dataset (based on T_Dataset_Files)
 
-        EXEC @myError = S_UpdateDatasetFileInfoXML @DatasetID, @DatasetInfoXML, @message output, @infoOnly=@infoOnly
+        EXEC @myError = s_update_dataset_file_info_xml @DatasetID, @DatasetInfoXML, @message output, @infoOnly=@infoOnly
 
         If @myError = 0 And @infoOnly = 0 And @DeleteFromTableOnSuccess <> 0
         Begin
@@ -77,5 +77,5 @@ As
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDMSFileInfoXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dms_file_info_xml] TO [DDL_Viewer] AS [dbo]
 GO

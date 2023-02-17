@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CheckForMyEMSLErrors] ******/
+/****** Object:  StoredProcedure [dbo].[check_for_myemsl_errors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.CheckForMyEMSLErrors
+CREATE PROCEDURE [dbo].[check_for_myemsl_errors]
 /****************************************************
 **
 **  Desc: Looks for anomalies in T_MyEMSL_Uploads
@@ -16,16 +15,17 @@ CREATE Procedure dbo.CheckForMyEMSLErrors
 **  Auth:   mem
 **  Date:   12/10/2013 mem - Initial version
 **          08/13/2017 mem - Increase the error rate threshold from 1% to 3% since we're now auto-retrying uploads
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MostRecentDays int = 2,
-    @StartDate datetime = null,     -- Only used if @MostRecentDays is 0 or negative
-    @EndDate datetime = null,       -- Only used if @MostRecentDays is 0 or negative
-    @LogErrors tinyint = 1,
+    @mostRecentDays int = 2,
+    @startDate datetime = null,     -- Only used if @MostRecentDays is 0 or negative
+    @endDate datetime = null,       -- Only used if @MostRecentDays is 0 or negative
+    @logErrors tinyint = 1,
     @message varchar(255) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -106,7 +106,7 @@ As
         Set @message = 'More than 3% of the uploads to MyEMSL had an error; error rate: ' + Convert(varchar(12), Convert(decimal(9,1), @UploadErrorRate*100)) + '% for ' + Convert(varchar(12), @UploadAttempts) + ' upload attempts'
 
         If @LogErrors <> 0
-            Exec PostLogEntry 'Error', @message, 'CheckForMyEMSLErrors'
+            Exec post_log_entry 'Error', @message, 'check_for_myemsl_errors'
         Else
             Print @message
 
@@ -119,7 +119,7 @@ As
         Set @message = 'More than 5% of the uploads to MyEMSL involved uploading the same dataset and subfolder 2 or more times; duplicate rate: ' + Convert(varchar(12), Convert(int, @DuplicateRate*100)) + '% for ' + Convert(varchar(12), @DatasetFolderUploads) + ' dataset/folder combos'
 
         If @LogErrors <> 0
-            Exec PostLogEntry 'Error', @message, 'CheckForMyEMSLErrors'
+            Exec post_log_entry 'Error', @message, 'check_for_myemsl_errors'
         Else
             Print @message
 
@@ -129,7 +129,6 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckForMyEMSLErrors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_for_myemsl_errors] TO [DDL_Viewer] AS [dbo]
 GO

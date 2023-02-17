@@ -1,23 +1,23 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCaptureTaskStats] ******/
+/****** Object:  StoredProcedure [dbo].[update_capture_task_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateCaptureTaskStats]
+CREATE PROCEDURE [dbo].[update_capture_task_stats]
 /****************************************************
 **
 **  Desc:   Update processing statistics in T_Capture_Task_Stats
 **
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError Int = 0
@@ -106,18 +106,17 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in UpdateCaptureTaskStats'
+            Set @message = 'Error in update_capture_task_stats'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @InfoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'UpdateCaptureTaskStats'
+            Exec post_log_entry 'Error', @message, 'update_capture_task_stats'
     End
 
     If Len(@message) > 0
         Print @message
 
     Return @myError
-
 
 GO

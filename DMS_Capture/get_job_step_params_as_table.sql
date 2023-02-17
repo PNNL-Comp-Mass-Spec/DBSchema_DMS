@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamsAsTable] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params_as_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
+CREATE PROCEDURE [dbo].[get_job_step_params_as_table]
 /****************************************************
 **
 **  Desc:   Get job step parameters for given job step
@@ -16,6 +15,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
 **  Auth:   mem
 **          05/05/2010 mem - Initial release
 **          02/12/2020 mem - Add argument @paramName, which can be used to filter the results
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -23,7 +23,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
     @stepNumber int,
     @paramName varchar(512) = '',           -- Optional parameter name to filter on (supports wildcards)
     @message varchar(512) = '' output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
 AS
     set nocount on
@@ -46,10 +46,10 @@ AS
     )
 
     ---------------------------------------------------
-    -- Call GetJobStepParams to populate the temporary table
+    -- Call get_job_step_params to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = GetJobStepParams @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_job_step_params @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 
@@ -81,7 +81,6 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsAsTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_as_table] TO [DDL_Viewer] AS [dbo]
 GO

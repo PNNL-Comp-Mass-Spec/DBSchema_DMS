@@ -1,11 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[post_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE Procedure [dbo].[PostLogEntry]
+CREATE PROCEDURE [dbo].[post_log_entry]
 /****************************************************
 **
 **  Desc: Put new entry into the main log table
@@ -19,6 +17,7 @@ CREATE Procedure [dbo].[PostLogEntry]
 **          02/27/2017 mem - Although @message is varchar(4096), the Message column in T_Log_Entries may be shorter; disable ANSI Warnings before inserting into the table
 **          01/28/2020 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
 **          08/25/2022 mem - Use new column name
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -27,7 +26,7 @@ CREATE Procedure [dbo].[PostLogEntry]
     @postedBy varchar(128)= 'na',
     @duplicateEntryHoldoffHours int = 0         -- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
 )
-As
+AS
     Declare @myError int
     Declare @myRowCount int
     Set @myError = 0
@@ -66,7 +65,7 @@ As
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PostLogEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[post_log_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_log_entry] TO [DMS_SP_User] AS [dbo]
 GO

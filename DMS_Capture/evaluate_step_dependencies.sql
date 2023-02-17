@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EvaluateStepDependencies] ******/
+/****** Object:  StoredProcedure [dbo].[evaluate_step_dependencies] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
+CREATE PROCEDURE [dbo].[evaluate_step_dependencies]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +18,7 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 **          05/17/2019 mem - Switch from folder to directory
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
 **          09/23/2022 mem - Remove unnecesary Else
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
     @maxJobsToProcess int = 0,
     @loopingUpdateInterval int = 5        -- Seconds between detailed logging while looping through the dependencies
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -333,7 +333,7 @@ As
         If DateDiff(second, @LastLogTime, GetDate()) >= @loopingUpdateInterval
         Begin
             Set @StatusMessage = '... Evaluating step dependencies: ' + Convert(varchar(12), @RowsProcessed) + ' / ' + Convert(varchar(12), @RowCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'EvaluateStepDependencies'
+            exec post_log_entry 'Progress', @StatusMessage, 'evaluate_step_dependencies'
             Set @LastLogTime = GetDate()
         End
 
@@ -347,5 +347,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluateStepDependencies] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[evaluate_step_dependencies] TO [DDL_Viewer] AS [dbo]
 GO

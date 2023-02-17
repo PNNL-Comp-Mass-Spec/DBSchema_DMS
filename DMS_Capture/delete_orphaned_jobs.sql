@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteOrphanedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[delete_orphaned_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[DeleteOrphanedJobs]
+CREATE PROCEDURE [dbo].[delete_orphaned_jobs]
 /****************************************************
 **
 **  Desc:   Delete jobs in state 0 where the dataset no longer exists in DMS
@@ -14,13 +13,14 @@ CREATE PROCEDURE [dbo].[DeleteOrphanedJobs]
 **  Auth:   mem
 **          05/22/2019 mem - Initial version
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 1,
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -128,7 +128,7 @@ As
 
                 Set @logMessage = 'Deleted orphaned ' + @scriptName + ' job ' + Cast(@job As Varchar(12)) + ' for dataset ' + @dataset + ' since no longer defined in DMS'
 
-                Exec PostLogEntry 'Normal', @logMessage, 'DeleteOrphanedJobs'
+                Exec post_log_entry 'Normal', @logMessage, 'delete_orphaned_jobs'
 
                 Set @jobsDeleted = @jobsDeleted + 1
             End -- </c>

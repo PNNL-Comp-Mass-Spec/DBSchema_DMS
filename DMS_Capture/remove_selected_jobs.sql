@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RemoveSelectedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[remove_selected_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RemoveSelectedJobs
+CREATE PROCEDURE [dbo].[remove_selected_jobs]
 /****************************************************
 **
 **  Desc:
@@ -13,16 +13,17 @@ CREATE PROCEDURE RemoveSelectedJobs
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**          09/12/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**  09/12/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,              -- 1 -> don't actually delete, just dump list of jobs that would have been
     @message varchar(512)='' output,
-    @LogDeletions tinyint = 0           -- When 1, then logs each deleted job number in T_Log_Entries
+    @logDeletions tinyint = 0           -- When 1, then logs each deleted job number in T_Log_Entries
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -146,7 +147,7 @@ As
                     end
 
                     Set @message = 'Deleted job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
-                    Exec PostLogEntry 'Normal', @message, 'RemoveSelectedJobs'
+                    Exec post_log_entry 'Normal', @message, 'remove_selected_jobs'
 
                 End -- </d>
 
@@ -182,5 +183,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveSelectedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_selected_jobs] TO [DDL_Viewer] AS [dbo]
 GO

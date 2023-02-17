@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewJobsFromAnalysisBroker] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_jobs_from_analysis_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MakeNewJobsFromAnalysisBroker
+CREATE PROCEDURE [dbo].[make_new_jobs_from_analysis_broker]
 /****************************************************
 **
 **  Desc:
@@ -24,20 +24,21 @@ CREATE PROCEDURE MakeNewJobsFromAnalysisBroker
 **          05/05/2011 mem - Removed @onlyDMSArchiveUpdateReqdDatasets since it was only required for a short while after we switched over to the DMS_Capture DB in January 2010
 **                         - Now using T_Default_SP_Params to get default input params from database table
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = NULL,                                   -- 0 To perform the update, 1 to preview capture tasks that would be created
     @message varchar(512)='' output,
-    @ImportWindowDays INT = NULL,                               -- Default to 10 (via T_Default_SP_Params)
-    @LoggingEnabled TINYINT = NULL,
+    @importWindowDays INT = NULL,                               -- Default to 10 (via T_Default_SP_Params)
+    @loggingEnabled TINYINT = NULL,
     @bypassDatasetArchive TINYINT = NULL,                       -- waive the requirement that there be an existing complete dataset archive job in broker; default to 1 (via T_Default_SP_Params)
-    @DatasetIDFilterMin int = NULL,                             -- If non-zero, then will be used to filter the candidate datasets
-    @DatasetIDFilterMax int = NULL,                             -- If non-zero, then will be used to filter the candidate datasets
-    @InfoOnlyShowsNewJobsOnly tinyint = 0,                      -- Set to 1 to only see new jobs that would trigger new capture tasks; only used if @infoOnly is non-zero
+    @datasetIDFilterMin int = NULL,                             -- If non-zero, then will be used to filter the candidate datasets
+    @datasetIDFilterMax int = NULL,                             -- If non-zero, then will be used to filter the candidate datasets
+    @infoOnlyShowsNewJobsOnly tinyint = 0,                      -- Set to 1 to only see new jobs that would trigger new capture tasks; only used if @infoOnly is non-zero
     @timeWindowToRequireExisingDatasetArchiveJob INT = NULL     -- Default to 30 days (via T_Default_SP_Params)
 )
-As
+AS
     Set nocount on
 
     declare @myError int
@@ -47,7 +48,7 @@ As
 
     -- Set SP name
     declare @spName varchar(128)
-    SET @spName = 'MakeNewJobsFromAnalysisBroker'
+    SET @spName = 'make_new_jobs_from_analysis_broker'
 
     ---------------------------------------------------
     -- Create a temporary table containing defaults for this SP
@@ -310,9 +311,9 @@ As
 Done:
     If @LoggingEnabled = 1 AND @myError > 0 AND @message <> ''
     Begin
-        exec PostLogEntry 'Error', @message, 'MakeNewJobsFromAnalysisBroker'
+        exec post_log_entry 'Error', @message, 'make_new_jobs_from_analysis_broker'
     End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewJobsFromAnalysisBroker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_jobs_from_analysis_broker] TO [DDL_Viewer] AS [dbo]
 GO

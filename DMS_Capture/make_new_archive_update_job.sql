@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewArchiveUpdateJob] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_archive_update_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
+CREATE PROCEDURE [dbo].[make_new_archive_update_job]
 /****************************************************
 **
 **  Desc:
@@ -18,13 +17,14 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 **          05/31/2013 mem - Added parameter @pushDatasetToMyEMSL
 **          07/11/2013 mem - Added parameter @pushDatasetRecursive
 **          10/24/2014 mem - Changed priority to 2 when @resultsDirectoryName = ''
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/28/2017 mem - Update status messages
 **          03/06/2018 mem - Also look for ArchiveUpdate jobs on hold when checking for an existing archive update task
 **          05/17/2019 mem - Switch from folder to directory
 **          06/27/2019 mem - Default job priority is now 4; higher priority is now 3
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +36,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
     @infoOnly tinyint = 0,                      -- 0 To perform the update, 1 preview job that would be created
     @message varchar(512)='' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -51,7 +51,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'MakeNewArchiveUpdateJob', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'make_new_archive_update_job', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -145,7 +145,7 @@ As
             @datasetName AS Dataset,
             @DatasetID AS Dataset_ID,
             @resultsDirectoryName AS Results_Folder_Name,
-            'Manually created using MakeNewArchiveUpdateJob' AS Comment
+            'Manually created using make_new_archive_update_job' AS Comment
     End
     Else
     Begin
@@ -160,7 +160,7 @@ As
                @datasetName AS Dataset,
                @DatasetID AS Dataset_ID,
                @resultsDirectoryName AS Results_Folder_Name,
-               'Created manually using MakeNewArchiveUpdateJob' AS [Comment],
+               'Created manually using make_new_archive_update_job' AS [Comment],
                CASE
                    WHEN @resultsDirectoryName = '' THEN 3
                    ELSE 4
@@ -195,7 +195,7 @@ Done:
         Print @message
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewArchiveUpdateJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_archive_update_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MakeNewArchiveUpdateJob] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[make_new_archive_update_job] TO [DMS_SP_User] AS [dbo]
 GO

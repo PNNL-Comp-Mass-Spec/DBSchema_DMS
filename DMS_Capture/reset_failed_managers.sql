@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetFailedManagers] ******/
+/****** Object:  StoredProcedure [dbo].[reset_failed_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ResetFailedManagers
+CREATE PROCEDURE [dbo].[reset_failed_managers]
 /****************************************************
 **
 **  Desc:   Resets managers that report "flag file" in V_Processor_Status_Warnings_CTM
@@ -11,14 +11,14 @@ CREATE PROCEDURE dbo.ResetFailedManagers
 **  Auth:   mem
 **          10/20/2016 mem - Ported from DMS_Pipeline
 **          01/16/2023 mem - Use new view name
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InfoOnly tinyint = 0,                              -- 1 to preview the changes
+    @infoOnly tinyint = 0,                              -- 1 to preview the changes
     @message varchar(512) = '' output
 )
-As
-
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -73,13 +73,12 @@ As
         -- Call the manager control database procedure
         -----------------------------------------------------------
         --
-        exec @myError = ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode @ManagerList, @CleanupMode=1, @showTable=1, @infoOnly=@InfoOnly
+        exec @myError = ProteinSeqs.Manager_Control.dbo.set_manager_error_cleanup_mode @ManagerList, @CleanupMode=1, @showTable=1, @infoOnly=@InfoOnly
 
     End
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedManagers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_managers] TO [DDL_Viewer] AS [dbo]
 GO

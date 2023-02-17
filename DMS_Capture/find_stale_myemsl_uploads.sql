@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindStaleMyEMSLUploads] ******/
+/****** Object:  StoredProcedure [dbo].[find_stale_myemsl_uploads] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
+CREATE PROCEDURE [dbo].[find_stale_myemsl_uploads]
 /****************************************************
 **
 **  Desc:
@@ -17,8 +16,9 @@ CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 **  Date:   05/20/2019 mem - Initial version
 **          07/01/2019 mem - Log details of entries over 1 year old that will have ErrorCode set to 101
 **          07/08/2019 mem - Fix bug updating RetrySucceeded
-**                         - Pass @logMessage to PostLogEntry
+**                         - Pass @logMessage to post_log_entry
 **          10/11/2022 mem - Change minimum value for @staleUploadDays to 14
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError Int = 0
@@ -217,7 +217,7 @@ As
                         ', ErrorCode: ' +  Cast(@errorCode As varchar(12)) +
                         ', Entered: ' +  Convert(varchar(32), @entered, 120)
 
-                Exec PostLogEntry 'Error', @logMessage, 'FindStaleMyEMSLUploads'
+                Exec post_log_entry 'Error', @logMessage, 'find_stale_myemsl_uploads'
 
                 Set @iteration = @iteration + 1
             End -- </b>
@@ -262,7 +262,7 @@ As
         If @myRowCount > 0
         Begin
             Set @message = @message + ' unverified for over ' + Cast(@staleUploadDays As varchar(12)) + ' days; ErrorCode set to 101'
-            Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
+            Exec post_log_entry 'Error', @message, 'find_stale_myemsl_uploads'
         End
 
         Commit
@@ -276,14 +276,13 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in FindStaleMyEMSLUploads'
+            Set @message = 'Error in find_stale_myemsl_uploads'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-        Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
+        Exec post_log_entry 'Error', @message, 'find_stale_myemsl_uploads'
     End
 
     Return @myError
-
 
 GO

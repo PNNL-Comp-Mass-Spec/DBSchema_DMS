@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetProcessorAssignedInstrumentList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_processor_assigned_instrument_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetProcessorAssignedInstrumentList]
+CREATE FUNCTION [dbo].[get_processor_assigned_instrument_list]
 /****************************************************
 **
 **  Desc:
@@ -15,10 +15,11 @@ CREATE FUNCTION [dbo].[GetProcessorAssignedInstrumentList]
 **
 **  Auth:   grk
 **  Date:   01/21/2010
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ProcessorName varchar(256)
+    @processorName varchar(256)
 )
 RETURNS varchar(4000)
 AS
@@ -39,5 +40,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetProcessorAssignedInstrumentList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_processor_assigned_instrument_list] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetDependentJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[reset_dependent_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ResetDependentJobSteps]
+CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
 /****************************************************
 **
 **  Desc:   Resets entries in T_Job_Steps and T_Job_Step_Dependencies for the given jobs
@@ -22,15 +21,15 @@ CREATE PROCEDURE [dbo].[ResetDependentJobSteps]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          07/10/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Jobs varchar(Max),                                 -- List of jobs whose steps should be reset
-    @InfoOnly tinyint = 0,                              -- 1 to preview the changes
+    @jobs varchar(Max),                                 -- List of jobs whose steps should be reset
+    @infoOnly tinyint = 0,                              -- 1 to preview the changes
     @message varchar(512) = '' output
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -77,7 +76,7 @@ As
 
         INSERT INTO #Tmp_Jobs (Job)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@Jobs, ',')
+        FROM dbo.parse_delimited_integer_list(@Jobs, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -157,17 +156,17 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ResetDependentJobSteps'
+        Exec post_log_entry 'Error', @message, 'reset_dependent_job_steps'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetDependentJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_dependent_job_steps] TO [DDL_Viewer] AS [dbo]
 GO

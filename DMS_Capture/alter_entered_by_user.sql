@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AlterEnteredByUser] ******/
+/****** Object:  StoredProcedure [dbo].[alter_entered_by_user] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE AlterEnteredByUser
+CREATE PROCEDURE [dbo].[alter_entered_by_user]
 /****************************************************
 **
 **  Desc:   Updates the Entered_By column for the specified row in the given table to be @NewUser
@@ -18,22 +18,23 @@ create PROCEDURE AlterEnteredByUser
 **  Auth:   mem
 **  Date:   03/25/2008 mem - Initial version (Ticket: #644)
 **          05/23/2008 mem - Expanded @EntryDescription to varchar(512)
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TargetTableName varchar(128),
-    @TargetIDColumnName varchar(128),
-    @TargetID int,
-    @NewUser varchar(128),
-    @ApplyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
-    @EntryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
-    @EntryDateColumnName varchar(128) = 'Entered',
-    @EnteredByColumnName varchar(128) = 'Entered_By',
+    @targetTableName varchar(128),
+    @targetIDColumnName varchar(128),
+    @targetID int,
+    @newUser varchar(128),
+    @applyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
+    @entryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
+    @entryDateColumnName varchar(128) = 'Entered',
+    @enteredByColumnName varchar(128) = 'Entered_By',
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0,
-    @PreviewSql tinyint = 0
+    @previewSql tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int
@@ -180,7 +181,7 @@ As
                 If @myError <> 0
                 Begin
                     Set @message = 'Error updating ' + @EntryDescription
-                    Exec PostLogEntry 'Error', @message, 'AlterEventLogEntryUser'
+                    Exec post_log_entry 'Error', @message, 'AlterEventLogEntryUser'
                     Goto Done
                 End
                 Else
@@ -216,5 +217,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUser] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[alter_entered_by_user] TO [DDL_Viewer] AS [dbo]
 GO

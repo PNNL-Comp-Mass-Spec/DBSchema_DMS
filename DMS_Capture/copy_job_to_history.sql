@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyJobToHistory] ******/
+/****** Object:  StoredProcedure [dbo].[copy_job_to_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CopyJobToHistory
+CREATE PROCEDURE [dbo].[copy_job_to_history]
 /****************************************************
 **
 **  Desc:
@@ -19,16 +19,17 @@ CREATE PROCEDURE CopyJobToHistory
 **          03/10/2015 mem - Added T_Job_Step_Dependencies_History
 **          03/22/2016 mem - Update @message when cannot copy a job
 **          11/04/2016 mem - Return a more detailed error message in @message
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @JobState int,
+    @jobState int,
     @message varchar(512) output,
-    @OverrideSaveTime tinyint = 0,      -- Set to 1 to use @SaveTimeOverride for the SaveTime instead of GetDate()
-    @SaveTimeOverride datetime = Null
+    @overrideSaveTime tinyint = 0,      -- Set to 1 to use @SaveTimeOverride for the SaveTime instead of GetDate()
+    @saveTimeOverride datetime = Null
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -265,5 +266,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyJobToHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_job_to_history] TO [DDL_Viewer] AS [dbo]
 GO

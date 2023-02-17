@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReportManagerIdle] ******/
+/****** Object:  StoredProcedure [dbo].[report_manager_idle] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ReportManagerIdle]
+CREATE PROCEDURE [dbo].[report_manager_idle]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +17,7 @@ CREATE PROCEDURE [dbo].[ReportManagerIdle]
 **  Date:   08/01/2017 mem - Initial release
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[ReportManagerIdle]
     @message varchar(256) = '' output,
     @returnCode varchar(64) = '' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -41,7 +41,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'ReportManagerIdle', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'report_manager_idle', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -108,7 +108,7 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         Set @message = 'Reset step task state back to 2 for job ' + cast(@jobNumber as varchar(9))
-        Exec PostLogEntry 'Warning', @message, 'ReportManagerIdle'
+        Exec post_log_entry 'Warning', @message, 'report_manager_idle'
     End
 
     ---------------------------------------------------
@@ -123,7 +123,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportManagerIdle] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_manager_idle] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportManagerIdle] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_manager_idle] TO [DMS_SP_User] AS [dbo]
 GO

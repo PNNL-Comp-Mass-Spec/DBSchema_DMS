@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RetrySelectedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[retry_selected_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RetrySelectedJobs
+CREATE PROCEDURE [dbo].[retry_selected_jobs]
 /****************************************************
 **
 **  Desc:
@@ -19,13 +19,13 @@ CREATE PROCEDURE RetrySelectedJobs
 **  Date:   01/11/2010
 **          01/18/2010 grk - reset step retry count
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -112,5 +112,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RetrySelectedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[retry_selected_jobs] TO [DDL_Viewer] AS [dbo]
 GO

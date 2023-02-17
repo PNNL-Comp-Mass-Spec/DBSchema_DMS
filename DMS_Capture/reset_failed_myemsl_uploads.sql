@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetFailedMyEMSLUploads] ******/
+/****** Object:  StoredProcedure [dbo].[reset_failed_myemsl_uploads] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
+CREATE PROCEDURE [dbo].[reset_failed_myemsl_uploads]
 /****************************************************
 **
 **  Desc:   Looks for failed Dataset Archive or Archive Update jobs with
@@ -24,6 +23,7 @@ CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 **          12/15/2017 mem - Reset steps with message 'ingest/backend/tasks.py'
 **          03/07/2018 mem - Do not reset the same job/subfolder ingest task more than once
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -33,8 +33,7 @@ CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
     @resetHoldoffMinutes real = 15,             -- Holdoff time to apply to column Finish
     @message varchar(4000) = '' output
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -93,7 +92,7 @@ As
         Begin
             INSERT INTO #Tmp_FailedJobs( Job, Dataset_ID, Subfolder, [Error_Message], SkipReset )
             SELECT DISTINCT Value, TS.Dataset_ID, TS.Output_Folder, TS.Completion_Message, 0 AS SkipReset
-            FROM dbo.udfParseDelimitedIntegerList ( @jobListOverride, ',' ) SrcJobs
+            FROM dbo.parse_delimited_integer_list ( @jobListOverride, ',' ) SrcJobs
                  INNER JOIN V_Task_Steps TS
                    ON SrcJobs.VALUE = TS.Job
                  LEFT OUTER JOIN #Tmp_FailedJobs Target
@@ -172,7 +171,7 @@ As
                     Set @logMessage = @logMessage + ' since the upload has already failed 2 or more times'
 
                     If @infoOnly = 0
-                        Exec PostLogEntry 'Error', @logMessage, 'ResetFailedMyEMSLUploads', 24
+                        Exec post_log_entry 'Error', @logMessage, 'reset_failed_myemsl_uploads', 24
                     Else
                         Print @logMessage
 
@@ -231,7 +230,7 @@ As
         If Exists (Select * From #Tmp_FailedJobs Where SkipReset = 0)
         Begin
             -----------------------------------------------------------
-            -- Construct a comma-separated list of jobs then call RetryMyEMSLUpload
+            -- Construct a comma-separated list of jobs then call retry_myemsl_upload
             -----------------------------------------------------------
             --
             Declare @JobList varchar(max) = null
@@ -243,7 +242,7 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            exec @myError = RetryMyEMSLUpload @Jobs = @JobList, @infoOnly = @infoOnly, @message = @message
+            exec @myError = retry_myemsl_upload @Jobs = @JobList, @infoOnly = @infoOnly, @message = @message
 
             -----------------------------------------------------------
             -- Post a log entry if any jobs were reset
@@ -258,9 +257,9 @@ As
                 FROM #Tmp_FailedJobs
                 WHERE SkipReset = 0
 
-                Set @message = 'Warning: Retrying MyEMSL upload for ' + dbo.CheckPlural(@jobCount, 'job ', 'jobs ') + @jobList + '; for details, see T_MyEMSL_Upload_Resets'
+                Set @message = 'Warning: Retrying MyEMSL upload for ' + dbo.check_plural(@jobCount, 'job ', 'jobs ') + @jobList + '; for details, see T_MyEMSL_Upload_Resets'
 
-                exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
+                exec post_log_entry 'Error', @message, 'reset_failed_myemsl_uploads'
 
                 SELECT @message AS Message
 
@@ -282,13 +281,13 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
+        Exec post_log_entry 'Error', @message, 'reset_failed_myemsl_uploads'
     END CATCH
 
 Done:
@@ -296,5 +295,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedMyEMSLUploads] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_myemsl_uploads] TO [DDL_Viewer] AS [dbo]
 GO

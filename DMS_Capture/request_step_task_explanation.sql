@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[RequestStepTaskExplanation] ******/
+/****** Object:  StoredProcedure [dbo].[request_step_task_explanation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RequestStepTaskExplanation
+CREATE PROCEDURE [dbo].[request_step_task_explanation]
 /****************************************************
 **
 ** Desc:
-**  Called from RequestStepTask in info only mode
+**  Called from request_step_task in info only mode
 **  to explain the assignment logic
 **
 **  Return values: 0: success, otherwise, error code
@@ -18,13 +18,14 @@ CREATE PROCEDURE RequestStepTaskExplanation
 **  Date:   09/07/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/20/2010 grk - Added logic for instrument/processor assignment
 **          01/27/2017 mem - Clarify some descriptions
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
   (
     @processorName VARCHAR(128),
     @processorIsAssigned INT,
     @infoOnly TINYINT,
-    @Machine VARCHAR(120)
+    @machine VARCHAR(120)
   )
 AS
   SET nocount ON
@@ -182,7 +183,6 @@ AS
         INNER JOIN dbo.T_Jobs ON T_Jobs.Job = #CandidateJobSteps.Job
         LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Step_Tool
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskExplanation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_step_task_explanation] TO [DDL_Viewer] AS [dbo]
 GO

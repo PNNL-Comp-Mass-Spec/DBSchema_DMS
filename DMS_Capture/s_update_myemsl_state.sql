@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_UpdateMyEMSLState] ******/
-CREATE SYNONYM [dbo].[S_UpdateMyEMSLState] FOR [DMS5].[dbo].[UpdateMyEMSLState]
+/****** Object:  Synonym [dbo].[s_update_myemsl_state] ******/
+CREATE SYNONYM [dbo].[s_update_myemsl_state] FOR [DMS5].[dbo].[UpdateMyEMSLState]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_UpdateMyEMSLState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_update_myemsl_state] TO [DDL_Viewer] AS [dbo]
 GO

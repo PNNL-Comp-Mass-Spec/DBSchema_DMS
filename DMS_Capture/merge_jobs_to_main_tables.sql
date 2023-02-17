@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MergeJobsToMainTables] ******/
+/****** Object:  StoredProcedure [dbo].[merge_jobs_to_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MergeJobsToMainTables]
+CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
 /****************************************************
 **
 **  Desc:   Updates T_Jobs, T_Job_Parameters, and T_Job_Steps
@@ -17,12 +16,13 @@ CREATE PROCEDURE [dbo].[MergeJobsToMainTables]
 **          05/25/2011 mem - Removed priority column from T_Job_Steps
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -43,7 +43,7 @@ goto Done
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'MergeJobsToMainTables'
+    set @transName = 'merge_jobs_to_main_tables'
     --
     begin transaction @transName
     --
@@ -185,5 +185,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MergeJobsToMainTables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[merge_jobs_to_main_tables] TO [DDL_Viewer] AS [dbo]
 GO

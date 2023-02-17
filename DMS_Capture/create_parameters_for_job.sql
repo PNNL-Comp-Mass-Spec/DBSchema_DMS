@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateParametersForJob] ******/
+/****** Object:  StoredProcedure [dbo].[create_parameters_for_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CreateParametersForJob
+CREATE PROCEDURE [dbo].[create_parameters_for_job]
 /****************************************************
 **
 **  Desc:
@@ -20,17 +20,18 @@ CREATE PROCEDURE CreateParametersForJob
 **          05/31/2013 mem - Added parameter @scriptName
 **                         - Added support for script 'MyEMSLDatasetPush'
 **          07/11/2013 mem - Added support for script 'MyEMSLDatasetPushRecursive'
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @datasetID INT,
     @scriptName varchar(64),
-    @pXML xml output,
+    @paramsXML xml output,
     @message varchar(512) output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -56,7 +57,7 @@ As
     --
     INSERT INTO @Job_Parameters
         (Job, Step_Number, [Section], [Name], Value)
-    execute GetJobParamTable @job, @datasetID
+    execute get_job_param_table @job, @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -104,10 +105,10 @@ As
     end
 
     ---------------------------------------------------
-    -- Populate @pXML
+    -- Populate @paramsXML
     ---------------------------------------------------
     --
-    SELECT @pXML = Parameters
+    SELECT @paramsXML = Parameters
     FROM #Job_Parameters
     WHERE Job = @job
 
@@ -119,5 +120,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateParametersForJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_parameters_for_job] TO [DDL_Viewer] AS [dbo]
 GO

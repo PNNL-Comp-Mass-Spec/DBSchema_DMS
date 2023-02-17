@@ -1,15 +1,15 @@
-/****** Object:  UserDefinedFunction [dbo].[udfDecimalToDouble] ******/
+/****** Object:  UserDefinedFunction [dbo].[decimal_to_double] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[udfDecimalToDouble]
+CREATE FUNCTION [dbo].[decimal_to_double]
 /****************************************************
 **  Test udf
 **
 **  Auth:   mem
 **  Date:   02/20/2020
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
@@ -24,7 +24,5 @@ BEGIN
 
     RETURN  @value
 END
-
-
 
 GO

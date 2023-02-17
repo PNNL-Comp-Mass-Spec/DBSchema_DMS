@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_SetArchiveUpdateTaskComplete] ******/
-CREATE SYNONYM [dbo].[S_SetArchiveUpdateTaskComplete] FOR [DMS5].[dbo].[SetArchiveUpdateTaskComplete]
+/****** Object:  Synonym [dbo].[s_set_archive_update_task_complete] ******/
+CREATE SYNONYM [dbo].[s_set_archive_update_task_complete] FOR [DMS5].[dbo].[SetArchiveUpdateTaskComplete]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_SetArchiveUpdateTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_set_archive_update_task_complete] TO [DDL_Viewer] AS [dbo]
 GO

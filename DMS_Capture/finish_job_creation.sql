@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FinishJobCreation] ******/
+/****** Object:  StoredProcedure [dbo].[finish_job_creation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[FinishJobCreation]
+CREATE PROCEDURE [dbo].[finish_job_creation]
 /****************************************************
 **
 **  Desc:
@@ -21,13 +20,14 @@ CREATE PROCEDURE [dbo].[FinishJobCreation]
 **          04/08/2011 mem - Now skipping the 'ImsDeMultiplex' step for datasets that end in '_inverse'
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory in temp tables
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -150,5 +150,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FinishJobCreation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[finish_job_creation] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDMSDatasetState] ******/
+/****** Object:  StoredProcedure [dbo].[update_dms_dataset_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDMSDatasetState]
+CREATE PROCEDURE [dbo].[update_dms_dataset_state]
 /****************************************************
 **
 **  Desc:   Update dataset state
@@ -15,24 +14,25 @@ CREATE PROCEDURE [dbo].[UpdateDMSDatasetState]
 **  Date:   01/05/2010 grk - Initial Version
 **          01/14/2010 grk - removed path ID fields
 **          05/05/2010 grk - added handling for dataset info XML
-**          09/01/2010 mem - Now calling UpdateDMSFileInfoXML
+**          09/01/2010 mem - Now calling update_dms_file_info_xml
 **          03/16/2011 grk - Now recognizes IMSDatasetCapture
-**          04/04/2012 mem - Now passing @failureMessage to S_SetCaptureTaskComplete when the job is failed in the broker
-**          06/13/2018 mem - Check for error code 53600 returned by UpdateDMSFileInfoXML to indicate a duplicate dataset
+**          04/04/2012 mem - Now passing @failureMessage to s_set_capture_task_complete when the job is failed in the broker
+**          06/13/2018 mem - Check for error code 53600 returned by update_dms_file_info_xml to indicate a duplicate dataset
 **          08/09/2018 mem - Set the job state to 14 when the error code is 53600
 **          08/17/2021 mem - Remove extra information from Completion messages with warning "Over 10% of the MS/MS spectra have a minimum m/z value larger than the required minimum; reporter ion peaks likely could not be detected"
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @datasetID int,
     @script varchar(64),
     @storageServerName varchar(128),
     @newJobStateInBroker int,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -48,7 +48,7 @@ As
     Begin
         If @newJobStateInBroker in (2, 3, 5) -- always call in case job completes too quickly for normal update cycle
         Begin
-            EXEC @myError = S_SetCaptureTaskBusy @datasetNum, '(broker)', @message output
+            EXEC @myError = s_set_capture_task_busy @datasetName, '(broker)', @message output
         End
 
         If @newJobStateInBroker = 3
@@ -57,12 +57,12 @@ As
             -- Job Succeeded
             ---------------------------------------------------
 
-            EXEC @myError = UpdateDMSFileInfoXML @DatasetID, @DeleteFromTableOnSuccess=1, @message=@message Output
+            EXEC @myError = update_dms_file_info_xml @DatasetID, @DeleteFromTableOnSuccess=1, @message=@message Output
 
             If @myError = 53600
             Begin
                 -- Use special completion code of 101
-                EXEC @myError = S_SetCaptureTaskComplete @datasetNum, 101, @message OUTPUT, @failureMessage = @message
+                EXEC @myError = s_set_capture_task_complete @datasetName, 101, @message OUTPUT, @failureMessage = @message
 
                 -- Fail out the job with state 14 (Failed, Ignore Job Step States)
                 Update T_Jobs
@@ -72,7 +72,7 @@ As
             Else
             Begin
                 -- Use special completion code of 100
-                EXEC @myError = S_SetCaptureTaskComplete @datasetNum, 100, @message OUTPUT
+                EXEC @myError = s_set_capture_task_complete @datasetName, 100, @message OUTPUT
             End
         End
 
@@ -99,8 +99,8 @@ As
                     T_Jobs J ON JS.Job = J.Job
                 WHERE (JS.Job = @job) AND IsNull(JS.Completion_Message, '') <> ''
 
-                -- Auto remove "; To ignore this error, use Exec AddUpdateJobParameter" from the completion message
-                Set @startPos = CharIndex('; To ignore this error, use Exec AddUpdateJobParameter', @failureMessage)
+                -- Auto remove "; To ignore this error, use Exec add_update_job_parameter" from the completion message
+                Set @startPos = CharIndex('; To ignore this error, use Exec add_update_job_parameter', @failureMessage)
 
                 If @startPos > 1
                 Begin
@@ -108,7 +108,7 @@ As
                 End
             End
 
-            EXEC @myError = S_SetCaptureTaskComplete @datasetNum, 1, @message output, @failureMessage=@failureMessage
+            EXEC @myError = s_set_capture_task_complete @datasetName, 1, @message output, @failureMessage=@failureMessage
         End
     End
 
@@ -120,17 +120,17 @@ As
     Begin
         If @newJobStateInBroker in (2, 3, 5) -- always call in case job completes too quickly for normal update cycle
         Begin
-            EXEC @myError = S_SetArchiveTaskBusy @datasetNum, @storageServerName, @message  output
+            EXEC @myError = s_set_archive_task_busy @datasetName, @storageServerName, @message  output
         End
 
         If @newJobStateInBroker = 3
         Begin
-            EXEC @myError = S_SetArchiveTaskComplete @datasetNum, 100, @message OUTPUT -- using special completion code of 100
+            EXEC @myError = s_set_archive_task_complete @datasetName, 100, @message OUTPUT -- using special completion code of 100
         End
 
         If @newJobStateInBroker = 5
         Begin
-            EXEC @myError = S_SetArchiveTaskComplete @datasetNum, 1, @message output
+            EXEC @myError = s_set_archive_task_complete @datasetName, 1, @message output
         End
     End
 
@@ -142,22 +142,22 @@ As
     Begin
         If @newJobStateInBroker in (2, 3, 5) -- always call in case job completes too quickly for normal update cycle
         Begin
-            EXEC @myError = S_SetArchiveUpdateTaskBusy @datasetNum, @storageServerName, @message output
+            EXEC @myError = s_set_archive_update_task_busy @datasetName, @storageServerName, @message output
         End
 
         If @newJobStateInBroker = 3
         Begin
-            EXEC @myError = S_SetArchiveUpdateTaskComplete @datasetNum, 0, @message output
+            EXEC @myError = s_set_archive_update_task_complete @datasetName, 0, @message output
         End
 
         If @newJobStateInBroker = 5
         Begin
-            EXEC @myError = S_SetArchiveUpdateTaskComplete @datasetNum, 1, @message output
+            EXEC @myError = s_set_archive_update_task_complete @datasetName, 1, @message output
         End
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDMSDatasetState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dms_dataset_state] TO [DDL_Viewer] AS [dbo]
 GO

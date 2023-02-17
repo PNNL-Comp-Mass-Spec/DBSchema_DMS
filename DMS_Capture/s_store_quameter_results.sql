@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_StoreQuameterResults] ******/
-CREATE SYNONYM [dbo].[S_StoreQuameterResults] FOR [DMS5].[dbo].[StoreQuameterResults]
+/****** Object:  Synonym [dbo].[s_store_quameter_results] ******/
+CREATE SYNONYM [dbo].[s_store_quameter_results] FOR [DMS5].[dbo].[StoreQuameterResults]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_StoreQuameterResults] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_store_quameter_results] TO [DDL_Viewer] AS [dbo]
 GO

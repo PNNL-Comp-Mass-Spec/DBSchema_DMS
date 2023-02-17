@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[HandleDatasetCaptureValidationFailure] ******/
+/****** Object:  StoredProcedure [dbo].[handle_dataset_capture_validation_failure] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
+CREATE PROCEDURE [dbo].[handle_dataset_capture_validation_failure]
 /****************************************************
 **
 **  Desc:
@@ -13,7 +12,7 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 **      (.Raw file too small, expected files missing, etc).
 **
 **      The procedure changes the capture job state to 101
-**      then calls HandleDatasetCaptureValidationFailure in DMS5
+**      then calls handle_dataset_capture_validation_failure in DMS5
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,9 +21,10 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 **          09/13/2011 mem - Updated to support script 'IMSDatasetCapture' in addition to 'DatasetCapture'
 **          11/05/2012 mem - Added additional Print statement
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
-**          08/10/2018 mem - Call UpdateDMSFileInfoXML to push the dataset info into DMS5.T_Dataset_Info
+**          08/10/2018 mem - Call update_dms_file_info_xml to push the dataset info into DMS5.T_Dataset_Info
 **          11/02/2020 mem - Fix bug validating the dataset name
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -33,7 +33,7 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -134,14 +134,14 @@ As
         Else
         Begin -- <b>
 
-            -- Call UpdateDMSFileInfoXML to push the dataset info into DMS5.T_Dataset_Info
+            -- Call update_dms_file_info_xml to push the dataset info into DMS5.T_Dataset_Info
             -- If a duplicate dataset is found, @myError will be 53600
-            EXEC @myError = UpdateDMSFileInfoXML @datasetID, @DeleteFromTableOnSuccess=1, @message=@message Output
+            EXEC @myError = update_dms_file_info_xml @datasetID, @DeleteFromTableOnSuccess=1, @message=@message Output
 
             If @myError = 53600
             Begin
                 -- Use special completion code of 101
-                EXEC @myError = S_SetCaptureTaskComplete @datasetName, 101, @message OUTPUT, @failureMessage = @message
+                EXEC @myError = s_set_capture_task_complete @datasetName, 101, @message OUTPUT, @failureMessage = @message
 
                 -- Fail out the job with state 14 (Failed, Ignore Job Step States)
                 UPDATE T_Jobs
@@ -168,7 +168,7 @@ As
             Else
             Begin
                 -- Mark the dataset as bad in DMS5
-                Exec DMS5.dbo.HandleDatasetCaptureValidationFailure @datasetID, @comment, @infoOnly, ''
+                Exec DMS5.dbo.handle_dataset_capture_validation_failure @datasetID, @comment, @infoOnly, ''
 
                 Set @message = 'Marked dataset as bad: ' + @datasetName
                 Print @message
@@ -181,7 +181,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[HandleDatasetCaptureValidationFailure] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[handle_dataset_capture_validation_failure] TO [DDL_Viewer] AS [dbo]
 GO

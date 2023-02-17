@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteCaptureTask] ******/
+/****** Object:  StoredProcedure [dbo].[delete_capture_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE DeleteCaptureTask
+CREATE PROCEDURE [dbo].[delete_capture_task]
 /****************************************************
 **
 **  Desc:
@@ -14,31 +14,32 @@ CREATE PROCEDURE DeleteCaptureTask
 **
 **  Auth:   mem
 **          09/12/2009 mem - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          09/11/2012 mem - Renamed from DeleteJob to DeleteCaptureTask
+**          09/11/2012 mem - Renamed from DeleteJob to delete_capture_task
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @jobNum varchar(32),
+    @job varchar(32),
     @callingUser varchar(128) = '',
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
     declare @myRowCount int = 0
 
-    declare @jobID int = convert(int, @jobNum)
+    declare @jobID int = convert(int, @job)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteCaptureTask', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'delete_capture_task', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -120,5 +121,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteCaptureTask] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_capture_task] TO [DDL_Viewer] AS [dbo]
 GO

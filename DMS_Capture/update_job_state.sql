@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobState] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateJobState]
+CREATE PROCEDURE [dbo].[update_job_state]
 /****************************************************
 **
 **    Desc: Based on step state, look for jobs that have been completed,
@@ -48,23 +47,24 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
 **          11/11/2014 mem - Now looking for jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
 **          11/04/2016 mem - Now looking for jobs that are failed, yet should be listed as in progress
-**                         - Only call CopyJobToHistory if the new job state is 3 or 5 and if not changing the state from 5 to 2
+**                         - Only call copy_job_to_history if the new job state is 3 or 5 and if not changing the state from 5 to 2
 **                         - Add parameter @infoOnly
 **                         - No longer computing @ProcessingTimeMinutes since not stored in any table
-**          01/23/2017 mem - Fix logic bug involving call to CopyJobToHistory
-**          06/13/2018 mem - Add comments regarding UpdateDMSFileInfoXML and T_Dataset_Info
+**          01/23/2017 mem - Fix logic bug involving call to copy_job_to_history
+**          06/13/2018 mem - Add comments regarding update_dms_file_info_xml and T_Dataset_Info
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
     @message varchar(512) output,
-    @MaxJobsToProcess int = 0,
-    @LoopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @loopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -282,7 +282,7 @@ As
     Set @LastLogTime = GetDate()
     SET @script = ''
     Declare
-        @datasetNum VARCHAR(128),
+        @datasetName VARCHAR(128),
         @datasetID INT,
         @storageServerName VARCHAR(128)
     --
@@ -296,7 +296,7 @@ As
                      @newJobStateInBroker = NewState,
                      @resultsFolderName = Results_Folder_Name,
                      @script = Script,
-                     @datasetNum = Dataset_Name,
+                     @datasetName = Dataset_Name,
                      @datasetID = Dataset_ID,
                      @storageServerName = Storage_Server
         FROM #Tmp_ChangedJobs
@@ -431,8 +431,8 @@ As
 
             ---------------------------------------------------
             -- Make changes to DMS if we are enabled to do so
-            -- UpdateDMSDatasetState will also call UpdateDMSFileInfoXML to push the data into T_Dataset_Info
-            -- If a duplicate dataset is found, UpdateDMSDatasetState will change this job's state to 14 in T_Jobs
+            -- update_dms_dataset_state will also call update_dms_file_info_xml to push the data into T_Dataset_Info
+            -- If a duplicate dataset is found, update_dms_dataset_state will change this job's state to 14 in T_Jobs
             ---------------------------------------------------
             --
             If @bypassDMS = 0 AND @datasetID <> 0
@@ -440,13 +440,13 @@ As
 
                 If @infoOnly > 0
                 Begin
-                    Print 'Exec UpdateDMSDatasetState @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                    Print 'Exec update_dms_dataset_state @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
                 End
                 Else
                 Begin
-                    Exec @myError = UpdateDMSDatasetState
+                    Exec @myError = update_dms_dataset_state
                                         @job,
-                                        @datasetNum,
+                                        @datasetName,
                                         @datasetID,
                                         @Script,
                                         @storageServerName,
@@ -454,7 +454,7 @@ As
                                         @message output
 
                     If @myError <> 0
-                        Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+                        Exec post_log_entry 'Error', @message, 'update_job_state'
                 End
 
             End -- </c>
@@ -464,18 +464,18 @@ As
 
                 If @infoOnly > 0
                 Begin
-                    Print 'Exec UpdateDMSPrepState @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                    Print 'Exec update_dms_prep_state @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
                 End
                 Else
                 Begin
-                    Exec @myError = UpdateDMSPrepState
+                    Exec @myError = update_dms_prep_state
                                 @job,
                                 @Script,
                                 @newJobStateInBroker,
                                 @message output
 
                     If @myError <> 0
-                        Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+                        Exec post_log_entry 'Error', @message, 'update_job_state'
                 End
             End -- </d>
 
@@ -489,11 +489,11 @@ As
             Begin
                 If @infoOnly > 0
                 Begin
-                    Print 'Exec CopyJobToHistory @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                    Print 'Exec copy_job_to_history @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
                 End
                 Else
                 Begin
-                    exec @myError = CopyJobToHistory @job, @newJobStateInBroker, @message output
+                    exec @myError = copy_job_to_history @job, @newJobStateInBroker, @message output
                 End
             End
 
@@ -503,7 +503,7 @@ As
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             Set @StatusMessage = '... Updating job state: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'UpdateJobState'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_job_state'
             Set @LastLogTime = GetDate()
         End
 
@@ -527,5 +527,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_state] TO [DDL_Viewer] AS [dbo]
 GO

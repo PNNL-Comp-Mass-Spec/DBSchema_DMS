@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLocalJobInBroker] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_local_job_in_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
+CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 /****************************************************
 **
 **  Desc:
@@ -18,9 +17,10 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/08/2016 mem - Include job number in errors raised by RAISERROR
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          08/28/2022 mem - When validating @mode = 'update', use state 3 for complete
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -56,7 +56,7 @@ AS
         ---------------------------------------------------
 
         Declare @authorized tinyint = 0
-        Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1;
+        Exec @authorized = verify_sp_authorized 'add_update_local_job_in_broker', @raiseError = 1;
         If @authorized = 0
         Begin;
             THROW 51000, 'Access denied', 1;
@@ -108,7 +108,7 @@ AS
             UPDATE   dbo.T_Jobs
             SET      Priority = @priority ,
                     Comment = @comment ,
-                    State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (UpdateJobState will handle final job state update)
+                    State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (update_job_state will handle final job state update)
             WHERE    Job = @job
 
             UPDATE   dbo.T_Job_Parameters
@@ -132,7 +132,7 @@ AS
 
             DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
 /*
-            exec MakeLocalJobInBroker
+            exec make_local_job_in_broker
                     @scriptName,
                     @priority,
                     @jobParamXML,
@@ -146,20 +146,19 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateLocalJobInBroker'
+        Exec post_log_entry 'Error', @message, 'add_update_local_job_in_broker'
     END CATCH
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLocalJobInBroker] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_local_job_in_broker] TO [DMS_SP_User] AS [dbo]
 GO

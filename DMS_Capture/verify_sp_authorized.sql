@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[VerifySPAuthorized] ******/
+/****** Object:  StoredProcedure [dbo].[verify_sp_authorized] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.VerifySPAuthorized
+CREATE PROCEDURE [dbo].[verify_sp_authorized]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE Procedure dbo.VerifySPAuthorized
 **  Auth:   mem
 **  Date:   06/16/2017 mem - Initial version
 **          01/05/2018 mem - Include username and hostname in RAISERROR message
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -96,7 +97,7 @@ AS
             If @raiseError > 0
             Begin
                 Set @message = 'User ' + @loginName + ' cannot execute procedure ' + @procedureName + ' from host ' + @clientHostName
-                Exec PostLogEntry 'Error', @message, 'VerifySPAuthorized'
+                Exec post_log_entry 'Error', @message, 'verify_sp_authorized'
 
                 Declare @msg varchar(128) = 'Access denied for current user (' + @loginName + ' on host ' + @clientHostName + ')'
                 RAISERROR (@msg, 11, 4)
@@ -109,6 +110,5 @@ AS
     -----------------------------------------------
 
     return @authorized
-
 
 GO

@@ -1,29 +1,29 @@
-/****** Object:  StoredProcedure [dbo].[PreviewRequestStepTask] ******/
+/****** Object:  StoredProcedure [dbo].[preview_request_step_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[PreviewRequestStepTask]
+CREATE PROCEDURE [dbo].[preview_request_step_task]
 /****************************************************
 **
 **  Desc: Previews the next step task that would be returned for a given processor
 **
 **  Auth:   mem
 **          01/06/2011 mem
-**          07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into RequestStepTask
+**          07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into request_step_task
 **          02/03/2023 bcg - Use the synonym for Manager_Control.V_Mgr_Params instead of a local view wrapping the synonym
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @processorName varchar(128),
-    @JobCountToPreview int = 10,        -- The number of jobs to preview
+    @jobCountToPreview int = 10,        -- The number of jobs to preview
     @jobNumber int = 0 output,          -- Job number assigned; 0 if no job available
     @parameters varchar(max)='' output, -- job step parameters (in XML)
     @message varchar(512)='' output,
     @infoOnly tinyint = 1               -- 1 to preview the assigned task; 2 to preview the task and see extra status messages; 3 to dump candidate tables and variables
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -40,7 +40,7 @@ As
 
     -- Lookup the value for "perspective" for this manager in the manager control DB
     SELECT @perspective = Parameter_Value
-    FROM S_Mgr_Params
+    FROM s_mgr_params
     WHERE (Manager_Name = @processorName) AND (Parameter_Name = 'perspective')
 
     If IsNull(@perspective, '') = ''
@@ -51,7 +51,7 @@ As
     If @perspective = 'server'
         Set @serverPerspectiveEnabled = 1
 
-    Exec RequestStepTask    @processorName,
+    Exec request_step_task    @processorName,
                             @jobNumber = @jobNumber output,
                             @message = @message output,
                             @infoonly = @infoOnly,
@@ -80,5 +80,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PreviewRequestStepTask] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[preview_request_step_task] TO [DDL_Viewer] AS [dbo]
 GO

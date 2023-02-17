@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewQuameterJob] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_quameter_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewQuameterJob]
+CREATE PROCEDURE [dbo].[make_new_quameter_job]
 /****************************************************
 **
 **  Desc:
@@ -15,14 +14,15 @@ CREATE PROCEDURE [dbo].[MakeNewQuameterJob]
 **  Auth:   mem
 **  Date:   02/22/2013 - Initial version
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetName varchar(128),
+    @datasetName varchar(128),
     @infoOnly tinyint = 0,                          -- 0 To perform the update, 1 preview job that would be created
     @message varchar(512)='' output
 )
-As
+AS
     Set nocount on
 
     declare @myError int
@@ -95,7 +95,7 @@ As
             'Quameter' AS Script,
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
-            'Created manually using MakeNewQuameterJob' AS Comment
+            'Created manually using make_new_quameter_job' AS Comment
     End
     Else
     Begin
@@ -106,7 +106,7 @@ As
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
             '' AS Results_Folder_Name,
-            'Created manually using MakeNewQuameterJob' AS Comment
+            'Created manually using make_new_quameter_job' AS Comment
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -132,5 +132,5 @@ Done:
         Print @message
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewQuameterJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_quameter_job] TO [DDL_Viewer] AS [dbo]
 GO

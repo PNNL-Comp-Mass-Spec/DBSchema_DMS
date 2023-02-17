@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateStepStates] ******/
+/****** Object:  StoredProcedure [dbo].[update_step_states] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateStepStates]
+CREATE PROCEDURE [dbo].[update_step_states]
 /****************************************************
 **
 **  Desc:
@@ -14,15 +13,16 @@ CREATE PROCEDURE [dbo].[UpdateStepStates]
 **  Auth:   grk
 **  Date:   09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          06/01/2020 mem - Tabs to spaces
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output,
     @infoOnly tinyint = 0,
-    @MaxJobsToProcess int = 0,
-    @LoopingUpdateInterval int = 5        -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @loopingUpdateInterval int = 5        -- Seconds between detailed logging while looping through the dependencies
 )
-As
+AS
     set nocount on
 
     Declare @myError INT = 0
@@ -49,12 +49,12 @@ As
         -- Get unevaluated dependencies for steps that are finished
         -- (skipped or completed)
         --
-        exec @result = EvaluateStepDependencies @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
+        exec @result = evaluate_step_dependencies @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
 
         -- Examine all dependencies for steps in "Waiting" state
         -- and set state of steps that have them all satisfied
         --
-        exec @result = UpdateDependentSteps @message output, @numStepsSkipped output, @infoOnly=@infoOnly, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
+        exec @result = update_dependent_steps @message output, @numStepsSkipped output, @infoOnly=@infoOnly, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
 
         -- Repeat if any step states were changed (but only if @infoOnly = 0)
         --
@@ -71,5 +71,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateStepStates] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_step_states] TO [DDL_Viewer] AS [dbo]
 GO

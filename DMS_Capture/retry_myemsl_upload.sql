@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RetryMyEMSLUpload] ******/
+/****** Object:  StoredProcedure [dbo].[retry_myemsl_upload] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[RetryMyEMSLUpload]
+CREATE PROCEDURE [dbo].[retry_myemsl_upload]
 /****************************************************
 **
 **  Desc:   Resets the DatasetArchive and ArchiveUpdate steps in T_Job_Steps for the
@@ -20,15 +19,15 @@ CREATE PROCEDURE [dbo].[RetryMyEMSLUpload]
 **          07/09/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **          02/06/2018 mem - Exclude logging some try/catch errors
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Jobs varchar(Max),                                    -- List of jobs whose steps should be reset
-    @InfoOnly tinyint = 0,                                -- 1 to preview the changes
+    @jobs varchar(Max),                                    -- List of jobs whose steps should be reset
+    @infoOnly tinyint = 0,                                -- 1 to preview the changes
     @message varchar(4000) = '' output
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int
@@ -85,7 +84,7 @@ As
 
         INSERT INTO #Tmp_Jobs (Job)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@Jobs, ',')
+        FROM dbo.parse_delimited_integer_list(@Jobs, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -165,7 +164,7 @@ As
                    ON TS.job = JR.Job
             WHERE tool IN ('ArchiveUpdate', 'DatasetArchive')
 
-            Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @JobList
+            Declare @execMsg varchar(256) = 'exec reset_dependent_job_steps ' + @JobList
             print @execMsg
 
         End
@@ -191,7 +190,7 @@ As
 
             -- Reset the state of the dependent steps
             --
-            exec ResetDependentJobSteps @JobList, @InfoOnly=0
+            exec reset_dependent_job_steps @JobList, @InfoOnly=0
 
             -- Reset the retry counts for the ArchiveVerify step
             --
@@ -209,7 +208,7 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -217,7 +216,7 @@ As
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'RetryMyEMSLUpload'
+            Exec post_log_entry 'Error', @message, 'retry_myemsl_upload'
         End
     END CATCH
 
@@ -226,5 +225,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RetryMyEMSLUpload] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[retry_myemsl_upload] TO [DDL_Viewer] AS [dbo]
 GO

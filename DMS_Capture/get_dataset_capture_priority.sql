@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDatasetCapturePriority] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dataset_capture_priority] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[GetDatasetCapturePriority]
+CREATE FUNCTION [dbo].[get_dataset_capture_priority]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +17,7 @@ CREATE FUNCTION [dbo].[GetDatasetCapturePriority]
 **
 **  Auth:   mem
 **  Date:   06/27/2019 mem - Initial version
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -55,9 +55,8 @@ BEGIN
     Return @priority
 END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetCapturePriority] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_capture_priority] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetDatasetCapturePriority] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_dataset_capture_priority] TO [public] AS [dbo]
 GO

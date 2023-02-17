@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RetryQuameterForJobs] ******/
+/****** Object:  StoredProcedure [dbo].[retry_quameter_for_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
+CREATE PROCEDURE [dbo].[retry_quameter_for_jobs]
 /****************************************************
 **
 **  Desc:   Resets failed DatasetQuality step in T_Job_Steps for the specified jobs
@@ -18,6 +17,7 @@ CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
 **  Date:   07/11/2019 mem - Initial version
 **          07/22/2019 mem - When @infoOnly is 0, return a table listing the jobs that were reset
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,8 +26,7 @@ CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
     @ignoreQuameterErrors Tinyint = 1,
     @message varchar(4000) = '' output
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError Int = 0
@@ -75,7 +74,7 @@ As
 
         INSERT INTO #Tmp_Jobs (Job)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@jobs, ',')
+        FROM dbo.parse_delimited_integer_list(@jobs, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -137,9 +136,9 @@ As
                 Else
                 Begin
                     If @infoOnly <> 0
-                        Print 'Exec AddUpdateJobParameter @job, ''StepParameters'', ''IgnoreQuameterErrors'', ''1'', @infoOnly=0'
+                        Print 'Exec add_update_job_parameter @job, ''StepParameters'', ''IgnoreQuameterErrors'', ''1'', @infoOnly=0'
                     Else
-                        Exec AddUpdateJobParameter @job, 'StepParameters', 'IgnoreQuameterErrors', '1', @infoOnly=0
+                        Exec add_update_job_parameter @job, 'StepParameters', 'IgnoreQuameterErrors', '1', @infoOnly=0
                 End
             End
         End
@@ -158,7 +157,7 @@ As
                    ON TS.job = JR.Job AND
                       TS.step = JR.Step
 
-            Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @jobList
+            Declare @execMsg varchar(256) = 'exec reset_dependent_job_steps ' + @jobList
             print @execMsg
 
         End
@@ -185,7 +184,7 @@ As
 
             -- Reset the state of the dependent steps
             --
-            exec ResetDependentJobSteps @jobList, @infoOnly=0
+            exec reset_dependent_job_steps @jobList, @infoOnly=0
 
             Commit Tran @jobResetTran
 
@@ -204,7 +203,7 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -212,7 +211,7 @@ As
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'RetryQuameterForJobs'
+            Exec post_log_entry 'Error', @message, 'retry_quameter_for_jobs'
         End
     END CATCH
 

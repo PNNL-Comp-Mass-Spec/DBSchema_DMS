@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewAutomaticJobs] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_automatic_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewAutomaticJobs]
+CREATE PROCEDURE [dbo].[make_new_automatic_jobs]
 /****************************************************
 **
 **  Desc:
@@ -19,13 +18,14 @@ CREATE PROCEDURE [dbo].[MakeNewAutomaticJobs]
 **  Date:   09/11/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/26/2017 mem - Add support for column Enabled in T_Automatic_Jobs
 **          01/29/2021 mem - Remove unused parameters
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
     @message varchar(512) output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -56,7 +56,6 @@ As
                        WHERE Script = Script_For_New_Job AND
                              Dataset = J.Dataset )
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewAutomaticJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_automatic_jobs] TO [DDL_Viewer] AS [dbo]
 GO

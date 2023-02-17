@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewJobsFromDMS] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_jobs_from_dms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewJobsFromDMS]
+CREATE PROCEDURE [dbo].[make_new_jobs_from_dms]
 /****************************************************
 **
 **  Desc:
@@ -15,10 +14,11 @@ CREATE PROCEDURE [dbo].[MakeNewJobsFromDMS]
 **          02/10/2010 dac - Removed comment stating that jobs were created from test script
 **          03/09/2011 grk - Added logic to choose different capture script based on instrument group
 **          09/17/2015 mem - Added parameter @infoOnly
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          06/27/2019 mem - Use GetDatasetCapturePriority to determine capture job priority using dataset name and instrument group
+**          06/27/2019 mem - Use get_dataset_capture_priority to determine capture job priority using dataset name and instrument group
 **          02/03/2023 bcg - Update column names for V_DMS_Get_New_Datasets
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[MakeNewJobsFromDMS]
     @infoOnly tinyint = 0,                -- 1 to preview changes that would be made; 2 to add new jobs but do not create job steps
     @debugMode tinyint = 0                -- 0 for no debugging; 1 to see debug messages
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -56,7 +56,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'MakeNewJobsFromDMS', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'make_new_jobs_from_dms', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -92,7 +92,7 @@ As
     If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @StatusMessage = 'Entering (' + CONVERT(VARCHAR(12), @bypassDMS) + ')'
-        exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewJobsFromDMS'
+        exec post_log_entry 'Progress', @StatusMessage, 'make_new_jobs_from_dms'
     End
 
     ---------------------------------------------------
@@ -105,7 +105,7 @@ As
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @StatusMessage = 'Querying DMS'
-            exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewJobsFromDMS'
+            exec post_log_entry 'Progress', @StatusMessage, 'make_new_jobs_from_dms'
         End
 
         If @infoOnly = 0
@@ -123,7 +123,7 @@ As
                    '' AS [Comment],
                    Src.Dataset,
                    Src.Dataset_ID,
-                   dbo.GetDatasetCapturePriority(Src.Dataset, Src.Instrument_Group)
+                   dbo.get_dataset_capture_priority(Src.Dataset, Src.Instrument_Group)
             FROM V_DMS_Get_New_Datasets Src
                  LEFT OUTER JOIN T_Jobs Target
                    ON Src.Dataset_ID = Target.Dataset_ID
@@ -148,7 +148,7 @@ As
                    '' AS [Comment],
                    Src.Dataset,
                    Src.Dataset_ID,
-                   dbo.GetDatasetCapturePriority(Src.Dataset, Src.Instrument_Group) As Priority
+                   dbo.get_dataset_capture_priority(Src.Dataset, Src.Instrument_Group) As Priority
             FROM V_DMS_Get_New_Datasets Src
                  LEFT OUTER JOIN T_Jobs Target
                    ON Src.Dataset_ID = Target.Dataset_ID
@@ -168,13 +168,13 @@ Done:
     If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @StatusMessage = 'Exiting'
-        exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewJobsFromDMS'
+        exec post_log_entry 'Progress', @StatusMessage, 'make_new_jobs_from_dms'
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewJobsFromDMS] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_jobs_from_dms] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MakeNewJobsFromDMS] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[make_new_jobs_from_dms] TO [DMS_SP_User] AS [dbo]
 GO

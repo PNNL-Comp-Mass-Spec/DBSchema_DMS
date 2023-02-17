@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RetryCaptureForDMSResetJobs] ******/
+/****** Object:  StoredProcedure [dbo].[retry_capture_for_dms_reset_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[RetryCaptureForDMSResetJobs]
+CREATE PROCEDURE [dbo].[retry_capture_for_dms_reset_jobs]
 /****************************************************
 **
 **  Desc:   Retry capture for datasets that failed capture
@@ -18,13 +17,14 @@ CREATE PROCEDURE [dbo].[RetryCaptureForDMSResetJobs]
 **  Date:   05/25/2011 mem - Initial version
 **          08/16/2017 mem - For jobs with error Error running OpenChrom, only reset the DatasetIntegrity step
 **          02/02/2023 bcg - Changed from V_Jobs and V_Job_Steps to V_Tasks and V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -107,12 +107,12 @@ As
     Begin -- <a>
 
         -- Update the job parameters for each job
-        exec UpdateParametersForJob @jobList, @message output
+        exec update_parameters_for_job @jobList, @message output
 
-        -- Reset the job steps using RetrySelectedJobs
+        -- Reset the job steps using retry_selected_jobs
         -- Fail out any completed steps before performing the reset
 
-        Declare @transName varchar(32) = 'RetryCaptureForDMSResetJobs'
+        Declare @transName varchar(32) = 'retry_capture_for_dms_reset_jobs'
 
         begin transaction @transName
 
@@ -137,7 +137,7 @@ As
             SET State = 6
             WHERE State = 5 AND Job IN (SELECT Job FROM #SJL)
 
-            EXEC @myError = RetrySelectedJobs @message output
+            EXEC @myError = retry_selected_jobs @message output
         End
         Else
         Begin
@@ -155,7 +155,7 @@ As
         Else
             Set @message = 'Reset dataset capture for job ' + @JobList
 
-        exec PostLogEntry 'Normal', @message, 'RetryCaptureForDMSResetJobs'
+        exec post_log_entry 'Normal', @message, 'retry_capture_for_dms_reset_jobs'
 
     End -- </a>
 
@@ -167,5 +167,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RetryCaptureForDMSResetJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[retry_capture_for_dms_reset_jobs] TO [DDL_Viewer] AS [dbo]
 GO

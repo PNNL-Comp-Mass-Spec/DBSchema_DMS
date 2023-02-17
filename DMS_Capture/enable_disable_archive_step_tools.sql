@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EnableDisableArchiveStepTools] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_archive_step_tools] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure dbo.EnableDisableArchiveStepTools
+CREATE PROCEDURE [dbo].[enable_disable_archive_step_tools]
 /****************************************************
 **
 **  Desc:   Enables or disables archive and archive update step tools
@@ -19,6 +18,7 @@ CREATE Procedure dbo.EnableDisableArchiveStepTools
 **          12/16/2013 mem - Added step tools 'ArchiveVerify' and 'ArchiveStatusCheck'
 **          12/11/2015 mem - Clearing comments that start with 'Disabled' when @enable = 1
 **          12/18/2017 mem - Avoid adding @disableComment to the comment field multiple times
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -27,7 +27,7 @@ CREATE Procedure dbo.EnableDisableArchiveStepTools
     @infoOnly tinyint = 0,
     @message varchar(255) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -143,9 +143,8 @@ As
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[EnableDisableArchiveStepTools] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[enable_disable_archive_step_tools] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EnableDisableArchiveStepTools] TO [DMSReader] AS [dbo]
+GRANT EXECUTE ON [dbo].[enable_disable_archive_step_tools] TO [DMSReader] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateParametersForJob] ******/
+/****** Object:  StoredProcedure [dbo].[update_parameters_for_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateParametersForJob]
+CREATE PROCEDURE [dbo].[update_parameters_for_job]
 /****************************************************
 **
 **  Desc:
@@ -16,7 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 **  Auth:   grk
 **  Date:   12/16/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/14/2010 grk - removed path ID fields
-**          01/28/2010 grk - modified to use CreateParametersForJob, and to take list of jobs
+**          01/28/2010 grk - modified to use create_parameters_for_job, and to take list of jobs
 **          04/13/2010 mem - Fixed bug that didn't properly update T_Job_Parameters when #Job_Parameters contains multiple jobs (because @jobList contained multiple jobs)
 **                         - Added support for jobs being present in T_Jobs but not present in T_Job_Parameters
 **          05/18/2011 mem - Updated @jobList to varchar(max)
@@ -24,20 +23,21 @@ CREATE PROCEDURE [dbo].[UpdateParametersForJob]
 **          08/27/2013 mem - Now updating 4 fields in T_Jobs if they are null (which will be the case if a job was copied from T_Jobs_History to T_Jobs yet the job had no parameters in T_Job_Parameters_History)
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          06/01/2015 mem - Changed update logic for Capture_Subfolder to pull from DMS5 _unless_ the value in DMS5 is null
-**          03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/24/2016 mem - Switch to using parse_delimited_integer_list to parse the list of jobs
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          01/30/2018 mem - Always update instrument settings using data in DMS (Storage_Server, Instrument, Instrument_Class, Max_Simultaneous_Captures, Capture_Subfolder)
 **          05/17/2019 mem - Switch from folder to directory
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @jobList varchar(max),
     @message varchar(512) = '' output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -50,7 +50,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateParametersForJob', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'update_parameters_for_job', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -66,7 +66,7 @@ As
 
     INSERT INTO #Tmp_Jobs (Job)
     SELECT Value
-    FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+    FROM dbo.parse_delimited_integer_list(@jobList, ',')
     ORDER BY Value
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -89,7 +89,7 @@ As
     ---------------------------------------------------
     -- Create temp table for jobs that are being updated
     -- and populate it
-    -- (needed by call to GetJobParamTable which CreateParametersForJob calls)
+    -- (needed by call to get_job_param_table which create_parameters_for_job calls)
     ---------------------------------------------------
     --
     CREATE TABLE #Jobs (
@@ -141,7 +141,7 @@ As
     ---------------------------------------------------
     -- temp table to accumulate XML parameters for
     -- jobs in list
-    -- (parameters for jobs will be added by CreateParametersForJob)
+    -- (parameters for jobs will be added by create_parameters_for_job)
     ---------------------------------------------------
     --
     CREATE TABLE #Job_Parameters (
@@ -212,11 +212,11 @@ As
             -- set up to get next job on next pass
             set @prevJob = @job
 
-            declare @pXML XML
+            declare @paramsXML XML
 
             -- get parameters for job (and also store in temp table #Job_Parameters)
-            -- Parameters are returned in @pXML
-            exec @myError = CreateParametersForJob @job, @datasetID, @scriptName, @pXML output, @message output, @DebugMode = @DebugMode
+            -- Parameters are returned in @paramsXML
+            exec @myError = create_parameters_for_job @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
 
         end --<b>
     end --<a>
@@ -268,7 +268,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateParametersForJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_parameters_for_job] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[create_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CreateJobSteps]
+CREATE PROCEDURE [dbo].[create_job_steps]
 /****************************************************
 **
 **  Desc:
@@ -18,27 +17,28 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 **  Auth:   grk
 **  Date:   09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/14/2010 grk - Removed path ID fields
-**          05/25/2011 mem - Updated call to CreateStepsForJob
+**          05/25/2011 mem - Updated call to create_steps_for_job
 **          04/09/2013 mem - Added additional comments
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          09/17/2015 mem - Added parameter @infoOnly
 **          05/17/2019 mem - Switch from folder to directory in temp tables
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output,
-    @DebugMode tinyint = 0,                             -- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
+    @debugMode tinyint = 0,                             -- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
     @mode varchar(32) = 'CreateFromImportedJobs',       -- Modes: CreateFromImportedJobs, ExtendExistingJob, UpdateExistingJob
     @existingJob int = 0,                               -- Used if @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'; also used if @DebugMode <> 1
     @extensionScriptNameList varchar(512) = '',
-    @MaxJobsToProcess int = 0,
-    @LogIntervalThreshold int = 15,         -- If this procedure runs longer than this threshold, then status messages will be posted to the log
-    @LoggingEnabled tinyint = 0,            -- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
-    @LoopingUpdateInterval int = 5,         -- Seconds between detailed logging while looping through the dependencies,
+    @maxJobsToProcess int = 0,
+    @logIntervalThreshold int = 15,         -- If this procedure runs longer than this threshold, then status messages will be posted to the log
+    @loggingEnabled tinyint = 0,            -- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
+    @loopingUpdateInterval int = 5,         -- Seconds between detailed logging while looping through the dependencies,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -88,7 +88,7 @@ As
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
     Begin
         Set @StatusMessage = 'Entering'
-        exec PostLogEntry 'Progress', @StatusMessage, 'CreateJobSteps'
+        exec post_log_entry 'Progress', @StatusMessage, 'create_job_steps'
     End
 
     ---------------------------------------------------
@@ -303,7 +303,7 @@ As
             -- set up to get next job on next pass
             set @prevJob = @job
 
-            Declare @pXML xml
+            Declare @paramsXML xml
             Declare @scriptXML xml
             Declare @tag varchar(8)
             set @tag = 'unk'
@@ -322,12 +322,12 @@ As
             end
 
             -- get parameters for job (and also store in #Job_Parameters)
-            -- Parameters are returned in @pXML (though @pXML is not used by this procedure)
-            exec @myError = CreateParametersForJob @job, @datasetID, @scriptName, @pXML output, @message output, @DebugMode = @DebugMode
+            -- Parameters are returned in @paramsXML (though @paramsXML is not used by this procedure)
+            exec @myError = create_parameters_for_job @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
 
             -- create the basic job structure (steps and dependencies)
             -- Details are stored in #Job_Steps and #Job_Step_Dependencies
-            exec @myError = CreateStepsForJob @job, @scriptXML, @resultsDirectoryName, @message output
+            exec @myError = create_steps_for_job @job, @scriptXML, @resultsDirectoryName, @message output
 
             if @DebugMode <> 0
             begin
@@ -338,7 +338,7 @@ As
 
             -- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
             --  copying to the main database tables
-            exec @myError = FinishJobCreation @job, @message output
+            exec @myError = finish_job_creation @job, @message output
 
             Set @JobsProcessed = @JobsProcessed + 1
         end --<b>
@@ -349,7 +349,7 @@ As
             Set @LoggingEnabled = 1
 
             Set @StatusMessage = '... Creating job steps: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'CreateJobSteps'
+            exec post_log_entry 'Progress', @StatusMessage, 'create_job_steps'
             Set @LastLogTime = GetDate()
         End
 
@@ -368,7 +368,7 @@ As
             --     #Job_Steps
             --     #Job_Step_Dependencies
             --     #Job_Parameters
-            exec MoveJobsToMainTables @message output, @DebugMode
+            exec move_jobs_to_main_tables @message output, @DebugMode
         end
 
     End
@@ -376,8 +376,8 @@ As
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
     Begin
         Set @LoggingEnabled = 1
-        Set @StatusMessage = 'CreateJobSteps complete'
-        exec PostLogEntry 'Progress', @StatusMessage, 'CreateJobSteps'
+        Set @StatusMessage = 'create_job_steps complete'
+        exec post_log_entry 'Progress', @StatusMessage, 'create_job_steps'
     End
 
     ---------------------------------------------------
@@ -388,7 +388,7 @@ Done:
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
     Begin
         Set @StatusMessage = 'Exiting'
-        exec PostLogEntry 'Progress', @StatusMessage, 'CreateJobSteps'
+        exec post_log_entry 'Progress', @StatusMessage, 'create_job_steps'
     End
 
     If @DebugMode <> 0
@@ -397,5 +397,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_job_steps] TO [DDL_Viewer] AS [dbo]
 GO

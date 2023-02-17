@@ -1,32 +1,32 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateJobParameterXML] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_job_parameter_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE AddUpdateJobParameterXML
+CREATE PROCEDURE [dbo].[add_update_job_parameter_xml]
 /****************************************************
 **
 **  Desc:
-**      Adds or updates an entry in the XML parameters in @pXML
+**      Adds or updates an entry in the XML parameters in @paramsXML
 **      Alternatively, use @DeleteParam=1 to delete the given parameter
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   09/24/2012 mem - Ported from DMS_Pipeline DB
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @pXML XML output,                -- XML to update (Input/output parameter)
-    @Section varchar(128),            -- Example: JobParameters
-    @ParamName varchar(128),        -- Example: SourceJob
-    @Value varchar(1024),            -- value for parameter @ParamName in section @Section
-    @DeleteParam tinyint = 0,        -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
+    @paramsXML XML output,                -- XML to update (Input/output parameter)
+    @section varchar(128),            -- Example: JobParameters
+    @paramName varchar(128),        -- Example: SourceJob
+    @value varchar(1024),            -- value for parameter @ParamName in section @Section
+    @deleteParam tinyint = 0,        -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
     @message varchar(512)='' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -62,7 +62,7 @@ As
             xmlNode.value('@Name', 'varchar(64)') as [Name],
             xmlNode.value('@Value', 'varchar(1024)') as [Value]
         FROM
-            @pXML.nodes('//Param') AS R(xmlNode)
+            @paramsXML.nodes('//Param') AS R(xmlNode)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -127,7 +127,7 @@ As
     End
     Else
     Begin
-        SELECT @pXML = ( SELECT [Section],
+        SELECT @paramsXML = ( SELECT [Section],
                                 [Name],
                                 [Value]
                          FROM @Job_Parameters Param
@@ -144,7 +144,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameterXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter_xml] TO [DDL_Viewer] AS [dbo]
 GO

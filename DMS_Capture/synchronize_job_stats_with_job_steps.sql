@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SynchronizeJobStatsWithJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[synchronize_job_stats_with_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.SynchronizeJobStatsWithJobSteps
+CREATE PROCEDURE [dbo].[synchronize_job_stats_with_job_steps]
 /****************************************************
 **
 **  Desc:   Makes sure the job stats (start and finish)
@@ -17,14 +17,15 @@ CREATE PROCEDURE dbo.SynchronizeJobStatsWithJobSteps
 **          01/22/2010 mem - Initial version
 **          03/10/2014 mem - Fix logic related to @CompletedJobsOnly
 **          09/30/2022 mem - Fix bug that used the wrong state_id for completed tasks
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint=1,
-    @CompletedJobsOnly tinyint = 0,
+    @completedJobsOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -117,7 +118,6 @@ Done:
     --
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[synchronize_job_stats_with_job_steps] TO [DDL_Viewer] AS [dbo]
 GO

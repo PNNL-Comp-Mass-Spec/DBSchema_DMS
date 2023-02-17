@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateStepsForJob] ******/
+/****** Object:  StoredProcedure [dbo].[create_steps_for_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CreateStepsForJob]
+CREATE PROCEDURE [dbo].[create_steps_for_job]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +19,7 @@ CREATE PROCEDURE [dbo].[CreateStepsForJob]
 **          05/25/2011 mem - Removed @priority parameter and removed priority column from T_Job_Steps
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory in temp tables
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,7 +28,7 @@ CREATE PROCEDURE [dbo].[CreateStepsForJob]
     @resultsDirectoryName varchar(128),
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -121,5 +121,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateStepsForJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_steps_for_job] TO [DDL_Viewer] AS [dbo]
 GO

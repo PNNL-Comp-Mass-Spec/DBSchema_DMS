@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateStepTools] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_step_tools] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE AddUpdateStepTools
+CREATE PROCEDURE [dbo].[add_update_step_tools]
 /****************************************************
 **
 **  Desc:
@@ -14,21 +13,22 @@ CREATE PROCEDURE AddUpdateStepTools
 **
 **  Auth:   grk
 **  Date:   09/15/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Name varchar(64),
-    @Description varchar(512),
-    @BionetRequired char(1),
-    @OnlyOnStorageServer char(1),
-    @InstrumentCapacityLimited char(1),
+    @name varchar(64),
+    @description varchar(512),
+    @bionetRequired char(1),
+    @onlyOnStorageServer char(1),
+    @instrumentCapacityLimited char(1),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -41,7 +41,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateStepTools', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'add_update_step_tools', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -146,9 +146,8 @@ As
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStepTools] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_step_tools] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateStepTools] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_step_tools] TO [DMS_SP_User] AS [dbo]
 GO

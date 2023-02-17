@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveJobsToMainTables] ******/
+/****** Object:  StoredProcedure [dbo].[move_jobs_to_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MoveJobsToMainTables]
+CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
 /****************************************************
 **
 **  Desc: Move contents of temporary tables:
@@ -24,13 +23,14 @@ CREATE PROCEDURE [dbo].[MoveJobsToMainTables]
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          09/17/2015 mem - Added parameter @DebugMode
 **          05/17/2019 mem - Switch from folder to directory in temp tables
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -44,7 +44,7 @@ As
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    set @transName = 'MoveJobsToMainTables'
+    set @transName = 'move_jobs_to_main_tables'
 
     ---------------------------------------------------
     -- populate actual tables from accumulated entries
@@ -177,5 +177,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveJobsToMainTables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_jobs_to_main_tables] TO [DDL_Viewer] AS [dbo]
 GO

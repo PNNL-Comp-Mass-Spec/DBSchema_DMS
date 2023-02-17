@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobParamList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_job_param_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetJobParamList
+CREATE FUNCTION [dbo].[get_job_param_list]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE FUNCTION dbo.GetJobParamList
 **
 **  Auth:   grk
 **  Date:   01/27/2010
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -59,8 +60,6 @@ AS
         RETURN @list
     END
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_param_list] TO [DDL_Viewer] AS [dbo]
 GO

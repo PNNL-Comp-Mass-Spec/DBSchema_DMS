@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateScripts] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_scripts] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE AddUpdateScripts
+CREATE PROCEDURE [dbo].[add_update_scripts]
 /****************************************************
 **
 **  Desc:
@@ -14,22 +13,23 @@ CREATE PROCEDURE AddUpdateScripts
 **
 **  Auth:   grk
 **  Date:   09/23/2008 grk - Initial version
-**          03/24/2009 mem - Now calling AlterEnteredByUser when @callingUser is defined
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/24/2009 mem - Now calling alter_entered_by_user when @callingUser is defined
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Script varchar(64),
-    @Description varchar(512),
-    @Enabled char(1),
-    @ResultsTag varchar(8),
-    @Contents text,
+    @script varchar(64),
+    @description varchar(512),
+    @enabled char(1),
+    @resultsTag varchar(8),
+    @contents text,
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -48,7 +48,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'add_update_scripts', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -147,7 +147,7 @@ As
             WHERE Script = @Script
 
             If Not @ID Is Null
-                Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
+                Exec alter_entered_by_user 'T_Scripts_History', 'ID', @ID, @CallingUser
         End
 
     end -- add mode
@@ -186,7 +186,7 @@ As
             WHERE Script = @Script
 
             If Not @ID Is Null
-                Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
+                Exec alter_entered_by_user 'T_Scripts_History', 'ID', @ID, @CallingUser
         End
 
     end -- update mode
@@ -194,15 +194,14 @@ As
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'AddUpdateScripts')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'add_update_scripts')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateScripts] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_scripts] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateScripts] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_scripts] TO [DMS_SP_User] AS [dbo]
 GO

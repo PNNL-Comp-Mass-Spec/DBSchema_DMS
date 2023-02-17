@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDMSPrepState] ******/
+/****** Object:  StoredProcedure [dbo].[update_dms_prep_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateDMSPrepState
+CREATE PROCEDURE [dbo].[update_dms_prep_state]
 /****************************************************
 **
 **  Desc:
@@ -15,15 +15,16 @@ CREATE PROCEDURE UpdateDMSPrepState
 **
 **  Auth:   grk
 **  Date:   05/08/2010 grk - Initial Veresion
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job INT,
-    @Script varchar(64),
+    @script varchar(64),
     @newJobStateInBroker int,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -59,20 +60,18 @@ As
 
         IF @newJobStateInBroker = 3
         BEGIN
-            EXEC @myError = S_SetPrepLCTaskComplete @prepLCID, @storagePathID, 0, @message OUTPUT
+            EXEC @myError = s_set_prep_lc_task_complete @prepLCID, @storagePathID, 0, @message OUTPUT
         END
 
         IF @newJobStateInBroker = 5
         BEGIN
-            EXEC @myError = S_SetPrepLCTaskComplete @prepLCID, 0, 1, @message output
+            EXEC @myError = s_set_prep_lc_task_complete @prepLCID, 0, 1, @message output
         END
 
     END
 
     return @myError
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDMSPrepState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dms_prep_state] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewJobsFromDMSArchiveReqd] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_jobs_from_dms_archive_reqd] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewJobsFromDMSArchiveReqd]
+CREATE PROCEDURE [dbo].[make_new_jobs_from_dms_archive_reqd]
 /****************************************************
 **
 **  Desc:
@@ -17,15 +16,16 @@ CREATE PROCEDURE [dbo].[MakeNewJobsFromDMSArchiveReqd]
 **  Date:   12/17/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,
     @message varchar(512) output,
-    @ImportWindowDays INT = 10,
-    @LoggingEnabled TINYINT = 0
+    @importWindowDays INT = 10,
+    @loggingEnabled TINYINT = 0
 )
-As
+AS
     Set nocount on
 
     declare @myError int
@@ -95,9 +95,9 @@ As
 Done:
     If @LoggingEnabled = 1 AND @myError > 0 AND @message <> ''
     Begin
-        exec PostLogEntry 'Error', @message, 'MakeNewJobsFromDMSArchiveReqd'
+        exec post_log_entry 'Error', @message, 'make_new_jobs_from_dms_archive_reqd'
     End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewJobsFromDMSArchiveReqd] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_jobs_from_dms_archive_reqd] TO [DDL_Viewer] AS [dbo]
 GO

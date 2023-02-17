@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetStepTaskComplete] ******/
+/****** Object:  StoredProcedure [dbo].[set_step_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SetStepTaskComplete]
+CREATE PROCEDURE [dbo].[set_step_task_complete]
 /****************************************************
 **
 **  Desc:   Make entry in step completion table
@@ -24,15 +23,16 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          10/16/2013 mem - Now updating Evaluation_Message when skipping the ArchiveVerify step
 **          09/24/2014 mem - No longer looking up machine
 **          11/03/2013 mem - Added support for @evaluationCode = 8 (failed, do not retry)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/21/2017 mem - Added support for @evaluationCode = 9 (tool skipped)
 **          12/04/2017 mem - Rename variables and add logic checks
-**          06/14/2018 mem - Call S_PostEmailAlert if a reporter ion m/z validation error or warning is detected
-**          07/30/2018 mem - Include dataset name when calling S_PostEmailAlert
+**          06/14/2018 mem - Call s_post_email_alert if a reporter ion m/z validation error or warning is detected
+**          07/30/2018 mem - Include dataset name when calling s_post_email_alert
 **          08/09/2018 mem - Expand @completionMessage to varchar(512)
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          08/21/2020 mem - Set @HoldoffIntervalMinutes to 60 (or higher) if @retryCount is 0
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -45,7 +45,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @message varchar(512) = '' output,
     @returnCode varchar(64) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -61,7 +61,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'set_step_task_complete', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -84,7 +84,7 @@ As
     SELECT @initialState = JS.State,
            @processor = JS.Processor,
            @retryCount = JS.Retry_Count,
-           @HoldoffIntervalMinutes = JS.Holdoff_Interval_Minutes,
+           @holdoffIntervalMinutes = JS.Holdoff_Interval_Minutes,
            @nextTry = JS.Next_Try,
            @stepTool = JS.Step_Tool,
            @outputFolderName = JS.Output_Folder_Name,
@@ -200,7 +200,7 @@ As
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    set @transName = 'SetStepTaskComplete'
+    set @transName = 'set_step_task_complete'
 
     -- Start transaction
     Begin transaction @transName
@@ -264,13 +264,13 @@ As
     If @completionMessage Like '%Over%of the % spectra have a minimum m/z value larger than the required minimum%'
     Begin
         Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
-        Exec S_PostEmailAlert 'Error', @msg, 'SetStepTaskComplete', @recipients='admins', @postMessageToLogEntries=1
+        Exec s_post_email_alert 'Error', @msg, 'set_step_task_complete', @recipients='admins', @postMessageToLogEntries=1
     End
     Else If @completionMessage Like '%Some of the % spectra have a minimum m/z value larger than the required minimum%' Or
             @completionMessage Like '%reporter ion peaks likely could not be detected%'
     Begin
         Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
-        Exec S_PostEmailAlert 'Warning', @msg, 'SetStepTaskComplete', @recipients='admins', @postMessageToLogEntries=1
+        Exec s_post_email_alert 'Warning', @msg, 'set_step_task_complete', @recipients='admins', @postMessageToLogEntries=1
     End
 
     ---------------------------------------------------
@@ -294,7 +294,7 @@ As
             If @evaluationCode = 5
                 Set @MyEMSLStateNew = 2
 
-            exec S_UpdateMyEMSLState @datasetID, @outputFolderName, @MyEMSLStateNew
+            exec s_update_myemsl_state @datasetID, @outputFolderName, @MyEMSLStateNew
 
         End
     End
@@ -308,7 +308,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_step_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskComplete] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_step_task_complete] TO [DMS_SP_User] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetMyEMSLUploadVerified] ******/
+/****** Object:  StoredProcedure [dbo].[set_myemsl_upload_verified] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SetMyEMSLUploadVerified]
+CREATE PROCEDURE [dbo].[set_myemsl_upload_verified]
 /****************************************************
 **
 **  Desc:
@@ -18,20 +17,21 @@ CREATE PROCEDURE [dbo].[SetMyEMSLUploadVerified]
 **  Date:   09/20/2013 mem - Initial version
 **          12/19/2014 mem - Added parameter @ingestStepsCompleted
 **          05/31/2017 mem - Add logging
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/13/2017 mem - Add parameter @statusURIList (required to avoid conflicts between StatusNums from the old MyEMSL backend vs. transaction IDs from the new backend)
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/07/2023 mem - Use new column names in view
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasetID int,
-    @StatusNumList varchar(1024),           -- Comma separated list of status numbers; these must all match the specified DatasetID and they must match the Status entries that the @statusURIList values match
+    @statusNumList varchar(1024),           -- Comma separated list of status numbers; these must all match the specified DatasetID and they must match the Status entries that the @statusURIList values match
     @statusURIList varchar(4000),           -- Comma separated list of status URIs; these must all match the specified DatasetID using V_MyEMSL_Uploads (this is a safety check)
     @ingestStepsCompleted tinyint,          -- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -42,7 +42,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'SetMyEMSLUploadVerified', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'set_myemsl_upload_verified', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -92,7 +92,7 @@ As
 
     INSERT INTO @StatusNumListTable (Status_Num)
     SELECT DISTINCT Value
-    FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
+    FROM dbo.parse_delimited_integer_list(@StatusNumList, ',')
     ORDER BY Value
 
     Declare @StatusNumCount int = 0
@@ -108,7 +108,7 @@ As
 
     INSERT INTO @StatusURIListTable (Status_URI)
     SELECT DISTINCT Value
-    FROM dbo.udfParseDelimitedList(@statusURIList, ',')
+    FROM dbo.parse_delimited_list(@statusURIList, ',')
     ORDER BY Value
 
     Declare @StatusURICount int = 0
@@ -219,18 +219,17 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in SetMyEMSLUploadVerified'
+            Set @message = 'Error in set_myemsl_upload_verified'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-        Exec PostLogEntry 'Error', @message, 'SetMyEMSLUploadVerified'
+        Exec post_log_entry 'Error', @message, 'set_myemsl_upload_verified'
     End
 
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadVerified] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_myemsl_upload_verified] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetMyEMSLUploadVerified] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_myemsl_upload_verified] TO [DMS_SP_User] AS [dbo]
 GO

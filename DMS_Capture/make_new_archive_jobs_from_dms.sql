@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewArchiveJobsFromDMS] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_archive_jobs_from_dms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewArchiveJobsFromDMS]
+CREATE PROCEDURE [dbo].[make_new_archive_jobs_from_dms]
 /****************************************************
 **
 **  Desc:   Add dataset archive jobs from DMS
@@ -17,6 +16,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveJobsFromDMS]
 **          09/17/2015 mem - Added parameter @infoOnly
 **          06/13/2018 mem - Remove unused parameter @debugMode
 **          06/27/2019 mem - Changed priority to 3 (since default job priority is now 4)
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,7 +28,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveJobsFromDMS]
     @loopingUpdateInterval int = 5,     -- Seconds between detailed logging while looping through the dependencies
     @infoOnly tinyint = 0               -- 1 to preview changes that would be made; 2 to add new jobs but do not create job steps
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -77,7 +77,7 @@ As
     If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @StatusMessage = 'Entering (' + CONVERT(VARCHAR(12), @bypassDMS) + ')'
-        exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewArchiveJobsFromDMS'
+        exec post_log_entry 'Progress', @StatusMessage, 'make_new_archive_jobs_from_dms'
     End
 
     ---------------------------------------------------
@@ -90,7 +90,7 @@ As
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @StatusMessage = 'Querying DMS'
-            exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewArchiveJobsFromDMS'
+            exec post_log_entry 'Progress', @StatusMessage, 'make_new_archive_jobs_from_dms'
         End
 
         If @infoOnly = 0
@@ -149,11 +149,11 @@ Done:
     If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @StatusMessage = 'Exiting'
-        exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewArchiveJobsFromDMS'
+        exec post_log_entry 'Progress', @StatusMessage, 'make_new_archive_jobs_from_dms'
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewArchiveJobsFromDMS] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_archive_jobs_from_dms] TO [DDL_Viewer] AS [dbo]
 GO

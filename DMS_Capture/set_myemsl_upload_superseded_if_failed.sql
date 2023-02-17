@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetMyEMSLUploadSupersededIfFailed] ******/
+/****** Object:  StoredProcedure [dbo].[set_myemsl_upload_superseded_if_failed] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.SetMyEMSLUploadSupersededIfFailed
+CREATE PROCEDURE [dbo].[set_myemsl_upload_superseded_if_failed]
 /****************************************************
 **
 **  Desc:
@@ -18,17 +18,18 @@ CREATE PROCEDURE dbo.SetMyEMSLUploadSupersededIfFailed
 **  Auth:   mem
 **  Date:   12/16/2014 mem - Initial version
 **          12/18/2014 mem - Added parameter @IngestStepsCompleted
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetID int,
-    @StatusNumList varchar(1024),           -- The status numbers in this list must match the specified DatasetID (this is a safety check)
-    @IngestStepsCompleted tinyint,          -- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
+    @datasetID int,
+    @statusNumList varchar(1024),           -- The status numbers in this list must match the specified DatasetID (this is a safety check)
+    @ingestStepsCompleted tinyint,          -- Number of ingest steps that were completed for these status nums (assumes that all the status nums completed the same steps)
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -39,7 +40,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'SetMyEMSLUploadSupersededIfFailed', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'set_myemsl_upload_superseded_if_failed', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -77,7 +78,7 @@ As
 
     INSERT INTO @StatusNumListTable (StatusNum)
     SELECT DISTINCT Value
-    FROM dbo.udfParseDelimitedIntegerList(@StatusNumList, ',')
+    FROM dbo.parse_delimited_integer_list(@StatusNumList, ',')
     ORDER BY Value
 
     Declare @StatusNumCount int = 0
@@ -133,16 +134,13 @@ Done:
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-        Exec PostLogEntry 'Error', @message, 'UpdateSupersededURIs'
+        Exec post_log_entry 'Error', @message, 'UpdateSupersededURIs'
     End
 
     Return @myError
 
-
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetMyEMSLUploadSupersededIfFailed] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_myemsl_upload_superseded_if_failed] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetMyEMSLUploadSupersededIfFailed] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_myemsl_upload_superseded_if_failed] TO [DMS_SP_User] AS [dbo]
 GO

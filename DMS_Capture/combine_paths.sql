@@ -1,22 +1,21 @@
-/****** Object:  UserDefinedFunction [dbo].[udfCombinePaths] ******/
+/****** Object:  UserDefinedFunction [dbo].[combine_paths] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE FUNCTION [dbo].[udfCombinePaths]
+CREATE FUNCTION [dbo].[combine_paths]
 /****************************************************
 **  Appends a folder or file name to a path,
 **   assuring that the two names are separated by a \
 **
 **  Auth:   mem
 **  Date:   07/03/2006
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @Path1 varchar(2048),
-    @Path2 varchar(2048)
+    @path1 varchar(2048),
+    @path2 varchar(2048)
 )
 RETURNS varchar(4096)
 AS
@@ -49,8 +48,6 @@ BEGIN
     RETURN  @NewPath
 END
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfCombinePaths] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[combine_paths] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMissedMyEMSLStateValues] ******/
+/****** Object:  StoredProcedure [dbo].[update_missed_myemsl_state_values] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateMissedMyEMSLStateValues]
+CREATE PROCEDURE [dbo].[update_missed_myemsl_state_values]
 /****************************************************
 **
 **  Desc:
@@ -26,14 +25,15 @@ CREATE PROCEDURE [dbo].[UpdateMissedMyEMSLStateValues]
 **          02/27/2014 mem - Now updating the appropriate ArchiveUpdate job if the job steps were skipped
 **          03/25/2014 mem - Changed log message type to be a warning
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @WindowDays int = 30,
+    @windowDays int = 30,
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -84,7 +84,7 @@ As
 
     If @myRowCount > 0
     Begin
-        Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset that needs', ' datasets that need') + ' MyEMSLState set to 1: '
+        Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' dataset that needs', ' datasets that need') + ' MyEMSLState set to 1: '
 
         -- Append the dataset IDs
         SELECT @message = @message + Convert(varchar(12), EntityID) + ', '
@@ -102,7 +102,7 @@ As
             WHERE AS_Dataset_ID IN (SELECT EntityID FROM #Tmp_IDsToUpdate) AND
                   MyEMSLState < 1
 
-            exec PostLogEntry 'Warning', @message, 'UpdateMissedMyEMSLStateValues'
+            exec post_log_entry 'Warning', @message, 'update_missed_myemsl_state_values'
 
             -- Reset skipped ArchiveVerify steps for the affected datasets
             --
@@ -146,7 +146,7 @@ As
 
     If @myRowCount > 0
     Begin
-        Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' analysis job that needs', ' analysis jobs that need') + ' MyEMSLState set to 1: '
+        Set @message = 'Found ' + Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' analysis job that needs', ' analysis jobs that need') + ' MyEMSLState set to 1: '
 
         -- Append the Job IDs
         SELECT @message = @message + Convert(varchar(12), EntityID) + ', '
@@ -165,7 +165,7 @@ As
             WHERE AJ_JobID IN (SELECT EntityID FROM #Tmp_IDsToUpdate) AND
                   AJ_MyEMSLState < 1
 
-            exec PostLogEntry 'Warning', @message, 'UpdateMissedMyEMSLStateValues'
+            exec post_log_entry 'Warning', @message, 'update_missed_myemsl_state_values'
         End
 
         -- Reset skipped ArchiveVerify steps for the datasets associated with the affected jobs
@@ -189,5 +189,5 @@ As
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMissedMyEMSLStateValues] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_missed_myemsl_state_values] TO [DDL_Viewer] AS [dbo]
 GO

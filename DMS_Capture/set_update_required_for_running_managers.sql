@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetUpdateRequiredForRunningManagers] ******/
+/****** Object:  StoredProcedure [dbo].[set_update_required_for_running_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SetUpdateRequiredForRunningManagers]
+CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 /****************************************************
 **
 **  Desc:
@@ -15,13 +14,14 @@ CREATE PROCEDURE [dbo].[SetUpdateRequiredForRunningManagers]
 **
 **  Auth:   mem
 **          04/17/2014 mem - Initial release
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -53,8 +53,8 @@ As
     End
     Else
     Begin
-        Print 'Calling SetManagerUpdateRequired for ' + Convert(varchar(12), @mgrCount) + ' managers'
-        Exec @myError = ProteinSeqs.Manager_Control.dbo.SetManagerUpdateRequired @mgrList, @showTable=1
+        Print 'Calling set_manager_update_required for ' + Convert(varchar(12), @mgrCount) + ' managers'
+        Exec @myError = ProteinSeqs.Manager_Control.dbo.set_manager_update_required @mgrList, @showTable=1
     End
 
     ---------------------------------------------------
@@ -64,7 +64,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetUpdateRequiredForRunningManagers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_update_required_for_running_managers] TO [DDL_Viewer] AS [dbo]
 GO

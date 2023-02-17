@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EnableDisableStepToolForDebugging] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_step_tool_for_debugging] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE EnableDisableStepToolForDebugging
+CREATE PROCEDURE [dbo].[enable_disable_step_tool_for_debugging]
 /****************************************************
 **
 **  Desc:
@@ -15,14 +15,15 @@ CREATE PROCEDURE EnableDisableStepToolForDebugging
 **  Date:   10/29/2013 mem - Initial version
 **          04/30/2014 mem - Now validating @Tool
 **          09/01/2017 mem - Implement functionality of @InfoOnly
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Tool varchar(512)='',
-    @DebugMode tinyint = 0,     -- 1 to disable on pubs to allow for debugging; 0 to enable on pubs
-    @InfoOnly tinyint = 0
+    @tool varchar(512)='',
+    @debugMode tinyint = 0,     -- 1 to disable on pubs to allow for debugging; 0 to enable on pubs
+    @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -154,5 +155,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EnableDisableStepToolForDebugging] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[enable_disable_step_tool_for_debugging] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMultipleCaptureJobs] ******/
+/****** Object:  StoredProcedure [dbo].[update_multiple_capture_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateMultipleCaptureJobs
+CREATE PROCEDURE [dbo].[update_multiple_capture_jobs]
 /****************************************************
 **
 **  Desc:
@@ -19,22 +19,23 @@ CREATE PROCEDURE dbo.UpdateMultipleCaptureJobs
 **          01/28/2010 grk - added UpdateParameters action
 **          10/25/2010 mem - Now raising an error if @mode is empty or invalid
 **          04/28/2011 mem - Set defaults for @action and @mode
-**          03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/24/2016 mem - Switch to using parse_delimited_integer_list to parse the list of jobs
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobList varchar(6000),
+    @jobList varchar(6000),
     @action VARCHAR(32) = 'Retry',      -- Hold, Ignore, Release, Retry, UpdateParameters
     @mode varchar(12) = 'Update',       -- Update or Preview
     @message varchar(512)= '' output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
-    -- Required to avoid warnings when RetrySelectedJobs is called
+    -- Required to avoid warnings when retry_selected_jobs is called
     SET CONCAT_NULL_YIELDS_NULL ON
     SET ANSI_WARNINGS ON
     SET ANSI_PADDING ON
@@ -49,7 +50,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateMultipleCaptureJobs', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'update_multiple_capture_jobs', @raiseError = 1;
 
     If @authorized = 0
     Begin
@@ -83,7 +84,7 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'UpdateMultipleCaptureJobs'
+    set @transName = 'update_multiple_capture_jobs'
 
     ---------------------------------------------------
     -- update parameters for jobs
@@ -92,7 +93,7 @@ As
     IF @action = 'UpdateParameters' AND @mode = 'update'
     BEGIN --<update params>
         begin transaction @transName
-        EXEC @myError = UpdateParametersForJob @jobList, @message  output, 0
+        EXEC @myError = update_parameters_for_job @jobList, @message  output, 0
         IF @myError <> 0
             rollback transaction @transName
         ELSE
@@ -129,7 +130,7 @@ As
 
     INSERT INTO #SJL (Job)
     SELECT Distinct Value
-    FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+    FROM dbo.parse_delimited_integer_list(@jobList, ',')
     ORDER BY Value
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -153,7 +154,7 @@ As
     IF @action = 'Retry' AND @mode = 'update'
     BEGIN --<retry>
         begin transaction @transName
-        EXEC @myError = RetrySelectedJobs @message output
+        EXEC @myError = retry_selected_jobs @message output
         IF @myError <> 0
             rollback transaction @transName
         ELSE
@@ -243,7 +244,7 @@ As
     -- delete?
     ---------------------------------------------------
 
-    -- RemoveSelectedJobs 0, @message output, 0
+    -- remove_selected_jobs 0, @message output, 0
 
     ---------------------------------------------------
     -- if we reach this point, action was not implemented
@@ -260,7 +261,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMultipleCaptureJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_multiple_capture_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMultipleCaptureJobs] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_multiple_capture_jobs] TO [DMS_SP_User] AS [dbo]
 GO

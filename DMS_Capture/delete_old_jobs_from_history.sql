@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteOldJobsFromHistory] ******/
+/****** Object:  StoredProcedure [dbo].[delete_old_jobs_from_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[DeleteOldJobsFromHistory]
+CREATE PROCEDURE [dbo].[delete_old_jobs_from_history]
 /****************************************************
 **
 **  Desc:   Delete jobs over three years old from
@@ -14,13 +13,14 @@ CREATE PROCEDURE [dbo].[DeleteOldJobsFromHistory]
 **
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 1,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0
@@ -161,25 +161,24 @@ As
 
     If @infoOnly = 0 And @jobCountToDelete > 0
     Begin
-        Exec PostLogEntry 'Normal', @message, 'DeleteOldJobsFromHistory'
+        Exec post_log_entry 'Normal', @message, 'delete_old_jobs_from_history'
     End
 
 Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in DeleteOldJobsFromHistory'
+            Set @message = 'Error in delete_old_jobs_from_history'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @infoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'DeleteOldJobsFromHistory'
+            Exec post_log_entry 'Error', @message, 'delete_old_jobs_from_history'
     End
 
     If Len(@message) > 0
         Print @message
 
     Return @myError
-
 
 GO

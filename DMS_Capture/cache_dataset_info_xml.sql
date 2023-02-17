@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CacheDatasetInfoXML] ******/
+/****** Object:  StoredProcedure [dbo].[cache_dataset_info_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.CacheDatasetInfoXML
+CREATE PROCEDURE [dbo].[cache_dataset_info_xml]
 /****************************************************
 **
 **  Desc:   Caches the XML-based dataset info in table T_Dataset_Info_XML
@@ -14,16 +14,17 @@ CREATE Procedure dbo.CacheDatasetInfoXML
 **
 **  Auth:   mem
 **  Date:   05/03/2010 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetID int,
-    @DatasetInfoXML xml,
+    @datasetID int,
+    @datasetInfoXML xml,
     @message varchar(255) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -36,7 +37,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'CacheDatasetInfoXML', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'cache_dataset_info_xml', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -67,9 +68,8 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CacheDatasetInfoXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[cache_dataset_info_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CacheDatasetInfoXML] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[cache_dataset_info_xml] TO [DMS_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ForceDatasetArchiveJob] ******/
+/****** Object:  StoredProcedure [dbo].[force_dataset_archive_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ForceDatasetArchiveJob
+CREATE PROCEDURE [dbo].[force_dataset_archive_job]
 /****************************************************
 **
 **  Desc:
@@ -16,14 +16,14 @@ CREATE PROCEDURE ForceDatasetArchiveJob
 **
 **  Auth:   grk
 **  Date:   01/22/2010
-**
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job INT,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -99,7 +99,7 @@ As
     -- create dataset archive entry in DMS
     ---------------------------------------------------
     --
-    EXEC @myError = S_AddArchiveDataset @datasetID
+    EXEC @myError = s_add_archive_dataset @datasetID
     --
     if @myError <> 0
     begin
@@ -120,7 +120,7 @@ As
         'DatasetArchive',
         @dataset,
         @datasetID,
-        'Created by ForceDatasetArchiveJob'
+        'Created by force_dataset_archive_job'
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -138,8 +138,6 @@ As
 Done:
     return @myError
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[ForceDatasetArchiveJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[force_dataset_archive_job] TO [DDL_Viewer] AS [dbo]
 GO

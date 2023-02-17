@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobParamTable] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_param_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobParamTable]
+CREATE PROCEDURE [dbo].[get_job_param_table]
 /****************************************************
 **
 **  Desc:
@@ -45,6 +44,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          02/03/2023 bcg - Use synonym name S_DMS_T_Instrument_Class instead of the view that wraps it
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Metadata
 **          02/03/2023 bcg - Replace Operator_PRN with Operator_Username
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -233,7 +233,7 @@ AS
 
     SELECT @TransferDirectoryPath = Transfer_Directory_Path
     FROM ( SELECT DISTINCT TStor.SP_vol_name_client AS Storage_Vol_External,
-                           dbo.udfCombinePaths(TStor.SP_vol_name_client, Xfer.Client) AS Transfer_Directory_Path
+                           dbo.combine_paths(TStor.SP_vol_name_client, Xfer.Client) AS Transfer_Directory_Path
            FROM S_DMS_t_storage_path AS TStor
                 CROSS JOIN ( SELECT TOP 1 Client
                              FROM S_DMS_V_Misc_Paths
@@ -286,5 +286,5 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_param_table] TO [DDL_Viewer] AS [dbo]
 GO

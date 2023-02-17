@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udfParseDelimitedListOrdered] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_list_ordered] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION udfParseDelimitedListOrdered
+CREATE FUNCTION [dbo].[parse_delimited_list_ordered]
 /****************************************************
 **  Parses the text in @DelimitedList and returns a table
 **   containing the values.  The table includes column EntryID
@@ -19,11 +18,12 @@ CREATE FUNCTION udfParseDelimitedListOrdered
 **  Auth:   mem
 **  Date:   10/16/2007
 **          03/27/2013 mem - Now replacing Tab characters, carriage returns and line feeds with @Delimiter
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @DelimitedList varchar(max),
-    @Delimiter varchar(2) = ','
+    @delimitedList varchar(max),
+    @delimiter varchar(2) = ','
 )
 RETURNS @tmpValues TABLE(EntryID int NOT NULL, Value varchar(2048) NULL)
 AS
@@ -88,5 +88,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedListOrdered] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_delimited_list_ordered] TO [DDL_Viewer] AS [dbo]
 GO

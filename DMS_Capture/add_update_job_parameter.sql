@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateJobParameter] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_job_parameter] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE AddUpdateJobParameter
+CREATE PROCEDURE [dbo].[add_update_job_parameter]
 /****************************************************
 **
 **  Desc:
@@ -16,27 +15,28 @@ CREATE PROCEDURE AddUpdateJobParameter
 **  Auth:   mem
 **  Date:   03/22/2011 mem - Initial Version
 **          04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
-**          01/19/2012 mem - Now using AddUpdateJobParameterXML
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          01/19/2012 mem - Now using add_update_job_parameter_xml
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @Section varchar(128),            -- Example: JobParameters
-    @ParamName varchar(128),        -- Example: SourceJob
-    @Value varchar(1024),            -- value for parameter @ParamName in section @Section
-    @DeleteParam tinyint = 0,        -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
+    @job int,
+    @section varchar(128),            -- Example: JobParameters
+    @paramName varchar(128),        -- Example: SourceJob
+    @value varchar(1024),            -- value for parameter @ParamName in section @Section
+    @deleteParam tinyint = 0,        -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
     @message varchar(512)='' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
     declare @myRowCount int = 0
 
-    Declare @pXML xml
+    Declare @paramsXML xml
     Declare @ExistingParamsFound tinyint = 0
 
     ---------------------------------------------------
@@ -44,7 +44,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'add_update_job_parameter', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -61,7 +61,7 @@ As
     -- Lookup the current parameters stored in T_Job_Parameters for this job
     ---------------------------------------------------
     --
-    SELECT @pXML = Parameters
+    SELECT @paramsXML = Parameters
     FROM T_Job_Parameters
     WHERE Job = @Job
     --
@@ -74,14 +74,14 @@ As
         Set @message = 'Warning: job not found in T_Job_Parameters'
         If @infoOnly <> 0
             print @message
-        Set @pXML = ''
+        Set @paramsXML = ''
     End
 
     ---------------------------------------------------
-    -- Call AddUpdateJobParameterXML to perform the work
+    -- Call add_update_job_parameter_xml to perform the work
     ---------------------------------------------------
     --
-    exec AddUpdateJobParameterXML @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
+    exec add_update_job_parameter_xml @paramsXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
 
 
     If @infoOnly = 0
@@ -94,7 +94,7 @@ As
         If @ExistingParamsFound = 1
         Begin
             UPDATE T_Job_Parameters
-            SET Parameters = @pXML
+            SET Parameters = @paramsXML
             WHERE Job = @Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -102,7 +102,7 @@ As
         Else
         Begin
             INSERT INTO T_Job_Parameters( Job, Parameters )
-            SELECT @job, @pXML
+            SELECT @job, @paramsXML
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
@@ -119,7 +119,6 @@ As
     --
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameter] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter] TO [DDL_Viewer] AS [dbo]
 GO

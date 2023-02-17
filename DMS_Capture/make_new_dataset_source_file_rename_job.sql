@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNewDatasetSourceFileRenameJob] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_dataset_source_file_rename_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeNewDatasetSourceFileRenameJob]
+CREATE PROCEDURE [dbo].[make_new_dataset_source_file_rename_job]
 /****************************************************
 **
 **  Desc:
@@ -14,14 +13,15 @@ CREATE PROCEDURE [dbo].[MakeNewDatasetSourceFileRenameJob]
 **  Date:   03/06/2012 mem - Initial version
 **          09/09/2022 mem - Fix typo in message
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetName varchar(128),
+    @datasetName varchar(128),
     @infoOnly tinyint = 0,                            -- 0 To perform the update, 1 preview job that would be created
     @message varchar(512)='' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -94,7 +94,7 @@ As
             'SourceFileRename' AS Script,
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
-            'Manually created using MakeNewDatasetSourceFileRenameJob' AS Comment
+            'Manually created using make_new_dataset_source_file_rename_job' AS Comment
     End
     Else
     Begin
@@ -105,7 +105,7 @@ As
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
             NULL AS Results_Folder_Name,
-            'Created manually using MakeNewDatasetSourceFileRenameJob' AS Comment
+            'Created manually using make_new_dataset_source_file_rename_job' AS Comment
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -130,7 +130,6 @@ Done:
     If @message <> ''
         Print @message
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNewDatasetSourceFileRenameJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_dataset_source_file_rename_job] TO [DDL_Viewer] AS [dbo]
 GO

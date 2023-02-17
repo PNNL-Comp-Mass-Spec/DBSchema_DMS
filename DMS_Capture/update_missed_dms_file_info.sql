@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMissedDMSFileInfo] ******/
+/****** Object:  StoredProcedure [dbo].[update_missed_dms_file_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateMissedDMSFileInfo]
+CREATE PROCEDURE [dbo].[update_missed_dms_file_info]
 /****************************************************
 **
 **  Desc:   Calls UpdateDatasetFileInfoXML for datasets
@@ -18,9 +17,10 @@ CREATE PROCEDURE [dbo].[UpdateMissedDMSFileInfo]
 **          02/24/2015 mem - Now skipping deleted datasets
 **          05/05/2015 mem - Added parameter @replaceExistingData
 **          08/02/2016 mem - Continue processing on errors (but log the error)
-**          06/13/2018 mem - Check for error code 53600 returned by UpdateDMSFileInfoXML to indicate a duplicate dataset
+**          06/13/2018 mem - Check for error code 53600 returned by update_dms_file_info_xml to indicate a duplicate dataset
 **                         - Add parameter @datasetIDs
 **          08/09/2018 mem - Filter out dataset info XML entries where Ignore is 1
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[UpdateMissedDMSFileInfo]
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -82,7 +82,7 @@ As
     --
     DELETE #TmpDatasetsToProcess
     WHERE NOT Dataset_ID IN ( SELECT Value
-                              FROM dbo.udfParseDelimitedIntegerList ( @datasetIDs, ',' ) )
+                              FROM dbo.parse_delimited_integer_list ( @datasetIDs, ',' ) )
     --
     SELECT @myRowCount = @@RowCount
 
@@ -101,7 +101,7 @@ As
     If @myRowCount > 0
     Begin
         Set @message = 'Ignoring ' + Cast(@myRowCount as varchar(12)) + ' dataset(s) in T_Dataset_Info_XML because they do not exist in DMS5.T_Dataset'
-        exec PostLogEntry 'Info', @message, 'UpdateMissedDMSFileInfo'
+        exec post_log_entry 'Info', @message, 'update_missed_dms_file_info'
 
         --------------------------------------------
         -- Delete any entries in T_Dataset_Info_XML that were cached over 7 days ago and do not exist in S_DMS_T_Dataset
@@ -170,7 +170,7 @@ As
             Set @continue = 0
         Else
         Begin
-            Exec @myError = UpdateDMSFileInfoXML @datasetID, @deleteFromTableOnSuccess, @message output, @infoOnly
+            Exec @myError = update_dms_file_info_xml @datasetID, @deleteFromTableOnSuccess, @message output, @infoOnly
 
             If @myError <> 0
             Begin
@@ -186,12 +186,12 @@ As
                 End
 
                 If IsNull(@message, '') = ''
-                    Set @logMsg = 'UpdateDMSFileInfoXML returned error code ' + Cast(@myError as varchar(9)) + ' for DatasetID ' + Cast(@datasetID as varchar(9))
+                    Set @logMsg = 'update_dms_file_info_xml returned error code ' + Cast(@myError as varchar(9)) + ' for DatasetID ' + Cast(@datasetID as varchar(9))
                 Else
-                    Set @logMsg = 'UpdateDMSFileInfoXML error: ' + @message
+                    Set @logMsg = 'update_dms_file_info_xml error: ' + @message
 
                 If @infoOnly = 0
-                    Exec PostLogEntry @logMsgType, @logMsg, 'UpdateMissedDMSFileInfo', 22
+                    Exec post_log_entry @logMsgType, @logMsg, 'update_missed_dms_file_info', 22
                 Else
                     Print @logMsg
 
@@ -203,5 +203,5 @@ As
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMissedDMSFileInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_missed_dms_file_info] TO [DDL_Viewer] AS [dbo]
 GO

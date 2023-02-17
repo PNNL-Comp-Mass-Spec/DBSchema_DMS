@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteMultipleTasks] ******/
+/****** Object:  StoredProcedure [dbo].[delete_multiple_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE DeleteMultipleTasks
+CREATE PROCEDURE [dbo].[delete_multiple_tasks]
 /****************************************************
 **
 **  Desc:
@@ -14,13 +14,14 @@ CREATE PROCEDURE DeleteMultipleTasks
 **
 **  Auth:   grk
 **  Date:   06/03/2010 grk - Initial release
-**          09/11/2012 mem - Renamed from DeleteMultipleJobs to DeleteMultipleTasks
+**          09/11/2012 mem - Renamed from DeleteMultipleJobs to delete_multiple_tasks
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/24/2016 mem - Switch to using udfParseDelimitedIntegerList to parse the list of jobs
+**          03/24/2016 mem - Switch to using parse_delimited_integer_list to parse the list of jobs
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE PROCEDURE DeleteMultipleTasks
     @callingUser varchar(128) = '',
     @message varchar(512)='' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int = 0
@@ -39,7 +40,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteMultipleTasks', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'delete_multiple_tasks', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -56,7 +57,7 @@ As
         --
         INSERT INTO #JOBS (Job)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+        FROM dbo.parse_delimited_integer_list(@jobList, ',')
         ORDER BY Value
 
         ---------------------------------------------------
@@ -105,13 +106,13 @@ As
     ---------------------------------------------------
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'DeleteMultipleTasks'
+        Exec post_log_entry 'Error', @message, 'delete_multiple_tasks'
     END CATCH
 
     ---------------------------------------------------
@@ -122,5 +123,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteMultipleTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_multiple_tasks] TO [DDL_Viewer] AS [dbo]
 GO

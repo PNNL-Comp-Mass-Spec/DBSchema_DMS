@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateManagerAndTaskStatusXML] ******/
+/****** Object:  StoredProcedure [dbo].[update_manager_and_task_status_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatusXML]
+CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 /****************************************************
 **
 **  Desc:
@@ -20,12 +19,13 @@ CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatusXML]
 **          08/31/2009 mem - Switched to running a bulk Insert and bulk Update instead of a Delete then Bulk Insert
 **          05/04/2015 mem - Added Process_ID
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/06/2017 mem - Allow Status_Date and Last_Start_Time to be UTC-based
 **                           Use Try_Cast to convert from varchar to numbers
 **                           Add parameter @debugMode
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/19/2018 mem - Add parameter @logProcessorNames
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatusXML]
     @debugMode tinyint = 0,             -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @parameters, use test data, and update tables, 4 to ignore @parameters, use test data, and not update tables
     @logProcessorNames tinyint = 0      -- 1 to log the names of updated processors (in T_Log_Entries)
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -59,7 +59,7 @@ As
         ---------------------------------------------------
 
         Declare @authorized tinyint = 0
-        Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1;
+        Exec @authorized = verify_sp_authorized 'update_manager_and_task_status_xml', @raiseError = 1;
         If @authorized = 0
         Begin;
             Throw 50000, 'Access denied', 1;
@@ -376,14 +376,14 @@ As
 
             Declare @logMessage varchar(4000) = @statusMessages + ', processors ' + @updatedProcessors
 
-            Exec PostLogEntry 'Debug', @logMessage, 'UpdateManagerAndTaskStatusXML'
+            Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateManagerAndTaskStatusXML')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_manager_and_task_status_xml')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
         Set @result = @message
@@ -399,7 +399,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_and_task_status_xml] TO [DMS_SP_User] AS [dbo]
 GO

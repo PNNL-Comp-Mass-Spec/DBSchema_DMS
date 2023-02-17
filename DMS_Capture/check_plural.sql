@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[CheckPlural] ******/
+/****** Object:  UserDefinedFunction [dbo].[check_plural] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-Create FUNCTION dbo.CheckPlural
+CREATE FUNCTION [dbo].[check_plural]
 /****************************************************
 **
 **  Desc: Returns @TextIfOneItem if @Count is 1; otherwise, returns @TextIfZeroOrMultiple
@@ -14,12 +14,13 @@ Create FUNCTION dbo.CheckPlural
 **
 **  Auth:   mem
 **  Date:   03/05/2013 mem - Initial release
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Count int,
-    @TextIfOneItem varchar(128) = 'item',
-    @TextIfZeroOrMultiple varchar(128) = 'items'
+    @count int,
+    @textIfOneItem varchar(128) = 'item',
+    @textIfZeroOrMultiple varchar(128) = 'items'
 )
 RETURNS varchar(128)
 AS
@@ -36,5 +37,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckPlural] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_plural] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,11 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RequestStepTask] ******/
+/****** Object:  StoredProcedure [dbo].[request_step_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
-CREATE PROCEDURE [dbo].[RequestStepTask]
+CREATE PROCEDURE [dbo].[request_step_task]
 /****************************************************
 **
 **  Desc:   Looks for capture job step that is appropriate for the given Processor Name.
@@ -41,11 +39,12 @@ CREATE PROCEDURE [dbo].[RequestStepTask]
 **          11/05/2015 mem - Consider column Enabled when checking T_Processor_Instrument for @processorName
 **          01/11/2016 mem - When looking for running capture jobs for each instrument, now ignoring job steps that started over 18 hours ago
 **          01/27/2017 mem - Show additional information when @infoOnly > 0
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/01/2017 mem - Improve info displayed when @infoOnly > 0 and no jobs are available
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/12/2018 mem - Update code formatting
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -53,8 +52,8 @@ CREATE PROCEDURE [dbo].[RequestStepTask]
     @jobNumber int = 0 OUTPUT,            -- Job number assigned; 0 if no job available
     @message varchar(512) OUTPUT,
     @infoOnly tinyint = 0,                -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
-    @ManagerVersion varchar(128) = '',
-    @JobCountToPreview int = 10,
+    @managerVersion varchar(128) = '',
+    @jobCountToPreview int = 10,
     @serverPerspectiveEnabled tinyint = 0,
     @returnCode varchar(64) = '' output
 )
@@ -77,7 +76,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'RequestStepTask', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'request_step_task', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -108,7 +107,7 @@ AS
     Declare @jobNotAvailableErrorCode int = 53000
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTask: Starting; make sure this is a valid processor'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task: Starting; make sure this is a valid processor'
 
     ---------------------------------------------------
     -- Make sure this is a valid processor
@@ -430,13 +429,13 @@ AS
     ---------------------------------------------------
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTask: Start transaction'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task: Start transaction'
 
     ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
     --
-    Declare @transName varchar(32) = 'RequestStepTask'
+    Declare @transName varchar(32) = 'request_step_task'
 
     Begin TRANSACTION @transName
 
@@ -530,14 +529,14 @@ AS
         End
 
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTask: Call GetJobStepParams'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task: Call get_job_step_params'
 
         ---------------------------------------------------
         -- Job was assigned; get step parameters
         ---------------------------------------------------
 
         -- Populate #ParamTab with job step parameters
-        EXEC @myError = GetJobStepParams @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
+        EXEC @myError = get_job_step_params @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
 
         If @infoOnly <> 0 AND LEN(@message) = 0
             Set @message = 'Job ' + CONVERT(varchar(12), @jobNumber) + ', Step '+ CONVERT(varchar(12), @stepNumber) + ' would be assigned to ' + @processorName
@@ -560,7 +559,7 @@ AS
     If @infoOnly <> 0
     Begin
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Preview results'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_taskXML: Preview results'
 
         Declare @machineLockedStepTools varchar(64) = null
 
@@ -603,7 +602,7 @@ AS
         --
         If @infoOnly >= 2
         Begin
-            EXEC RequestStepTaskExplanation @processorName, @processorIsAssigned, @infoOnly, @machine
+            EXEC request_step_task_explanation @processorName, @processorIsAssigned, @infoOnly, @machine
         End
 
     End
@@ -624,9 +623,8 @@ Done:
     Set @returnCode = Cast(@myError As varchar(64))
     RETURN @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestStepTask] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_step_task] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestStepTask] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_step_task] TO [DMS_SP_User] AS [dbo]
 GO
