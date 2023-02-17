@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyHistoryToJobMulti] ******/
+/****** Object:  StoredProcedure [dbo].[copy_history_to_job_multi] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CopyHistoryToJobMulti]
+CREATE PROCEDURE [dbo].[copy_history_to_job_multi]
 /****************************************************
 **
 **  Desc:
@@ -25,8 +24,9 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJobMulti]
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          05/12/2017 mem - Add Remote_Info_ID
 **          01/19/2018 mem - Add Runtime_Minutes
-**          06/20/2018 mem - Move rollback transaction to before the call to LocalErrorHandler
+**          06/20/2018 mem - Move rollback transaction to before the call to local_error_handler
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJobMulti]
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -63,7 +63,7 @@ As
 
         INSERT INTO #Tmp_JobsToCopy (Job)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+        FROM dbo.parse_delimited_integer_list(@jobList, ',')
 
         ---------------------------------------------------
         -- Bail if no candidates found
@@ -165,7 +165,7 @@ As
         -- Start transaction
         ---------------------------------------------------
         --
-        Declare @transName varchar(64) = 'CopyHistoryToJob'
+        Declare @transName varchar(64) = 'copy_history_to_job'
         Begin transaction @transName
 
         ---------------------------------------------------
@@ -458,7 +458,7 @@ As
         ---------------------------------------------------
         --
         Set @message = 'Copied ' + Convert(varchar(12), @JobsCopied) + ' jobs from the history tables to the main tables'
-        exec PostLogEntry 'Normal', @message, 'CopyHistoryToJobMulti'
+        exec post_log_entry 'Normal', @message, 'copy_history_to_job_multi'
 
         Declare @Job int = 0
         Declare @JobsRefreshed int = 0
@@ -486,17 +486,17 @@ As
                 -- Update the job parameters in case any parameters have changed (in particular, storage path)
                 ---------------------------------------------------
                 --
-                Set @CurrentLocation = 'Call UpdateJobParameters for job ' + Convert(varchar(12), @job)
+                Set @CurrentLocation = 'Call update_job_parameters for job ' + Convert(varchar(12), @job)
                 --
-                exec @myError = UpdateJobParameters @Job, @infoOnly=0
+                exec @myError = update_job_parameters @Job, @infoOnly=0
 
                 ---------------------------------------------------
                 -- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
                 ---------------------------------------------------
                 --
-                Set @CurrentLocation = 'Call ValidateJobServerInfo for job ' + Convert(varchar(12), @job)
+                Set @CurrentLocation = 'Call validate_job_server_info for job ' + Convert(varchar(12), @job)
                 --
-                exec ValidateJobServerInfo @Job, @UseJobParameters=1
+                exec validate_job_server_info @Job, @UseJobParameters=1
 
                 Set @JobsRefreshed = @JobsRefreshed + 1
 
@@ -504,7 +504,7 @@ As
                 Begin
                     Set @LastStatusTime = GetDate()
                     Set @ProgressMsg = 'Updating job parameters and storage info for copied jobs: ' + Convert(varchar(12), @JobsRefreshed) + ' / ' + Convert(varchar(12), @JobsCopied)
-                    exec PostLogEntry 'Progress', @ProgressMsg, 'CopyHistoryToJobMulti'
+                    exec post_log_entry 'Progress', @ProgressMsg, 'copy_history_to_job_multi'
                 End
             End
 
@@ -515,8 +515,8 @@ As
             Rollback
 
         -- Error caught; log the error
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'CopyHistoryToJobMulti')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'copy_history_to_job_multi')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
 
@@ -527,7 +527,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyHistoryToJobMulti] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_history_to_job_multi] TO [DDL_Viewer] AS [dbo]
 GO

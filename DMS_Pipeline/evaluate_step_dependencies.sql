@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EvaluateStepDependencies] ******/
+/****** Object:  StoredProcedure [dbo].[evaluate_step_dependencies] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
+CREATE PROCEDURE [dbo].[evaluate_step_dependencies]
 /****************************************************
 **
 **  Desc:
@@ -22,15 +21,16 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 **          12/20/2011 mem - Changed @message to an optional output parameter
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          03/30/2018 mem - Rename variables and reformat queries
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512)='' output,
-    @MaxJobsToProcess int = 0,
-    @LoopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @loopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int
@@ -350,7 +350,7 @@ As
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             Set @StatusMessage = '... Evaluating step dependencies: ' + Convert(varchar(12), @RowsProcessed) + ' / ' + Convert(varchar(12), @RowCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'EvaluateStepDependencies'
+            exec post_log_entry 'Progress', @StatusMessage, 'evaluate_step_dependencies'
             Set @LastLogTime = GetDate()
         End
 
@@ -364,7 +364,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluateStepDependencies] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[evaluate_step_dependencies] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluateStepDependencies] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[evaluate_step_dependencies] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCPULoading] ******/
+/****** Object:  StoredProcedure [dbo].[update_cpu_loading] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.UpdateCPULoading
+CREATE PROCEDURE [dbo].[update_cpu_loading]
 /****************************************************
 **
 **  Desc:
@@ -26,12 +25,13 @@ CREATE PROCEDURE dbo.UpdateCPULoading
 **          04/17/2015 mem - Now using column Uses_All_Cores
 **          11/18/2015 mem - Now using Actual_CPU_Load
 **          05/26/2017 mem - Consider Remote_Info_ID when determining CPU and memory usage
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -115,7 +115,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCPULoading] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cpu_loading] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCPULoading] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cpu_loading] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobStepProcessingStats] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_step_processing_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateJobStepProcessingStats]
+CREATE PROCEDURE [dbo].[update_job_step_processing_stats]
 /****************************************************
 **
 **  Desc:
@@ -18,13 +17,14 @@ CREATE PROCEDURE [dbo].[UpdateJobStepProcessingStats]
 **  Auth:   mem
 **          11/23/2015 mem - initial release
 **          02/06/2023 bcg - Update after view column rename
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MinimumTimeIntervalMinutes integer = 4,                        -- Set this to 0 to force the addition of new data to T_Job_Step_Processing_Stats
-    @MinimumTimeIntervalMinutesForIdenticalStats integer = 60,      -- This controls how often identical stats will get added to T_Job_Step_Processing_Stats
+    @minimumTimeIntervalMinutes integer = 4,                        -- Set this to 0 to force the addition of new data to T_Job_Step_Processing_Stats
+    @minimumTimeIntervalMinutesForIdenticalStats integer = 60,      -- This controls how often identical stats will get added to T_Job_Step_Processing_Stats
     @message varchar(128) = '' OUTPUT,
-    @InfoOnly tinyint = 0
+    @infoOnly tinyint = 0
 )
 AS
     Set NoCount On
@@ -160,5 +160,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobStepProcessingStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_step_processing_stats] TO [DDL_Viewer] AS [dbo]
 GO

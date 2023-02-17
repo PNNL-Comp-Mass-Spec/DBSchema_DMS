@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ExtendMultipleJobs] ******/
+/****** Object:  StoredProcedure [dbo].[extend_multiple_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ExtendMultipleJobs
+CREATE PROCEDURE [dbo].[extend_multiple_jobs]
 /****************************************************
 **
 **  Desc:   Applies an extension script to a series of jobs
@@ -12,16 +12,17 @@ CREATE PROCEDURE dbo.ExtendMultipleJobs
 **
 **  Auth:   mem
 **  Date:   10/22/2010 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobList varchar(max),                  -- Comma separated list of jobs to extend
+    @jobList varchar(max),                  -- Comma separated list of jobs to extend
     @extensionScriptName varchar(64),       -- Example: Sequest_Extend_MSGF
     @message varchar(512)='' output,
     @infoOnly tinyint = 0,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -49,7 +50,7 @@ As
 
     INSERT INTO #Tmp_JobsToExtend (Job, Valid)
     SELECT Value, 0
-    FROM dbo.udfParseDelimitedIntegerList(@JobList, ',')
+    FROM dbo.parse_delimited_integer_list(@JobList, ',')
 
 
     ---------------------------------------------------
@@ -118,14 +119,14 @@ As
     -- Validate that the extension script is appropriate for the existing job script
     ---------------------------------------------------
     --
-    Exec @myError = ValidateExtensionScriptForJob @Job, @extensionScriptName, @message = @message output
+    Exec @myError = validate_extension_script_for_job @Job, @extensionScriptName, @message = @message output
 
     If @myError <> 0
         Goto Done
 
 
     ---------------------------------------------------
-    -- Loop through the jobs and call CreateJobSteps for each
+    -- Loop through the jobs and call create_job_steps for each
     ---------------------------------------------------
     --
     Set @Job = 0
@@ -146,7 +147,7 @@ As
         Else
         Begin
 
-            exec @myError = CreateJobSteps @message=@message output,
+            exec @myError = create_job_steps @message=@message output,
                                 @mode='ExtendExistingJob',
                                 @extensionScriptName=@extensionScriptName,
                                 @existingJob = @Job,
@@ -167,9 +168,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExtendMultipleJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[extend_multiple_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExtendMultipleJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[extend_multiple_jobs] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ExtendMultipleJobs] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[extend_multiple_jobs] TO [PNL\D3M578] AS [dbo]
 GO

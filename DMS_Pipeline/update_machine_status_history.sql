@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMachineStatusHistory] ******/
+/****** Object:  StoredProcedure [dbo].[update_machine_status_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateMachineStatusHistory
+CREATE PROCEDURE [dbo].[update_machine_status_history]
 /****************************************************
 **
 **  Desc:
@@ -21,8 +21,8 @@ CREATE PROCEDURE UpdateMachineStatusHistory
 **
 *****************************************************/
 (
-    @MinimumTimeIntervalHours int = 1,      -- Set this to 0 to force the addition of new data to T_Analysis_Job_Status_History
-    @ActiveProcessWindowHours int = 24,     -- Will consider status values posted within the last @ActiveProcessWindowHours as valid status values
+    @minimumTimeIntervalHours int = 1,      -- Set this to 0 to force the addition of new data to T_Analysis_Job_Status_History
+    @activeProcessWindowHours int = 24,     -- Will consider status values posted within the last @ActiveProcessWindowHours as valid status values
     @message varchar(128) = '' OUTPUT
 )
 AS
@@ -93,9 +93,8 @@ Done:
 
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMachineStatusHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_machine_status_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMachineStatusHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_machine_status_history] TO [Limited_Table_Write] AS [dbo]
 GO

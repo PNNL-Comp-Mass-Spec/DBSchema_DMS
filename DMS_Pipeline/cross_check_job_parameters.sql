@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CrossCheckJobParameters] ******/
+/****** Object:  StoredProcedure [dbo].[cross_check_job_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.CrossCheckJobParameters
+CREATE PROCEDURE [dbo].[cross_check_job_parameters]
 /****************************************************
 **
 **  Desc: Compares the data in #Job_Steps to existing data in T_Job_Steps
@@ -15,14 +15,15 @@ CREATE PROCEDURE dbo.CrossCheckJobParameters
 **          02/03/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
 **          03/11/2009 mem - Now including Old/New step tool and Old/New Signatures if differences are found (Ticket #725, http://prismtrac.pnl.gov/trac/ticket/725)
 **          01/06/2011 mem - Added parameter @IgnoreSignatureMismatch
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @message varchar(512) output,
-    @IgnoreSignatureMismatch tinyint = 0
+    @ignoreSignatureMismatch tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -80,7 +81,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CrossCheckJobParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[cross_check_job_parameters] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CrossCheckJobParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[cross_check_job_parameters] TO [Limited_Table_Write] AS [dbo]
 GO

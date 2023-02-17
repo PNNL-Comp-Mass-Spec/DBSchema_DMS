@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UnholdRepoPkgJobs] ******/
+/****** Object:  StoredProcedure [dbo].[unhold_repo_pkg_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UnholdRepoPkgJobs]
+CREATE PROCEDURE [dbo].[unhold_repo_pkg_jobs]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +14,7 @@ CREATE PROCEDURE [dbo].[UnholdRepoPkgJobs]
 **
 **  Auth:   mem
 **  Date:   04/10/2013 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -62,7 +62,6 @@ AS
         End
     End
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UnholdRepoPkgJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[unhold_repo_pkg_jobs] TO [DDL_Viewer] AS [dbo]
 GO

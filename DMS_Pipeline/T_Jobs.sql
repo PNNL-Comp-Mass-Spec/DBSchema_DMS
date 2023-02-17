@@ -129,17 +129,17 @@ CREATE TRIGGER [dbo].[trig_u_Jobs] ON [dbo].[T_Jobs]
 FOR UPDATE
 /****************************************************
 **
-**	Desc: 
-**		Makes entry in T_Job_Events
-**		Calls AddUpdateJobParameter for any entries in which the Data Package ID value changed
+**  Desc:
+**      Makes entry in T_Job_Events
+**      Calls add_update_job_parameter for any entries in which the Data Package ID value changed
 
-**	Return values: 0:  success, otherwise, error code
+**  Return values: 0:  success, otherwise, error code
 **
-**	Parameters:
+**  Parameters:
 **
-**	Auth:	mem
-**	Date:	08/11/2008 mem - Initial version
-**			01/19/2012 mem - Now verifying that the State actually changed
+**  Auth:   mem
+**  Date:   08/11/2008 mem - Initial version
+**          01/19/2012 mem - Now verifying that the State actually changed
 **
 *****************************************************/
 AS

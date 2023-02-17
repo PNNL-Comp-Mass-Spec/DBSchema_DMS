@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamsFromHistoryWork] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params_from_history_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobStepParamsFromHistoryWork]
+CREATE PROCEDURE [dbo].[get_job_step_params_from_history_work]
 /****************************************************
 **
 **  Desc:
@@ -22,18 +21,19 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsFromHistoryWork]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:   07/31/2013 mem - Ported from GetJobStepParamsWork
+**  Date:   07/31/2013 mem - Ported from get_job_step_params_work
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          06/20/2016 mem - Update procedure name shown when using @DebugMode
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @jobNumber int,
     @stepNumber int,
     @message varchar(512) = '' output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
 AS
     set nocount on
@@ -53,7 +53,7 @@ AS
     set @DebugMode = IsNull(@DebugMode, 0)
 
     If @DebugMode <> 0
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get basic job step parameters'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get basic job step parameters'
 
     ---------------------------------------------------
     -- Get basic job step parameters
@@ -85,7 +85,7 @@ AS
     end
 
     If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get shared results folder name list'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get shared results folder name list'
 
     ---------------------------------------------------
     -- Lookup data package ID in T_Jobs
@@ -124,7 +124,7 @@ AS
     end
 
     If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get job step parameters'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get job step parameters'
 
     ---------------------------------------------------
     -- get input and output folder names for individual steps
@@ -173,7 +173,7 @@ AS
 
 
     If @DebugMode <> 0
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsFromHistoryWork: Get job parameters using cross apply'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get job parameters using cross apply'
 
     ---------------------------------------------------
     -- Get job parameters
@@ -226,7 +226,6 @@ AS
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsFromHistoryWork] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_from_history_work] TO [DDL_Viewer] AS [dbo]
 GO

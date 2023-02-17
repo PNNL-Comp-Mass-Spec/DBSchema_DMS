@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FinishJobCreation] ******/
+/****** Object:  StoredProcedure [dbo].[finish_job_creation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[FinishJobCreation]
+CREATE PROCEDURE [dbo].[finish_job_creation]
 /****************************************************
 **
 **  Desc:
@@ -19,10 +18,11 @@ CREATE PROCEDURE [dbo].[FinishJobCreation]
 **          03/06/2009 grk - added code for: Special="Job_Results"
 **          07/31/2009 mem - Now filtering by job in the subquery that looks for job steps with flag Special="Job_Results" (necessary when #Job_Steps contains more than one job)
 **          03/21/2011 mem - Added support for Special="ExtractSourceJobFromComment"
-**          03/22/2011 mem - Now calling AddUpdateJobParameterTempTable
+**          03/22/2011 mem - Now calling add_update_job_parameter_temp_table
 **          04/04/2011 mem - Removed SourceJob code since needs to occur after T_Job_Parameters has been updated for this job
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          02/13/2023 mem - Update Special="Job_Results" comment to mention ProMex
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[FinishJobCreation]
     @message varchar(512) output,
     @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -130,9 +130,8 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[FinishJobCreation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[finish_job_creation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FinishJobCreation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[finish_job_creation] TO [Limited_Table_Write] AS [dbo]
 GO

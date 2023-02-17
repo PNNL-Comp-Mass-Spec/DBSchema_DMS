@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeLocalJobInBroker] ******/
+/****** Object:  StoredProcedure [dbo].[make_local_job_in_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
+CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 /****************************************************
 **
 **  Desc:   Create analysis job directly in broker database
@@ -14,22 +13,23 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 **  Auth:   grk
 **          04/13/2010 grk - Initial release
 **          05/25/2010 grk - All dataset name other than 'na'
-**          10/25/2010 grk - Added call to AdjustParamsForLocalJob
+**          10/25/2010 grk - Added call to adjust_params_for_local_job
 **          11/25/2010 mem - Added code to update the Dependencies column in #Job_Steps
-**          05/25/2011 mem - Updated call to CreateStepsForJob and removed Priority from #Job_Steps
+**          05/25/2011 mem - Updated call to create_steps_for_job and removed Priority from #Job_Steps
 **          10/17/2011 mem - Added column Memory_Usage_MB
 **          11/14/2011 mem - Now populating column Transfer_Folder_Path in T_Jobs
-**          01/09/2012 mem - Added parameter @ownerPRN
+**          01/09/2012 mem - Added parameter @ownerUsername
 **          01/19/2012 mem - Added parameter @dataPackageID
 **          02/07/2012 mem - Now validating that @dataPackageID is > 0 when @scriptName is MultiAlign_Aggregator
-**          03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
-**          08/21/2012 mem - Now including the message text reported by CreateStepsForJob if it returns an error code
-**          04/10/2013 mem - Now calling AlterEnteredByUser to update T_Job_Events
+**          03/20/2012 mem - Now calling update_job_param_org_db_info_using_data_pkg
+**          08/21/2012 mem - Now including the message text reported by create_steps_for_job if it returns an error code
+**          04/10/2013 mem - Now calling alter_entered_by_user to update T_Job_Events
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**          03/10/2021 mem - Do not call S_GetNewJobID when @debugMode is non-zero
+**          03/10/2021 mem - Do not call s_get_new_job_id when @debugMode is non-zero
 **          10/15/2021 mem - Capitalize keywords and update whitespace
 **          03/02/2022 mem - Require that data package ID is non-zero for MaxQuant and MSFragger jobs
-**                         - Pass data package ID to CreateSignaturesForJobSteps
+**                         - Pass data package ID to create_signatures_for_job_steps
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
     @priority int,
     @jobParamXML xml,
     @comment varchar(512),
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @dataPackageID int,
     @debugMode tinyint = 0,            -- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
     @job int OUTPUT,
@@ -153,7 +153,7 @@ AS
     --
     If @debugMode = 0
     Begin
-        exec @job = S_GetNewJobID 'Created in broker'
+        exec @job = s_get_new_job_id 'Created in broker'
         --
         If @job = 0
         Begin
@@ -167,7 +167,7 @@ AS
     ---------------------------------------------------
     -- Note: @datasetID needs to be 0
     -- If it is non-zero, the newly created job will get deleted from
-    --  this DB the next time UpdateContext runs, since the system will think
+    --  this DB the next time update_context runs, since the system will think
     --  the job no-longer exists in DMS5 and thus should be deleted
     ---------------------------------------------------
 
@@ -184,10 +184,10 @@ AS
     -- Get results folder name (and store in #Jobs)
     ---------------------------------------------------
     --
-    exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
+    exec @myError = create_results_folder_name @job, @tag, @resultsFolderName output, @message output
     If @myError <> 0
     Begin
-        Set @msg = 'Error returned by CreateResultsFolderName: ' + Convert(varchar(12), @myError)
+        Set @msg = 'Error returned by create_results_folder_name: ' + Convert(varchar(12), @myError)
         goto Done
     End
 
@@ -196,10 +196,10 @@ AS
     -- Details are stored in #Job_Steps and #Job_Step_Dependencies
     ---------------------------------------------------
     --
-    exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
+    exec @myError = create_steps_for_job @job, @scriptXML, @resultsFolderName, @message output
     If @myError <> 0
     Begin
-        Set @msg = 'Error returned by CreateStepsForJob: ' + Convert(varchar(12), @myError)
+        Set @msg = 'Error returned by create_steps_for_job: ' + Convert(varchar(12), @myError)
         If IsNull(@message, '') <> ''
             Set @msg = @msg + '; ' + @message
         goto Done
@@ -208,7 +208,7 @@ AS
     ---------------------------------------------------
     -- Do special needs for local jobs that target other jobs
     ---------------------------------------------------
-    EXEC AdjustParamsForLocalJob
+    EXEC adjust_params_for_local_job
         @scriptName ,
         @datasetNum ,
         @dataPackageID ,
@@ -218,7 +218,7 @@ AS
     If @debugMode > 0
     Begin
         Print ''
-        Print 'Job params after calling AdjustParamsForLocalJob: ' + Cast(@jobParamXML As Varchar(8000))
+        Print 'Job params after calling adjust_params_for_local_job: ' + Cast(@jobParamXML As Varchar(8000))
     End
 
     ---------------------------------------------------
@@ -226,17 +226,17 @@ AS
     -- Details are stored in #Job_Steps
     ---------------------------------------------------
     --
-    exec @myError = CreateSignaturesForJobSteps @job, @jobParamXML, @dataPackageID, @message output, @debugMode = @debugMode
+    exec @myError = create_signatures_for_job_steps @job, @jobParamXML, @dataPackageID, @message output, @debugMode = @debugMode
     If @myError <> 0
     Begin
-        Set @msg = 'Error returned by CreateSignaturesForJobSteps: ' + Convert(varchar(12), @myError)
+        Set @msg = 'Error returned by create_signatures_for_job_steps: ' + Convert(varchar(12), @myError)
         goto Done
     End
 
     ---------------------------------------------------
     -- Save job parameters as XML into temp table
     ---------------------------------------------------
-    -- FUTURE: need to get set of parameters normally provided by GetJobParamTable,
+    -- FUTURE: need to get set of parameters normally provided by get_job_param_table,
     -- except for the job specifc ones which need to be provided as initial content of @jobParamXML
     --
     INSERT INTO #Job_Parameters (Job, Parameters)
@@ -256,15 +256,15 @@ AS
     -- Handle any step cloning
     ---------------------------------------------------
     --
-    exec @myError = CloneJobStep @job, @jobParamXML, @message output
+    exec @myError = clone_job_step @job, @jobParamXML, @message output
     If @myError <> 0
     Begin
-        Set @msg = 'Error returned by CloneJobStep: ' + Convert(varchar(12), @myError)
+        Set @msg = 'Error returned by clone_job_step: ' + Convert(varchar(12), @myError)
         goto Done
     End
 
     ---------------------------------------------------
-    -- Update step dependency count (code taken from SP FinishJobCreation)
+    -- Update step dependency count (code taken from SP finish_job_creation)
     ---------------------------------------------------
     --
     UPDATE #Job_Steps
@@ -292,7 +292,7 @@ AS
 
     If @debugMode = 0
     Begin
-        -- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
+        -- move_jobs_to_main_tables sproc assumes that T_Jobs table entry is already there
         --
         INSERT INTO T_Jobs( Job,
                             Priority,
@@ -307,12 +307,12 @@ AS
                             DataPkgID )
         VALUES(@job, @priority, @scriptName, 1,
                @datasetNum, @datasetID, NULL,
-               @comment, NULL, @ownerPRN,
+               @comment, NULL, @ownerUsername,
                IsNull(@dataPackageID, 0))
 
-        exec @myError = MoveJobsToMainTables @message output
+        exec @myError = move_jobs_to_main_tables @message output
 
-        exec AlterEnteredByUser 'T_Job_Events', 'Job', @job, @callingUser
+        exec alter_entered_by_user 'T_Job_Events', 'Job', @job, @callingUser
     End
 
     If @debugMode = 0
@@ -324,7 +324,7 @@ AS
         Declare @transferFolderPath varchar(512) = ''
 
         SELECT @transferFolderPath = [Value]
-        FROM dbo.GetJobParamTableLocal ( @job )
+        FROM dbo.get_job_param_table_local ( @job )
         WHERE [Name] = 'transferFolderPath'
 
         If IsNull(@transferFolderPath, '') <> ''
@@ -341,16 +341,16 @@ AS
         --
         If @dataPackageID > 0
         Begin
-            Exec UpdateJobParamOrgDbInfoUsingDataPkg @job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
+            Exec update_job_param_org_db_info_using_data_pkg @job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
         End
     End
 
     If @debugMode > 0 And @dataPackageID > 0
     Begin
         -----------------------------------------------
-        -- Call UpdateJobParamOrgDbInfoUsingDataPkg with debug mode enabled
+        -- Call update_job_param_org_db_info_using_data_pkg with debug mode enabled
         ---------------------------------------------------
-        Exec UpdateJobParamOrgDbInfoUsingDataPkg @job, @dataPackageID, @deleteIfInvalid=0, @debugMode=1, @scriptNameForDebug=@scriptName, @message=@message output, @callingUser=@callingUser
+        Exec update_job_param_org_db_info_using_data_pkg @job, @dataPackageID, @deleteIfInvalid=0, @debugMode=1, @scriptNameForDebug=@scriptName, @message=@message output, @callingUser=@callingUser
     End
 
     ---------------------------------------------------
@@ -375,14 +375,14 @@ Done:
 
         If @debugMode > 1
         Begin
-            EXEC PostLogEntry 'Debug', @jobParams, 'MakeLocalJobInBroker'
+            EXEC post_log_entry 'Debug', @jobParams, 'make_local_job_in_broker'
         End
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeLocalJobInBroker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeLocalJobInBroker] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_local_job_in_broker] TO [Limited_Table_Write] AS [dbo]
 GO

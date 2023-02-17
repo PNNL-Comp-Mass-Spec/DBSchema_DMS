@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLocalJobInBroker] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_local_job_in_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
+CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 /****************************************************
 **
 **  Desc:   Create or edit analysis job directly in broker database
@@ -32,31 +31,31 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
 **          10/25/2010 grk - Removed creation prohibition all jobs except aggregation jobs
 **          11/25/2010 mem - Added parameter @debugMode
 **          07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
-**          01/09/2012 mem - Added parameter @ownerPRN
+**          01/09/2012 mem - Added parameter @ownerUsername
 **          01/19/2012 mem - Added parameter @dataPackageID
 **          02/07/2012 mem - Now updating Transfer_Folder_Path after updating T_Job_Parameters
-**          03/20/2012 mem - Now calling UpdateJobParamOrgDbInfoUsingDataPkg
-**          03/07/2013 mem - Now calling ResetAggregationJob to reset jobs; supports resetting a job that succeeded
-**                         - No longer changing job state to 20; ResetAggregationJob will update the job state
-**          04/10/2013 mem - Now passing @CallingUser to MakeLocalJobInBroker
-**          07/23/2013 mem - Now calling PostLogEntry only once in the Catch block
+**          03/20/2012 mem - Now calling update_job_param_org_db_info_using_data_pkg
+**          03/07/2013 mem - Now calling reset_aggregation_job to reset jobs; supports resetting a job that succeeded
+**                         - No longer changing job state to 20; reset_aggregation_job will update the job state
+**          04/10/2013 mem - Now passing @CallingUser to make_local_job_in_broker
+**          07/23/2013 mem - Now calling post_log_entry only once in the Catch block
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/08/2016 mem - Include job number in errors raised by RAISERROR
-**          06/16/2016 mem - Add call to AddUpdateTransferPathsInParamsUsingDataPkg
-**          11/08/2016 mem - Auto-define @ownerPRN if it is empty
-**          11/10/2016 mem - Pass @callingUser to GetUserLoginWithoutDomain
+**          06/16/2016 mem - Add call to add_update_transfer_paths_in_params_using_data_pkg
+**          11/08/2016 mem - Auto-define @ownerUsername if it is empty
+**          11/10/2016 mem - Pass @callingUser to get_user_login_without_domain
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/21/2017 mem - Fix double logging of exceptions
 **          08/01/2017 mem - Use THROW if not authorized
-**          11/15/2017 mem - Call ValidateDataPackageForMACJob
-**          03/07/2018 mem - Call AlterEnteredByUser
+**          11/15/2017 mem - Call validate_data_package_for_mac_job
+**          03/07/2018 mem - Call alter_entered_by_user
 **          04/06/2018 mem - Allow updating comment, priority, and owner regardless of job state
 **          01/21/2021 mem - Log @jobParam to T_Log_Entries when @debugMode is 2
-**          03/10/2021 mem - Make @jobParam an input/output variable when calling VerifyJobParameters
-**                         - Send @dataPackageID and @debugMode to VerifyJobParameters
+**          03/10/2021 mem - Make @jobParam an input/output variable when calling verify_job_parameters
+**                         - Send @dataPackageID and @debugMode to verify_job_parameters
 **          03/15/2021 mem - Fix bug in the Catch block that changed @myError
-**                         - If VerifyJobParameters returns an error, return the error message in @message
+**                         - If verify_job_parameters returns an error, return the error message in @message
 **          01/31/2022 mem - Add more print statements to aid debugging
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
 **          07/01/2022 mem - Update parameter names in comments
@@ -70,7 +69,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLocalJobInBroker]
     @priority int,
     @jobParam varchar(8000),             -- XML (as text)
     @comment varchar(512),
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @dataPackageID int,
     @resultsFolderName varchar(128) OUTPUT,
     @mode varchar(12) = 'add',          -- or 'update' or 'reset' or 'previewAdd'
@@ -108,7 +107,7 @@ AS
     If @debugMode > 0
     Begin
         Print ''
-        Print '[AddUpdateLocalJobInBroker]'
+        Print '[add_update_local_job_in_broker]'
         print @jobParam
     End
 
@@ -117,7 +116,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateLocalJobInBroker', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_local_job_in_broker', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -156,14 +155,14 @@ AS
             RAISERROR('Web page bug: @jobParam is empty for job %d', 11, 30, @job)
 
         -- Uncomment to log the job parameters to T_Log_Entries
-        -- exec PostLogEntry 'Debug', @jobParam, 'AddUpdateLocalJobInBroker'
+        -- exec post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
         -- goto done
 
-        exec @myError = VerifyJobParameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
+        exec @myError = verify_job_parameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
 
         If @myError > 0
         Begin
-            Set @message = 'Error from VerifyJobParameters'
+            Set @message = 'Error from verify_job_parameters'
             If @job > 0
             Begin
                 Set @message = @message + ' (Job ' + Cast(@job as varchar(9)) + ')'
@@ -175,10 +174,10 @@ AS
             RAISERROR(@message, 11, @myError)
         End
 
-        If IsNull(@ownerPRN, '') = ''
+        If IsNull(@ownerUsername, '') = ''
         Begin
             -- Auto-define the owner
-            Set @ownerPRN = dbo.GetUserLoginWithoutDomain(@callingUser)
+            Set @ownerUsername = dbo.get_user_login_without_domain(@callingUser)
         End
 
         If @mode in ('add', 'previewAdd')
@@ -188,7 +187,7 @@ AS
             ---------------------------------------------------
 
             -- Validate scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
-            EXEC @result = dbo.ValidateDataPackageForMACJob
+            EXEC @result = dbo.validate_data_package_for_mac_job
                                     @dataPackageID,
                                     @scriptName,
                                     @tool output,
@@ -197,7 +196,7 @@ AS
 
             If @result <> 0
             Begin
-                -- Change @logErrors to 0 since the error was already logged to T_Log_Entries by ValidateDataPackageForMACJob
+                -- Change @logErrors to 0 since the error was already logged to T_Log_Entries by validate_data_package_for_mac_job
                 Set @logErrors = 0
 
                 RAISERROR('%s', 11, 24, @msg)
@@ -221,9 +220,9 @@ AS
             -- Update job and params
             --
             UPDATE   dbo.T_Jobs
-            SET      Priority = @priority ,
-                     Comment = @comment ,
-                     Owner = @ownerPRN ,
+            SET      Priority = @priority,
+                     Comment = @comment,
+                     Owner = @ownerUsername,
                      DataPkgID = Case When @state IN (1, 4, 5) Then @dataPackageID Else DataPkgID End
             WHERE    Job = @job
 
@@ -252,7 +251,7 @@ AS
                 --   'DataPackagePath'
                 ---------------------------------------------------
 
-                exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
+                exec add_update_transfer_paths_in_params_using_data_pkg @dataPackageID, @paramsUpdated output, @message output
 
                 If @paramsUpdated <> 0
                 Begin
@@ -276,7 +275,7 @@ AS
                 Declare @TransferFolderPath varchar(512) = ''
 
                 SELECT @TransferFolderPath = [Value]
-                FROM dbo.GetJobParamTableLocal ( @Job )
+                FROM dbo.get_job_param_table_local ( @Job )
                 WHERE [Name] = 'transferFolderPath'
 
                 If IsNull(@TransferFolderPath, '') <> ''
@@ -293,13 +292,13 @@ AS
                 --
                 If @dataPackageID > 0
                 Begin
-                    Exec UpdateJobParamOrgDbInfoUsingDataPkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
+                    Exec update_job_param_org_db_info_using_data_pkg @Job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
                 End
 
                 If @reset = 'Y'
                 Begin --<reset>
 
-                    exec ResetAggregationJob @job, @InfoOnly=0, @message=@message output
+                    exec reset_aggregation_job @job, @InfoOnly=0, @message=@message output
 
                 END --<reset>
             End
@@ -327,17 +326,17 @@ AS
                 Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
                 If @debugMode > 1
                 Begin
-                    EXEC PostLogEntry 'Debug', @jobParam, 'AddUpdateLocalJobInBroker'
+                    EXEC post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
                 End
             End
 
-            exec MakeLocalJobInBroker
+            exec make_local_job_in_broker
                     @scriptName,
                     @datasetNum,
                     @priority,
                     @jobParamXML,
                     @comment,
-                    @ownerPRN,
+                    @ownerUsername,
                     @dataPackageID,
                     @debugMode,
                     @job OUTPUT,
@@ -349,7 +348,7 @@ AS
 
     END TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Set @message = IsNull(@message, 'Unknown error message')
         Set @myError = IsNull(@myError, 'Unknown error details')
@@ -364,7 +363,7 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @logMessage, 'AddUpdateLocalJobInBroker'
+            Exec post_log_entry 'Error', @logMessage, 'add_update_local_job_in_broker'
 
             If Len(IsNull(@callingUser, '')) > 0
             Begin
@@ -378,7 +377,7 @@ AS
                 SELECT @myRowCount = @@rowcount
 
                 If @myRowCount > 0
-                    Exec AlterEnteredByUser 'T_Log_Entries', 'Entry_ID', @logEntryID, @CallingUser, @EntryDateColumnName = 'Entered'
+                    Exec alter_entered_by_user 'T_Log_Entries', 'Entry_ID', @logEntryID, @CallingUser, @EntryDateColumnName = 'Entered'
             End
         End
     END CATCH
@@ -386,11 +385,10 @@ AS
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLocalJobInBroker] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_local_job_in_broker] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLocalJobInBroker] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_local_job_in_broker] TO [Limited_Table_Write] AS [dbo]
 GO

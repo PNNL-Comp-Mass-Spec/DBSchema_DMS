@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[AppendToText] ******/
+/****** Object:  UserDefinedFunction [dbo].[append_to_text] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[AppendToText]
+CREATE FUNCTION [dbo].[append_to_text]
 /****************************************************
 **
 **  Desc:    Appends a new string to an existing string, using the specified delimiter
@@ -16,6 +15,7 @@ CREATE FUNCTION [dbo].[AppendToText]
 **  Auth:   mem
 **  Date:   05/12/2010 mem - Initial version
 **          06/12/2018 mem - Add parameter @maxLength
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -56,7 +56,6 @@ Begin
     Return @text
 End
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AppendToText] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[append_to_text] TO [DDL_Viewer] AS [dbo]
 GO

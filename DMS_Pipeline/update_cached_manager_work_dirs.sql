@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedManagerWorkDirs] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_manager_work_dirs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateCachedManagerWorkDirs]
+CREATE PROCEDURE [dbo].[update_cached_manager_work_dirs]
 /****************************************************
 **
 **  Desc:
@@ -16,12 +15,13 @@ CREATE PROCEDURE [dbo].[UpdateCachedManagerWorkDirs]
 **  Date:   10/05/2016 mem - Initial release
 **          02/17/2020 mem - Update the Mgr_Name column in S_Manager_Control_V_MgrWorkDir
 **          01/30/2023 mem - Use new synonym name with renamed columns
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -93,10 +93,10 @@ As
             If @myRowCount > 0
             Begin
                 Set @message = 'Updated WorkDir_AdminShare for ' +
-                               Cast(@myRowCount as Varchar(8)) + dbo.CheckPlural(@myRowCount, ' manager', ' managers') +
+                               Cast(@myRowCount as Varchar(8)) + dbo.check_plural(@myRowCount, ' manager', ' managers') +
                                ' in T_Local_Processors'
 
-                exec PostLogEntry 'Normal', @message, 'UpdateCachedManagerWorkDirs'
+                exec post_log_entry 'Normal', @message, 'update_cached_manager_work_dirs'
             End
 
         End
@@ -104,8 +104,8 @@ As
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateCachedManagerWorkDirs')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_cached_manager_work_dirs')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
     End Catch
@@ -117,7 +117,6 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedManagerWorkDirs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_manager_work_dirs] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateStepsForJob] ******/
+/****** Object:  StoredProcedure [dbo].[create_steps_for_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CreateStepsForJob
+CREATE PROCEDURE [dbo].[create_steps_for_job]
 /****************************************************
 **
 **  Desc:
@@ -26,6 +26,7 @@ CREATE PROCEDURE CreateStepsForJob
 **          10/17/2011 mem - Added column Memory_Usage_MB
 **          04/16/2012 grk - Added error checking for missing step tools
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -34,7 +35,7 @@ CREATE PROCEDURE CreateStepsForJob
     @resultsFolderName varchar(128),
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -151,7 +152,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateStepsForJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_steps_for_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateStepsForJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_steps_for_job] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteJobIfNewOrFailed] ******/
+/****** Object:  StoredProcedure [dbo].[delete_job_if_new_or_failed] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
+CREATE PROCEDURE [dbo].[delete_job_if_new_or_failed]
 /****************************************************
 **
 **  Desc:
@@ -17,13 +16,14 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
 **  Auth:   mem
 **  Date:   04/21/2017 mem - Initial release
 **          05/26/2017 mem - Check for job step state 9 (Running_Remote)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/01/2017 mem - Fix preview bug
 **          09/27/2018 mem - Rename @previewMode to @infoonly
 **          05/04/2020 mem - Add additional debug messages
 **          08/08/2020 mem - Customize message shown when @infoOnly = 0
 **          10/18/2022 mem - Fix logic bugs for warning messages
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -32,7 +32,7 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
     @message varchar(512)='' output,
     @infoonly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int= 0
@@ -47,7 +47,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteJobIfNewOrFailed', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_job_if_new_or_failed', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -152,13 +152,13 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteJobIfNewOrFailed] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_job_if_new_or_failed] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteJobIfNewOrFailed] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_job_if_new_or_failed] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteJobIfNewOrFailed] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_job_if_new_or_failed] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteJobIfNewOrFailed] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_job_if_new_or_failed] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteJobIfNewOrFailed] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_job_if_new_or_failed] TO [Limited_Table_Write] AS [dbo]
 GO

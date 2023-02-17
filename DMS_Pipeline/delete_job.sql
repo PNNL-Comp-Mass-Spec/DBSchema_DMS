@@ -1,15 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[DeleteJob] ******/
+/****** Object:  StoredProcedure [dbo].[delete_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.DeleteJob
+CREATE PROCEDURE [dbo].[delete_job]
 /****************************************************
 **
 **  Desc:
 **      Deletes the given job from T_Jobs and T_Job_Steps
 **      This procedure was previously called by DeleteAnalysisJob in DMS5
-**      However, now DeleteAnalysisJob calls DeleteJobIfNewOrFailed in this database
+**      However, now DeleteAnalysisJob calls delete_job_if_new_or_failed in this database
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -17,8 +17,9 @@ CREATE PROCEDURE dbo.DeleteJob
 **          12/31/2008 mem - initial release
 **          05/26/2009 mem - Now deleting from T_Job_Step_Dependencies and T_Job_Parameters
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,7 +27,7 @@ CREATE PROCEDURE dbo.DeleteJob
     @callingUser varchar(128) = '',
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -39,7 +40,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteJob', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_job', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -121,11 +122,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteJob] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_job] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteJob] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_job] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_job] TO [Limited_Table_Write] AS [dbo]
 GO

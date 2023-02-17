@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateManagerAndTaskStatusXML] ******/
+/****** Object:  StoredProcedure [dbo].[update_manager_and_task_status_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateManagerAndTaskStatusXML
+CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 /****************************************************
 **
 **  Desc:
@@ -24,10 +24,11 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
 **          05/23/2017 mem - Update fewer status fields if Remote_Manager is not empty
 **                         - Change @debugMode to recognize various values
 **          06/15/2017 mem - Use Cast and Try_Cast
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/06/2017 mem - Allow Status_Date and Last_Start_Time to be UTC-based
 **                           Use Try_Cast to convert from varchar to numbers
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -35,7 +36,7 @@ CREATE PROCEDURE UpdateManagerAndTaskStatusXML
     @result varchar(4096) output,
     @debugMode tinyint = 0            -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @parameters, use test data, and update tables, 4 to ignore @parameters, use test data, and not update tables
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int = 0
@@ -57,7 +58,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'update_manager_and_task_status_xml', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -457,8 +458,8 @@ As
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateManagerAndTaskStatusXML')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_manager_and_task_status_xml')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
         Set @result = @message
@@ -473,17 +474,16 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_and_task_status_xml] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status_xml] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_and_task_status_xml] TO [PNL\D3M578] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatusXML] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_and_task_status_xml] TO [svc-dms] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatusXML] TO [svc-dms] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status_xml] TO [svc-dms] AS [dbo]
 GO

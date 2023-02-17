@@ -1,18 +1,17 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobParameters] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.UpdateJobParameters
+CREATE PROCEDURE [dbo].[update_job_parameters]
 /****************************************************
 **
 **  Desc:
 **      Updates the parameters in T_Job_Parameters for the specified job
 **
 **
-**  Note:   The job parameters come from the DMS5 database (via CreateParametersForJob
-**          and then GetJobParamTable), and not from the T_Job_Parameters table local to this DB
+**  Note:   The job parameters come from the DMS5 database (via create_parameters_for_job
+**          and then get_job_param_table), and not from the T_Job_Parameters table local to this DB
 **
 **
 **  Return values: 0: success, otherwise, error code
@@ -21,17 +20,18 @@ CREATE PROCEDURE dbo.UpdateJobParameters
 **
 **  Auth:   mem
 **  Date:   01/24/2009
-**          02/08/2009 grk - Modified to call CreateParametersForJob
+**          02/08/2009 grk - Modified to call create_parameters_for_job
 **          01/05/2010 mem - Added parameter @SettingsFileOverride
 **          03/21/2011 mem - Now calling UpdateInputFolderUsingSourceJobComment
-**          04/04/2011 mem - Now calling UpdateInputFolderUsingSpecialProcessingParam
+**          04/04/2011 mem - Now calling update_input_folder_using_special_processing_param
 **          01/11/2012 mem - Updated to support @pXML being null, which will be the case for a job created directly in the pipeline database
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @infoOnly tinyint = 0,
-    @SettingsFileOverride varchar(256) = '',    -- When defined, then will use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters (in GetJobParamTable)
+    @settingsFileOverride varchar(256) = '',    -- When defined, then will use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters (in get_job_param_table)
     @message varchar(128) = '' Output
 )
 AS
@@ -77,7 +77,7 @@ AS
     declare @DebugMode tinyint
     set @DebugMode = @infoOnly
 
-    exec @myError = CreateParametersForJob
+    exec @myError = create_parameters_for_job
                             @job,
                             @pXML output,
                             @message output,
@@ -124,7 +124,7 @@ AS
     Else
         Set @ShowResults = 0
 
-    exec dbo.UpdateInputFolderUsingSpecialProcessingParam @JobList = @Job, @infoOnly=@infoOnly, @ShowResults=@ShowResults
+    exec dbo.update_input_folder_using_special_processing_param @JobList = @Job, @infoOnly=@infoOnly, @ShowResults=@ShowResults
 
 Done:
     If @myError <> 0 AND @infoOnly <> 0
@@ -132,11 +132,10 @@ Done:
 
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_parameters] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateJobParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_job_parameters] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_parameters] TO [Limited_Table_Write] AS [dbo]
 GO

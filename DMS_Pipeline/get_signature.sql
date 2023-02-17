@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetSignature] ******/
+/****** Object:  StoredProcedure [dbo].[get_signature] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.GetSignature
+CREATE PROCEDURE [dbo].[get_signature]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,8 @@ CREATE PROCEDURE dbo.GetSignature
 **  Auth:   grk
 **  Date:   08/22/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
 **          03/22/2011 mem - Now populating String, Entered, and Last_Used in T_Signatures
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**                         - Replace call to function bin2hex with CONVERT(varchar, varbinary value, 2)
 **
 *****************************************************/
 (
@@ -32,7 +34,8 @@ AS
     -- convert string to hash
     ---------------------------------------------------
 
-    set @pattern = dbo.bin2hex(HashBytes('SHA1', @s))
+    -- CONVERT(varchar, varbinary, 2): convert varbinary to hex string (uppercase), '2' means 'no 0x prefix'
+    set @pattern = CONVERT(varchar, HashBytes('SHA1', @s), 2)
 
     ---------------------------------------------------
     -- is it already in table?
@@ -89,10 +92,8 @@ AS
 Done:
     RETURN @reference
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetSignature] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_signature] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetSignature] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_signature] TO [Limited_Table_Write] AS [dbo]
 GO

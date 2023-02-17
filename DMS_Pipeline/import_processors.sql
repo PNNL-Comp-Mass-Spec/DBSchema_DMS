@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ImportProcessors] ******/
+/****** Object:  StoredProcedure [dbo].[import_processors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ImportProcessors]
+CREATE PROCEDURE [dbo].[import_processors]
 /****************************************************
 **
 **  Desc:
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[ImportProcessors]
     @bypassDMS tinyint = 0,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -97,9 +96,8 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[ImportProcessors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[import_processors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ImportProcessors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[import_processors] TO [Limited_Table_Write] AS [dbo]
 GO

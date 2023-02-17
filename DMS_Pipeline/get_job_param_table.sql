@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobParamTable] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_param_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobParamTable]
+CREATE PROCEDURE [dbo].[get_job_param_table]
 /****************************************************
 **
 **  Desc:   Returns a table filled with the parameters for the
@@ -20,15 +19,15 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **          06/02/2009 mem - Updated to run within the DMS_Pipeline DB and to use view V_DMS_PipelineJobParameters (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **          07/29/2009 mem - Updated to look in T_Jobs.Comment for the 'DTA:' tag when 'ExternalDTAFolderName' is defined in the script
 **          01/05/2010 mem - Added parameter @settingsFileOverride
-**          02/23/2010 mem - Updated to not return any debug info using SELECT statements; required since CreateParametersForJob calls this SP using the notation: INSERT INTO ... exec GetJobParamTable ...
+**          02/23/2010 mem - Updated to not return any debug info using SELECT statements; required since create_parameters_for_job calls this SP using the notation: INSERT INTO ... exec get_job_param_table ...
 **          04/04/2011 mem - Updated to support V_DMS_SettingsFiles returning true XML for the Contents column (using S_DMS_V_Get_Pipeline_Settings_Files)
 **                         - Added support for field Special_Processing
-**          04/20/2011 mem - Now calling CheckAddSpecialProcessingParam to look for an AMTDB entry in the Special_Processing parameter
+**          04/20/2011 mem - Now calling check_add_special_processing_param to look for an AMTDB entry in the Special_Processing parameter
 **                         - Additionally, adding parameter AMTDBServer if the AMTDB entry is present
 **          08/01/2011 mem - Now filtering on Analysis_Tool when querying V_DMS_SettingsFiles
 **          05/07/2012 mem - Now including DatasetType
 **          05/07/2012 mem - Now including Experiment
-**          08/23/2012 mem - Now calling CheckAddSpecialProcessingParam to look for a DataImportFolder entry
+**          08/23/2012 mem - Now calling check_add_special_processing_param to look for a DataImportFolder entry
 **          04/23/2013 mem - Now including Instrument and InstrumentGroup
 **          01/30/2014 mem - Now using S_DMS_V_Settings_File_Lookup when a match is not found in V_DMS_SettingsFiles for the given settings file and analysis tool
 **          03/14/2014 mem - Added InstrumentDataPurged
@@ -41,6 +40,7 @@ CREATE PROCEDURE [dbo].[GetJobParamTable]
 **                            given the AMT tag DB name, the code used a view to determine the server on which the MT DB resides)
 **                         - Remove check for DataImportFolder in the Special_Processing field
 **          02/01/2023 mem - Use new column names
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -320,12 +320,12 @@ AS
         --
         Declare @extDTA varchar(128) = ''
 
-        SELECT @extDTA = dbo.ExtractTaggedName('DTA:', Value)
+        SELECT @extDTA = dbo.extract_tagged_name('DTA:', Value)
         FROM #T_Tmp_ParamTab
         WHERE [Name] = 'Special_Processing'
         --
         If @extDTA = ''
-            SELECT @extDTA = dbo.ExtractTaggedName('DTA:', Comment)
+            SELECT @extDTA = dbo.extract_tagged_name('DTA:', Comment)
             FROM T_Jobs
             WHERE Job = @job
         --
@@ -363,9 +363,8 @@ AS
 
     RETURN
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_param_table] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamTable] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_param_table] TO [Limited_Table_Write] AS [dbo]
 GO

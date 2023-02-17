@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateExtensionScriptForJob] ******/
+/****** Object:  StoredProcedure [dbo].[validate_extension_script_for_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ValidateExtensionScriptForJob
+CREATE PROCEDURE [dbo].[validate_extension_script_for_job]
 /****************************************************
 **
 **  Desc:   Validates that the given extension script is appropriate for the given job
@@ -13,11 +13,12 @@ CREATE PROCEDURE ValidateExtensionScriptForJob
 **
 **  Auth:   mem
 **  Date:   10/22/2010 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @ExtensionScriptName varchar(64),
+    @job int,
+    @extensionScriptName varchar(64),
     @message varchar(512) = '' output
 )
 AS
@@ -190,7 +191,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateExtensionScriptForJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_extension_script_for_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateExtensionScriptForJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_extension_script_for_job] TO [Limited_Table_Write] AS [dbo]
 GO

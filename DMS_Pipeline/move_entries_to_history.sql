@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveEntriesToHistory] ******/
+/****** Object:  StoredProcedure [dbo].[move_entries_to_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[MoveEntriesToHistory]
+CREATE PROCEDURE [dbo].[move_entries_to_history]
 /****************************************************
 **
 **  Desc: Move entries from log tables into
@@ -17,12 +16,13 @@ CREATE PROCEDURE [dbo].[MoveEntriesToHistory]
 **  Date:   07/12/2011 mem - Initial version
 **          10/04/2011 mem - Removed @DBName parameter
 **          08/25/2022 mem - Use new column name in T_Log_Entries
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @intervalDays int = 365
 )
-As
+AS
     set nocount on
     declare @cutoffDateTime datetime
 
@@ -232,5 +232,5 @@ As
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveEntriesToHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_entries_to_history] TO [DDL_Viewer] AS [dbo]
 GO

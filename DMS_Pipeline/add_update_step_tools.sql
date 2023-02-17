@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateStepTools] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_step_tools] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateStepTools
+CREATE PROCEDURE [dbo].[add_update_step_tools]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Step_Tools
@@ -16,25 +16,26 @@ CREATE PROCEDURE AddUpdateStepTools
 **  Date:   09/24/2008
 **          12/17/2009 mem - Added parameter @ParamFileStoragePath
 **          10/17/2011 mem - Added parameter @MemoryUsageMB
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Name varchar(64),
-    @Type varchar(128),
-    @Description varchar(512),
-    @SharedResultVersion smallint,
-    @FilterVersion smallint,
-    @CPULoad smallint,
-    @MemoryUsageMB int,
-    @ParameterTemplate text,
-    @ParamFileStoragePath varchar(256),
+    @name varchar(64),
+    @type varchar(128),
+    @description varchar(512),
+    @sharedResultVersion smallint,
+    @filterVersion smallint,
+    @cpuLoad smallint,
+    @memoryUsageMB int,
+    @parameterTemplate text,
+    @paramFileStoragePath varchar(256),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -47,7 +48,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateStepTools', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'add_update_step_tools', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -166,9 +167,9 @@ As
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStepTools] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_step_tools] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateStepTools] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_step_tools] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStepTools] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_step_tools] TO [Limited_Table_Write] AS [dbo]
 GO

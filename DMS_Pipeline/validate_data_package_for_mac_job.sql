@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateDataPackageForMACJob] ******/
+/****** Object:  StoredProcedure [dbo].[validate_data_package_for_mac_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
+CREATE PROCEDURE [dbo].[validate_data_package_for_mac_job]
 /****************************************************
 **
 **  Desc:
@@ -26,17 +25,18 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 **          04/20/2014 mem - Now mentioning ReporterTol param file when MASIC counts are not correct for an Isobaric_Labeling or MAC_iTRAQ script
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          11/15/2017 mem - Use AppendToText to combine strings
+**          11/15/2017 mem - Use append_to_text to combine strings
 **                         - Include data package ID in log messages
 **          01/11/2018 mem - Allow PRIDE_Converter jobs to have multiple MSGF+ jobs for each dataset
 **          04/06/2018 mem - Allow Phospho_FDR_Aggregator jobs to have multiple MSGF+ jobs for each dataset
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          05/01/2019 mem - Fix typo counting SEQUEST jobs
 **          03/09/2021 mem - Add support for MaxQuant
 **          08/26/2021 mem - Add support for MSFragger
 **          10/02/2021 mem - No longer require that DeconTools jobs exist for MAC_iTRAQ jobs (similarly, MAC_TMT10Plex jobs don't need DeconTools)
 **          06/30/2022 mem - Use new parameter file column name
 **          12/07/2022 mem - Include script name in the error message
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -188,7 +188,7 @@ AS
 
             If @tool = ''
             Begin
-                Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs; error validating script ' + @scriptName, 0, '; ', 1024)
+                Set @errMsg = dbo.append_to_text(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs; error validating script ' + @scriptName, 0, '; ', 1024)
             End
         End
 
@@ -200,22 +200,22 @@ AS
         If @scriptName IN ('Isobaric_Labeling')
         Begin
             If @deconToolsCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
+                Set @errMsg = dbo.append_to_text(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
 
             If @masicCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
+                Set @errMsg = dbo.append_to_text(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
         End
 
         If @scriptName IN ('MAC_iTRAQ', 'MAC_TMT10Plex')
         Begin
             If @masicCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
+                Set @errMsg = dbo.append_to_text(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
         End
 
         If @scriptName IN ('Global_Label-Free_AMT_Tag')
         Begin
             If @deconToolsCountNotOne > 0
-                Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
+                Set @errMsg = dbo.append_to_text(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
         End
 
         If @errMsg <> ''
@@ -226,8 +226,8 @@ AS
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
-        Exec PostLogEntry 'Error', @message, 'ValidateDataPackageForMACJob'
+        EXEC format_error_message @message output, @myError output
+        Exec post_log_entry 'Error', @message, 'validate_data_package_for_mac_job'
 
         If @myError = 0
             Set @myError = 20000
@@ -237,5 +237,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDataPackageForMACJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_data_package_for_mac_job] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.UpdateUserPermissions
+CREATE PROCEDURE [dbo].[update_user_permissions]
 /****************************************************
 **
 **  Desc: Updates user permissions in the current DB
@@ -18,11 +17,11 @@ CREATE PROCEDURE dbo.UpdateUserPermissions
 **          08/13/2012 mem - Added update permission for T_Scripts_History
 **          03/16/2016 mem - Add users gigasax\msdadmin and gigasax\ftms
 **                         - Allow the DMS_SP_User role to update the Entered_By column in T_Job_Events
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
     Set NoCount On
-
 
     if exists (select * from sys.schemas where name = 'DMSReader')
         drop schema DMSReader
@@ -69,8 +68,6 @@ AS
 
     Return 0
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_user_permissions] TO [DDL_Viewer] AS [dbo]
 GO

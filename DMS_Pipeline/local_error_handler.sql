@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LocalErrorHandler] ******/
+/****** Object:  StoredProcedure [dbo].[local_error_handler] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[LocalErrorHandler]
+CREATE PROCEDURE [dbo].[local_error_handler]
 /****************************************************
 **
 **  Desc:   This procedure should be called from within a Try...Catch block
@@ -19,8 +18,9 @@ CREATE PROCEDURE [dbo].[LocalErrorHandler]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          03/15/2021 mem - Treat @errorNum as an input/output parameter
-**          08/17/2021 mem - If an exception is caught when calling PostLogEntry, append the text that would have been sent to PostLogEntry
-**                         - Rollback open transactions prior to calling PostLogEntry
+**          08/17/2021 mem - If an exception is caught when calling post_log_entry, append the text that would have been sent to post_log_entry
+**                         - Rollback open transactions prior to calling post_log_entry
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[LocalErrorHandler]
     @message varchar(512)='' output,            -- Populated with a description of the error
     @duplicateEntryHoldoffHours int = 0         -- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myRowCount int = 0
@@ -83,7 +83,7 @@ As
             Set @errorProc = @callingProcName
         End
 
-        -- Update @callingProcName using @errorProc (required for calling PostLogEntry)
+        -- Update @callingProcName using @errorProc (required for calling post_log_entry)
         Set @callingProcName = @errorProc
 
         If @errorNumber = 0 And Len(@errorMessage) = 0
@@ -116,15 +116,15 @@ As
                 ROLLBACK TRANSACTION;
 
             Set @currentLocation = 'Examining @logWarningErrorList'
-            If Exists (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@logWarningErrorList, ',') WHERE Value = @errorNum)
+            If Exists (SELECT Value FROM dbo.parse_delimited_integer_list(@logWarningErrorList, ',') WHERE Value = @errorNum)
                 Set @logErrorType = 'Warning'
             Else
                 Set @logErrorType = 'Error'
 
             Set @messageToLog = @message
 
-            Set @currentLocation = 'Calling PostLogEntry'
-            execute PostLogEntry @logErrorType, @message, @callingProcName, @duplicateEntryHoldoffHours
+            Set @currentLocation = 'Calling post_log_entry'
+            execute post_log_entry @logErrorType, @message, @callingProcName, @duplicateEntryHoldoffHours
         End
 
         If @displayError <> 0
@@ -132,7 +132,7 @@ As
 
     End Try
     Begin Catch
-        Set @message = 'Error ' + @currentLocation + ' in LocalErrorHandler: ' + IsNull(ERROR_MESSAGE(), '?') + '; Error ' + Cast(IsNull(ERROR_NUMBER(), 0) as varchar(12))
+        Set @message = 'Error ' + @currentLocation + ' in local_error_handler: ' + IsNull(ERROR_MESSAGE(), '?') + '; Error ' + Cast(IsNull(ERROR_NUMBER(), 0) as varchar(12))
         If @messageToLog <> ''
         Begin
             Set @message = @message + '; ' + @messageToLog
@@ -142,17 +142,16 @@ As
         SELECT @message as Error_Description
         Print @message
 
-        Declare @postedBy varchar(128) = 'LocalErrorHandler (' + @callingProcName + ')'
-        Exec PostLogEntry 'Error', @message, @postedBy
+        Declare @postedBy varchar(128) = 'local_error_handler (' + @callingProcName + ')'
+        Exec post_log_entry 'Error', @message, @postedBy
     End Catch
 
     RETURN @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[LocalErrorHandler] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[local_error_handler] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[local_error_handler] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LocalErrorHandler] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[local_error_handler] TO [Limited_Table_Write] AS [dbo]
 GO

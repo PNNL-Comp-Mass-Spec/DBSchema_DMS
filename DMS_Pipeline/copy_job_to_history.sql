@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyJobToHistory] ******/
+/****** Object:  StoredProcedure [dbo].[copy_job_to_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CopyJobToHistory]
+CREATE PROCEDURE [dbo].[copy_job_to_history]
 /****************************************************
 **
 **  Desc:
@@ -29,6 +28,7 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
 **          01/19/2018 mem - Add Runtime_Minutes
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **          08/17/2021 mem - Fix typo in argument @saveTimeOverride
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
     @overrideSaveTime tinyint = 0,        -- Set to 1 to use @saveTimeOverride for the SaveTime instead of GetDate()
     @saveTimeOverride datetime = Null
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -287,9 +287,8 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyJobToHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_job_to_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyJobToHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_job_to_history] TO [Limited_Table_Write] AS [dbo]
 GO

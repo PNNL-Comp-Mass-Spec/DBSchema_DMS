@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetStepTaskComplete] ******/
+/****** Object:  StoredProcedure [dbo].[set_step_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SetStepTaskComplete]
+CREATE PROCEDURE [dbo].[set_step_task_complete]
 /****************************************************
 **
 **  Desc:
@@ -35,11 +34,11 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          05/11/2017 mem - Add support for @completionCode 25 (RUNNING_REMOTE) and columns Next_Try and Retry_Count
 **          05/12/2017 mem - Add parameter @remoteInfo, update Remote_Info_ID in T_Job_Steps, and update T_Remote_Info
 **          05/15/2017 mem - Add parameter @remoteTimestamp, which is used to define the remote info file in the TaskQueuePath folder
-**          05/18/2017 mem - Use GetRemoteInfoID to resolve @remoteInfo to @remoteInfoID
+**          05/18/2017 mem - Use get_remote_info_id to resolve @remoteInfo to @remoteInfoID
 **          05/23/2017 mem - Add parameter @remoteProgress
 **                           Update Remote_Finish if a remotely running job has finished (success or failure)
 **          05/26/2017 mem - Add completion code 26 (FAILED_REMOTE), which leads to step state 16
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/12/2017 mem - Skip waiting step tools MSGF, IDPicker, and MSAlign_Quant when a DataExtractor step reports NO_DATA
 **          10/17/2017 mem - Fix the warning logged when the DataExtractor reports no data
@@ -48,7 +47,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          03/29/2018 mem - Decrease @adjustedHoldoffInterval from 90 to 30 minutes
 **          04/19/2018 mem - Add parameters @remoteStart and @remoteFinish
 **          04/25/2018 mem - Stop setting Remote_Finish to the current date since @remoteFinish provides that info
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          10/18/2018 mem - Add output parameter @message
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          12/14/2020 mem - Add support for completion code 18 (CLOSEOUT_SKIPPED_MZ_REFINERY)
@@ -56,6 +55,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **                         - Expand @completionMessage and @evaluationMessage to varchar(512)
 **          09/21/2021 mem - Add support for completion code 23 (CLOSEOUT_RESET_JOB_STEP)
 **          08/26/2022 mem - Use new column name in T_Log_Entries
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -76,7 +76,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
     @returnCode varchar(64) = '' output
 
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -90,7 +90,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'set_step_task_complete', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -150,7 +150,7 @@ As
     If @myError <> 0
     Begin
         Set @message = 'Error getting machine name from T_Local_Processors using T_Job_Steps for ' + @jobStepDescription
-        Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+        Exec post_log_entry 'Error', @message, 'set_step_task_complete'
         Goto Done
     End
     --
@@ -158,7 +158,7 @@ As
     Begin
         Set @myError = 66
         Set @message = 'Could not find machine name in T_Local_Processors using T_Job_Steps; cannot mark ' + @jobStepDescription + ' complete for processor ' + @processorName
-        Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+        Exec post_log_entry 'Error', @message, 'set_step_task_complete'
 
         Goto Done
     End
@@ -167,7 +167,7 @@ As
     Begin
         Set @myError = 67
         Set @message = @jobStepDescriptionCapital + ' is not in the correct state (4) to be marked complete by processor ' + @processorName + '; actual state is ' + Cast(@state as varchar(9))
-        Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+        Exec post_log_entry 'Error', @message, 'set_step_task_complete'
 
         Goto Done
     End
@@ -177,7 +177,7 @@ As
         Begin
             Set @myError = 68
             Set @message = @jobStepDescriptionCapital + ' is being processed by ' + @jobStepsProcessor + '; processor ' + @processorName + ' is not allowed to mark it as complete'
-            Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+            Exec post_log_entry 'Error', @message, 'set_step_task_complete'
 
             Goto Done
         End
@@ -248,7 +248,7 @@ As
         Begin
             Set @completionCodeDescription = 'No Data'
 
-            -- Note that Formularity and NOMSI jobs that report completion code 20 are handled in AutoFixFailedJobs
+            -- Note that Formularity and NOMSI jobs that report completion code 20 are handled in auto_fix_failed_jobs
 
             If @stepTool IN ('Decon2LS_V2')
             Begin
@@ -258,7 +258,7 @@ As
                 INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('LCMSFeatureFinder')
 
                 Set @message = 'Warning, ' + @jobStepDescription + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'
-                Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+                Exec post_log_entry 'Error', @message, 'set_step_task_complete'
             End
 
             If @stepTool IN ('DataExtractor')
@@ -269,7 +269,7 @@ As
                 INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
 
                 Set @message = 'Warning, ' + @jobStepDescription + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
-                Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+                Exec post_log_entry 'Error', @message, 'set_step_task_complete'
             End
         End
 
@@ -327,7 +327,7 @@ As
     -- Set up transaction parameters
     ---------------------------------------------------
     --
-    Declare @transName varchar(32) = 'SetStepTaskComplete'
+    Declare @transName varchar(32) = 'set_step_task_complete'
 
     -- Start transaction
     Begin transaction @transName
@@ -387,7 +387,7 @@ As
     Begin
         Declare @remoteInfoID int = 0
 
-        Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
+        Exec @remoteInfoID = get_remote_info_id @remoteInfo
 
         If IsNull(@remoteInfoID, 0) = 0
         Begin
@@ -445,7 +445,7 @@ As
                            ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, PBF_Gen, or ProMex step prior to step ' + Cast(@step as varchar(12)) +
                            '; CompletionCode ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ') is invalid'
 
-            Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+            Exec post_log_entry 'Error', @message, 'set_step_task_complete'
             Goto CommitTran
         End
 
@@ -465,7 +465,7 @@ As
 
             UPDATE T_Job_Steps
             SET State = 7,        -- Holding
-                Completion_Message = dbo.AppendToText(Completion_Message, @message, 0, '; ', 256)
+                Completion_Message = dbo.append_to_text(Completion_Message, @message, 0, '; ', 256)
             WHERE Job = @job AND
                   Step_Number = @step
 
@@ -473,12 +473,12 @@ As
                            @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) +
                            ' again because this likely represents a problem; this step is now in state "holding"'
 
-            Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
+            Exec post_log_entry 'Error', @message, 'set_step_task_complete'
 
             Goto CommitTran
         End
 
-        Exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
+        Exec post_log_entry 'Normal', @message, 'set_step_task_complete'
 
         -- Reset shared results step just upstream from this step
         --
@@ -531,7 +531,7 @@ As
             WHERE Job = @job AND Step_Number = @nextStep
 
             set @message = 'Updated job step dependencies for job ' + Cast(@job as varchar(9)) + ' since step ' + Cast(@step as varchar(9)) + ' has been skipped'
-            exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
+            exec post_log_entry 'Normal', @message, 'set_step_task_complete'
         End
 
     End
@@ -582,16 +582,14 @@ Done:
     Set @returnCode = Cast(@myError As varchar(64))
     return @myError
 
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_step_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskComplete] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_step_task_complete] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskComplete] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_step_task_complete] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetStepTaskComplete] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_step_task_complete] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskComplete] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_step_task_complete] TO [svc-dms] AS [dbo]
 GO

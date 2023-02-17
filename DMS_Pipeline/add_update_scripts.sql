@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateScripts] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_scripts] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateScripts
+CREATE PROCEDURE [dbo].[add_update_scripts]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Scripts
@@ -14,30 +14,31 @@ CREATE PROCEDURE AddUpdateScripts
 **
 **  Auth:   grk
 **  Date:   09/23/2008 grk - Initial Veresion
-**          03/24/2009 mem - Now calling AlterEnteredByUser when @callingUser is defined
+**          03/24/2009 mem - Now calling alter_entered_by_user when @callingUser is defined
 **          10/06/2010 grk - Added @Parameters field
 **          12/01/2011 mem - Expanded @Description to varchar(2000)
 **          01/09/2012 mem - Added parameter @BackfillToDMS
 **                         - Changed ID field in T_Scripts to a non-identity based int
 **          08/13/2013 mem - Added @Fields field  (used by MAC Job Wizard on DMS website)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Script varchar(64),
-    @Description varchar(2000),
-    @Enabled char(1),
-    @ResultsTag varchar(8),
-    @BackfillToDMS char(1),
-    @Contents TEXT,
-    @Parameters TEXT,
-    @Fields TEXT,
+    @script varchar(64),
+    @description varchar(2000),
+    @enabled char(1),
+    @resultsTag varchar(8),
+    @backfillToDMS char(1),
+    @contents TEXT,
+    @parameters TEXT,
+    @fields TEXT,
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -51,7 +52,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_scripts', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -180,7 +181,7 @@ As
             WHERE Script = @Script
 
             If Not @ID Is Null
-                Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
+                Exec alter_entered_by_user 'T_Scripts_History', 'ID', @ID, @CallingUser
         End
 
     end -- add mode
@@ -223,7 +224,7 @@ As
             WHERE Script = @Script
 
             If Not @ID Is Null
-                Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
+                Exec alter_entered_by_user 'T_Scripts_History', 'ID', @ID, @CallingUser
         End
 
     end -- update mode
@@ -231,9 +232,9 @@ As
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateScripts] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_scripts] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateScripts] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_scripts] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateScripts] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_scripts] TO [Limited_Table_Write] AS [dbo]
 GO

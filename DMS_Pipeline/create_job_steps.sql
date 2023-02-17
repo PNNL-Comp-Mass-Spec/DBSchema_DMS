@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[create_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CreateJobSteps]
+CREATE PROCEDURE [dbo].[create_job_steps]
 /****************************************************
 **
 **  Desc:
@@ -15,7 +14,7 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 **    Example usage for debugging:
 **
 **        DECLARE @message VARCHAR(256)
-**        EXEC CreateJobSteps @message output, 1, 'CreateFromImportedJobs', @existingJob=555225
+**        EXEC create_job_steps @message output, 1, 'CreateFromImportedJobs', @existingJob=555225
 **        SELECT @message
 **
 **  Auth:   grk
@@ -33,19 +32,20 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 **          12/21/2009 mem - Now displaying additional information when @debugMode is non-zero
 **          01/05/2010 mem - Renamed parameter @extensionScriptNameList to @extensionScriptName
 **                         - Added parameter @extensionScriptSettingsFileOverride
-**          10/22/2010 mem - Now passing @debugMode to MergeJobsToMainTables
-**          01/06/2011 mem - Now passing @ignoreSignatureMismatch to CrossCheckJobParameters
-**          03/21/2011 mem - Now passing @debugMode to FinishJobCreation
-**          05/25/2011 mem - Updated call to CreateStepsForJob
-**          10/17/2011 mem - Now populating column Memory_Usage_MB using UpdateJobStepMemoryUsage
+**          10/22/2010 mem - Now passing @debugMode to merge_jobs_to_main_tables
+**          01/06/2011 mem - Now passing @ignoreSignatureMismatch to cross_check_job_parameters
+**          03/21/2011 mem - Now passing @debugMode to finish_job_creation
+**          05/25/2011 mem - Updated call to create_steps_for_job
+**          10/17/2011 mem - Now populating column Memory_Usage_MB using update_job_step_memory_usage
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**          09/14/2015 mem - Now passing @debugMode to MoveJobsToMainTables
+**          09/14/2015 mem - Now passing @debugMode to move_jobs_to_main_tables
 **                         - Verify that T_Step_Tool_Versions has Tool_Version_ID 1 (unknown)
 **          11/09/2015 mem - Assure that Dataset_ID is only if the dataset name is 'Aggregation'
 **          05/12/2017 mem - Verify that T_Remote_Info has Remote_Info_ID 1 (unknown)
-**          03/02/2022 mem - Pass data package ID to CreateSignaturesForJobSteps when dataset ID is 0
+**          03/02/2022 mem - Pass data package ID to create_signatures_for_job_steps when dataset ID is 0
 **          02/13/2023 mem - Show contents of temp table #Jobs when @debugMode is 1
 **                         - Add results folder name comment regarding Special="Job_Results"
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,7 +61,7 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
     @infoOnly tinyint = 0,
     @debugMode tinyint = 0              -- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job.  Also, when this is non-zero, various debug tables will be shown
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -186,7 +186,7 @@ As
 
         -- Make sure there are no conflicts in the step numbers in the extension script vs. the script used for the existing job
 
-        Exec @myError = ValidateExtensionScriptForJob @existingJob, @extensionScriptName, @message = @message output
+        Exec @myError = validate_extension_script_for_job @existingJob, @extensionScriptName, @message = @message output
         If @myError <> 0
             Goto Done
 
@@ -261,7 +261,7 @@ As
     Begin
         -- populate #jobs with info from existing job
         -- If it only exists in history, restore it to main tables
-        exec @myError = SetUpToExtendExistingJob @existingJob, @message
+        exec @myError = set_up_to_extend_existing_job @existingJob, @message
     End
 
     If @mode = 'UpdateExistingJob'
@@ -403,7 +403,7 @@ As
 
             If @myError <> 0
             Begin
-                exec PostLogEntry 'Error', @errorMessage, 'CreateJobSteps'
+                exec post_log_entry 'Error', @errorMessage, 'create_job_steps'
 
                 UPDATE #Jobs
                 SET State = 5
@@ -447,12 +447,12 @@ As
 
                 If @mode = 'CreateFromImportedJobs' or @mode = 'UpdateExistingJob'
                 Begin
-                    exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
+                    exec @myError = create_results_folder_name @job, @tag, @resultsFolderName output, @message output
                 End
 
                 -- get parameters for job (and also store in job parameters)
                 -- Parameters are returned in @pXML
-                exec @myError = CreateParametersForJob
+                exec @myError = create_parameters_for_job
                                         @job,
                                         @pXML output,
                                         @message output,
@@ -464,19 +464,19 @@ As
 
                 -- Create the basic job structure (steps and dependencies)
                 -- Details are stored in #Job_Steps and #Job_Step_Dependencies
-                exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
+                exec @myError = create_steps_for_job @job, @scriptXML, @resultsFolderName, @message output
 
                 -- Calculate signatures for steps that require them (and also handle shared results folders)
                 -- Details are stored in #Job_Steps
-                exec @myError = CreateSignaturesForJobSteps @job, @pXML, @datasetOrDataPackageId, @message output, @debugMode = @debugMode
+                exec @myError = create_signatures_for_job_steps @job, @pXML, @datasetOrDataPackageId, @message output, @debugMode = @debugMode
 
                 -- Update the memory usage for job steps that have JavaMemorySize entries defined in the parameters
                 -- This updates Memory_Usage_MB in #Job_Steps
-                exec @myError = UpdateJobStepMemoryUsage @job, @pXML, @message output
+                exec @myError = update_job_step_memory_usage @job, @pXML, @message output
 
                 -- For MSXML_Gen and ProMex jobs, @resultsFolderName will be of the form XML202212141459_Auto2113610 or PMX202301141131_Auto2139566
                 -- We actually want the results folder to be the shared results directory name (e.g. MSXML_Gen_1_194_863076 or ProMex_1_286_1112666)
-                -- This change will be made by FinishJobCreation when it looks for Special="Job_Results" in the pipeline script XML, for example
+                -- This change will be made by finish_job_creation when it looks for Special="Job_Results" in the pipeline script XML, for example
                 --
                 -- <JobScript Name="ProMex">
                 -- <Step Number="1" Tool="PBF_Gen"/>
@@ -493,7 +493,7 @@ As
                 End
 
                 -- Handle any step cloning
-                exec @myError = CloneJobStep @job, @pXML, @message output
+                exec @myError = clone_job_step @job, @pXML, @message output
 
                 If @debugMode <> 0
                 Begin
@@ -508,21 +508,21 @@ As
 
                 -- Handle external DTAs If any
                 -- This updates DTA_Gen steps in #Job_Steps for which the job parameters contain parameter 'ExternalDTAFolderName' with value 'DTA_Manual'
-                exec @myError = OverrideDTAGenForExternalDTA @job, @pXML, @message output
+                exec @myError = override_dta_gen_for_external_dta @job, @pXML, @message output
 
                 -- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
                 -- copying to the main database tables
-                exec @myError = FinishJobCreation @job, @message output, @debugMode
+                exec @myError = finish_job_creation @job, @message output, @debugMode
 
                 If @debugMode <> 0
                 Begin
-                    SELECT '#Jobs (after FinishJobCreation)' as [Table], * FROM #Jobs
+                    SELECT '#Jobs (after finish_job_creation)' as [Table], * FROM #Jobs
                 End
 
                 -- Do current job parameters conflict with existing job?
                 If @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'
                 Begin -- <d>
-                    exec @myError = CrossCheckJobParameters @job, @message output, @ignoreSignatureMismatch=1
+                    exec @myError = cross_check_job_parameters @job, @message output, @ignoreSignatureMismatch=1
 
                     If @myError <> 0
                     Begin -- <e>
@@ -560,7 +560,7 @@ As
             Set @loggingEnabled = 1
 
             Set @statusMessage = '... Creating job steps: ' + Convert(varchar(12), @jobsProcessed) + ' / ' + Convert(varchar(12), @jobCountToProcess)
-            exec PostLogEntry 'Progress', @statusMessage, 'CreateJobSteps'
+            exec post_log_entry 'Progress', @statusMessage, 'create_job_steps'
             Set @lastLogTime = GetDate()
         End
 
@@ -575,23 +575,23 @@ As
         If @mode = 'CreateFromImportedJobs'
         Begin
             -- Move temp tables to main tables
-            exec MoveJobsToMainTables @message output, @debugMode
+            exec move_jobs_to_main_tables @message output, @debugMode
 
             -- Possibly update the input folder using the
             -- Special_Processing param in the job parameters
-            exec UpdateInputFolderUsingSpecialProcessingParam @jobList, @infoOnly=0, @showResults=0
+            exec update_input_folder_using_special_processing_param @jobList, @infoOnly=0, @showResults=0
         End
 
         If @mode = 'ExtendExistingJob'
         Begin
             -- Merge temp tables with existing job
-            exec MergeJobsToMainTables @message output, @infoOnly = @infoOnly
+            exec merge_jobs_to_main_tables @message output, @infoOnly = @infoOnly
         End
 
         If @mode = 'UpdateExistingJob'
         Begin
             -- Merge temp tables with existing job
-            exec UpdateJobInMainTables @message output
+            exec update_job_in_main_tables @message output
         End
 
     End
@@ -600,15 +600,15 @@ As
         If @mode = 'ExtendExistingJob'
         Begin
             -- Preview changes that would be made
-            exec MergeJobsToMainTables @message output, @infoOnly = @infoOnly
+            exec merge_jobs_to_main_tables @message output, @infoOnly = @infoOnly
         End
     End
 
     If @loggingEnabled = 1 Or DateDiff(second, @startTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @loggingEnabled = 1
-        Set @statusMessage = 'CreateJobSteps complete'
-        exec PostLogEntry 'Progress', @statusMessage, 'CreateJobSteps'
+        Set @statusMessage = 'create_job_steps complete'
+        exec post_log_entry 'Progress', @statusMessage, 'create_job_steps'
     End
 
     ---------------------------------------------------
@@ -621,15 +621,14 @@ Done:
     Begin
         -- Display the data in #Jobs
         --  (If @mode is 'ExtendExistingJob' then we will have
-        --   already done this in MergeJobsToMainTables)
+        --   already done this in merge_jobs_to_main_tables)
         SELECT * FROM #Jobs
     End
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_job_steps] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateJobSteps] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_job_steps] TO [Limited_Table_Write] AS [dbo]
 GO

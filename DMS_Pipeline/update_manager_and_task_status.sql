@@ -1,21 +1,20 @@
-/****** Object:  StoredProcedure [dbo].[UpdateManagerAndTaskStatus] ******/
+/****** Object:  StoredProcedure [dbo].[update_manager_and_task_status] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatus]
+CREATE PROCEDURE [dbo].[update_manager_and_task_status]
 /****************************************************
 **
 **  Desc:
 **      Logs the current status of the given analysis manager
 **
-**      Manager status is typically stored in the database using UpdateManagerAndTaskStatusXML,
+**      Manager status is typically stored in the database using update_manager_and_task_status_xml,
 **      which is called by the StatusMessageDBUpdater
 **      (running at \\proto-5\DMS_Programs\StatusMessageDBUpdater)
 **
 **      The StatusMessageDBUpdater caches the status messages from the managers, then
-**      periodically calls UpdateManagerAndTaskStatusXML to update T_Processor_Status
+**      periodically calls update_manager_and_task_status_xml to update T_Processor_Status
 **
 **      However, if the message broker stops working, running analysis managers
 **      will set LogStatusToBrokerDB to true, meaning calls to WriteStatusFile
@@ -27,12 +26,13 @@ CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatus]
 **          03/31/2009 mem - Added parameter @dSScanCount
 **          04/09/2009 grk - @message needs to be initialized to '' inside body of sproc
 **          06/26/2009 mem - Expanded to support the new status fields
-**          08/29/2009 mem - Commented out the update code to disable the functionality of this procedure (superseded by UpdateManagerAndTaskStatusXML, which is called by StatusMessageDBUpdater)
+**          08/29/2009 mem - Commented out the update code to disable the functionality of this procedure (superseded by update_manager_and_task_status_xml, which is called by StatusMessageDBUpdater)
 **          05/04/2015 mem - Added Process_ID
 **          11/20/2015 mem - Added ProgRunner_ProcessID and ProgRunner_CoreUsage
 **          08/25/2022 mem - Re-enabled the functionality of this procedure
 **                         - Replaced int parameters @mgrStatusCode, @taskStatusCode, and @taskDetailStatusCode
 **                           with string parameters @mgrStatus, @taskStatus, and @taskDetailStatus
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,7 +40,7 @@ CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatus]
     @mgrStatus Varchar(50),
     @lastUpdate datetime,
     @lastStartTime datetime,
-    @cPUUtilization real,
+    @cpuUtilization real,
     @freeMemoryMB real,
 
     @processID int = null,
@@ -66,7 +66,7 @@ CREATE PROCEDURE [dbo].[UpdateManagerAndTaskStatus]
     @spectrumCount int=0,                    -- The total number of spectra that need to be processed (or have been generated).  For Sequest, this is the DTA count
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -155,13 +155,12 @@ Done:
     --
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatus] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatus] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_and_task_status] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateManagerAndTaskStatus] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerAndTaskStatus] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_and_task_status] TO [svc-dms] AS [dbo]
 GO

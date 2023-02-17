@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[OverrideDTAGenForExternalDTA] ******/
+/****** Object:  StoredProcedure [dbo].[override_dta_gen_for_external_dta] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE OverrideDTAGenForExternalDTA
+CREATE PROCEDURE [dbo].[override_dta_gen_for_external_dta]
 /****************************************************
 **
 **  Desc:
@@ -21,14 +21,15 @@ CREATE PROCEDURE OverrideDTAGenForExternalDTA
 **          04/14/2009 grk - Modified to apply to DTA_Import step tool also (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          04/15/2009 grk - Modified to maintain shared results for imported DTA (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          03/21/2011 mem - Rearranged logic to remove Goto
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @pXML xml,
+    @paramsXML xml,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -47,7 +48,7 @@ As
     set @externalDTAFolderName = ''
     --
     SELECT @externalDTAFolderName = xmlNode.value('@Value', 'varchar(64)')
-    FROM   @pXML.nodes('//Param') AS R(xmlNode)
+    FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="ExternalDTAFolderName"]') = 1
 
     If IsNull(@externalDTAFolderName, '') <> ''
@@ -78,7 +79,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[OverrideDTAGenForExternalDTA] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[override_dta_gen_for_external_dta] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[OverrideDTAGenForExternalDTA] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[override_dta_gen_for_external_dta] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamValue] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_param_value] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobStepParamValue]
+CREATE PROCEDURE [dbo].[get_job_step_param_value]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +15,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamValue]
 **
 **  Auth:   mem
 **          03/09/2021 mem - Initial release
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,10 +61,10 @@ AS
     )
 
     ---------------------------------------------------
-    -- Call GetJobStepParamsWork to populate the temporary table
+    -- Call get_job_step_params_work to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = GetJobStepParamsWork @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_job_step_params_work @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ImportJobProcessors] ******/
+/****** Object:  StoredProcedure [dbo].[import_job_processors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ImportJobProcessors
+CREATE PROCEDURE [dbo].[import_job_processors]
 /****************************************************
 **
 **  Desc:
@@ -15,19 +15,20 @@ CREATE PROCEDURE dbo.ImportJobProcessors
 **
 **  Auth:   grk
 **          05/26/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
-**          01/17/2009 mem - Removed Insert operation for T_Local_Job_Processors, since SyncJobInfo now populates T_Local_Job_Processors (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
+**          01/17/2009 mem - Removed Insert operation for T_Local_Job_Processors, since sync_job_info now populates T_Local_Job_Processors (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
 **          06/27/2009 mem - Now removing entries from T_Local_Job_Processors only if the job is complete or not present in T_Jobs; if a job is failed but still in T_Jobs, then the entry is not removed from T_Local_Job_Processors
 **          07/01/2010 mem - No longer logging message "Updated T_Local_Job_Processors; DeleteCount=" each time T_Local_Job_Processors is updated
 **          06/01/2015 mem - No longer deleting rows in T_Local_Job_Processors since we have deprecated processor groups
 **          02/15/2016 mem - Re-enabled support for processor groups, but altered logic to wait for 2 hours before deleting completed jobs
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -67,7 +68,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ImportJobProcessors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[import_job_processors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ImportJobProcessors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[import_job_processors] TO [Limited_Table_Write] AS [dbo]
 GO

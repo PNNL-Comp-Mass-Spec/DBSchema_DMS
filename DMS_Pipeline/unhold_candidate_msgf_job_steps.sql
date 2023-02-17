@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UnholdCandidateMSGFJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[unhold_candidate_msgf_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UnholdCandidateMSGFJobSteps
+CREATE PROCEDURE [dbo].[unhold_candidate_msgf_job_steps]
 /****************************************************
 **
 **  Desc:
@@ -18,14 +18,15 @@ CREATE PROCEDURE UnholdCandidateMSGFJobSteps
 **  Auth:   mem
 **  Date:   12/20/2011 mem - Initial version
 **          05/12/2017 mem - Update Tool_Version_ID, Next_Try, and Remote_Info_ID
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @StepTool varchar(64) = 'MSGF',
-    @TargetCandidates int = 25,
+    @stepTool varchar(64) = 'MSGF',
+    @targetCandidates int = 25,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -100,5 +101,5 @@ As
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UnholdCandidateMSGFJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[unhold_candidate_msgf_job_steps] TO [DDL_Viewer] AS [dbo]
 GO

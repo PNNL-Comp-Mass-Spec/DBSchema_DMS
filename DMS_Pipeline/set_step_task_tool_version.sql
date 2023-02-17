@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetStepTaskToolVersion] ******/
+/****** Object:  StoredProcedure [dbo].[set_step_task_tool_version] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SetStepTaskToolVersion]
+CREATE PROCEDURE [dbo].[set_step_task_tool_version]
 /****************************************************
 **
 **  Desc:
@@ -15,18 +14,19 @@ CREATE PROCEDURE [dbo].[SetStepTaskToolVersion]
 **
 **  Auth:   mem
 **  Date:   07/05/2011 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @step int,
-    @ToolVersionInfo varchar(900),
+    @toolVersionInfo varchar(900),
     @returnCode varchar(64) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -41,7 +41,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'SetStepTaskToolVersion', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'set_step_task_tool_version', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -132,9 +132,9 @@ As
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetStepTaskToolVersion] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_step_task_tool_version] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskToolVersion] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_step_task_tool_version] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetStepTaskToolVersion] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_step_task_tool_version] TO [svc-dms] AS [dbo]
 GO

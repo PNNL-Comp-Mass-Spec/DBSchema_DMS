@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReportSequestWarnings] ******/
+/****** Object:  StoredProcedure [dbo].[report_sequest_warnings] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ReportSequestWarnings
+CREATE PROCEDURE [dbo].[report_sequest_warnings]
 /****************************************************
 **
 **  Desc:   Displays or e-mails a list of Sequest clusters
@@ -17,17 +17,17 @@ CREATE PROCEDURE dbo.ReportSequestWarnings
 **          12/11/2009 mem - Now returning the SQL Query in the e-mail
 **          12/14/2009 mem - Now displaying Job and Finish as the first two columns
 **          03/18/2016 mem - Update e-mail address for parameter EmailAddressList
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @IncludeWarningsInReport tinyint = 0,   -- When 0, then will only report jobs / send an e-mail if the Evaluation_Code column has an error bit set.  When 1, will show stats for all jobs in T_Job_Steps that have a non-zero Evaluation_Code value
-    @JobFinishThresholdHours int = 24,      -- Will include jobs that have finished within this many hours of the present time
-    @SendEmail tinyint = 0,                 -- When 1, then will send an e-mail to the addesses specified by @EmailAddressList if any jobs have a warning
-    @EmailAddressList varchar(4000) = 'EMSL-Prism.Users.DB_Operators@pnnl.gov',
+    @includeWarningsInReport tinyint = 0,   -- When 0, then will only report jobs / send an e-mail if the Evaluation_Code column has an error bit set.  When 1, will show stats for all jobs in T_Job_Steps that have a non-zero Evaluation_Code value
+    @jobFinishThresholdHours int = 24,      -- Will include jobs that have finished within this many hours of the present time
+    @sendEmail tinyint = 0,                 -- When 1, then will send an e-mail to the addesses specified by @EmailAddressList if any jobs have a warning
+    @emailAddressList varchar(4000) = 'EMSL-Prism.Users.DB_Operators@pnnl.gov',
     @message varchar(512) = '' output
 )
-As
-
+AS
     set nocount on
 
     declare @myError int
@@ -166,7 +166,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportSequestWarnings] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_sequest_warnings] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportSequestWarnings] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_sequest_warnings] TO [Limited_Table_Write] AS [dbo]
 GO

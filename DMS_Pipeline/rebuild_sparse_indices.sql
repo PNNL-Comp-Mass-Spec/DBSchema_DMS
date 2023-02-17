@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RebuildSparseIndices] ******/
+/****** Object:  StoredProcedure [dbo].[rebuild_sparse_indices] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.RebuildSparseIndices
+CREATE PROCEDURE [dbo].[rebuild_sparse_indices]
 /****************************************************
 **
 **  Desc:
@@ -21,16 +20,17 @@ CREATE PROCEDURE dbo.RebuildSparseIndices
 **
 **  Auth:   mem
 **  Date:   04/24/2013 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @FillFactorThreshold int = 90,
-    @SmallTableRowThreshold int = 1000,     -- Tables with fewer than this many rows will get a fill factor of 100 applied
-    @NewFillFactorLargeTables int = 90,     -- Fill_factor to use on tables with over @SmallTableRowThreshold rows
+    @fillFactorThreshold int = 90,
+    @smallTableRowThreshold int = 1000,     -- Tables with fewer than this many rows will get a fill factor of 100 applied
+    @newFillFactorLargeTables int = 90,     -- Fill_factor to use on tables with over @SmallTableRowThreshold rows
     @infoOnly tinyint = 1,
     @message varchar(1024) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int
@@ -222,7 +222,7 @@ As
                 EXEC (@command)
 
                 Set @message = 'Reindexed ' + @indexname + ' due to Fill_Factor = ' + Convert(varchar(12), @fillFactor)
-                Exec PostLogEntry 'Normal', @message, 'RebuildSparseIndices'
+                Exec post_log_entry 'Normal', @message, 'rebuild_sparse_indices'
 
             End
 
@@ -239,7 +239,7 @@ As
         -----------------------------------------------------------
 
         Set @message = 'Reindexed ' + Convert(varchar(12), @IndexCountProcessed) + ' indices in ' + convert(varchar(12), Convert(decimal(9,1), DateDiff(second, @StartTime, GetDate()) / 60.0)) + ' minutes'
-        Exec PostLogEntry 'Normal', @message, 'RebuildSparseIndices'
+        Exec post_log_entry 'Normal', @message, 'rebuild_sparse_indices'
     End
 
 Done:
@@ -249,7 +249,6 @@ Done:
 
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[RebuildSparseIndices] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[rebuild_sparse_indices] TO [DDL_Viewer] AS [dbo]
 GO

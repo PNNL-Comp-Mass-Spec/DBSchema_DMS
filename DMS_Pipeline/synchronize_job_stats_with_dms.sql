@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SynchronizeJobStatsWithDMS] ******/
+/****** Object:  StoredProcedure [dbo].[synchronize_job_stats_with_dms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SynchronizeJobStatsWithDMS]
+CREATE PROCEDURE [dbo].[synchronize_job_stats_with_dms]
 /****************************************************
 **
 **  Desc:
@@ -16,14 +15,15 @@ CREATE PROCEDURE [dbo].[SynchronizeJobStatsWithDMS]
 **  Auth:   mem
 **          02/27/2010 mem - Initial version
 **          02/06/2023 bcg - Update column names from views
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobListToProcess varchar(max) = '',            -- Jobs to process; if blank, then will process all jobs in T_Jobs
-    @InfoOnly tinyint = 0,
+    @jobListToProcess varchar(max) = '',            -- Jobs to process; if blank, then will process all jobs in T_Jobs
+    @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
 
     declare @myError int
@@ -62,7 +62,7 @@ As
         SELECT T_Jobs.Job
         FROM T_Jobs
             INNER JOIN ( SELECT Value AS Job
-                        FROM dbo.udfParseDelimitedIntegerList ( @JobListToProcess, ',' )
+                        FROM dbo.parse_delimited_integer_list ( @JobListToProcess, ',' )
                         ) ValueQ
             ON T_Jobs.Job = ValueQ.Job
         WHERE T_Jobs.State IN (4,5)
@@ -136,7 +136,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithDMS] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[synchronize_job_stats_with_dms] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SynchronizeJobStatsWithDMS] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[synchronize_job_stats_with_dms] TO [Limited_Table_Write] AS [dbo]
 GO

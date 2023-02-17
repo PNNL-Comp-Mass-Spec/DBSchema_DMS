@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_param_org_db_info_using_data_pkg] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
+CREATE PROCEDURE [dbo].[update_job_param_org_db_info_using_data_pkg]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +19,7 @@ CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
 **          01/31/2022 mem - Add support for MSFragger
 **                         - Add parameters @debugMode and @scriptNameForDebug
 **          02/01/2023 mem - Use new synonym name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg]
     @message varchar(512)= '' output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -108,13 +108,13 @@ As
         Set @dataPackageID = -1
 
         If @debugMode > 0
-            Print 'UpdateJobParamOrgDbInfoUsingDataPkg: ' + @message
+            Print 'update_job_param_org_db_info_using_data_pkg: ' + @message
     End
 
     If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%' AND NOT @scriptName LIKE 'MSFragger%'
     Begin -- <a>
         If @debugMode > 0
-            Print 'UpdateJobParamOrgDbInfoUsingDataPkg: Looking update OrgDB info for jobs associated with data package ' + Cast(@dataPackageID As Varchar(12)) + ' for script ' + @scriptName
+            Print 'update_job_param_org_db_info_using_data_pkg: Looking update OrgDB info for jobs associated with data package ' + Cast(@dataPackageID As Varchar(12)) + ' for script ' + @scriptName
 
         ---------------------------------------------------
         -- Lookup the OrgDB info for jobs associated with data package @dataPackageID
@@ -183,7 +183,7 @@ As
             If @debugMode > 0
             Begin
                 Print ''
-                Print 'UpdateJobParamOrgDbInfoUsingDataPkg would update the following parameters for job ' + Cast (@Job As Varchar(12))
+                Print 'update_job_param_org_db_info_using_data_pkg would update the following parameters for job ' + Cast (@Job As Varchar(12))
                 Print '  OrganismName=         ' + @organismName
                 Print '  LegacyFastaFileName=  ' + @legacyFastaFileName
                 Print '  ProteinCollectionList=' + @proteinCollectionList
@@ -191,10 +191,10 @@ As
             End
             Else
             Begin
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'OrganismName',          @value=@organismName,          @DeleteParam=0
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'LegacyFastaFileName',   @value=@legacyFastaFileName,   @DeleteParam=0
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value=@proteinCollectionList, @DeleteParam=0
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value=@proteinOptions,        @DeleteParam=0
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'OrganismName',          @value=@organismName,          @DeleteParam=0
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'LegacyFastaFileName',   @value=@legacyFastaFileName,   @DeleteParam=0
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'ProteinCollectionList', @value=@proteinCollectionList, @DeleteParam=0
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'ProteinOptions',        @value=@proteinOptions,        @DeleteParam=0
             End
 
             Set @message = 'Defined OrgDb related parameters for job ' + Convert(varchar(12), @job)
@@ -218,7 +218,7 @@ As
             If @debugMode > 0
             Begin
                 Print ''
-                Print 'UpdateJobParamOrgDbInfoUsingDataPkg would delete following parameters for job ' + Cast (@Job As Varchar(12)) + ' since the data package ID is 0'
+                Print 'update_job_param_org_db_info_using_data_pkg would delete following parameters for job ' + Cast (@Job As Varchar(12)) + ' since the data package ID is 0'
                 Print '  OrganismName'
                 Print '  LegacyFastaFileName'
                 Print '  ProteinCollectionList'
@@ -226,10 +226,10 @@ As
             End
             Else
             Begin
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'OrganismName',          @value='',  @DeleteParam=1
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'LegacyFastaFileName',   @value='',  @DeleteParam=1
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinCollectionList', @value='',  @DeleteParam=1
-                Exec AddUpdateJobParameter @job, 'PeptideSearch', 'ProteinOptions',        @value='',  @DeleteParam=1
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'OrganismName',          @value='',  @DeleteParam=1
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'LegacyFastaFileName',   @value='',  @DeleteParam=1
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'ProteinCollectionList', @value='',  @DeleteParam=1
+                Exec add_update_job_parameter @job, 'PeptideSearch', 'ProteinOptions',        @value='',  @DeleteParam=1
             End
 
             Set @messageAddon = 'Deleted OrgDb related parameters from the PeptideSearch section of the job parameters for job ' + Convert(varchar(12), @job)
@@ -249,7 +249,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobParamOrgDbInfoUsingDataPkg] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_param_org_db_info_using_data_pkg] TO [DDL_Viewer] AS [dbo]
 GO

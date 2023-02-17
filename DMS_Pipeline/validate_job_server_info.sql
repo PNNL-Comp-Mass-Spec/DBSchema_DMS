@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateJobServerInfo] ******/
+/****** Object:  StoredProcedure [dbo].[validate_job_server_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ValidateJobServerInfo
+CREATE PROCEDURE [dbo].[validate_job_server_info]
 /****************************************************
 **
 **  Desc:
@@ -15,16 +15,16 @@ CREATE PROCEDURE dbo.ValidateJobServerInfo
 **  Date:   07/12/2011 mem - Initial version
 **          11/14/2011 mem - Updated to support Dataset Name being blank
 **          12/21/2016 mem - Use job parameter DatasetFolderName when constructing the transfer folder path
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @UseJobParameters tinyint = 1,      -- When non-zero, then preferentially uses T_Job_Parameters; otherwise, directly queries DMS
+    @job int,
+    @useJobParameters tinyint = 1,      -- When non-zero, then preferentially uses T_Job_Parameters; otherwise, directly queries DMS
     @message varchar(256) = '',
-    @DebugMode tinyint = 0
-
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -59,15 +59,15 @@ As
         ---------------------------------------------------
         --
         SELECT @TransferFolderPath = [Value]
-        FROM dbo.GetJobParamTableLocal ( @Job )
+        FROM dbo.get_job_param_table_local ( @Job )
         WHERE [Name] = 'transferFolderPath'
 
         SELECT @Dataset = [Value]
-        FROM dbo.GetJobParamTableLocal ( @Job )
+        FROM dbo.get_job_param_table_local ( @Job )
         WHERE [Name] = 'DatasetNum'
 
         SELECT @DatasetFolderName = [Value]
-        FROM dbo.GetJobParamTableLocal ( @Job )
+        FROM dbo.get_job_param_table_local ( @Job )
         WHERE [Name] = 'DatasetFolderName'
 
         If @DebugMode <> 0
@@ -91,7 +91,7 @@ As
         --
         INSERT INTO @Job_Parameters
             (Job, Step_Number, [Section], [Name], Value)
-        execute GetJobParamTable @job, @SettingsFileOverride='', @DebugMode=@DebugMode
+        execute get_job_param_table @job, @SettingsFileOverride='', @DebugMode=@DebugMode
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -118,18 +118,18 @@ As
         --
         If IsNull(@DatasetFolderName, '') <> ''
         Begin
-            Set @TransferFolderPath = dbo.udfCombinePaths(@TransferFolderPath, @DatasetFolderName)
+            Set @TransferFolderPath = dbo.combine_paths(@TransferFolderPath, @DatasetFolderName)
         End
         Else
         Begin
             If IsNull(@Dataset, '') <> ''
-                Set @TransferFolderPath = dbo.udfCombinePaths(@TransferFolderPath, @Dataset)
+                Set @TransferFolderPath = dbo.combine_paths(@TransferFolderPath, @Dataset)
         End
 
         If Right(@TransferFolderPath, 1) <> '\'
             Set @TransferFolderPath = @TransferFolderPath + '\'
 
-        Set @StorageServerName = dbo.udfExtractServerName(@TransferFolderPath)
+        Set @StorageServerName = dbo.extract_server_name(@TransferFolderPath)
 
         UPDATE T_Jobs
         SET Transfer_Folder_Path = @TransferFolderPath,
@@ -149,7 +149,7 @@ As
     Else
     Begin
         Set @message = 'Unable to determine TransferFolderPath and/or Dataset name for job ' + Convert(varchar(12), @job)
-        Exec PostLogEntry 'Error', @message, 'ValidateJobServerInfo'
+        Exec post_log_entry 'Error', @message, 'validate_job_server_info'
         Set @myError = 52005
 
         If @DebugMode <> 0
@@ -159,5 +159,5 @@ As
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateJobServerInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_job_server_info] TO [DDL_Viewer] AS [dbo]
 GO

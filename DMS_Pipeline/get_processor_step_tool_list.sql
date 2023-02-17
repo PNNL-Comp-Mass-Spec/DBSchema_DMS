@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetProcessorStepToolList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_processor_step_tool_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[GetProcessorStepToolList]
+CREATE FUNCTION [dbo].[get_processor_step_tool_list]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +16,7 @@ CREATE FUNCTION [dbo].[GetProcessorStepToolList]
 **  Auth:   mem
 **  Date:   03/30/2009
 **          09/02/2009 mem - Now using T_Processor_Tool_Groups and T_Processor_Tool_Group_Details to determine the processor tool priorities for the given processor
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -46,7 +46,6 @@ AS
         RETURN @list
     END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetProcessorStepToolList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_processor_step_tool_list] TO [DDL_Viewer] AS [dbo]
 GO

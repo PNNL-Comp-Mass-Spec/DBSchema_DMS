@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddDataFolderCreateTask] ******/
+/****** Object:  StoredProcedure [dbo].[add_data_folder_create_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddDataFolderCreateTask
+CREATE PROCEDURE [dbo].[add_data_folder_create_task]
 /****************************************************
 **
 **  Desc:
@@ -15,23 +15,24 @@ CREATE PROCEDURE dbo.AddDataFolderCreateTask
 **
 **  Auth:   mem
 **  Date:   03/17/2011 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @PathLocalRoot varchar(256),            -- Required, for example: F:\DataPkgs
-    @PathSharedRoot varchar(256),           -- Required, for example: \\protoapps\DataPkgs\
-    @FolderPath varchar(512),               -- Required, for example: Public\2011\264_PNWRCE_Dengue_iTRAQ
-    @SourceDB varchar(128),                 -- Optional, for example: DMS_Data_Package
-    @SourceTable varchar(256),              -- Optional, for example: T_Data_Package
-    @SourceID int,                          -- Optional, for example: 264
-    @SourceIDFieldName varchar(128),        -- Optional, for example: ID
-    @Command varchar(64) = 'add',           -- Optional, for example: add
+    @pathLocalRoot varchar(256),            -- Required, for example: F:\DataPkgs
+    @pathSharedRoot varchar(256),           -- Required, for example: \\protoapps\DataPkgs\
+    @folderPath varchar(512),               -- Required, for example: Public\2011\264_PNWRCE_Dengue_iTRAQ
+    @sourceDB varchar(128),                 -- Optional, for example: DMS_Data_Package
+    @sourceTable varchar(256),              -- Optional, for example: T_Data_Package
+    @sourceID int,                          -- Optional, for example: 264
+    @sourceIDFieldName varchar(128),        -- Optional, for example: ID
+    @command varchar(64) = 'add',           -- Optional, for example: add
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -44,7 +45,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddDataFolderCreateTask', @raiseError = 1;
+    Exec @authorized = Verify_SP_Authorized 'add_data_folder_create_task', @raiseError = 1;
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -93,7 +94,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddDataFolderCreateTask] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_data_folder_create_task] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddDataFolderCreateTask] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_data_folder_create_task] TO [DMS_SP_User] AS [dbo]
 GO

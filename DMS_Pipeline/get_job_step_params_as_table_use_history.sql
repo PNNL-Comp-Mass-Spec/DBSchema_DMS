@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamsAsTableUseHistory] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params_as_table_use_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.GetJobStepParamsAsTableUseHistory
+CREATE PROCEDURE [dbo].[get_job_step_params_as_table_use_history]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE PROCEDURE dbo.GetJobStepParamsAsTableUseHistory
 **  Auth:   mem
 **          07/31/2013 mem - Initial release
 **          01/05/2018 mem - Add parameters @section, @paramName, and @firstParameterValue
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -25,7 +26,7 @@ CREATE PROCEDURE dbo.GetJobStepParamsAsTableUseHistory
     @paramName varchar(128) = '',       -- Optional parameter name to filter on, for example: SourceJob
     @message varchar(512) = '' output,
     @firstParameterValue varchar(1024) = '' output,     -- The value of the first parameter in the retrieved job parameters; useful when using both @section and @paramName
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
 AS
     set nocount on
@@ -57,10 +58,10 @@ AS
     )
 
     ---------------------------------------------------
-    -- Call GetJobStepParamsFromHistoryWork to populate the temporary table
+    -- Call get_job_step_params_from_history_work to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = GetJobStepParamsFromHistoryWork @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_job_step_params_from_history_work @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 
@@ -107,9 +108,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsAsTableUseHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_as_table_use_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetJobStepParamsAsTableUseHistory] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_job_step_params_as_table_use_history] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetJobStepParamsAsTableUseHistory] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_job_step_params_as_table_use_history] TO [svc-dms] AS [dbo]
 GO

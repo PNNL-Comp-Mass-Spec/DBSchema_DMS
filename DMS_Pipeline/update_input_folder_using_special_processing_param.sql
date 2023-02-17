@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateInputFolderUsingSpecialProcessingParam] ******/
+/****** Object:  StoredProcedure [dbo].[update_input_folder_using_special_processing_param] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateInputFolderUsingSpecialProcessingParam
+CREATE PROCEDURE [dbo].[update_input_folder_using_special_processing_param]
 /****************************************************
 **
 **  Desc:   Updates the input folder name using the SourceJob:0000 tag defined for the specified jobs
@@ -14,18 +14,19 @@ CREATE PROCEDURE UpdateInputFolderUsingSpecialProcessingParam
 **
 **  Auth:   mem
 **  Date:   03/21/2011 mem - Initial Version
-**          03/22/2011 mem - Now calling AddUpdateJobParameter to store the SourceJob in T_Job_Parameters
+**          03/22/2011 mem - Now calling add_update_job_parameter to store the SourceJob in T_Job_Parameters
 **          04/04/2011 mem - Updated to use the Special_Processing param instead of the job comment
 **          07/13/2012 mem - Now determining job parameters with additional items if SourceJob2 is defined: SourceJob2, SourceJob2Dataset, SourceJob2FolderPath, and SourceJob2FolderPathArchive
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobList varchar(max),
+    @jobList varchar(max),
     @infoOnly tinyint = 0,
-    @ShowResults tinyint = 2,               -- 0 to not show results, 1 to show results if #Tmp_Source_Job_Folders is populated; 2 to show results even if #Tmp_Source_Job_Folders is not populated
+    @showResults tinyint = 2,               -- 0 to not show results, 1 to show results if #Tmp_Source_Job_Folders is populated; 2 to show results even if #Tmp_Source_Job_Folders is not populated
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -83,7 +84,7 @@ As
     SELECT Value AS Job,
            IsNull(J.Script, '') AS Script,
            CASE WHEN J.Job IS NULL THEN 'Job Number not found in T_Jobs' ELSE '' END
-    FROM dbo.udfParseDelimitedIntegerList ( @JobList, ',' ) JL
+    FROM dbo.parse_delimited_integer_list ( @JobList, ',' ) JL
          LEFT OUTER JOIN T_Jobs J
            ON JL.VALUE = J.Job
     --
@@ -154,7 +155,7 @@ As
     Begin -- <a2>
         -- Lookup the SourceJob info for each job in #Tmp_Source_Job_Folders
         -- This procedure examines the Special_Processing parameter for each job (in T_Job_Parameters)
-        exec LookupSourceJobFromSpecialProcessingParam @message=@message output, @PreviewSql=@infoOnly
+        exec lookup_source_job_from_special_processing_param @message=@message output, @PreviewSql=@infoOnly
 
         If @infoOnly = 0
         Begin -- <b2>
@@ -195,16 +196,16 @@ As
                     If IsNull(@SourceJob, 0) > 0
                     Begin
                         Set @SourceJobText = Convert(varchar(12), @SourceJob)
-                        Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob', @SourceJobText, @DeleteParam=0, @infoOnly=0
+                        Exec add_update_job_parameter @Job, 'JobParameters', 'SourceJob', @SourceJobText, @DeleteParam=0, @infoOnly=0
                     End
 
                     If IsNull(@SourceJob2, 0) > 0
                     Begin
                         Set @SourceJobText = Convert(varchar(12), @SourceJob2)
-                        Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2', @SourceJobText, @DeleteParam=0, @infoOnly=0
-                        Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2Dataset', @SourceJob2Dataset, @DeleteParam=0, @infoOnly=0
-                        Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2FolderPath', @SourceJob2FolderPath, @DeleteParam=0, @infoOnly=0
-                        Exec AddUpdateJobParameter @Job, 'JobParameters', 'SourceJob2FolderPathArchive', @SourceJob2FolderPathArchive, @DeleteParam=0, @infoOnly=0
+                        Exec add_update_job_parameter @Job, 'JobParameters', 'SourceJob2', @SourceJobText, @DeleteParam=0, @infoOnly=0
+                        Exec add_update_job_parameter @Job, 'JobParameters', 'SourceJob2Dataset', @SourceJob2Dataset, @DeleteParam=0, @infoOnly=0
+                        Exec add_update_job_parameter @Job, 'JobParameters', 'SourceJob2FolderPath', @SourceJob2FolderPath, @DeleteParam=0, @infoOnly=0
+                        Exec add_update_job_parameter @Job, 'JobParameters', 'SourceJob2FolderPathArchive', @SourceJob2FolderPathArchive, @DeleteParam=0, @infoOnly=0
                     End
 
                 End -- </d>
@@ -259,5 +260,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInputFolderUsingSpecialProcessingParam] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_input_folder_using_special_processing_param] TO [DDL_Viewer] AS [dbo]
 GO

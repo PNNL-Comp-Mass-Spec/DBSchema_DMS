@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MergeJobsToMainTables] ******/
+/****** Object:  StoredProcedure [dbo].[merge_jobs_to_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MergeJobsToMainTables
+CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
 /****************************************************
 **
 **  Desc:   Merges data in the temp tables into T_Jobs, T_Job_Steps, etc.
@@ -20,13 +20,14 @@ CREATE PROCEDURE MergeJobsToMainTables
 **          10/17/2011 mem - Added column Memory_Usage_MB
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          11/18/2015 mem - Add Actual_CPU_Load
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output,
-    @InfoOnly tinyint = 0
+    @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -42,7 +43,7 @@ As
         SELECT '#Jobs' as [Table], * FROM #Jobs
         SELECT '#Job_Parameters ' as [Table], * FROM #Job_Parameters
 
-        -- No need to output these tables, since SP CreateJobSteps will have already displayed them
+        -- No need to output these tables, since SP create_job_steps will have already displayed them
         -- SELECT '#Job_Steps ' as [Table], * FROM #Job_Steps
         -- SELECT '#Job_Step_Dependencies' as [Table], * FROM #Job_Step_Dependencies
 
@@ -54,7 +55,7 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'MergeJobsToMainTables'
+    set @transName = 'merge_jobs_to_main_tables'
     --
     begin transaction @transName
     --
@@ -201,7 +202,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MergeJobsToMainTables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[merge_jobs_to_main_tables] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MergeJobsToMainTables] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[merge_jobs_to_main_tables] TO [Limited_Table_Write] AS [dbo]
 GO

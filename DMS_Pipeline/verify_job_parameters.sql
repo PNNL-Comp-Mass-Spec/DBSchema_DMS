@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[VerifyJobParameters] ******/
+/****** Object:  StoredProcedure [dbo].[verify_job_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[VerifyJobParameters]
+CREATE PROCEDURE [dbo].[verify_job_parameters]
 /****************************************************
 **
 **  Desc:   Check input parameters against the definition for the script
@@ -21,6 +20,7 @@ CREATE PROCEDURE [dbo].[VerifyJobParameters]
 **                         - Add arguments @dataPackageID and @debugMode
 **          01/31/2022 mem - Add support for MSFragger
 **          04/11/2022 mem - Use varchar(4000) when populating temporary tables
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -231,17 +231,17 @@ AS
             return @myError
         End
 
-        exec @myError = dbo.S_ValidateProteinCollectionParams
+        exec @myError = dbo.s_validate_protein_collection_params
                         @scriptBaseName,
                         @organismDBName output,
                         @organismName,
                         @protCollNameList output,
                         @protCollOptionsList output,
-                        @ownerPRN = '',
+                        @ownerUsername = '',
                         @message = @message output,
                         @debugMode = @debugMode
 
-        If @myError = 0 AND Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList) <> 'na'
+        If @myError = 0 AND Len(@protCollNameList) > 0 And dbo.validate_na_parameter(@protCollNameList) <> 'na'
         Begin
             ---------------------------------------------------
             -- Validate @protCollNameList
@@ -250,7 +250,7 @@ AS
             --  if @protCollNameList is updated
             ---------------------------------------------------
             --
-            exec @myError = dbo.ValidateProteinCollectionListForDataPackage
+            exec @myError = dbo.validate_protein_collection_list_for_data_package
                                 @dataPackageID,
                                 @protCollNameList=@protCollNameList output,
                                 @collectionCountAdded=@collectionCountAdded output,
@@ -286,9 +286,8 @@ AS
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[VerifyJobParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[verify_job_parameters] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[VerifyJobParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[verify_job_parameters] TO [Limited_Table_Write] AS [dbo]
 GO

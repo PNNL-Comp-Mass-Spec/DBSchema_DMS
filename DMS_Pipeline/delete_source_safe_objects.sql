@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteSourceSafeObjects] ******/
+/****** Object:  StoredProcedure [dbo].[delete_source_safe_objects] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.DeleteSourceSafeObjects
+CREATE PROCEDURE [dbo].[delete_source_safe_objects]
 /****************************************************
 **
 **  Desc:
@@ -13,12 +13,13 @@ CREATE PROCEDURE dbo.DeleteSourceSafeObjects
 **
 **  Auth:   mem
 **          01/07/2009 mem - initial release
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -100,7 +101,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteSourceSafeObjects] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_source_safe_objects] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteSourceSafeObjects] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_source_safe_objects] TO [Limited_Table_Write] AS [dbo]
 GO

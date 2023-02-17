@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveJobsToMainTables] ******/
+/****** Object:  StoredProcedure [dbo].[move_jobs_to_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE MoveJobsToMainTables
+CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
 /****************************************************
 **
 **  Desc:
@@ -24,13 +24,14 @@ CREATE PROCEDURE MoveJobsToMainTables
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          09/14/2015 mem - Added parameter @DebugMode
 **          11/18/2015 mem - Add Actual_CPU_Load
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -46,7 +47,7 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'MoveJobsToMainTables'
+    set @transName = 'move_jobs_to_main_tables'
 
     ---------------------------------------------------
     -- populate actual tables from accumulated entries
@@ -177,7 +178,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveJobsToMainTables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_jobs_to_main_tables] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveJobsToMainTables] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_jobs_to_main_tables] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamsWork] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobStepParamsWork]
+CREATE PROCEDURE [dbo].[get_job_step_params_work]
 /****************************************************
 **
 **  Desc:
@@ -38,6 +37,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsWork]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **          07/27/2022 mem - Move check for missing ToolName parameter to after adding job parameters using T_Job_Parameters
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -71,7 +71,7 @@ AS
     set @debugMode = IsNull(@debugMode, 0)
 
     If @debugMode <> 0
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get basic job step parameters'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_work: Get basic job step parameters'
 
     ---------------------------------------------------
     -- Get basic job step parameters
@@ -104,7 +104,7 @@ AS
     end
 
     If @debugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get shared results folder name list'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_work: Get shared results folder name list'
 
     ---------------------------------------------------
     -- Lookup data package ID and script name in T_Jobs
@@ -154,7 +154,7 @@ AS
     end
 
     If @debugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job step parameters'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_work: Get job step parameters'
 
     ---------------------------------------------------
     -- Get input and output folder names for individual steps
@@ -224,7 +224,7 @@ AS
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
 
     If @debugMode <> 0
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsWork: Get job parameters using cross apply'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_work: Get job parameters using cross apply'
 
     ---------------------------------------------------
     -- Get job parameters
@@ -284,9 +284,8 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsWork] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_work] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsWork] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_work] TO [Limited_Table_Write] AS [dbo]
 GO

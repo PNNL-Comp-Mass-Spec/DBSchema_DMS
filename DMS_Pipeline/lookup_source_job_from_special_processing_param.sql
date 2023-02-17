@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LookupSourceJobFromSpecialProcessingParam] ******/
+/****** Object:  StoredProcedure [dbo].[lookup_source_job_from_special_processing_param] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
+CREATE PROCEDURE [dbo].[lookup_source_job_from_special_processing_param]
 /****************************************************
 **
 **  Desc:   Looks up the source job defined for a new job
@@ -29,19 +28,20 @@ CREATE PROCEDURE LookupSourceJobFromSpecialProcessingParam
 **  Date:   03/21/2011 mem - Initial Version
 **          04/04/2011 mem - Updated to use the Special_Processing param instead of the job comment
 **          04/20/2011 mem - Updated to support cases where @SpecialProcessingText contains ORDER BY
-**          05/03/2012 mem - Now calling LookupSourceJobFromSpecialProcessingText to parse @SpecialProcessingText
-**          05/04/2012 mem - Now passing @TagName and @AutoQueryUsed to LookupSourceJobFromSpecialProcessingText
+**          05/03/2012 mem - Now calling lookup_source_job_from_special_processing_text to parse @SpecialProcessingText
+**          05/04/2012 mem - Now passing @TagName and @AutoQueryUsed to lookup_source_job_from_special_processing_text
 **          07/12/2012 mem - Now looking up details for Job2 (if defined in the Special_Processing text)
 **          07/13/2012 mem - Now storing SourceJob2Dataset in #Tmp_Source_Job_Folders
 **          03/11/2013 mem - Now overriding @SourceJobResultsFolder if there is a problem determining the details for Job2
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512)='' output,
-    @PreviewSql tinyint = 0
+    @previewSql tinyint = 0
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -138,7 +138,7 @@ As
                     -- Lookup the Special_Processing parameter for this job
                     --
                     SELECT @SpecialProcessingText = Value
-                    FROM dbo.GetJobParamTableLocal(@Job)
+                    FROM dbo.get_job_param_table_local(@Job)
                     WHERE [Name] = 'Special_Processing'
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -153,7 +153,7 @@ As
                         If Not @SpecialProcessingText LIKE '%SourceJob:%'
                         Begin
                             Set @WarningMessage = 'Special_Processing parameter for job ' + Convert(varchar(12), @Job) + ' does not contain tag "SourceJob:0000" Or "SourceJob:Auto{Sql_Where_Clause}"'
-                            execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingParam'
+                            execute post_log_entry 'Debug', @WarningMessage, 'lookup_source_job_from_special_processing_param'
                         End
                     End
                 End
@@ -162,7 +162,7 @@ As
                 Begin
                     Set @TagName = 'SourceJob'
 
-                    Exec @myError = LookupSourceJobFromSpecialProcessingText
+                    Exec @myError = lookup_source_job_from_special_processing_text
                                               @Job,
                                               @Dataset,
                                               @SpecialProcessingText,
@@ -175,7 +175,7 @@ As
 
                     If IsNull(@WarningMessage, '') <> ''
                     Begin
-                        execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingParam'
+                        execute post_log_entry 'Debug', @WarningMessage, 'lookup_source_job_from_special_processing_param'
 
                         -- Override @SourceJobResultsFolder with an error message; this will force the job to fail since the input folder will not be found
                         If @WarningMessage Like '%exception%'
@@ -238,7 +238,7 @@ As
                     --
                     Set @TagName = 'Job2'
 
-                    Exec @myError = LookupSourceJobFromSpecialProcessingText
+                    Exec @myError = lookup_source_job_from_special_processing_text
                                               @Job,
                                               @Dataset,
                                               @SpecialProcessingText,
@@ -251,7 +251,7 @@ As
 
                     If IsNull(@WarningMessage, '') <> ''
                     Begin
-                        execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingParam'
+                        execute post_log_entry 'Debug', @WarningMessage, 'lookup_source_job_from_special_processing_param'
 
                         -- Override @SourceJobResultsFolder with an error message; this will force the job to fail since the input folder will not be found
                         If @WarningMessage Like '%exception%'
@@ -279,7 +279,7 @@ As
                     Set @SourceJobResultsFolderOverride = 'UnknownFolder_Job1_and_Job2_are_both_' + Convert(varchar(12), @SourceJob)
 
                     Set @LogMessage = 'Auto-query used to lookup Job2 for job ' + Convert(varchar(12), @Job) + ': ' + IsNull(@AutoQuerySql, '')
-                    exec PostLogEntry 'Debug', @LogMessage, 'LookupSourceJobFromSpecialProcessingParam'
+                    exec post_log_entry 'Debug', @LogMessage, 'lookup_source_job_from_special_processing_param'
                 End
 
                 If @SourceJob2 > 0 AND @WarningMessage = ''
@@ -288,8 +288,8 @@ As
                     -- Lookup the results folder for @SourceJob2
                     --
                     SELECT @SourceJob2Dataset = Dataset,
-                           @SourceJob2FolderPath = dbo.udfCombinePaths(dbo.udfCombinePaths([Dataset Storage Path], [Dataset]), [Results Folder]),
-                           @SourceJob2FolderPathArchive = dbo.udfCombinePaths(dbo.udfCombinePaths([Archive Folder Path], [Dataset]), [Results Folder])
+                           @SourceJob2FolderPath = dbo.combine_paths(dbo.combine_paths([Dataset Storage Path], [Dataset]), [Results Folder]),
+                           @SourceJob2FolderPathArchive = dbo.combine_paths(dbo.combine_paths([Archive Folder Path], [Dataset]), [Results Folder])
                     FROM S_DMS_V_Analysis_Job_Info
                     WHERE Job = @SourceJob2 And Not [Results Folder] Is Null
                     --
@@ -322,9 +322,9 @@ As
             End Try
             Begin Catch
                 -- Error caught; log the error, then continue with the next job
-                Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'LookupSourceJobFromSpecialProcessingParam')
+                Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'lookup_source_job_from_special_processing_param')
 
-                exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+                exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                         @ErrorNum = @myError output, @message = @message output
 
                 Set @SourceJobResultsFolder = 'UnknownFolder_Exception_Determining_SourceJob'
@@ -350,7 +350,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupSourceJobFromSpecialProcessingParam] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_source_job_from_special_processing_param] TO [DDL_Viewer] AS [dbo]
 GO

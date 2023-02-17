@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobStepStatusHistory] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_step_status_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.UpdateJobStepStatusHistory
+CREATE PROCEDURE [dbo].[update_job_step_status_history]
 /****************************************************
 **
 **  Desc:
@@ -17,13 +17,14 @@ CREATE PROCEDURE dbo.UpdateJobStepStatusHistory
 **
 **  Auth:   mem
 **  Date:   12/05/2008
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MinimumTimeIntervalMinutes integer = 60,                       -- Set this to 0 to force the addition of new data to T_Job_Step_Status_History
-    @MinimumTimeIntervalMinutesForIdenticalStats integer = 355,     -- This controls how often identical stats will get added to T_Job_Step_Status_History
+    @minimumTimeIntervalMinutes integer = 60,                       -- Set this to 0 to force the addition of new data to T_Job_Step_Status_History
+    @minimumTimeIntervalMinutesForIdenticalStats integer = 355,     -- This controls how often identical stats will get added to T_Job_Step_Status_History
     @message varchar(128) = '' OUTPUT,
-    @InfoOnly tinyint = 0
+    @infoOnly tinyint = 0
 )
 AS
     Set NoCount On
@@ -163,7 +164,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobStepStatusHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_step_status_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobStepStatusHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_step_status_history] TO [Limited_Table_Write] AS [dbo]
 GO

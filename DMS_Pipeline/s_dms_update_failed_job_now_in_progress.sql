@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_DMS_UpdateFailedJobNowInProgress] ******/
-CREATE SYNONYM [dbo].[S_DMS_UpdateFailedJobNowInProgress] FOR [DMS5].[dbo].[UpdateFailedJobNowInProgress]
+/****** Object:  Synonym [dbo].[s_dms_update_failed_job_now_in_progress] ******/
+CREATE SYNONYM [dbo].[s_dms_update_failed_job_now_in_progress] FOR [DMS5].[dbo].[UpdateFailedJobNowInProgress]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_DMS_UpdateFailedJobNowInProgress] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_dms_update_failed_job_now_in_progress] TO [DDL_Viewer] AS [dbo]
 GO

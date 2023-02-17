@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ManageJobExecution] ******/
+/****** Object:  StoredProcedure [dbo].[manage_job_execution] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ManageJobExecution
+CREATE PROCEDURE [dbo].[manage_job_execution]
 /****************************************************
 **
 **  Desc:
@@ -17,17 +17,18 @@ CREATE PROCEDURE ManageJobExecution
 **  Auth:   grk
 **          05/08/2009 grk - Initial release
 **          09/16/2009 mem - Now updating priority and processor group directly in this DB
-**                         - Next, calls S_ManageJobExecution to update the primary DMS DB
+**                         - Next, calls s_manage_job_execution to update the primary DMS DB
 **          05/25/2011 mem - No longer updating priority in T_Job_Steps
 **          06/01/2015 mem - Removed support for option @action = 'group' because we have deprecated processor groups
 **          02/15/2016 mem - Added back support for @action = 'group'
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @parameters text = '',
     @result varchar(4096) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -125,7 +126,7 @@ As
         If @JobUpdateCount > 0
         Begin
             Set @message = 'Job priorities changed: updated ' + Convert(varchar(12), @JobUpdateCount) + ' job(s) in T_Jobs'
-            execute PostLogEntry 'Normal', @message, 'ManageJobExecution'
+            execute post_log_entry 'Normal', @message, 'manage_job_execution'
             Set @message = ''
         End
     end
@@ -152,7 +153,7 @@ As
             If @JobUpdateCount > 0
             Begin
                 Set @message = 'Updated T_Local_Job_Processors; UpdateCount=0; InsertCount=0; DeleteCount=' + Convert(varchar(12), @JobUpdateCount)
-                execute PostLogEntry 'Normal', @message, 'ManageJobExecution'
+                execute post_log_entry 'Normal', @message, 'manage_job_execution'
                 Set @message = ''
             End
         End
@@ -161,7 +162,7 @@ As
             ---------------------------------------------------
             -- Need to associate jobs with a specific processor group
             -- Given the complexity of the association, this needs to be done in DMS5,
-            -- and this will happen when S_ManageJobExecution is called
+            -- and this will happen when s_manage_job_execution is called
             ---------------------------------------------------
             Set @myError = 0
         End
@@ -186,17 +187,17 @@ As
 
 
     ---------------------------------------------------
-    --  Call S_ManageJobExecution to update the primary DMS DB
+    --  Call s_manage_job_execution to update the primary DMS DB
     ---------------------------------------------------
 
-    exec @myError = S_ManageJobExecution @parameters, @result output
+    exec @myError = s_manage_job_execution @parameters, @result output
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ManageJobExecution] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[manage_job_execution] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ManageJobExecution] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[manage_job_execution] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ManageJobExecution] TO [RBAC-Web_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[manage_job_execution] TO [RBAC-Web_Analysis] AS [dbo]
 GO

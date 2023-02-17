@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDependentSteps] ******/
+/****** Object:  StoredProcedure [dbo].[update_dependent_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateDependentSteps]
+CREATE PROCEDURE [dbo].[update_dependent_steps]
 /****************************************************
 **
 **  Desc:
@@ -39,6 +38,7 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
 **          03/02/2022 mem - For data package based jobs, skip checks for existing shared results
 **          03/10/2022 mem - Clear the completion code and completion message when skipping a job step
 **                         - Check for a job step with shared results being repeatedly skipped, then reset, then skipped again
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +48,7 @@ CREATE PROCEDURE [dbo].[UpdateDependentSteps]
     @maxJobsToProcess int = 0,
     @loopingUpdateInterval int = 5        -- Seconds between detailed logging while looping through the dependencies
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -429,7 +429,7 @@ As
                             If @infoOnly <> 0
                                 Print @msg
                             Else
-                                Exec PostLogEntry 'Warning', @msg, 'UpdateDependentSteps'
+                                Exec post_log_entry 'Warning', @msg, 'update_dependent_steps'
 
                             Set @newState = 2       -- "Enabled"
                         End
@@ -493,12 +493,12 @@ As
 
                         If @completionCode > 0
                         Begin
-                            Set @newEvaluationMessage = dbo.AppendToText(@newEvaluationMessage, 'Original completion code: ' + Cast(@completionCode As varchar(12)), 0, '; ', 512)
+                            Set @newEvaluationMessage = dbo.append_to_text(@newEvaluationMessage, 'Original completion code: ' + Cast(@completionCode As varchar(12)), 0, '; ', 512)
                         End
 
                         If IsNull(@completionMessage, '') <> ''
                         Begin
-                            Set @newEvaluationMessage = dbo.AppendToText(@newEvaluationMessage, 'Original completion msg: ' + @completionMessage, 0, '; ', 512)
+                            Set @newEvaluationMessage = dbo.append_to_text(@newEvaluationMessage, 'Original completion msg: ' + @completionMessage, 0, '; ', 512)
                         End
 
                         -- This query updates the state to @newState
@@ -555,7 +555,7 @@ As
         If DateDiff(second, @lastLogTime, GetDate()) >= @loopingUpdateInterval
         Begin
             Set @statusMessage = '... Updating dependent steps: ' + Convert(varchar(12), @rowsProcessed) + ' / ' + Convert(varchar(12), @rowCountToProcess)
-            exec PostLogEntry 'Progress', @statusMessage, 'UpdateDependentSteps'
+            exec post_log_entry 'Progress', @statusMessage, 'update_dependent_steps'
             Set @lastLogTime = GetDate()
         End
 
@@ -587,7 +587,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDependentSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dependent_steps] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDependentSteps] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dependent_steps] TO [Limited_Table_Write] AS [dbo]
 GO

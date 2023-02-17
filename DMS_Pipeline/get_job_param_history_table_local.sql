@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobParamHistoryTableLocal] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_job_param_history_table_local] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[GetJobParamHistoryTableLocal]
+CREATE FUNCTION [dbo].[get_job_param_history_table_local]
 /****************************************************
 **
 **  Desc:   Returns a table of the job parameters stored locally in T_Job_Parameters_History
@@ -12,6 +11,7 @@ CREATE FUNCTION [dbo].[GetJobParamHistoryTableLocal]
 **  Auth:   mem
 **  Date:   01/12/2012
 **          04/11/2022 mem - Use varchar(4000) when populating the table
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -57,5 +57,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobParamHistoryTableLocal] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_param_history_table_local] TO [DDL_Viewer] AS [dbo]
 GO

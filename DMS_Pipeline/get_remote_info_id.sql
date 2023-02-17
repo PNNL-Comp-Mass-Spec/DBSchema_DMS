@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetRemoteInfoID] ******/
+/****** Object:  StoredProcedure [dbo].[get_remote_info_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.GetRemoteInfoID
+CREATE PROCEDURE [dbo].[get_remote_info_id]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE PROCEDURE dbo.GetRemoteInfoID
 **
 **  Auth:   mem
 **  Date:   05/18/2017 mem - Initial release
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

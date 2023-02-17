@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AdjustParamsForLocalJob] ******/
+/****** Object:  StoredProcedure [dbo].[adjust_params_for_local_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AdjustParamsForLocalJob]
+CREATE PROCEDURE [dbo].[adjust_params_for_local_job]
 /****************************************************
 **
 **  Desc:   Adjust the job parameters for special cases, for example
@@ -17,13 +16,14 @@ CREATE PROCEDURE [dbo].[AdjustParamsForLocalJob]
 **          01/19/2012 mem - Added parameter @DataPackageID
 **          01/03/2014 grk - Added logic for CacheFolderRootPath
 **          03/14/2014 mem - Added job parameter InstrumentDataPurged
-**          06/16/2016 mem - Move data package transfer folder path logic to AddUpdateTransferPathsInParamsUsingDataPkg
+**          06/16/2016 mem - Move data package transfer folder path logic to add_update_transfer_paths_in_params_using_data_pkg
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @scriptName varchar(64),
-    @datasetNum varchar(128) = 'na',
+    @datasetName varchar(128) = 'na',
     @DataPackageID int,
     @jobParamXML xml output,            -- Input / Output parameter
     @message varchar(512) OUTPUT
@@ -64,7 +64,7 @@ AS
     --   'DataPackagePath'
     ---------------------------------------------------
 
-    exec AddUpdateTransferPathsInParamsUsingDataPkg @dataPackageID, @paramsUpdated output, @message output
+    exec add_update_transfer_paths_in_params_using_data_pkg @dataPackageID, @paramsUpdated output, @message output
 
 
     ---------------------------------------------------
@@ -156,9 +156,8 @@ AS
         SET @jobParamXML = ( SELECT * FROM #PARAMS AS Param FOR XML AUTO, TYPE)
     END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AdjustParamsForLocalJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[adjust_params_for_local_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AdjustParamsForLocalJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[adjust_params_for_local_job] TO [Limited_Table_Write] AS [dbo]
 GO

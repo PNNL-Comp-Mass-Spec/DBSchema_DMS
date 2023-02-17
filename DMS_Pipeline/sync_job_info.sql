@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SyncJobInfo] ******/
+/****** Object:  StoredProcedure [dbo].[sync_job_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SyncJobInfo]
+CREATE PROCEDURE [dbo].[sync_job_info]
 /****************************************************
 **
 **  Desc:
@@ -21,13 +20,14 @@ CREATE PROCEDURE [dbo].[SyncJobInfo]
 **          05/28/2015 mem - No longer updating T_Local_Job_Processors since we have deprecated processor groups
 **          02/15/2016 mem - Re-enabled use of T_Local_Job_Processors
 **          02/06/2023 bcg - Use synonym rather than view that simply wraps the synonym
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
     @message varchar(512)= '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -86,7 +86,7 @@ As
     Begin
         set @message = 'Error updating Archive_Busy in T_Jobs'
 
-        execute PostLogEntry 'Error', @message, 'SyncJobInfo'
+        execute post_log_entry 'Error', @message, 'sync_job_info'
         Set @message = ''
     End
 
@@ -112,7 +112,7 @@ As
     If @JobUpdateCount > 0
     Begin
         Set @message = 'Job priorities changed: updated ' + Convert(varchar(12), @JobUpdateCount) + ' job(s) in T_Jobs'
-        execute PostLogEntry 'Normal', @message, 'SyncJobInfo'
+        execute post_log_entry 'Normal', @message, 'sync_job_info'
         Set @message = ''
     End
 
@@ -150,7 +150,7 @@ As
     if @myError <> 0
     begin
         set @message = 'Error merging V_DMS_PipelineJobProcessors with T_Local_Job_Processors (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-        execute PostLogEntry 'Error', @message, 'SyncJobInfo'
+        execute post_log_entry 'Error', @message, 'sync_job_info'
         goto Done
     end
 
@@ -174,7 +174,7 @@ As
 --  If @MergeUpdateCount > 0 Or @MergeInsertCount > 0 Or @MergeDeleteCount > 0
 --  Begin
 --      Set @message = 'Updated T_Local_Job_Processors; UpdateCount=' + Convert(varchar(12), @MergeUpdateCount) + '; InsertCount=' + Convert(varchar(12), @MergeInsertCount) + '; DeleteCount=' + Convert(varchar(12), @MergeDeleteCount)
---      execute PostLogEntry 'Normal', @message, 'SyncJobInfo'
+--      execute post_log_entry 'Normal', @message, 'sync_job_info'
 --      Set @message = ''
 --  End
 
@@ -185,9 +185,8 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[sync_job_info] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncJobInfo] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[sync_job_info] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobInMainTables] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_in_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateJobInMainTables
+CREATE PROCEDURE [dbo].[update_job_in_main_tables]
 /****************************************************
 **
 **  Desc:   Updates T_Jobs, T_Job_Steps, and T_Job_Parameters
@@ -21,12 +21,13 @@ CREATE PROCEDURE UpdateJobInMainTables
 **          10/17/2011 mem - Added column Memory_Usage_MB
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          11/18/2015 mem - Add Actual_CPU_Load
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -42,7 +43,7 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'UpdateJobInMainTables'
+    set @transName = 'update_job_in_main_tables'
     --
     begin transaction @transName
     --
@@ -219,7 +220,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobInMainTables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_in_main_tables] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobInMainTables] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_in_main_tables] TO [Limited_Table_Write] AS [dbo]
 GO

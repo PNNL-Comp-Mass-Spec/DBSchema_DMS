@@ -1,15 +1,15 @@
-/****** Object:  UserDefinedFunction [dbo].[udfExtractServerName] ******/
+/****** Object:  UserDefinedFunction [dbo].[extract_server_name] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION dbo.udfExtractServerName
+CREATE FUNCTION [dbo].[extract_server_name]
 /****************************************************
 **  Extracts the server name from the given path
 **
 **  Auth:   mem
 **  Date:   03/03/2010
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
@@ -47,7 +47,6 @@ BEGIN
     RETURN  @ServerName
 END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfExtractServerName] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[extract_server_name] TO [DDL_Viewer] AS [dbo]
 GO

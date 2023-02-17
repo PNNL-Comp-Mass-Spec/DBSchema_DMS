@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RequestFolderCreateTask] ******/
+/****** Object:  StoredProcedure [dbo].[request_folder_create_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RequestFolderCreateTask
+CREATE PROCEDURE [dbo].[request_folder_create_task]
 /****************************************************
 **
 ** Desc:
@@ -12,20 +12,21 @@ CREATE PROCEDURE RequestFolderCreateTask
 **  Return values: 0: success, otherwise, error code
 **
 **  Example XML parameters returned in @parameters:
-        <root>
-        <package>264</package>
-        <Path_Local_Root>F:\DataPkgs</Path_Local_Root>
-        <Path_Shared_Root>\\protoapps\DataPkgs\</Path_Shared_Root>
-        <Path_Folder>2011\Public\264_PNWRCE_Dengue_iTRAQ</Path_Folder>
-        <cmd>add</cmd>
-        <Source_DB>DMS_Data_Package</Source_DB>
-        <Source_Table>T_Data_Package</Source_Table>
-        </root>
+**      <root>
+**      <package>264</package>
+**      <Path_Local_Root>F:\DataPkgs</Path_Local_Root>
+**      <Path_Shared_Root>\\protoapps\DataPkgs\</Path_Shared_Root>
+**      <Path_Folder>2011\Public\264_PNWRCE_Dengue_iTRAQ</Path_Folder>
+**      <cmd>add</cmd>
+**      <Source_DB>DMS_Data_Package</Source_DB>
+**      <Source_Table>T_Data_Package</Source_Table>
+**      </root>
 **
 **  Auth:   mem
 **          03/17/2011 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE PROCEDURE RequestFolderCreateTask
     @infoOnly tinyint = 0,                      -- Set to 1 to preview the task that would be returned
     @taskCountToPreview int = 10                -- The number of tasks to preview when @infoOnly >= 1
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -50,7 +51,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'RequestFolderCreateTask', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'request_folder_create_task', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -205,9 +206,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestFolderCreateTask] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_folder_create_task] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestFolderCreateTask] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_folder_create_task] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestFolderCreateTask] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_folder_create_task] TO [svc-dms] AS [dbo]
 GO

@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateTmpParamTabEntry] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_tmp_param_tab_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateTmpParamTabEntry
+CREATE PROCEDURE [dbo].[add_update_tmp_param_tab_entry]
 /****************************************************
 **
 **  Desc:   Adds or updates an entry in temp table #T_Tmp_ParamTab
-**          This procedure is typically called by GetJobParamTable
+**          This procedure is typically called by get_job_param_table
 **
 **          The calling procedure must create table #T_Tmp_ParamTab
 **
@@ -23,14 +23,15 @@ CREATE PROCEDURE AddUpdateTmpParamTabEntry
 **
 **  Auth:   mem
 **  Date:   04/20/2011 mem - Initial Version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Section varchar(128),      -- Example: JobParameters
-    @ParamName varchar(128),    -- Example: AMTDBServer
-    @ParamValue varchar(2000)   -- Example: Elmer
+    @section varchar(128),      -- Example: JobParameters
+    @paramName varchar(128),    -- Example: AMTDBServer
+    @paramValue varchar(2000)   -- Example: Elmer
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -66,7 +67,6 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateTmpParamTabEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_tmp_param_tab_entry] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RemoveSelectedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[remove_selected_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE RemoveSelectedJobs
+CREATE PROCEDURE [dbo].[remove_selected_jobs]
 /****************************************************
 **
 **  Desc:
@@ -17,17 +17,18 @@ CREATE PROCEDURE RemoveSelectedJobs
 **          02/26/2009 mem - Added parameter @LogDeletions
 **          02/28/2009 grk - Added logic to preserve record of successful shared results
 **          08/20/2013 mem - Added support for @LogDeletions=2
-**                         - Now disabling trigger trig_ud_T_Jobs when deleting rows from T_Jobs (required because stored procedure RemoveOldJobs wraps the call to this procedure with a transaction)
+**                         - Now disabling trigger trig_ud_T_Jobs when deleting rows from T_Jobs (required because stored procedure remove_old_jobs wraps the call to this procedure with a transaction)
 **          06/16/2014 mem - Now disabling trigger trig_ud_T_Job_Steps when deleting rows from T_Job_Steps
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,              -- 1 -> don't actually delete, just dump list of jobs that would have been
     @message varchar(512)='' output,
-    @LogDeletions tinyint = 0           -- When 1, then logs each deleted job number in T_Log_Entries; when 2 then prints a log message (but does not log to T_Log_Entries)
+    @logDeletions tinyint = 0           -- When 1, then logs each deleted job number in T_Log_Entries; when 2 then prints a log message (but does not log to T_Log_Entries)
 )
-As
+AS
     Set nocount on
 
     declare @myError int
@@ -198,7 +199,7 @@ As
                     End
 
                     Set @message = 'Deleted job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
-                    Exec PostLogEntry 'Normal', @message, 'RemoveSelectedJobs'
+                    Exec post_log_entry 'Normal', @message, 'remove_selected_jobs'
 
                 End -- </d>
 
@@ -241,7 +242,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveSelectedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_selected_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveSelectedJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_selected_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

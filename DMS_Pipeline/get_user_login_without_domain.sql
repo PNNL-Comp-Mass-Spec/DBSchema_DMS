@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetUserLoginWithoutDomain] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_user_login_without_domain] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetUserLoginWithoutDomain
+CREATE FUNCTION [dbo].[get_user_login_without_domain]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION dbo.GetUserLoginWithoutDomain
 **  Auth:   mem
 **  Date:   11/08/2016 mem - Initial Version
 **          11/10/2016 mem - Add parameter @callingUser, which is used in place of DMSWebUser
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -51,5 +52,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetUserLoginWithoutDomain] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_user_login_without_domain] TO [DDL_Viewer] AS [dbo]
 GO

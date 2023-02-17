@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateProteinCollectionListForDataPackage] ******/
+/****** Object:  StoredProcedure [dbo].[validate_protein_collection_list_for_data_package] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDataPackage]
+CREATE PROCEDURE [dbo].[validate_protein_collection_list_for_data_package]
 /****************************************************
 **
 **  Desc: Check input parameters against the definition for the script
@@ -19,6 +18,7 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDataPackage]
 **          03/10/2021 mem - Validate protein collection (or FASTA file) options for MaxQuant jobs
 **                         - Rename the XML job parameters argument and make it an input/output argument
 **                         - Add argument @debugMode
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -79,7 +79,7 @@ AS
         Return 20001
     End
 
-    exec @myError = dbo.S_ValidateProteinCollectionListForDatasetTable
+    exec @myError = dbo.s_validate_protein_collection_list_for_dataset_table
                         @protCollNameList=@protCollNameList output,
                         @collectionCountAdded = @collectionCountAdded output,
                         @showMessages = @showMessages,

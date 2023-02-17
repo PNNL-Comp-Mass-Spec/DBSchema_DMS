@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetFolderCreateTaskComplete] ******/
+/****** Object:  StoredProcedure [dbo].[set_folder_create_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.SetFolderCreateTaskComplete
+CREATE PROCEDURE [dbo].[set_folder_create_task_complete]
 /****************************************************
 **
 **  Desc:
@@ -14,8 +14,9 @@ CREATE PROCEDURE dbo.SetFolderCreateTaskComplete
 **
 **  Auth:   mem
 **          03/17/2011 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -23,7 +24,7 @@ CREATE PROCEDURE dbo.SetFolderCreateTaskComplete
     @completionCode int,                    -- 0 means success; non-zero means failure
     @message varchar(512)='' output         -- Output message
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -36,7 +37,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'SetFolderCreateTaskComplete', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'set_folder_create_task_complete', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -94,7 +95,7 @@ As
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'SetStepTaskComplete'
+    set @transName = 'set_step_task_complete'
 
     -- Start transaction
     begin transaction @transName
@@ -129,9 +130,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetFolderCreateTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_folder_create_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetFolderCreateTaskComplete] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_folder_create_task_complete] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetFolderCreateTaskComplete] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_folder_create_task_complete] TO [svc-dms] AS [dbo]
 GO

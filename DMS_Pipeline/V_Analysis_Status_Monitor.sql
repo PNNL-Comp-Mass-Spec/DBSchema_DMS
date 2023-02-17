@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Status_Monitor]
 AS
 SELECT LP.ID AS Processor_ID,
        PS.Processor_Name,
-       dbo.GetProcessorStepToolList(PS.Processor_Name) AS Tools,
+       dbo.get_processor_step_tool_list(PS.Processor_Name) AS Tools,
        ISNULL(PS.Mgr_Status, 'Unknown_Status') AS Mgr_Status,
        PS.Job,
        PS.Job_Step,
@@ -26,7 +25,6 @@ SELECT LP.ID AS Processor_ID,
 FROM dbo.T_Local_Processors AS LP
      RIGHT OUTER JOIN dbo.T_Processor_Status AS PS
        ON LP.Processor_Name = PS.Processor_Name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Status_Monitor] TO [DDL_Viewer] AS [dbo]

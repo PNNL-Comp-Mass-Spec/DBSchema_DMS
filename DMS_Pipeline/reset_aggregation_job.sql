@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetAggregationJob] ******/
+/****** Object:  StoredProcedure [dbo].[reset_aggregation_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ResetAggregationJob
+CREATE PROCEDURE [dbo].[reset_aggregation_job]
 /****************************************************
 **
 **  Desc:   Resets an aggregation job
@@ -11,7 +11,7 @@ CREATE PROCEDURE dbo.ResetAggregationJob
 **          Case 1:
 **          If the job is complete (state 4), then renames the Output_Folder and resets all steps
 **
-**          Case 2:
+            Case 2:
 **          If the job has one or more failed steps, then leaves the Output Folder name unchanged but resets the failed steps
 **
 **  Auth:   mem
@@ -21,15 +21,15 @@ CREATE PROCEDURE dbo.ResetAggregationJob
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/12/2017 mem - Update Next_Try and Remote_Info_ID
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,                                           -- Job that needs to be rerun, including re-generating the shared results
-    @InfoOnly tinyint = 1,                              -- 1 to preview the changes
+    @job int,                                           -- Job that needs to be rerun, including re-generating the shared results
+    @infoOnly tinyint = 1,                              -- 1 to preview the changes
     @message varchar(512) = '' output
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -136,7 +136,7 @@ As
 
         INSERT INTO #Jobs (Job) Values (@Job)
 
-        Exec CreateResultsFolderName @Job, @tag, @resultsFolderName output, @message output
+        Exec create_results_folder_name @Job, @tag, @resultsFolderName output, @message output
 
         print @resultsFolderName
 
@@ -261,18 +261,18 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
         Print @message
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ResetAggregationJob'
+        Exec post_log_entry 'Error', @message, 'reset_aggregation_job'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetAggregationJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_aggregation_job] TO [DDL_Viewer] AS [dbo]
 GO

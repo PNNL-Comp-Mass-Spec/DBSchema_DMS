@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyRuntimeMetadataFromHistory] ******/
+/****** Object:  StoredProcedure [dbo].[copy_runtime_metadata_from_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
+CREATE PROCEDURE [dbo].[copy_runtime_metadata_from_history]
 /****************************************************
 **
 **  Desc:
@@ -31,6 +30,7 @@ CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
 **          01/04/2021 mem - Add support for PRIDE_Converter jobs
 **          11/14/2022 mem - Fix bug referencing the wrong column
 **          02/06/2023 bcg - Update after view column rename
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[CopyRuntimeMetadataFromHistory]
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -79,7 +79,7 @@ As
     --
     INSERT INTO #Tmp_Jobs (Job, UpdateRequired, Invalid)
     SELECT Value as Job, 0, 0
-    FROM dbo.udfParseDelimitedIntegerList(@jobList, ',')
+    FROM dbo.parse_delimited_integer_list(@jobList, ',')
 
     If Not Exists (SELECT * FROM #Tmp_Jobs)
     Begin

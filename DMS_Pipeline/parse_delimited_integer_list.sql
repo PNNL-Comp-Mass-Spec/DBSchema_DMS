@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udfParseDelimitedIntegerList] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_integer_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION [dbo].[udfParseDelimitedIntegerList]
+CREATE FUNCTION [dbo].[parse_delimited_integer_list]
 /****************************************************
 **
 **  Desc:
@@ -21,11 +20,12 @@ CREATE FUNCTION [dbo].[udfParseDelimitedIntegerList]
 **          03/27/2013 mem - Now replacing carriage return and line feed characters with @Delimiter
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @DelimitedList varchar(max),
-    @Delimiter varchar(2) = ','
+    @delimitedList varchar(max),
+    @delimiter varchar(2) = ','
 )
 RETURNS @tmpValues TABLE(Value int)
 AS
@@ -91,7 +91,6 @@ BEGIN
     RETURN
 END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedIntegerList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_delimited_integer_list] TO [DDL_Viewer] AS [dbo]
 GO

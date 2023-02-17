@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateSignaturesForJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[create_signatures_for_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CreateSignaturesForJobSteps]
+CREATE PROCEDURE [dbo].[create_signatures_for_job_steps]
 /****************************************************
 **
 **  Desc:   Create signatures for job steps
@@ -17,16 +16,17 @@ CREATE PROCEDURE [dbo].[CreateSignaturesForJobSteps]
 **          07/16/2014 mem - Updated capitalization of keywords
 **          03/02/2022 mem - Rename parameter @datasetID to @datasetOrDataPackageId
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @pXML xml,
+    @paramsXML xml,
     @datasetOrDataPackageId int,
     @message varchar(512) output,
     @debugMode tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -55,7 +55,7 @@ As
         xmlNode.value('@Name', 'varchar(128)') As [Name],
         xmlNode.value('@Value', 'varchar(2000)') As [Value]         -- If the value is over 2000 characters long, it will be truncated; that's OK
     FROM
-        @pXML.nodes('//Param') As R(xmlNode)
+        @paramsXML.nodes('//Param') As R(xmlNode)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -145,7 +145,7 @@ As
                 ---------------------------------------------------
                 -- get signature for rolled-up parameter string
                 --
-                exec @signature = GetSignature @s
+                exec @signature = get_signature @s
                 --
                 If @signature = 0
                 Begin
@@ -192,7 +192,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateSignaturesForJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_signatures_for_job_steps] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateSignaturesForJobSteps] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_signatures_for_job_steps] TO [Limited_Table_Write] AS [dbo]
 GO

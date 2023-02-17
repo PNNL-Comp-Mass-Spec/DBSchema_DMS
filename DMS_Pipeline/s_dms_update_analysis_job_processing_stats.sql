@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_DMS_UpdateAnalysisJobProcessingStats] ******/
-CREATE SYNONYM [dbo].[S_DMS_UpdateAnalysisJobProcessingStats] FOR [DMS5].[dbo].[UpdateAnalysisJobProcessingStats]
+/****** Object:  Synonym [dbo].[s_dms_update_analysis_job_processing_stats] ******/
+CREATE SYNONYM [dbo].[s_dms_update_analysis_job_processing_stats] FOR [DMS5].[dbo].[UpdateAnalysisJobProcessingStats]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_DMS_UpdateAnalysisJobProcessingStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_dms_update_analysis_job_processing_stats] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[CheckAddSpecialProcessingParam] ******/
+/****** Object:  StoredProcedure [dbo].[check_add_special_processing_param] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CheckAddSpecialProcessingParam
+CREATE PROCEDURE [dbo].[check_add_special_processing_param]
 /****************************************************
 **
 **  Desc:   Looks for a tagged entry in the Special_Processing parameter of #T_Tmp_ParamTab
 **          If found, then adds it as a normal parameter in the JobParameters section
-**          This procedure is typically called by GetJobParamTable
+**          This procedure is typically called by get_job_param_table
 **
 **          The calling procedure must create table #T_Tmp_ParamTab
 **
@@ -22,10 +22,11 @@ CREATE PROCEDURE CheckAddSpecialProcessingParam
 **
 **  Auth:   mem
 **  Date:   04/20/2011 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TagName varchar(64)
+    @tagName varchar(64)
 )
 AS
     declare @myError int
@@ -42,17 +43,17 @@ AS
         set @TagNameWithColon = @TagName + ':'
         set @TagValue = ''
 
-        SELECT @TagValue = dbo.ExtractTaggedName(@TagNameWithColon, Value)
+        SELECT @TagValue = dbo.extract_tagged_name(@TagNameWithColon, Value)
         FROM #T_Tmp_ParamTab
         WHERE [Name] = 'Special_Processing'
 
         If @TagValue <> ''
-            exec AddUpdateTmpParamTabEntry 'JobParameters', @TagName, @TagValue
+            exec add_update_tmp_param_tab_entry 'JobParameters', @TagName, @TagValue
 
     End
 
     RETURN
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckAddSpecialProcessingParam] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_add_special_processing_param] TO [DDL_Viewer] AS [dbo]
 GO

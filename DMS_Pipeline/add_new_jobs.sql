@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewJobs] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AddNewJobs]
+CREATE PROCEDURE [dbo].[add_new_jobs]
 /****************************************************
 **
 **  Desc: Add jobs from DMS that are in "New" state that aren't
@@ -21,14 +20,14 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 **  New       (job not         Import job:
 **             in broker)      - Add it to local job table
 **                             - Set local job state to freshly imported
-**                               (CreateJobSteps will set local state to New)
+**                               (create_job_steps will set local state to New)
 **
 **  New       failed           Resume job:
 **            holding          - Reset any failed/holding job steps to waiting
 **                             - Reset Evaluated and Triggered to 0 in T_Job_Step_Dependencies for the affected steps
 **                             - Set local job state to "resuming"
-**                               (UpdateJobState will handle final job state update)
-**                               (UpdateDependentSteps will handle final job step state updates)
+**                               (update_job_state will handle final job state update)
+**                               (update_dependent_steps will handle final job step state updates)
 **
 **  New       complete         Reset job:
 **                             - Delete entries from job, steps, parameters, and dependencies tables
@@ -46,7 +45,7 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 **          12/05/2008 mem - Now populating Transfer_Folder_Path in T_Jobs
 **          12/09/2008 grk - Clarified comment description of how DMS state affects broker
 **          01/07/2009 mem - Updated job resume logic to match steps with state of 6 or 7 in T_Job_Steps; also updated to match jobs with state of 5 or 8 in T_Jobs
-**          01/17/2009 mem - Moved updating of T_Jobs.Archive_Busy to SyncJobInfo (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
+**          01/17/2009 mem - Moved updating of T_Jobs.Archive_Busy to sync_job_info (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
 **          02/12/2009 mem - Updated job resume logic to change step states from 6 or 7 to 1=waiting (instead of 2=enabled) and to reset Evaluated and Triggered to 0 in T_Job_Step_Dependencies for the affected steps
 **                         - Added parameter @DebugMode
 **          03/02/2009 grk - added code to update job parameters when jobs are resumed (from hold or fail)
@@ -61,9 +60,9 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 **                         - Now calling UpdateInputFolderUsingSourceJobComment if needed when resuming jobs
 **          04/04/2011 mem - Now populating Special_Processing in T_Jobs
 **                         - Removed call to UpdateInputFolderUsingSourceJobComment
-**                         - Now using function GetJobParamTableLocal() to lookup a value in T_Job_Parameters
+**                         - Now using function get_job_param_table_local() to lookup a value in T_Job_Parameters
 **          07/05/2011 mem - Now updating Tool_Version_ID when resetting job steps
-**          07/12/2011 mem - Now calling ValidateJobServerInfo
+**          07/12/2011 mem - Now calling validate_job_server_info
 **          01/09/2012 mem - Now populating Owner in T_Jobs
 **          01/12/2012 mem - Now only auto-adding jobs for scripts with Backfill_to_DMS = 0
 **          01/19/2012 mem - Now populating DataPkgID in T_Jobs
@@ -74,20 +73,20 @@ CREATE PROCEDURE [dbo].[AddNewJobs]
 **          05/12/2017 mem - Update Next_Try and Remote_Info_ID
 **          03/30/2018 mem - Add support for job step states 9=Running_Remote, 10=Holding_Staging, and 16=Failed_Remote
 **          02/01/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
     @message varchar(512) = '' output,
-    @MaxJobsToProcess int = 0,
-    @LogIntervalThreshold int = 15,     -- If this procedure runs longer than this threshold, then status messages will be posted to the log
-    @LoggingEnabled tinyint = 0,        -- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
-    @LoopingUpdateInterval int = 5,     -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @logIntervalThreshold int = 15,     -- If this procedure runs longer than this threshold, then status messages will be posted to the log
+    @loggingEnabled tinyint = 0,        -- Set to 1 to immediately enable progress logging; if 0, then logging will auto-enable if @LogIntervalThreshold seconds elapse
+    @loopingUpdateInterval int = 5,     -- Seconds between detailed logging while looping through the dependencies
     @infoOnly tinyint = 0,              -- 1 to preview changes that would be made; 2 to add new jobs but do not create job steps
-    @DebugMode tinyint = 0              -- 0 for no debugging; 1 to see debug messages
+    @debugMode tinyint = 0              -- 0 for no debugging; 1 to see debug messages
 )
-As
-
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -190,7 +189,7 @@ As
     -- define transaction
     ---------------------------------------------------
     --
-    declare @transName varchar(32) = 'AddNewJobs'
+    declare @transName varchar(32) = 'add_new_jobs'
 
     ---------------------------------------------------
     -- Get list of new or held jobs from DMS
@@ -248,7 +247,7 @@ As
     Begin
         Set @LoggingEnabled = 1
         Set @StatusMessage = 'Finding jobs to reset'
-        exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+        exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
     End
 
     -- Start transaction #1
@@ -287,7 +286,7 @@ As
         Set @StatusMessage = 'Resetting ' + Convert(varchar(12), @myRowCount) + ' completed job'
         If @myRowCount <> 1
             Set @StatusMessage = @StatusMessage + 's'
-        exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+        exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
     end
 
     -- Also look for jobs where the DMS state is "New", the broker state is 2, 5, or 8 (In Progress, Failed, or Holding),
@@ -331,7 +330,7 @@ As
         Else
             Set @StatusMessage = @StatusMessage + ' that is In Progress, Failed, or Holding and has no completed or running job steps'
 
-        exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+        exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
     end
 
     --
@@ -376,7 +375,7 @@ As
             INSERT INTO #SJL (Job)
             SELECT Job FROM #Tmp_ResetJobs
             --
-            exec @myError = RemoveSelectedJobs @infoOnly, @message output, @LogDeletions=0
+            exec @myError = remove_selected_jobs @infoOnly, @message output, @LogDeletions=0
             --
             if @myError <> 0
             begin
@@ -394,7 +393,7 @@ As
         Begin
             Set @LoggingEnabled = 1
             Set @StatusMessage = 'Adding new jobs to T_Jobs'
-            exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+            exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
         End
 
         ---------------------------------------------------
@@ -408,7 +407,7 @@ As
             Comment, Special_Processing, Storage_Server, Owner, DataPkgID)
         SELECT TOP (@MaxJobsToAddResetOrResume)
             DJ.Job, DJ.Priority, DJ.Script, 0 as State, DJ.Dataset, DJ.Dataset_ID, DJ.Transfer_Folder_Path,
-            DJ.Comment, DJ.Special_Processing, dbo.udfExtractServerName(DJ.Transfer_Folder_Path) AS Storage_Server, DJ.Owner, 0 AS DataPkgID
+            DJ.Comment, DJ.Special_Processing, dbo.extract_server_name(DJ.Transfer_Folder_Path) AS Storage_Server, DJ.Owner, 0 AS DataPkgID
         FROM #Tmp_DMSJobs DJ
              INNER JOIN T_Scripts S
                ON DJ.Script = S.Script
@@ -442,7 +441,7 @@ As
     Begin
         Set @LoggingEnabled = 1
         Set @StatusMessage = 'Finding jobs to Resume'
-        exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+        exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
     End
 
     INSERT INTO #Tmp_JobsToResumeOrReset (Job, Dataset, FailedJob)
@@ -491,10 +490,10 @@ As
             -- Note:
             --   In order to avoid cross-server distributed transactions, the updates for jobs in #Tmp_JobsToResumeOrReset
             --   will occur after the transaction is committed.  This is required because
-            --   UpdateJobParameters calls CreateParametersForJob, which calls GetJobParamTable, and if a transaction
-            --   is in progress and GetJobParamTable accesses another server (via V_DMS_Pipeline_Job_Parameters), we may get these errors:
+            --   update_job_parameters calls create_parameters_for_job, which calls get_job_param_table, and if a transaction
+            --   is in progress and get_job_param_table accesses another server (via V_DMS_Pipeline_Job_Parameters), we may get these errors:
             --     OLE DB provider "SQLNCLI10" for linked server "Gigasax" returned message "The transaction manager has disabled its support for remote/network transactions.".
-            --     Msg 7391, Level 16, State 2, Procedure CreateParametersForJob, Line 46
+            --     Msg 7391, Level 16, State 2, Procedure create_parameters_for_job, Line 46
             --     The operation could not be performed because OLE DB provider "SQLNCLI10" for linked server "Gigasax" was unable to begin a distributed transaction.
             --
             --   Delaying the updates will also avoid running a potentially long While loop in the middle of a transaction
@@ -533,7 +532,7 @@ As
         Begin
             Set @LoggingEnabled = 1
             Set @StatusMessage = 'Finding jobs to Suspend (Hold)'
-            exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+            exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
         End
 
         -- Set local job state to holding for jobs
@@ -560,7 +559,7 @@ As
             Set @StatusMessage = 'Suspended ' + Convert(varchar(12), @myRowCount) + ' job'
             If @myRowCount <> 1
                 Set @StatusMessage = @StatusMessage + 's'
-            exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+            exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
         End
     End -- </SuspendUpdates>
 
@@ -579,13 +578,13 @@ As
         Set @StatusMessage = 'Resuming ' + Convert(varchar(12), @JobCountToResume) + ' job'
         If @JobCountToResume <> 1
             Set @StatusMessage = @StatusMessage + 's'
-        exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+        exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
 
         If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
         Begin
             Set @LoggingEnabled = 1
             Set @StatusMessage = 'Updating parameters for resumed jobs'
-            exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+            exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
         End
 
         -- Update parameters for jobs being resumed or reset (jobs in #Tmp_JobsToResumeOrReset)
@@ -611,11 +610,11 @@ As
                 set @continue = 0
             else
             begin
-                exec @myError = UpdateJobParameters @currJob, @infoOnly = @infoOnly, @message = @message Output
+                exec @myError = update_job_parameters @currJob, @infoOnly = @infoOnly, @message = @message Output
                 if @myError <> 0
                 begin
                     set @message = 'Error updating parameters for job ' + Convert(varchar(12), @currJob)
-                    exec PostLogEntry 'Error', @message, 'AddNewJobs'
+                    exec post_log_entry 'Error', @message, 'add_new_jobs'
                     goto Done
                 end
 
@@ -623,7 +622,7 @@ As
                 -- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
                 ---------------------------------------------------
                 --
-                exec ValidateJobServerInfo @currJob, @UseJobParameters=1, @DebugMode = @DebugMode
+                exec validate_job_server_info @currJob, @UseJobParameters=1, @DebugMode = @DebugMode
 
                 Set @JobsProcessed = @JobsProcessed + 1
             end
@@ -634,7 +633,7 @@ As
                 Set @LoggingEnabled = 1
 
                 Set @StatusMessage = '... Updating parameters for resumed jobs: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToResume)
-                exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+                exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
                 Set @LastLogTime = GetDate()
             End
         end
@@ -677,14 +676,14 @@ As
             If @myRowCount > 1
                 Set @StatusMessage = @StatusMessage + 's'
 
-            exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+            exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
         End
 
         If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
         Begin
             Set @LoggingEnabled = 1
             Set @StatusMessage = 'Updating T_Job_Steps, T_Job_Step_Dependencies, and T_Jobs for resumed jobs'
-            exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+            exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
         End
 
         -- Start transaction #2
@@ -770,8 +769,8 @@ As
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
     Begin
         Set @LoggingEnabled = 1
-        Set @StatusMessage = 'AddNewJobs Complete'
-        exec PostLogEntry 'Progress', @StatusMessage, 'AddNewJobs'
+        Set @StatusMessage = 'add_new_jobs Complete'
+        exec post_log_entry 'Progress', @StatusMessage, 'add_new_jobs'
     End
 
     ---------------------------------------------------
@@ -786,9 +785,8 @@ Done:
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

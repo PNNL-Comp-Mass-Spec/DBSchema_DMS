@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RemoveOldJobs] ******/
+/****** Object:  StoredProcedure [dbo].[remove_old_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[RemoveOldJobs]
+CREATE PROCEDURE [dbo].[remove_old_jobs]
 /****************************************************
 **
 **  Delete jobs past their expiration date
@@ -15,15 +14,16 @@ CREATE PROCEDURE [dbo].[RemoveOldJobs]
 **  Auth:   grk
 **          12/18/2008 grk - Initial release
 **          12/29/2008 mem - Updated to use Start time if Finish time is null and the Job has failed (State=5)
-**          02/19/2009 grk - Added call to RemoveSelectedJobs (Ticket #723)
-**          02/26/2009 mem - Now passing @logDeletions=0 to RemoveSelectedJobs
+**          02/19/2009 grk - Added call to remove_selected_jobs (Ticket #723)
+**          02/26/2009 mem - Now passing @logDeletions=0 to remove_selected_jobs
 **          05/31/2009 mem - Updated @intervalDaysForSuccess to support partial days (e.g. 0.5)
 **          02/24/2012 mem - Added parameter @maxJobsToProcess with a default of 25000
 **          08/20/2013 mem - Added parameter @logDeletions
-**          03/10/2014 mem - Added call to SynchronizeJobStatsWithJobSteps
+**          03/10/2014 mem - Added call to synchronize_job_stats_with_job_steps
 **          01/18/2017 mem - Now counting job state 7 (No Intermediate Files Created) as Success
 **          08/17/2021 mem - When looking for completed or inactive jobs, use the Start time if Finish is null
 **                         - Also look for jobs with state 14 = Failed, Ignore Job Step States
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +36,7 @@ CREATE PROCEDURE [dbo].[RemoveOldJobs]
     @maxJobsToProcess int = 25000,
     @logDeletions tinyint = 0               -- When 1, then logs each deleted job number in T_Log_Entries; when 2 then prints a log message (but does not log to T_Log_Entries)
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -85,7 +85,7 @@ As
     -- Make sure the job Start and Finish values are up-to-date
     ---------------------------------------------------
     --
-    Exec SynchronizeJobStatsWithJobSteps @infoOnly=0
+    Exec synchronize_job_stats_with_job_steps @infoOnly=0
 
     ---------------------------------------------------
     -- Add old successful jobs to be removed to list
@@ -164,7 +164,7 @@ As
                State
         FROM T_Jobs
         WHERE Job IN ( SELECT DISTINCT VALUE
-                       FROM dbo.udfParseDelimitedIntegerList ( @jobListOverride, ',' ) ) AND
+                       FROM dbo.parse_delimited_integer_list ( @jobListOverride, ',' ) ) AND
               NOT Job IN ( SELECT Job FROM #SJL )
     End
 
@@ -212,9 +212,9 @@ As
             Else
             Begin
                 If @infoOnly > 0
-                    Print 'Call copyJobToHistory for job ' + Cast(@JobToAdd as varchar(9)) + ' with date ' + Cast(@SaveTimeOverride as varchar(32))
+                    Print 'Call copy_job_to_history for job ' + Cast(@JobToAdd as varchar(9)) + ' with date ' + Cast(@SaveTimeOverride as varchar(32))
                 Else
-                    exec CopyJobToHistory @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
+                    exec copy_job_to_history @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
             End
         End
     End -- </c>
@@ -223,10 +223,10 @@ As
     -- Do actual deletion
     ---------------------------------------------------
 
-    Declare @transName varchar(64) = 'RemoveOldJobs'
+    Declare @transName varchar(64) = 'remove_old_jobs'
     Begin transaction @transName
 
-    exec @myError = RemoveSelectedJobs @infoOnly, @message output, @logDeletions=@logDeletions
+    exec @myError = remove_selected_jobs @infoOnly, @message output, @logDeletions=@logDeletions
 
     If @myError = 0
         Commit transaction @transName
@@ -241,7 +241,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveOldJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_old_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveOldJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_old_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_ValidateProteinCollectionParams] ******/
-CREATE SYNONYM [dbo].[S_ValidateProteinCollectionParams] FOR [DMS5].[dbo].[ValidateProteinCollectionParams]
+/****** Object:  Synonym [dbo].[s_validate_protein_collection_params] ******/
+CREATE SYNONYM [dbo].[s_validate_protein_collection_params] FOR [DMS5].[dbo].[ValidateProteinCollectionParams]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_ValidateProteinCollectionParams] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_validate_protein_collection_params] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepInputFolder] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_input_folder] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetJobStepInputFolder
+CREATE PROCEDURE [dbo].[get_job_step_input_folder]
 /****************************************************
 **
 **  Desc:   Returns the input folder for a given job and optionally job step
@@ -18,6 +18,7 @@ CREATE PROCEDURE GetJobStepInputFolder
 **
 **  Auth:   mem
 **  Date:   02/02/2017 mem - Initial release
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -84,11 +85,11 @@ AS
     RETURN
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepInputFolder] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_input_folder] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetJobStepInputFolder] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_job_step_input_folder] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepInputFolder] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_input_folder] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetJobStepInputFolder] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_job_step_input_folder] TO [svc-dms] AS [dbo]
 GO

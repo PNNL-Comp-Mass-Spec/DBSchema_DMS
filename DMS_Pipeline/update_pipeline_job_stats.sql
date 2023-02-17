@@ -1,23 +1,23 @@
-/****** Object:  StoredProcedure [dbo].[UpdatePipelineJobStats] ******/
+/****** Object:  StoredProcedure [dbo].[update_pipeline_job_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdatePipelineJobStats]
+CREATE PROCEDURE [dbo].[update_pipeline_job_stats]
 /****************************************************
 **
 **  Desc:   Update processing statistics in T_Pipeline_Job_Stats
 **
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError Int = 0
@@ -108,18 +108,17 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in UpdatePipelineJobStats'
+            Set @message = 'Error in update_pipeline_job_stats'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @InfoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'UpdatePipelineJobStats'
+            Exec post_log_entry 'Error', @message, 'update_pipeline_job_stats'
     End
 
     If Len(@message) > 0
         Print @message
 
     Return @myError
-
 
 GO

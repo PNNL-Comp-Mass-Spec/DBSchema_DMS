@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EnableDisableStepToolForDebugging] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_step_tool_for_debugging] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[EnableDisableStepToolForDebugging]
+CREATE PROCEDURE [dbo].[enable_disable_step_tool_for_debugging]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +17,7 @@ CREATE PROCEDURE [dbo].[EnableDisableStepToolForDebugging]
 **          11/22/2013 mem - Now validating @tool
 **          09/01/2017 mem - Implement functionality of @infoOnly
 **          08/26/2021 mem - Auto-change @groupName to the default value if an empty string
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[EnableDisableStepToolForDebugging]
     @groupName varchar(128) = 'Monroe Development Box',
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -178,5 +178,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EnableDisableStepToolForDebugging] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[enable_disable_step_tool_for_debugging] TO [DDL_Viewer] AS [dbo]
 GO

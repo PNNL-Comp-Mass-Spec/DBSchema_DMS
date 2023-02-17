@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateMultipleLCMSFFJobs] ******/
+/****** Object:  StoredProcedure [dbo].[create_multiple_lcms_ff_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CreateMultipleLCMSFFJobs
+CREATE PROCEDURE [dbo].[create_multiple_lcms_ff_jobs]
 /****************************************************
 **
 **  Desc:   Creates a new LC-MS Feature Finder job for a series of existing DeconTools jobs
@@ -13,18 +13,19 @@ CREATE PROCEDURE CreateMultipleLCMSFFJobs
 **  Auth:   jds
 **  Date:   10/27/2010 jds - Initial version
 **          11/24/2010 mem - Now grabbing dataset name from T_Jobs_History (if not found in T_Jobs)
-**          01/09/2012 mem - Now passing @ownerPRN to AddUpdateLocalJobInBroker
+**          01/09/2012 mem - Now passing @ownerUsername to add_update_local_job_in_broker
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobList varchar(max),                              -- Comma separated list of DeconTools jobs to process
-    @ScriptName varchar(64) = 'LCMSFeature_Finder',     -- Example: LCMSFeature_Finder
-    @LCMSFeatureFinderIniFile varchar(256),
+    @jobList varchar(max),                              -- Comma separated list of DeconTools jobs to process
+    @scriptName varchar(64) = 'LCMSFeature_Finder',     -- Example: LCMSFeature_Finder
+    @lcmsFeatureFinderIniFile varchar(256),
     @callingUser varchar(128) = '',
     @message varchar(512)='' output,
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @ScriptFirst varchar(64)
@@ -52,7 +53,7 @@ As
 
     INSERT INTO #Tmp_JobsToLoad (Job, Valid)
     SELECT Value, 0
-    FROM dbo.udfParseDelimitedIntegerList(@JobList, ',')
+    FROM dbo.parse_delimited_integer_list(@JobList, ',')
 
 
     ---------------------------------------------------
@@ -123,7 +124,7 @@ As
     End
 
     ---------------------------------------------------
-    -- Loop through the jobs and call AddUpdateLocalJobInBroker for each
+    -- Loop through the jobs and call add_update_local_job_in_broker for each
     ---------------------------------------------------
     --
     Set @refJob = 0
@@ -137,7 +138,7 @@ As
             @priority int,
             @jobParam varchar(8000),
             @comment varchar(512),
-            @ownerPRN varchar(64),
+            @ownerUsername varchar(64),
             @resultsFolderName varchar(128),
             @mode varchar(12)
 
@@ -159,9 +160,9 @@ As
             set @jobParam = '<Param Section="JobParameters" Name="sourceJob" Value="' + convert(varchar(32), @refJob) + '" Reqd="Yes"/><Param Section="JobParameters" Name="LCMSFeatureFinderIniFile" Value="' + @LCMSFeatureFinderIniFile + '" Reqd="Yes"/>'
             set @comment = 'Automated job creation'
 
-            set @ownerPRN = @callingUser
-            If IsNull(@ownerPRN, '') = ''
-                set @ownerPRN = suser_sname()
+            set @ownerUsername = @callingUser
+            If IsNull(@ownerUsername, '') = ''
+                set @ownerUsername = suser_sname()
 
             set @resultsFolderName = @resultsFolderName
             set @mode = 'add'
@@ -169,14 +170,14 @@ As
 
             set @Job = 0
 
-            exec @myError = AddUpdateLocalJobInBroker
+            exec @myError = add_update_local_job_in_broker
                             @Job = @Job OUTPUT,
                             @scriptName = @ScriptName,
                             @datasetNum = @datasetNum,
                             @priority = 1,
                             @jobParam = @jobParam,
                             @comment = 'Automatic Job creation',
-                            @ownerPRN = @ownerPRN,
+                            @ownerUsername = @ownerUsername,
                             @resultsFolderName = @resultsFolderName OUTPUT,
                             @mode = 'add',
                             @message = @message OUTPUT,
@@ -195,7 +196,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateMultipleLCMSFFJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_multiple_lcms_ff_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateMultipleLCMSFFJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_multiple_lcms_ff_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

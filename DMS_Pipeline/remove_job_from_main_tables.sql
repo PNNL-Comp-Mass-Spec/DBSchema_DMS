@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RemoveJobFromMainTables] ******/
+/****** Object:  StoredProcedure [dbo].[remove_job_from_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.RemoveJobFromMainTables
+CREATE PROCEDURE [dbo].[remove_job_from_main_tables]
 /****************************************************
 **
 **  Desc:
@@ -14,15 +14,16 @@ CREATE PROCEDURE dbo.RemoveJobFromMainTables
 **
 **  Auth:   mem
 **          11/19/2010 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,                           -- Job to remove
+    @job int,                           -- Job to remove
     @infoOnly tinyint = 0,              -- 1 -> don't actually delete, just dump list of jobs that would have been
     @message varchar(512)='' output,
-    @ValidateJobStepSuccess tinyint = 0
+    @validateJobStepSuccess tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -96,10 +97,10 @@ As
     ---------------------------------------------------
 
     declare @transName varchar(64)
-    set @transName = 'RemoveOldJobs'
+    set @transName = 'remove_old_jobs'
     begin transaction @transName
 
-    exec @myError = RemoveSelectedJobs @infoOnly, @message output, @LogDeletions=0
+    exec @myError = remove_selected_jobs @infoOnly, @message output, @LogDeletions=0
 
     if @myError = 0
         commit transaction @transName
@@ -114,7 +115,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveJobFromMainTables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_job_from_main_tables] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveJobFromMainTables] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_job_from_main_tables] TO [Limited_Table_Write] AS [dbo]
 GO

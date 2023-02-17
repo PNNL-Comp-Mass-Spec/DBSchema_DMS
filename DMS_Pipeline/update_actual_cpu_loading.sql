@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateActualCPULoading] ******/
+/****** Object:  StoredProcedure [dbo].[update_actual_cpu_loading] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UpdateActualCPULoading
+CREATE PROCEDURE [dbo].[update_actual_cpu_loading]
 /****************************************************
 **
 **  Desc:
@@ -17,12 +17,13 @@ CREATE PROCEDURE UpdateActualCPULoading
 **  Date:   11/20/2015 mem - Initial release
 **          01/05/2016 mem - Check for load values over 255
 **          05/26/2017 mem - Ignore jobs running remotely
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -130,5 +131,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateActualCPULoading] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_actual_cpu_loading] TO [DDL_Viewer] AS [dbo]
 GO

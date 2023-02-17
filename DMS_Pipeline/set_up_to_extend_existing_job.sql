@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetUpToExtendExistingJob] ******/
+/****** Object:  StoredProcedure [dbo].[set_up_to_extend_existing_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE SetUpToExtendExistingJob
+CREATE PROCEDURE [dbo].[set_up_to_extend_existing_job]
 /****************************************************
 **
 **  Desc:
@@ -13,13 +13,14 @@ CREATE PROCEDURE SetUpToExtendExistingJob
 **
 **  Auth:   grk
 **  Date:   02/03/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -35,7 +36,7 @@ As
     -- restore it from most recent successful historic job.
     ---------------------------------------------------
     --
-    exec @myError = CopyHistoryToJob @job, @message
+    exec @myError = copy_history_to_job @job, @message
     --
     if @myError <> 0
         goto Done
@@ -65,7 +66,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetUpToExtendExistingJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_up_to_extend_existing_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetUpToExtendExistingJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_up_to_extend_existing_job] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,16 +1,16 @@
-/****** Object:  StoredProcedure [dbo].[ResetFailedManagers] ******/
+/****** Object:  StoredProcedure [dbo].[reset_failed_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[ResetFailedManagers]
+CREATE PROCEDURE [dbo].[reset_failed_managers]
 /****************************************************
 **
 **  Desc:   Resets managers that report "flag file" in V_Processor_Status_Warnings
 **
 **  Auth:   12/02/2014 mem - Initial version
 **          03/29/2019 mem - Add parameter @resetAllWithError
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -18,8 +18,7 @@ CREATE PROCEDURE [dbo].[ResetFailedManagers]
     @resetAllWithError Tinyint = 0,         -- When 0, the manager must have Most_Recent_Log_Message = 'Flag file'; when 1, also matches managers with Mgr_Status = 'Stopped Error'
     @message varchar(512) = '' output
 )
-As
-
+AS
     set nocount on
 
     Declare @myError int
@@ -78,15 +77,14 @@ As
         -- Call the manager control database procedure
         -----------------------------------------------------------
         --
-        exec @myError = ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode @ManagerList, @CleanupMode=1, @showTable=1, @infoOnly=@infoOnly
+        exec @myError = ProteinSeqs.Manager_Control.dbo.set_manager_error_cleanup_mode @ManagerList, @CleanupMode=1, @showTable=1, @infoOnly=@infoOnly
 
     End
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedManagers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_managers] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ResetFailedManagers] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[reset_failed_managers] TO [DMS_SP_User] AS [dbo]
 GO

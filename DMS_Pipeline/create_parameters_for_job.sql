@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[CreateParametersForJob] ******/
+/****** Object:  StoredProcedure [dbo].[create_parameters_for_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CreateParametersForJob
+CREATE PROCEDURE [dbo].[create_parameters_for_job]
 /****************************************************
 **
-**  Desc:   Get parameters for given job into XML format, populating @pXML
+**  Desc:   Get parameters for given job into XML format, populating @paramsXML
 **
 **      In addition, makes entries in temporary table #Job_Parameters
 **
@@ -16,7 +16,7 @@ CREATE PROCEDURE CreateParametersForJob
 **      )
 **
 **
-**  Note:   The job parameters come from the DMS5 database (via GetJobParamTable),
+**  Note:   The job parameters come from the DMS5 database (via get_job_param_table),
 **          and not from the T_Job_Parameters table local to this DB
 **
 **
@@ -26,19 +26,20 @@ CREATE PROCEDURE CreateParametersForJob
 **  Auth:   grk
 **          01/31/2009 grk - Initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
 **          02/08/2009 mem - Added parameter @DebugMode
-**          06/01/2009 mem - Switched from S_GetJobParamTable (which pointed to a stored procedure in DMS5)
-**                           to GetJobParamTable, which is local to this database (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
+**          06/01/2009 mem - Switched from S_get_job_param_table (which pointed to a stored procedure in DMS5)
+**                           to get_job_param_table, which is local to this database (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **          01/05/2010 mem - Added parameter @SettingsFileOverride
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @pXML xml output,
+    @paramsXML xml output,
     @message varchar(512) output,
-    @SettingsFileOverride varchar(256) = '',    -- When defined, then will use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters (in GetJobParamTable)
-    @DebugMode tinyint = 0
+    @SettingsFileOverride varchar(256) = '',    -- When defined, then will use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters (in get_job_param_table)
+    @debugMode tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -63,7 +64,7 @@ As
     --
     INSERT INTO @Job_Parameters
         (Job, Step_Number, [Section], [Name], Value)
-    execute GetJobParamTable @job, @SettingsFileOverride, @DebugMode=@DebugMode
+    execute get_job_param_table @job, @SettingsFileOverride, @DebugMode=@DebugMode
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -102,7 +103,7 @@ As
     -- return XML
     ---------------------------------------------------
     --
-    SELECT @pXML = Parameters
+    SELECT @paramsXML = Parameters
     FROM #Job_Parameters
     WHERE Job = @job
 
@@ -114,7 +115,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateParametersForJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_parameters_for_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateParametersForJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_parameters_for_job] TO [Limited_Table_Write] AS [dbo]
 GO

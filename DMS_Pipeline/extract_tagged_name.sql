@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ExtractTaggedName] ******/
+/****** Object:  UserDefinedFunction [dbo].[extract_tagged_name] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION dbo.ExtractTaggedName
+CREATE FUNCTION [dbo].[extract_tagged_name]
 /****************************************************
 **
 **  Desc:
@@ -22,6 +21,7 @@ CREATE FUNCTION dbo.ExtractTaggedName
 **          07/29/2009 mem - Updated to return nothing if @tag is not found in @text
 **                         - Added additional delimiters when searching for the end of the text to return after the tag
 **          08/23/2012 mem - Expanded @tag from varchar(12) to varchar(64)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -57,7 +57,6 @@ BEGIN
     RETURN @ExtractedText
 END
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExtractTaggedName] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[extract_tagged_name] TO [DDL_Viewer] AS [dbo]
 GO

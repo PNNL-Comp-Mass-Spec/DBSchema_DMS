@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateJobParameter] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_job_parameter] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateJobParameter
+CREATE PROCEDURE [dbo].[add_update_job_parameter]
 /****************************************************
 **
 **  Desc:   Adds or updates an entry in the XML parameters for a given job
@@ -14,22 +14,23 @@ CREATE PROCEDURE AddUpdateJobParameter
 **  Auth:   mem
 **  Date:   03/22/2011 mem - Initial Version
 **          04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
-**          01/19/2012 mem - Now using AddUpdateJobParameterXML
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          01/19/2012 mem - Now using add_update_job_parameter_xml
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          06/22/2017 mem - If updating DataPackageID, also update T_Jobs
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @Section varchar(128),          -- Example: JobParameters
-    @ParamName varchar(128),        -- Example: SourceJob
-    @Value varchar(1024),           -- value for parameter @ParamName in section @Section
-    @DeleteParam tinyint = 0,       -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
+    @job int,
+    @section varchar(128),          -- Example: JobParameters
+    @paramName varchar(128),        -- Example: SourceJob
+    @value varchar(1024),           -- value for parameter @ParamName in section @Section
+    @deleteParam tinyint = 0,       -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -43,7 +44,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_job_parameter', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -77,10 +78,10 @@ As
     End
 
     ---------------------------------------------------
-    -- Call AddUpdateJobParameterXML to perform the work
+    -- Call add_update_job_parameter_xml to perform the work
     ---------------------------------------------------
     --
-    exec AddUpdateJobParameterXML @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
+    exec add_update_job_parameter_xml @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
 
     If @infoOnly = 0
     Begin
@@ -129,5 +130,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameter] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter] TO [DDL_Viewer] AS [dbo]
 GO

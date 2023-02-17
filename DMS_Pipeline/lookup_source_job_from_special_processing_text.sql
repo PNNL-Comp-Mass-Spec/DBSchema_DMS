@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LookupSourceJobFromSpecialProcessingText] ******/
+/****** Object:  StoredProcedure [dbo].[lookup_source_job_from_special_processing_text] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[LookupSourceJobFromSpecialProcessingText]
+CREATE PROCEDURE [dbo].[lookup_source_job_from_special_processing_text]
 /****************************************************
 **
 **  Desc:
@@ -14,7 +13,7 @@ CREATE PROCEDURE [dbo].[LookupSourceJobFromSpecialProcessingText]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:   05/03/2012 mem - Initial version (extracted from LookupSourceJobFromSpecialProcessingParam)
+**  Date:   05/03/2012 mem - Initial version (extracted from lookup_source_job_from_special_processing_param)
 **          05/04/2012 mem - Added parameters @TagName and @AutoQueryUsed
 **                         - Removed the SourceJobResultsFolder parameter
 **          07/12/2012 mem - Added support for $ThisDataset in an Auto-query Where Clause
@@ -25,20 +24,21 @@ CREATE PROCEDURE [dbo].[LookupSourceJobFromSpecialProcessingText]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          06/30/2022 mem - Update comments to use [Param File]
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @Dataset varchar(255),
-    @SpecialProcessingText varchar(1024),
-    @TagName varchar(12) = 'SourceJob',                    -- Typically 'SourceJob' or Job2'
-    @SourceJob int = 0 output,
-    @AutoQueryUsed tinyint = 0 output,
-    @WarningMessage varchar(512) = '' output,
-    @PreviewSql tinyint = 0,
-    @AutoQuerySql nvarchar(2048) = '' output            -- The auto-query SQL that was used
+    @job int,
+    @dataset varchar(255),
+    @specialProcessingText varchar(1024),
+    @tagName varchar(12) = 'SourceJob',                    -- Typically 'SourceJob' or Job2'
+    @sourceJob int = 0 output,
+    @autoQueryUsed tinyint = 0 output,
+    @warningMessage varchar(512) = '' output,
+    @previewSql tinyint = 0,
+    @autoQuerySql nvarchar(2048) = '' output            -- The auto-query SQL that was used
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -88,7 +88,7 @@ As
         ------------------------------------------------
         -- Parse the Special_Processing text to extract out the source job info
         ------------------------------------------------
-        Set @SourceJobText = dbo.ExtractTaggedName(@TagName, @SpecialProcessingText)
+        Set @SourceJobText = dbo.extract_tagged_name(@TagName, @SpecialProcessingText)
 
         If IsNull(@SourceJobText, '') <> ''
             Set @SourceJob = Try_Parse(@SourceJobText as int)
@@ -283,18 +283,18 @@ As
     End Try
     Begin Catch
         -- Error caught; log the error, then continue with the next job
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'LookupSourceJobFromSpecialProcessingText')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'lookup_source_job_from_special_processing_text')
         If @WhereClause <> ''
             Set @CurrentLocation = @CurrentLocation + '; using Sql Where Clause (see separate log entry)'
 
         Declare @message varchar(512)
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
         If @WhereClause <> ''
         Begin
             Set @WarningMessage = 'Query for SourceJob determination for job ' + Convert(varchar(12), @Job) + ': ' + @AutoQuerySql
-            execute PostLogEntry 'Debug', @WarningMessage, 'LookupSourceJobFromSpecialProcessingText'
+            execute post_log_entry 'Debug', @WarningMessage, 'lookup_source_job_from_special_processing_text'
         End
 
         If @WarningMessage = ''
@@ -304,7 +304,6 @@ As
 
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupSourceJobFromSpecialProcessingText] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_source_job_from_special_processing_text] TO [DDL_Viewer] AS [dbo]
 GO

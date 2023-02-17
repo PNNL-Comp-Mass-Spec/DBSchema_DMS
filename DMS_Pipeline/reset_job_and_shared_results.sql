@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetJobAndSharedResults] ******/
+/****** Object:  StoredProcedure [dbo].[reset_job_and_shared_results] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ResetJobAndSharedResults
+CREATE PROCEDURE [dbo].[reset_job_and_shared_results]
 /****************************************************
 **
 **  Desc:   Resets a job, including updating the appropriate tables
@@ -20,17 +20,17 @@ CREATE PROCEDURE dbo.ResetJobAndSharedResults
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/12/2017 mem - Update Next_Try and Remote_Info_ID
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,                                           -- Job that needs to be rerun, including re-generating the shared results
-    @SharedResultFolderName varchar(128) = '',          -- If blank, then will be auto-determined for the given job
-    @ResetJob tinyint = 0,                              -- Will automatically reset the job if 1, otherwise, you must manually reset the job
-    @InfoOnly tinyint = 1,                              -- 1 to preview the changes
+    @job int,                                           -- Job that needs to be rerun, including re-generating the shared results
+    @sharedResultFolderName varchar(128) = '',          -- If blank, then will be auto-determined for the given job
+    @resetJob tinyint = 0,                              -- Will automatically reset the job if 1, otherwise, you must manually reset the job
+    @infoOnly tinyint = 1,                              -- 1 to preview the changes
     @message varchar(512) = '' output
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int
@@ -74,7 +74,7 @@ As
         Output_Folder varchar(128)
     )
 
-    -- This table is used by RemoveSelectedJobs and must be named #SJL
+    -- This table is used by remove_selected_jobs and must be named #SJL
     CREATE TABLE #SJL (
         Job INT,
         State INT
@@ -186,7 +186,7 @@ As
 
                 If Exists (SELECT * FROM #SJL)
                 Begin
-                    exec RemoveSelectedJobs @infoOnly=0, @message=@RemoveJobsMessage output, @LogDeletions=1
+                    exec remove_selected_jobs @infoOnly=0, @message=@RemoveJobsMessage output, @LogDeletions=1
 
                     Set @message = @message + '; ' + @RemoveJobsMessage
                 End
@@ -251,7 +251,7 @@ As
         End
         Else
         Begin
-            -- Reset the job (but don't delete it from the tables, and don't use RemoveSelectedJobs since it would update T_Shared_Results)
+            -- Reset the job (but don't delete it from the tables, and don't use remove_selected_jobs since it would update T_Shared_Results)
 
             -- Reset dependencies
             UPDATE T_Job_Step_Dependencies
@@ -279,19 +279,19 @@ As
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ResetJobAndSharedResults'
+        Exec post_log_entry 'Error', @message, 'reset_job_and_shared_results'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetJobAndSharedResults] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_job_and_shared_results] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetJobAndSharedResults] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_job_and_shared_results] TO [Limited_Table_Write] AS [dbo]
 GO

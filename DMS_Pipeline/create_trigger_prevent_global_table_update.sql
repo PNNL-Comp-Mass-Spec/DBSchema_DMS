@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateTriggerPreventGlobalTableUpdate] ******/
+/****** Object:  StoredProcedure [dbo].[create_trigger_prevent_global_table_update] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE CreateTriggerPreventGlobalTableUpdate
+CREATE PROCEDURE [dbo].[create_trigger_prevent_global_table_update]
 /****************************************************
 **
 **  Desc:
@@ -17,11 +16,12 @@ CREATE PROCEDURE CreateTriggerPreventGlobalTableUpdate
 **  Auth:   mem
 **  Date:   02/08/2011
 **          09/11/2015 mem - Added support for the table being empty
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TableName varchar(50),                 -- Table name to create the trigger on
-    @TriggerType varchar(20) = 'Both'       -- 'Update' if to create only update trigger, 'Delete' if to create only delete trigger, 'Both' if to create both (combine) delete & update trigger
+    @tableName varchar(50),                 -- Table name to create the trigger on
+    @triggerType varchar(20) = 'Both'       -- 'Update' if to create only update trigger, 'Delete' if to create only delete trigger, 'Both' if to create both (combine) delete & update trigger
 )
 AS
 Begin
@@ -156,5 +156,5 @@ Begin
 end
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateTriggerPreventGlobalTableUpdate] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_trigger_prevent_global_table_update] TO [DDL_Viewer] AS [dbo]
 GO

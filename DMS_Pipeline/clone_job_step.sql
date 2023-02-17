@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CloneJobStep] ******/
+/****** Object:  StoredProcedure [dbo].[clone_job_step] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE CloneJobStep
+CREATE PROCEDURE [dbo].[clone_job_step]
 /****************************************************
 **
 **  Desc:
@@ -18,14 +18,15 @@ CREATE PROCEDURE CloneJobStep
 **          05/25/2011 mem - Removed priority column from #Job_Steps
 **          10/17/2011 mem - Added column Memory_Usage_MB
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
-    @pXML xml,
+    @paramsXML xml,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -57,7 +58,7 @@ As
     set @num_clones = 0
     --
     SELECT @num_clones = xmlNode.value('@Value', 'varchar(64)')
-    FROM   @pXML.nodes('//Param') AS R(xmlNode)
+    FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="NumberOfClonedSteps"]') = 1
     --
     if @num_clones = 0 goto Done
@@ -67,7 +68,7 @@ As
     set @clone_step_num_base = 0
     --
     SELECT @clone_step_num_base = xmlNode.value('@Value', 'varchar(64)')
-    FROM   @pXML.nodes('//Param') AS R(xmlNode)
+    FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="CloneStepRenumberStart"]') = 1
     --
     if @clone_step_num_base = 0 goto Done
@@ -215,7 +216,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CloneJobStep] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[clone_job_step] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CloneJobStep] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[clone_job_step] TO [Limited_Table_Write] AS [dbo]
 GO

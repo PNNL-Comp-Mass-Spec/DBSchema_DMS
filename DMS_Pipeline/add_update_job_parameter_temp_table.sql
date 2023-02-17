@@ -1,15 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateJobParameterTempTable] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_job_parameter_temp_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateJobParameterTempTable
+CREATE PROCEDURE [dbo].[add_update_job_parameter_temp_table]
 /****************************************************
 **
 **  Desc:   Adds or updates an entry in the XML parameters for a given job
 **          Alternatively, use @DeleteParam=1 to delete the given parameter
 **
-**          This procedure is nearly identical to AddUpdateJobParameter;
+**          This procedure is nearly identical to add_update_job_parameter;
 **          However, it operates on #Job_Parameters
 **
 **  Return values: 0: success, otherwise, error code
@@ -18,19 +18,20 @@ CREATE PROCEDURE AddUpdateJobParameterTempTable
 **
 **  Auth:   mem
 **  Date:   03/22/2011 mem - Initial Version
-**          01/19/2012 mem - Now using AddUpdateJobParameterXML
+**          01/19/2012 mem - Now using add_update_job_parameter_xml
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @Section varchar(128),          -- Example: JobParameters
-    @ParamName varchar(128),        -- Example: SourceJob
-    @Value varchar(1024),           -- value for parameter @ParamName in section @Section
-    @DeleteParam tinyint = 0,       -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
+    @job int,
+    @section varchar(128),          -- Example: JobParameters
+    @paramName varchar(128),        -- Example: SourceJob
+    @value varchar(1024),           -- value for parameter @ParamName in section @Section
+    @deleteParam tinyint = 0,       -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
     @message varchar(512)='' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -69,10 +70,10 @@ As
     End
 
     ---------------------------------------------------
-    -- Call AddUpdateJobParameterXML to perform the work
+    -- Call add_update_job_parameter_xml to perform the work
     ---------------------------------------------------
     --
-    exec AddUpdateJobParameterXML @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
+    exec add_update_job_parameter_xml @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
 
 
     If @infoOnly = 0
@@ -112,5 +113,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameterTempTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter_temp_table] TO [DDL_Viewer] AS [dbo]
 GO

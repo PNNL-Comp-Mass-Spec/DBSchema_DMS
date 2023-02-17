@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_transfer_paths_in_params_using_data_pkg] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
+CREATE PROCEDURE [dbo].[add_update_transfer_paths_in_params_using_data_pkg]
 /****************************************************
 **
 **  Desc:
@@ -29,6 +28,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
 **          06/09/2021 mem - Tabs to spaces
 **          06/24/2012 mem - Add parameter DataPackagePath
 **          01/09/2023 mem - Use new column name in view
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +36,7 @@ CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
     @paramsUpdated int = 0 output,          -- Output: will be 1 if #PARAMS is updated
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -166,7 +166,6 @@ As
 Done:
     Return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_transfer_paths_in_params_using_data_pkg] TO [DDL_Viewer] AS [dbo]
 GO

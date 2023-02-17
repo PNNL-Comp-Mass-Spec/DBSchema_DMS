@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoFixFailedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[auto_fix_failed_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AutoFixFailedJobs]
+CREATE PROCEDURE [dbo].[auto_fix_failed_jobs]
 /****************************************************
 **
 **  Desc:
@@ -20,13 +19,14 @@ CREATE PROCEDURE [dbo].[AutoFixFailedJobs]
 **          05/26/2017 mem - Add step state 16 (Failed_Remote)
 **          03/30/2018 mem - Reset MSGF+ steps with "Timeout expired"
 **          06/05/2018 mem - Add support for Formularity
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int
@@ -244,5 +244,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoFixFailedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_fix_failed_jobs] TO [DDL_Viewer] AS [dbo]
 GO

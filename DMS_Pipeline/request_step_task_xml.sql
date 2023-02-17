@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RequestStepTaskXML] ******/
+/****** Object:  StoredProcedure [dbo].[request_step_task_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[RequestStepTaskXML]
+CREATE PROCEDURE [dbo].[request_step_task_xml]
 /****************************************************
 **
 **  Desc:
@@ -78,7 +77,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          05/04/2017 mem - Filter on column Next_Try
 **          05/11/2017 mem - Look for jobs in state 2 or 9
 **                           Commit the transaction earlier to reduce the time that a HoldLock is on table T_Job_Steps
-**                           Pass @jobIsRunningRemote to GetJobStepParamsXML
+**                           Pass @jobIsRunningRemote to get_job_step_params_xml
 **          05/15/2017 mem - Consider MonitorRunningRemote when looking for candidate jobs
 **          05/16/2017 mem - Do not update T_Job_Step_Processing_Log if checking the status of a remotely running job
 **          05/18/2017 mem - Add parameter @remoteInfo
@@ -86,7 +85,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          05/23/2017 mem - Update Remote_Start, Remote_Finish, and Remote_Progress
 **          05/26/2017 mem - Treat state 9 (Running_Remote) as having a CPU_Load of 0
 **          06/08/2017 mem - Remove use of column MonitorRunningRemote in T_Machines since @remoteInfo replaces it
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/03/2017 mem - Use column Max_Job_Priority in table T_Processor_Tool_Group_Details
 **          02/17/2018 mem - When previewing job candidates, show jobs that would be excluded due to Next_Try
@@ -97,6 +96,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 **          02/21/2019 mem - Reset Completion_Code and Completion_Message when a job is assigned
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/06/2023 bcg - Update after view column rename
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -115,7 +115,7 @@ CREATE PROCEDURE [dbo].[RequestStepTaskXML]
     @logSPUsage tinyint = 0,
     @returnCode varchar(64) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -139,7 +139,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'RequestStepTaskXML', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'request_step_task_xml', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -190,7 +190,7 @@ As
     Declare @jobNotAvailableErrorCode int = 53000
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Starting; make sure this is a valid processor'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Starting; make sure this is a valid processor'
 
     ---------------------------------------------------
     -- Make sure this is a valid processor (and capitalize it according to T_Local_Processors)
@@ -232,7 +232,7 @@ As
         INSERT INTO T_SP_Usage( Posted_By,
                                 ProcessorID,
                                 Calling_User )
-        VALUES('RequestStepTaskXML', null, SUSER_SNAME() + ' Invalid processor: ' + @processorName)
+        VALUES('request_step_task_xml', null, SUSER_SNAME() + ' Invalid processor: ' + @processorName)
 
 
         goto Done
@@ -263,7 +263,7 @@ As
                             Posted_By,
                             ProcessorID,
                             Calling_User )
-            VALUES('RequestStepTaskXML', @ProcessorID, SUSER_SNAME())
+            VALUES('request_step_task_xml', @ProcessorID, SUSER_SNAME())
 
     end
 
@@ -413,7 +413,7 @@ As
         --
         Declare @stepsRunningRemotely int = 0
 
-        Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
+        Exec @remoteInfoID = get_remote_info_id @remoteInfo
 
         -- Note that @remoteInfoID 1 means the @remoteInfo is 'Unknown'
 
@@ -502,7 +502,7 @@ As
     )
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Populate #Tmp_CandidateJobSteps'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Populate #Tmp_CandidateJobSteps'
 
     ---------------------------------------------------
     -- Look for available Results_Transfer steps
@@ -550,7 +550,7 @@ As
             CASE
                 WHEN (J.Archive_Busy = 1)
                     -- Transfer tool steps for jobs that are in the midst of an archive operation
-                    -- The Archive_Busy flag in T_Jobs is updated by SyncJobInfo
+                    -- The Archive_Busy flag in T_Jobs is updated by sync_job_info
                     -- It uses S_DMS_V_Get_Analysis_Jobs_For_Archive_Busy (which uses V_Get_Analysis_Jobs_For_Archive_Busy) to look for jobs that have an archive in progress
                     -- However, if the dataset has been in state "Archive In Progress" for over 90 minutes, Archive_Busy will be changed back to 0 (false)
                     THEN 102
@@ -1066,7 +1066,7 @@ As
     ---------------------------------------------------
     --
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Check for jobs with Association_Type 101'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Check for jobs with Association_Type 101'
 
     Declare @cpuLoadExceeded int = 0
 
@@ -1083,7 +1083,7 @@ As
     If @throttleByStartTime <> 0
     Begin
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Check for servers that need to be throttled'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Check for servers that need to be throttled'
 
         -- The following query counts the number of job steps that recently started,
         --  grouping by storage server, and only examining steps numbers <= @maxStepNumToThrottle
@@ -1219,7 +1219,7 @@ As
     end
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Start transaction'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Start transaction'
 
     ---------------------------------------------------
     -- set up transaction parameters
@@ -1286,7 +1286,7 @@ As
                 ELSE 'Null'
                 END
 
-           Exec PostLogEntry 'Debug', @debugMsg, 'RequestStepTaskXML'
+           Exec post_log_entry 'Debug', @debugMsg, 'request_step_task_xml'
         */
 
         UPDATE T_Job_Steps
@@ -1337,7 +1337,7 @@ As
     commit transaction @transName
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Transaction committed'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Transaction committed'
 
     If @jobAssigned = 1 AND @infoOnly = 0 And @remoteInfoID <= 1
     Begin --<f>
@@ -1394,13 +1394,13 @@ As
         End
 
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Call GetJobStepParamsXML'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Call get_job_step_params_xml'
 
         ---------------------------------------------------
         -- Job was assigned; return parameters in XML
         ---------------------------------------------------
         --
-        exec @myError = GetJobStepParamsXML
+        exec @myError = get_job_step_params_xml
                                 @jobNumber,
                                 @stepNumber,
                                 @parameters output,
@@ -1431,7 +1431,7 @@ As
     If @infoOnly <> 0
     Begin
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Preview results'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Preview results'
 
         -- Preview the next @jobCountToPreview available jobs
 
@@ -1485,13 +1485,12 @@ Done:
     Set @returnCode = Cast(@myError As varchar(64))
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_step_task_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestStepTaskXML] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_step_task_xml] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestStepTaskXML] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_step_task_xml] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestStepTaskXML] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_step_task_xml] TO [svc-dms] AS [dbo]
 GO

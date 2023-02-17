@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[ReindexDatabase] ******/
+/****** Object:  StoredProcedure [dbo].[reindex_database] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE ReindexDatabase
+CREATE PROCEDURE [dbo].[reindex_database]
 /****************************************************
 **
 **  Desc:
 **      Reindexes the key tables in the database
-**      Once complete, updates ReindexDatabaseNow to 0 in T_Process_Step_Control
+**      Once complete, updates reindex_databaseNow to 0 in T_Process_Step_Control
 **
 **  Return values: 0:  success, otherwise, error code
 **
@@ -19,12 +19,13 @@ CREATE PROCEDURE ReindexDatabase
 **          10/30/2007 mem - Now calling VerifyUpdateEnabled
 **          10/09/2008 mem - Added T_Score_Inspect
 **          06/02/2009 mem - Ported to DMS_Pipeline (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -77,14 +78,14 @@ As
     -----------------------------------------------------------
 
     Set @message = 'Reindexed ' + Convert(varchar(12), @TableCount) + ' tables'
-    Exec PostLogEntry 'Normal', @message, 'ReindexDatabase'
+    Exec post_log_entry 'Normal', @message, 'reindex_database'
 
 
 Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reindex_database] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reindex_database] TO [Limited_Table_Write] AS [dbo]
 GO

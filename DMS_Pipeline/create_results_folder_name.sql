@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateResultsFolderName] ******/
+/****** Object:  StoredProcedure [dbo].[create_results_folder_name] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE CreateResultsFolderName
+CREATE PROCEDURE [dbo].[create_results_folder_name]
 /****************************************************
 **
 **  Desc:
@@ -15,7 +15,8 @@ create PROCEDURE CreateResultsFolderName
 **
 **
 **  Auth:   grk
-**          01/31/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
+**  Date:   01/31/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -24,7 +25,7 @@ create PROCEDURE CreateResultsFolderName
     @resultsFolderName varchar(128) output,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -62,7 +63,7 @@ As
     end
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateResultsFolderName] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_results_folder_name] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateResultsFolderName] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_results_folder_name] TO [Limited_Table_Write] AS [dbo]
 GO

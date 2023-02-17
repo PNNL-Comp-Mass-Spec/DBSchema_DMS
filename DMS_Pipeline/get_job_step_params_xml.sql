@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamsXML] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.GetJobStepParamsXML
+CREATE PROCEDURE [dbo].[get_job_step_params_xml]
 /****************************************************
 **
 **  Desc:
@@ -19,9 +19,10 @@ CREATE PROCEDURE dbo.GetJobStepParamsXML
 **          12/11/2008 grk - initial release
 **          01/14/2009 mem - Increased the length of the Value entries extracted from T_Job_Parameters to be 2000 characters (nvarchar(4000)), Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714
 **          05/29/2009 mem - Added parameter @DebugMode
-**          12/04/2009 mem - Moved the code that defines the job parameters to GetJobStepParamsWork
+**          12/04/2009 mem - Moved the code that defines the job parameters to get_job_step_params_work
 **          05/11/2017 mem - Add parameter @jobIsRunningRemote
 **          05/13/2017 mem - Only add RunningRemote to #Tmp_JobParamsTable if @jobIsRunningRemote is non-zero
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -29,8 +30,8 @@ CREATE PROCEDURE dbo.GetJobStepParamsXML
     @stepNumber int,
     @parameters varchar(max) output,    -- Output: job step parameters (in XML)
     @message varchar(512) output,
-    @jobIsRunningRemote tinyint = 0,    -- RequestStepTaskXML will set this to 1 if the newly started job step was state 9
-    @DebugMode tinyint = 0
+    @jobIsRunningRemote tinyint = 0,    -- request_step_task_xml will set this to 1 if the newly started job step was state 9
+    @debugMode tinyint = 0
 )
 AS
     set nocount on
@@ -55,10 +56,10 @@ AS
     )
 
     ---------------------------------------------------
-    -- Call GetJobStepParamsWork to populate the temporary table
+    -- Call get_job_step_params_work to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = GetJobStepParamsWork @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_job_step_params_work @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 
@@ -69,7 +70,7 @@ AS
     End
 
     If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: populate @st table'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_xml: populate @st table'
 
     --------------------------------------------------------------
     -- create XML correctly shaped into settings file format
@@ -88,7 +89,7 @@ AS
 
 
     If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: populate @x xml variable'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_xml: populate @x xml variable'
 
     --------------------------------------------------------------
     -- Run nested query with sections as outer
@@ -121,7 +122,7 @@ AS
     set @xp = '<sections>' + convert(varchar(max), @x) + '</sections>'
 
     If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'GetJobStepParamsXML: exiting'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_xml: exiting'
 
     ---------------------------------------------------
     -- Exit
@@ -138,7 +139,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsXML] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_xml] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RemoveDMSDeletedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[remove_dms_deleted_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RemoveDMSDeletedJobs]
+CREATE PROCEDURE [dbo].[remove_dms_deleted_jobs]
 /****************************************************
 **
 **  Desc:
@@ -19,14 +19,15 @@ CREATE PROCEDURE [dbo].[RemoveDMSDeletedJobs]
 **          04/13/2010 grk - don't delete jobs where dataset ID = 0
 **          05/26/2017 mem - Treat state 9 (Running_Remote) as an active job
 **          02/01/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,              -- 1 -> don't actually delete, just dump list of jobs that would have been
     @message varchar(512)='' output,
-    @MaxJobsToProcess int = 0
+    @maxJobsToProcess int = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -94,10 +95,10 @@ As
     ---------------------------------------------------
 
     declare @transName varchar(64)
-    set @transName = 'RemoveDMSDeletedJobs'
+    set @transName = 'remove_dms_deleted_jobs'
     begin transaction @transName
 
-    exec @myError = RemoveSelectedJobs @infoOnly, @message output, @LogDeletions = 1
+    exec @myError = remove_selected_jobs @infoOnly, @message output, @LogDeletions = 1
 
     if @myError = 0
         commit transaction @transName
@@ -111,9 +112,8 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_dms_deleted_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveDMSDeletedJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_dms_deleted_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

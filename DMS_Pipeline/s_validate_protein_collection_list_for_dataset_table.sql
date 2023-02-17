@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_ValidateProteinCollectionListForDatasetTable] ******/
-CREATE SYNONYM [dbo].[S_ValidateProteinCollectionListForDatasetTable] FOR [DMS5].[dbo].[ValidateProteinCollectionListForDatasetTable]
+/****** Object:  Synonym [dbo].[s_validate_protein_collection_list_for_dataset_table] ******/
+CREATE SYNONYM [dbo].[s_validate_protein_collection_list_for_dataset_table] FOR [DMS5].[dbo].[ValidateProteinCollectionListForDatasetTable]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_ValidateProteinCollectionListForDatasetTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_validate_protein_collection_list_for_dataset_table] TO [DDL_Viewer] AS [dbo]
 GO

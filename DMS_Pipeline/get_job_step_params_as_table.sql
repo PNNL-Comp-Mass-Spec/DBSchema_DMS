@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetJobStepParamsAsTable] ******/
+/****** Object:  StoredProcedure [dbo].[get_job_step_params_as_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
+CREATE PROCEDURE [dbo].[get_job_step_params_as_table]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +17,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
 **          12/04/2009 mem - Initial release
 **          01/05/2018 mem - Add parameters @section, @paramName, and @firstParameterValue
 **          02/12/2020 mem - Allow @section and @paramName to have wildcards
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -27,7 +27,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
     @paramName varchar(128) = '',       -- Optional parameter name to filter on, for example: SourceJob
     @message varchar(512) = '' output,
     @firstParameterValue varchar(1024) = '' output,     -- The value of the first parameter in the retrieved job parameters; useful when using both @section and @paramName
-    @DebugMode tinyint = 0
+    @debugMode tinyint = 0
 )
 AS
     set nocount on
@@ -58,10 +58,10 @@ AS
     )
 
     ---------------------------------------------------
-    -- Call GetJobStepParamsWork to populate the temporary table
+    -- Call get_job_step_params_work to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = GetJobStepParamsWork @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_job_step_params_work @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 
@@ -108,7 +108,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsAsTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_as_table] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsAsTable] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_as_table] TO [Limited_Table_Write] AS [dbo]
 GO

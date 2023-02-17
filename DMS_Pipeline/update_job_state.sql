@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobState] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateJobState]
+CREATE PROCEDURE [dbo].[update_job_state]
 /****************************************************
 **
 **  Desc:
@@ -64,7 +63,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          12/11/2008 mem - Improved null handling for comments
 **          12/15/2008 mem - Now calling SetArchiveUpdateRequired when a job successfully completes
 **          12/17/2008 grk - Calling S_SetArchiveUpdateRequired instead of DMS5.dbo.SetArchiveUpdateRequired
-**          12/18/2008 grk - Calling CopyJobToHistory when a job finishes (both success or fail)
+**          12/18/2008 grk - Calling copy_job_to_history when a job finishes (both success or fail)
 **          12/29/2008 mem - Updated logic for when to copy comment information to DMS
 **          01/12/2009 grk - Handle "No results above threshold" (http://prismtrac.pnl.gov/trac/ticket/706)
 **          02/05/2009 mem - Now populating AJ_ProcessingTimeMinutes in DMS (Ticket #722, http://prismtrac.pnl.gov/trac/ticket/722)
@@ -72,7 +71,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          02/07/2009 mem - Tweaked logic for updating Start and Finish in T_Jobs
 **          02/16/2009 mem - Updated processing time calculation to use the Maximum processing time for each step tool, then take the sum of those values to compute the total job time
 **          03/16/2009 mem - Updated to handle jobs with non-zero AJ_propagationMode values in T_Analysis_Job in DMS
-**          06/02/2009 mem - Now calling S_DMS_UpdateAnalysisJobProcessingStats instead of directly updating DMS5.dbo.T_Analysis_Job (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
+**          06/02/2009 mem - Now calling s_dms_update_analysis_job_processing_stats instead of directly updating DMS5.dbo.T_Analysis_Job (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **                         - No longer calling S_SetArchiveUpdateRequired since UpdateAnalysisJobProcessingStats does this for us
 **                         - Added parameter @MaxJobsToProcess
 **                         - Renamed synonym for T_Analysis_Job table to S_DMS_T_Analysis_Job
@@ -83,7 +82,7 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          10/25/2010 grk - Bypass updating job in DMS if job not in DMS (@jobInDMS)
 **          05/11/2011 mem - Now updating job state from Failed to Complete if all job steps are now complete and at least one of the job steps finished later than the Finish time in T_Jobs
 **          11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
-**          12/31/2011 mem - Fixed PostedBy name when calling PostLogEntry
+**          12/31/2011 mem - Fixed PostedBy name when calling post_log_entry
 **          01/12/2012 mem - Added parameter @infoOnly
 **          09/25/2012 mem - Expanded @orgDBName and Organism_DB_Name to varchar(128)
 **          02/21/2013 mem - Now updating the state of failed jobs in DMS back to state 2 if they are now in-progress or finished
@@ -95,25 +94,26 @@ CREATE PROCEDURE [dbo].[UpdateJobState]
 **          09/15/2016 mem - Update jobs in DMS5 that are in state 1=New, but are actually in progress
 **          05/13/2017 mem - Treat step state 9 (Running_Remote) as "In progress"
 **          05/26/2017 mem - Add step state 16 (Failed_Remote)
-**                         - Only call CopyJobToHistory if the job state is 4 or 5
+**                         - Only call copy_job_to_history if the job state is 4 or 5
 **          06/15/2017 mem - Expand @comment to varchar(512)
 **          10/16/2017 mem - Remove the leading semicolon from @comment
 **          01/19/2018 mem - Populate column Runtime_Minutes in T_Jobs
 **                         - Use column Proc_Time_Minutes_Completed_Steps in V_Job_Processing_Time
 **          05/10/2018 mem - Append to the job comment, rather than replacing it (provided the job completed successfully)
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          03/12/2021 mem - Expand @comment to varchar(1024)
 **          02/06/2023 bcg - Update column names from views
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
     @message varchar(512) output,
-    @MaxJobsToProcess int = 0,
-    @LoopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
+    @maxJobsToProcess int = 0,
+    @loopingUpdateInterval int = 5,        -- Seconds between detailed logging while looping through the dependencies
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -402,7 +402,7 @@ As
                     Comment =
                         CASE WHEN @newJobStateInBroker IN (5) THEN @Comment     -- 5=Failed
                         WHEN @newJobStateInBroker IN (4, 7)                     -- 4=Complete, 7=No Intermediate Files Created
-                        THEN dbo.AppendToText(Comment, @Comment, 0, '; ', 1024)
+                        THEN dbo.append_to_text(Comment, @Comment, 0, '; ', 1024)
                         ELSE Comment
                         END,
                     Runtime_Minutes = @ProcessingTimeMinutes
@@ -505,11 +505,11 @@ As
                 -- DMS changes enabled, update DMS job state
 
                 -- Uncomment to debug
-                -- Declare @DebugMsg varchar(512) = 'Calling S_DMS_UpdateAnalysisJobProcessingStats for job ' + Convert(varchar(12), @Job)
-                -- exec PostLogEntry 'Debug', @DebugMsg, 'UpdateJobState'
+                -- Declare @DebugMsg varchar(512) = 'Calling s_dms_update_analysis_job_processing_stats for job ' + Convert(varchar(12), @Job)
+                -- exec post_log_entry 'Debug', @DebugMsg, 'update_job_state'
 
                 -- Compute the value for @UpdateCode, which is used as a safety feature to prevent unauthorized job updates
-                -- Procedure UpdateAnalysisJobProcessingStats (called by S_DMS_UpdateAnalysisJobProcessingStats) will re-compute @UpdateCode based on @Job
+                -- Procedure UpdateAnalysisJobProcessingStats (called by s_dms_update_analysis_job_processing_stats) will re-compute @UpdateCode based on @Job
                 --  and if the values don't match, the update is not performed
 
                 Declare @jobCommentAddnl varchar(512)
@@ -523,7 +523,7 @@ As
                 Else
                     Set @UpdateCode = (@Job % 125) + 11
 
-                Exec @myError = S_DMS_UpdateAnalysisJobProcessingStats
+                Exec @myError = s_dms_update_analysis_job_processing_stats
                         @Job = @job,
                         @NewDMSJobState = @NewDMSJobState,
                         @NewBrokerJobState = @newJobStateInBroker,
@@ -539,7 +539,7 @@ As
                         @message = @message output
 
                 If @myError <> 0
-                    Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+                    Exec post_log_entry 'Error', @message, 'update_job_state'
 
             End --</c1>
 
@@ -551,7 +551,7 @@ As
                     -- Save job history
                     ---------------------------------------------------
                     --
-                    exec @myError = CopyJobToHistory @job, @newJobStateInBroker, @message output
+                    exec @myError = copy_job_to_history @job, @newJobStateInBroker, @message output
                 End
 
             End
@@ -562,7 +562,7 @@ As
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             Set @StatusMessage = '... Updating job state: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-            exec PostLogEntry 'Progress', @StatusMessage, 'UpdateJobState'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_job_state'
             Set @LastLogTime = GetDate()
         End
 
@@ -659,7 +659,7 @@ As
                 Else
                 Begin -- <d2>
                     -- Compute the value for @UpdateCode, which is used as a safety feature to prevent unauthorized job updates
-                    -- Procedure UpdateAnalysisJobProcessingStats (called by S_DMS_UpdateAnalysisJobProcessingStats) will re-compute @UpdateCode based on @Job
+                    -- Procedure UpdateAnalysisJobProcessingStats (called by s_dms_update_analysis_job_processing_stats) will re-compute @UpdateCode based on @Job
                     --  and if the values don't match, then the update is not performed
 
                     If @Job % 2 = 0
@@ -675,7 +675,7 @@ As
                     FROM T_Job_Steps
                     WHERE (Job = @job) AND Not Start Is Null
 
-                    Exec @myError = S_DMS_UpdateFailedJobNowInProgress
+                    Exec @myError = s_dms_update_failed_job_now_in_progress
                             @Job = @job,
                             @NewBrokerJobState = @newJobStateInBroker,
                             @JobStart = @StartMin,
@@ -684,7 +684,7 @@ As
                             @message = @message output
 
                     If @myError <> 0
-                        Exec PostLogEntry 'Error', @message, 'UpdateJobState'
+                        Exec post_log_entry 'Error', @message, 'update_job_state'
 
                 End    -- </d2>
             End -- </c2>
@@ -700,7 +700,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_state] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobState] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_state] TO [Limited_Table_Write] AS [dbo]
 GO

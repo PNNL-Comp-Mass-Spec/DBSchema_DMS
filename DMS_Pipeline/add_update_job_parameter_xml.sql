@@ -1,27 +1,27 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateJobParameterXML] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_job_parameter_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[AddUpdateJobParameterXML]
+CREATE PROCEDURE [dbo].[add_update_job_parameter_xml]
 /****************************************************
 **
-**  Desc:   Adds or updates an entry in the XML parameters in @pXML
+**  Desc:   Adds or updates an entry in the XML parameters in @paramsXML
 **          Alternatively, use @DeleteParam=1 to delete the given parameter
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:   01/19/2012 mem - Initial Version (refactored from AddUpdateJobParameter)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**  Date:   01/19/2012 mem - Initial Version (refactored from add_update_job_parameter)
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
 **                         - Expand @Value to varchar(4000)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @pXML XML output,                   -- XML to update (Input/output parameter)
+    @paramsXML XML output,              -- XML to update (Input/output parameter)
     @Section varchar(128),              -- Example: JobParameters
     @ParamName varchar(128),            -- Example: SourceJob
     @Value varchar(4000),               -- value for parameter @ParamName in section @Section
@@ -29,7 +29,7 @@ CREATE PROCEDURE [dbo].[AddUpdateJobParameterXML]
     @message varchar(512)='' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -40,7 +40,7 @@ As
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameterXML', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_job_parameter_xml', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -74,7 +74,7 @@ As
             xmlNode.value('@Name', 'varchar(128)') as [Name],
             xmlNode.value('@Value', 'varchar(4000)') as [Value]
         FROM
-            @pXML.nodes('//Param') AS R(xmlNode)
+            @paramsXML.nodes('//Param') AS R(xmlNode)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -139,7 +139,7 @@ As
     End
     Else
     Begin
-        SELECT @pXML = ( SELECT [Section],
+        SELECT @paramsXML = ( SELECT [Section],
                              [Name],
                    [Value]
                          FROM @Job_Parameters Param
@@ -157,5 +157,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameterXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter_xml] TO [DDL_Viewer] AS [dbo]
 GO

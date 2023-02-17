@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyHistoryToJob] ******/
+/****** Object:  StoredProcedure [dbo].[copy_history_to_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[CopyHistoryToJob]
+CREATE PROCEDURE [dbo].[copy_history_to_job]
 /****************************************************
 **
 **  Desc:
@@ -18,9 +17,9 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 **          02/06/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
 **          10/05/2009 mem - Now looking up CPU_Load for each step tool
 **          04/05/2011 mem - Now copying column Special_Processing
-**          05/19/2011 mem - Now calling UpdateJobParameters
+**          05/19/2011 mem - Now calling update_job_parameters
 **          05/25/2011 mem - Removed priority column from T_Job_Steps
-**          07/12/2011 mem - Now calling ValidateJobServerInfo
+**          07/12/2011 mem - Now calling validate_job_server_info
 **          10/17/2011 mem - Added column Memory_Usage_MB
 **          11/01/2011 mem - Added column Tool_Version_ID
 **          11/14/2011 mem - Added column Transfer_Folder_Path
@@ -37,13 +36,14 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 **          05/12/2017 mem - Add Remote_Info_ID
 **          01/19/2018 mem - Add Runtime_Minutes
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @job int,
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -115,7 +115,7 @@ As
     -- Start transaction
     ---------------------------------------------------
     --
-    Declare @transName varchar(64) = 'CopyHistoryToJob'
+    Declare @transName varchar(64) = 'copy_history_to_job'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -402,13 +402,13 @@ As
     -- Update the job parameters in case any parameters have changed (in particular, storage path)
     ---------------------------------------------------
     --
-    exec @myError = UpdateJobParameters @job, @infoOnly=0
+    exec @myError = update_job_parameters @job, @infoOnly=0
 
     ---------------------------------------------------
     -- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
     ---------------------------------------------------
     --
-    exec ValidateJobServerInfo @job, @UseJobParameters=1
+    exec validate_job_server_info @job, @UseJobParameters=1
 
     ---------------------------------------------------
     -- Make sure the Dependencies column is up-to-date in T_Job_Steps
@@ -436,9 +436,8 @@ As
 Done:
     return @myError
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyHistoryToJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_history_to_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyHistoryToJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_history_to_job] TO [Limited_Table_Write] AS [dbo]
 GO

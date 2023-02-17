@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UnholdCandidateJobSteps] ******/
+/****** Object:  StoredProcedure [dbo].[unhold_candidate_job_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UnholdCandidateJobSteps
+CREATE PROCEDURE [dbo].[unhold_candidate_job_steps]
 /****************************************************
 **
 **  Desc:
@@ -17,15 +17,16 @@ CREATE PROCEDURE UnholdCandidateJobSteps
 **  Date:   12/20/2011 mem - Initial version
 **          04/24/2014 mem - Added parameter @MaxCandidatesPlusJobs
 **          05/13/2017 mem - Add step state 9 (Running_Remote)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @StepTool varchar(64) = 'MASIC_Finnigan',
-    @TargetCandidates int = 15,
-    @MaxCandidatesPlusJobs int = 30,
+    @stepTool varchar(64) = 'MASIC_Finnigan',
+    @targetCandidates int = 15,
+    @maxCandidatesPlusJobs int = 30,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -98,5 +99,5 @@ As
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UnholdCandidateJobSteps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[unhold_candidate_job_steps] TO [DDL_Viewer] AS [dbo]
 GO
