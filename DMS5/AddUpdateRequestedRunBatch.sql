@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
 **          02/14/2023 mem - Rename variable and use new parameter names for ValidateRequestedRunBatchParams
 **          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
+**                         - Rename @requestedInstrument to @requestedInstrumentGroup
 **
 *****************************************************/
 (
@@ -50,7 +51,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
-    @requestedInstrument varchar(64),               -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+    @requestedInstrumentGroup varchar(64),          -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
     @comment varchar(512),
     @batchGroupID int = Null,
     @batchGroupOrder Int = Null,
@@ -99,7 +100,7 @@ As
             @requestedBatchPriority = @requestedCompletionDate,
             @requestedCompletionDate = @requestedCompletionDate,
             @justificationHighPriority = @justificationHighPriority,
-            @requestedInstrumentGroup = @requestedInstrument,              -- Will typically contain an instrument group, not an instrument name
+            @requestedInstrumentGroup = @requestedInstrumentGroup,
             @comment = @comment,
             @batchGroupID = @batchGroupID output,
             @batchGroupOrder = @batchGroupOrder output,
@@ -490,6 +491,7 @@ As
     END CATCH
 
     return @myError
+
 
 
 GO
