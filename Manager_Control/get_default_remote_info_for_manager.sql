@@ -33,7 +33,7 @@ As
 
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+
     Declare @managerID int = 0
     Set @remoteInfoXML = ''
 

@@ -6,64 +6,64 @@ GO
 CREATE Procedure [dbo].[AddUpdateManager]
 /****************************************************
 **
-**	Desc: 
-**	Updates existing manager values in database
+**  Desc:
+**  Updates existing manager values in database
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**		Auth: jds
-**		Date: 8/22/2007
-**    
+**  Auth:   jds
+**  Date:   8/22/2007
+**
 *****************************************************/
 (
-	@mID varchar(32) = '',
-	@mName varchar(50) = '',
-	@mControlFromWebsite varchar(32),
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) = '' output
+    @mID varchar(32) = '',
+    @mName varchar(50) = '',
+    @mControlFromWebsite varchar(32),
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) = '' output
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int
-	set @myError = 0
+    declare @myError int
+    set @myError = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
-	
-	set @message = ''
-	
-	declare @msg varchar(256)
-	
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    declare @myRowCount int
+    set @myRowCount = 0
 
-	-- future
+    set @message = ''
 
-	---------------------------------------------------
-	-- Update the T_Mgrs table
-	---------------------------------------------------
+    declare @msg varchar(256)
 
-	UPDATE T_Mgrs
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
+
+    -- future
+
+    ---------------------------------------------------
+    -- Update the T_Mgrs table
+    ---------------------------------------------------
+
+    UPDATE T_Mgrs
     SET M_Name = @mName,
         M_ControlFromWebsite = @mControlFromWebsite
-	WHERE (M_ID = @mID)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0 or @myRowCount <> 1
-	begin
-		set @msg = 'Error updating T_Mgrs.' 
-		RAISERROR (@msg, 10, 1)
-		return 51000
-	end
+    WHERE (M_ID = @mID)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0 or @myRowCount <> 1
+    begin
+        set @msg = 'Error updating T_Mgrs.'
+        RAISERROR (@msg, 10, 1)
+        return 51000
+    end
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
+    ---------------------------------------------------
+    --
+    ---------------------------------------------------
 
-	return 0
+    return 0
 GO
 GRANT EXECUTE ON [dbo].[AddUpdateManager] TO [Mgr_Config_Admin] AS [dbo]
 GO

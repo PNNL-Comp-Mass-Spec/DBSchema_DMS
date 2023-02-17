@@ -6,7 +6,7 @@ GO
 
 CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 /****************************************************
-** 
+**
 **  Desc:   Enables or disables a manager to run jobs remotely
 **
 **  Return values: 0: success, otherwise, error code
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 **          03/29/2018 mem - Add parameter @addMgrParamsIfMissing
 **          02/12/2020 mem - Rename parameter to @infoOnly
 **          02/03/2023 bcg - Use renamed view V_Mgr_Params
-**    
+**
 *****************************************************/
 (
     @enable tinyint,                        -- 0 to disable running jobs remotely, 1 to enable running jobs remotely
@@ -27,12 +27,12 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 )
 As
     Set NoCount On
-    
+
     declare @myRowCount int
     declare @myError int
     set @myRowCount = 0
     set @myError = 0
-    
+
     Declare @NewValue varchar(32)
     Declare @ActiveStateDescription varchar(32)
     Declare @CountToUpdate int
@@ -69,19 +69,19 @@ As
     CREATE TABLE #TmpManagerList (
         Manager_Name varchar(128) NOT NULL
     )
-    
+
     -- Populate #TmpMangerList using ParseManagerNameList
-    --    
+    --
     Exec @myError = ParseManagerNameList @managerNameList, @RemoveUnknownManagers=1, @message=@message output
-    
+
     If @myError <> 0
     Begin
         If Len(@message) = 0
             Set @message = 'Error calling ParseManagerNameList: ' + Convert(varchar(12), @myError)
-                
+
         Goto Done
     End
-    
+
     -- Set @NewValue based on @enable
     If @enable = 0
     Begin
@@ -98,7 +98,7 @@ As
     Begin
         Delete From #TmpManagerList Where Manager_Name = 'Default_AnalysisMgr_Params'
 
-        Set @message = 'For safety, not updating RunJobsRemotely for manager Default_AnalysisMgr_Params' 
+        Set @message = 'For safety, not updating RunJobsRemotely for manager Default_AnalysisMgr_Params'
 
         If Exists (Select * From #TmpManagerList)
         Begin
@@ -297,15 +297,15 @@ As
             Else
             Begin
                 Set @message = 'Configured ' + Convert(varchar(12), @myRowCount) + ' managers to ' + @ActiveStateDescription
-            
+
                 If @CountUnchanged <> 0
                     Set @message = @message + ' (' + Convert(varchar(12), @CountUnchanged) + ' managers were already set to ' + @ActiveStateDescription + ')'
             End
-                        
+
             SELECT @message AS Message
         End
     End
-    
+
 Done:
     Return @myError
 

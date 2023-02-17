@@ -7,7 +7,7 @@ GO
 CREATE Procedure [dbo].[AddUpdateManagerParams]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **  Adds new or updates existing manager control param values in database
 **
 **  Return values: 0: success, otherwise, error code
@@ -33,11 +33,11 @@ As
     declare @myRowCount int
     set @myError = 0
     set @myRowCount = 0
-    
+
     set @message = ''
-    
+
     declare @msg varchar(256)
-    
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
@@ -76,15 +76,15 @@ As
         return 0
 
     ---------------------------------------------------
-    -- Create a temporary table that will hold the Entry_ID 
+    -- Create a temporary table that will hold the Entry_ID
     -- values that need to be updated in T_ParamValue
     ---------------------------------------------------
     CREATE TABLE #TmpIDUpdateList (
         TargetID int NOT NULL
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
-    
+
     declare @delim char(1) = '!'
 
     declare @inPos int = 1
@@ -95,13 +95,13 @@ As
 
     declare @itemID int
     declare @tVal varchar(128)
-    
+
     declare @EntryID int
     declare @NewEntryID int
 
     declare @MgrActiveChanged int
     declare @MgrActiveTargetState int
-    
+
     ---------------------------------------------------
     -- process lists into rows
     -- and insert into DB table
@@ -118,7 +118,7 @@ As
         -- get the next field from the item name list
         --
         execute @done = NextField @itemNameList, @delim, @inPos output, @inFld output
-        
+
         -- process the next field from the item value list
         --
         execute NextField @itemValueList, @delim, @vPos output, @vFld output
@@ -147,7 +147,7 @@ As
             Set @EntryID = -1
             SELECT @tVal = Value, @EntryID = Entry_ID
             FROM T_ParamValue
-            WHERE (TypeID = @itemID) AND (MgrID = @mgrID)        
+            WHERE (TypeID = @itemID) AND (MgrID = @mgrID)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -161,7 +161,7 @@ As
             -- if entry exists in value table, update it
             -- otherwise insert it
             --
-            if @myRowCount > 0 
+            if @myRowCount > 0
             begin
                 if IsNull(@tVal, '') <> @vFld
                 begin
@@ -178,55 +178,55 @@ As
                 SELECT @myError = @@error, @myRowCount = @@rowcount, @NewEntryID = @@Identity
 
                 If @myRowCount > 0
-                    Set @EntryID = @NewEntryID        
+                    Set @EntryID = @NewEntryID
             end
 
             If Len(@callingUser) > 0 And IsNull(@EntryID, -1) >= 0
             Begin -- <c>
                 -- @callingUser is defined
                 -- Items need to be updated in T_ParamValue and possibly in T_Event_Log
-                
+
                 -- Add @EntryID to #TmpIDUpdateList
                 INSERT INTO #TmpIDUpdateList (TargetID)
                 VALUES (@EntryID)
-                
+
                 If @inFld = 'mgractive' or @itemID = 17
                 Begin
                     -- MgrActive was changed to True or False
-                    
+
                     Set @MgrActiveChanged = 1
-                    
+
                     If @vFld = 'True'
                         Set @MgrActiveTargetState = 1
                     else
                         Set @MgrActiveTargetState = 0
                 End
             End -- </c>
-        
+
         End -- </b>
     End -- </a>
 
     If Len(@callingUser) > 0
     Begin
         -- @callingUser is defined
-        -- Items need to be updated in T_ParamValue        
-        
+        -- Items need to be updated in T_ParamValue
+
         Exec AlterEnteredByUserMultiID 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
 
         If @MgrActiveChanged = 1
         Begin
-            -- Triggers trig_i_T_ParamValue and trig_u_T_ParamValue make an entry in 
+            -- Triggers trig_i_T_ParamValue and trig_u_T_ParamValue make an entry in
             --  T_Event_Log whenever mgractive (param TypeID = 17) is changed
-            
+
             -- Call AlterEventLogEntryUserMultiID
             -- to alter the Entered_By field in T_Event_Log
-                    
+
             -- Populate #TmpIDUpdateList with Manager ID values, then call AlterEventLogEntryUserMultiID
             Truncate Table #TmpIDUpdateList
-            
+
             INSERT INTO #TmpIDUpdateList (TargetID)
             VALUES (@mgrID)
-            
+
             Exec AlterEventLogEntryUserMultiID 1, @MgrActiveTargetState, @callingUser
         End
     End

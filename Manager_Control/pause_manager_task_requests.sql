@@ -4,10 +4,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[PauseManagerTaskRequests] 
+CREATE PROCEDURE [dbo].[PauseManagerTaskRequests]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Updates parameter TaskRequestEnableTime for the given manager
 **
 **      This will stop the analysis manager from requesting new analysis jobs for the length of time specified by @holdoffIntervalMinutes
@@ -26,14 +26,14 @@ AS
 
     Declare @myError Int = 0
     Declare @myRowCount int = 0
-    
+
     Set @managerName = IsNull(@managerName, '')
     Set @holdoffIntervalMinutes = IsNull(@holdoffIntervalMinutes, 60)
     Set @message = ''
-    
-    Declare @mgrId int    
+
+    Declare @mgrId int
     Declare @paramId int
-    
+
     ---------------------------------------------------
     -- Confirm that the manager name is valid
     ---------------------------------------------------
@@ -75,13 +75,13 @@ AS
     Begin
         -- No rows were updated; may need to make a new entry for 'TaskRequestEnableTime' in the T_ParamValue table
         Set @paramId = 0
-        
+
         SELECT @paramId = ParamID
         FROM T_ParamType
         WHERE ParamName = 'TaskRequestEnableTime'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @paramId > 0
         Begin
             If Exists (SELECT * FROM T_ParamValue WHERE MgrID = @mgrId AND TypeID = @paramId)
@@ -90,18 +90,18 @@ AS
             Begin
                 INSERT INTO T_ParamValue (MgrID, TypeID, Value)
                 VALUES (@mgrId, @paramId, @newTime)
-            
+
                 Set @message = 'Updated TaskRequestEnableTime to ' + @newTime + ' (added new entry to T_ParamValue)'
             End
         End
     End
-        
+
     ---------------------------------------------------
     -- Exit the procedure
     ---------------------------------------------------
 Done:
     return @myError
-    
+
 
 GO
 GRANT EXECUTE ON [dbo].[PauseManagerTaskRequests] TO [DMS_Analysis_Job_Runner] AS [dbo]

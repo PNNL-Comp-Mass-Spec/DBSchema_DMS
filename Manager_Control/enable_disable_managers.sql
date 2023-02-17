@@ -6,7 +6,7 @@ GO
 
 CREATE PROCEDURE [dbo].[EnableDisableManagers]
 /****************************************************
-** 
+**
 **  Desc:  Enables or disables all managers of the given type
 **
 **  Return values: 0: success, otherwise, error code
@@ -19,7 +19,7 @@ CREATE PROCEDURE [dbo].[EnableDisableManagers]
 **          10/12/2017 mem - Allow @ManagerTypeID to be 0 if @ManagerNameList is provided
 **          03/28/2018 mem - Use different messages when updating just one manager
 **          02/12/2020 mem - Rename parameter to @infoOnly
-**    
+**
 *****************************************************/
 (
     @Enable tinyint,                        -- 0 to disable, 1 to enable
@@ -30,12 +30,12 @@ CREATE PROCEDURE [dbo].[EnableDisableManagers]
 )
 As
     Set NoCount On
-    
+
     declare @myRowCount int
     declare @myError int
     set @myRowCount = 0
     set @myError = 0
-    
+
     Declare @NewValue varchar(32)
     Declare @ManagerTypeName varchar(128)
     Declare @ActiveStateDescription varchar(16)
@@ -56,15 +56,15 @@ As
         SELECT @message AS Message
         Goto Done
     End
-        
-    If @ManagerTypeID Is Null 
+
+    If @ManagerTypeID Is Null
     Begin
         set @myError = 40001
         Set @message = '@ManagerTypeID cannot be null'
         SELECT @message AS Message
         Goto Done
     End
-    
+
     If @ManagerTypeID = 0 And Len(@ManagerNameList) > 0 And @ManagerNameList <> 'All'
     Begin
         Set @ManagerTypeName = 'Any'
@@ -86,13 +86,13 @@ As
                 Set @message = '@ManagerTypeID ' + Convert(varchar(12), @ManagerTypeID) + ' has MT_Active = 0 in T_MgrTypes; unable to continue'
             Else
                 Set @message = '@ManagerTypeID ' + Convert(varchar(12), @ManagerTypeID) + ' not found in T_MgrTypes'
-                
+
             SELECT @message AS Message
             set @myError  = 40002
             Goto Done
         End
     End
-    
+
     If @Enable <> 0 AND Len(@ManagerNameList) = 0
     Begin
         Set @message = '@ManagerNameList cannot be blank when @Enable is non-zero; to update all managers, set @ManagerNameList to All'
@@ -108,18 +108,18 @@ As
     CREATE TABLE #TmpManagerList (
         Manager_Name varchar(128) NOT NULL
     )
-    
+
     If Len(@ManagerNameList) > 0 And @ManagerNameList <> 'All'
     Begin
         -- Populate #TmpMangerList using ParseManagerNameList
-        
+
         Exec @myError = ParseManagerNameList @ManagerNameList, @RemoveUnknownManagers=1, @message=@message output
-        
+
         If @myError <> 0
         Begin
             If Len(@message) = 0
                 Set @message = 'Error calling ParseManagerNameList: ' + Convert(varchar(12), @myError)
-                
+
             Goto Done
         End
 
@@ -132,14 +132,14 @@ As
             WHERE M.M_Name Is Null
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount > 0
             Begin
                 Set @message = 'Found ' + convert(varchar(12), @myRowCount) + ' entries in @ManagerNameList that are not ' + @ManagerTypeName + ' managers'
                 Set @message = ''
             End
         End
-        
+
     End
     Else
     Begin
@@ -152,8 +152,8 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     End
-    
-    
+
+
     -- Set @NewValue based on @Enable
     If @Enable = 0
     Begin
@@ -165,7 +165,7 @@ As
         Set @NewValue = 'True'
         Set @ActiveStateDescription = 'Active'
     End
-    
+
     -- Count the number of managers that need to be updated
     Set @CountToUpdate = 0
     SELECT @CountToUpdate = COUNT(*)
@@ -290,15 +290,15 @@ As
                     Set @message = 'Set ' + Convert(varchar(12), @myRowCount) + ' managers to state ' + @ActiveStateDescription
                 Else
                     Set @message = 'Set ' + Convert(varchar(12), @myRowCount) + ' ' + @ManagerTypeName + ' managers to state ' + @ActiveStateDescription
-            
+
                 If @CountUnchanged <> 0
                     Set @message = @message + ' (' + Convert(varchar(12), @CountUnchanged) + ' managers were already ' + @ActiveStateDescription + ')'
             End
-            
+
             SELECT @message AS Message
         End
     End
-    
+
 Done:
     Return @myError
 

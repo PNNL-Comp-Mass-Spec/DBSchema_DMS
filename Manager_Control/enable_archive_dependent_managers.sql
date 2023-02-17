@@ -6,30 +6,30 @@ GO
 
 CREATE PROCEDURE [dbo].[EnableArchiveDependentManagers]
 /****************************************************
-** 
-**	Desc:	Disables managers that rely on the NWFS archive
 **
-**	Return values: 0: success, otherwise, error code
+**  Desc:   Disables managers that rely on the NWFS archive
 **
-**	Auth:	mem
-**	Date:	06/09/2011 mem - Initial Version
+**  Return values: 0: success, otherwise, error code
+**
+**  Auth:   mem
+**  Date:   06/09/2011 mem - Initial Version
 **          02/12/2020 mem - Rename parameter to @infoOnly
-**    
+**
 *****************************************************/
 (
-	@infoOnly tinyint = 0,
-	@message varchar(512)='' output
+    @infoOnly tinyint = 0,
+    @message varchar(512)='' output
 )
 As
-	Set NoCount On
+    Set NoCount On
 
-	Declare @myError int
+    Declare @myError int
 
-	exec @myerror = EnableDisableAllManagers @ManagerTypeIDList='8,15', @ManagerNameList='All', @enable=1, 
-	                                         @infoOnly=@infoOnly, @message = @message output
+    exec @myerror = EnableDisableAllManagers @ManagerTypeIDList='8,15', @ManagerNameList='All', @enable=1,
+                                             @infoOnly=@infoOnly, @message = @message output
 
 
-	Return @myError
+    Return @myError
 
 
 GO
