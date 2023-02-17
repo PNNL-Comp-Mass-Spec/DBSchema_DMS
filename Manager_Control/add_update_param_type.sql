@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateParamType] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_param_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateParamType
+CREATE PROCEDURE [dbo].[add_update_param_type]
 /****************************************************
 **
 **  Desc:
@@ -14,17 +14,18 @@ CREATE Procedure dbo.AddUpdateParamType
 **  Auth:   jds
 **  Date:   04/01/2008
 **          04/27/2009 mem - Added support for @mode = 'add'
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @pID varchar(32) = '',
-    @pName varchar(50) = '',
-    @pPicklistName varchar(50),
-    @pComment varchar(255),
+    @paramID varchar(32) = '',
+    @paramName varchar(50) = '',
+    @paramPicklistName varchar(50),
+    @paramComment varchar(255),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -35,15 +36,15 @@ As
     set @message = ''
 
     declare @msg varchar(256)
-    declare @pNameCurrent varchar(128)
+    declare @paramNameCurrent varchar(128)
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
 
     Set @mode = IsNull(@mode, '??')
-    Set @pID = IsNull(@pID, '')
-    Set @pName = IsNull(@pName, '')
+    Set @paramID = IsNull(@paramID, '')
+    Set @paramName = IsNull(@paramName, '')
 
     if @mode <> 'add' and @mode <> 'update'
     Begin
@@ -52,7 +53,7 @@ As
         return 51000
     End
 
-    If @pName = ''
+    If @paramName = ''
     Begin
         set @msg = 'Parameter name is empty; unable to continue'
         RAISERROR (@msg, 10, 1)
@@ -63,7 +64,7 @@ As
     Begin
 
         INSERT INTO T_ParamType (ParamName, PicklistName, Comment)
-        VALUES (@pName, @pPicklistName, @pComment)
+        VALUES (@paramName, @paramPicklistName, @paramComment)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -82,31 +83,31 @@ As
         -- Update the T_Mgrs table
         ---------------------------------------------------
 
-        SELECT @pNameCurrent = ParamName
+        SELECT @paramNameCurrent = ParamName
         FROM T_ParamType
-        WHERE (ParamID = @pID)
+        WHERE (ParamID = @paramID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
-            set @msg = 'Error looking for ID ' + @pID + ' in T_ParamType'
+            set @msg = 'Error looking for ID ' + @paramID + ' in T_ParamType'
             RAISERROR (@msg, 10, 1)
             return 51003
         end
 
         if @myRowCount = 0
         begin
-            set @msg = 'Error updating T_ParamType; ParamID ' + @pID + ' not found'
+            set @msg = 'Error updating T_ParamType; ParamID ' + @paramID + ' not found'
             RAISERROR (@msg, 10, 1)
             return 51003
         end
 
         UPDATE T_ParamType
-        SET ParamName = @pName,
-            PicklistName = @pPicklistName,
-            Comment = @pComment
-        WHERE (ParamID = @pID)
+        SET ParamName = @paramName,
+            PicklistName = @paramPicklistName,
+            Comment = @paramComment
+        WHERE (ParamID = @paramID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -117,8 +118,8 @@ As
             return 51003
         end
 
-        If @pNameCurrent <> @pName
-            Set @message = 'Warning: Parameter renamed from "' + @pNameCurrent + '" to "' + @pName + '"'
+        If @paramNameCurrent <> @paramName
+            Set @message = 'Warning: Parameter renamed from "' + @paramNameCurrent + '" to "' + @paramName + '"'
     end
 
     ---------------------------------------------------
@@ -126,6 +127,7 @@ As
     ---------------------------------------------------
 
     return 0
+
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamType] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_type] TO [Mgr_Config_Admin] AS [dbo]
 GO

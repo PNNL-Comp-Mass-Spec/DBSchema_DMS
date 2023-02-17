@@ -1,15 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[UnarchiveOldManagersAndParams] ******/
+/****** Object:  StoredProcedure [dbo].[unarchive_old_managers_and_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE UnarchiveOldManagersAndParams
+CREATE PROCEDURE [dbo].[unarchive_old_managers_and_params]
 /****************************************************
 **
 **  Desc:   Moves managers from T_OldManagers to T_Mgrs
 **          and moves manager parameters from T_ParamValue_OldManagers to T_ParamValue
 **
-**          To reverse this process, use procedure ArchiveOldManagersAndParams
+**          To reverse this process, use procedure archive_old_managers_and_params
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -17,15 +17,16 @@ CREATE PROCEDURE UnarchiveOldManagersAndParams
 **  Date:   02/25/2016 mem - Initial version
 **          04/22/2016 mem - Now updating M_Comment in T_Mgrs
 **          01/31/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MgrList varchar(max),    -- One or more manager names (comma-separated list); supports wildcards because uses stored procedure ParseManagerNameList
-    @InfoOnly tinyint = 1,
-    @EnableControlFromWebsite tinyint = 0,
+    @mgrList varchar(max),    -- One or more manager names (comma-separated list); supports wildcards because uses stored procedure parse_manager_name_list
+    @infoOnly tinyint = 1,
+    @enableControlFromWebsite tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set XACT_ABORT, NoCount On
 
     Declare @myRowCount int = 0
@@ -53,7 +54,7 @@ As
     ---------------------------------------------------
     --
 
-    exec ParseManagerNameList @MgrList, @RemoveUnknownManagers=0
+    exec parse_manager_name_list @MgrList, @RemoveUnknownManagers=0
 
     If Not Exists (Select * from #TmpManagerList)
     Begin
@@ -237,6 +238,5 @@ As
 
 Done:
     RETURN @myError
-
 
 GO

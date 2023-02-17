@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetManagerUpdateRequired] ******/
+/****** Object:  StoredProcedure [dbo].[set_manager_update_required] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.SetManagerUpdateRequired
+CREATE PROCEDURE [dbo].[set_manager_update_required]
 /****************************************************
 **
 **  Desc:
@@ -14,10 +14,11 @@ CREATE PROCEDURE dbo.SetManagerUpdateRequired
 **  Date:   01/24/2009 mem - Initial version
 **          04/17/2014 mem - Expanded @ManagerList to varchar(max) and added parameter @showTable
 **          02/01/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ManagerList varchar(max) = '',
+    @managerList varchar(max) = '',
     @showTable tinyint = 0,
     @message varchar(512) = '' output
 )
@@ -50,7 +51,7 @@ AS
     If Len(@ManagerList) > 0
         INSERT INTO #TmpManagerList (ManagerName)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@ManagerList, ',')
+        FROM dbo.parse_delimited_list(@ManagerList, ',')
         WHERE Len(IsNull(Value, '')) > 0
     Else
         INSERT INTO #TmpManagerList (ManagerName)
@@ -160,9 +161,8 @@ AS
 Done:
     return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[SetManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_manager_update_required] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetManagerUpdateRequired] TO [MTUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_manager_update_required] TO [MTUser] AS [dbo]
 GO

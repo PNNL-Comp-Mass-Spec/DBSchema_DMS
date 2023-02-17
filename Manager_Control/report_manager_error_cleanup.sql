@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReportManagerErrorCleanup] ******/
+/****** Object:  StoredProcedure [dbo].[report_manager_error_cleanup] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.ReportManagerErrorCleanup
+CREATE PROCEDURE [dbo].[report_manager_error_cleanup]
 /****************************************************
 **
 **  Desc:
@@ -15,9 +15,9 @@ CREATE PROCEDURE dbo.ReportManagerErrorCleanup
 **
 *****************************************************/
 (
-    @ManagerName varchar(128),
-    @State int = 0,                 -- 1 = Cleanup Attempt start, 2 = Cleanup Successful, 3 = Cleanup Failed
-    @FailureMsg varchar(512) = '',
+    @managerName varchar(128),
+    @state int = 0,                 -- 1 = Cleanup Attempt start, 2 = Cleanup Successful, 3 = Cleanup Failed
+    @failureMsg varchar(512) = '',
     @message varchar(512) = '' output
 )
 AS
@@ -103,7 +103,7 @@ AS
             Set @message = @message + '; ' + @FailureMsg
     End
 
-    Exec PostLogEntry @MessageType, @Message, 'ReportManagerErrorCleanup'
+    Exec post_log_entry @MessageType, @Message, 'report_manager_error_cleanup'
 
     ---------------------------------------------------
     -- Lookup the value of ManagerErrorCleanupMode in T_ParamValue
@@ -156,7 +156,7 @@ AS
         if @myError <> 0
         Begin
             Set @Message = 'Error setting ManagerErrorCleanupMode to 0 in T_ParamValue for manager ' + @ManagerName
-            Exec PostLogEntry 'Error', @message, 'ReportManagerErrorCleanup'
+            Exec post_log_entry 'Error', @message, 'report_manager_error_cleanup'
         End
         Else
         Begin
@@ -175,9 +175,9 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[ReportManagerErrorCleanup] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_manager_error_cleanup] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportManagerErrorCleanup] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_manager_error_cleanup] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportManagerErrorCleanup] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_manager_error_cleanup] TO [svc-dms] AS [dbo]
 GO

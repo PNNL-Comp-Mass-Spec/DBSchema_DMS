@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AlterEventLogEntryUser] ******/
+/****** Object:  StoredProcedure [dbo].[alter_event_log_entry_user] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AlterEventLogEntryUser
+CREATE PROCEDURE [dbo].[alter_event_log_entry_user]
 /****************************************************
 **
 **  Desc:   Updates the user associated with a given event log entry to be @NewUser
@@ -19,19 +19,20 @@ CREATE PROCEDURE AlterEventLogEntryUser
 **  Date:   02/29/2008 mem - Initial version (Ticket: #644)
 **          05/23/2008 mem - Expanded @EntryDescription to varchar(512)
 **          03/30/2009 mem - Ported to the Manager Control DB
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TargetType smallint,               -- 1=Manager Enable/Disable
-    @TargetID int,
-    @TargetState int,
-    @NewUser varchar(128),
-    @ApplyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
-    @EntryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
+    @targetType smallint,               -- 1=Manager Enable/Disable
+    @targetID int,
+    @targetState int,
+    @newUser varchar(128),
+    @applyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
+    @entryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int
@@ -167,7 +168,7 @@ As
                 If @myError <> 0
                 Begin
                     Set @message = 'Error updating ' + @EntryDescription
-                    Exec PostLogEntry 'Error', @message, 'AlterEventLogEntryUser'
+                    Exec post_log_entry 'Error', @message, 'alter_event_log_entry_user'
                     Goto Done
                 End
                 Else

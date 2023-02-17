@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddManagers] ******/
+/****** Object:  StoredProcedure [dbo].[add_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddManagers]
+CREATE PROCEDURE [dbo].[add_managers]
 /****************************************************
 **
 **  Desc:
@@ -18,12 +17,15 @@ CREATE Procedure [dbo].[AddManagers]
 **
 **  Auth:   jds
 **  Date:   08/17/2007
-**          05/14/07 - jds spelled out the fields to insert for T_ParamValue(TypeID, [Value], MgrID)
+**          05/14/2007 jds - spelled out the fields to insert for T_ParamValue(TypeID, [Value], MgrID)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
+(
     @managerTypeID int,
     @managerNameList varchar(2048)
-As
+)
+AS
 declare @myError int
     set @myError = 0
 
@@ -39,7 +41,7 @@ declare @myError int
 
     Insert into T_Mgrs(M_Name, M_TypeID, M_ParmValueChanged, M_ControlFromWebsite)
     select Item, @managerTypeID, 0, 1
-    from MakeTableFromList(@managerNameList)
+    from make_table_from_list(@managerNameList)
 
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -65,7 +67,7 @@ declare @myError int
         select M_ID from T_Mgrs
         where M_Name in
             (
-            SELECT * FROM MakeTableFromList(@managerNameList)
+            SELECT * FROM make_table_from_list(@managerNameList)
             )
         ) nMgrs
 
@@ -83,5 +85,5 @@ declare @myError int
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddManagers] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_managers] TO [Mgr_Config_Admin] AS [dbo]
 GO

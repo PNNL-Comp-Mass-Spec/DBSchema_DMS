@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[NextField] ******/
+/****** Object:  StoredProcedure [dbo].[next_field] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure NextField
+CREATE PROCEDURE [dbo].[next_field]
 /****************************************************
 **
 **  Desc: Parses off and returns next field from string.
@@ -23,6 +23,7 @@ CREATE Procedure NextField
 **  Date:   12/13/2000
 **          03/23/2004 grk - increased size of @line
 **          03/27/2009 mem - Expanded @line to varchar(6000)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -31,7 +32,7 @@ CREATE Procedure NextField
     @curPos int output,
     @field varchar(255) output
 )
-As
+AS
     declare @EndOfField int
     declare @EOL int
 
@@ -64,5 +65,5 @@ As
     return @EOL
 
 GO
-GRANT EXECUTE ON [dbo].[NextField] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[next_field] TO [Mgr_Config_Admin] AS [dbo]
 GO

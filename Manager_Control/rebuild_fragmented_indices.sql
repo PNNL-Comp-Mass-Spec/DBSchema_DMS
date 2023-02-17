@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RebuildFragmentedIndices] ******/
+/****** Object:  StoredProcedure [dbo].[rebuild_fragmented_indices] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.RebuildFragmentedIndices
+CREATE PROCEDURE [dbo].[rebuild_fragmented_indices]
 /****************************************************
 **
 **  Desc:
@@ -18,16 +17,17 @@ CREATE PROCEDURE dbo.RebuildFragmentedIndices
 **  Date:   11/12/2007
 **          10/15/2012 mem - Added spaces prior to printing debug messages
 **          10/18/2012 mem - Added parameter @VerifyUpdateEnabled
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MaxFragmentation int = 15,
-    @TrivialPageCount int = 12,
-    @VerifyUpdateEnabled tinyint = 1,       -- When non-zero, then calls VerifyUpdateEnabled to assure that database updating is enabled
+    @maxFragmentation int = 15,
+    @trivialPageCount int = 12,
+    @verifyUpdateEnabled tinyint = 1,       -- When non-zero, then calls VerifyUpdateEnabled to assure that database updating is enabled
     @infoOnly tinyint = 1,
     @message varchar(1024) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int
@@ -206,16 +206,16 @@ As
                 EXEC (@command)
 
                 Set @message = 'Reindexed ' + @indexname + ' due to Fragmentation = ' + Convert(varchar(12), Convert(decimal(9,1), @frag)) + '%; '
-                Exec PostLogEntry 'Normal', @message, 'RebuildFragmentedIndices'
+                Exec post_log_entry 'Normal', @message, 'rebuild_fragmented_indices'
 
                 Set @IndexCountProcessed = @IndexCountProcessed + 1
 
                 If @VerifyUpdateEnabled <> 0
                 Begin
                     -- Validate that updating is enabled, abort if not enabled
-                    If Exists (select * from sys.objects where name = 'VerifyUpdateEnabled')
+                    If Exists (select * from sys.objects where name = 'verify_update_enabled')
                     Begin
-                        exec VerifyUpdateEnabled @CallingFunctionDescription = 'RebuildFragmentedIndices', @AllowPausing = 1, @UpdateEnabled = @UpdateEnabled output, @message = @message output
+                        exec verify_update_enabled @CallingFunctionDescription = 'rebuild_fragmented_indices', @AllowPausing = 1, @UpdateEnabled = @UpdateEnabled output, @message = @message output
                         If @UpdateEnabled = 0
                             Goto Done
                     End
@@ -232,7 +232,7 @@ As
         ---------------------------------------
 
         Set @message = 'Reindexed ' + Convert(varchar(12), @IndexCountProcessed) + ' indices in ' + convert(varchar(12), Convert(decimal(9,1), DateDiff(second, @StartTime, GetDate()) / 60.0)) + ' minutes'
-        Exec PostLogEntry 'Normal', @message, 'RebuildFragmentedIndices'
+        Exec post_log_entry 'Normal', @message, 'rebuild_fragmented_indices'
     End
 
 Done:
@@ -241,6 +241,5 @@ Done:
     DROP TABLE #TmpIndicesToProcess
 
     Return @myError
-
 
 GO

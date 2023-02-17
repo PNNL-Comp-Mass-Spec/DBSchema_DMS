@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetManagerParameters] ******/
+/****** Object:  StoredProcedure [dbo].[get_manager_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetManagerParameters]
+CREATE PROCEDURE [dbo].[get_manager_parameters]
 /****************************************************
 **
 **  Desc:   Gets the parameters for the given analysis manager(s)
@@ -16,17 +15,18 @@ CREATE PROCEDURE [dbo].[GetManagerParameters]
 **  Date:   05/07/2015 mem - Initial version
 **          08/10/2015 mem - Add @SortMode=3
 **          09/02/2016 mem - Increase the default for parameter @MaxRecursion from 5 to 50
-**          03/14/2018 mem - Refactor actual parameter lookup into stored procedure GetManagerParametersWork
+**          03/14/2018 mem - Refactor actual parameter lookup into stored procedure get_manager_parameters_work
 **          01/31/2023 mem - Rename columns in #Tmp_Mgr_Params
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ManagerNameList varchar(4000) = '',
-    @SortMode tinyint = 0,                    -- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName, 3 means Value then ParamName
-    @MaxRecursion tinyint = 50,
+    @managerNameList varchar(4000) = '',
+    @sortMode tinyint = 0,                    -- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName, 3 means Value then ParamName
+    @maxRecursion tinyint = 50,
     @message varchar(512) = '' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myRowCount int = 0
@@ -63,7 +63,7 @@ As
     )
 
     -- Populate the temporary table with the manager parameters
-    Exec @myError = GetManagerParametersWork @ManagerNameList, @SortMode, @MaxRecursion, @message = @message Output
+    Exec @myError = get_manager_parameters_work @ManagerNameList, @SortMode, @MaxRecursion, @message = @message Output
 
     -- Return the parameters as a result set
 
@@ -92,7 +92,6 @@ As
 Done:
     Return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[GetManagerParameters] TO [DMSReader] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_manager_parameters] TO [DMSReader] AS [dbo]
 GO

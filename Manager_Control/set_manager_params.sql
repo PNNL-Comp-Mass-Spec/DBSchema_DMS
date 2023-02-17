@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetManagerParams] ******/
+/****** Object:  StoredProcedure [dbo].[set_manager_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE SetManagerParams
+CREATE PROCEDURE [dbo].[set_manager_params]
 /****************************************************
 **
 **  Desc:
@@ -14,12 +14,13 @@ CREATE PROCEDURE SetManagerParams
 **
 **  Parameters:
 **
-**      Auth: grk
-**      Date: 04/27/2007
-**            05/02/2007 grk - added translation table
-**            05/02/2007 grk - fixed too-narrow variables in OPENXML
-**            05/02/2007 grk - fixed sloppy final update statement
-**            05/02/2007 dac - added translation for bionet password
+**  Auth:   grk
+**  Date:   04/27/2007
+**          05/02/2007 grk - added translation table
+**          05/02/2007 grk - fixed too-narrow variables in OPENXML
+**          05/02/2007 grk - fixed sloppy final update statement
+**          05/02/2007 dac - added translation for bionet password
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE PROCEDURE SetManagerParams
     @mode varchar(24) = 'InfoOnly',
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -204,6 +205,7 @@ As
     ---------------------------------------------------
 DONE:
     return @myError
+
 GO
-GRANT EXECUTE ON [dbo].[SetManagerParams] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_manager_params] TO [Mgr_Config_Admin] AS [dbo]
 GO

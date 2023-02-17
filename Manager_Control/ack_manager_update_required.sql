@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AckManagerUpdateRequired] ******/
+/****** Object:  StoredProcedure [dbo].[ack_manager_update_required] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AckManagerUpdateRequired
+CREATE PROCEDURE [dbo].[ack_manager_update_required]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE PROCEDURE dbo.AckManagerUpdateRequired
 **  Auth:   mem
 **  Date:   01/16/2009 mem - Initial version
 **          09/09/2009 mem - Added support for 'ManagerUpdateRequired' already being False
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -100,9 +101,9 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[ack_manager_update_required] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[ack_manager_update_required] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[ack_manager_update_required] TO [svc-dms] AS [dbo]
 GO

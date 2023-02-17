@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CheckForParamChanged] ******/
+/****** Object:  StoredProcedure [dbo].[check_for_param_changed] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.CheckForParamChanged
+CREATE PROCEDURE [dbo].[check_for_param_changed]
 /****************************************************
 **
 **  Desc:
@@ -20,7 +20,8 @@ CREATE PROCEDURE dbo.CheckForParamChanged
 **  Auth:   grk
 **  Date:   06/05/2007
 **          06/12/2007 dac - Modified numeric return values to remove duplicates
-**          05/04/2009 mem - Added call to PostUsageLogEntry to gauge the frequency that this stored procedure is called
+**          05/04/2009 mem - Added call to post_usage_log_entry to gauge the frequency that this stored procedure is called
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -96,13 +97,14 @@ Done:
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = 'Manager: ' + @managerName
-    Exec PostUsageLogEntry 'CheckForParamChanged', @UsageMessage, @MinimumUpdateInterval=0
+    Exec post_usage_log_entry 'check_for_param_changed', @UsageMessage, @MinimumUpdateInterval=0
 
     return @myError
+
 GO
-GRANT EXECUTE ON [dbo].[CheckForParamChanged] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[check_for_param_changed] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CheckForParamChanged] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[check_for_param_changed] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CheckForParamChanged] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[check_for_param_changed] TO [svc-dms] AS [dbo]
 GO

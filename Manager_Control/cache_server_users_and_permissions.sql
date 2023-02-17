@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CacheServerUsersAndPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[cache_server_users_and_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure CacheServerUsersAndPermissions
+CREATE PROCEDURE [dbo].[cache_server_users_and_permissions]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE Procedure CacheServerUsersAndPermissions
 **
 **  Auth:   mem
 **  Date:   03/11/2016 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -297,7 +298,7 @@ AS
 
         -- The following generates a Tally table with 256 rows
         -- then uses that table to split @databaseList on commas
-        -- We could alternatively have used dbo.udfParseDelimitedList() but wanted to keep this procedure self-contained
+        -- We could alternatively have used dbo.parse_delimited_list() but wanted to keep this procedure self-contained
         --
         ;
         WITH
@@ -510,7 +511,7 @@ AS
                             Set @message = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' rows from T_Auth_Database_LoginsAndRoles ' +
                                           ' that were for database ' + @DatabaseName + ' yet did not have database ID ' + Cast(@DatabaseID as varchar(12))
 
-                            Exec PostLogEntry 'Warning', @message, 'CacheServerUsersAndPermissions'
+                            Exec post_log_entry 'Warning', @message, 'cache_server_users_and_permissions'
 
                         End
 
@@ -666,7 +667,7 @@ AS
                             Set @message = 'Deleted ' + Cast(@myRowCount as varchar(12)) + ' rows from T_Auth_Database_Permissions ' +
                                           ' that were for database ' + @DatabaseName + ' yet did not have database ID ' + Cast(@DatabaseID as varchar(12))
 
-                            Exec PostLogEntry 'Warning', @message, 'CacheServerUsersAndPermissions'
+                            Exec post_log_entry 'Warning', @message, 'cache_server_users_and_permissions'
 
                         End
 
@@ -748,8 +749,8 @@ AS
         If @@TranCount > 0
             Rollback
 
-        Declare @CallingProcName varchar(128) = IsNull(ERROR_PROCEDURE(), 'CacheServerUsersAndPermissions')
-                exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 0,
+        Declare @CallingProcName varchar(128) = IsNull(ERROR_PROCEDURE(), 'cache_server_users_and_permissions')
+                exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 0,
                                         @ErrorNum = @myError output, @message = @message output
 
         Set @message = 'Exception: ' + @message
@@ -760,6 +761,5 @@ AS
 Done:
 
     Return @myError
-
 
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSingleMgrTypeControlParam] ******/
+/****** Object:  StoredProcedure [dbo].[update_single_mgr_type_control_param] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateSingleMgrTypeControlParam]
+CREATE PROCEDURE [dbo].[update_single_mgr_type_control_param]
 /****************************************************
 **
 **  Desc:
@@ -18,9 +17,10 @@ CREATE Procedure [dbo].[UpdateSingleMgrTypeControlParam]
 **  Auth:   jds
 **  Date:   07/17/2007
 **          07/31/2007 grk - changed for 'controlfromwebsite' no longer a parameter
-**          03/30/2009 mem - Added optional parameter @callingUser; if provided, then will call AlterEnteredByUserMultiID and possibly AlterEventLogEntryUserMultiID
-**          04/16/2009 mem - Now calling UpdateSingleMgrParamWork to perform the updates
+**          03/30/2009 mem - Added optional parameter @callingUser; if provided, then will call alter_entered_by_user_multi_id and possibly alter_event_log_entry_user_multi_id
+**          04/16/2009 mem - Now calling update_single_mgr_param_work to perform the updates
 **          02/15/2020 mem - Rename the first parameter to @paramName
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -29,8 +29,7 @@ CREATE Procedure [dbo].[UpdateSingleMgrTypeControlParam]
     @managerTypeIDList varchar(2048),
     @callingUser varchar(128) = ''
 )
-As
-
+AS
     declare @myError int
     declare @myRowCount int
     set @myError = 0
@@ -60,7 +59,7 @@ As
            ON MgrID = M_ID
     WHERE ParamName = @paramName AND
           M_TypeID IN ( SELECT Item
-                        FROM MakeTableFromList ( @managerTypeIDList )
+                        FROM make_table_from_list ( @managerTypeIDList )
                       ) AND
           MgrID IN ( SELECT M_ID
                      FROM T_Mgrs
@@ -76,14 +75,14 @@ As
     end
 
     ---------------------------------------------------
-    -- Call UpdateSingleMgrParamWork to perform the update, then call
-    -- AlterEnteredByUserMultiID and AlterEventLogEntryUserMultiID for @callingUser
+    -- Call update_single_mgr_param_work to perform the update, then call
+    -- alter_entered_by_user_multi_id and alter_event_log_entry_user_multi_id for @callingUser
     ---------------------------------------------------
     --
-    exec @myError = UpdateSingleMgrParamWork @paramName, @newValue, @callingUser
+    exec @myError = update_single_mgr_param_work @paramName, @newValue, @callingUser
 
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateSingleMgrTypeControlParam] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_single_mgr_type_control_param] TO [Mgr_Config_Admin] AS [dbo]
 GO

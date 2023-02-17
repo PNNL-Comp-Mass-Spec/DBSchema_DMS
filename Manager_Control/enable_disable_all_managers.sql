@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EnableDisableAllManagers] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_all_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[EnableDisableAllManagers]
+CREATE PROCEDURE [dbo].[enable_disable_all_managers]
 /****************************************************
 **
 **  Desc:   Enables or disables all managers, optionally filtering by manager type ID or manager name
@@ -16,16 +15,17 @@ CREATE PROCEDURE [dbo].[EnableDisableAllManagers]
 **          06/09/2011 - Created by extending code in DisableAllManagers
 **                     - Now filtering on MT_Active > 0 in T_MgrTypes
 **          02/12/2020 mem - Rename parameter to @infoOnly
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ManagerTypeIDList varchar(1024) = '',  -- Optional: list of manager type IDs to disable, e.g. "1, 2, 3"
-    @ManagerNameList varchar(4000) = '',    -- Optional: if defined, then only managers specified here will be enabled; supports the % wildcard
-    @Enable tinyint = 1,                    -- 1 to enable, 0 to disable
+    @managerTypeIDList varchar(1024) = '',  -- Optional: list of manager type IDs to disable, e.g. "1, 2, 3"
+    @managerNameList varchar(4000) = '',    -- Optional: if defined, then only managers specified here will be enabled; supports the % wildcard
+    @enable tinyint = 1,                    -- 1 to enable, 0 to disable
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     declare @myRowCount int
@@ -56,7 +56,7 @@ As
         --
         INSERT INTO #TmpManagerTypeIDs (MgrTypeID)
         SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedIntegerList(@ManagerTypeIDList, ',')
+        FROM dbo.parse_delimited_integer_list(@ManagerTypeIDList, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -76,7 +76,7 @@ As
 
     -----------------------------------------------
     -- Loop through the manager types in #TmpManagerTypeIDs
-    -- For each, call EnableDisableManagers
+    -- For each, call enable_disable_managers
     -----------------------------------------------
 
     Set @MgrTypeID = 0
@@ -99,14 +99,13 @@ As
             Set @Continue = 0
         Else
         Begin
-            exec @myError = EnableDisableManagers @Enable=@Enable, @ManagerTypeID=@MgrTypeID, @ManagerNameList=@ManagerNameList, @infoOnly = @infoOnly, @message = @message output
+            exec @myError = enable_disable_managers @Enable=@Enable, @ManagerTypeID=@MgrTypeID, @ManagerNameList=@ManagerNameList, @infoOnly = @infoOnly, @message = @message output
         End
     End
 
 Done:
     Return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[EnableDisableAllManagers] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[enable_disable_all_managers] TO [Mgr_Config_Admin] AS [dbo]
 GO

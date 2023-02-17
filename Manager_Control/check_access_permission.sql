@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CheckAccessPermission] ******/
+/****** Object:  StoredProcedure [dbo].[check_access_permission] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create PROCEDURE CheckAccessPermission
+CREATE PROCEDURE [dbo].[check_access_permission]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ create PROCEDURE CheckAccessPermission
 **
 **  Auth:   grk
 **  Date:   02/08/2005
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 @sprocName varchar(128)
@@ -29,5 +30,5 @@ AS
     RETURN @result
 
 GO
-GRANT EXECUTE ON [dbo].[CheckAccessPermission] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[check_access_permission] TO [Mgr_Config_Admin] AS [dbo]
 GO

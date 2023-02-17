@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[MakeTableFromList] ******/
+/****** Object:  UserDefinedFunction [dbo].[make_table_from_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION MakeTableFromList
+CREATE FUNCTION [dbo].[make_table_from_list]
 /****************************************************
 **
 **  Desc:
@@ -14,15 +14,15 @@ CREATE FUNCTION MakeTableFromList
 **  Parameters:
 **
 **
-**      Auth: grk
-**      Date: 1/12/2006
-**
-**      03/05/2008 jds - added the line to convert null list to empty string if value is null
-**      09/16/2009 mem - Expanded @list to varchar(max)
+**  Auth:   grk
+**  Date:   1/12/2006
+**          03/05/2008 jds - added the line to convert null list to empty string if value is null
+**          09/16/2009 mem - Expanded @list to varchar(max)
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-@list varchar(max)
+    @list varchar(max)
 )
 RETURNS @theTable TABLE
    (

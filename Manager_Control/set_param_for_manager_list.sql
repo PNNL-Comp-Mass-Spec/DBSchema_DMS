@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetParamForManagerList] ******/
+/****** Object:  StoredProcedure [dbo].[set_param_for_manager_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure SetParamForManagerList
+CREATE PROCEDURE [dbo].[set_param_for_manager_list]
 /****************************************************
 **
 **  Desc:
@@ -18,7 +18,8 @@ CREATE Procedure SetParamForManagerList
 **  Auth:   grk
 **  Date:   07/31/2007
 **          03/30/2009 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
-**          04/16/2009 mem - Now calling UpdateSingleMgrParamWork to perform the updates
+**          04/16/2009 mem - Now calling update_single_mgr_param_work to perform the updates
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE Procedure SetParamForManagerList
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -78,7 +79,7 @@ As
     ---------------------------------------------------
     -- Add value entries that don't already exist for managers in list
     -- We first set the value to '##_DummyParamValue_##'; we'll next
-    -- update it using UpdateSingleMgrParamWork
+    -- update it using update_single_mgr_param_work
     ---------------------------------------------------
 
     INSERT INTO T_ParamValue
@@ -121,11 +122,11 @@ As
     If @myRowCount > 0
     Begin
         ---------------------------------------------------
-        -- Call UpdateSingleMgrParamWork to perform the update, then call
-        -- AlterEnteredByUserMultiID and AlterEventLogEntryUserMultiID for @callingUser
+        -- Call update_single_mgr_param_work to perform the update, then call
+        -- alter_entered_by_user_multi_id and alter_event_log_entry_user_multi_id for @callingUser
         ---------------------------------------------------
         --
-        exec @myError = UpdateSingleMgrParamWork @paramType, @paramValue, @callingUser
+        exec @myError = update_single_mgr_param_work @paramType, @paramValue, @callingUser
     End
 
     ---------------------------------------------------
@@ -134,5 +135,5 @@ As
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[SetParamForManagerList] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_param_for_manager_list] TO [Mgr_Config_Admin] AS [dbo]
 GO

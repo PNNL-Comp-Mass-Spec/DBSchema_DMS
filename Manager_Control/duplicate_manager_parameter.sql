@@ -1,33 +1,34 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateManagerParameter] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_manager_parameter] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.DuplicateManagerParameter
+CREATE PROCEDURE [dbo].[duplicate_manager_parameter]
 /****************************************************
 **
 **  Desc:   Duplicates an existing parameter for all managers,
 **          creating a new entry with a new TypeID value
 **
 **  Example usage:
-**    exec DuplicateManagerParameter 157, 172, @ParamValueSearchText='msfileinfoscanner', @ParamValueReplaceText='AgilentToUimfConverter', @InfoOnly=1
+**    exec duplicate_manager_parameter 157, 172, @ParamValueSearchText='msfileinfoscanner', @ParamValueReplaceText='AgilentToUimfConverter', @InfoOnly=1
 **
-**    exec DuplicateManagerParameter 179, 182, @ParamValueSearchText='PbfGen', @ParamValueReplaceText='ProMex', @InfoOnly=1
+**    exec duplicate_manager_parameter 179, 182, @ParamValueSearchText='PbfGen', @ParamValueReplaceText='ProMex', @InfoOnly=1
 **
 **  Auth:   mem
 **  Date:   08/26/2013 mem - Initial release
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceParamTypeID int,
-    @NewParamTypeID int,
-    @ParamValueOverride varchar(255) = null,        -- Optional: New parameter value; ignored if @ParamValueSearchText is defined
-    @CommentOverride varchar(255) = null,
-    @ParamValueSearchText varchar(255) = null,      -- Optional: text to search for in the source parameter value
-    @ParamValueReplaceText varchar(255) = null,     -- Optional: replacement text (ignored if @ParamValueReplaceText is null)
-    @InfoOnly tinyint = 1
+    @sourceParamTypeID int,
+    @newParamTypeID int,
+    @paramValueOverride varchar(255) = null,        -- Optional: New parameter value; ignored if @ParamValueSearchText is defined
+    @commentOverride varchar(255) = null,
+    @paramValueSearchText varchar(255) = null,      -- Optional: text to search for in the source parameter value
+    @paramValueReplaceText varchar(255) = null,     -- Optional: replacement text (ignored if @ParamValueReplaceText is null)
+    @infoOnly tinyint = 1
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -130,4 +131,5 @@ As
     End
 
     return 0
+
 GO

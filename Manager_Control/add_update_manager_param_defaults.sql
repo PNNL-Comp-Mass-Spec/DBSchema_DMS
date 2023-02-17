@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateManagerParamDefaults] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_manager_param_defaults] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateManagerParamDefaults
+CREATE PROCEDURE [dbo].[add_update_manager_param_defaults]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE Procedure dbo.AddUpdateManagerParamDefaults
 **  Auth:   jds
 **  Date:   09/07/2007
 **          04/16/2009 mem - Updated comparison of @tVal and @vFld to use IsNull
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -23,7 +24,7 @@ CREATE Procedure dbo.AddUpdateManagerParamDefaults
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -101,11 +102,11 @@ As
 
         -- get the next field from the item name list
         --
-        execute @done = NextField @itemNameList, @delim, @inPos output, @inFld output
+        execute @done = next_field @itemNameList, @delim, @inPos output, @inFld output
 
         -- process the next field from the item value list
         --
-        execute NextField @itemValueList, @delim, @vPos output, @vFld output
+        execute next_field @itemValueList, @delim, @vPos output, @vFld output
 
         -- resolve item name to item ID
         --
@@ -177,6 +178,7 @@ nextItem:
 
 
     return 0
+
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateManagerParamDefaults] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_manager_param_defaults] TO [Mgr_Config_Admin] AS [dbo]
 GO

@@ -1,20 +1,20 @@
-/****** Object:  UserDefinedFunction [dbo].[udfTimeStampText] ******/
+/****** Object:  UserDefinedFunction [dbo].[time_stamp_text] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-create FUNCTION udfTimeStampText
+CREATE FUNCTION [dbo].[time_stamp_text]
 /****************************************************
 **  Returns a time stamp for the value specified by @CurrentTime
 **  The time stamp will be in the form: 2006-09-01 09:05:03
 **
 **  Auth:   mem
 **  Date:   09/01/2006
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @CurrentTime datetime
+    @currentTime datetime
 )
 RETURNS varchar(20)
 AS

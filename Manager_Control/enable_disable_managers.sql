@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EnableDisableManagers] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[EnableDisableManagers]
+CREATE PROCEDURE [dbo].[enable_disable_managers]
 /****************************************************
 **
 **  Desc:  Enables or disables all managers of the given type
@@ -19,16 +18,17 @@ CREATE PROCEDURE [dbo].[EnableDisableManagers]
 **          10/12/2017 mem - Allow @ManagerTypeID to be 0 if @ManagerNameList is provided
 **          03/28/2018 mem - Use different messages when updating just one manager
 **          02/12/2020 mem - Rename parameter to @infoOnly
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Enable tinyint,                        -- 0 to disable, 1 to enable
-    @ManagerTypeID int=11,                  -- Defined in table T_MgrTypes.  8=Space, 9=DataImport, 11=Analysis Tool Manager, 15=CaptureTaskManager
-    @ManagerNameList varchar(4000) = '',    -- Required when @Enable = 1.  Only managers specified here will be enabled, though you can use "All" to enable All managers.  When @Enable = 0, if this parameter is blank (or All) then all managers of the given type will be disabled; supports the % wildcard
+    @enable tinyint,                        -- 0 to disable, 1 to enable
+    @managerTypeID int=11,                  -- Defined in table T_MgrTypes.  8=Space, 9=DataImport, 11=Analysis Tool Manager, 15=CaptureTaskManager
+    @managerNameList varchar(4000) = '',    -- Required when @Enable = 1.  Only managers specified here will be enabled, though you can use "All" to enable All managers.  When @Enable = 0, if this parameter is blank (or All) then all managers of the given type will be disabled; supports the % wildcard
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     declare @myRowCount int
@@ -111,14 +111,14 @@ As
 
     If Len(@ManagerNameList) > 0 And @ManagerNameList <> 'All'
     Begin
-        -- Populate #TmpMangerList using ParseManagerNameList
+        -- Populate #TmpManagerList using parse_manager_name_list
 
-        Exec @myError = ParseManagerNameList @ManagerNameList, @RemoveUnknownManagers=1, @message=@message output
+        Exec @myError = parse_manager_name_list @ManagerNameList, @RemoveUnknownManagers=1, @message=@message output
 
         If @myError <> 0
         Begin
             If Len(@message) = 0
-                Set @message = 'Error calling ParseManagerNameList: ' + Convert(varchar(12), @myError)
+                Set @message = 'Error calling parse_manager_name_list: ' + Convert(varchar(12), @myError)
 
             Goto Done
         End
@@ -302,7 +302,6 @@ As
 Done:
     Return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[EnableDisableManagers] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[enable_disable_managers] TO [Mgr_Config_Admin] AS [dbo]
 GO

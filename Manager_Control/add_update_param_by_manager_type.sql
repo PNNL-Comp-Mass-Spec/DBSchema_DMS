@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateParamByManagerType] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_param_by_manager_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.AddUpdateParamByManagerType
+CREATE PROCEDURE [dbo].[add_update_param_by_manager_type]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE Procedure dbo.AddUpdateParamByManagerType
 **          04/16/2009 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **          01/12/2011 mem - Now updating @newValue to '' if null
 **                         - Added parameter @AssociateParameterWithManagers
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -29,7 +30,7 @@ CREATE Procedure dbo.AddUpdateParamByManagerType
     @callingUser varchar(128) = '',
     @AssociateParameterWithManagers tinyint = 1     -- If 1, then adds an entry to T_ParamValue for all managers with types defined in @managerTypeIDList; otherwise, does not update T_ParamValue
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -74,7 +75,7 @@ As
 
     INSERT INTO #TmpMgrTypeIDList (MgrTypeID)
     SELECT Convert(int, Item)
-    FROM MakeTableFromList(@managerTypeIDList)
+    FROM make_table_from_list(@managerTypeIDList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -185,7 +186,7 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            Exec AlterEnteredByUserMultiID 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
+            Exec alter_entered_by_user_multi_id 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
         End
 
     end
@@ -193,5 +194,5 @@ As
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamByManagerType] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_by_manager_type] TO [Mgr_Config_Admin] AS [dbo]
 GO

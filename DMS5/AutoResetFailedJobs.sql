@@ -479,7 +479,7 @@ As
                                 Set @LogMessage = @Processor + ' reports "Stopped Error"; setting ManagerErrorCleanupMode to 1 in the Manager_Control DB'
                                 Exec PostLogEntry 'Warning', @LogMessage, 'AutoResetFailedJobs'
 
-                                -- Call ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode
+                                -- Call ProteinSeqs.Manager_Control.dbo.set_manager_error_cleanup_mode
                                 Exec S_SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1
                             End
                             Else
@@ -513,8 +513,6 @@ As
     END CATCH
 
     return @myError
-
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[AutoResetFailedJobs] TO [DDL_Viewer] AS [dbo]
 GO

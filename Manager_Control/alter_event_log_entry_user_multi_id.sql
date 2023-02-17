@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[AlterEventLogEntryUserMultiID] ******/
+/****** Object:  StoredProcedure [dbo].[alter_event_log_entry_user_multi_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AlterEventLogEntryUserMultiID
+CREATE PROCEDURE [dbo].[alter_event_log_entry_user_multi_id]
 /****************************************************
 **
-**  Desc:   Calls AlterEventLogEntryUser for each entry in #TmpIDUpdateList
+**  Desc:   Calls alter_event_log_entry_user for each entry in #TmpIDUpdateList
 **
 **          The calling procedure must create and populate temporary table #TmpIDUpdateList:
 **              CREATE TABLE #TmpIDUpdateList (
@@ -23,18 +23,19 @@ CREATE PROCEDURE AlterEventLogEntryUserMultiID
 **  Date:   02/29/2008 mem - Initial version (Ticket: #644)
 **          05/23/2008 mem - Expanded @EntryDescription to varchar(512)
 **          03/30/2009 mem - Ported to the Manager Control DB
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TargetType smallint,               -- 1=Manager Enable/Disable
-    @TargetState int,
-    @NewUser varchar(128),
-    @ApplyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
-    @EntryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
+    @targetType smallint,               -- 1=Manager Enable/Disable
+    @targetState int,
+    @newUser varchar(128),
+    @applyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
+    @entryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int
@@ -120,7 +121,7 @@ As
 
     ------------------------------------------------
     -- Parse the values in #TmpIDUpdateList
-    -- Call AlterEventLogEntryUser for each
+    -- Call alter_event_log_entry_user for each
     ------------------------------------------------
 
     Set @CountUpdated = 0
@@ -139,7 +140,7 @@ As
             Set @continue = 0
         Else
         Begin
-            Exec @myError = AlterEventLogEntryUser
+            Exec @myError = alter_event_log_entry_user
                                 @TargetType,
                                 @TargetID,
                                 @TargetState,

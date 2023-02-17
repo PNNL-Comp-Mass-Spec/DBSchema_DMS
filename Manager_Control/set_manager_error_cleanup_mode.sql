@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetManagerErrorCleanupMode] ******/
+/****** Object:  StoredProcedure [dbo].[set_manager_error_cleanup_mode] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[SetManagerErrorCleanupMode]
+CREATE PROCEDURE [dbo].[set_manager_error_cleanup_mode]
 /****************************************************
 **
 **  Desc:
@@ -17,11 +16,12 @@ CREATE PROCEDURE [dbo].[SetManagerErrorCleanupMode]
 **                         - Fixed where clause bug in final update query
 **          01/30/2023 mem - Use new column name in view
 **          02/01/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ManagerList varchar(max) = '',
-    @CleanupMode tinyint = 1,                -- 0 = No auto cleanup, 1 = Attempt auto cleanup once, 2 = Auto cleanup always
+    @managerList varchar(max) = '',
+    @cleanupMode tinyint = 1,                -- 0 = No auto cleanup, 1 = Attempt auto cleanup once, 2 = Auto cleanup always
     @showTable tinyint = 1,
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
@@ -64,7 +64,7 @@ AS
     If Len(@ManagerList) > 0
         INSERT INTO #TmpManagerList (ManagerName)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@ManagerList, ',')
+        FROM dbo.parse_delimited_list(@ManagerList, ',')
         WHERE Len(IsNull(Value, '')) > 0
     Else
         INSERT INTO #TmpManagerList (ManagerName)
@@ -194,9 +194,8 @@ AS
 Done:
     return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_manager_error_cleanup_mode] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [MTUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_manager_error_cleanup_mode] TO [MTUser] AS [dbo]
 GO

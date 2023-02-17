@@ -1,14 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[GetDefaultRemoteInfoForManager] ******/
+/****** Object:  StoredProcedure [dbo].[get_default_remote_info_for_manager] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetDefaultRemoteInfoForManager]
+CREATE PROCEDURE [dbo].[get_default_remote_info_for_manager]
 /****************************************************
 **
 **  Desc:   Gets the default remote info parameters for the given manager
-**          Retrieves parameters using GetManagerParametersWork, so properly retrieves parent group parameters, if any
+**          Retrieves parameters using get_manager_parameters_work, so properly retrieves parent group parameters, if any
 **          If the manager does not have parameters RunJobsRemotely and RemoteHostName defined, returns an empty string
 **          Also returns an empty string if RunJobsRemotely is not True
 **
@@ -19,21 +18,22 @@ CREATE PROCEDURE [dbo].[GetDefaultRemoteInfoForManager]
 **
 **  Auth:   mem
 **  Date:   05/18/2017 mem - Initial version
-**          03/14/2018 mem - Use GetManagerParametersWork to lookup manager parameters, allowing for getting remote info parameters from parent groups
+**          03/14/2018 mem - Use get_manager_parameters_work to lookup manager parameters, allowing for getting remote info parameters from parent groups
 **          03/29/2018 mem - Return an empty string if the manager does not have parameters RunJobsRemotely and RemoteHostName defined, or if RunJobsRemotely is false
 **          01/31/2023 mem - Rename columns in #Tmp_Mgr_Params
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @managerName varchar(128),            -- Manager name
     @remoteInfoXML varchar(900) Output    -- Output XML if valid remote info parameters are defined, otherwise an empty string
 )
-As
+AS
     Set NoCount On
 
     Declare @myRowCount int = 0
     Declare @myError int = 0
-
+    
     Declare @managerID int = 0
     Set @remoteInfoXML = ''
 
@@ -69,7 +69,7 @@ As
     )
 
     -- Populate the temporary table with the manager parameters
-    Exec @myError = GetManagerParametersWork @managerName, 0, 50
+    Exec @myError = get_manager_parameters_work @managerName, 0, 50
 
     If Not Exists ( SELECT value
                     FROM #Tmp_Mgr_Params
@@ -119,12 +119,12 @@ As
               WHERE (param_name = 'RemoteOrgDBPath' And mgr_name = @managerName)
               UNION
               SELECT 7 AS Sort,
-                     '<privateKey>' + dbo.udfGetFilename([Value]) + '</privateKey>' AS [Value]
+                     '<privateKey>' + dbo.get_filename([Value]) + '</privateKey>' AS [Value]
               FROM #Tmp_Mgr_Params
               WHERE (param_name = 'RemoteHostPrivateKeyFile' And mgr_name = @managerName)
               UNION
               SELECT 8 AS Sort,
-                     '<passphrase>' + dbo.udfGetFilename([Value]) + '</passphrase>' AS [Value]
+                     '<passphrase>' + dbo.get_filename([Value]) + '</passphrase>' AS [Value]
               FROM #Tmp_Mgr_Params
               WHERE (param_name = 'RemoteHostPassphraseFile' And mgr_name = @managerName)
               ) SourceQ
@@ -134,7 +134,6 @@ As
 Done:
     Return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[GetDefaultRemoteInfoForManager] TO [MTUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_default_remote_info_for_manager] TO [MTUser] AS [dbo]
 GO

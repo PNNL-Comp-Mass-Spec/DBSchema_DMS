@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[UpdateUserPermissions]
+CREATE PROCEDURE [dbo].[update_user_permissions]
 /****************************************************
 **
 **  Desc: Updates user permissions in the current DB
@@ -16,11 +15,11 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissions]
 **  Auth:   mem
 **  Date:   07/31/2012 mem - Initial Version
 **          08/08/2012 mem - Added permissions for DMSWebUser
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
     Set NoCount On
-
 
     if exists (select * from sys.schemas where name = 'DMSReader')
         drop schema DMSReader
@@ -53,37 +52,37 @@ AS
     grant showplan to MTUser
 
 
-    GRANT EXECUTE ON [dbo].[AckManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddManagers] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateManager] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateManagerParamDefaults] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateManagerParams] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateManagerState] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateManagerType] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateMgrTypeControlParams] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateParamByManagerType] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateParamType] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[CheckAccessPermission] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[CheckForParamChanged]  TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[DisableAnalysisManagers] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[DisableArchiveDependentManagers] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[DisableSequestClusters] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[EnableArchiveDependentManagers] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[EnableDisableAllManagers] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[EnableDisableManagers] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[LocalErrorHandler] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[NextField] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[ParseManagerNameList] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[PostLogEntry] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[ReportManagerErrorCleanup]  TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[ack_manager_update_required] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_managers] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_manager] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_manager_param_defaults] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_manager_params] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_managerState] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_manager_type] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_mgr_type_control_params] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_param_by_manager_type] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_param_type] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[check_access_permission] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[check_for_param_changed]  TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[disable_analysis_managers] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[disable_archive_dependent_managers] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[disable_sequest_clusters] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[enable_archive_dependent_managers] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[enable_disable_all_managers] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[enable_disable_managers] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[local_error_handler] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[next_field] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[parse_manager_name_list] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[post_log_entry] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[report_manager_error_cleanup]  TO [Mgr_Config_Admin] AS [dbo]
     GRANT EXECUTE ON [dbo].[SelectManagerControlParams] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[SetManagerErrorCleanupMode] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[SetManagerParams] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[SetManagerUpdateRequired] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[SetParamForManagerList] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateManagerControlParams] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateSingleMgrControlParam] TO [Mgr_Config_Admin] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateSingleMgrTypeControlParam] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[set_manager_error_cleanup_mode] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[set_manager_params] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[set_manager_update_required] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[set_param_for_manager_list] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_manager_control_params] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_single_mgr_control_param] TO [Mgr_Config_Admin] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_single_mgr_type_control_param] TO [Mgr_Config_Admin] AS [dbo]
 
     GRANT INSERT ON [dbo].[V_MgrState] TO [DMSWebUser]
     GRANT SELECT ON [dbo].[V_MgrState] TO [DMSWebUser]
@@ -92,6 +91,5 @@ AS
     GRANT UPDATE ON [dbo].[T_ParamValue] ([Last_Affected]) TO [DMSWebUser] AS [dbo]
 
     Return 0
-
 
 GO

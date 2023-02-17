@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EnableDisableRunJobsRemotely] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_run_jobs_remotely] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
+CREATE PROCEDURE [dbo].[enable_disable_run_jobs_remotely]
 /****************************************************
 **
 **  Desc:   Enables or disables a manager to run jobs remotely
@@ -16,6 +15,7 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
 **          03/29/2018 mem - Add parameter @addMgrParamsIfMissing
 **          02/12/2020 mem - Rename parameter to @infoOnly
 **          02/03/2023 bcg - Use renamed view V_Mgr_Params
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[EnableDisableRunJobsRemotely]
     @addMgrParamsIfMissing tinyint = 0,      -- When 1, if manger(s) are missing parameters RunJobsRemotely or RemoteHostName, will auto-add those parameters
     @message varchar(512) = '' output
 )
-As
+AS
     Set NoCount On
 
     declare @myRowCount int
@@ -70,14 +70,14 @@ As
         Manager_Name varchar(128) NOT NULL
     )
 
-    -- Populate #TmpMangerList using ParseManagerNameList
+    -- Populate #TmpMangerList using parse_manager_name_list
     --
-    Exec @myError = ParseManagerNameList @managerNameList, @RemoveUnknownManagers=1, @message=@message output
+    Exec @myError = parse_manager_name_list @managerNameList, @RemoveUnknownManagers=1, @message=@message output
 
     If @myError <> 0
     Begin
         If Len(@message) = 0
-            Set @message = 'Error calling ParseManagerNameList: ' + Convert(varchar(12), @myError)
+            Set @message = 'Error calling parse_manager_name_list: ' + Convert(varchar(12), @myError)
 
         Goto Done
     End
@@ -308,6 +308,5 @@ As
 
 Done:
     Return @myError
-
 
 GO

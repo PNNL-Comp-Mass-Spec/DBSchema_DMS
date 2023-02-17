@@ -43,6 +43,7 @@ AS
 **	Date:	08/17/2006
 **			09/01/2006 mem - Updated to use dbo.udfTimeStampText
 **          08/26/2022 mem - Use new column name in T_Log_Entries
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **    
 *****************************************************/
 	
@@ -57,11 +58,11 @@ AS
 		Declare @SepChar varchar(2)
 		set @SepChar = ' ('
 
-		-- Note that dbo.udfTimeStampText returns a timestamp 
+		-- Note that dbo.time_stamp_text returns a timestamp 
 		-- in the form: 2006-09-01 09:05:03
 
 		Declare @UserInfo varchar(128)
-		Set @UserInfo = dbo.udfTimeStampText(GetDate()) + '; ' + LEFT(SYSTEM_USER,75)
+		Set @UserInfo = dbo.time_stamp_text(GetDate()) + '; ' + LEFT(SYSTEM_USER,75)
 		Set @UserInfo = IsNull(@UserInfo, '')
 
 		UPDATE T_Log_Entries
@@ -73,9 +74,7 @@ AS
 				(SELECT Entry_ID, CharIndex(@SepChar, IsNull(Entered_By, '')) AS MatchLoc
 				 FROM inserted 
 				) LookupQ ON T_Log_Entries.Entry_ID = LookupQ.Entry_ID
-
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Log_Entries] ENABLE TRIGGER [trig_u_T_Log_Entries]

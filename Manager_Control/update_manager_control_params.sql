@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateManagerControlParams] ******/
+/****** Object:  StoredProcedure [dbo].[update_manager_control_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateManagerControlParams
+CREATE PROCEDURE [dbo].[update_manager_control_params]
 /****************************************************
 **
 **  Desc:
@@ -17,9 +17,10 @@ CREATE Procedure dbo.UpdateManagerControlParams
 **  Auth:   jds
 **  Date:   06/20/2007
 **          07/27/2007 jds - Added support for parameters that do not exist for a manager
-**          07/31/2007 grk - Factored out param change logic into 'SetParamForManagerList'
+**          07/31/2007 grk - Factored out param change logic into 'set_param_for_manager_list'
 **          03/28/2008 jds - Renamed Paramx variables to ParamValx for clarity
-**          04/16/2009 mem - Added optional parameter @callingUser; if provided, then SetParamForManagerList will populate field Entered_By with this name
+**          04/16/2009 mem - Added optional parameter @callingUser; if provided, then set_param_for_manager_list will populate field Entered_By with this name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -37,7 +38,7 @@ CREATE Procedure dbo.UpdateManagerControlParams
     @managerIDList varchar(2048),       -- manager ID values (numbers, not manager names)
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -68,7 +69,7 @@ As
     --Insert IDs into temp table
     --
     INSERT INTO #ManagerIDList
-    SELECT Item FROM MakeTableFromList(@managerIDList)
+    SELECT Item FROM make_table_from_list(@managerIDList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -97,12 +98,12 @@ As
     end
 
     ---------------------------------------------------
-    -- Call SetParamForManagerList to update the managers
+    -- Call set_param_for_manager_list to update the managers
     ---------------------------------------------------
 
     if IsNull(@param1Type, '') <> ''
     begin
-        exec @myError = SetParamForManagerList @paramVal1, @param1Type, @message output, @callingUser
+        exec @myError = set_param_for_manager_list @paramVal1, @param1Type, @message output, @callingUser
         if @myError <> 0
         begin
             RAISERROR (@message, 10, 1)
@@ -112,7 +113,7 @@ As
     --
     if IsNull(@param2Type, '') <> ''
     begin
-        exec @myError = SetParamForManagerList @paramVal2, @param2Type, @message output, @callingUser
+        exec @myError = set_param_for_manager_list @paramVal2, @param2Type, @message output, @callingUser
         if @myError <> 0
         begin
             RAISERROR (@message, 10, 1)
@@ -122,7 +123,7 @@ As
     --
     if IsNull(@param3Type, '') <> ''
     begin
-        exec @myError = SetParamForManagerList @paramVal3, @param3Type, @message output, @callingUser
+        exec @myError = set_param_for_manager_list @paramVal3, @param3Type, @message output, @callingUser
         if @myError <> 0
         begin
             RAISERROR (@message, 10, 1)
@@ -132,7 +133,7 @@ As
     --
     if IsNull(@param4Type, '') <> ''
     begin
-        exec @myError = SetParamForManagerList @paramVal4, @param4Type, @message output, @callingUser
+        exec @myError = set_param_for_manager_list @paramVal4, @param4Type, @message output, @callingUser
         if @myError <> 0
         begin
             RAISERROR (@message, 10, 1)
@@ -142,7 +143,7 @@ As
     --
     if IsNull(@param5Type, '') <> ''
     begin
-        exec @myError = SetParamForManagerList @paramVal5, @param5Type, @message output, @callingUser
+        exec @myError = set_param_for_manager_list @paramVal5, @param5Type, @message output, @callingUser
         if @myError <> 0
         begin
             RAISERROR (@message, 10, 1)
@@ -153,5 +154,5 @@ As
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateManagerControlParams] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_manager_control_params] TO [Mgr_Config_Admin] AS [dbo]
 GO

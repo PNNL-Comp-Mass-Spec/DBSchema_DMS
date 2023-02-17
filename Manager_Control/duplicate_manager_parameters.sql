@@ -1,28 +1,29 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateManagerParameters] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_manager_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.DuplicateManagerParameters
+CREATE PROCEDURE [dbo].[duplicate_manager_parameters]
 /****************************************************
 **
 **  Desc:   Duplicates the parameters for a given manager
 **          to create new parameters for a new manager
 **
 **  Example usage:
-**    exec DuplicateManagerParameter 157, 172
+**    exec duplicate_manager_parameter 157, 172
 **
 **  Auth:   mem
 **  Date:   10/10/2014 mem - Initial release
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceMgrID int,
-    @TargetMgrID int,
-    @MergeSourceWithTarget tinyint = 0,         -- When 0, then the target manager cannot have any parameters; if 1, then will add missing parameters to the target manager
-    @InfoOnly tinyint = 0
+    @sourceMgrID int,
+    @targetMgrID int,
+    @mergeSourceWithTarget tinyint = 0,         -- When 0, then the target manager cannot have any parameters; if 1, then will add missing parameters to the target manager
+    @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -111,4 +112,5 @@ As
     End
 
     return 0
+
 GO

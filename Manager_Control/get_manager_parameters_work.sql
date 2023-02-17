@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetManagerParametersWork] ******/
+/****** Object:  StoredProcedure [dbo].[get_manager_parameters_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[GetManagerParametersWork]
+CREATE PROCEDURE [dbo].[get_manager_parameters_work]
 /****************************************************
 **
 **  Desc:   Populates a temporary table with the parameters for the given analysis manager(s)
@@ -28,18 +27,19 @@ CREATE PROCEDURE [dbo].[GetManagerParametersWork]
 **      )
 **
 **  Auth:   mem
-**  Date:   03/14/2018 mem - Initial version (code refactored from GetManagerParameters)
+**  Date:   03/14/2018 mem - Initial version (code refactored from get_manager_parameters)
 **          01/31/2023 mem - Use new view name
 **          02/01/2023 mem - Fix typo in column name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ManagerNameList varchar(4000) = '',
-    @SortMode tinyint = 0,                    -- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName, 3 means Value then ParamName
-    @MaxRecursion tinyint = 50,
+    @managerNameList varchar(4000) = '',
+    @sortMode tinyint = 0,                    -- 0 means sort by ParamTypeID then MgrName, 1 means ParamName, then MgrName, 2 means MgrName, then ParamName, 3 means Value then ParamName
+    @maxRecursion tinyint = 50,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myRowCount Int = 0
@@ -87,7 +87,7 @@ As
            End As parent_param_pointer_state,
            mgr_name
     FROM V_Param_Value
-    WHERE (mgr_name IN (Select Value From dbo.udfParseDelimitedList(@ManagerNameList, ',')))
+    WHERE (mgr_name IN (Select Value From dbo.parse_delimited_list(@ManagerNameList, ',')))
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -171,6 +171,5 @@ As
 
 Done:
     Return @myError
-
 
 GO

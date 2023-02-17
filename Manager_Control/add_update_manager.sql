@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateManager] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_manager] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateManager]
+CREATE PROCEDURE [dbo].[add_update_manager]
 /****************************************************
 **
 **  Desc:
@@ -12,7 +12,8 @@ CREATE Procedure [dbo].[AddUpdateManager]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   jds
-**  Date:   8/22/2007
+**  Date:   08/22/2007
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -22,7 +23,7 @@ CREATE Procedure [dbo].[AddUpdateManager]
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -64,6 +65,7 @@ As
     ---------------------------------------------------
 
     return 0
+
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateManager] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_manager] TO [Mgr_Config_Admin] AS [dbo]
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateManagerParams] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_manager_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddUpdateManagerParams]
+CREATE PROCEDURE [dbo].[add_update_manager_params]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +15,7 @@ CREATE Procedure [dbo].[AddUpdateManagerParams]
 **  Date:   08/20/2007
 **          04/16/2009 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **          04/17/2015 mem - Now ignoring parameters that are blank
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,7 +26,7 @@ CREATE Procedure [dbo].[AddUpdateManagerParams]
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -117,11 +117,11 @@ As
 
         -- get the next field from the item name list
         --
-        execute @done = NextField @itemNameList, @delim, @inPos output, @inFld output
+        execute @done = next_field @itemNameList, @delim, @inPos output, @inFld output
 
         -- process the next field from the item value list
         --
-        execute NextField @itemValueList, @delim, @vPos output, @vFld output
+        execute next_field @itemValueList, @delim, @vPos output, @vFld output
 
         -- resolve item name to item ID
         --
@@ -211,23 +211,23 @@ As
         -- @callingUser is defined
         -- Items need to be updated in T_ParamValue
 
-        Exec AlterEnteredByUserMultiID 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
+        Exec alter_entered_by_user_multi_id 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
 
         If @MgrActiveChanged = 1
         Begin
             -- Triggers trig_i_T_ParamValue and trig_u_T_ParamValue make an entry in
             --  T_Event_Log whenever mgractive (param TypeID = 17) is changed
 
-            -- Call AlterEventLogEntryUserMultiID
+            -- Call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
 
-            -- Populate #TmpIDUpdateList with Manager ID values, then call AlterEventLogEntryUserMultiID
+            -- Populate #TmpIDUpdateList with Manager ID values, then call alter_event_log_entry_user_multi_id
             Truncate Table #TmpIDUpdateList
 
             INSERT INTO #TmpIDUpdateList (TargetID)
             VALUES (@mgrID)
 
-            Exec AlterEventLogEntryUserMultiID 1, @MgrActiveTargetState, @callingUser
+            Exec alter_event_log_entry_user_multi_id 1, @MgrActiveTargetState, @callingUser
         End
     End
 
@@ -238,5 +238,5 @@ As
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateManagerParams] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_manager_params] TO [Mgr_Config_Admin] AS [dbo]
 GO

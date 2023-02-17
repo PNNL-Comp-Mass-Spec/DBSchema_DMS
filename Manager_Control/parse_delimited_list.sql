@@ -1,10 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udfParseDelimitedList] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION udfParseDelimitedList
+CREATE FUNCTION [dbo].[parse_delimited_list]
 /****************************************************
 **  Parses the text in @DelimitedList and returns a table
 **  containing the values
@@ -20,11 +19,12 @@ CREATE FUNCTION udfParseDelimitedList
 **          03/14/2007 mem - Changed @DelimitedList parameter from varchar(8000) to varchar(max)
 **          04/02/2012 mem - Now removing Tab characters
 **          03/27/2013 mem - Now replacing Tab characters, carriage returns and line feeds with @Delimiter
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @DelimitedList varchar(max),
-    @Delimiter varchar(2) = ','
+    @delimitedList varchar(max),
+    @delimiter varchar(2) = ','
 )
 RETURNS @tmpValues TABLE(Value varchar(2048))
 AS

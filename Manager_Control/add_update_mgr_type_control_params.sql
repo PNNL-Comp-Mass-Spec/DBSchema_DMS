@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateMgrTypeControlParams] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_mgr_type_control_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure [dbo].[AddUpdateMgrTypeControlParams]
+CREATE PROCEDURE [dbo].[add_update_mgr_type_control_params]
 /****************************************************
 **
 **  Desc:
@@ -16,11 +16,12 @@ CREATE Procedure [dbo].[AddUpdateMgrTypeControlParams]
 **
 **  Auth:   jds
 **  Date:   09/21/2007
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
     @mgrTypeID varchar(32),
     @paramIDList varchar(2048)
-As
+AS
     declare @myError int
     set @myError = 0
 
@@ -35,7 +36,7 @@ As
 
     Insert Into T_MgrType_ParamType_Map(MgrTypeID, ParamTypeID)
     Select @mgrTypeID, *
-    from MakeTableFromList(@paramIDList)
+    from make_table_from_list(@paramIDList)
     where Item NOT IN   (
                     Select ParamTypeID
                     From T_MgrType_ParamType_Map
@@ -52,9 +53,8 @@ As
         return 51310
     end
 
-
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateMgrTypeControlParams] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_mgr_type_control_params] TO [Mgr_Config_Admin] AS [dbo]
 GO

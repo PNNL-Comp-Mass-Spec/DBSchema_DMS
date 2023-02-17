@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSingleMgrParamWork] ******/
+/****** Object:  StoredProcedure [dbo].[update_single_mgr_param_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Procedure dbo.UpdateSingleMgrParamWork
+CREATE PROCEDURE [dbo].[update_single_mgr_param_work]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE Procedure dbo.UpdateSingleMgrParamWork
 **
 **  Auth:   mem
 **  Date:   04/16/2009
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -26,8 +27,7 @@ CREATE Procedure dbo.UpdateSingleMgrParamWork
     @newValue varchar(128),             -- The new value to assign for this parameter
     @callingUser varchar(128) = ''
 )
-As
-
+AS
     declare @myError int
     declare @myRowCount int
     set @myError = 0
@@ -100,13 +100,13 @@ As
 
         CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
 
-        -- Populate #TmpIDUpdateList with Entry_ID values for T_ParamValue, then call AlterEnteredByUserMultiID
+        -- Populate #TmpIDUpdateList with Entry_ID values for T_ParamValue, then call alter_entered_by_user_multi_id
         --
         INSERT INTO #TmpIDUpdateList (TargetID)
         SELECT EntryID
         FROM #TmpParamValueEntriesToUpdate
 
-        Exec AlterEnteredByUserMultiID 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
+        Exec alter_entered_by_user_multi_id 'T_ParamValue', 'Entry_ID', @CallingUser, @EntryDateColumnName = 'Last_Affected'
 
 
         If @paramName = 'mgractive' or @ParamID = 17
@@ -114,7 +114,7 @@ As
             -- Triggers trig_i_T_ParamValue and trig_u_T_ParamValue make an entry in
             --  T_Event_Log whenever mgractive (param TypeID = 17) is changed
 
-            -- Call AlterEventLogEntryUserMultiID
+            -- Call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
 
             If @newValue = 'True'
@@ -122,7 +122,7 @@ As
             else
                 Set @TargetState = 0
 
-            -- Populate #TmpIDUpdateList with Manager ID values, then call AlterEventLogEntryUserMultiID
+            -- Populate #TmpIDUpdateList with Manager ID values, then call alter_event_log_entry_user_multi_id
             Truncate Table #TmpIDUpdateList
 
             INSERT INTO #TmpIDUpdateList (TargetID)
@@ -130,7 +130,7 @@ As
             FROM T_ParamValue
             WHERE Entry_ID IN (SELECT EntryID FROM #TmpParamValueEntriesToUpdate)
 
-            Exec AlterEventLogEntryUserMultiID 1, @TargetState, @callingUser
+            Exec alter_event_log_entry_user_multi_id 1, @TargetState, @callingUser
         End
 
     End

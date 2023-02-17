@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMgrTypeListByParamName] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_mgr_type_list_by_param_name] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMgrTypeListByParamName]
+CREATE FUNCTION [dbo].[get_mgr_type_list_by_param_name]
 /****************************************************
 **
 **  Desc:
@@ -12,6 +12,7 @@ CREATE FUNCTION [dbo].[GetMgrTypeListByParamName]
 **  Auth:   jds
 **  Date:   03/26/2009 jds - Initial commit
 **          01/30/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,7 +55,6 @@ BEGIN
         Deallocate manager_type
 
         return(@theMgrTypeList)
-end
-
+END
 
 GO

@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[post_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[PostLogEntry]
+CREATE PROCEDURE [dbo].[post_log_entry]
 /****************************************************
 **
 **  Desc: Put new entry into the main log table
@@ -16,14 +15,14 @@ CREATE Procedure [dbo].[PostLogEntry]
 **          02/17/2005 mem - Added parameter @duplicateEntryHoldoffHours
 **          05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
 **          08/25/2022 mem - Use new column name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
     @type varchar(128),
     @message varchar(4096),
     @postedBy varchar(128)= 'na',
     @duplicateEntryHoldoffHours int = 0         -- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
-As
-
+AS
     Declare @duplicateRowCount int
     Set @duplicateRowCount = 0
 
@@ -49,13 +48,12 @@ As
 
     return 0
 
-
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_log_entry] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_log_entry] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_log_entry] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostLogEntry] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_log_entry] TO [svc-dms] AS [dbo]
 GO

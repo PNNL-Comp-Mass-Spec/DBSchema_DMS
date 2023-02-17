@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostUsageLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[post_usage_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE PostUsageLogEntry
+CREATE PROCEDURE [dbo].[post_usage_log_entry]
 /****************************************************
 **
 **  Desc: Put new entry into T_Usage_Log and update T_Usage_Stats
@@ -18,6 +18,7 @@ CREATE PROCEDURE PostUsageLogEntry
 **          03/16/2006 mem - Now updating T_Usage_Stats
 **          03/17/2006 mem - Now populating Usage_Count in T_Usage_Log and changed @MinimumUpdateInterval from 6 hours to 1 hour
 **          05/03/2009 mem - Removed parameter @DBName
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -25,7 +26,7 @@ CREATE PROCEDURE PostUsageLogEntry
     @message varchar(500) = '',
     @MinimumUpdateInterval int = 1          -- Set to a value greater than 0 to limit the entries to occur at most every @MinimumUpdateInterval hours
 )
-As
+AS
     set nocount on
 
     declare @myRowCount int
@@ -84,7 +85,7 @@ As
         if @myRowCount <> 1 Or @myError <> 0
         begin
             Set @message = 'Update was unsuccessful for T_Usage_Log table: @myRowCount = ' + Convert(varchar(19), @myRowCount) + '; @myError = ' + Convert(varchar(19), @myError)
-            execute PostLogEntry 'Error', @message, 'PostUsageLogEntry'
+            execute post_log_entry 'Error', @message, 'post_usage_log_entry'
         end
     End
 

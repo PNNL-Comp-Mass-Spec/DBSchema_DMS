@@ -1,10 +1,10 @@
-/****** Object:  StoredProcedure [dbo].[ParseManagerNameList] ******/
+/****** Object:  StoredProcedure [dbo].[parse_manager_name_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE dbo.ParseManagerNameList
+CREATE PROCEDURE [dbo].[parse_manager_name_list]
 /****************************************************
 **
 **  Desc:   Parses the list of managers in @ManagerNameList and populates
@@ -22,14 +22,15 @@ CREATE PROCEDURE dbo.ParseManagerNameList
 **  Auth:   mem
 **  Date:   05/09/2008
 **          05/14/2015 mem - Update Insert query to explicitly list field Manager_Name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ManagerNameList varchar(4000) = '',
-    @RemoveUnknownManagers tinyint = 1,
+    @managerNameList varchar(4000) = '',
+    @removeUnknownManagers tinyint = 1,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     declare @myRowCount int
@@ -70,7 +71,7 @@ As
         -- Populate #TmpMangerSpecList with the data in @ManagerNameList
         INSERT INTO #TmpMangerSpecList (Manager_Name)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@ManagerNameList, ',')
+        FROM dbo.parse_delimited_list(@ManagerNameList, ',')
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -144,7 +145,6 @@ As
 
     Return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[ParseManagerNameList] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[parse_manager_name_list] TO [Mgr_Config_Admin] AS [dbo]
 GO

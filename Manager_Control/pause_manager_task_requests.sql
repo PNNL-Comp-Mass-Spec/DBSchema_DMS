@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PauseManagerTaskRequests] ******/
+/****** Object:  StoredProcedure [dbo].[pause_manager_task_requests] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[PauseManagerTaskRequests]
+CREATE PROCEDURE [dbo].[pause_manager_task_requests]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +13,7 @@ CREATE PROCEDURE [dbo].[PauseManagerTaskRequests]
 **
 **  Auth:   mem
 **  Date:   09/21/2021 mem - Initial version
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -104,9 +104,9 @@ Done:
 
 
 GO
-GRANT EXECUTE ON [dbo].[PauseManagerTaskRequests] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[pause_manager_task_requests] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PauseManagerTaskRequests] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[pause_manager_task_requests] TO [Mgr_Config_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PauseManagerTaskRequests] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[pause_manager_task_requests] TO [svc-dms] AS [dbo]
 GO

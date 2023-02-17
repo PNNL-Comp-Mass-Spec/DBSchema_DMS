@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSingleMgrControlParam] ******/
+/****** Object:  StoredProcedure [dbo].[update_single_mgr_control_param] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateSingleMgrControlParam]
+CREATE PROCEDURE [dbo].[update_single_mgr_control_param]
 /****************************************************
 **
 **  Desc:
@@ -15,14 +15,15 @@ CREATE PROCEDURE [dbo].[UpdateSingleMgrControlParam]
 **  Auth:   jds
 **  Date:   06/20/2007
 **          07/31/2007 grk - changed for 'controlfromwebsite' no longer a parameter
-**          04/16/2009 mem - Added optional parameter @callingUser; if provided, then UpdateSingleMgrParamWork will populate field Entered_By with this name
+**          04/16/2009 mem - Added optional parameter @callingUser; if provided, then update_single_mgr_param_work will populate field Entered_By with this name
 **          04/08/2011 mem - Will now add parameter @paramValue to managers that don't yet have the parameter defined
 **          04/21/2011 mem - Expanded @managerIDList to varchar(8000)
 **          05/11/2011 mem - Fixed bug reporting error resolving @paramValue to @ParamTypeID
-**          04/29/2015 mem - Now parsing @managerIDList using udfParseDelimitedIntegerList
+**          04/29/2015 mem - Now parsing @managerIDList using parse_delimited_integer_list
 **                         - Added parameter @infoOnly
 **                         - Renamed the first parameter from @paramValue to @paramName
 **          01/31/2023 mem - Use new view name
+**          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -32,7 +33,7 @@ CREATE PROCEDURE [dbo].[UpdateSingleMgrControlParam]
     @callingUser varchar(128) = '',
     @infoOnly tinyint = 0
 )
-As
+AS
     Set NoCount On
 
     Declare @myRowCount int = 0
@@ -89,7 +90,7 @@ As
     --
     INSERT INTO #TmpMgrIDs (MgrID)
     SELECT Cast(Value as varchar(12))
-    FROM dbo.udfParseDelimitedIntegerList ( @managerIDList, ',' )
+    FROM dbo.parse_delimited_integer_list ( @managerIDList, ',' )
 
     If @infoOnly <> 0
     Begin
@@ -135,7 +136,7 @@ As
         -- don't yet have an entry in T_ParamValue for parameter @paramName
         --
         -- Adding value '##_DummyParamValue_##' so that
-        --  we'll force a call to UpdateSingleMgrParamWork
+        --  we'll force a call to update_single_mgr_param_work
         ---------------------------------------------------
 
         INSERT INTO T_ParamValue( TypeID,
@@ -179,17 +180,16 @@ As
         end
 
         ---------------------------------------------------
-        -- Call UpdateSingleMgrParamWork to perform the update, then call
-        -- AlterEnteredByUserMultiID and AlterEventLogEntryUserMultiID for @callingUser
+        -- Call update_single_mgr_param_work to perform the update, then call
+        -- alter_entered_by_user_multi_id and alter_event_log_entry_user_multi_id for @callingUser
         ---------------------------------------------------
         --
-        exec @myError = UpdateSingleMgrParamWork @paramName, @newValue, @callingUser
+        exec @myError = update_single_mgr_param_work @paramName, @newValue, @callingUser
 
     End
 
     return @myError
 
-
 GO
-GRANT EXECUTE ON [dbo].[UpdateSingleMgrControlParam] TO [Mgr_Config_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_single_mgr_control_param] TO [Mgr_Config_Admin] AS [dbo]
 GO
