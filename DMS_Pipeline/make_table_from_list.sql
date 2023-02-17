@@ -6,21 +6,20 @@ GO
 CREATE FUNCTION dbo.MakeTableFromList
 /****************************************************
 **
-**	Desc: 
+**  Desc:
 **  Returns a table filled with the contents of a delimited list
 **
-**	Return values: 
+**  Return values:
 **
-**	Parameters:
-**	
+**  Parameters:
 **
-**	Auth: grk
-**	Date: 1/12/2006
-**      
-**		03/05/2008 jds - Added the line to convert null list to empty string if value is null 
-**		08/25/2008 grk - Increased size of input @list 
-**		03/04/2015 mem - Update to use udfParseDelimitedList
-**    
+**
+**  Auth:   grk
+**  Date:   01/12/2006
+**          03/05/2008 jds - Added the line to convert null list to empty string if value is null
+**          08/25/2008 grk - Increased size of input @list
+**          03/04/2015 mem - Update to use udfParseDelimitedList
+**
 *****************************************************/
 (
 @list varchar(max)
@@ -31,12 +30,12 @@ RETURNS @theTable TABLE
    )
 AS
 BEGIN
-		
-		INSERT INTO @theTable
-			(Item)
-		SELECT Value
-		FROM dbo.udfParseDelimitedList(@list, ',')
-		RETURN
+
+        INSERT INTO @theTable
+            (Item)
+        SELECT Value
+        FROM dbo.udfParseDelimitedList(@list, ',')
+        RETURN
 END
 
 GO

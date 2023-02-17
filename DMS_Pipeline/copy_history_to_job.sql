@@ -8,10 +8,10 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 /****************************************************
 **
 **  Desc:
-**      For a given job, copies the job details, steps, 
+**      For a given job, copies the job details, steps,
 **      and parameters from the most recent successful
 **      run in the history tables back into the main tables
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -37,7 +37,7 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 **          05/12/2017 mem - Add Remote_Info_ID
 **          01/19/2018 mem - Add Runtime_Minutes
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
-**    
+**
 *****************************************************/
 (
     @job int,
@@ -45,12 +45,12 @@ CREATE PROCEDURE [dbo].[CopyHistoryToJob]
 )
 As
     set nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     ---------------------------------------------------
     -- Bail if no candidates found
     ---------------------------------------------------
@@ -72,7 +72,7 @@ As
     ---------------------------------------------------
     --
     Declare @dateStamp datetime
-    
+
     -- Find most recent successful historic job
     --
     SELECT @dateStamp = MAX(Saved)
@@ -87,11 +87,11 @@ As
         set @message = 'Error '
         goto Done
     end
-        
+
     If @dateStamp Is Null
     Begin
         Print 'No successful jobs found in T_Jobs_History for job ' + Convert(varchar(12), @job) + '; will look for a failed job'
-        
+
         -- Find most recent historic job, regardless of job state
         --
         SELECT @dateStamp = MAX(Saved)
@@ -100,15 +100,15 @@ As
         GROUP BY Job, State
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
         Begin
             Select 'Job not found in T_Jobs_History: ' + Convert(varchar(12), @job) AS Warning
             Goto Done
         End
-        
+
         Print 'Match found, saved on ' + Convert(varchar(30), @dateStamp)
-        
+
     End
 
     ---------------------------------------------------
@@ -141,7 +141,7 @@ As
         DataPkgID,
         Comment
     )
-    SELECT 
+    SELECT
         Job,
         Priority,
         Script,
@@ -163,7 +163,7 @@ As
         T_Jobs_History
     WHERE
         Job = @job AND
-        Saved = @dateStamp 
+        Saved = @dateStamp
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -173,7 +173,7 @@ As
         set @message = 'Error '
         goto Done
     end
-    
+
     ---------------------------------------------------
     -- Copy Steps
     ---------------------------------------------------
@@ -274,7 +274,7 @@ As
     ---------------------------------------------------
     -- Copy job step dependencies
     ---------------------------------------------------
-    --    
+    --
     -- First delete any extra steps for this job that are in T_Job_Step_Dependencies
     --
     DELETE T_Job_Step_Dependencies
@@ -294,16 +294,16 @@ As
         set @message = 'Error '
         goto Done
     end
-    
+
     -- Check whether this job has entries in T_Job_Step_Dependencies_History
     --
     If Not Exists (Select * From T_Job_Step_Dependencies_History Where Job = @job)
     Begin
         -- Job did not have cached dependencies
         -- Look for a job that used the same script
-    
+
         Declare @SimilarJob int = 0
-                
+
         SELECT @SimilarJob = MIN(H.Job)
         FROM T_Job_Step_Dependencies_History H
              INNER JOIN ( SELECT Job
@@ -312,15 +312,15 @@ As
                                 Script = ( SELECT Script
                                            FROM T_Jobs_History
                 WHERE Job = @job AND
-                                                 Most_Recent_Entry = 1 ) 
+                                                 Most_Recent_Entry = 1 )
                          ) SimilarJobQ
                ON H.Job = SimilarJobQ.Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount > 0
         Begin
-            
+
             INSERT INTO T_Job_Step_Dependencies( Job,
                                                  Step_Number,
                                                  Target_Step_Number,
@@ -345,7 +345,7 @@ As
         Begin
             -- No similar jobs
             -- Create default dependencenies
-            
+
             INSERT INTO T_Job_Step_Dependencies( Job,
                                                  Step_Number,
                                                  Target_Step_Number,
@@ -362,40 +362,40 @@ As
             WHERE (Job = @job) AND
                   (Step_Number > 1)
         End
-                
+
     End
     Else
     Begin
-              
+
         -- Now add/update the job step dependencies
-        --    
+        --
         MERGE T_Job_Step_Dependencies AS target
-        USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+        USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
                        Evaluated, Triggered, Enable_Only
                 FROM T_Job_Step_Dependencies_History
-                WHERE Job = @job    
+                WHERE Job = @job
             ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
-            ON (target.Job = source.Job And 
+            ON (target.Job = source.Job And
                 target.Step_Number = source.Step_Number And
                 target.Target_Step_Number = source.Target_Step_Number)
-        WHEN Matched THEN 
-            UPDATE Set 
+        WHEN Matched THEN
+            UPDATE Set
                 Condition_Test = source.Condition_Test,
                 Test_Value = source.Test_Value,
                 Evaluated = source.Evaluated,
                 Triggered = source.Triggered,
                 Enable_Only = source.Enable_Only
         WHEN Not Matched THEN
-            INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+            INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
                     Evaluated, Triggered, Enable_Only)
-            VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+            VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value,
                     source.Evaluated, source.Triggered, source.Enable_Only)
-        ;        
+        ;
          --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
     End
-    
+
     commit transaction @transName
 
     ---------------------------------------------------
@@ -421,7 +421,7 @@ As
                              COUNT(*) AS dependencies
                       FROM T_Job_Step_Dependencies
                       WHERE (Job = @job)
-                      GROUP BY Step_Number 
+                      GROUP BY Step_Number
                     ) T
            ON T.Step_Number = JS.Step_Number
     WHERE (JS.Job = @job) AND

@@ -7,10 +7,10 @@ GO
 CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Mark job step as complete
 **      Also updates CPU and Memory info tracked by T_Machines
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **                         - Now looking up machine using T_Local_Processors
 **          10/30/2014 mem - Added support for completion code 17 (CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY)
 **          03/11/2015 mem - Now updating Completion_Message when completion code 16 or 17 is encountered more than once in a 24 hour period
-**          04/17/2015 mem - Now using Uses_All_Cores for determining the number of cores to add back to CPUs_Available 
+**          04/17/2015 mem - Now using Uses_All_Cores for determining the number of cores to add back to CPUs_Available
 **          11/18/2015 mem - Add Actual_CPU_Load
 **          12/31/2015 mem - Added support for completion code 20 (CLOSEOUT_NO_DATA)
 **          01/05/2016 mem - Tweak warning message for DeconTools results without data
@@ -81,38 +81,38 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
-    Set @message = ''    
+
+    Set @message = ''
     Set @returnCode = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- This table variable tracks step tools that should be skipped when a job step reports NO_DATA
     ---------------------------------------------------
-    
+
     Declare @stepToolsToSkip table (Step_Tool varchar(64))
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @job = IsNull(@job, 0)
     Set @step = IsNull(@step, 0)
     Set @processorName = IsNull(@processorName, '')
-    
+
     Declare @jobStepDescription varchar(32) = 'job ' + Cast(@job as varchar(12)) + ', step ' + Cast(@step as varchar(9))
     Declare @jobStepDescriptionCapital varchar(32) = 'Job ' + Cast(@job as varchar(12)) + ', step ' + Cast(@step as varchar(9))
-    
+
     ---------------------------------------------------
     -- get current state of this job step
     ---------------------------------------------------
@@ -159,7 +159,7 @@ As
         Set @myError = 66
         Set @message = 'Could not find machine name in T_Local_Processors using T_Job_Steps; cannot mark ' + @jobStepDescription + ' complete for processor ' + @processorName
         Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
-        
+
         Goto Done
     End
     --
@@ -168,7 +168,7 @@ As
         Set @myError = 67
         Set @message = @jobStepDescriptionCapital + ' is not in the correct state (4) to be marked complete by processor ' + @processorName + '; actual state is ' + Cast(@state as varchar(9))
         Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
-        
+
         Goto Done
     End
     Else
@@ -178,7 +178,7 @@ As
             Set @myError = 68
             Set @message = @jobStepDescriptionCapital + ' is being processed by ' + @jobStepsProcessor + '; processor ' + @processorName + ' is not allowed to mark it as complete'
             Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
-            
+
             Goto Done
         End
     End
@@ -189,10 +189,10 @@ As
     --
     Declare @stepState int
     Declare @resetSharedResultStep tinyint = 0
-    Declare @handleSkippedStep tinyint = 0    
+    Declare @handleSkippedStep tinyint = 0
     Declare @completionCodeDescription varchar(64) = 'Unknown completion reason'
     Declare @nextTry DateTime = GetDate()
-    
+
     If @completionCode = 0
     Begin
         Set @stepState = 5 -- success
@@ -201,14 +201,14 @@ As
     Else
     Begin
         Set @stepState = 0
-        
+
         If @completionCode = 16  -- CLOSEOUT_FILE_NOT_IN_CACHE
         Begin
             Set @stepState = 1 -- waiting
             Set @resetSharedResultStep = 1
             Set @completionCodeDescription = 'File not in cache'
         End
-        
+
         If @completionCode = 17  -- CLOSEOUT_UNABLE_TO_USE_MZ_REFINERY
         Begin
             Set @stepState = 3 -- skipped
@@ -236,7 +236,7 @@ As
             Set @handleSkippedStep = 1
             Set @completionCodeDescription = 'Skipped MaxQuant'
         End
-        
+
         If @completionCode = 23  -- CLOSEOUT_RESET_JOB_STEP
         Begin
             Set @stepState = 2 -- New
@@ -254,50 +254,50 @@ As
             Begin
                 -- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
                 Set @stepState = 5 -- Complete
-                
+
                 INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('LCMSFeatureFinder')
-                
+
                 Set @message = 'Warning, ' + @jobStepDescription + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'
                 Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
             End
-            
+
             If @stepTool IN ('DataExtractor')
             Begin
                 -- Treat "No_data" results for the DataExtractor as a completed job step but skip later job steps that match certain tools
                 Set @stepState = 5 -- Complete
-                
+
                 INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
-                
+
                 Set @message = 'Warning, ' + @jobStepDescription + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
                 Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
             End
         End
-        
+
         If @completionCode = 25  -- RUNNING_REMOTE
         Begin
-            Set @stepState = 9  -- Running_Remote            
+            Set @stepState = 9  -- Running_Remote
             Set @completionCodeDescription = 'Running remote'
-            
+
             Declare @holdoffIntervalMinutes int
-            
+
             SELECT @holdoffIntervalMinutes = Holdoff_Interval_Minutes
             FROM T_Step_Tools
             WHERE [Name] = @stepTool
 
             If IsNull(@holdoffIntervalMinutes, 0) < 1
                 Set @holdoffIntervalMinutes = 3
-            
+
             Set @retryCount = @retryCount + 1
             If (@retryCount < 1)
                 Set @retryCount = 1
-                
+
             -- Wait longer after each check of remote status, with a maximum holdoff interval of 30 minutes
             -- If @holdoffIntervalMinutes is 5, will wait 5 minutes initially, then wait 6 minutes after the next check, then 7, etc.
             Declare @adjustedHoldoffInterval int = @holdoffIntervalMinutes + (@retryCount - 1)
-            
+
             If @adjustedHoldoffInterval > 30
                 Set @adjustedHoldoffInterval = 30
-            
+
             If @remoteProgress > 0
             Begin
                 -- Bump @adjustedHoldoffInterval down based on @remoteProgress; examples:
@@ -309,13 +309,13 @@ As
 
             Set @nextTry = DateAdd(minute, @adjustedHoldoffInterval, GetDate())
         End
-        
+
         If @completionCode = 26  -- FAILED_REMOTE
         Begin
-            Set @stepState = 16  -- Failed_Remote            
+            Set @stepState = 16  -- Failed_Remote
             Set @completionCodeDescription = 'Failed remote'
         End
-        
+
         If @stepState = 0
         Begin
             Set @stepState = 6 -- fail
@@ -328,7 +328,7 @@ As
     ---------------------------------------------------
     --
     Declare @transName varchar(32) = 'SetStepTaskComplete'
-        
+
     -- Start transaction
     Begin transaction @transName
 
@@ -349,7 +349,7 @@ As
            Remote_Progress = @remoteProgress,
            Remote_Start = @remoteStart,
            Remote_Finish = @remoteFinish
-    WHERE Job = @job AND 
+    WHERE Job = @job AND
           Step_Number = @step
      --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -360,7 +360,7 @@ As
         Set @message = 'Error updating step table'
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Update machine loading for this job step's processor's machine
     ---------------------------------------------------
@@ -386,16 +386,16 @@ As
     If IsNull(@remoteInfo, '') <> ''
     Begin
         Declare @remoteInfoID int = 0
-        
+
         Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
-        
+
         If IsNull(@remoteInfoID, 0) = 0
         Begin
             ---------------------------------------------------
-            -- Something went wrong; @remoteInfo wasn't found in T_Remote_Info 
+            -- Something went wrong; @remoteInfo wasn't found in T_Remote_Info
             -- and we were unable to add it with the Merge statement
             ---------------------------------------------------
-            
+
             UPDATE T_Job_Steps
             SET Remote_Info_ID = 1
             WHERE Job = @job AND
@@ -404,7 +404,7 @@ As
         End
         Else
         Begin
-            
+
             UPDATE T_Job_Steps
             SET Remote_Info_ID = @remoteInfoID,
                 Remote_Progress = CASE WHEN @stepState = 5 THEN 100 ELSE Remote_Progress END
@@ -413,25 +413,25 @@ As
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            
+
             UPDATE T_Remote_Info
             SET Most_Recent_Job = @Job,
                 Last_Used = GetDate()
             WHERE Remote_Info_ID = @remoteInfoID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
         End
-                
+
     End
-    
+
     If @resetSharedResultStep <> 0
     Begin
         -- Possibly reset the the DTA_Gen, DTA_Refinery, Mz_Refinery,
         -- MSXML_Gen, MSXML_Bruker, PBF_Gen, or ProMex step just upstream from this step
-        
+
         Declare @SharedResultStep int = -1
-        
+
         SELECT TOP 1 @SharedResultStep = Step_Number
         FROM T_Job_Steps
         WHERE Job = @job AND
@@ -441,40 +441,40 @@ As
 
         If IsNull(@SharedResultStep, -1) < 0
         Begin
-            Set @message = 'Job ' + Cast(@job as varchar(12)) + 
-                           ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, PBF_Gen, or ProMex step prior to step ' + Cast(@step as varchar(12)) + 
+            Set @message = 'Job ' + Cast(@job as varchar(12)) +
+                           ' does not have a Mz_Refinery, MSXML_Gen, MSXML_Bruker, PBF_Gen, or ProMex step prior to step ' + Cast(@step as varchar(12)) +
                            '; CompletionCode ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ') is invalid'
 
             Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
             Goto CommitTran
         End
-    
-        Set @message = 'Re-running step ' + Cast(@SharedResultStep as varchar(12)) + ' for job ' + Cast(@job as varchar(12)) + 
-                       ' because step ' + Cast(@step as varchar(12)) + 
+
+        Set @message = 'Re-running step ' + Cast(@SharedResultStep as varchar(12)) + ' for job ' + Cast(@job as varchar(12)) +
+                       ' because step ' + Cast(@step as varchar(12)) +
                        ' reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')'
-                       
+
         If Exists ( SELECT *
                     FROM T_Log_Entries
                     WHERE Message = @message And
                           type = 'Normal' And
-                          Entered >= DateAdd(day, -1, GetDate()) 
+                          Entered >= DateAdd(day, -1, GetDate())
              )
         Begin
-            Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')' + 
+            Set @message = 'has already reported completion code ' + Cast(@completionCode as varchar(12)) + ' (' + @completionCodeDescription + ')' +
                            ' within the last 24 hours'
-            
+
             UPDATE T_Job_Steps
-            SET State = 7,        -- Holding                
+            SET State = 7,        -- Holding
                 Completion_Message = dbo.AppendToText(Completion_Message, @message, 0, '; ', 256)
             WHERE Job = @job AND
                   Step_Number = @step
-            
-            Set @message = 'Step ' + Cast(@step as varchar(12)) + ' in job ' + Cast(@job as varchar(12)) + ' ' + 
-                           @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) + 
+
+            Set @message = 'Step ' + Cast(@step as varchar(12)) + ' in job ' + Cast(@job as varchar(12)) + ' ' +
+                           @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) +
                            ' again because this likely represents a problem; this step is now in state "holding"'
 
             Exec PostLogEntry 'Error', @message, 'SetStepTaskComplete'
-            
+
             Goto CommitTran
         End
 
@@ -487,7 +487,7 @@ As
             Tool_Version_ID = 1,        -- 1=Unknown
             Next_Try = GetDate(),
             Remote_Info_ID = 1          -- 1=Unknown
-        WHERE Job = @job AND 
+        WHERE Job = @job AND
               Step_Number = @SharedResultStep And
               Not State IN (4, 9)       -- Do not reset the step if it is already running
 
@@ -502,17 +502,17 @@ As
             Triggered = 0
         WHERE Job = @job AND
               Target_Step_Number = @SharedResultStep
-              
+
     End
 
     If @handleSkippedStep <> 0
     Begin
         -- This step was skipped
         -- Update T_Job_Step_Dependencies and T_Job_Steps
-        
+
         Declare @newTargetStep int = -1
         Declare @nextStep int = -1
-        
+
         SELECT @newTargetStep = Target_Step_Number
         FROM T_Job_Step_Dependencies
         WHERE Job = @job AND
@@ -529,13 +529,13 @@ As
             UPDATE T_Job_Step_Dependencies
             SET Target_Step_Number = @newTargetStep
             WHERE Job = @job AND Step_Number = @nextStep
-            
+
             set @message = 'Updated job step dependencies for job ' + Cast(@job as varchar(9)) + ' since step ' + Cast(@step as varchar(9)) + ' has been skipped'
             exec PostLogEntry 'Normal', @message, 'SetStepTaskComplete'
         End
-        
+
     End
-    
+
     IF Exists (SELECT * FROM @stepToolsToSkip)
     Begin
         -- Skip specific waiting step tools for this job
@@ -549,9 +549,9 @@ As
               JS.State = 1
 
     End
-    
+
 CommitTran:
-    
+
     -- Update was successful
     commit transaction @transName
 
@@ -563,7 +563,7 @@ CommitTran:
     Begin
         UPDATE T_Jobs
         Set Organism_DB_Name = @organismDBName
-        WHERE Job = @job    
+        WHERE Job = @job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -573,7 +573,7 @@ CommitTran:
             Goto Done
         End
     End
-        
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

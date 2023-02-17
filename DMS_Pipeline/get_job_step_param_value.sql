@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamValue]
 **
 **  Auth:   mem
 **          03/09/2021 mem - Initial release
-**    
+**
 *****************************************************/
 (
     @jobNumber int,
@@ -35,14 +35,14 @@ AS
 
     Set @message = ''
     Set @firstParameterValue = ''
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @section = IsNull(@section, '')
     Set @paramName = IsNull(@paramName, '')
-    
+
     If @paramName= ''
     Begin
         Set @message = '@paramName cannot be empty'
@@ -63,7 +63,7 @@ AS
     ---------------------------------------------------
     -- Call GetJobStepParamsWork to populate the temporary table
     ---------------------------------------------------
-        
+
     exec @myError = GetJobStepParamsWork @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
@@ -71,7 +71,7 @@ AS
     ---------------------------------------------------
     -- Possibly filter the parameters
     ---------------------------------------------------
-        
+
     If @section <> ''
     Begin
         DELETE FROM #Tmp_JobParamsTable
@@ -83,15 +83,15 @@ AS
         DELETE FROM #Tmp_JobParamsTable
         WHERE Not [Name] Like @paramName
     End
-    
+
     ---------------------------------------------------
     -- Find the value for the first parameter (sorting on section name then parameter name)
     ---------------------------------------------------
-    
+
     SELECT TOP 1 @firstParameterValue = [Value]
     FROM #Tmp_JobParamsTable
     ORDER BY [Section], [Name]
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

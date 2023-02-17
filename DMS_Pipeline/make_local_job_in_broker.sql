@@ -7,8 +7,8 @@ GO
 CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 /****************************************************
 **
-**  Desc:   Create analysis job directly in broker database 
-**    
+**  Desc:   Create analysis job directly in broker database
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -48,7 +48,7 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 )
 AS
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -114,11 +114,11 @@ AS
     Declare @pXML xml
     Declare @scriptXML xml
     Declare @tag varchar(8) = 'unk'
-    
+
     -- Get contents of script and tag for results folder name
     --
-    SELECT @scriptXML = Contents, @tag = Results_Tag 
-    FROM T_Scripts 
+    SELECT @scriptXML = Contents, @tag = Results_Tag
+    FROM T_Scripts
     WHERE Script = @scriptName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -130,7 +130,7 @@ AS
         RAISERROR (@msg, 15, 1)
         return @myError
     End
-    
+
     If @scriptXML Is Null
     Begin
         Set @myError = 50014
@@ -146,7 +146,7 @@ AS
         RAISERROR (@msg, 15, 1)
         return @myError
     End
-    
+
     ---------------------------------------------------
     -- Obtain new job number (if not debugging)
     ---------------------------------------------------
@@ -170,7 +170,7 @@ AS
     --  this DB the next time UpdateContext runs, since the system will think
     --  the job no-longer exists in DMS5 and thus should be deleted
     ---------------------------------------------------
-    
+
     Declare @datasetID int = 0
 
     ---------------------------------------------------
@@ -183,19 +183,19 @@ AS
     ---------------------------------------------------
     -- Get results folder name (and store in #Jobs)
     ---------------------------------------------------
-    -- 
+    --
     exec @myError = CreateResultsFolderName @job, @tag, @resultsFolderName output, @message output
     If @myError <> 0
     Begin
         Set @msg = 'Error returned by CreateResultsFolderName: ' + Convert(varchar(12), @myError)
         goto Done
     End
-    
+
     ---------------------------------------------------
     -- Create the basic job structure (steps and dependencies)
     -- Details are stored in #Job_Steps and #Job_Step_Dependencies
     ---------------------------------------------------
-    -- 
+    --
     exec @myError = CreateStepsForJob @job, @scriptXML, @resultsFolderName, @message output
     If @myError <> 0
     Begin
@@ -204,7 +204,7 @@ AS
             Set @msg = @msg + '; ' + @message
         goto Done
     End
-    
+
     ---------------------------------------------------
     -- Do special needs for local jobs that target other jobs
     ---------------------------------------------------
@@ -236,7 +236,7 @@ AS
     ---------------------------------------------------
     -- Save job parameters as XML into temp table
     ---------------------------------------------------
-    -- FUTURE: need to get set of parameters normally provided by GetJobParamTable, 
+    -- FUTURE: need to get set of parameters normally provided by GetJobParamTable,
     -- except for the job specifc ones which need to be provided as initial content of @jobParamXML
     --
     INSERT INTO #Job_Parameters (Job, Parameters)
@@ -251,7 +251,7 @@ AS
         RAISERROR (@msg, 15, 1)
         return @myError
     End
-            
+
     ---------------------------------------------------
     -- Handle any step cloning
     ---------------------------------------------------
@@ -285,15 +285,15 @@ AS
         set @message = 'Error updating job step dependency count: ' + Convert(varchar(12), @myError)
         goto Done
     End
-    
+
     ---------------------------------------------------
     -- Move temp tables to main tables
     ---------------------------------------------------
-    
+
     If @debugMode = 0
-    Begin    
+    Begin
         -- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
-        --    
+        --
         INSERT INTO T_Jobs( Job,
                             Priority,
                             Script,
@@ -305,46 +305,46 @@ AS
                             Storage_Server,
                             Owner,
                             DataPkgID )
-        VALUES(@job, @priority, @scriptName, 1, 
-               @datasetNum, @datasetID, NULL, 
+        VALUES(@job, @priority, @scriptName, 1,
+               @datasetNum, @datasetID, NULL,
                @comment, NULL, @ownerPRN,
                IsNull(@dataPackageID, 0))
 
         exec @myError = MoveJobsToMainTables @message output
-        
-        exec AlterEnteredByUser 'T_Job_Events', 'Job', @job, @callingUser        
+
+        exec AlterEnteredByUser 'T_Job_Events', 'Job', @job, @callingUser
     End
 
     If @debugMode = 0
-    Begin    
+    Begin
         ---------------------------------------------------
         -- Populate column Transfer_Folder_Path in T_Jobs
         ---------------------------------------------------
         --
         Declare @transferFolderPath varchar(512) = ''
-        
+
         SELECT @transferFolderPath = [Value]
         FROM dbo.GetJobParamTableLocal ( @job )
         WHERE [Name] = 'transferFolderPath'
-        
+
         If IsNull(@transferFolderPath, '') <> ''
         Begin
             UPDATE T_Jobs
             SET Transfer_Folder_Path = @transferFolderPath
             WHERE Job = @job
         End
-        
+
         ---------------------------------------------------
-        -- If a data package is defined, update entries for 
+        -- If a data package is defined, update entries for
         -- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
         ---------------------------------------------------
         --
         If @dataPackageID > 0
         Begin
             Exec UpdateJobParamOrgDbInfoUsingDataPkg @job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
-        End        
+        End
     End
-    
+
     If @debugMode > 0 And @dataPackageID > 0
     Begin
         -----------------------------------------------

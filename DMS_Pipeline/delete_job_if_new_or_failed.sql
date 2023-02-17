@@ -11,7 +11,7 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
 **      Deletes the given job from T_Jobs if the state is New, Failed, or Holding
 **      Does not delete the job if it has running job steps (though if the step started over 48 hours ago, ignore that job step)
 **      This procedure is called by DeleteAnalysisJob in DMS5
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[DeleteJobIfNewOrFailed]
 )
 As
     set nocount on
-    
+
     Declare @myError int= 0
     Declare @myRowCount int = 0
 
@@ -45,22 +45,22 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DeleteJobIfNewOrFailed', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
- 
+
     Set @message = ''
     Set @infoonly = IsNull(@infoonly, 0)
-    
+
     Set @jobText = 'job ' + Coalesce(Cast(@job As varchar(12)), '??')
 
     If @infoonly > 0
     Begin
-        If Exists (SELECT * FROM T_Jobs    
+        If Exists (SELECT * FROM T_Jobs
                    WHERE Job = @job AND
                          State IN (1, 5, 8) AND
                          NOT Job IN ( SELECT JS.Job
@@ -68,7 +68,7 @@ As
                                       WHERE JS.Job = @job AND
                                             JS.State IN (4, 9) AND
                                             JS.Start >= DateAdd(hour, -48, GetDate())) )
-        BEGIN            
+        BEGIN
             ---------------------------------------------------
             -- Preview deletion of jobs that are new, failed, or holding (job state 1, 5, or 8)
             ---------------------------------------------------
@@ -82,7 +82,7 @@ As
             If Exists (SELECT * FROM T_Jobs WHERE Job = @job)
             Begin
                 SELECT @jobState = State
-                FROM T_Jobs 
+                FROM T_Jobs
                 WHERE Job = @job
 
                 If @jobState IN (2,3,9)
@@ -101,11 +101,11 @@ As
                 SELECT 'Job not found in T_Jobs: ' + Cast(@job as Varchar(9)) As Action
             End
         End
-            
+
     End
     Else
     Begin
-        
+
         ---------------------------------------------------
         -- Delete the jobs that are new, failed, or holding (job state 1, 5, or 8)
         -- Skip any jobs with running job steps that started within the last 2 days
@@ -133,7 +133,7 @@ As
             Print 'Deleted analysis ' + @jobText + ' from T_Jobs in DMS_Pipeline'
         End
         Else
-        Begin            
+        Begin
             If @jobState IN (2,3,9)
                 Print 'DMS_Pipeline ' + @jobText + ' not deleted; job is in progress'
             Else If @jobState IN (4,7,14)
@@ -141,9 +141,9 @@ As
             Else
                 Print 'DMS_Pipeline ' + @jobText + ' not deleted; job state is not New, Failed, or Holding'
         End
-        
+
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

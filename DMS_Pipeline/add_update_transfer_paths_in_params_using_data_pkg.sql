@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      If a job has a data package ID defined, determines the
 **      appropriate paths for 'CacheFolderPath' and 'transferFolderPath'
 **
@@ -38,19 +38,19 @@ CREATE PROCEDURE [dbo].[AddUpdateTransferPathsInParamsUsingDataPkg]
 )
 As
     Set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowcount int = 0
 
     Declare @value varchar(2000)
     Declare @dataPkgSharePath varchar(260) = ''
-    Declare @dataPkgName varchar(128) = ''        
+    Declare @dataPkgName varchar(128) = ''
     Declare @xferPath varchar(260) = ''
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    --    
+    --
     Set @DataPackageID = IsNull(@DataPackageID, 0)
     Set @paramsUpdated = 0
     Set @message = ''
@@ -69,7 +69,7 @@ As
         --
         If IsNull(@value, '') <> ''
         Begin
-            Set @dataPackageID = Try_Cast(@value as int)            
+            Set @dataPackageID = Try_Cast(@value as int)
         End
     End
 
@@ -77,14 +77,14 @@ As
     -- Get data package info (if one is specified)
     ---------------------------------------------------
     --
-    If @DataPackageID <> 0 
-    Begin 
-        SELECT 
+    If @DataPackageID <> 0
+    Begin
+        SELECT
             @dataPkgSharePath = Share_Path,
             @dataPkgName = Name
-        FROM S_Data_Package_Details 
+        FROM S_Data_Package_Details
         WHERE ID = @DataPackageID
-    End 
+    End
 
     ---------------------------------------------------
     -- Check whether job parameter CacheFolderRootPath has a cache root folder path defined
@@ -96,11 +96,11 @@ As
     -- MaxQuant          \\protoapps\MaxQuant_Staging
     -- MSFragger         \\proto-9\MSFragger_Staging
     --
-    -- PeptideAtlas      \\protoapps\PeptideAtlas_Staging   (tool retired in 2020) 
-    
+    -- PeptideAtlas      \\protoapps\PeptideAtlas_Staging   (tool retired in 2020)
+
     Declare @cacheFolderPath varchar(260) = ''
     Declare @cacheRootFolderPath varchar(260) = ''
-    
+
     SELECT @cacheRootFolderPath = Value
     FROM #PARAMS
     WHERE Name = 'CacheFolderRootPath'
@@ -116,7 +116,7 @@ As
         --
         Declare @cacheFolderPathOld varchar(260) = ''
         Declare @xferPathOld varchar(260) = ''
-        
+
         SELECT @cacheFolderPathOld = Value
         FROM #PARAMS
         WHERE Section = 'JobParameters' and Name = 'CacheFolderPath'
@@ -125,8 +125,8 @@ As
         FROM #PARAMS
         WHERE Section = 'JobParameters' and Name = 'transferFolderPath'
 
-                
-        If IsNull(@cacheRootFolderPath, '') = '' 
+
+        If IsNull(@cacheRootFolderPath, '') = ''
         Begin
             Set @xferPath = @dataPkgSharePath
         End
@@ -144,7 +144,7 @@ As
                 VALUES ( 'JobParameters', 'CacheFolderPath', @cacheFolderPath )
             End
         End
-        
+
         If @xferPathOld <> @xferPath
         Begin
             DELETE FROM #PARAMS
@@ -161,8 +161,8 @@ As
         VALUES('JobParameters', 'DataPackagePath', @dataPkgSharePath);
 
         Set @paramsUpdated = 1
-    End 
-    
+    End
+
 Done:
     Return @myError
 

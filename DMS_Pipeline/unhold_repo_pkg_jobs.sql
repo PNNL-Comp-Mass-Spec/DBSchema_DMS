@@ -7,60 +7,60 @@ GO
 CREATE PROCEDURE [dbo].[UnholdRepoPkgJobs]
 /****************************************************
 **
-**  Desc: 
-**  Add a MAC job from job template 
-**	
+**  Desc:
+**  Add a MAC job from job template
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
-**  Auth:	mem
-**  Date:	04/10/2013 mem - Initial version
+**  Auth:   mem
+**  Date:   04/10/2013 mem - Initial version
 **
 *****************************************************/
 (
-	@maxRunningRepoJobs int = 3,
-	@message VARCHAR(512)='' output
+    @maxRunningRepoJobs int = 3,
+    @message VARCHAR(512)='' output
 )
 AS
-	set nocount on
-	
-	declare @myError int = 0
-	declare @myRowCount int = 0
+    set nocount on
 
-	Set @message = ''
+    declare @myError int = 0
+    declare @myRowCount int = 0
 
-	---------------------------------------------------
-	-- Look for running RepoPkgr jobs
-	---------------------------------------------------
+    Set @message = ''
 
-	declare @jobs int
-	SELECT @Jobs= COUNT(*) 
-	FROM V_Job_Steps
-	WHERE (Tool = 'RepoPkgr') AND (State = 4)
+    ---------------------------------------------------
+    -- Look for running RepoPkgr jobs
+    ---------------------------------------------------
 
-	If @jobs < @maxRunningRepoJobs
-	Begin
-		---------------------------------------------------
-		-- Look for a job to unpause
-		---------------------------------------------------
+    declare @jobs int
+    SELECT @Jobs= COUNT(*)
+    FROM V_Job_Steps
+    WHERE (Tool = 'RepoPkgr') AND (State = 4)
 
-		declare @JobToUnpause int = 0
+    If @jobs < @maxRunningRepoJobs
+    Begin
+        ---------------------------------------------------
+        -- Look for a job to unpause
+        ---------------------------------------------------
 
-		SELECT top 1 @JobToUnpause = Job
-		FROM V_Job_Steps
-		WHERE (Tool = 'RepoPkgr') AND (State = 7)
-		ORDER BY Job
+        declare @JobToUnpause int = 0
 
-		If ISNULL(@JobToUnpause, 0) > 0
-		Begin
-			Set @message = 'Un-holding job ' + CONVERT(varchar(12), @JobToUnpause)
+        SELECT top 1 @JobToUnpause = Job
+        FROM V_Job_Steps
+        WHERE (Tool = 'RepoPkgr') AND (State = 7)
+        ORDER BY Job
 
-			UPDATE V_Job_Steps
-			SET State = 2
-			WHERE State = 7 And Job = @JobToUnpause
+        If ISNULL(@JobToUnpause, 0) > 0
+        Begin
+            Set @message = 'Un-holding job ' + CONVERT(varchar(12), @JobToUnpause)
 
-		End
-	End
+            UPDATE V_Job_Steps
+            SET State = 2
+            WHERE State = 7 And Job = @JobToUnpause
+
+        End
+    End
 
 
 GO

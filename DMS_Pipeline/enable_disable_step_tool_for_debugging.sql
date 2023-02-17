@@ -48,7 +48,7 @@ As
     Begin
         Set @groupName = 'Monroe Development Box'
     End
-    
+
     SELECT @groupID = Group_ID
     FROM T_Processor_Tool_Groups
     WHERE Group_Name = @groupName

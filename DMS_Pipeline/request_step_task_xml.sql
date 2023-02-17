@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[RequestStepTaskXML]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Looks for analysis job step that is appropriate for the given Processor Name.
 **      If found, step is assigned to caller
 **
@@ -120,11 +120,11 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @jobAssigned tinyint = 0
 
     Declare @CandidateJobStepsToRetrieve int = 15
-    
+
     Declare @HoldoffWindowMinutes int
     Declare @MaxSimultaneousJobCount int
 
@@ -137,8 +137,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'RequestStepTaskXML', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -146,14 +146,14 @@ As
     End;
 
     ---------------------------------------------------
-    -- These 3 hard-coded values give optimal performance 
+    -- These 3 hard-coded values give optimal performance
     -- (note that @useBigBangQuery overrides the value passed into this procedure)
     ---------------------------------------------------
     --
     Set @HoldoffWindowMinutes = 3                -- Typically 3
     Set @MaxSimultaneousJobCount = 75            -- Increased from 10 to 75 on 4/25/2013
     Set @useBigBangQuery = 1                     -- Always forced by this procedure to be 1
-    
+
     ---------------------------------------------------
     -- Validate the inputs; clear the outputs
     ---------------------------------------------------
@@ -170,7 +170,7 @@ As
         Set @JobCountToPreview= 10
 
     Set @useBigBangQuery = IsNull(@useBigBangQuery, 1)
-    
+
     Set @throttleByStartTime = IsNull(@throttleByStartTime, 0)
     Set @maxStepNumToThrottle = IsNull(@maxStepNumToThrottle, 10)
     Set @throttleAllStepTools = IsNull(@throttleAllStepTools, 0)
@@ -180,9 +180,9 @@ As
 
     If @jobCountToPreview > @CandidateJobStepsToRetrieve
         Set @CandidateJobStepsToRetrieve = @jobCountToPreview
-        
+
     ---------------------------------------------------
-    -- The analysis manager expects a non-zero 
+    -- The analysis manager expects a non-zero
     -- return value if no jobs are available
     -- Code 53000 is used for this
     ---------------------------------------------------
@@ -206,7 +206,7 @@ As
     --
     Declare @processorDoesGP int = -1
     --
-    SELECT 
+    SELECT
         @processorDoesGP = 1,        -- Prior to May 2015 used: @processorDoesGP = GP_Groups
         @machine = Machine,
         @processorName = Processor_Name,
@@ -228,7 +228,7 @@ As
     Begin
         Set @message = 'Processor not defined in T_Local_Processors: ' + @processorName
         Set @myError = @jobNotAvailableErrorCode
-        
+
         INSERT INTO T_SP_Usage( Posted_By,
                                 ProcessorID,
                                 Calling_User )
@@ -237,7 +237,7 @@ As
 
         goto Done
     end
-    
+
     ---------------------------------------------------
     -- Update processor's request timestamp
     -- (to show when the processor was most recently active)
@@ -257,9 +257,9 @@ As
             Set @message = 'Error updating latest processor request time'
             Goto Done
         End
-        
+
         if IsNull(@logSPUsage, 0) <> 0
-            INSERT INTO T_SP_Usage ( 
+            INSERT INTO T_SP_Usage (
                             Posted_By,
                             ProcessorID,
                             Calling_User )
@@ -286,7 +286,7 @@ As
         Set @myError = @jobNotAvailableErrorCode
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Lookup the number of CPUs available and amount of memory available for this processor's machine
     -- In addition, make sure this machine is a member of an enabled group
@@ -295,7 +295,7 @@ As
     Set @availableMemoryMB = 0
     Set @Enabled = 0
     Set @ProcessToolGroup = ''
-    
+
     SELECT @availableCPUs = M.CPUs_Available,
            @availableMemoryMB = M.Memory_Available,
            @Enabled = PTG.Enabled,
@@ -311,18 +311,18 @@ As
     Begin
         Set @message = 'Error querying T_Machines and T_Processor_Tool_Groups'
         Goto Done
-    end    
-    
+    end
+
     If @Enabled <= 0
     Begin
         Set @message = 'Machine "' + @machine + '" is in a disabled tool group; no tasks will be assigned for processor ' + @processorName
         Set @myError = @jobNotAvailableErrorCode
         Goto Done
     End
-        
+
     If @infoOnly <> 0
     Begin -- <PreviewProcessorTools>
-                
+
         ---------------------------------------------------
         -- Get list of step tools currently assigned to processor
         ---------------------------------------------------
@@ -340,10 +340,10 @@ As
         )
         --
         INSERT INTO @availableProcessorTools (
-            Processor_Tool_Group, Tool_Name, 
-            CPU_Load, Memory_Usage_MB, 
+            Processor_Tool_Group, Tool_Name,
+            CPU_Load, Memory_Usage_MB,
             Tool_Priority, GP, Max_Job_Priority,
-            Exceeds_Available_CPU_Load, 
+            Exceeds_Available_CPU_Load,
             Exceeds_Available_Memory)
         SELECT PTG.Group_Name,
                PTGD.Tool_Name,
@@ -374,7 +374,7 @@ As
             Set @message = 'Error getting processor tools'
             Goto Done
         End
-    
+
         -- Preview the tools for this processor (as defined in @availableProcessorTools, which we just populated)
         SELECT PT.Processor_Tool_Group,
                PT.Tool_Name,
@@ -399,10 +399,10 @@ As
                     ON LP.Machine = M.Machine
                           WHERE LP.Processor_Name = @processorName ) MachineQ
         ORDER BY PT.Tool_Name
-        
+
     End -- </PreviewProcessorTools>
 
-    
+
     If @remoteInfo <> ''
     Begin -- <CheckRunningRemoteTasks>
 
@@ -412,9 +412,9 @@ As
         ---------------------------------------------------
         --
         Declare @stepsRunningRemotely int = 0
-        
+
         Exec @remoteInfoID = GetRemoteInfoID @remoteInfo
-        
+
         -- Note that @remoteInfoID 1 means the @remoteInfo is 'Unknown'
 
         If @remoteInfoID > 1
@@ -429,11 +429,11 @@ As
             WHERE State IN (4, 9) AND Remote_Info_ID = @remoteInfoID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @stepsRunningRemotely > 0
             Begin
-                SELECT @maxSimultaneousRunningRemoteSteps = Max_Running_Job_Steps 
-                FROM T_Remote_Info 
+                SELECT @maxSimultaneousRunningRemoteSteps = Max_Running_Job_Steps
+                FROM T_Remote_Info
                 WHERE Remote_Info_ID = @remoteInfoID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -443,7 +443,7 @@ As
                     Set @runningRemoteLimitReached = 1
                 End
             End
-            
+
             If @infoOnly <> 0
             Begin
                 -- Preview RunningRemote tasks on the remote host associated with this manager
@@ -466,7 +466,7 @@ As
                       JS.State IN (4, 9)
                 ORDER BY Job, Step
             End
-        
+
         End
         Else
         Begin
@@ -475,7 +475,7 @@ As
                 Print 'Could not resolve ' + @remoteInfo + ' to Remote_Info_ID'
             End
         End
-        
+
     End -- </CheckRunningRemoteTasks>
 
     ---------------------------------------------------
@@ -508,16 +508,16 @@ As
     -- Look for available Results_Transfer steps
     -- Only assign a Results_Transfer step to a manager running on the job's storage server
     ---------------------------------------------------
-    
+
     If Exists (SELECT *
-               FROM T_Local_Processors LP 
-                    INNER JOIN T_Machines M 
-                      ON LP.Machine = M.Machine 
-                    INNER JOIN T_Processor_Tool_Group_Details PTGD 
-                      ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND 
+               FROM T_Local_Processors LP
+                    INNER JOIN T_Machines M
+                      ON LP.Machine = M.Machine
+                    INNER JOIN T_Processor_Tool_Group_Details PTGD
+                      ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
                          M.ProcTool_Group_ID = PTGD.Group_ID
-               WHERE LP.Processor_Name = @processorName And 
-                     PTGD.Enabled > 0 And 
+               WHERE LP.Processor_Name = @processorName And
+                     PTGD.Enabled > 0 And
                      PTGD.Tool_Name = 'Results_Transfer')
     Begin
         -- Look for Results_Transfer candidates
@@ -537,7 +537,7 @@ As
             Next_Try
         )
         SELECT TOP (@CandidateJobStepsToRetrieve)
-            JS.Job, 
+            JS.Job,
             JS.Step_Number,
             JS.State,
             J.Priority AS Job_Priority,
@@ -548,19 +548,19 @@ As
             J.Dataset_ID,
             TP.Machine,
             CASE
-                WHEN (J.Archive_Busy = 1) 
+                WHEN (J.Archive_Busy = 1)
                     -- Transfer tool steps for jobs that are in the midst of an archive operation
                     -- The Archive_Busy flag in T_Jobs is updated by SyncJobInfo
                     -- It uses S_DMS_V_Get_Analysis_Jobs_For_Archive_Busy (which uses V_Get_Analysis_Jobs_For_Archive_Busy) to look for jobs that have an archive in progress
                     -- However, if the dataset has been in state "Archive In Progress" for over 90 minutes, Archive_Busy will be changed back to 0 (false)
-                    THEN 102                
+                    THEN 102
                 WHEN J.Storage_Server Is Null
                     -- Results_Transfer step for job without a specific storage server
-                    THEN 6                
+                    THEN 6
                 WHEN JS.Next_Try > GETDATE()
                     -- Job won't start until after Next_Try
                     THEN 20
-                ELSE 5   -- Results_Transfer step to be run on the job-specific storage server 
+                ELSE 5   -- Results_Transfer step to be run on the job-specific storage server
             END AS Association_Type,
             JS.Next_Try
         FROM ( SELECT TJ.Job,
@@ -581,17 +581,17 @@ As
                                INNER JOIN T_Processor_Tool_Group_Details PTGD
                                  ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
                                     M.ProcTool_Group_ID = PTGD.Group_ID
-                          WHERE LP.Processor_Name = @processorName AND 
+                          WHERE LP.Processor_Name = @processorName AND
                                 PTGD.Enabled > 0 AND
                                 PTGD.Tool_Name = 'Results_Transfer'
              ) TP
-               ON JS.Step_Tool = 'Results_Transfer' AND 
+               ON JS.Step_Tool = 'Results_Transfer' AND
                   TP.Machine = IsNull(J.Storage_Server, TP.Machine)        -- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
         WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoOnly > 0)
-        ORDER BY 
+        ORDER BY
             Association_Type,
             J.Priority,        -- Job_Priority
-            Job, 
+            Job,
             Step_Number
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -615,7 +615,7 @@ As
                 Next_Try
             )
             SELECT TOP (@CandidateJobStepsToRetrieve)
-                JS.Job, 
+                JS.Job,
                 JS.Step_Number,
                 JS.State,
                 J.Priority AS Job_Priority,
@@ -629,9 +629,9 @@ As
                     WHEN JS.Next_Try > GETDATE()
                         -- Job won't start until after Next_Try
                         THEN 20
-                    WHEN (J.Archive_Busy = 1) 
+                    WHEN (J.Archive_Busy = 1)
                         -- Transfer tool steps for jobs that are in the midst of an archive operation
-                        THEN 102                    
+                        THEN 102
                     ELSE 106  -- Results_Transfer step to be run on the job-specific storage server
                 END AS Association_Type,
                 JS.Next_Try
@@ -653,22 +653,22 @@ As
                                 INNER JOIN T_Processor_Tool_Group_Details PTGD
                                     ON LP.ProcTool_Mgr_ID = PTGD.Mgr_ID AND
                                        M.ProcTool_Group_ID = PTGD.Group_ID
-                            WHERE LP.Processor_Name = @processorName AND 
+                            WHERE LP.Processor_Name = @processorName AND
                                   PTGD.Enabled > 0 AND
                                   PTGD.Tool_Name = 'Results_Transfer'
                 ) TP
-                ON JS.Step_Tool = 'Results_Transfer' AND 
+                ON JS.Step_Tool = 'Results_Transfer' AND
                     TP.Machine <> J.Storage_Server
                WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoOnly > 0)
-            ORDER BY 
+            ORDER BY
                 Association_Type,
                 J.Priority,        -- Job_Priority
-                Job, 
+                Job,
                 Step_Number
         End
-        
+
     End
-        
+
     ---------------------------------------------------
     -- Get list of viable job step assignments organized
     -- by processor in order of assignment priority
@@ -681,7 +681,7 @@ As
         -- This query can be very expensive if there is a large number of active jobs
         -- and SQL Server gets confused about which indices to use (more likely on SQL Server 2005)
         --
-        -- This can lead to huge "lock request/sec" rates, particularly when there are 
+        -- This can lead to huge "lock request/sec" rates, particularly when there are
         -- thouands of jobs in T_Jobs with state <> 8 and steps with state IN (2, 9)
         -- *********************************************************************************
         --
@@ -700,7 +700,7 @@ As
             Next_Try
         )
         SELECT TOP (@CandidateJobStepsToRetrieve)
-            JS.Job, 
+            JS.Job,
             JS.Step_Number,
             JS.State,
             J.Priority AS Job_Priority,
@@ -712,13 +712,13 @@ As
             TP.Machine,
             CASE
                 WHEN (TP.CPUs_Available < CASE WHEN JS.State = 9 Or @remoteInfoID > 1 Then -50
-                                               ELSE TP.CPU_Load END) 
+                                               ELSE TP.CPU_Load END)
                     -- No processing load available on machine
                     THEN 101
-                WHEN (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) 
+                WHEN (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1)
                     -- Transfer tool steps for jobs that are in the midst of an archive operation
                     THEN 102
-                WHEN (TP.Memory_Available < JS.Memory_Usage_MB) 
+                WHEN (TP.Memory_Available < JS.Memory_Usage_MB)
                     -- Not enough memory available on machine
                     THEN 105
                 WHEN JS.State = 2 AND @runningRemoteLimitReached > 0
@@ -730,35 +730,35 @@ As
                 WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
                     -- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
                     THEN 2
-                WHEN (NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+                WHEN (NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors))
                     -- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
                     THEN 4
                 WHEN JS.Next_Try > GETDATE()
                     -- Job won't start until after Next_Try
                     THEN 20
-                WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+                WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors))
                     -- Job associated with an alternate, specific processor
-                    THEN 99        
+                    THEN 99
             /*
                 ---------------------------------------------------
-                -- Deprecated in May 2015: 
-                --    
+                -- Deprecated in May 2015:
+                --
                 WHEN (Processor_GP > 0 AND Tool_GP = 'Y' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
                     -- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
                     THEN 2
-                WHEN (Processor_GP > 0 AND Tool_GP = 'Y') 
+                WHEN (Processor_GP > 0 AND Tool_GP = 'Y')
                     -- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
                     THEN 4
                 WHEN (Processor_GP > 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
                     -- Directly associated steps ('Specific Association', aka Association_Type=2):
                     THEN 2
-                WHEN (Processor_GP > 0 AND Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0)) 
+                WHEN (Processor_GP > 0 AND Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0))
                     -- Non-associated steps ('Non-associated', aka Association_Type=3):
                     THEN 3
-                WHEN (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0)) 
+                WHEN (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))
                     -- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
-                    THEN 1                
-            */            
+                    THEN 1
+            */
                 ELSE 100 -- not recognized assignment ('<Not recognized>')
             END AS Association_Type,
             JS.Next_Try
@@ -768,7 +768,7 @@ As
                       TJ.Storage_Server,
                       TJ.Dataset_ID
                FROM T_Jobs TJ
-               WHERE TJ.State <> 8 
+               WHERE TJ.State <> 8
              ) J
              INNER JOIN T_Job_Steps JS
                ON J.Job = JS.Job
@@ -780,12 +780,12 @@ As
                                  PTGD.Max_Job_Priority,
                                  /*
                                  ---------------------------------------------------
-                                 -- Deprecated in May 2015: 
+                                 -- Deprecated in May 2015:
                                  --
                                  LP.GP_Groups AS Processor_GP,
                                  ST.Available_For_General_Processing AS Tool_GP,
                                  */
-                                 M.CPUs_Available,                                 
+                                 M.CPUs_Available,
                                  ST.CPU_Load,
                                  M.Memory_Available,
                                  M.Machine
@@ -806,14 +806,14 @@ As
               J.Priority <= TP.Max_Job_Priority AND
               (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
               NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
-        ORDER BY 
+        ORDER BY
             Association_Type,
-            Tool_Priority, 
+            Tool_Priority,
             J.Priority,        -- Job_Priority
             CASE WHEN Step_Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
-                 ELSE 0 
-            END DESC,                 
-            Job, 
+                 ELSE 0
+            END DESC,
+            Job,
             Step_Number
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -822,14 +822,14 @@ As
     Begin -- <UseMultiStep>
         -- Not using the Big-bang query
 
-        /*    
+        /*
         Declare @ProcessorGP int
 
         ---------------------------------------------------
-        -- Deprecated in May 2015: 
+        -- Deprecated in May 2015:
         --
         -- Lookup the GP_Groups count for this processor
-        
+
         SELECT DISTINCT @ProcessorGP = LP.GP_Groups
         FROM T_Machines M
             INNER JOIN T_Local_Processors LP
@@ -845,7 +845,7 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         Set @ProcessorGP = IsNull(@ProcessorGP, 0)
-        
+
         If @ProcessorGP = 0
         Begin -- <LimitedProcessingMachine>
             -- Processor does not do general processing
@@ -863,7 +863,7 @@ As
                 Next_Try
             )
             SELECT TOP (@CandidateJobStepsToRetrieve)
-                JS.Job, 
+                JS.Job,
                 Step_Number,
                 State,
                 J.Priority AS Job_Priority,
@@ -914,15 +914,15 @@ As
                   NOT (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
                   NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
                   -- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
-                  -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))                  
-            ORDER BY 
+                  -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))
+            ORDER BY
                 Association_Type,
-                Tool_Priority, 
+                Tool_Priority,
                 J.Priority,    -- Job_Priority
                 CASE WHEN Step_Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
-                    ELSE 0 
-                END DESC,                
-                Job, 
+                    ELSE 0
+                END DESC,
+                Job,
                 Step_Number
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -947,7 +947,7 @@ As
                 Next_Try
             )
             SELECT TOP (@CandidateJobStepsToRetrieve)
-                JS.Job, 
+                JS.Job,
                 Step_Number,
                 State,
                 J.Priority AS Job_Priority,
@@ -966,13 +966,13 @@ As
                     WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name))
                         -- Directly associated steps (Generic) ('Specific Association', aka Association_Type=2):
                         THEN 2
-                    WHEN (Not JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+                    WHEN (Not JS.Job IN (SELECT Job FROM T_Local_Job_Processors))
                         -- Generic processing steps ('Non-associated Generic', aka Association_Type=4):
                         THEN 4
                     WHEN JS.Next_Try > GETDATE()
                         -- Job won't start until after Next_Try
                         Then 20
-                    WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors)) 
+                    WHEN (JS.Job IN (SELECT Job FROM T_Local_Job_Processors))
                         -- Job associated with an alternate, specific processor
                         THEN 99
                     ELSE 100    -- not recognized assignment ('<Not recognized>')
@@ -995,7 +995,7 @@ As
                                      PTGD.Max_Job_Priority,
                                      /*
                                      ---------------------------------------------------
-                                     -- Deprecated in May 2015: 
+                                     -- Deprecated in May 2015:
                                      --
                                      ST.Available_For_General_Processing AS Tool_GP,
                                      */
@@ -1041,24 +1041,24 @@ As
 
                         -- Non-associated steps ('Non-associated', aka Association_Type=3):
                         -- Type 3
-                        (Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0)) 
-                    )            
+                        (Tool_GP = 'N' AND NOT JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor <> Processor_Name AND General_Processing = 0))
+                    )
                     */
-            ORDER BY 
+            ORDER BY
                 Association_Type,
-                Tool_Priority, 
+                Tool_Priority,
                 J.Priority,        -- Job_Priority
                 CASE WHEN Step_Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
-                    ELSE 0 
-                END DESC,                 
-                Job, 
+                    ELSE 0
+                END DESC,
+                Job,
                 Step_Number
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
         -- Comment this end statement out due to deprecating processor groups
         -- End     -- </GeneralProcessingMachine>
-    
+
     End -- </UseMultiStep>
 
     ---------------------------------------------------
@@ -1069,12 +1069,12 @@ As
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Check for jobs with Association_Type 101'
 
     Declare @cpuLoadExceeded int = 0
-    
+
     If Exists (SELECT * FROM #Tmp_CandidateJobSteps WHERE Association_Type = 101)
         Set @cpuLoadExceeded = 1
 
     ---------------------------------------------------
-    -- Check for storage servers for which too many 
+    -- Check for storage servers for which too many
     -- steps have recently started (and are still running)
     --
     -- As of January 2013, this is no longer a necessity because copying of large files now uses lock files
@@ -1085,7 +1085,7 @@ As
         If @infoOnly > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Check for servers that need to be throttled'
 
-        -- The following query counts the number of job steps that recently started, 
+        -- The following query counts the number of job steps that recently started,
         --  grouping by storage server, and only examining steps numbers <= @maxStepNumToThrottle
         -- If @throttleAllStepTools is 0, then it excludes Sequest and Results_Transfer steps
         -- It then looks for storage servers where too many steps have recently started (count >= @MaxSimultaneousJobCount)
@@ -1108,7 +1108,7 @@ As
                                 WHERE (JS.Start >= DATEADD(MINUTE, -@HoldoffWindowMinutes, GETDATE())) AND
                                       (JS.Step_Number <= @maxStepNumToThrottle) AND
                                       (JS.State = 4)
-                                GROUP BY T_Jobs.Storage_Server 
+                                GROUP BY T_Jobs.Storage_Server
                             ) LookupQ
                         WHERE (Running_Steps_Recently_Started >= @MaxSimultaneousJobCount)
                         ) ServerQ
@@ -1117,9 +1117,9 @@ As
               (NOT Step_Tool IN ('Sequest', 'Results_Transfer') OR @throttleAllStepTools > 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
     End
-    
+
     ---------------------------------------------------
     -- Look for any active job steps running on the same machine as this manager
     -- Exclude any jobs in #Tmp_CandidateJobSteps that correspond to a dataset
@@ -1137,7 +1137,7 @@ As
                            INNER JOIN T_Local_Processors LP
                              ON JS.Processor = LP.Processor_Name
                       WHERE JS.State = 4 AND
-                            JS.Start >= DateAdd(minute, -10, GetDate()) 
+                            JS.Start >= DateAdd(minute, -10, GetDate())
                      ) RecentStartQ
            ON CJS.Dataset_ID = RecentStartQ.Dataset_ID And
               CJS.Machine = RecentStartQ.Machine
@@ -1158,7 +1158,7 @@ As
     WHERE Association_Type < @AssociationTypeIgnoreThreshold And Next_Try > GetDate()
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @infoOnly = 0
     Begin
         DELETE FROM #Tmp_CandidateJobSteps
@@ -1178,10 +1178,10 @@ As
         -- They are assigned to specific processors, but not to this processor
         If Exists (SELECT * FROM #Tmp_CandidateJobSteps WHERE Association_Type = 99)
         Begin
-            -- Update the state to 103 for jobs associated with another processor, but not this processor 
+            -- Update the state to 103 for jobs associated with another processor, but not this processor
             UPDATE #Tmp_CandidateJobSteps
             SET Association_Type = 103,
-                Alternate_Specific_Processor = LJP.Alternate_Processor + 
+                Alternate_Specific_Processor = LJP.Alternate_Processor +
                          CASE WHEN Alternate_Processor_Count > 1
                                                THEN ' and others'
                                                ELSE ''
@@ -1192,7 +1192,7 @@ As
                                      COUNT(*) AS Alternate_Processor_Count
                               FROM T_Local_Job_Processors
                               WHERE Processor <> @processorName
-                              GROUP BY Job 
+                              GROUP BY Job
                             ) LJP
                    ON CJS.Job = LJP.Job
             WHERE CJS.Association_Type = 99 AND
@@ -1202,11 +1202,11 @@ As
 
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         End
-        
+
     End
-    
+
     ---------------------------------------------------
     -- If no tools available, bail
     ---------------------------------------------------
@@ -1226,10 +1226,10 @@ As
     ---------------------------------------------------
     --
     Declare @transName varchar(32) = 'RequestStepTask'
-        
+
     -- Start transaction
     Begin transaction @transName
-    
+
     ---------------------------------------------------
     -- get best step candidate in order of preference:
     --   Assignment priority (prefer directly associated jobs to general pool)
@@ -1240,17 +1240,17 @@ As
     ---------------------------------------------------
     --
     Declare @stepNumber int = 0
-    
+
     -- This is set to 1 if the assigned job had state 9 and thus the manager is checking the status of a job step already running remotely
     Declare @jobIsRunningRemote tinyint = 0
-    
+
     SELECT TOP 1
         @jobNumber =  JS.Job,
         @stepNumber = JS.Step_Number,
         @machine = CJS.Machine,
         @jobIsRunningRemote = CASE WHEN JS.State = 9 THEN 1 ELSE 0 END
-    FROM   
-        T_Job_Steps JS WITH (HOLDLOCK) INNER JOIN 
+    FROM
+        T_Job_Steps JS WITH (HOLDLOCK) INNER JOIN
         #Tmp_CandidateJobSteps CJS ON CJS.Job = JS.Job AND CJS.Step_Number = JS.Step_Number
     WHERE JS.State IN (2, 9) And CJS.Association_Type <= @AssociationTypeIgnoreThreshold
     ORDER BY Seq
@@ -1266,32 +1266,32 @@ As
 
     If @myRowCount > 0
         Set @jobAssigned = 1
-    
+
     Set @jobIsRunningRemote = IsNull(@jobIsRunningRemote, 0)
-    
+
     ---------------------------------------------------
-    -- If a job step was found (@jobNumber <> 0) and if @infoOnly = 0, 
+    -- If a job step was found (@jobNumber <> 0) and if @infoOnly = 0,
     --  then update the step state to Running
     ---------------------------------------------------
     --
     If @jobAssigned = 1 AND @infoOnly = 0
     Begin --<e>
-        /* Declare @debugMsg varchar(512) = 
-            'Assigned job ' + Cast(@jobNumber as varchar(9)) + ', step ' + Cast(@stepNumber as varchar(9)) + '; ' + 
-            'remoteInfoID=' + Cast(@remoteInfoId as varchar(9)) + ', ' + 
+        /* Declare @debugMsg varchar(512) =
+            'Assigned job ' + Cast(@jobNumber as varchar(9)) + ', step ' + Cast(@stepNumber as varchar(9)) + '; ' +
+            'remoteInfoID=' + Cast(@remoteInfoId as varchar(9)) + ', ' +
             'jobIsRunningRemote=' + Cast(@jobIsRunningRemote as varchar(3)) + ', ' +
-            'setting Remote_Start to ' + 
+            'setting Remote_Start to ' +
                 CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN Cast(GetDate() as varchar(32))
                 WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN 'existing Remote_Start value'
                 ELSE 'Null'
                 END
-                           
+
            Exec PostLogEntry 'Debug', @debugMsg, 'RequestStepTaskXML'
         */
-        
+
         UPDATE T_Job_Steps
         SET
-            State = 4, 
+            State = 4,
             Processor = @processorName,
             Start = GetDate(),
             Finish = Null,
@@ -1306,7 +1306,7 @@ As
             Remote_Start =    CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN GetDate()
                                    WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Start
                                    ELSE NULL
-                              END,            
+                              END,
             Remote_Finish =   CASE WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 0 THEN Null
                                    WHEN @remoteInfoId > 1 AND @jobIsRunningRemote = 1 THEN Remote_Finish
                                    ELSE NULL
@@ -1332,7 +1332,7 @@ As
         End
 
     end --<e>
-      
+
     -- update was successful
     commit transaction @transName
 
@@ -1365,7 +1365,7 @@ As
                                  ON LP.Machine = M.Machine
                           WHERE LP.Machine = @machine AND
                                 JS.State = 4
-                          GROUP BY LP.Machine 
+                          GROUP BY LP.Machine
                       ) CPUQ
                ON CPUQ.Machine = Target.Machine
         --
@@ -1386,7 +1386,7 @@ As
             -- Add entry to T_Job_Step_Processing_Log
             -- However, skip this step if checking the status of a remote job
             ---------------------------------------------------
-            
+
             INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor, Remote_Info_ID)
             VALUES (@jobNumber, @stepNumber, @processorName, @remoteInfoID)
             --
@@ -1395,7 +1395,7 @@ As
 
         If @infoOnly > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Call GetJobStepParamsXML'
-        
+
         ---------------------------------------------------
         -- Job was assigned; return parameters in XML
         ---------------------------------------------------
@@ -1419,11 +1419,11 @@ As
         --
         set @myError = @jobNotAvailableErrorCode
         set @message = 'No available jobs'
-        
+
         If @cpuLoadExceeded > 0
             set @message = @message + ' (note: one or more step tools would exceed the available CPU load)'
     End
-    
+
     ---------------------------------------------------
     -- dump candidate list if in infoOnly mode
     ---------------------------------------------------
@@ -1435,7 +1435,7 @@ As
 
         -- Preview the next @jobCountToPreview available jobs
 
-        SELECT TOP ( @jobCountToPreview ) 
+        SELECT TOP ( @jobCountToPreview )
                CJS.Seq,
                CASE CJS.Association_Type
                    WHEN 1 Then   'Exclusive Association'
@@ -1471,8 +1471,8 @@ As
                @processorName AS Processor
         FROM #Tmp_CandidateJobSteps CJS
              INNER JOIN T_Jobs J
-               ON CJS.Job = J.Job 
-             INNER JOIN T_Job_Steps JS 
+               ON CJS.Job = J.Job
+             INNER JOIN T_Job_Steps JS
                ON CJS.Job = JS.Job AND CJS.Step_Number = JS.Step_Number
         ORDER BY Seq
     End

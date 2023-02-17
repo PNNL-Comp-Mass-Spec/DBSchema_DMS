@@ -4,18 +4,18 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[EvaluateStepDependencies] 
+CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Look at all unevaluated dependentices for steps
 **      that are finised (completed or skipped) and evaluate them
-**  
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   05/06/2008 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/666)
-**          01/06/2009 grk - added condition evaluation logic for Completion_Message_Contains http://prismtrac.pnl.gov/trac/ticket/706.  
+**          01/06/2009 grk - added condition evaluation logic for Completion_Message_Contains http://prismtrac.pnl.gov/trac/ticket/706.
 **          06/01/2009 mem - Added parameter @MaxJobsToProcess (Ticket #738, http://prismtrac.pnl.gov/trac/ticket/738)
 **          06/03/2009 mem - Added parameter @LoopingUpdateInterval
 **          12/21/2009 mem - Added parameter @infoOnly
@@ -32,19 +32,19 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 )
 As
     set nocount on
-    
+
     Declare @myError int
     Declare @myRowCount int
     set @myError = 0
     set @myRowCount = 0
-    
+
     set @message = ''
 
     Declare @StartTime datetime
-    Declare @StatusMessage varchar(512)    
+    Declare @StatusMessage varchar(512)
 
     Declare @RowCountToProcess int
-        
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -55,7 +55,7 @@ As
     Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
     If @LoopingUpdateInterval < 2
         Set @LoopingUpdateInterval = 2
-        
+
     ---------------------------------------------------
     -- table variable for processing dependenices
     ---------------------------------------------------
@@ -68,19 +68,19 @@ As
         Condition_Test varchar(256),
         Test_Value varchar(256),
         Enable_Only tinyint,
-        SortOrder INT IDENTITY(1,1) NOT NULL 
+        SortOrder INT IDENTITY(1,1) NOT NULL
     )
-    
+
     CREATE INDEX #IX_Tmp_DepTable_SortOrder ON #Tmp_DepTable (SortOrder)
 
     ---------------------------------------------------
     -- For steps that are waiting,
-    -- get unevaluated dependencies that target steps 
-    -- that are finished (skipped or completed) 
+    -- get unevaluated dependencies that target steps
+    -- that are finished (skipped or completed)
     ---------------------------------------------------
     --
     INSERT INTO #Tmp_DepTable (
-        Job, 
+        Job,
         DependentStep,
         TargetStep,
         TargetState,
@@ -107,7 +107,7 @@ As
     WHERE (JSD.Evaluated = 0) AND
           (JS.State IN (3, 5)) AND
           (JS_B.State = 1)
-    -- 
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
@@ -121,7 +121,7 @@ As
     Begin
         If @infoOnly <> 0
             SELECT 'Did not find any job steps to process' AS Message
-            
+
         goto Done
     End
 
@@ -132,9 +132,9 @@ As
         WHERE NOT Job IN ( SELECT TOP ( @MaxJobsToProcess ) Job
                            FROM #Tmp_DepTable
                            ORDER BY Job )
-        
+
     End
-    
+
     If @infoOnly <> 0
     Begin
         -- Preview the steps to process
@@ -142,7 +142,7 @@ As
         FROM #Tmp_DepTable
         ORDER BY SortOrder
     End
-    
+
     ---------------------------------------------------
     -- loop though dependencies and evaluate them
     ---------------------------------------------------
@@ -159,7 +159,7 @@ As
     Declare @actualValue int
     Declare @enableOnly tinyint
     Declare @continue tinyint = 1
-    
+
     SELECT @RowCountToProcess = COUNT(*)
     FROM #Tmp_DepTable
     --
@@ -188,7 +188,7 @@ As
         FROM #Tmp_DepTable
         WHERE SortOrder > @SortOrder
         ORDER BY SortOrder
-          -- 
+          --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
@@ -196,7 +196,7 @@ As
             set @message = 'Error getting next dependency'
             goto Done
         End
-        
+
         If @job = 0
             set @continue = 0
         Else
@@ -206,7 +206,7 @@ As
             ---------------------------------------------------
             --
             set @Triggered = 0
-            
+
             ---------------------------------------------------
             -- Skip if signature of dependent step matches
             -- test value (usually used with value of "0"
@@ -295,8 +295,8 @@ As
                 --
                 SELECT @outputFolderName = Output_Folder_Name
                 FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep        
-                  -- 
+                WHERE Job = @job AND Step_Number = @targetStep
+                  --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
                 If @myError <> 0
@@ -312,7 +312,7 @@ As
                     SET Input_Folder_Name = @outputFolderName
                     WHERE Job = @job AND
                           Step_Number = @dependentStep
-                  -- 
+                  --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
                 If @myError <> 0
@@ -321,7 +321,7 @@ As
                     goto Done
                 End
             End -- </EnableOnly>
-            
+
             ---------------------------------------------------
             -- Update state of dependency
             ---------------------------------------------------
@@ -335,7 +335,7 @@ As
                 WHERE Job = @job AND
                       Step_Number = @dependentStep AND
                       Target_Step_Number = @targetStep
-              -- 
+              --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
@@ -343,7 +343,7 @@ As
                 set @message = 'Error updating dependency'
                 goto Done
             End
-            
+
             Set @RowsProcessed = @RowsProcessed + 1
         End -- </b>
 

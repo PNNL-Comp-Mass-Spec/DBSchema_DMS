@@ -33,19 +33,19 @@ As
     Declare @myRowCount int
     Set @myError = 0
     Set @myRowCount = 0
-    
+
     Set @infoOnly = IsNull(@infoOnly, 1)
     If @infoOnly < 1
         Set @infoOnly = 1
 
     Declare @remoteInfo varchar(900)
-    
+
     Exec GetDefaultRemoteInfoForManager @processorName, @remoteInfoXML = @remoteInfo output
-    
-    Exec RequestStepTaskXML @processorName, 
-                            @jobNumber = @jobNumber output, 
-                            @parameters = @parameters output, 
-                            @message = @message output, 
+
+    Exec RequestStepTaskXML @processorName,
+                            @jobNumber = @jobNumber output,
+                            @parameters = @parameters output,
+                            @message = @message output,
                             @infoonly = @infoOnly,
                             @JobCountToPreview=@JobCountToPreview,
                             @remoteInfo = @remoteInfo
@@ -64,7 +64,7 @@ As
     Begin
         SELECT @message as Message
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

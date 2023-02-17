@@ -150,13 +150,13 @@ As
              INNER JOIN ( SELECT Machine,
                                  Min(Entry_ID) AS Entry_ID
                           FROM T_Machine_Status_History
-                          WHERE Entry_ID IN 
+                          WHERE Entry_ID IN
                                    ( SELECT Entry_ID
                                      FROM ( SELECT Entry_ID,
                                             Row_Number() OVER ( PARTITION BY Machine ORDER BY entry_id DESC ) AS RowRank
                                             FROM T_Machine_Status_History ) RankQ
                                      WHERE RowRank > 1000 )
-                          GROUP BY Machine 
+                          GROUP BY Machine
                         ) FilterQ
                ON H.Entry_ID = FilterQ.Entry_ID
         ORDER BY Machine
@@ -177,7 +177,7 @@ As
 
         -- Keep the 1000 most recent status values for each machine
         DELETE T_Machine_Status_History
-        WHERE Entry_ID IN 
+        WHERE Entry_ID IN
               ( SELECT Entry_ID
                 FROM ( SELECT Entry_ID,
                               Row_Number() OVER ( PARTITION BY Machine ORDER BY entry_id DESC ) AS RowRank
@@ -186,7 +186,7 @@ As
 
         -- Keep the 500 most recent processing stats values for each processor
         DELETE T_Job_Step_Processing_Stats
-        WHERE Entry_ID IN 
+        WHERE Entry_ID IN
               ( SELECT Entry_ID
                 FROM ( SELECT Entry_ID,
                               Processor,

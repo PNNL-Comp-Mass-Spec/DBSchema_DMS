@@ -7,38 +7,38 @@ GO
 CREATE FUNCTION [dbo].[XmlToHTML]
 /****************************************************
 **
-**	Desc:	Converts XML to HTML text, adding a carriage return before each XML tag
-**			and changing the < and > signs to &lt; and &gt;
+**  Desc:   Converts XML to HTML text, adding a carriage return before each XML tag
+**          and changing the < and > signs to &lt; and &gt;
 **
-**	Returns the XML as varchar(max) text
+**  Returns the XML as varchar(max) text
 **
-**		Auth:	mem
-**		Date:	06/10/2010 mem - Initial version
+**      Auth:   mem
+**      Date:   06/10/2010 mem - Initial version
 **
 *****************************************************/
 (
-	@XML XML
+    @XML XML
 )
-	RETURNS varchar(max)
+    RETURNS varchar(max)
 AS
 Begin
- 
-	Declare @CharLoc int
-	Declare @Text varchar(MAX)
-	Declare @CRLF varchar(2)
-	
-	If @XML Is Null
-		Set @Text = ''
-	Else
-	Begin
-		Set @CRLF = CHAR(13) + CHAR(10)
-		
-		Set @Text = LTRIM(RTRIM(REPLACE(CONVERT(varchar(MAX), @XML), '<', @CRLF + '<')))
-		Set @Text = '<pre>' + REPLACE(REPLACE(@Text, '<', '&lt;'), '>', '&gt;') + '</pre>'
-		
-	End
-	
-	Return @Text 
+
+    Declare @CharLoc int
+    Declare @Text varchar(MAX)
+    Declare @CRLF varchar(2)
+
+    If @XML Is Null
+        Set @Text = ''
+    Else
+    Begin
+        Set @CRLF = CHAR(13) + CHAR(10)
+
+        Set @Text = LTRIM(RTRIM(REPLACE(CONVERT(varchar(MAX), @XML), '<', @CRLF + '<')))
+        Set @Text = '<pre>' + REPLACE(REPLACE(@Text, '<', '&lt;'), '>', '&gt;') + '</pre>'
+
+    End
+
+    Return @Text
 End
 
 

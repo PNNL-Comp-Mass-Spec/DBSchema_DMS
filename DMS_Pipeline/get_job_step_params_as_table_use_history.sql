@@ -6,105 +6,105 @@ GO
 CREATE PROCEDURE dbo.GetJobStepParamsAsTableUseHistory
 /****************************************************
 **
-**	Desc:
+**  Desc:
 **    Get job step parameters for given job step
 **
-**	Note: Data comes from table T_Job_Parameters_History in the DMS_Pipeline DB, not from DMS5
+**  Note: Data comes from table T_Job_Parameters_History in the DMS_Pipeline DB, not from DMS5
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	mem
-**			07/31/2013 mem - Initial release
-**			01/05/2018 mem - Add parameters @section, @paramName, and @firstParameterValue
-**    
+**  Auth:   mem
+**          07/31/2013 mem - Initial release
+**          01/05/2018 mem - Add parameters @section, @paramName, and @firstParameterValue
+**
 *****************************************************/
 (
-	@jobNumber int,
-	@stepNumber int,
-	@section varchar(128) = '',			-- Optional section name to filter on, for example: JobParameters
-	@paramName varchar(128) = '',		-- Optional parameter name to filter on, for example: SourceJob
+    @jobNumber int,
+    @stepNumber int,
+    @section varchar(128) = '',         -- Optional section name to filter on, for example: JobParameters
+    @paramName varchar(128) = '',       -- Optional parameter name to filter on, for example: SourceJob
     @message varchar(512) = '' output,
-    @firstParameterValue varchar(1024) = '' output,		-- The value of the first parameter in the retrieved job parameters; useful when using both @section and @paramName
+    @firstParameterValue varchar(1024) = '' output,     -- The value of the first parameter in the retrieved job parameters; useful when using both @section and @paramName
     @DebugMode tinyint = 0
 )
 AS
-	set nocount on
+    set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
-	--
-	set @message = ''
-	set @firstParameterValue = ''
+    declare @myError int
+    declare @myRowCount int
+    set @myError = 0
+    set @myRowCount = 0
+    --
+    set @message = ''
+    set @firstParameterValue = ''
 
-	---------------------------------------------------
-	-- Validate the inputs
-	---------------------------------------------------
-	
-	Set @section = IsNull(@section, '')
-	Set @paramName = IsNull(@paramName, '')
-	
-	
-	---------------------------------------------------
-	-- Temporary table to hold job parameters
-	---------------------------------------------------
-	--
-	CREATE TABLE #Tmp_JobParamsTable (
-		[Section] Varchar(128),
-		[Name] Varchar(128),
-		[Value] Varchar(max)
-	)
+    ---------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Call GetJobStepParamsFromHistoryWork to populate the temporary table
-	---------------------------------------------------
-		
-	exec @myError = GetJobStepParamsFromHistoryWork @jobNumber, @stepNumber, @message output, @DebugMode
-	if @myError <> 0
-		Goto Done
+    Set @section = IsNull(@section, '')
+    Set @paramName = IsNull(@paramName, '')
 
-	---------------------------------------------------
-	-- Possibly filter the parameters
-	---------------------------------------------------
-		
-	If @section <> ''
-	Begin
-		DELETE FROM #Tmp_JobParamsTable
-		WHERE [Section] <> @section
-	End
 
-	If @paramName <> ''
-	Begin
-		DELETE FROM #Tmp_JobParamsTable
-		WHERE [Name] <> @paramName
-	End
+    ---------------------------------------------------
+    -- Temporary table to hold job parameters
+    ---------------------------------------------------
+    --
+    CREATE TABLE #Tmp_JobParamsTable (
+        [Section] Varchar(128),
+        [Name] Varchar(128),
+        [Value] Varchar(max)
+    )
 
-	---------------------------------------------------
-	-- Cache the first parameter value (sorting on section name then parameter name)
-	---------------------------------------------------
-	
-	SELECT TOP 1 @firstParameterValue = [Value]
-	FROM #Tmp_JobParamsTable
-	ORDER BY [Section], [Name]
+    ---------------------------------------------------
+    -- Call GetJobStepParamsFromHistoryWork to populate the temporary table
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Return the contents of #Tmp_JobParamsTable
-	---------------------------------------------------
-	
-	SELECT *
-	FROM #Tmp_JobParamsTable
-	ORDER BY [Section], [Name], [Value]
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
-	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
-	--
+    exec @myError = GetJobStepParamsFromHistoryWork @jobNumber, @stepNumber, @message output, @DebugMode
+    if @myError <> 0
+        Goto Done
+
+    ---------------------------------------------------
+    -- Possibly filter the parameters
+    ---------------------------------------------------
+
+    If @section <> ''
+    Begin
+        DELETE FROM #Tmp_JobParamsTable
+        WHERE [Section] <> @section
+    End
+
+    If @paramName <> ''
+    Begin
+        DELETE FROM #Tmp_JobParamsTable
+        WHERE [Name] <> @paramName
+    End
+
+    ---------------------------------------------------
+    -- Cache the first parameter value (sorting on section name then parameter name)
+    ---------------------------------------------------
+
+    SELECT TOP 1 @firstParameterValue = [Value]
+    FROM #Tmp_JobParamsTable
+    ORDER BY [Section], [Name]
+
+    ---------------------------------------------------
+    -- Return the contents of #Tmp_JobParamsTable
+    ---------------------------------------------------
+
+    SELECT *
+    FROM #Tmp_JobParamsTable
+    ORDER BY [Section], [Name], [Value]
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    ---------------------------------------------------
+    -- Exit
+    ---------------------------------------------------
+    --
 Done:
 
-	return @myError
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobStepParamsAsTableUseHistory] TO [DDL_Viewer] AS [dbo]

@@ -11,11 +11,11 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDataPackage]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Auth:	grk
-**  Date:	10/06/2010 grk - Initial release
-**			11/25/2010 mem - Now validating that the script exists in T_Scripts
-**			12/10/2013 grk - problem inserting null values into #TPD
-**			04/08/2016 mem - Clear @message if null
+**  Auth:   grk
+**  Date:   10/06/2010 grk - Initial release
+**          11/25/2010 mem - Now validating that the script exists in T_Scripts
+**          12/10/2013 grk - problem inserting null values into #TPD
+**          04/08/2016 mem - Clear @message if null
 **          03/10/2021 mem - Validate protein collection (or FASTA file) options for MaxQuant jobs
 **                         - Rename the XML job parameters argument and make it an input/output argument
 **                         - Add argument @debugMode
@@ -25,36 +25,36 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDataPackage]
     @dataPackageID int,
     @protCollNameList varchar(4000)='' output,
     @collectionCountAdded int = 0 output,
-    @showMessages tinyint = 1,    
-	@message varchar(512) = '' output
+    @showMessages tinyint = 1,
+    @message varchar(512) = '' output
 )
 AS
-	Set nocount on
-	
-	Declare @myError int = 0
-	Declare @myRowCount int = 0
+    Set nocount on
 
-	Set @message = IsNull(@message, '')
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+
+    Set @message = IsNull(@message, '')
 
     Declare @dataPackageName varchar(1024)
 
     ---------------------------------------------------
-	-- Create a temporary table to hold dataset names
-	---------------------------------------------------
-    --	
+    -- Create a temporary table to hold dataset names
+    ---------------------------------------------------
+    --
     CREATE TABLE #TmpDatasets (
         Dataset_Num varchar(128),
     )
-    
+
     ---------------------------------------------------
-	-- Validate the data package ID
-	---------------------------------------------------
+    -- Validate the data package ID
+    ---------------------------------------------------
     --
     SELECT @dataPackageName = Name
     FROM dbo.S_Data_Package_Details
     WHERE ID = @dataPackageID
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount = 0
     Begin
@@ -63,16 +63,16 @@ AS
     End
 
     ---------------------------------------------------
-	-- Populate the table
-	---------------------------------------------------
+    -- Populate the table
+    ---------------------------------------------------
     --
     INSERT INTO #TmpDatasets (Dataset_Num)
     SELECT Dataset
     FROM dbo.S_Data_Package_Datasets
     WHERE Data_Package_ID = @dataPackageID
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
     If @myRowCount = 0
     Begin
         Set @message = 'Data package does not have any datasets, ID: ' + Cast(@dataPackageID as varchar(9))
@@ -86,6 +86,6 @@ AS
                         @message = @message output,
                         @showDebug = 0
 
-	return @myError
+    return @myError
 
 GO

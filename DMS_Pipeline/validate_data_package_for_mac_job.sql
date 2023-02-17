@@ -7,10 +7,10 @@ GO
 CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **  Verify configuration and contents of a data package
-**  suitable for running a given MAC job from job template 
-**    
+**  suitable for running a given MAC job from job template
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
@@ -41,14 +41,14 @@ CREATE PROCEDURE [dbo].[ValidateDataPackageForMACJob]
 *****************************************************/
 (
     @dataPackageID int,
-    @scriptName varchar(64),    
+    @scriptName varchar(64),
     @tool varchar(64) output,
-    @mode varchar(12) = 'add', 
+    @mode varchar(12) = 'add',
     @message varchar(512) output
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -56,8 +56,8 @@ AS
     Set @tool = ''
 
     Declare @debugMode tinyint = 0
-    
-    Begin Try                
+
+    Begin Try
         ---------------------------------------------------
         -- create table to hold data package datasets
         -- and job counts
@@ -69,7 +69,7 @@ AS
               Decon2LS_V2 INT NULL ,
               MASIC INT NULL ,
               MSGFPlus INT NULL ,
-              SEQUEST INT NULL 
+              SEQUEST INT NULL
             )
 
         ---------------------------------------------------
@@ -88,14 +88,14 @@ AS
         ---------------------------------------------------
 
         UPDATE #Tmp_DataPackageItems
-        Set 
+        Set
             Decon2LS_V2 = TargetTable.Decon2LS_V2,
             MASIC = TargetTable.MASIC,
             MSGFPlus = TargetTable.MSGFPlus,
             SEQUEST = TargetTable.SEQUEST
-        FROM #Tmp_DataPackageItems INNER JOIN 
+        FROM #Tmp_DataPackageItems INNER JOIN
         (
-            SELECT  
+            SELECT
                 TPKG.Dataset,
                 SUM(CASE WHEN TPKG.Tool = 'Decon2LS_V2' THEN 1 ELSE 0 END) AS Decon2LS_V2,
                 SUM(CASE WHEN TPKG.Tool = 'MASIC_Finnigan' AND TD.[Param File] LIKE '%ReporterTol%' THEN 1 ELSE 0 END) AS MASIC,
@@ -107,12 +107,12 @@ AS
             GROUP BY TPKG.Dataset
         ) TargetTable ON #Tmp_DataPackageItems.Dataset = TargetTable.Dataset
 
-        
+
         ---------------------------------------------------
         -- Assess job/tool coverage of datasets
         ---------------------------------------------------
 
-        Declare 
+        Declare
             @errMsg varchar(1024) = '',
             @datasetCount int,
             @deconToolsCountNotOne int,
@@ -127,13 +127,13 @@ AS
         SELECT @datasetCount = COUNT(*) FROM #Tmp_DataPackageItems
 
         SELECT @deconToolsCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE Decon2LS_V2 <> 1
-        
+
         SELECT @masicCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE MASIC <> 1
-        
+
         SELECT @msgfPlusCountExactlyOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE MSGFPlus = 1
         SELECT @msgfPlusCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE MSGFPlus <> 1
         SELECT @msgfPlusCountOneOrMore = COUNT(*) FROM #Tmp_DataPackageItems WHERE MSGFPlus >= 1
-        
+
         SELECT @sequestCountExactlyOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE SEQUEST = 1
         SELECT @sequestCountNotOne = COUNT(*) FROM #Tmp_DataPackageItems WHERE SEQUEST <> 1
         SELECT @sequestCountOneOrMore = COUNT(*) FROM #Tmp_DataPackageItems WHERE SEQUEST >= 1
@@ -157,7 +157,7 @@ AS
                 Else If @sequestCountOneOrMore > 0
                     Set @tool = 'sequest'
             End
-   
+
             If @tool = '' And @msgfPlusCountOneOrMore > 0
             Begin
                 If @msgfPlusCountNotOne = 0 And @msgfPlusCountExactlyOne = @msgfPlusCountOneOrMore
@@ -191,49 +191,49 @@ AS
                 Set @errMsg = dbo.AppendToText(@errMsg, 'Data package must have one or more MSGFPlus (or Sequest) jobs; error validating script ' + @scriptName, 0, '; ', 1024)
             End
         End
-        
+
         ---------------------------------------------------
-        -- Determine if job/tool coverage is acceptable for 
+        -- Determine if job/tool coverage is acceptable for
         -- given job template
         ---------------------------------------------------
-        
+
         If @scriptName IN ('Isobaric_Labeling')
-        Begin 
-            If @deconToolsCountNotOne > 0 
+        Begin
+            If @deconToolsCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
-            
+
             If @masicCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
-        End 
+        End
 
         If @scriptName IN ('MAC_iTRAQ', 'MAC_TMT10Plex')
-        Begin 
+        Begin
             If @masicCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one MASIC_Finnigan job per dataset (and that job must use a param file with ReporterTol in the name) for script ' + @scriptName, 0, '; ', 1024)
-        End 
+        End
 
         If @scriptName IN ('Global_Label-Free_AMT_Tag')
-        Begin 
+        Begin
             If @deconToolsCountNotOne > 0
                 Set @errMsg = dbo.AppendToText(@errMsg, 'There must be exactly one Decon2LS_V2 job per dataset for script ' + @scriptName, 0, '; ', 1024)
         End
-        
+
         If @errMsg <> ''
         Begin
             Set @errMsg = 'Data package ' + Cast(@dataPackageID as varchar(12)) + ' is not configured correctly for this job: ' + @errMsg
              RAISERROR(@errMsg, 11, 25)
-        End                             
+        End
 
     End Try
-    Begin Catch 
+    Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
         Exec PostLogEntry 'Error', @message, 'ValidateDataPackageForMACJob'
-        
+
         If @myError = 0
             Set @myError = 20000
-        
+
     End Catch
-    
+
     return @myError
 
 GO

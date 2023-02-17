@@ -12,223 +12,223 @@ CREATE PROCEDURE AddUpdateScripts
 **
 **  Parameters:
 **
-**  Auth:	grk
-**  Date:	09/23/2008 grk - Initial Veresion
-**			03/24/2009 mem - Now calling AlterEnteredByUser when @callingUser is defined
-**			10/06/2010 grk - Added @Parameters field
-**			12/01/2011 mem - Expanded @Description to varchar(2000)
-**			01/09/2012 mem - Added parameter @BackfillToDMS
-						   - Changed ID field in T_Scripts to a non-identity based int
-**			08/13/2013 mem - Added @Fields field  (used by MAC Job Wizard on DMS website)
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
-**    
+**  Auth:   grk
+**  Date:   09/23/2008 grk - Initial Veresion
+**          03/24/2009 mem - Now calling AlterEnteredByUser when @callingUser is defined
+**          10/06/2010 grk - Added @Parameters field
+**          12/01/2011 mem - Expanded @Description to varchar(2000)
+**          01/09/2012 mem - Added parameter @BackfillToDMS
+**                         - Changed ID field in T_Scripts to a non-identity based int
+**          08/13/2013 mem - Added @Fields field  (used by MAC Job Wizard on DMS website)
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**
 *****************************************************/
 (
-	@Script varchar(64),
-	@Description varchar(2000),
-	@Enabled char(1),
-	@ResultsTag varchar(8),
-	@BackfillToDMS char(1),
-	@Contents TEXT,
-	@Parameters TEXT,
-	@Fields TEXT,
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @Script varchar(64),
+    @Description varchar(2000),
+    @Enabled char(1),
+    @ResultsTag varchar(8),
+    @BackfillToDMS char(1),
+    @Contents TEXT,
+    @Parameters TEXT,
+    @Fields TEXT,
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+    declare @myError int = 0
+    declare @myRowCount int = 0
 
-	declare @ID int
-	declare @BackFill tinyint
+    declare @ID int
+    declare @BackFill tinyint
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
-	
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
 
-	Set @Description = IsNull(@Description, '')
-	Set @Enabled = IsNull(@Enabled, 'Y')
-	Set @BackfillToDMS = IsNull(@BackfillToDMS, 'Y')
-	Set @mode = IsNull(@mode, '')
-	Set @message = ''
-	Set @callingUser = IsNull(@callingUser, '')
+    Declare @authorized tinyint = 0
+    Exec @authorized = VerifySPAuthorized 'AddUpdateScripts', @raiseError = 1
+    If @authorized = 0
+    Begin
+        THROW 51000, 'Access denied', 1;
+    End
 
-	If @BackfillToDMS = 'Y'
-		Set @BackFill = 1
-	Else
-		Set @BackFill = 0
-		
-	If @Description = ''
-	begin
-		set @message = 'Description cannot be blank'
-		RAISERROR (@message, 10, 1)
-		return 51005
-	End
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
 
-	If @Mode <> 'add' and @mode <> 'update'
-	Begin
-		set @message = 'Unknown Mode: ' + @mode
-		RAISERROR (@message, 10, 1)
-		return 51006
-	End
-			
-	---------------------------------------------------
-	-- Is entry already in database? 
-	---------------------------------------------------
-	declare @tmp int
-	set @tmp = 0
-	--
-	SELECT @tmp = ID
-	FROM  T_Scripts
-	WHERE Script = @Script
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error searching for existing entry'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+    Set @Description = IsNull(@Description, '')
+    Set @Enabled = IsNull(@Enabled, 'Y')
+    Set @BackfillToDMS = IsNull(@BackfillToDMS, 'Y')
+    Set @mode = IsNull(@mode, '')
+    Set @message = ''
+    Set @callingUser = IsNull(@callingUser, '')
 
-	-- cannot update a non-existent entry
-	--
-	if @mode = 'update' and @tmp = 0
-	begin
-		set @message = 'Could not find "' + @Script + '" in database'
-		RAISERROR (@message, 10, 1)
-		return 51008
-	end
+    If @BackfillToDMS = 'Y'
+        Set @BackFill = 1
+    Else
+        Set @BackFill = 0
 
-	-- cannot add an existing entry
-	--
-	if @mode = 'add' and @tmp <> 0
-	begin
-		set @message = 'Script "' + @Script + '" already exists in database'
-		RAISERROR (@message, 10, 1)
-		return 51009
-	end
+    If @Description = ''
+    begin
+        set @message = 'Description cannot be blank'
+        RAISERROR (@message, 10, 1)
+        return 51005
+    End
 
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
-	if @Mode = 'add'
-	begin
+    If @Mode <> 'add' and @mode <> 'update'
+    Begin
+        set @message = 'Unknown Mode: ' + @mode
+        RAISERROR (@message, 10, 1)
+        return 51006
+    End
 
-		Declare @ScriptIDNew int = 1
+    ---------------------------------------------------
+    -- Is entry already in database?
+    ---------------------------------------------------
+    declare @tmp int
+    set @tmp = 0
+    --
+    SELECT @tmp = ID
+    FROM  T_Scripts
+    WHERE Script = @Script
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error searching for existing entry'
+        RAISERROR (@message, 10, 1)
+        return 51007
+    end
 
-		Declare @TranAddScript varchar(64) = 'AddScript'
-		Begin Tran @TranAddScript
-		
-		SELECT @ScriptIDNew = IsNull(MAX(ID), 0) + 1
-		FROM T_Scripts
+    -- cannot update a non-existent entry
+    --
+    if @mode = 'update' and @tmp = 0
+    begin
+        set @message = 'Could not find "' + @Script + '" in database'
+        RAISERROR (@message, 10, 1)
+        return 51008
+    end
 
-		INSERT INTO T_Scripts (
-			ID,
-			Script, 
-			Description, 
-			Enabled, 
-			Results_Tag, 
-			Backfill_to_DMS,
-			Contents,
-			Parameters,
-			Fields
-		) VALUES (
-			@ScriptIDNew,
-			@Script, 
-			@Description, 
-			@Enabled, 
-			@ResultsTag, 
-			@BackFill,
-			@Contents,
-			@Parameters,
-			@Fields
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Insert operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
+    -- cannot add an existing entry
+    --
+    if @mode = 'add' and @tmp <> 0
+    begin
+        set @message = 'Script "' + @Script + '" already exists in database'
+        RAISERROR (@message, 10, 1)
+        return 51009
+    end
 
-		Commit Tran @TranAddScript
-		
-		-- If @callingUser is defined, then update Entered_By in T_Scripts_History
-		If Len(@callingUser) > 0
-		Begin
-			Set @ID = Null
-			SELECT @ID = ID
-			FROM T_Scripts
-			WHERE Script = @Script
-			
-			If Not @ID Is Null
-				Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
-		End
-		
-	end -- add mode
+    ---------------------------------------------------
+    -- action for add mode
+    ---------------------------------------------------
+    if @Mode = 'add'
+    begin
 
-	---------------------------------------------------
-	-- action for update mode
-	---------------------------------------------------
-	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
-		--
+        Declare @ScriptIDNew int = 1
 
-		UPDATE T_Scripts 
-		SET 
-		  Description = @Description, 
-		  Enabled = @Enabled, 
-		  Results_Tag = @ResultsTag, 
-		  Backfill_to_DMS = @BackFill,
-		  Contents = @Contents,
-		  Parameters = @Parameters,
-		  Fields = @Fields
-		WHERE (Script = @Script)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-		  set @message = 'Update operation failed: "' + @Script + '"'
-		  RAISERROR (@message, 10, 1)
-		  return 51004
-		end
-		
-		-- If @callingUser is defined, then update Entered_By in T_Scripts_History
-		If Len(@callingUser) > 0
-		Begin
-			Set @ID = Null
-			SELECT @ID = ID
-			FROM T_Scripts
-			WHERE Script = @Script
-			
-			If Not @ID Is Null
-				Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
-		End
-		
-	end -- update mode
+        Declare @TranAddScript varchar(64) = 'AddScript'
+        Begin Tran @TranAddScript
 
-	return @myError
+        SELECT @ScriptIDNew = IsNull(MAX(ID), 0) + 1
+        FROM T_Scripts
+
+        INSERT INTO T_Scripts (
+            ID,
+            Script,
+            Description,
+            Enabled,
+            Results_Tag,
+            Backfill_to_DMS,
+            Contents,
+            Parameters,
+            Fields
+        ) VALUES (
+            @ScriptIDNew,
+            @Script,
+            @Description,
+            @Enabled,
+            @ResultsTag,
+            @BackFill,
+            @Contents,
+            @Parameters,
+            @Fields
+        )
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            set @message = 'Insert operation failed'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        end
+
+        Commit Tran @TranAddScript
+
+        -- If @callingUser is defined, then update Entered_By in T_Scripts_History
+        If Len(@callingUser) > 0
+        Begin
+            Set @ID = Null
+            SELECT @ID = ID
+            FROM T_Scripts
+            WHERE Script = @Script
+
+            If Not @ID Is Null
+                Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
+        End
+
+    end -- add mode
+
+    ---------------------------------------------------
+    -- action for update mode
+    ---------------------------------------------------
+    --
+    if @Mode = 'update'
+    begin
+        set @myError = 0
+        --
+
+        UPDATE T_Scripts
+        SET
+          Description = @Description,
+          Enabled = @Enabled,
+          Results_Tag = @ResultsTag,
+          Backfill_to_DMS = @BackFill,
+          Contents = @Contents,
+          Parameters = @Parameters,
+          Fields = @Fields
+        WHERE (Script = @Script)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+          set @message = 'Update operation failed: "' + @Script + '"'
+          RAISERROR (@message, 10, 1)
+          return 51004
+        end
+
+        -- If @callingUser is defined, then update Entered_By in T_Scripts_History
+        If Len(@callingUser) > 0
+        Begin
+            Set @ID = Null
+            SELECT @ID = ID
+            FROM T_Scripts
+            WHERE Script = @Script
+
+            If Not @ID Is Null
+                Exec AlterEnteredByUser 'T_Scripts_History', 'ID', @ID, @CallingUser
+        End
+
+    end -- update mode
+
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateScripts] TO [DDL_Viewer] AS [dbo]

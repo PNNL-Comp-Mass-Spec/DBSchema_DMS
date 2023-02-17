@@ -19,7 +19,7 @@ CREATE FUNCTION [dbo].[AppendToText]
 **
 *****************************************************/
 (
-    @text varchar(1024), 
+    @text varchar(1024),
     @addnlText varchar(1024),
     @addDuplicateText tinyint = 0,
     @delimiter varchar(10) = '; ',
@@ -28,9 +28,9 @@ CREATE FUNCTION [dbo].[AppendToText]
     RETURNS varchar(1024)
 AS
 Begin
- 
+
     Declare @charLoc int
-    
+
     If IsNull(@text, '') = ''
         Set @text = ''
 
@@ -38,7 +38,7 @@ Begin
     Begin
         Set @charLoc = 0
         Set @charLoc = CharIndex(@addnlText, @text)
-        
+
         If @charLoc = 0 Or @addDuplicateText <> 0
         Begin
             If @text = ''
@@ -47,13 +47,13 @@ Begin
                 Set @text = @text + @delimiter + @addnlText
         End
     End
-    
+
     If @maxLength > 0 And Len(@text) > @maxLength
     Begin
         Set @text = Substring(@text, 1, @maxLength)
     End
 
-    Return @text 
+    Return @text
 End
 
 

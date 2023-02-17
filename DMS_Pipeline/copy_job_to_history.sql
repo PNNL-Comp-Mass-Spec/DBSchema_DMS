@@ -8,9 +8,9 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
 /****************************************************
 **
 **  Desc:
-**      For a given job, copies the job details, steps, 
+**      For a given job, copies the job details, steps,
 **      and parameters to the history tables
-**  
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -29,7 +29,7 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
 **          01/19/2018 mem - Add Runtime_Minutes
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **          08/17/2021 mem - Fix typo in argument @saveTimeOverride
-**    
+**
 *****************************************************/
 (
     @job int,
@@ -40,12 +40,12 @@ CREATE PROCEDURE [dbo].[CopyJobToHistory]
 )
 As
     set nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
-    
+
     set @message = ''
-    
+
     ---------------------------------------------------
     -- Bail if no candidates found
     ---------------------------------------------------
@@ -69,7 +69,7 @@ As
     ---------------------------------------------------
     --
     Declare @saveTime datetime
-    
+
     If IsNull(@overrideSaveTime, 0) <> 0
         Set @SaveTime = IsNull(@saveTimeOverride, GetDate())
     Else
@@ -106,7 +106,7 @@ As
         Comment,
         Saved
     )
-    SELECT 
+    SELECT
         Job,
         Priority,
         Script,
@@ -164,7 +164,7 @@ As
         Remote_Start,
         Remote_Finish
     )
-    SELECT 
+    SELECT
         Job,
         Step_Number,
         Step_Tool,
@@ -242,20 +242,20 @@ As
         set @message = 'Error '
         goto Done
     end
-        
+
     -- Now add/update the job step dependencies
     --
     MERGE T_Job_Step_Dependencies_History AS target
-    USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+    USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
                    Evaluated, Triggered, Enable_Only
             FROM T_Job_Step_Dependencies
-            WHERE Job = @job    
+            WHERE Job = @job
           ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
-           ON (target.Job = source.Job And 
+           ON (target.Job = source.Job And
                target.Step_Number = source.Step_Number And
                target.Target_Step_Number = source.Target_Step_Number)
-    WHEN Matched THEN 
-        UPDATE Set 
+    WHEN Matched THEN
+        UPDATE Set
             Condition_Test = source.Condition_Test,
             Test_Value = source.Test_Value,
             Evaluated = source.Evaluated,
@@ -263,11 +263,11 @@ As
             Enable_Only = source.Enable_Only,
             Saved = @saveTime
     WHEN Not Matched THEN
-        INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 
+        INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
                 Evaluated, Triggered, Enable_Only, Saved)
-        VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value, 
+        VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value,
                 source.Evaluated, source.Triggered, source.Enable_Only, @saveTime)
-    ;        
+    ;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --

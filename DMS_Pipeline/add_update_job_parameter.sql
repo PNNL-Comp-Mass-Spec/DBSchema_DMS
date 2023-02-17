@@ -7,126 +7,126 @@ CREATE PROCEDURE AddUpdateJobParameter
 /****************************************************
 **
 **  Desc:   Adds or updates an entry in the XML parameters for a given job
-**			Alternatively, use @DeleteParam=1 to delete the given parameter
+**          Alternatively, use @DeleteParam=1 to delete the given parameter
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Auth:	mem
-**  Date:	03/22/2011 mem - Initial Version
-**			04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
-**			01/19/2012 mem - Now using AddUpdateJobParameterXML
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			06/22/2017 mem - If updating DataPackageID, also update T_Jobs
-**			08/01/2017 mem - Use THROW if not authorized
-**    
+**  Auth:   mem
+**  Date:   03/22/2011 mem - Initial Version
+**          04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
+**          01/19/2012 mem - Now using AddUpdateJobParameterXML
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/22/2017 mem - If updating DataPackageID, also update T_Jobs
+**          08/01/2017 mem - Use THROW if not authorized
+**
 *****************************************************/
 (
-	@Job int,
-	@Section varchar(128),			-- Example: JobParameters
-	@ParamName varchar(128),		-- Example: SourceJob
-	@Value varchar(1024),			-- value for parameter @ParamName in section @Section
-	@DeleteParam tinyint = 0,		-- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
-	@message varchar(512) = '' output,
-	@infoOnly tinyint = 0
+    @Job int,
+    @Section varchar(128),          -- Example: JobParameters
+    @ParamName varchar(128),        -- Example: SourceJob
+    @Value varchar(1024),           -- value for parameter @ParamName in section @Section
+    @DeleteParam tinyint = 0,       -- When 0, then adds/updates the given parameter; when 1 then deletes the parameter
+    @message varchar(512) = '' output,
+    @infoOnly tinyint = 0
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
+    declare @myError int = 0
+    declare @myRowCount int = 0
 
-	Declare @pXML xml
-	Declare @ExistingParamsFound tinyint = 0	
+    Declare @pXML xml
+    Declare @ExistingParamsFound tinyint = 0
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    Declare @authorized tinyint = 0
+    Exec @authorized = VerifySPAuthorized 'AddUpdateJobParameter', @raiseError = 1
+    If @authorized = 0
+    Begin
+        THROW 51000, 'Access denied', 1;
+    End
 
-	Set @message = ''
-	Set @infoOnly = IsNull(@infoOnly, 0)
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Lookup the current parameters stored in T_Job_Parameters for this job
-	---------------------------------------------------
-	--
-	SELECT @pXML = Parameters
-	FROM T_Job_Parameters 
-	WHERE Job = @Job
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	
-	If @myRowCount > 0
-		Set @ExistingParamsFound = 1
-	Else
-	Begin
-		Set @message = 'Warning: job not found in T_Job_Parameters'
-		If @infoOnly <> 0
-			print @message
-		Set @pXML = ''
-	End
+    Set @message = ''
+    Set @infoOnly = IsNull(@infoOnly, 0)
 
-	---------------------------------------------------
-	-- Call AddUpdateJobParameterXML to perform the work
-	---------------------------------------------------
-	--
-	exec AddUpdateJobParameterXML @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
+    ---------------------------------------------------
+    -- Lookup the current parameters stored in T_Job_Parameters for this job
+    ---------------------------------------------------
+    --
+    SELECT @pXML = Parameters
+    FROM T_Job_Parameters
+    WHERE Job = @Job
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	If @infoOnly = 0
-	Begin
-		---------------------------------------------------
-		-- Update T_Job_Parameters
-		-- Note: Ordering by Section name but not by parameter name
-		---------------------------------------------------
-		--
-		If @ExistingParamsFound = 1
-		Begin
-			UPDATE T_Job_Parameters
-			SET Parameters = @pXML
-			WHERE Job = @Job
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount		
-		End
-		Else
-		Begin
-			INSERT INTO T_Job_Parameters( Job, Parameters )
-			SELECT @job, @pXML
-			--
-			SELECT @myError = @@error, @myRowCount = @@rowcount
-		End
+    If @myRowCount > 0
+        Set @ExistingParamsFound = 1
+    Else
+    Begin
+        Set @message = 'Warning: job not found in T_Job_Parameters'
+        If @infoOnly <> 0
+            print @message
+        Set @pXML = ''
+    End
 
-		if @myError <> 0
-		begin
-			set @message = 'Error storing parameters in T_Job_Parameters for job ' + Convert(varchar(12), @Job)
-		end
-		
-		If @ParamName = 'DataPackageID'
-		Begin
-			Declare @dataPkgID int = Try_Cast(@Value As int)
-			
-			UPDATE T_Jobs
-			SET DataPkgID = @dataPkgID
-			WHERE Job = @Job
-		End
-		
-	End
-	
-	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
-	--
+    ---------------------------------------------------
+    -- Call AddUpdateJobParameterXML to perform the work
+    ---------------------------------------------------
+    --
+    exec AddUpdateJobParameterXML @pXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
+
+    If @infoOnly = 0
+    Begin
+        ---------------------------------------------------
+        -- Update T_Job_Parameters
+        -- Note: Ordering by Section name but not by parameter name
+        ---------------------------------------------------
+        --
+        If @ExistingParamsFound = 1
+        Begin
+            UPDATE T_Job_Parameters
+            SET Parameters = @pXML
+            WHERE Job = @Job
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
+        Else
+        Begin
+            INSERT INTO T_Job_Parameters( Job, Parameters )
+            SELECT @job, @pXML
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
+
+        if @myError <> 0
+        begin
+            set @message = 'Error storing parameters in T_Job_Parameters for job ' + Convert(varchar(12), @Job)
+        end
+
+        If @ParamName = 'DataPackageID'
+        Begin
+            Declare @dataPkgID int = Try_Cast(@Value As int)
+
+            UPDATE T_Jobs
+            SET DataPkgID = @dataPkgID
+            WHERE Job = @Job
+        End
+
+    End
+
+    ---------------------------------------------------
+    -- Exit
+    ---------------------------------------------------
+    --
 Done:
-	return @myError
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateJobParameter] TO [DDL_Viewer] AS [dbo]

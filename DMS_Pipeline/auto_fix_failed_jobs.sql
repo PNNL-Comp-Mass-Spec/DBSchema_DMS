@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[AutoFixFailedJobs]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Automatically deal with certain types of failed job situations
 **
 **  Return values: 0:  success, otherwise, error code
@@ -28,7 +28,7 @@ CREATE PROCEDURE [dbo].[AutoFixFailedJobs]
 )
 As
     set nocount on
-    
+
     Declare @myError int
     Declare @myRowcount int
     Set @myRowcount = 0
@@ -38,9 +38,9 @@ As
         Job int not null,
         Step int not null
     )
-    
+
     CREATE CLUSTERED INDEX #Ix_Tmp_JobsToFix_Job ON #Tmp_JobsToFix (Job, Step)
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -53,7 +53,7 @@ As
     ---------------------------------------------------
     --
     DELETE FROM #Tmp_JobsToFix
-    
+
     INSERT INTO #Tmp_JobsToFix (Job, Step)
     SELECT Job, Step_Number
     FROM T_Job_Steps
@@ -80,7 +80,7 @@ As
         Else
         Begin
             -- We will leave these jobs as "failed" in T_Analysis_Job since there are no results to track
-            
+
             -- Change the step state to 3 (Skipped) for all of the steps in this job
             --
             UPDATE T_Job_Steps
@@ -90,16 +90,16 @@ As
                    ON Target.Job = F.Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
         End
     End -- </a1>
-         
+
     ---------------------------------------------------
     -- Look for Formularity or NOMSI jobs that failed with error "No peaks found"
     ---------------------------------------------------
     --
     DELETE FROM #Tmp_JobsToFix
-    
+
     INSERT INTO #Tmp_JobsToFix( Job, Step )
     SELECT Job,
            Step_Number
@@ -143,7 +143,7 @@ As
             FROM T_Jobs Target
                  INNER JOIN #Tmp_JobsToFix F
                    ON Target.Job = F.Job
-                   
+
             -- Change the step state to 3 (Skipped)
             --
             UPDATE T_Job_Steps
@@ -166,7 +166,7 @@ As
     ---------------------------------------------------
     --
     DELETE FROM #Tmp_JobsToFix
-    
+
     INSERT INTO #Tmp_JobsToFix (Job, Step)
     SELECT Job, Step_Number
     FROM T_Job_Steps
@@ -228,7 +228,7 @@ As
                    ON Target.AJ_JobID = F.Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             -- Change the job state back to "In Progress"
             --
             UPDATE T_Jobs
