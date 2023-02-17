@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateDatasetInstrument]
 /****************************************************
 **
@@ -229,7 +228,7 @@ AS
             Goto Done
         End
 
-        Exec DMS_Capture.dbo.UpdateParametersForJob @captureJob
+        Exec DMS_Capture.dbo.update_parameters_for_job @captureJob
     End
     Else
     Begin

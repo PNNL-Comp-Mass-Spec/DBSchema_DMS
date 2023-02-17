@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CloneDataset]
 /****************************************************
 **
@@ -500,7 +499,7 @@ AS
 
 			If IsNull(@CaptureJobNew, 0) > 0
 			Begin
-				exec DMS_Capture.dbo.UpdateParametersForJob @CaptureJobNew
+				exec DMS_Capture.dbo.update_parameters_for_job @CaptureJobNew
 			
 				Declare @jobMessage varchar(255) = 'Created capture task job ' + Convert(varchar(12), @CaptureJobNew) + ' for dataset ' + @DatasetNew + ' by cloning job ' + Convert(varchar(12), @CaptureJob)
 				Exec PostLogEntry 'Normal', @jobMessage, 'CloneDataset'
@@ -529,7 +528,6 @@ AS
 Done:
 
 	return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CloneDataset] TO [DDL_Viewer] AS [dbo]

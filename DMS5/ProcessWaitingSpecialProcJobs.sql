@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE ProcessWaitingSpecialProcJobs
+CREATE PROCEDURE [dbo].[ProcessWaitingSpecialProcJobs]
 /****************************************************
 ** 
 **	Desc:	Examines jobs in T_Analysis_Job that are in state 19="Special Proc. Waiting"
@@ -190,7 +189,7 @@ As
 							Set @WarningMessage = ''
 							Set @ReadyToProcess = 0
 							
-							Exec @myError = DMS_Pipeline.dbo.LookupSourceJobFromSpecialProcessingText 
+							Exec @myError = DMS_Pipeline.dbo.lookup_source_job_from_special_processing_text 
 										@Job,
 										@Dataset, 
 										@SpecialProcessingText, 

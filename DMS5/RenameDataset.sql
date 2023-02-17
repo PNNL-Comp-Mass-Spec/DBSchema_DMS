@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[RenameDataset]
 /****************************************************
 **
@@ -462,8 +461,8 @@ AS
         Else
         Begin
         
-            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
-            exec DMS_Capture.dbo.AddUpdateJobParameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
             
             UPDATE DMS_Capture.dbo.T_Jobs 
             Set Dataset = @datasetNameNew
@@ -519,8 +518,8 @@ AS
         Else
         Begin
         
-            exec DMS_Pipeline.dbo.AddUpdateJobParameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0
-            exec DMS_Pipeline.dbo.AddUpdateJobParameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoOnly=0
+            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0
+            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoOnly=0
             
             UPDATE DMS_Pipeline.dbo.T_Jobs 
             Set Dataset = @datasetNameNew
