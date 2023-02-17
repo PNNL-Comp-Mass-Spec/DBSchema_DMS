@@ -14,7 +14,7 @@ SELECT CC.Charge_Code,                       -- aka [Work Package]
        CC.Usage_SamplePrep AS Usage_Sample_Prep,
        CC.Usage_RequestedRun AS Usage_Requested_Run,
        ISNULL(DMSUser.Username, 'D' + CC.Resp_PRN) AS Owner_Username,
-       DMSUser.U_Name AS Owner_Name,
+       DMSUser.Name AS Owner_Name,
        CC.Setup_Date,
        CC.SortKey AS Sort_Key,
        -- The following are old column names, included for compatibility with older versions of Buzzard
