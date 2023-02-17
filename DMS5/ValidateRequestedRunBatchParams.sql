@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
 **          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
 **          02/14/2023 mem - Rename username and requested instrument group parameters
 **                         - Update error message
+**          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
 **
 *****************************************************/
 (
@@ -28,6 +29,8 @@ CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
     @justificationHighPriority varchar(512),
     @requestedInstrumentGroup varchar(64),      -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
     @comment varchar(512),
+    @batchGroupID int = Null output,
+    @batchGroupOrder Int = Null output,
     @mode varchar(12) = 'add',                  -- 'add' or 'update' or 'PreviewAdd'
     @instrumentGroupToUse varchar(64) output,   -- Output: Actual instrument group
     @userID int output,                         -- Output: user_id for @ownerUsername
@@ -44,7 +47,6 @@ As
     BEGIN TRY
         Set @name = LTrim(RTrim(IsNull(@name, '')))
         Set @description = IsNull(@description, '')
-        Set @message = ''
 
         If Len(@name) < 1
         Begin
@@ -111,6 +113,13 @@ As
         --
         If @mode = 'update'
         Begin
+            If IsNull(@batchID, 0) = 0
+            Begin
+                Set @message = 'Cannot update batch; ID must non-zero'
+                Set @myError = 50004
+                return @myError
+            End
+
             Declare @locked varchar(12)
             --
             SELECT @locked = Locked
@@ -122,21 +131,21 @@ As
             If @myError <> 0
             Begin
                 Set @message = 'Error trying to find existing entry in T_Requested_Run_Batches'
-                Set @myError = 50004
+                Set @myError = 50005
                 return @myError
             End
 
             If @myRowCount = 0
             Begin
-                Set @message = 'Cannot update: entry does not exist in database'
-                Set @myError = 50005
+                Set @message = 'Cannot update: batch ' + Cast(@batchID As Varchar(12)) + ' does not exist in database'
+                Set @myError = 50006
                 return @myError
             End
 
             If @locked = 'yes'
             Begin
                 Set @message = 'Cannot update: batch is locked'
-                Set @myError = 50006
+                Set @myError = 50007
                 return @myError
             End
         End
@@ -174,9 +183,31 @@ As
             Else
             Begin
                 Set @message = 'Could not find entry in database for username "' + @ownerUsername + '"'
-                Set @myError = 50007
+                Set @myError = 50008
                 return @myError
             End
+        End
+
+        ---------------------------------------------------
+        -- Verify @batchGroupID
+        ---------------------------------------------------
+
+        If Coalesce(@batchGroupID, 0) = 0
+        Begin
+            Set @batchGroupID = Null
+            Set @batchGroupOrder = Null
+        End
+
+        If @batchGroupID > 0 And Not Exists (Select * From T_Requested_Run_Batch_Group Where Batch_Group_ID = @batchGroupID)
+        Begin
+            Set @message = 'Requested run batch group does not exist: ' + Cast(@batchGroupID As varchar(12))
+            Set @myError = 50009
+            return @myError
+        End
+
+        If @batchGroupID > 0 And IsNull(@batchGroupOrder, 0) < 1
+        Begin
+            Set @batchGroupOrder = 1
         End
 
     END TRY
