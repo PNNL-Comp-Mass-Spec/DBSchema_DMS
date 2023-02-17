@@ -5,15 +5,15 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE FUNCTION [dbo].[udfDecimalToDouble]
-/****************************************************	
-**	Test udf
+/****************************************************
+**  Test udf
 **
-**	Auth:	mem
-**	Date:	02/20/2020
-**  
+**  Auth:   mem
+**  Date:   02/20/2020
+**
 ****************************************************/
 (
-	@value Decimal(9,5)
+    @value Decimal(9,5)
 )
 RETURNS float
 AS
@@ -22,7 +22,7 @@ BEGIN
 
     Set @newValue = @value
 
-	RETURN  @value
+    RETURN  @value
 END
 
 

@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[RetryMyEMSLUpload]
 /****************************************************
 **
-**  Desc:   Resets the DatasetArchive and ArchiveUpdate steps in T_Job_Steps for the 
+**  Desc:   Resets the DatasetArchive and ArchiveUpdate steps in T_Job_Steps for the
 **          specified jobs, but only if the ArchiveVerify step is failed
 **
 **          Useful for jobs with Completion message error submitting ingest job
@@ -19,8 +19,8 @@ CREATE PROCEDURE [dbo].[RetryMyEMSLUpload]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          07/09/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **          02/06/2018 mem - Exclude logging some try/catch errors
-**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
-**    
+**          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**
 *****************************************************/
 (
     @Jobs varchar(Max),                                    -- List of jobs whose steps should be reset
@@ -30,18 +30,18 @@ CREATE PROCEDURE [dbo].[RetryMyEMSLUpload]
 As
 
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int
     Declare @myRowCount int
     Set @myError = 0
     Set @myRowCount = 0
 
     Declare @JobResetTran varchar(24) = 'ResetArchiveOperation'
-    
+
     Declare @logErrors tinyint = 0
 
-    BEGIN TRY 
-    
+    BEGIN TRY
+
         -----------------------------------------------------------
         -- Validate the inputs
         -----------------------------------------------------------
@@ -49,7 +49,7 @@ As
         Set @Jobs = IsNull(@Jobs, '')
         Set @InfoOnly = IsNull(@InfoOnly, 0)
         Set @message = ''
-        
+
         If @Jobs = ''
         Begin
             Set @message = 'Job number not supplied'
@@ -65,7 +65,7 @@ As
         CREATE TABLE #Tmp_Jobs (
             Job int
         )
-        
+
         CREATE TABLE #Tmp_JobsToSkip (
             Job int
         )
@@ -94,7 +94,7 @@ As
         -----------------------------------------------------------
         -- Look for jobs that have a failed ArchiveVerify step
         -----------------------------------------------------------
-        --        
+        --
         INSERT INTO #Tmp_JobsToReset( Job )
         SELECT TS.Job
         FROM V_Task_Steps TS
@@ -125,23 +125,23 @@ As
             RAISERROR (@message, 11, 17)
             Goto Done
         End
-        
+
         Declare @SkipCount int = 0
 
         SELECT @SkipCount = COUNT(*)
         FROM #Tmp_JobsToSkip
-        
+
         If IsNull(@SkipCount, 0) > 0
         Begin
             Set @message = 'Skipping ' + Cast(@SkipCount as varchar(6)) + ' job(s) that do not have a failed ArchiveVerify step'
             Print @message
             Select @message as Warning
         End
-                        
+
         -- Construct a comma-separated list of jobs
         --
         Declare @JobList varchar(max) = null
-        
+
         SELECT @JobList = Coalesce(@JobList + ',' + Cast(Job as varchar(9)), Cast(Job as varchar(9)))
         FROM #Tmp_JobsToReset
         ORDER BY Job
@@ -150,7 +150,7 @@ As
         -- Reset the ArchiveUpdate or DatasetArchive step
         -----------------------------------------------------------
         --
-        
+
         If @InfoOnly <> 0
         Begin
             SELECT TS.job,
@@ -164,10 +164,10 @@ As
                  INNER JOIN #Tmp_JobsToReset JR
                    ON TS.job = JR.Job
             WHERE tool IN ('ArchiveUpdate', 'DatasetArchive')
-            
+
             Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @JobList
             print @execMsg
-            
+
         End
         Else
         Begin
@@ -179,16 +179,16 @@ As
             --
             UPDATE V_Task_Steps
             Set state = 2,
-                completion_code = 0, 
-                completion_message = Null, 
-                evaluation_code = Null, 
+                completion_code = 0,
+                completion_message = Null,
+                evaluation_code = Null,
                 evaluation_message = Null
             FROM V_Task_Steps TS INNER JOIN #Tmp_JobsToReset JR
                ON TS.job = JR.Job
             WHERE tool IN ('ArchiveUpdate', 'DatasetArchive')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             -- Reset the state of the dependent steps
             --
             exec ResetDependentJobSteps @JobList, @InfoOnly=0
@@ -202,15 +202,15 @@ As
                  INNER JOIN #Tmp_JobsToReset JR
                    ON TS.job = JR.Job
             WHERE tool = 'ArchiveVerify'
-            
+
             Commit Tran @JobResetTran
-                        
-        End    
-        
+
+        End
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;

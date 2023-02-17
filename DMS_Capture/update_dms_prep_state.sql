@@ -13,63 +13,63 @@ CREATE PROCEDURE UpdateDMSPrepState
 **
 **  Parameters:
 **
-**  Auth:	grk
-**  Date:	05/08/2010 grk - Initial Veresion
-**    
+**  Auth:   grk
+**  Date:   05/08/2010 grk - Initial Veresion
+**
 *****************************************************/
 (
-	@job INT,
-	@Script varchar(64),
-	@newJobStateInBroker int,
-	@message varchar(512) output
+    @job INT,
+    @Script varchar(64),
+    @newJobStateInBroker int,
+    @message varchar(512) output
 )
 As
-	set nocount on
+    set nocount on
 
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    declare @myError int
+    declare @myRowCount int
+    set @myError = 0
+    set @myRowCount = 0
 
-	---------------------------------------------------
-	-- 
-	---------------------------------------------------
-	--
-	IF @Script = 'HPLCSequenceCapture'
-	BEGIN
-		DECLARE @prepLCID INT
-		--
-		SELECT
-			@prepLCID = CONVERT(INT, xmlNode.value('@Value', 'nvarchar(128)'))
-		FROM
-			T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
-		WHERE
-			T_Job_Parameters.Job = @job AND
-			(xmlNode.value('@Name', 'nvarchar(128)') = 'ID') 
-			
-		DECLARE @storagePathID INT
-		--
-		SELECT
-			@storagePathID = CONVERT(INT, xmlNode.value('@Value', 'nvarchar(128)'))
-		FROM
-			T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
-		WHERE
-			T_Job_Parameters.Job = @job AND
-			(xmlNode.value('@Name', 'nvarchar(128)') = 'Storage_Path_ID') 
+    ---------------------------------------------------
+    --
+    ---------------------------------------------------
+    --
+    IF @Script = 'HPLCSequenceCapture'
+    BEGIN
+        DECLARE @prepLCID INT
+        --
+        SELECT
+            @prepLCID = CONVERT(INT, xmlNode.value('@Value', 'nvarchar(128)'))
+        FROM
+            T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+        WHERE
+            T_Job_Parameters.Job = @job AND
+            (xmlNode.value('@Name', 'nvarchar(128)') = 'ID')
 
-		IF @newJobStateInBroker = 3
-		BEGIN 
-			EXEC @myError = S_SetPrepLCTaskComplete @prepLCID, @storagePathID, 0, @message OUTPUT
-		END
+        DECLARE @storagePathID INT
+        --
+        SELECT
+            @storagePathID = CONVERT(INT, xmlNode.value('@Value', 'nvarchar(128)'))
+        FROM
+            T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+        WHERE
+            T_Job_Parameters.Job = @job AND
+            (xmlNode.value('@Name', 'nvarchar(128)') = 'Storage_Path_ID')
 
-		IF @newJobStateInBroker = 5
-		BEGIN 
-			EXEC @myError = S_SetPrepLCTaskComplete @prepLCID, 0, 1, @message output
-		END
+        IF @newJobStateInBroker = 3
+        BEGIN
+            EXEC @myError = S_SetPrepLCTaskComplete @prepLCID, @storagePathID, 0, @message OUTPUT
+        END
 
-	END
+        IF @newJobStateInBroker = 5
+        BEGIN
+            EXEC @myError = S_SetPrepLCTaskComplete @prepLCID, 0, 1, @message output
+        END
 
-	return @myError
+    END
+
+    return @myError
 
 
 

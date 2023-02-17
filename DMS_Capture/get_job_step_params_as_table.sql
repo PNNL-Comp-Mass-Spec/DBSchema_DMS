@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsAsTable]
 **  Auth:   mem
 **          05/05/2010 mem - Initial release
 **          02/12/2020 mem - Add argument @paramName, which can be used to filter the results
-**    
+**
 *****************************************************/
 (
     @jobNumber int,
@@ -32,7 +32,7 @@ AS
     Declare @myRowCount int = 0
     --
     set @message = ''
-    
+
     Set @paramName = Ltrim(Rtrim(Coalesce(@ParamName, '')))
 
     ---------------------------------------------------
@@ -48,15 +48,15 @@ AS
     ---------------------------------------------------
     -- Call GetJobStepParams to populate the temporary table
     ---------------------------------------------------
-        
+
     exec @myError = GetJobStepParams @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
-    
+
     ---------------------------------------------------
     -- Return the contents of #Tmp_JobParamsTable
     ---------------------------------------------------
-    
+
     If @ParamName = '' Or @ParamName = '%'
     Begin
         SELECT *

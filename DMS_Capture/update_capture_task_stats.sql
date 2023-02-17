@@ -82,7 +82,7 @@ As
     ---------------------------------------------------
     -- Update cached stats in T_Capture_Task_Stats
     --
-    -- Since old jobs get deleted from T_Jobs_History, 
+    -- Since old jobs get deleted from T_Jobs_History,
     -- assure that the maximum value is used for each row
     ---------------------------------------------------
 
@@ -92,7 +92,7 @@ As
     WHEN MATCHED AND (
         t.Jobs < s.Jobs
         )
-    THEN UPDATE SET 
+    THEN UPDATE SET
         Jobs = s.Jobs
     WHEN NOT MATCHED BY TARGET THEN
         INSERT(Script, Instrument, [Year], Jobs)

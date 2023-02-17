@@ -17,8 +17,8 @@ CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
 **  Auth:   mem
 **  Date:   07/11/2019 mem - Initial version
 **          07/22/2019 mem - When @infoOnly is 0, return a table listing the jobs that were reset
-**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
-**    
+**          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**
 *****************************************************/
 (
     @jobs varchar(Max),                                   -- List of jobs whose steps should be reset
@@ -29,16 +29,16 @@ CREATE PROCEDURE [dbo].[RetryQuameterForJobs]
 As
 
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount int = 0
 
     Declare @jobResetTran varchar(24) = 'ResetDatasetQuality'
-    
+
     Declare @logErrors tinyint = 0
 
-    BEGIN TRY 
-    
+    BEGIN TRY
+
         -----------------------------------------------------------
         -- Validate the inputs
         -----------------------------------------------------------
@@ -47,7 +47,7 @@ As
         Set @infoOnly = IsNull(@infoOnly, 0)
         Set @ignoreQuameterErrors = IsNull(@ignoreQuameterErrors, 1)
         Set @message = ''
-        
+
         If @jobs = ''
         Begin
             Set @message = 'Job number not supplied'
@@ -63,7 +63,7 @@ As
         CREATE TABLE #Tmp_Jobs (
             Job int
         )
-       
+
         CREATE TABLE #Tmp_JobStepsToReset (
             Job int,
             Step int
@@ -84,7 +84,7 @@ As
         -----------------------------------------------------------
         -- Look for jobs that have a failed DatasetQuality step
         -----------------------------------------------------------
-        --        
+        --
         INSERT INTO #Tmp_JobStepsToReset( Job, Step )
         SELECT TS.Job, TS.Step
         FROM V_Task_Steps TS
@@ -94,7 +94,7 @@ As
               state = 6
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If Not Exists (Select * From #Tmp_JobStepsToReset)
         Begin
             Set @message = 'None of the job(s) has a failed DatasetQuality step'
@@ -102,11 +102,11 @@ As
             RAISERROR (@message, 11, 17)
             Goto Done
         End
-                                
+
         -- Construct a comma-separated list of jobs
         --
         Declare @jobList varchar(max) = null
-        
+
         SELECT @jobList = Coalesce(@jobList + ',' + Cast(Job as varchar(9)), Cast(Job as varchar(9)))
         FROM #Tmp_JobStepsToReset
         ORDER BY Job
@@ -115,7 +115,7 @@ As
         -- Reset the DatasetQuality step
         -----------------------------------------------------------
         --
-        
+
         If @ignoreQuameterErrors > 0
         Begin
             Declare @job Int = 0
@@ -141,7 +141,7 @@ As
                     Else
                         Exec AddUpdateJobParameter @job, 'StepParameters', 'IgnoreQuameterErrors', '1', @infoOnly=0
                 End
-            End                
+            End
         End
 
         If @infoOnly <> 0
@@ -157,10 +157,10 @@ As
                  INNER JOIN #Tmp_JobStepsToReset JR
                    ON TS.job = JR.Job AND
                       TS.step = JR.Step
-            
+
             Declare @execMsg varchar(256) = 'exec ResetDependentJobSteps ' + @jobList
             print @execMsg
-            
+
         End
         Else
         Begin
@@ -182,11 +182,11 @@ As
                       TS.step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             -- Reset the state of the dependent steps
             --
             exec ResetDependentJobSteps @jobList, @infoOnly=0
-                        
+
             Commit Tran @jobResetTran
 
              SELECT TS.job,
@@ -200,12 +200,12 @@ As
                   INNER JOIN #Tmp_JobStepsToReset JR
                     ON TS.job = JR.Job AND
                        TS.step = JR.Step
-        End    
-        
+        End
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;

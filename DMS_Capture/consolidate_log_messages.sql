@@ -6,14 +6,14 @@ GO
 
 CREATE Procedure [dbo].[ConsolidateLogMessages]
 /****************************************************
-** 
+**
 **  Desc:   Deletes duplicate messages in T_Log_Entries,
-**          keeping the first and last message 
+**          keeping the first and last message
 **          (or, optionally only the first message)
 **
 **  Auth:   mem
 **  Date:   01/14/2019 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @messageType varchar(64) = 'Error',
@@ -24,7 +24,7 @@ CREATE Procedure [dbo].[ConsolidateLogMessages]
 )
 As
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -40,11 +40,11 @@ As
     Set @CurrentLocation = 'Start'
 
     Begin Try
-        
+
         ---------------------------------------------------
         -- Validate the inputs
         ---------------------------------------------------
-        
+
         Set @messageType = Ltrim(Rtrim(IsNull(@messageType, '')))
         Set @messageFilter = IsNull(@messageFilter, '')
         Set @keepFirstMessageOnly = IsNull(@keepFirstMessageOnly, 0)
@@ -63,7 +63,7 @@ As
             [Entry_ID_Last] int
         )
 
-        CREATE TABLE #Tmp_MessagesToDelete (            
+        CREATE TABLE #Tmp_MessagesToDelete (
             [Entry_ID] int
         )
 
@@ -80,7 +80,7 @@ As
             GROUP BY [message]
             HAVING Count(*) >= 2
             --
-	        SELECT @myError = @@error, @myRowCount = @@rowcount
+            SELECT @myError = @@error, @myRowCount = @@rowcount
         End
         Else
         Begin
@@ -95,7 +95,7 @@ As
                 GROUP BY [message]
                 HAVING Count(*) >= 2
                 --
-	            SELECT @myError = @@error, @myRowCount = @@rowcount
+                SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 If @myRowCount > 0 Or @messageFilter Like '%[%]%'
                     Set @retriesRemaining = 0
@@ -112,7 +112,7 @@ As
         -- Find the messages that should be deleted,
         -- keeping only the first one if @keepFirstMessageOnly non-zero
         ----------------------------------------------------
-        --     
+        --
         If @keepFirstMessageOnly = 0
         Begin
             INSERT INTO #Tmp_MessagesToDelete
@@ -124,7 +124,7 @@ As
                       L.Entry_ID <> D.Entry_ID_Last
             ORDER BY L.[message], L.Entry_ID
             --
-	        SELECT @myError = @@error, @myRowCount = @@rowcount
+            SELECT @myError = @@error, @myRowCount = @@rowcount
         End
         Else
         Begin
@@ -136,13 +136,13 @@ As
                       L.Entry_ID <> D.Entry_ID_First
             ORDER BY L.[message], L.Entry_ID
             --
-	        SELECT @myError = @@error, @myRowCount = @@rowcount
+            SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
         ----------------------------------------------------
         -- Show the duplicate messages, along with an action message
         ----------------------------------------------------
-        --     
+        --
         If @infoOnly = 0
         Begin
             Set @statusKeep = 'Retained'
@@ -153,7 +153,7 @@ As
             Set @statusKeep = 'Keep'
             Set @statusDelete = 'Delete'
         End
-        
+
         SELECT L.*,
                 CASE
                     WHEN D.Entry_ID IS NULL THEN @statusKeep
@@ -165,25 +165,25 @@ As
         WHERE L.Message IN ( SELECT [Message] FROM #Tmp_DuplicateMessages )
         ORDER BY L.[message], L.Entry_ID
         --
-	    SELECT @myError = @@error, @myRowCount = @@rowcount
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @infoOnly = 0
         Begin
             ----------------------------------------------------
             -- Remove the duplicates
             ----------------------------------------------------
-            --     
+            --
             DELETE FROM T_Log_Entries
             WHERE Entry_ID IN ( SELECT Entry_ID FROM #Tmp_MessagesToDelete )
             --
-	        SELECT @myError = @@error, @myRowCount = @@rowcount
+            SELECT @myError = @@error, @myRowCount = @@rowcount
 
             Set @deletedMessageCount = @myRowCount
 
             SELECT @duplicateMessageCount = Count(*)
             FROM #Tmp_DuplicateMessages
 
-            Set @message = 'Found ' + Cast(@duplicateMessageCount As varchar(12)) + ' duplicate ' + dbo.CheckPlural(@duplicateMessageCount, 'message', 'messages') + ' in T_Log_Entries; ' + 
+            Set @message = 'Found ' + Cast(@duplicateMessageCount As varchar(12)) + ' duplicate ' + dbo.CheckPlural(@duplicateMessageCount, 'message', 'messages') + ' in T_Log_Entries; ' +
                            'deleted ' +  Cast(@deletedMessageCount As varchar(12)) + dbo.CheckPlural(@myRowCount, ' log entry', ' log entries')
 
             Print @message
@@ -201,21 +201,21 @@ As
                       Message IN ( SELECT [Message]
                                    FROM #Tmp_DuplicateMessages )
                 --
-	            SELECT @myError = @@error, @myRowCount = @@rowcount
+                SELECT @myError = @@error, @myRowCount = @@rowcount
 
             End
         End
-        
+
     End Try
     Begin Catch
         -- Error caught; log the error
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'ConsolidateLogMessages')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
-    
+
 Done:
-    
+
     return @myError
 
 

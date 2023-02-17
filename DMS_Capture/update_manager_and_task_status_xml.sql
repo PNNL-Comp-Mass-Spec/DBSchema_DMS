@@ -39,7 +39,7 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @result = ''
     Set @debugMode = IsNull(@debugMode, 0)
     Set @logProcessorNames= IsNull(@logProcessorNames, 0)
@@ -57,8 +57,8 @@ As
         ---------------------------------------------------
         -- Verify that the user can execute this procedure from the given client host
         ---------------------------------------------------
-            
-        Declare @authorized tinyint = 0    
+
+        Declare @authorized tinyint = 0
         Exec @authorized = VerifySPAuthorized 'UpdateManagerAndTaskStatusXML', @raiseError = 1;
         If @authorized = 0
         Begin;
@@ -71,7 +71,7 @@ As
 
         Declare @paramXML xml
         set @paramXML = @parameters
-        
+
         If @debugMode >= 3
         Begin
             -- Use some test data
@@ -82,7 +82,7 @@ As
                             <Root><Manager><MgrName>TestManager5</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:31 AM</LastUpdate><LastStartTime>8/20/2009 10:24:05 AM</LastStartTime><CPUUtilization>30.0</CPUUtilization><FreeMemoryMB>415.0</FreeMemoryMB><ProcessID>1111</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>0.26</Duration><DurationMinutes>15.4</DurationMinutes><Progress>9.88</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525283</Job><Step>3</Step><Dataset>Mcq_CynoLung_norm_12_7Apr08_Phoenix_08-03-01</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525283; Sequest, Step 3; Mcq_CynoLung_norm_12_7Apr08_Phoenix_08-03-01; 8/20/2009 10:24:05 AM</MostRecentJobInfo><SpectrumCount>27664</SpectrumCount></TaskDetails></Task></Root>
                             <Root><Manager><MgrName>TestManager6</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:30 AM</LastUpdate><LastStartTime>8/19/2009 10:24:32 PM</LastStartTime><CPUUtilization>33.0</CPUUtilization><FreeMemoryMB>1133.0</FreeMemoryMB><ProcessID>6666</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>12.25</Duration><DurationMinutes>735.0</DurationMinutes><Progress>81.81</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525236</Job><Step>3</Step><Dataset>PL-1_pro_A_5Aug09_Owl_09-05-10</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525236; Sequest, Step 3; PL-1_pro_A_5Aug09_Owl_09-05-10; 8/19/2009 10:24:32 PM</MostRecentJobInfo><SpectrumCount>44321</SpectrumCount></TaskDetails></Task></Root>'
         End
-        
+
          ---------------------------------------------------
         -- temporary table to hold processor status messages
         ---------------------------------------------------
@@ -115,34 +115,34 @@ As
         )
 
         CREATE CLUSTERED INDEX #IX_TPS_Processor_Name ON #TPS (Processor_Name)
-        
+
          ---------------------------------------------------
         -- load status messages into temp table
         ---------------------------------------------------
         --
-        INSERT INTO #TPS( Processor_Name, 
-                          Mgr_Status, 
-                          Status_Date, 
-                          Last_Start_Time, 
-                          CPU_Utilization, 
-                          Free_Memory_MB, 
-                          Process_ID, 
-                          Most_Recent_Error_Message, 
-                          Step_Tool, 
-                          Task_Status, 
-                          Duration_Minutes, 
-                          Progress, 
-                          Current_Operation, 
-                          Task_Detail_Status, 
-                          Job, 
-                          Job_Step, 
-                          Dataset, 
-                          Most_Recent_Log_Message, 
-                          Most_Recent_Job_Info, 
-                          Spectrum_Count, 
-                          Monitor_Processor, 
+        INSERT INTO #TPS( Processor_Name,
+                          Mgr_Status,
+                          Status_Date,
+                          Last_Start_Time,
+                          CPU_Utilization,
+                          Free_Memory_MB,
+                          Process_ID,
+                          Most_Recent_Error_Message,
+                          Step_Tool,
+                          Task_Status,
+                          Duration_Minutes,
+                          Progress,
+                          Current_Operation,
+                          Task_Detail_Status,
+                          Job,
+                          Job_Step,
+                          Dataset,
+                          Most_Recent_Log_Message,
+                          Most_Recent_Job_Info,
+                          Spectrum_Count,
+                          Monitor_Processor,
                           Remote_Status_Location)
-        SELECT 
+        SELECT
             xmlNode.value('data((Manager/MgrName)[1])', 'nvarchar(128)') Processor_Name,
             xmlNode.value('data((Manager/MgrStatus)[1])', 'nvarchar(50)') Mgr_Status,
             xmlNode.value('data((Manager/LastUpdate)[1])', 'nvarchar(50)') Status_Date,
@@ -176,19 +176,19 @@ As
             set @result = 'Error loading temp table'
             goto Done
         end
-        
+
         If @debugMode > 0
         Begin
-            SELECT * 
+            SELECT *
             FROM #TPS
             ORDER BY Processor_Name
         End
-        
+
         set @statusMessages = @statusMessages + 'Messages:' + convert(varchar(12), @myRowCount)
 
         If @debugMode IN (2, 4)
             Goto Done
-            
+
 /*
          ---------------------------------------------------
         -- update error message column in temp table
@@ -198,9 +198,9 @@ As
         SET Most_Recent_Error_Message = Most_Recent_Error_Message + CASE WHEN Most_Recent_Error_Message <> '' THEN + '; ' + ErrMsg ELSE ErrMsg END
         FROM #TPS INNER JOIN
         (
-            SELECT 
+            SELECT
                 xmlNode.value('data((../../MgrName)[1])', 'nvarchar(128)') MgrName,
-                xmlNode.value('data((.)[1])', 'nvarchar(1024)') ErrMsg 
+                xmlNode.value('data((.)[1])', 'nvarchar(1024)') ErrMsg
             FROM   @paramXML.nodes('//RecentErrorMessages/ErrMsg') AS R(xmlNode)
         ) T ON T.MgrName = #TPS.Processor_Name
         --
@@ -234,7 +234,7 @@ As
         UPDATE #TPS
         SET Status_Date = SUBSTRING(Status_Date, 1, PATINDEX('%.[0-9][0-9][0-9][0-9]%Z', Status_Date) + 3) + 'Z'
         WHERE Status_Date LIKE '%.[0-9][0-9][0-9][0-9]%Z'
-        
+
         UPDATE #TPS
         SET Last_Start_Time = SUBSTRING(Last_Start_Time, 1, PATINDEX('%.[0-9][0-9][0-9][0-9]%Z', Last_Start_Time) + 3) + 'Z'
         WHERE Last_Start_Time LIKE '%.[0-9][0-9][0-9][0-9]%Z'
@@ -242,13 +242,13 @@ As
         -- Now convert from text-based UTC date to local datetime
         --
         UPDATE #TPS
-        SET Status_Date_Value = CASE WHEN Status_Date LIKE '%Z' 
-                                THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Status_Date), 127) 
-                                ELSE Try_Cast(Status_Date As DateTime) 
+        SET Status_Date_Value = CASE WHEN Status_Date LIKE '%Z'
+                                THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Status_Date), 127)
+                                ELSE Try_Cast(Status_Date As DateTime)
                                 END,
-            Last_Start_Time_Value = CASE WHEN Last_Start_Time LIKE '%Z' 
-                                THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Last_Start_Time), 127) 
-                                ELSE Try_Cast(Last_Start_Time As DateTime) 
+            Last_Start_Time_Value = CASE WHEN Last_Start_Time LIKE '%Z'
+                                THEN CONVERT(DATETIME, DATEADD(hour, @hourOffset, Last_Start_Time), 127)
+                                ELSE Try_Cast(Last_Start_Time As DateTime)
                                 END
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -274,18 +274,18 @@ As
             Job_Step = Try_Cast(Src.Job_Step as Int),
             Dataset = Src.Dataset,
             Spectrum_Count = Try_Cast(Src.Spectrum_Count as Int),
-            Most_Recent_Error_Message = CASE WHEN Src.Most_Recent_Error_Message <> '' 
-                                        THEN Src.Most_Recent_Error_Message 
-                                        ELSE Target.Most_Recent_Error_Message 
+            Most_Recent_Error_Message = CASE WHEN Src.Most_Recent_Error_Message <> ''
+                                        THEN Src.Most_Recent_Error_Message
+                                        ELSE Target.Most_Recent_Error_Message
                                         END,
             Most_Recent_Log_Message = CASE WHEN Src.Most_Recent_Log_Message <> ''
                                       THEN Src.Most_Recent_Log_Message
-                                      ELSE Target.Most_Recent_Log_Message 
+                                      ELSE Target.Most_Recent_Log_Message
                                       END,
             Most_Recent_Job_Info = CASE WHEN Src.Most_Recent_Job_Info <> ''
                                    THEN Src.Most_Recent_Job_Info
-                                   ELSE Target.Most_Recent_Job_Info 
-                                   END            
+                                   ELSE Target.Most_Recent_Job_Info
+                                   END
         FROM T_Processor_Status Target
              INNER JOIN #TPS Src
                ON Src.Processor_Name = Target.Processor_Name
@@ -299,7 +299,7 @@ As
         end
 
         set @statusMessages = @statusMessages + ', Preserved:' + convert(varchar(12), @myRowCount)
-    
+
          ---------------------------------------------------
         -- Add missing processors to the table
         ---------------------------------------------------
@@ -367,7 +367,7 @@ As
 
         If @logProcessorNames > 0
         Begin
-             
+
             Declare @updatedProcessors varchar(4000) = null
 
             SELECT @updatedProcessors = Coalesce(@updatedProcessors + ', ' + Processor_Name, Processor_Name)
@@ -383,7 +383,7 @@ As
     Begin Catch
         -- Error caught; log the error, then continue at the next section
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateManagerAndTaskStatusXML')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
         Set @result = @message
@@ -395,7 +395,7 @@ As
 Done:
     if @myError = 0
         set @result = @statusMessages
-        
+
     return @myError
 
 GO

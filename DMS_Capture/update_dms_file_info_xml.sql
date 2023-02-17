@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[UpdateDMSFileInfoXML]
 **  Date:   09/01/2010 mem - Initial Version
 **          06/13/2018 mem - Add comment regarding duplicate datasets
 **          08/09/2018 mem - Set Ignore to 1 when the return code from S_UpdateDatasetFileInfoXML is 53600
-**    
+**
 *****************************************************/
 (
     @DatasetID INT,
@@ -38,7 +38,7 @@ As
 
     declare @myError int = 0
     declare @myRowCount int = 0
-        
+
     Declare @DatasetInfoXML xml
 
     --------------------------------------------
@@ -48,11 +48,11 @@ As
     Set @DeleteFromTableOnSuccess = IsNull(@DeleteFromTableOnSuccess, 1)
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
-    
+
     SELECT @DatasetInfoXML = DS_Info_XML
     FROM T_Dataset_Info_XML
     WHERE Dataset_ID = @DatasetID
-    
+
     If Not @DatasetInfoXML Is Null
     Begin
         If @infoOnly > 0
@@ -61,7 +61,7 @@ As
         -- Note that this procedure will return error code 53600 if this dataset is a duplicate to another dataset (based on T_Dataset_Files)
 
         EXEC @myError = S_UpdateDatasetFileInfoXML @DatasetID, @DatasetInfoXML, @message output, @infoOnly=@infoOnly
-        
+
         If @myError = 0 And @infoOnly = 0 And @DeleteFromTableOnSuccess <> 0
         Begin
             DELETE FROM T_Dataset_Info_XML WHERE Dataset_ID = @DatasetID

@@ -7,9 +7,9 @@ GO
 CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **  Creates a new archive update job for the specified dataset and results directory
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 **          05/17/2019 mem - Switch from folder to directory
 **          06/27/2019 mem - Default job priority is now 4; higher priority is now 3
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
-**    
+**
 *****************************************************/
 (
     @datasetName varchar(128),
@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveUpdateJob]
 )
 As
     Set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -49,8 +49,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'MakeNewArchiveUpdateJob', @raiseError = 1;
     If @authorized = 0
     Begin;
@@ -61,20 +61,20 @@ As
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @resultsDirectoryName = IsNull(@resultsDirectoryName, '') 
+    Set @resultsDirectoryName = IsNull(@resultsDirectoryName, '')
     Set @allowBlankResultsDirectory = IsNull(@allowBlankResultsDirectory, 0)
     Set @pushDatasetToMyEMSL = IsNull(@pushDatasetToMyEMSL, 0)
     Set @pushDatasetRecursive = IsNull(@pushDatasetRecursive, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
-        
+
     If @datasetName Is Null
     Begin
         Set @message = 'Dataset name not defined'
         Set @myError = 50000
         Goto Done
     End
-        
+
     If @resultsDirectoryName = '' And @allowBlankResultsDirectory = 0
     Begin
         Set @message = 'Results directory name is blank; to update the Dataset file and all subdirectories, set @allowBlankResultsDirectory to 1'
@@ -85,9 +85,9 @@ As
     ---------------------------------------------------
     -- Validate this dataset and determine its Dataset_ID
     ---------------------------------------------------
-    
+
     Set @DatasetID = 0
-    
+
     SELECT @DatasetID = Dataset_ID
     FROM S_DMS_V_DatasetFullDetails
     WHERE Dataset_num = @datasetName
@@ -106,7 +106,7 @@ As
     ---------------------------------------------------
     --
     Set @JobID = 0
-    
+
     SELECT @JobID = Job
     FROM T_Jobs
     WHERE (Script = 'ArchiveUpdate') AND
@@ -114,7 +114,7 @@ As
           (ISNULL(Results_Folder_Name, '') = @resultsDirectoryName) AND
           (State In (1,2,4,7))
 
-    If @JobID > 0 
+    If @JobID > 0
     Begin
         if @resultsDirectoryName = ''
             Set @message = 'Existing pending job already exists for ' + @datasetName + ' and subdirectory ' + @resultsDirectoryName + '; job ' + Convert(varchar(12), @JobID)
@@ -133,7 +133,7 @@ As
     End
     Else
         Set @Script = 'ArchiveUpdate'
-    
+
     ---------------------------------------------------
     -- create new Archive Update job for specified dataset
     ---------------------------------------------------
@@ -149,7 +149,7 @@ As
     End
     Else
     Begin
-        
+
         INSERT INTO T_Jobs( Script,
                             Dataset,
                             Dataset_ID,
@@ -172,25 +172,25 @@ As
         begin
             set @message = 'Error trying to add new Archive Update job'
             goto Done
-        end    
-        
+        end
+
         Set @JobID = SCOPE_IDENTITY()
-        
+
         Set @message = 'Created Job ' + Convert(varchar(12), @JobID) + ' for dataset ' + @datasetName
-        
+
         if @resultsDirectoryName = ''
             Set @message = @message + ' and all subdirectories'
         else
             Set @message = @message + ' and results directory ' + @resultsDirectoryName
 
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
 Done:
-    
+
     If @message <> ''
         Print @message
 

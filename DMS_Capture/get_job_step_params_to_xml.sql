@@ -13,16 +13,16 @@ CREATE PROCEDURE [dbo].[GetJobStepParamsToXML]
 **  The calling procedure must create table #ParamTab
 **
 **      CREATE TABLE #ParamTab (
-**    		[Section] Varchar(128),
-**    		[Name] Varchar(128),
-**    		[Value] Varchar(max)
-**    	)
-**    
+**          [Section] Varchar(128),
+**          [Name] Varchar(128),
+**          [Value] Varchar(max)
+**      )
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   09/08/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**    
+**
 *****************************************************/
 (
     @parameters varchar(max) output, -- job step parameters (as XML)
@@ -46,25 +46,25 @@ AS
     )
     insert into @st(name)
     select distinct Section
-    from #ParamTab 
+    from #ParamTab
 
     -- run nested query with sections as outer
     -- query and values as inner query to shape XML
     --
     declare @x xml
     set @x = (
-        SELECT 
+        SELECT
           name,
-          (SELECT 
+          (SELECT
             Name  AS [key],
             IsNull(Value, '') AS [value]
-           FROM   
+           FROM
             #ParamTab item
            WHERE item.Section = section.name
                  AND Not item.name Is Null
            for xml auto, type
           )
-        FROM   
+        FROM
           @st section
         for xml auto, type
     )

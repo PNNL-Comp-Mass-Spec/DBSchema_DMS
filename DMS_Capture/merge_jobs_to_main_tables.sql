@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[MergeJobsToMainTables]
 /****************************************************
 **
 **  Desc:   Updates T_Jobs, T_Job_Parameters, and T_Job_Steps
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
@@ -17,29 +17,29 @@ CREATE PROCEDURE [dbo].[MergeJobsToMainTables]
 **          05/25/2011 mem - Removed priority column from T_Job_Steps
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory
-**    
+**
 *****************************************************/
 (
     @message varchar(512) output
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
 /*
 select * from #Jobs
-select * from #Job_Steps 
+select * from #Job_Steps
 select * from #Job_Step_Dependencies
-select * from #Job_Parameters 
+select * from #Job_Parameters
 goto Done
 */
 
     ---------------------------------------------------
-    -- 
+    --
     ---------------------------------------------------
     --
     declare @transName varchar(32)
@@ -104,7 +104,7 @@ goto Done
         Processor,
         Holdoff_Interval_Minutes,
         Retry_Count
-    )    
+    )
     SELECT
         Job,
         Step_Number,
@@ -118,12 +118,12 @@ goto Done
         Holdoff_Interval_Minutes,
         Retry_Count
     FROM #Job_Steps
-    WHERE NOT EXISTS 
+    WHERE NOT EXISTS
     (
-        SELECT * 
+        SELECT *
         FROM T_Job_Steps
-        WHERE 
-            T_Job_Steps.Job = #Job_Steps.Job and 
+        WHERE
+            T_Job_Steps.Job = #Job_Steps.Job and
             T_Job_Steps.Step_Number = #Job_Steps.Step_Number
     )
     --
@@ -135,9 +135,9 @@ goto Done
         set @message = 'Error'
         goto Done
     end
-    
+
     ---------------------------------------------------
-    -- add step dependencies for job that currently aren't 
+    -- add step dependencies for job that currently aren't
     -- in main tables
     ---------------------------------------------------
 
@@ -155,13 +155,13 @@ goto Done
         Target_Step_Number,
         Condition_Test,
         Test_Value,
-        Enable_Only 
+        Enable_Only
     FROM #Job_Step_Dependencies
-    WHERE NOT EXISTS 
+    WHERE NOT EXISTS
     (
-        SELECT * 
+        SELECT *
         FROM T_Job_Step_Dependencies
-        WHERE 
+        WHERE
             T_Job_Step_Dependencies.Job = #Job_Step_Dependencies.Job and
             T_Job_Step_Dependencies.Step_Number = #Job_Step_Dependencies.Step_Number
     )
@@ -176,7 +176,7 @@ goto Done
     end
 
      commit transaction @transName
- 
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

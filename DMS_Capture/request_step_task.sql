@@ -75,8 +75,8 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'RequestStepTask', @raiseError = 1;
     If @authorized = 0
     Begin;
@@ -96,11 +96,11 @@ AS
     Set @serverPerspectiveEnabled = ISNULL(@serverPerspectiveEnabled, 0)
 
 
-    If @JobCountToPreview > @CandidateJobStepsToRetrieve 
+    If @JobCountToPreview > @CandidateJobStepsToRetrieve
         Set @CandidateJobStepsToRetrieve = @JobCountToPreview
-            
+
     ---------------------------------------------------
-    -- The capture task manager expects a non-zero 
+    -- The capture task manager expects a non-zero
     -- return value if no jobs are available
     -- Code 53000 is used for this
     ---------------------------------------------------
@@ -111,7 +111,7 @@ AS
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTask: Starting; make sure this is a valid processor'
 
     ---------------------------------------------------
-    -- Make sure this is a valid processor 
+    -- Make sure this is a valid processor
     -- (and capitalize it according to T_Local_Processors)
     ---------------------------------------------------
     --
@@ -124,14 +124,14 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    If @myError <> 0 
+    If @myError <> 0
     Begin
         Set @message = 'Error looking for processor in T_Local_Processors'
         GOTO Done
     End
 
     -- check if no processor found?
-    If @myRowCount = 0 
+    If @myRowCount = 0
     Begin
         Set @message = 'Processor not defined in T_Local_Processors: ' + @processorName
         Set @myError = @jobNotAvailableErrorCode
@@ -145,13 +145,13 @@ AS
     --
     If @infoOnly <> 0
         SELECT 'Processor and Machine Info' as Information, @processorName AS Processor, @infoOnly AS InfoOnlyLevel, @Machine as Machine
-            
+
     ---------------------------------------------------
     -- Update processor's request timestamp
     -- (to show when the processor was most recently active)
     ---------------------------------------------------
     --
-    If @infoOnly = 0 
+    If @infoOnly = 0
     Begin
         UPDATE T_Local_Processors
         Set Latest_Request = GETDATE(),
@@ -160,13 +160,13 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        If @myError <> 0 
+        If @myError <> 0
         Begin
             Set @message = 'Error updating latest processor request time'
             GOTO Done
         End
     End
-    
+
     ---------------------------------------------------
     -- Get list of step tools currently assigned to processor
     -- active tools that are presently handled by this processor
@@ -213,7 +213,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    If @myError <> 0 
+    If @myError <> 0
     Begin
         Set @message = 'Error getting processor tools'
         GOTO Done
@@ -221,13 +221,13 @@ AS
 
     If @infoOnly > 1
     Begin
-        Select 'Tools enabled for this processor' as Information, * 
+        Select 'Tools enabled for this processor' as Information, *
         FROM #AvailableProcessorTools
         ORDER BY Tool_Name
     End
-    
+
     ---------------------------------------------------
-    -- Bail out if no tools available, and we are not 
+    -- Bail out if no tools available, and we are not
     -- in infoOnly mode
     ---------------------------------------------------
     --
@@ -235,7 +235,7 @@ AS
     SELECT @num_tools = COUNT(*)
     FROM #AvailableProcessorTools
     --
-    If @infoOnly = 0 AND @num_tools = 0 
+    If @infoOnly = 0 AND @num_tools = 0
     Begin
           Set @message = 'No tools presently available for processor "'+ @processorName +'"'
           Set @myError = @jobNotAvailableErrorCode
@@ -244,7 +244,7 @@ AS
 
     ---------------------------------------------------
     -- Get a list of instruments and their current loading
-    -- (steps in busy state that have step tools that are 
+    -- (steps in busy state that have step tools that are
     -- instrument capacity limited tools, summed by Instrument)
     --
     -- Ignore job steps that started over 18 hours ago; they're probably stalled
@@ -280,7 +280,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    If @myError <> 0 
+    If @myError <> 0
     Begin
           Set @message = 'Error populating #InstrumentLoading temp table'
           GOTO Done
@@ -324,7 +324,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    If @myError <> 0 
+    If @myError <> 0
     Begin
         Set @message = 'Error populating #InstrumentProcessor temp table'
         GOTO Done
@@ -337,10 +337,10 @@ AS
         --   In contrast, CTM's with  perspective="client" will use dataset paths of the form \\proto-5\Exact04\2012_1
         -- Therefore, capture tasks that occur on the Proto-x servers should be limited to instruments whose data is stored on the same server as the CTM
         --   This is accomplished via one or more mapping rows in table T_Processor_Instrument in the DMS_Capture DB
-        -- If a capture task manager running on a Proto-x server has the DatasetCapture tool enabled, yet does not have an entry in T_Processor_Instrument, 
+        -- If a capture task manager running on a Proto-x server has the DatasetCapture tool enabled, yet does not have an entry in T_Processor_Instrument,
         --   then we do not allow capture tasks to be assigned (to thus avoid drive path problems)
         Set @excludeCaptureTasks = 1
-        
+
         If @infoOnly > 0
             Print 'Note: setting @excludeCaptureTasks=1 because this processor does not have any entries in T_Processor_Instrument yet @serverPerspectiveEnabled=1'
     End
@@ -357,7 +357,7 @@ AS
             ORDER BY Instrument
         End
     End
-    
+
     ---------------------------------------------------
     -- Table variable to hold job step candidates
     -- for possible assignment
@@ -405,7 +405,7 @@ AS
           NOT (@excludeCaptureTasks = 1 AND JS.Step_Tool = 'DatasetCapture') AND
           (APT.Instrument_Capacity_Limited = 'N'  OR (NOT ISNULL(IL.Available_Capacity, 1) < 1)) AND
           (APT.Processor_Assignment_Applies = 'N' OR (
-             (@processorIsAssigned > 0 AND ISNULL(IP.Assigned_To_This_Processor, 0) > 0) OR 
+             (@processorIsAssigned > 0 AND ISNULL(IP.Assigned_To_This_Processor, 0) > 0) OR
              (@processorIsAssigned = 0 AND ISNULL(IP.Assigned_To_Any_Processor,  0) = 0)))
     ORDER BY APT.Tool_Priority, J.Priority, J.Job, JS.Step_Number
     --
@@ -414,11 +414,11 @@ AS
     Declare @num_candidates int = @myRowCount
 
     ---------------------------------------------------
-    -- Bail out if no steps available, and we are not 
+    -- Bail out if no steps available, and we are not
     -- in infoOnly mode
     ---------------------------------------------------
     --
-    If @infoOnly = 0 AND @num_candidates = 0 
+    If @infoOnly = 0 AND @num_candidates = 0
     Begin
         Set @message = 'No candidates presently available'
         Set @myError = @jobNotAvailableErrorCode
@@ -437,9 +437,9 @@ AS
     ---------------------------------------------------
     --
     Declare @transName varchar(32) = 'RequestStepTask'
-        
+
     Begin TRANSACTION @transName
-    
+
     ---------------------------------------------------
     -- Get best step candidate in order of preference:
     --   Assignment priority (prefer directly associated jobs to general pool)
@@ -464,23 +464,23 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    If @myError <> 0 
+    If @myError <> 0
     Begin
         ROLLBACK TRANSACTION @transName
         Set @message = 'Error searching for job step'
         GOTO Done
     End
 
-    If @myRowCount > 0 
+    If @myRowCount > 0
         Set @jobAssigned = 1
 
     ---------------------------------------------------
-    -- If a job step was assigned and 
-    -- if we are not in infoOnly mode 
+    -- If a job step was assigned and
+    -- if we are not in infoOnly mode
     -- then update the step state to Running
     ---------------------------------------------------
     --
-    If @jobAssigned = 1 AND @infoOnly = 0 
+    If @jobAssigned = 1 AND @infoOnly = 0
     Begin --<e>
         UPDATE T_Job_Steps
         Set State = 4,
@@ -492,7 +492,7 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        If @myError <> 0 
+        If @myError <> 0
         Begin
             ROLLBACK TRANSACTION @transName
             Set @message = 'Error updating job step'
@@ -514,15 +514,15 @@ AS
         [Value] varchar(MAX)
     )
 
-    If @jobAssigned = 1 
+    If @jobAssigned = 1
     Begin
-    
+
         If @infoOnly = 0
         Begin
             ---------------------------------------------------
             -- Add entry to T_Job_Step_Processing_Log
             ---------------------------------------------------
-            
+
             INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor)
             VALUES (@jobNumber, @stepNumber, @processorName)
             --
@@ -531,7 +531,7 @@ AS
 
         If @infoOnly > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTask: Call GetJobStepParams'
-            
+
         ---------------------------------------------------
         -- Job was assigned; get step parameters
         ---------------------------------------------------
@@ -539,10 +539,10 @@ AS
         -- Populate #ParamTab with job step parameters
         EXEC @myError = GetJobStepParams @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
 
-        If @infoOnly <> 0 AND LEN(@message) = 0 
+        If @infoOnly <> 0 AND LEN(@message) = 0
             Set @message = 'Job ' + CONVERT(varchar(12), @jobNumber) + ', Step '+ CONVERT(varchar(12), @stepNumber) + ' would be assigned to ' + @processorName
     End
-    Else 
+    Else
     Begin
         ---------------------------------------------------
         -- No job step found; update @myError and @message
@@ -550,7 +550,7 @@ AS
         --
       Set @myError = @jobNotAvailableErrorCode
       Set @message = 'No available jobs'
-        
+
     End
 
     ---------------------------------------------------
@@ -563,15 +563,15 @@ AS
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'RequestStepTaskXML: Preview results'
 
         Declare @machineLockedStepTools varchar(64) = null
-        
+
         SELECT @machineLockedStepTools = Coalesce(@machineLockedStepTools + ', ' + [Name], [Name])
         FROM T_Step_Tools
         WHERE (Only_On_Storage_Server = 'Y')
-                
+
         -- Preview the next @JobCountToPreview available jobs
 
         If Exists (Select * From #Tmp_CandidateJobSteps)
-        Begin         
+        Begin
             SELECT TOP ( @JobCountToPreview ) 'Candidate Job Steps for ' + @processorName AS Information,
                    Seq,
                    Tool_Priority,
@@ -588,7 +588,7 @@ AS
         Begin
             SELECT 'Candidate Job Steps for ' + @processorName AS Information,
                    @machine AS Machine,
-                   'No candidate job steps found (jobs with step tools ' + @machineLockedStepTools + 
+                   'No candidate job steps found (jobs with step tools ' + @machineLockedStepTools +
                    ' only assigned if dataset stored on ' + @machine + ')' AS Message,
                    CASE
                        WHEN @processorLockedToInstrument > 0 THEN 'Processor locked to instrument'
@@ -596,7 +596,7 @@ AS
                    END AS Warning
 
         End
-        
+
         ---------------------------------------------------
         -- dump candidate list if infoOnly mode is 2 or higher
         ---------------------------------------------------
@@ -605,11 +605,11 @@ AS
         Begin
             EXEC RequestStepTaskExplanation @processorName, @processorIsAssigned, @infoOnly, @machine
         End
-        
+
     End
 
     ---------------------------------------------------
-    -- Output job parameters as resultset 
+    -- Output job parameters as resultset
     ---------------------------------------------------
     --
     SELECT [Name] AS Parameter,

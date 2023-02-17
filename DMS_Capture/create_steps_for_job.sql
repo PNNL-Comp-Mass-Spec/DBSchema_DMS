@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[CreateStepsForJob]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Make entries in temporary tables for the the given job according to definition of scriptXML
 **      Uses stemp tables:
 **        #Job_Steps
@@ -20,7 +20,7 @@ CREATE PROCEDURE [dbo].[CreateStepsForJob]
 **          05/25/2011 mem - Removed @priority parameter and removed priority column from T_Job_Steps
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory in temp tables
-**    
+**
 *****************************************************/
 (
     @job int,
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[CreateStepsForJob]
 )
 As
     set nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount int = 0
 
@@ -41,10 +41,10 @@ As
     ---------------------------------------------------
     --
     INSERT INTO #Job_Steps (
-        Job, 
-        Step_Number, 
-        Step_Tool, 
---        CPU_Load, 
+        Job,
+        Step_Number,
+        Step_Tool,
+--        CPU_Load,
         Dependencies,
         State,
         Output_Directory_Name,
@@ -53,8 +53,8 @@ As
         Retry_Count
     )
     SELECT
-        @job AS Job, 
-        TS.Step_Number, 
+        @job AS Job,
+        TS.Step_Number,
         TS.Step_Tool,
 --        CPU_Load,
         0 AS Dependencies,
@@ -63,7 +63,7 @@ As
         Special_Instructions,
         Holdoff_Interval_Minutes,
         Number_Of_Retries
-    FROM 
+    FROM
         (
             SELECT
                 xmlNode.value('@Number', 'nvarchar(128)') Step_Number,
@@ -71,7 +71,7 @@ As
                 xmlNode.value('@Special', 'nvarchar(128)') Special_Instructions
             FROM
                 @scriptXML.nodes('//Step') AS R(xmlNode)
-        ) TS INNER JOIN 
+        ) TS INNER JOIN
         T_Step_Tools ON TS.Step_Tool = T_Step_Tools.Name
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -81,21 +81,21 @@ As
         set @message = 'Error copying job steps from script'
         goto Done
     end
-      
+
     ---------------------------------------------------
     -- make set of step dependencies based on scriptXML
     ---------------------------------------------------
     --
     INSERT INTO #Job_Step_Dependencies
     (
-        Step_Number, 
-        Target_Step_Number, 
-        Condition_Test, 
-        Test_Value, 
-        Enable_Only, 
+        Step_Number,
+        Target_Step_Number,
+        Condition_Test,
+        Test_Value,
+        Enable_Only,
         Job
     )
-    SELECT 
+    SELECT
         xmlNode.value('../@Number', 'nvarchar(24)') Step_Number,
         xmlNode.value('@Step_Number', 'nvarchar(24)') Target_Step_Number,
         xmlNode.value('@Test', 'nvarchar(128)') Condition_Test,

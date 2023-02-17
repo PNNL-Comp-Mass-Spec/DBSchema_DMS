@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[EvaluateStepDependencies] 
+CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Look at all unevaluated dependencies for steps that are finished (completed or skipped)
 **      and evaluate them
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -28,19 +28,19 @@ CREATE PROCEDURE [dbo].[EvaluateStepDependencies]
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     Declare @StartTime datetime
     Declare @LastLogTime datetime
-    Declare @StatusMessage varchar(512)    
+    Declare @StatusMessage varchar(512)
 
     Declare @RowCountToProcess int
     Declare @RowsProcessed int
-        
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -51,7 +51,7 @@ As
     Set @loopingUpdateInterval = IsNull(@loopingUpdateInterval, 5)
     If @loopingUpdateInterval < 2
         Set @loopingUpdateInterval = 2
-        
+
     ---------------------------------------------------
     -- table variable for processing dependenices
     ---------------------------------------------------
@@ -64,19 +64,19 @@ As
         Condition_Test varchar(256),
         Test_Value varchar(256),
         Enable_Only tinyint,
-        SortOrder INT IDENTITY(1,1) NOT NULL 
+        SortOrder INT IDENTITY(1,1) NOT NULL
     )
-    
+
     CREATE INDEX #IX_Tmp_DepTable_SortOrder ON #Tmp_DepTable (SortOrder)
 
     ---------------------------------------------------
     -- For steps that are waiting,
-    -- get unevaluated dependencies that target steps 
-    -- that are finished (skipped or completed) 
+    -- get unevaluated dependencies that target steps
+    -- that are finished (skipped or completed)
     ---------------------------------------------------
     --
     INSERT INTO #Tmp_DepTable (
-        Job, 
+        Job,
         DependentStep,
         TargetStep,
         TargetState,
@@ -103,7 +103,7 @@ As
     WHERE (JSD.Evaluated = 0) AND
           (JS.State IN (3, 5, 13)) AND
           (JS_B.State = 1)
-    -- 
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
@@ -123,9 +123,9 @@ As
         WHERE NOT Job IN ( SELECT TOP ( @maxJobsToProcess ) Job
                            FROM #Tmp_DepTable
                            ORDER BY Job )
-        
+
     End
-        
+
     ---------------------------------------------------
     -- loop though dependencies and evaluate them
     ---------------------------------------------------
@@ -142,7 +142,7 @@ As
     Declare @actualValue int
     Declare @enableOnly tinyint
     Declare @done int
-    
+
     SELECT @RowCountToProcess = COUNT(*)
     FROM #Tmp_DepTable
     --
@@ -171,7 +171,7 @@ As
                      @enableOnly = Enable_Only
         FROM #Tmp_DepTable
         ORDER BY SortOrder
-          -- 
+          --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
@@ -179,7 +179,7 @@ As
             set @message = 'Error getting next dependency'
             goto Done
         end
-        
+
         if @job = 0
             set @done = 1
         else
@@ -189,7 +189,7 @@ As
             ---------------------------------------------------
             --
             set @Triggered = 0
-/*            
+/*
             ---------------------------------------------------
             -- skip if signature of dependent step matches
             -- test value (usually used with value of "0"
@@ -203,7 +203,7 @@ As
                 --
                 SELECT @actualValue = Signature
                 FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @dependentStep        
+                WHERE Job = @job AND Step_Number = @dependentStep
                 --
                 if @actualValue = -1
                 begin
@@ -229,10 +229,10 @@ As
                 --
                 set @actualValue = -1
                 --
-                SELECT 
+                SELECT
                     @actualValue = State
                 FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep        
+                WHERE Job = @job AND Step_Number = @targetStep
                 --
                 if @actualValue = -1
                 begin
@@ -255,10 +255,10 @@ As
                 --
                 set @targetCompletionMessage = ''
                 --
-                SELECT 
+                SELECT
                     @targetCompletionMessage = Completion_Message
                 FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep        
+                WHERE Job = @job AND Step_Number = @targetStep
                 --
                 if @targetCompletionMessage like '%' + @testValue + '%'
                     set @Triggered = 1
@@ -278,8 +278,8 @@ As
                 --
                 SELECT @outputDirectoryName = Output_Folder_Name
                 FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep        
-                  -- 
+                WHERE Job = @job AND Step_Number = @targetStep
+                  --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
                 if @myError <> 0
@@ -290,8 +290,8 @@ As
                 --
                 UPDATE T_Job_Steps
                 SET Input_Folder_Name = @outputDirectoryName
-                WHERE Job = @job AND Step_Number = @dependentStep        
-                  -- 
+                WHERE Job = @job AND Step_Number = @dependentStep
+                  --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
                 if @myError <> 0
@@ -300,7 +300,7 @@ As
                     goto Done
                 end
             end --<eo>
-            
+
             ---------------------------------------------------
             -- update state of dependency
             ---------------------------------------------------
@@ -311,7 +311,7 @@ As
             WHERE Job = @job AND
                   Step_Number = @dependentStep AND
                   Target_Step_Number = @targetStep
-            -- 
+            --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             if @myError <> 0
@@ -319,14 +319,14 @@ As
                 set @message = 'Error updating dependency'
                 goto Done
             end
-            
+
             ---------------------------------------------------
             -- remove dependency from processing table
             ---------------------------------------------------
             --
             DELETE FROM #Tmp_DepTable
-            WHERE SortOrder = @SortOrder 
-            
+            WHERE SortOrder = @SortOrder
+
             Set @RowsProcessed = @RowsProcessed + 1
         end --<b>
 

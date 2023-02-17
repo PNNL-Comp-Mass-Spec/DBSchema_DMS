@@ -7,10 +7,10 @@ GO
 CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Looks for unverified entries added to T_MyEMSL_Uploads over 45 ago (customize with @staleUploadDays)
 **      For any that are found, sets the ErrorCode to 101 and posts an entry to T_Log_Entries
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
@@ -19,16 +19,16 @@ CREATE PROCEDURE [dbo].[FindStaleMyEMSLUploads]
 **          07/08/2019 mem - Fix bug updating RetrySucceeded
 **                         - Pass @logMessage to PostLogEntry
 **          10/11/2022 mem - Change minimum value for @staleUploadDays to 14
-**    
+**
 *****************************************************/
 (
     @staleUploadDays int = 45,
     @infoOnly tinyint = 0,
-    @message varchar(512) = '' output 
+    @message varchar(512) = '' output
 )
 As
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount int = 0
 
@@ -39,11 +39,11 @@ As
 
     Declare @entryIDList varchar(500)
     Declare @jobList varchar(500)
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @staleUploadDays = IsNull(@staleUploadDays, 45);
     Set @infoOnly = IsNull(@infoOnly, 0);
     Set @message = ''
@@ -52,12 +52,12 @@ As
     Begin
         -- Require @staleUploadDays to be at least 14
         Set @staleUploadDays = 14
-    End    
-    
+    End
+
     ---------------------------------------------------
     -- Find and process stale uploads
     ---------------------------------------------------
-    
+
     Create Table #Tmp_StaleUploads (
         Entry_ID Int Not Null,
         Job Int Not Null,
@@ -99,7 +99,7 @@ As
     ---------------------------------------------------
     -- Look for uploads that were retried and the retry succeeded
     ---------------------------------------------------
-         
+
     UPDATE #Tmp_StaleUploads
     SET RetrySucceeded = 1
     WHERE Entry_ID IN ( SELECT Stale.Entry_ID
@@ -115,10 +115,10 @@ As
     Begin
         Set @foundRetrySuccessTasks = 1
     End
-    
+
     If @infoOnly > 0
     Begin
-    
+
         ---------------------------------------------------
         -- Preview tasks to update
         ---------------------------------------------------
@@ -133,7 +133,7 @@ As
     End
     Else
     Begin
-    
+
         ---------------------------------------------------
         -- Perform the update
         ---------------------------------------------------
@@ -168,7 +168,7 @@ As
 
         Declare @subFolder varchar(255)
         Declare @fileCountNew Int
-        Declare @fileCountUpdated Int 
+        Declare @fileCountUpdated Int
         Declare @bytes bigint
         Declare @verifed int
         Declare @ingestStepsCompleted int
@@ -204,9 +204,9 @@ As
                 FROM T_MyEMSL_Uploads
                 WHERE Entry_ID = @entryID
 
-                Set @logMessage = 
-                        'Details of an old MyEMSL upload entry to be marked stale; ' + 
-                        'Entry ID: ' + Cast(@entryID As varchar(12)) + 
+                Set @logMessage =
+                        'Details of an old MyEMSL upload entry to be marked stale; ' +
+                        'Entry ID: ' + Cast(@entryID As varchar(12)) +
                         ', Job: ' +  Cast(@job As varchar(12)) +
                         ', Subfolder: ' + Coalesce(@subFolder, 'Null') +
                         ', FileCountNew: ' +  Cast(@fileCountNew As varchar(12)) +
@@ -220,7 +220,7 @@ As
                 Exec PostLogEntry 'Error', @logMessage, 'FindStaleMyEMSLUploads'
 
                 Set @iteration = @iteration + 1
-            End -- </b>    
+            End -- </b>
         End -- </a>
 
         -- Update uploads where a successful retry does not exist
@@ -240,10 +240,10 @@ As
             FROM #Tmp_StaleUploads
 
             -- MyEMSL upload task 1625978 for job 3773650 has been unverified for over 45 days; ErrorCode set to 101
-            Set @message = 'MyEMSL upload task ' + Cast(@entryID As varchar(12)) + 
+            Set @message = 'MyEMSL upload task ' + Cast(@entryID As varchar(12)) +
                            ' for job '  + Cast(@job As varchar(12)) + ' has been'
         End
-        
+
         If @myRowCount > 1
         Begin
             Set @entryIDList = ''
@@ -255,13 +255,13 @@ As
             ORDER BY Entry_ID
 
             -- MyEMSL upload tasks 1633334,1633470,1633694 for jobs 3789097,3789252,3789798 have been unverified for over 45 days; ErrorCode set to 101
-            Set @message = 'MyEMSL upload tasks ' + Substring(@entryIDList, 1, Len(@entryIDList) - 1) + 
+            Set @message = 'MyEMSL upload tasks ' + Substring(@entryIDList, 1, Len(@entryIDList) - 1) +
                            ' for jobs '  + Substring(@jobList, 1, Len(@jobList) - 1) + ' have been'
         End
 
         If @myRowCount > 0
         Begin
-            Set @message = @message + ' unverified for over ' + Cast(@staleUploadDays As varchar(12)) + ' days; ErrorCode set to 101' 
+            Set @message = @message + ' unverified for over ' + Cast(@staleUploadDays As varchar(12)) + ' days; ErrorCode set to 101'
             Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
         End
 
@@ -270,18 +270,18 @@ As
         Print @message
 
     End
-    
+
 Done:
 
     If @myError <> 0
     Begin
         If @message = ''
             Set @message = 'Error in FindStaleMyEMSLUploads'
-        
+
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
-        
+
         Exec PostLogEntry 'Error', @message, 'FindStaleMyEMSLUploads'
-    End    
+    End
 
     Return @myError
 

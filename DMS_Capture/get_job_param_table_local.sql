@@ -6,54 +6,54 @@ GO
 create FUNCTION GetJobParamTableLocal
 /****************************************************
 **
-**  Desc:	Returns a table of the job parameters stored locally in T_Job_Parameters
+**  Desc:   Returns a table of the job parameters stored locally in T_Job_Parameters
 **
-**  Auth:	grk
-**  Date:	06/07/2010
-**			04/04/2011 mem - Updated to only query T_Job_Parameters
-**      
-**    
+**  Auth:   grk
+**  Date:   06/07/2010
+**          04/04/2011 mem - Updated to only query T_Job_Parameters
+**
+**
 *****************************************************/
 (
-	@jobNumber INT
+    @jobNumber INT
 )
 RETURNS @theTable TABLE (
-		Job INT NULL,
-		[Name] Varchar(128),
-		[Value] Varchar(max)
-	)
+        Job INT NULL,
+        [Name] Varchar(128),
+        [Value] Varchar(max)
+    )
 AS
 BEGIN
 
-	---------------------------------------------------
-	-- The following demonstrates how we could Query the XML for a specific parameter:
-	--
-	-- The XML we are querying looks like:
-	-- <Param Section="JobParameters" Name="transferFolderPath" Value="\\proto-9\DMS3_Xfer\"/>
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- The following demonstrates how we could Query the XML for a specific parameter:
+    --
+    -- The XML we are querying looks like:
+    -- <Param Section="JobParameters" Name="transferFolderPath" Value="\\proto-9\DMS3_Xfer\"/>
+    ---------------------------------------------------
 /*
-		
-	SELECT @TransferFolderPath = Parameters.query('Param[@Name = "transferFolderPath"]').value('(/Param/@Value)[1]', 'varchar(256)')
-	FROM [T_Job_Parameters]
-	WHERE Job = @currJob
-*/
-	
-	---------------------------------------------------
-	-- Query T_Job_Parameters
-	---------------------------------------------------
-	--
-	INSERT INTO @theTable (Job, [Name], [Value])
-	SELECT
-		@jobNumber as Job,
---		xmlNode.value('@Section', 'nvarchar(256)') Section,
-		xmlNode.value('@Name', 'nvarchar(256)') Name,
-		xmlNode.value('@Value', 'nvarchar(4000)') Value
-	FROM
-		T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
-	WHERE
-		T_Job_Parameters.Job = @jobNumber
 
-	RETURN
+    SELECT @TransferFolderPath = Parameters.query('Param[@Name = "transferFolderPath"]').value('(/Param/@Value)[1]', 'varchar(256)')
+    FROM [T_Job_Parameters]
+    WHERE Job = @currJob
+*/
+
+    ---------------------------------------------------
+    -- Query T_Job_Parameters
+    ---------------------------------------------------
+    --
+    INSERT INTO @theTable (Job, [Name], [Value])
+    SELECT
+        @jobNumber as Job,
+--      xmlNode.value('@Section', 'nvarchar(256)') Section,
+        xmlNode.value('@Name', 'nvarchar(256)') Name,
+        xmlNode.value('@Value', 'nvarchar(4000)') Value
+    FROM
+        T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+    WHERE
+        T_Job_Parameters.Job = @jobNumber
+
+    RETURN
 END
 
 GO

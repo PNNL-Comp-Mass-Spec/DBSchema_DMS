@@ -7,7 +7,7 @@ GO
 CREATE PROCEDURE [dbo].[DeleteOldJobsFromHistory]
 /****************************************************
 **
-**  Desc:   Delete jobs over three years old from 
+**  Desc:   Delete jobs over three years old from
 **          T_Jobs_History, T_Job_Steps_History, T_Job_Step_Dependencies_History, and T_Job_Parameters_History
 **
 **          However, assure that at least 250,000 jobs are retained
@@ -98,8 +98,8 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        Set @message = 'Removed ' + Cast(@myRowCount As Varchar(12)) + 
-                       ' rows from #Tmp_JobsToDelete to assure that ' + 
+        Set @message = 'Removed ' + Cast(@myRowCount As Varchar(12)) +
+                       ' rows from #Tmp_JobsToDelete to assure that ' +
                        Cast(@jobHistoryMinimumCount As Varchar(12)) + ' rows remain in T_Jobs_History'
 
         Print @message
@@ -129,7 +129,7 @@ As
         SELECT Top 10 Job, Saved, 'Preview delete' As Comment
         From #Tmp_JobsToDelete
         ORDER By Job
-        
+
         SELECT TOP 10 Job, Saved, 'Preview delete' AS Comment
         FROM ( SELECT TOP 10 Job, Saved
                FROM #Tmp_JobsToDelete

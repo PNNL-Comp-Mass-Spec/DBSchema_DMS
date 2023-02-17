@@ -17,7 +17,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParams]
 **            [Name] Varchar(128),
 **            [Value] Varchar(max)
 **        )
-**    
+**
 **    Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -27,7 +27,7 @@ CREATE PROCEDURE [dbo].[GetJobStepParams]
 **          06/15/2017 mem - Only append /xml to the MyEMSL status URI if it contains /status/
 **          06/12/2018 mem - Now calling GetMetadataForDataset
 **          05/17/2019 mem - Switch from folder to directory
-**    
+**
 *****************************************************/
 (
     @jobNumber int,
@@ -44,13 +44,13 @@ AS
     Declare @stepTool varchar(64)
     Declare @inputDirectoryName varchar(128)
     Declare @outputDirectoryName varchar(128)
-    Declare @resultsDirectoryName varchar(128)    
+    Declare @resultsDirectoryName varchar(128)
     Declare @MyEMSLStatusURI varchar(128)
-    
+
     Declare @EUSInstrumentID int
     Declare @EUSProposalID varchar(10)
     Declare @EUSUploaderID int
-    
+
     set @stepTool = ''
     set @inputDirectoryName = ''
     set @outputDirectoryName = ''
@@ -60,9 +60,9 @@ AS
     set @EUSInstrumentID = 0
     set @EUSProposalID = ''
     set @EUSUploaderID = 0
-    
+
     set @message = ''
-    
+
     ---------------------------------------------------
     -- Get basic job step parameters
     ---------------------------------------------------
@@ -114,8 +114,8 @@ AS
         -- Need a URL of the form https://ingest.my.emsl.pnl.gov/myemsl/cgi-bin/status/3268638/xml
         Set @MyEMSLStatusURI = @MyEMSLStatusURI + '/xml'
     End
-    
-        
+
+
     ---------------------------------------------------
     -- Get job step parameters
     ---------------------------------------------------
@@ -129,7 +129,7 @@ AS
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'InputDirectoryName', @inputDirectoryName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'OutputDirectoryName', @outputDirectoryName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'MyEMSL_Status_URI', @MyEMSLStatusURI)
-    
+
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'EUS_InstrumentID', @EUSInstrumentID)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'EUS_ProposalID', @EUSProposalID)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'EUS_UploaderID', @EUSUploaderID)
@@ -139,7 +139,7 @@ AS
     ---------------------------------------------------
     --
     -- to allow for more than one instance of a tool
-    -- in a single script, look at parameters in sections 
+    -- in a single script, look at parameters in sections
     -- that either are not locked to any step
     -- (step number is null) or are locked to the current step
     --
@@ -169,8 +169,8 @@ AS
     If @stepTool In ('DatasetInfo', 'DatasetQuality')
     Begin
         Declare @dataset varchar(128) = ''
-        SELECT @dataset = Dataset 
-        FROM T_Jobs 
+        SELECT @dataset = Dataset
+        FROM T_Jobs
         WHERE Job = @jobNumber
 
         EXEC GetMetadataForDataset @dataset

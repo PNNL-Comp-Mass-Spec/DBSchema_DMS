@@ -7,11 +7,11 @@ GO
 CREATE PROCEDURE [dbo].[FinishJobCreation]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Perform a mixed bag of operations on the jobs
 **      in the temporary tables to finalize them before
 **      copying to the main database tables
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -21,7 +21,7 @@ CREATE PROCEDURE [dbo].[FinishJobCreation]
 **          04/08/2011 mem - Now skipping the 'ImsDeMultiplex' step for datasets that end in '_inverse'
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory in temp tables
-**    
+**
 *****************************************************/
 (
     @job int,
@@ -29,10 +29,10 @@ CREATE PROCEDURE [dbo].[FinishJobCreation]
 )
 As
     set nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     ---------------------------------------------------
@@ -42,13 +42,13 @@ As
     UPDATE #Job_Steps
     SET
         Dependencies = T.dependencies
-    FROM   
+    FROM
         #Job_Steps INNER JOIN
         (
-            SELECT   
+            SELECT
               Step_Number,
               COUNT(*) AS dependencies
-            FROM     
+            FROM
               #Job_Step_Dependencies
             WHERE    (Job = @job)
             GROUP BY Step_Number
@@ -65,14 +65,14 @@ As
     end
 
     ---------------------------------------------------
-    -- Initialize input directory of dataset 
-    -- for steps that have no dependencies 
+    -- Initialize input directory of dataset
+    -- for steps that have no dependencies
     ---------------------------------------------------
     --
     UPDATE #Job_Steps
     SET
         Input_Directory_Name = ''
-    FROM   
+    FROM
         #Job_Steps
     WHERE
         Dependencies = 0 AND
@@ -90,7 +90,7 @@ As
     -- Set results directory name for job to be that of
     --  the output directory for any step designated as
     --  Special="Job_Results"
-    -- 
+    --
     -- This will only affect jobs that have a step with
     --  the Special_Instructions = 'Job_Results' attribute
     ---------------------------------------------------
@@ -124,7 +124,7 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    
+
     ---------------------------------------------------
     -- set job to initialized state ("New")
     ---------------------------------------------------

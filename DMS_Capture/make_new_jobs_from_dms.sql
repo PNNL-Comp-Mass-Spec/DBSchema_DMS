@@ -19,7 +19,7 @@ CREATE PROCEDURE [dbo].[MakeNewJobsFromDMS]
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/27/2019 mem - Use GetDatasetCapturePriority to determine capture job priority using dataset name and instrument group
 **          02/03/2023 bcg - Update column names for V_DMS_Get_New_Datasets
-**    
+**
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
@@ -33,7 +33,7 @@ CREATE PROCEDURE [dbo].[MakeNewJobsFromDMS]
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -44,24 +44,24 @@ As
     Declare @JobsProcessed int
     Declare @JobCountToResume int
     Declare @JobCountToReset int
-    
+
     Declare @MaxJobsToAddResetOrResume int
 
     Declare @StartTime datetime
     Declare @LastLogTime datetime
-    Declare @StatusMessage varchar(512)    
+    Declare @StatusMessage varchar(512)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'MakeNewJobsFromDMS', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-        
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -70,7 +70,7 @@ As
     Set @bypassDMS = IsNull(@bypassDMS, 0)
     Set @debugMode = IsNull(@debugMode, 0)
     Set @maxJobsToProcess = IsNull(@maxJobsToProcess, 0)
-    
+
     set @message = ''
 
     If @maxJobsToProcess <= 0
@@ -82,10 +82,10 @@ As
     Set @loggingEnabled = IsNull(@loggingEnabled, 0)
     Set @logIntervalThreshold = IsNull(@logIntervalThreshold, 15)
     Set @loopingUpdateInterval = IsNull(@loopingUpdateInterval, 5)
-    
+
     If @logIntervalThreshold = 0
         Set @loggingEnabled = 1
-        
+
     If @loopingUpdateInterval < 2
         Set @loopingUpdateInterval = 2
 
@@ -94,14 +94,14 @@ As
         Set @StatusMessage = 'Entering (' + CONVERT(VARCHAR(12), @bypassDMS) + ')'
         exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewJobsFromDMS'
     End
-    
+
     ---------------------------------------------------
     -- Add new jobs
     ---------------------------------------------------
     --
     IF @bypassDMS = 0
     BEGIN -- <AddJobs>
-    
+
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @StatusMessage = 'Querying DMS'
@@ -110,7 +110,7 @@ As
 
         If @infoOnly = 0
         Begin -- <InsertQuery>
-        
+
             INSERT INTO T_Jobs( Script,
                                 [Comment],
                                 Dataset,
@@ -136,7 +136,7 @@ As
                 set @message = 'Error adding new DatasetCapture tasks'
                 goto Done
             end
-            
+
         End -- </InsertQuery>
         Else
         Begin -- <Preview>
@@ -155,9 +155,9 @@ As
             WHERE Target.Dataset_ID IS NULL
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
         End -- </Preview>
-        
+
     END -- </AddJobs>
 
     ---------------------------------------------------

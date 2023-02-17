@@ -21,7 +21,7 @@ CREATE PROCEDURE [dbo].[UpdateDMSDatasetState]
 **          06/13/2018 mem - Check for error code 53600 returned by UpdateDMSFileInfoXML to indicate a duplicate dataset
 **          08/09/2018 mem - Set the job state to 14 when the error code is 53600
 **          08/17/2021 mem - Remove extra information from Completion messages with warning "Over 10% of the MS/MS spectra have a minimum m/z value larger than the required minimum; reporter ion peaks likely could not be detected"
-**    
+**
 *****************************************************/
 (
     @job int,
@@ -47,23 +47,23 @@ As
     If @script = 'DatasetCapture' OR @script = 'IMSDatasetCapture'
     Begin
         If @newJobStateInBroker in (2, 3, 5) -- always call in case job completes too quickly for normal update cycle
-        Begin 
+        Begin
             EXEC @myError = S_SetCaptureTaskBusy @datasetNum, '(broker)', @message output
         End
 
         If @newJobStateInBroker = 3
-        Begin 
+        Begin
             ---------------------------------------------------
             -- Job Succeeded
             ---------------------------------------------------
-            
+
             EXEC @myError = UpdateDMSFileInfoXML @DatasetID, @DeleteFromTableOnSuccess=1, @message=@message Output
 
             If @myError = 53600
             Begin
                 -- Use special completion code of 101
                 EXEC @myError = S_SetCaptureTaskComplete @datasetNum, 101, @message OUTPUT, @failureMessage = @message
-                
+
                 -- Fail out the job with state 14 (Failed, Ignore Job Step States)
                 Update T_Jobs
                 Set State = 14
@@ -77,13 +77,13 @@ As
         End
 
         If @newJobStateInBroker = 5
-        Begin 
+        Begin
             ---------------------------------------------------
             -- Job Failed
             ---------------------------------------------------
-            
+
             Declare @failureMessage varchar(512)
-            
+
             -- Look for any failure messages in T_Job_Steps for this job
             -- First check the Evaluation_Message column
             SELECT @failureMessage = JS.Evaluation_Message
@@ -105,9 +105,9 @@ As
                 If @startPos > 1
                 Begin
                     Set @failureMessage = Substring(@failureMessage, 1, @startPos - 1)
-                End                
+                End
             End
-            
+
             EXEC @myError = S_SetCaptureTaskComplete @datasetNum, 1, @message output, @failureMessage=@failureMessage
         End
     End
@@ -119,17 +119,17 @@ As
     If @script = 'DatasetArchive'
     Begin
         If @newJobStateInBroker in (2, 3, 5) -- always call in case job completes too quickly for normal update cycle
-        Begin 
+        Begin
             EXEC @myError = S_SetArchiveTaskBusy @datasetNum, @storageServerName, @message  output
         End
 
         If @newJobStateInBroker = 3
-        Begin 
+        Begin
             EXEC @myError = S_SetArchiveTaskComplete @datasetNum, 100, @message OUTPUT -- using special completion code of 100
         End
 
         If @newJobStateInBroker = 5
-        Begin 
+        Begin
             EXEC @myError = S_SetArchiveTaskComplete @datasetNum, 1, @message output
         End
     End
@@ -141,17 +141,17 @@ As
     If @script = 'ArchiveUpdate'
     Begin
         If @newJobStateInBroker in (2, 3, 5) -- always call in case job completes too quickly for normal update cycle
-        Begin 
+        Begin
             EXEC @myError = S_SetArchiveUpdateTaskBusy @datasetNum, @storageServerName, @message output
         End
 
         If @newJobStateInBroker = 3
-        Begin 
+        Begin
             EXEC @myError = S_SetArchiveUpdateTaskComplete @datasetNum, 0, @message output
         End
 
         If @newJobStateInBroker = 5
-        Begin 
+        Begin
             EXEC @myError = S_SetArchiveUpdateTaskComplete @datasetNum, 1, @message output
         End
     End

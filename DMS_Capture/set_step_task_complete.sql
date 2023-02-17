@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 /****************************************************
 **
 **  Desc:   Make entry in step completion table
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -33,7 +33,7 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 **          08/09/2018 mem - Expand @completionMessage to varchar(512)
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          08/21/2020 mem - Set @HoldoffIntervalMinutes to 60 (or higher) if @retryCount is 0
-**    
+**
 *****************************************************/
 (
     @job int,
@@ -47,26 +47,26 @@ CREATE PROCEDURE [dbo].[SetStepTaskComplete]
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @msg varchar(1024)
 
-    Set @message = ''    
+    Set @message = ''
     Set @returnCode = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'SetStepTaskComplete', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Get current state of this job step
     ---------------------------------------------------
@@ -92,11 +92,11 @@ As
            @datasetName = J.Dataset
     FROM T_Job_Steps JS
          INNER JOIN T_Local_Processors LP
-           ON LP.Processor_Name = JS.Processor    
+           ON LP.Processor_Name = JS.Processor
          INNER JOIN T_Jobs J
            ON JS.Job = J.Job
     WHERE (JS.Job = @job) AND
-          (JS.Step_Number = @step)     
+          (JS.Step_Number = @step)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -109,9 +109,9 @@ As
     If @initialState <> 4
     Begin
         set @myError = 67
-        set @message = 'Job step is not in correct state to be completed; job ' + convert(varchar(12), @job) + 
-                       ', step ' + convert(varchar(12), @step) + 
-                       ', actual state ' + convert(varchar(6), @initialState)  + 
+        set @message = 'Job step is not in correct state to be completed; job ' + convert(varchar(12), @job) +
+                       ', step ' + convert(varchar(12), @step) +
+                       ', actual state ' + convert(varchar(6), @initialState)  +
                        '; expected state 4'
         goto Done
     End
@@ -131,20 +131,20 @@ As
     Else
     Begin
         -- Either completion code is non-zero, or the step was skipped (eval-code 9)
-        
+
         If @evaluationCode = 8      -- EVAL_CODE_FAILURE_DO_NOT_RETRY
         Begin
             -- Failed
             Set @newStepState = 6
             Set @retryCount = 0
         End
-        
+
         If @evaluationCode = 9      -- EVAL_CODE_SKIPPED
         Begin
             -- Skipped
             Set @newStepState = 3
         End
-        
+
         If Not @newStepState IN (3, 6) And (@retryCount > 0 Or @evaluationCode = 3)
         Begin
             If @initialState = 4
@@ -152,12 +152,12 @@ As
                 -- Retry the step
                 Set @newStepState = 2
             End
-            
+
             If @retryCount > 0
             Begin
                 Set @retryCount = @retryCount - 1   -- decrement retry count
             End
-            
+
             If @evaluationCode = 3
             Begin
                 -- The captureTaskManager returns 3 (EVAL_CODE_NETWORK_ERROR_RETRY_CAPTURE) when a network error occurs during capture
@@ -179,11 +179,11 @@ As
 
                 If @retryCount = 0 AND @HoldoffIntervalMinutes < 60
                     Set @HoldoffIntervalMinutes = 60
-                
+
                 If @newStepState <> 5
                     set @nextTry = DATEADD(minute, @HoldoffIntervalMinutes, GETDATE())
             End
-                
+
         End
         Else
         Begin
@@ -201,7 +201,7 @@ As
     --
     Declare @transName varchar(32)
     set @transName = 'SetStepTaskComplete'
-        
+
     -- Start transaction
     Begin transaction @transName
 
@@ -236,13 +236,13 @@ As
         -- If @evaluationCode = 6, we copied data to Aurora via FTP but did not upload to MyEMSL
         -- If @evaluationCode = 7, we uploaded data to MyEMSL, but there were no new files to upload, so there is nothing to verify
         -- In either case, skip the ArchiveVerify and ArchiveStatusCheck steps for this job (if they exist)
-        
+
         UPDATE T_Job_Steps
         SET State = 3,
             Completion_Code = 0,
             Completion_Message = '',
             Evaluation_Code = 0,
-            Evaluation_Message = 
+            Evaluation_Message =
               CASE
                   WHEN @evaluationCode = 6 THEN 'Skipped since MyEMSL upload was skipped'
                   WHEN @evaluationCode = 7 THEN 'Skipped since MyEMSL files were already up-to-date'
@@ -256,12 +256,12 @@ As
 
     -- Update was successful
     commit transaction @transName
-    
+
     ---------------------------------------------------
     -- Check for reporter ion m/z validation warnings or errors
     ---------------------------------------------------
 
-    If @completionMessage Like '%Over%of the % spectra have a minimum m/z value larger than the required minimum%' 
+    If @completionMessage Like '%Over%of the % spectra have a minimum m/z value larger than the required minimum%'
     Begin
         Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
         Exec S_PostEmailAlert 'Error', @msg, 'SetStepTaskComplete', @recipients='admins', @postMessageToLogEntries=1
@@ -279,26 +279,26 @@ As
     --
     If @completionCode = 0
     Begin
-        
+
         -- @evaluationCode = 4 means Submitted to MyEMSL
         -- @evaluationCode = 5 means Verified in MyEMSL
-        
+
         If @stepTool Like '%Archive%' And @evaluationCode IN (4, 5)
         Begin
-            -- Update the MyEMSLState values            
+            -- Update the MyEMSLState values
             Declare @MyEMSLStateNew tinyint = 0
-            
+
             If @evaluationCode = 4
                 Set @MyEMSLStateNew = 1
-                
+
             If @evaluationCode = 5
                 Set @MyEMSLStateNew = 2
-            
+
             exec S_UpdateMyEMSLState @datasetID, @outputFolderName, @MyEMSLStateNew
-            
+
         End
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

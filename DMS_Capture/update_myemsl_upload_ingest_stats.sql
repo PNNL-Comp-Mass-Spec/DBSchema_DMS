@@ -10,7 +10,7 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
 **  Desc:   Updates column Ingest_Steps_Completed for the given MyEMSL ingest task
 **
 **          This procedure is called by the ArchiveStatusCheckPlugin in the DMS Capture Manager
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
@@ -35,10 +35,10 @@ CREATE PROCEDURE [dbo].[UpdateMyEMSLUploadIngestStats]
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @errorCode int = 0
 
     Set @returnCode = ''
@@ -46,26 +46,26 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateMyEMSLUploadIngestStats', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @datasetID = IsNull(@datasetID, 0)
     Set @statusNum = IsNull(@statusNum, 0)
     Set @ingestStepsCompleted = IsNull(@ingestStepsCompleted, 0)
     Set @fatalError = IsNull(@fatalError, 0)
     Set @transactionId = IsNull(@transactionId, 0)
-    
+
     Set @message = ''
-    
+
     If @datasetID <= 0
     Begin
         Set @message = '@datasetID must be positive; unable to continue'
@@ -76,46 +76,46 @@ As
     ---------------------------------------------------
     -- Make sure the @statusNum exists in T_MyEMSL_Uploads
     ---------------------------------------------------
-    
+
     If Not Exists (SELECT * FROM T_MyEMSL_Uploads MU WHERE StatusNum = @statusNum)
     Begin
         Set @message = 'StatusNum ' + Cast(@statusNum as varchar(12)) + ' not found in T_MyEMSL_Uploads'
         Set @myError = 60003
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Make sure the Dataset_ID is correct
     -- Also lookup the current ErrorCode for this upload task
     ---------------------------------------------------
-    
+
     SELECT @errorCode = ErrorCode
     FROM T_MyEMSL_Uploads
     WHERE StatusNum = @statusNum AND
           Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myRowCount = 0
     Begin
         Set @message = 'The DatasetID for StatusNum ' + Cast(@statusNum as varchar(12)) + ' is not ' + Cast(@datasetID as varchar(12)) + '; will not update Ingest_Steps_Completed'
         Set @myError = 60004
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Possibly update the error code
     ---------------------------------------------------
-    
+
     If @fatalError > 0 And IsNull(@errorCode, 0) = 0
     Begin
         Set @errorCode = -1
     End
-    
+
     ---------------------------------------------------
     -- Perform the update
     ---------------------------------------------------
-    
+
     UPDATE T_MyEMSL_Uploads
     SET Ingest_Steps_Completed = @ingestStepsCompleted,
         ErrorCode = @errorCode,
@@ -134,18 +134,18 @@ As
         Set @myError = 60006
         Goto Done
     End
-    
+
 Done:
 
     If @myError <> 0
     Begin
         If @message = ''
             Set @message = 'Error in UpdateMyEMSLUploadIngestStats'
-        
+
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
-        
+
         Exec PostLogEntry 'Error', @message, 'UpdateMyEMSLUploadIngestStats'
-    End    
+    End
 
     Set @returnCode = Cast(@myError As varchar(64))
     Return @myError

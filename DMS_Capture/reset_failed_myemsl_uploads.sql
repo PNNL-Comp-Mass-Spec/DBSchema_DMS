@@ -23,7 +23,7 @@ CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 **          08/01/2017 mem - Reset steps with message 'Connection aborted.', error(32, 'Broken pipe')
 **          12/15/2017 mem - Reset steps with message 'ingest/backend/tasks.py'
 **          03/07/2018 mem - Do not reset the same job/subfolder ingest task more than once
-**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **
 *****************************************************/
 (
@@ -36,14 +36,14 @@ CREATE PROCEDURE [dbo].[ResetFailedMyEMSLUploads]
 As
 
     Set XACT_ABORT, nocount on
-    
+
     declare @myError int
     declare @myRowCount int
     set @myError = 0
     set @myRowCount = 0
 
-    BEGIN TRY 
-    
+    BEGIN TRY
+
         -----------------------------------------------------------
         -- Validate the inputs
         -----------------------------------------------------------
@@ -53,7 +53,7 @@ As
         Set @jobListOverride = IsNull(@jobListOverride, '')
         Set @resetHoldoffMinutes = IsNull(@resetHoldoffMinutes, 15)
         Set @message = ''
-        
+
         -----------------------------------------------------------
         -- Create the temporary tables
         -----------------------------------------------------------
@@ -67,7 +67,7 @@ As
             SkipReset tinyint Null,
             SkipReason varchar(128) NULL
         )
-            
+
         -----------------------------------------------------------
         -- Look for failed jobs
         -----------------------------------------------------------
@@ -109,17 +109,17 @@ As
         Begin
             If @infoOnly > 0
                 SELECT 'No failed jobs were found' AS Message
-                
+
             Goto Done
         End
-       
+
         -----------------------------------------------------------
         -- Flag any jobs that have failed twice for the same subfolder
         -- pushing the same number of files each time
         -----------------------------------------------------------
 
         UPDATE #Tmp_FailedJobs
-        SET SkipReset = 1, 
+        SET SkipReset = 1,
             SkipReason = 'Upload has failed two or more times'
         FROM #Tmp_FailedJobs Target
              INNER JOIN ( SELECT U.Job,
@@ -132,7 +132,7 @@ As
                                  ON U.Job = #Tmp_FailedJobs.Job AND
                                     U.Subfolder = #Tmp_FailedJobs.Subfolder
                           WHERE U.Verified = 0
-                          GROUP BY U.Job, U.SubFolder, U.FileCountNew, U.FileCountUpdated 
+                          GROUP BY U.Job, U.SubFolder, U.FileCountNew, U.FileCountUpdated
                         ) AttemptQ
                ON Target.Job = AttemptQ.Job AND
                   Target.Subfolder = AttemptQ.SubFolder
@@ -144,7 +144,7 @@ As
         Begin -- <a>
             -- Post a log entry about jobs that we are not resetting
             -- Limit the logging to once every 24 hours
-            
+
             Declare @skippedJob int = 0
             Declare @skippedSubfolder varchar(128)
             Declare @continue tinyint = 1
@@ -180,7 +180,7 @@ As
             End -- </b>
 
         End -- </a>
-         
+
         -----------------------------------------------------------
         -- Flag any jobs that have a DatasetArchive or ArchiveUpdate step in state 7 (Holding)
         -----------------------------------------------------------
@@ -203,31 +203,31 @@ As
         --
 
         Declare @jobCountAtStart int
-        
-        SELECT @jobCountAtStart = Count(*) 
+
+        SELECT @jobCountAtStart = Count(*)
         FROM #Tmp_FailedJobs
         WHERE SkipReset = 0
 
         If @maxJobsToReset > 0 And @jobCountAtStart > @maxJobsToReset
         Begin
-            
+
             DELETE #Tmp_FailedJobs
             WHERE SkipReset = 0 AND
                   NOT Job IN ( SELECT TOP ( @maxJobsToReset ) Job
                                FROM #Tmp_FailedJobs
                                WHERE SkipReset = 0
                                ORDER BY Job )
-            
+
             Declare @verb varchar(16)
             If @infoOnly = 0
                 Set @verb = 'Resetting '
             Else
                 Set @verb = 'Would reset '
-            
+
             Select @verb + Cast(@maxJobsToReset as varchar(9)) + ' out of ' + Cast(@jobCountAtStart as varchar(9)) + ' candidate jobs' as Reset_Message
 
         End
-        
+
         If Exists (Select * From #Tmp_FailedJobs Where SkipReset = 0)
         Begin
             -----------------------------------------------------------
@@ -235,7 +235,7 @@ As
             -----------------------------------------------------------
             --
             Declare @JobList varchar(max) = null
-        
+
             SELECT @JobList = Coalesce(@JobList + ',' + Cast(Job as varchar(9)), Cast(Job as varchar(9)))
             FROM #Tmp_FailedJobs
             WHERE SkipReset = 0
@@ -253,25 +253,25 @@ As
             If @infoOnly = 0
             Begin
                 Declare @jobCount int
-            
+
                 SELECT @jobCount = COUNT(*)
                 FROM #Tmp_FailedJobs
                 WHERE SkipReset = 0
 
                 Set @message = 'Warning: Retrying MyEMSL upload for ' + dbo.CheckPlural(@jobCount, 'job ', 'jobs ') + @jobList + '; for details, see T_MyEMSL_Upload_Resets'
-            
+
                 exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
-            
+
                 SELECT @message AS Message
-            
+
                 INSERT INTO T_MyEMSL_Upload_Resets (Job, Dataset_ID, Subfolder, Error_Message)
                 SELECT Job, Dataset_ID, Subfolder, Error_Message
                 FROM #Tmp_FailedJobs
                 WHERE SkipReset = 0
-            
+
             End
         End
-      
+
         If @infoOnly <> 0
         Begin
             -- Preview the jobs in #Tmp_FailedJobs
@@ -281,13 +281,13 @@ As
         End
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'ResetFailedMyEMSLUploads'
     END CATCH
 

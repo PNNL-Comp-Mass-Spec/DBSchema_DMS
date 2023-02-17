@@ -8,12 +8,12 @@ CREATE PROCEDURE [dbo].[DeleteOrphanedJobs]
 /****************************************************
 **
 **  Desc:   Delete jobs in state 0 where the dataset no longer exists in DMS
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **          05/22/2019 mem - Initial version
-**			02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
+**          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **
 *****************************************************/
 (
@@ -22,12 +22,12 @@ CREATE PROCEDURE [dbo].[DeleteOrphanedJobs]
 )
 As
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     Set @message = ''
-    
+
     ---------------------------------------------------
     -- Find orphaned jobs
     ---------------------------------------------------
@@ -52,7 +52,7 @@ As
     ---------------------------------------------------
     -- Remove any jobs that have data in T_Job_Steps, T_Job_Step_Dependencies, or T_Job_Parameters
     ---------------------------------------------------
-    
+
     UPDATE #Tmp_JobsToDelete
     SET HasDependencies = 1
     FROM #Tmp_JobsToDelete Target
@@ -64,7 +64,7 @@ As
     FROM #Tmp_JobsToDelete Target
          INNER JOIN T_Job_Step_Dependencies D
            ON Target.Job = D.Job
-    
+
     UPDATE #Tmp_JobsToDelete
     SET HasDependencies = 1
     FROM #Tmp_JobsToDelete Target
@@ -90,7 +90,7 @@ As
         ---------------------------------------------------
         -- Delete each job individually (so that we can log the dataset name and ID in T_Log_Entries)
         ---------------------------------------------------
-        -- 
+        --
 
         Declare @continue Tinyint = 1
         Declare @job Int = 0
@@ -108,7 +108,7 @@ As
             ORDER BY Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-             
+
             If @myRowCount = 0
             Begin
                 Set @continue = 0
@@ -124,10 +124,10 @@ As
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 DELETE FROM T_Jobs
-	            WHERE Job = @job
+                WHERE Job = @job
 
                 Set @logMessage = 'Deleted orphaned ' + @scriptName + ' job ' + Cast(@job As Varchar(12)) + ' for dataset ' + @dataset + ' since no longer defined in DMS'
-                
+
                 Exec PostLogEntry 'Normal', @logMessage, 'DeleteOrphanedJobs'
 
                 Set @jobsDeleted = @jobsDeleted + 1

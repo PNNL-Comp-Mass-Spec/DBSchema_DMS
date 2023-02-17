@@ -7,96 +7,96 @@ GO
 CREATE PROCEDURE [dbo].[MakeNewJobsFromDMSArchiveReqd]
 /****************************************************
 **
-**  Desc: 
-**    create new jobs from DMS datasets 
+**  Desc:
+**    create new jobs from DMS datasets
 **    that are in archive required state
-**	
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   12/17/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
-**    
+**
 *****************************************************/
 (
-	@infoOnly tinyint = 0,
-	@message varchar(512) output,
-	@ImportWindowDays INT = 10,
-	@LoggingEnabled TINYINT = 0
+    @infoOnly tinyint = 0,
+    @message varchar(512) output,
+    @ImportWindowDays INT = 10,
+    @LoggingEnabled TINYINT = 0
 )
 As
-	Set nocount on
-	
-	declare @myError int
-	declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+    Set nocount on
 
-	---------------------------------------------------
-	-- temp table to hold candidate jobs
-	---------------------------------------------------
+    declare @myError int
+    declare @myRowCount int
+    Set @myError = 0
+    Set @myRowCount = 0
 
-	CREATE TABLE #AUJobs(
-		Dataset varchar(128),
-		Dataset_ID int
-		)
+    ---------------------------------------------------
+    -- temp table to hold candidate jobs
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- get datasets from DMS that are in archive required state
-	---------------------------------------------------
+    CREATE TABLE #AUJobs(
+        Dataset varchar(128),
+        Dataset_ID int
+        )
 
-	INSERT INTO #AUJobs( Dataset,
-	                     Dataset_ID )
-	SELECT Dataset,
-	       Dataset_ID
-	FROM V_DMS_Dataset_Archive_Status
-	WHERE Archive_State_ID = 1 AND
-	      Dataset_State_ID = 3 AND
-	      Archive_State_Last_Affected > DateAdd(day, -@ImportWindowDays, GetDate())
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error getting candidate DatasetArchive steps'
-		goto Done
-	end
+    ---------------------------------------------------
+    -- get datasets from DMS that are in archive required state
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- make jobs
-	---------------------------------------------------
-	--
-	IF @infoOnly = 0
-	BEGIN
-		INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Comment)
-		SELECT DISTINCT
-		  'DatasetArchive' AS Script,
-		  Dataset,
-		  Dataset_ID,
-		  'Created from direct DMS import' AS Comment
-		FROM
-		  #AUJobs			
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			set @message = 'Error trying to add new DatasetArchive steps'
-			goto Done
-		end
-	END
+    INSERT INTO #AUJobs( Dataset,
+                         Dataset_ID )
+    SELECT Dataset,
+           Dataset_ID
+    FROM V_DMS_Dataset_Archive_Status
+    WHERE Archive_State_ID = 1 AND
+          Dataset_State_ID = 3 AND
+          Archive_State_Last_Affected > DateAdd(day, -@ImportWindowDays, GetDate())
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error getting candidate DatasetArchive steps'
+        goto Done
+    end
+
+    ---------------------------------------------------
+    -- make jobs
+    ---------------------------------------------------
+    --
+    IF @infoOnly = 0
+    BEGIN
+        INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Comment)
+        SELECT DISTINCT
+          'DatasetArchive' AS Script,
+          Dataset,
+          Dataset_ID,
+          'Created from direct DMS import' AS Comment
+        FROM
+          #AUJobs
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            set @message = 'Error trying to add new DatasetArchive steps'
+            goto Done
+        end
+    END
 
 
-	---------------------------------------------------
-	-- Exit
-	---------------------------------------------------
-	--
+    ---------------------------------------------------
+    -- Exit
+    ---------------------------------------------------
+    --
 Done:
-	If @LoggingEnabled = 1 AND @myError > 0 AND @message <> ''
-	Begin
-		exec PostLogEntry 'Error', @message, 'MakeNewJobsFromDMSArchiveReqd'
-	End
+    If @LoggingEnabled = 1 AND @myError > 0 AND @message <> ''
+    Begin
+        exec PostLogEntry 'Error', @message, 'MakeNewJobsFromDMSArchiveReqd'
+    End
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[MakeNewJobsFromDMSArchiveReqd] TO [DDL_Viewer] AS [dbo]

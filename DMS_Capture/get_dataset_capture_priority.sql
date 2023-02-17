@@ -7,7 +7,7 @@ GO
 CREATE FUNCTION [dbo].[GetDatasetCapturePriority]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Determines if the dataset warrants preferential processing priority for dataset capture
 **      This procedure is used by MakeNewJobsFromDMS to define the capture job priority
 **
@@ -18,7 +18,7 @@ CREATE FUNCTION [dbo].[GetDatasetCapturePriority]
 **
 **  Auth:   mem
 **  Date:   06/27/2019 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @datasetName varchar(128),
@@ -51,7 +51,7 @@ BEGIN
             Set @priority = 4
         End
     End
-    
+
     Return @priority
 END
 

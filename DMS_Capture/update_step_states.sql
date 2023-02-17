@@ -7,14 +7,14 @@ GO
 CREATE PROCEDURE [dbo].[UpdateStepStates]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Determine which steps will be enabled or skipped based
 **      upon completion of target steps that they depend upon
-**    
+**
 **  Auth:   grk
 **  Date:   09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          06/01/2020 mem - Tabs to spaces
-**    
+**
 *****************************************************/
 (
     @message varchar(512) output,
@@ -24,17 +24,17 @@ CREATE PROCEDURE [dbo].[UpdateStepStates]
 )
 As
     set nocount on
-    
+
     Declare @myError INT = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
     Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
-    
+
     Declare @result int
 
     ---------------------------------------------------
-    -- perform state evaluation process followed by 
+    -- perform state evaluation process followed by
     -- step update process and repeat until no more
     -- step states were changed
     ---------------------------------------------------
@@ -46,7 +46,7 @@ As
     While @done = 0
     Begin
 
-        -- Get unevaluated dependencies for steps that are finished 
+        -- Get unevaluated dependencies for steps that are finished
         -- (skipped or completed)
         --
         exec @result = EvaluateStepDependencies @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
@@ -55,12 +55,12 @@ As
         -- and set state of steps that have them all satisfied
         --
         exec @result = UpdateDependentSteps @message output, @numStepsSkipped output, @infoOnly=@infoOnly, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
-        
+
         -- Repeat if any step states were changed (but only if @infoOnly = 0)
         --
         If not (@numStepsSkipped > 0 AND @infoOnly = 0)
             set @done = 1
-        
+
     End
 
     ---------------------------------------------------

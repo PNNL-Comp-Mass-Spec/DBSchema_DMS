@@ -35,7 +35,7 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int= 0
-        
+
     Declare @continue tinyint
     Declare @datasetID int
     Declare @logMsg varchar(512)
@@ -50,7 +50,7 @@ As
     Set @datasetIDs = IsNull(@datasetIDs, '')
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
-    
+
     --------------------------------------------
     -- Create a table to hold datasets to process
     --------------------------------------------
@@ -58,9 +58,9 @@ As
     CREATE TABLE #TmpDatasetsToProcess (
         Dataset_ID int not null
     )
-    
+
     CREATE CLUSTERED INDEX #IX_TmpDatasetsToProcess ON #TmpDatasetsToProcess (Dataset_ID)
-    
+
     --------------------------------------------
     -- Look for Datasets with entries in T_Dataset_Info_XML but null values for File_Info_Last_Modified in DMS
     -- Alternatively, if @replaceExistingData is non zero, process all entries in T_Dataset_Info_XML
@@ -71,7 +71,7 @@ As
     FROM T_Dataset_Info_XML DI
          LEFT OUTER JOIN S_DMS_T_Dataset
            ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID
-    WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL Or @replaceExistingData <> 0) And 
+    WHERE (S_DMS_T_Dataset.File_Info_Last_Modified IS NULL Or @replaceExistingData <> 0) And
           DI.Ignore = 0
     --
     SELECT @myRowCount = @@RowCount
@@ -102,7 +102,7 @@ As
     Begin
         Set @message = 'Ignoring ' + Cast(@myRowCount as varchar(12)) + ' dataset(s) in T_Dataset_Info_XML because they do not exist in DMS5.T_Dataset'
         exec PostLogEntry 'Info', @message, 'UpdateMissedDMSFileInfo'
-        
+
         --------------------------------------------
         -- Delete any entries in T_Dataset_Info_XML that were cached over 7 days ago and do not exist in S_DMS_T_Dataset
         --------------------------------------------
@@ -141,9 +141,9 @@ As
                   FROM T_Dataset_Info_XML DI
                        INNER JOIN S_DMS_T_Dataset
                          ON DI.Dataset_ID = S_DMS_T_Dataset.Dataset_ID AND
-                            DI.Cache_Date > S_DMS_T_Dataset.File_Info_Last_Modified 
+                            DI.Cache_Date > S_DMS_T_Dataset.File_Info_Last_Modified
                   WHERE DI.Ignore = 0
-                  ) InnerQ 
+                  ) InnerQ
          ) FilterQ
     WHERE (ScanCountNew <> ISNULL(Scan_Count_Old, 0)) OR
           (FileSizeBytesNew <> ISNULL(File_Size_Bytes_Old, 0) AND FileSizeBytesNew > 0)
@@ -153,10 +153,10 @@ As
     --------------------------------------------
     -- Process each of the datasets in #TmpDatasetsToProcess
     --------------------------------------------
-    
+
     Set @continue = 1
     Set @datasetID = -1
-    
+
     While @continue = 1
     Begin
         SELECT TOP 1 @datasetID = Dataset_ID
@@ -165,7 +165,7 @@ As
         ORDER BY Dataset_ID
         --
         SELECT @myRowCount = @@RowCount
-        
+
         If @myRowCount = 0
             Set @continue = 0
         Else
@@ -197,9 +197,9 @@ As
 
             End
         End
-        
+
     End
-    
+
     return @myError
 
 GO

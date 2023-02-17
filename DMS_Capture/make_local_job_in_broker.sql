@@ -7,9 +7,9 @@ GO
 CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 /****************************************************
 **
-**  Desc: 
-**      Create capture job directly in broker database 
-**    
+**  Desc:
+**      Create capture job directly in broker database
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
@@ -35,7 +35,7 @@ CREATE PROCEDURE [dbo].[MakeLocalJobInBroker]
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount int = 0
 
@@ -67,7 +67,7 @@ AS
     )
 
 --    CREATE INDEX #IX_Jobs_Job ON #Jobs (Job)
-    
+
     CREATE TABLE #Job_Steps (
         [Job] int NOT NULL,
         [Step_Number] int NOT NULL,
@@ -109,7 +109,7 @@ AS
     ---------------------------------------------------
     -- dataset
     ---------------------------------------------------
-    
+
     Declare @datasetNum varchar(128)
     Declare @datasetID int
     SET @datasetNum = 'na'
@@ -126,8 +126,8 @@ AS
     --
     --
     -- get contents of script and tag for results Directory name
-    SELECT @scriptXML = Contents, @tag = Results_Tag 
-    FROM T_Scripts 
+    SELECT @scriptXML = Contents, @tag = Results_Tag
+    FROM T_Scripts
     WHERE Script = @scriptName
 
     ---------------------------------------------------
@@ -141,19 +141,19 @@ AS
                        Dataset,
                        Dataset_ID,
                        Results_Directory_Name )
-    VALUES(@job, 
-           @priority, 
-           @scriptName, 
-           1, 
-           @datasetNum, 
-           @datasetID, 
+    VALUES(@job,
+           @priority,
+           @scriptName,
+           1,
+           @datasetNum,
+           @datasetID,
            NULL)
 
 
     ---------------------------------------------------
     -- save job parameters as XML into temp table
     ---------------------------------------------------
-    -- FUTURE: need to get set of parameters normally provided by GetJobParamTable, 
+    -- FUTURE: need to get set of parameters normally provided by GetJobParamTable,
     -- except for the job specifc ones which need to be provided as initial content of @jobParamXML
     --
     INSERT INTO #Job_Parameters (Job, Parameters)
@@ -164,11 +164,11 @@ AS
     -- create the basic job structure (steps and dependencies)
     -- Details are stored in #Job_Steps and #Job_Step_Dependencies
     ---------------------------------------------------
-    -- 
+    --
     exec @myError = CreateStepsForJob @job, @scriptXML, @resultsDirectoryName, @message output
-        
+
     ---------------------------------------------------
-    -- Perform a mixed bag of operations on the jobs 
+    -- Perform a mixed bag of operations on the jobs
     -- in the temporary tables to finalize them before
     --  copying to the main database tables
     ---------------------------------------------------
@@ -180,7 +180,7 @@ AS
     ---------------------------------------------------
     Declare @transName varchar(32)
     set @transName = 'MakeLocalJobInBroker'
-    
+
     ---------------------------------------------------
     -- move temp tables to main tables
     ---------------------------------------------------
@@ -190,7 +190,7 @@ AS
         begin transaction @transName
 
         -- MoveJobsToMainTables sproc assumes that T_Jobs table entry is already there
-        --    
+        --
         INSERT INTO T_Jobs
             (
               Priority,
@@ -203,7 +203,7 @@ AS
               Storage_Server
             )
         VALUES
-            ( 
+            (
               @priority,
               @scriptName,
               1,
@@ -213,9 +213,9 @@ AS
               @comment,
               NULL
             )
-            
+
         set @job = IDENT_CURRENT('T_Jobs')
-        
+
         UPDATE #Jobs  SET Job = @Job
         UPDATE #Job_Steps  SET Job = @Job
         UPDATE #Job_Step_Dependencies  SET Job = @Job
@@ -244,13 +244,13 @@ Done:
     end
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'MakeLocalJobInBroker'
     END CATCH
     return @myError

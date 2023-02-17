@@ -7,17 +7,17 @@ GO
 CREATE PROCEDURE [dbo].[MakeNewArchiveJobsFromDMS]
 /****************************************************
 **
-**  Desc:   Add dataset archive jobs from DMS 
+**  Desc:   Add dataset archive jobs from DMS
 **          for datsets that are in archive “New” state that aren’t
 **          already in table.
 **
 **  Auth:   grk
-**  Date:   01/08/2010 grk - Initial release 
+**  Date:   01/08/2010 grk - Initial release
 **          10/24/2014 mem - Changed priority to 2 (since we want archive jobs to have priority over non-archive jobs)
 **          09/17/2015 mem - Added parameter @infoOnly
 **          06/13/2018 mem - Remove unused parameter @debugMode
 **          06/27/2019 mem - Changed priority to 3 (since default job priority is now 4)
-**    
+**
 *****************************************************/
 (
     @bypassDMS tinyint = 0,
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[MakeNewArchiveJobsFromDMS]
 )
 As
     Set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -41,13 +41,13 @@ As
     Declare @JobsProcessed int
     Declare @JobCountToResume int
     Declare @JobCountToReset int
-    
+
     Declare @MaxJobsToAddResetOrResume int
 
     Declare @StartTime datetime
     Declare @LastLogTime datetime
-    Declare @StatusMessage varchar(512)    
-        
+    Declare @StatusMessage varchar(512)
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -55,7 +55,7 @@ As
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @bypassDMS = IsNull(@bypassDMS, 0)
     Set @maxJobsToProcess = IsNull(@maxJobsToProcess, 0)
-    
+
     Set @message = ''
 
     If @maxJobsToProcess <= 0
@@ -67,10 +67,10 @@ As
     Set @loggingEnabled = IsNull(@loggingEnabled, 0)
     Set @logIntervalThreshold = IsNull(@logIntervalThreshold, 15)
     Set @loopingUpdateInterval = IsNull(@loopingUpdateInterval, 5)
-    
+
     If @logIntervalThreshold = 0
         Set @loggingEnabled = 1
-        
+
     If @loopingUpdateInterval < 2
         Set @loopingUpdateInterval = 2
 
@@ -79,14 +79,14 @@ As
         Set @StatusMessage = 'Entering (' + CONVERT(VARCHAR(12), @bypassDMS) + ')'
         exec PostLogEntry 'Progress', @StatusMessage, 'MakeNewArchiveJobsFromDMS'
     End
-    
+
     ---------------------------------------------------
     --  Add new jobs
     ---------------------------------------------------
     --
     IF @bypassDMS = 0
     BEGIN -- <AddJobs>
-    
+
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @StatusMessage = 'Querying DMS'
@@ -95,7 +95,7 @@ As
 
         If @infoOnly = 0
         Begin -- <InsertQuery>
-            
+
             INSERT INTO T_Jobs (Script,
                                 [Comment],
                                 Dataset,
@@ -119,7 +119,7 @@ As
                 Set @message = 'Error creating archive jobs'
                 goto Done
             end
-            
+
         End -- </InsertQuery>
         Else
         Begin -- <Preview>
@@ -136,9 +136,9 @@ As
             WHERE Target.Dataset_ID IS NULL
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
         End -- </Preview>
-        
+
     END -- </AddJobs>
 
     ---------------------------------------------------

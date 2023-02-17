@@ -7,11 +7,11 @@ GO
 CREATE PROCEDURE [dbo].[CreateJobSteps]
 /****************************************************
 **
-**  Desc: 
-**      Make entries in job steps table and job step 
+**  Desc:
+**      Make entries in job steps table and job step
 **      dependency table for each newly added job
 **      according to definition of script for that job
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
@@ -24,7 +24,7 @@ CREATE PROCEDURE [dbo].[CreateJobSteps]
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          09/17/2015 mem - Added parameter @infoOnly
 **          05/17/2019 mem - Switch from folder to directory in temp tables
-**    
+**
 *****************************************************/
 (
     @message varchar(512) output,
@@ -43,19 +43,19 @@ As
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @StepCount int = 0
     Declare @StepCountNew int = 0
-    
+
     Declare @MaxJobsToAdd int
 
     Declare @StartTime datetime
     Declare @LastLogTime datetime
-    Declare @StatusMessage varchar(512)    
+    Declare @StatusMessage varchar(512)
 
     Declare @JobCountToProcess int
     Declare @JobsProcessed int
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
@@ -66,7 +66,7 @@ As
     Set @existingJob = IsNull(@existingJob, 0)
     Set @mode = IsNull(@mode, '')
     Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
-    
+
     If @mode Not In ('CreateFromImportedJobs', 'ExtendExistingJob', 'UpdateExistingJob')
     Begin
         Set @message = 'Unknown mode: ' + @Mode
@@ -78,10 +78,10 @@ As
     Set @LoggingEnabled = IsNull(@LoggingEnabled, 0)
     Set @LogIntervalThreshold = IsNull(@LogIntervalThreshold, 15)
     Set @LoopingUpdateInterval = IsNull(@LoopingUpdateInterval, 5)
-    
+
     If @LogIntervalThreshold = 0
         Set @LoggingEnabled = 1
-        
+
     If @LoopingUpdateInterval < 2
         Set @LoopingUpdateInterval = 2
 
@@ -113,7 +113,7 @@ As
     )
 
     CREATE INDEX #IX_Jobs_Job ON #Jobs (Job)
-    
+
     CREATE TABLE #Job_Steps (
         [Job] int NOT NULL,
         [Step_Number] int NOT NULL,
@@ -151,7 +151,7 @@ As
     )
 
     CREATE INDEX #IX_Job_Parameters_Job ON #Job_Parameters (Job)
-    
+
     ---------------------------------------------------
     -- Get jobs that need to be processed
     -- into temp table
@@ -163,10 +163,10 @@ As
             Set @MaxJobsToAdd = @MaxJobsToProcess
         Else
             Set @MaxJobsToAdd = 1000000
-        
+
         if @DebugMode = 0 OR (@DebugMode <> 0 And @existingJob = 0)
         Begin
-            INSERT INTO #Jobs( 
+            INSERT INTO #Jobs(
                 Job,
                 Priority,
                 Script,
@@ -197,7 +197,7 @@ As
                 T_Jobs TJ
                 INNER JOIN V_DMS_Get_Dataset_Definition AS VDD ON TJ.Dataset_ID = VDD.Dataset_ID
             WHERE
-                TJ.State = 0    
+                TJ.State = 0
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -241,7 +241,7 @@ As
                 goto Done
             end
         End
-    End    
+    End
 
     ---------------------------------------------------
     -- loop through jobs and process them into temp tables
@@ -253,12 +253,12 @@ As
     Declare @resultsDirectoryName varchar(128)
     Declare @datasetID int
     Declare @done tinyint
-    
+
     SELECT @JobCountToProcess = COUNT(*)
     FROM #Jobs
     --
     Set @JobCountToProcess = IsNull(@JobCountToProcess, 0)
-    
+
     set @done = 0
     set @prevJob = 0
     Set @JobsProcessed = 0
@@ -267,21 +267,21 @@ As
     while @done = 0
     begin --<a>
         ---------------------------------------------------
-        -- get next unprocessed job and 
+        -- get next unprocessed job and
         -- build it into the temporary tables
         ---------------------------------------------------
-        -- 
+        --
         set @job = 0
         --
-        SELECT TOP 1 
+        SELECT TOP 1
             @job = Job,
             @scriptName = Script,
             @datasetID = Dataset_ID,
             @resultsDirectoryName = ISNULL(Results_Directory_Name, '')
-        FROM 
+        FROM
             #Jobs
         WHERE Job > @prevJob
-        ORDER BY Job        
+        ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -309,8 +309,8 @@ As
             set @tag = 'unk'
 
             -- get contents of script and tag for results Directory name
-            SELECT @scriptXML = Contents, @tag = Results_Tag 
-            FROM T_Scripts 
+            SELECT @scriptXML = Contents, @tag = Results_Tag
+            FROM T_Scripts
             WHERE Script = @scriptName
 
             -- add additional scripts, if specified
@@ -342,12 +342,12 @@ As
 
             Set @JobsProcessed = @JobsProcessed + 1
         end --<b>
-        
+
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             -- Make sure @LoggingEnabled is 1
             Set @LoggingEnabled = 1
-            
+
             Set @StatusMessage = '... Creating job steps: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
             exec PostLogEntry 'Progress', @StatusMessage, 'CreateJobSteps'
             Set @LastLogTime = GetDate()
@@ -370,7 +370,7 @@ As
             --     #Job_Parameters
             exec MoveJobsToMainTables @message output, @DebugMode
         end
-    
+
     End
 
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
@@ -379,7 +379,7 @@ As
         Set @StatusMessage = 'CreateJobSteps complete'
         exec PostLogEntry 'Progress', @StatusMessage, 'CreateJobSteps'
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------

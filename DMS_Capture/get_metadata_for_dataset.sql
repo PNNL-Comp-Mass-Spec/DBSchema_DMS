@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[GetMetadataForDataset]
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/03/2023 bcg - Update column name for V_DMS_Get_Experiment_Metadata
 **          02/09/2023 bcg - Update column name for S_DMS_V_DatasetFullDetails
-**    
+**
 *****************************************************/
 (
     @datasetName varchar(128)
@@ -89,7 +89,7 @@ AS
            @datasetId = Dataset_ID,
            @instrumentName = IN_name,
            @datasetComment = DS_comment,
-           @datasetSecSep = DS_sec_sep,           
+           @datasetSecSep = DS_sec_sep,
            @lcCartName = LC_Cart_Name,
            @lcCartConfig = LC_Cart_Config,
            @lcColumn = LC_Column,
@@ -141,7 +141,7 @@ AS
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_organism_name', @organismName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_comment', @experimentComment)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_sample_concentration', @experimentSampleConc)
-    
+
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_sample_labelling', @experimentLabelling)
 
     If @labellingReporterMzMin > 0
@@ -160,7 +160,7 @@ AS
     -- Insert auxiliary metadata for the dataset's experiment
     ---------------------------------------------------
 
-    INSERT INTO #ParamTab ([Section], [Name], Value)  
+    INSERT INTO #ParamTab ([Section], [Name], Value)
     SELECT @stepParmSectionName AS [Section], 'Meta_Aux_Info:' + Target + ':' + Category + '.' + Subcategory + '.' + Item AS [Name], [Value]
     FROM V_DMS_Get_Experiment_Metadata
     WHERE Experiment = @experimentName

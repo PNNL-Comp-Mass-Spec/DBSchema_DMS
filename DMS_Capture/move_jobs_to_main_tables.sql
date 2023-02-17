@@ -24,7 +24,7 @@ CREATE PROCEDURE [dbo].[MoveJobsToMainTables]
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          09/17/2015 mem - Added parameter @DebugMode
 **          05/17/2019 mem - Switch from folder to directory in temp tables
-**    
+**
 *****************************************************/
 (
     @message varchar(512) output,
@@ -32,10 +32,10 @@ CREATE PROCEDURE [dbo].[MoveJobsToMainTables]
 )
 As
     set nocount on
-    
+
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
-    
+
     set @message = ''
     set @DebugMode = IsNull(@DebugMode, 0)
 
@@ -49,7 +49,7 @@ As
     ---------------------------------------------------
     -- populate actual tables from accumulated entries
     ---------------------------------------------------
-    
+
     If @DebugMode <> 0
     Begin
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobs') Drop table T_Tmp_NewJobs
@@ -57,10 +57,10 @@ As
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobStepDependencies') Drop table T_Tmp_NewJobStepDependencies
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobParameters') Drop table T_Tmp_NewJobParameters
 
-        select * INTO T_Tmp_NewJobs from #Jobs 
-        select * INTO T_Tmp_NewJobSteps from #Job_Steps  
-        select * INTO T_Tmp_NewJobStepDependencies from #Job_Step_Dependencies 
-        select * INTO T_Tmp_NewJobParameters from #Job_Parameters 
+        select * INTO T_Tmp_NewJobs from #Jobs
+        select * INTO T_Tmp_NewJobSteps from #Job_Steps
+        select * INTO T_Tmp_NewJobStepDependencies from #Job_Step_Dependencies
+        select * INTO T_Tmp_NewJobParameters from #Job_Parameters
     End
 
     begin transaction @transName
@@ -99,7 +99,7 @@ As
         Processor,
         Holdoff_Interval_Minutes,
         Retry_Count
-    )    
+    )
     SELECT
         Job,
         Step_Number,
