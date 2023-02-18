@@ -9,7 +9,7 @@ CREATE PROCEDURE [dbo].[retry_selected_jobs]
 **  Desc:
 **      Updates capture jobs in temporary table #SJL
 **
-**      Note: Use SP UpdateMultipleCaptureJobs to retry a list of jobs
+**      Note: Use SP update_multiple_capture_jobs to retry a list of jobs
 **
 **  Return values: 0: success, otherwise, error code
 **

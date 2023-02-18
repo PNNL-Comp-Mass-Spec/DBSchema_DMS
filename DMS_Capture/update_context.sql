@@ -324,7 +324,7 @@ AS
     Begin Try
 
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'UpdateCPULoading')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'update_cpu_loading')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -333,13 +333,13 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' UpdateCPULoading'
+            Set @StatusMessage = @Action + ' update_cpu_loading'
             exec post_log_entry 'Progress', @StatusMessage, 'update_context'
         End
 
-        Set @CurrentLocation = 'Call UpdateCPULoading'
+        Set @CurrentLocation = 'Call update_cpu_loading'
         if @result <> 0
-            exec UpdateCPULoading @message output
+            exec update_cpu_loading @message output
 
     End Try
     Begin Catch

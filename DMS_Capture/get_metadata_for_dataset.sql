@@ -52,7 +52,7 @@ AS
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Investigation', 'Proteomics')
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Instrument_Type', 'Mass spectrometer')
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_Number', @datasetName)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_Name', @datasetName)
 
     ---------------------------------------------------
     -- Insert primary metadata for the dataset

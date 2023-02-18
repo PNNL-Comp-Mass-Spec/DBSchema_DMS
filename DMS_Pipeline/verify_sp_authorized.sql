@@ -97,7 +97,7 @@ AS
             If @raiseError > 0
             Begin
                 Set @message = 'User ' + @loginName + ' cannot execute procedure ' + @procedureName + ' from host ' + @clientHostName
-                Exec PostLogEntry 'Error', @message, 'verify_sp_authorized'
+                Exec post_log_entry 'Error', @message, 'verify_sp_authorized'
 
                 Declare @msg varchar(128) = 'Access denied for current user (' + @loginName + ' on host ' + @clientHostName + ')'
                 RAISERROR (@msg, 11, 4)

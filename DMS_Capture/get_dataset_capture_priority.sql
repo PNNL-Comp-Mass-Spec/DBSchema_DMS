@@ -8,7 +8,7 @@ CREATE FUNCTION [dbo].[get_dataset_capture_priority]
 **
 **  Desc:
 **      Determines if the dataset warrants preferential processing priority for dataset capture
-**      This procedure is used by MakeNewJobsFromDMS to define the capture job priority
+**      This procedure is used by make_new_jobs_from_dms to define the capture job priority
 **
 **      If the dataset name matches one of the filters below, the capture priority will be 2 instead of 4
 **      Otherwise, if the instrument group matches one of the filters, the capture priority will be 6 instead of 4

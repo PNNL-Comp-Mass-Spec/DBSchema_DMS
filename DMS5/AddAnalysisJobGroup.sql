@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 /****************************************************
 **
@@ -871,7 +870,7 @@ As
                 Set @scriptName = 'MSFragger_DataPkg'
             End
 
-            -- Call AddUpdateLocalJobInBroker
+            -- Call add_update_local_job_in_broker
             exec @myError = dbo.S_Pipeline_AddUpdateLocalJob
                                 @job = @pipelineJob output,
                                 @scriptName = @scriptName,
@@ -879,7 +878,7 @@ As
                                 @priority = @priority,
                                 @jobParam = @jobParam,
                                 @comment = @comment,
-                                @ownerPRN = @ownerPRN,
+                                @ownerUsername = @ownerPRN,
                                 @dataPackageID = @dataPackageID,
                                 @resultsFolderName = @resultsFolderName output,
                                 @mode = @mode,
@@ -1332,8 +1331,6 @@ Explain:
     End Catch
 
     return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [DDL_Viewer] AS [dbo]

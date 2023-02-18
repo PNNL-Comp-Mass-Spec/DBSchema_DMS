@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
 ** 
@@ -425,8 +424,8 @@ As
 
             Exec PostEmailAlert 'Error', @message, 'UpdateDatasetFileInfoXML', @recipients='admins', @postMessageToLogEntries=1, @duplicateEntryHoldoffHours=6
 
-            -- Error code 53600 is used by stored procedure UpdateDMSDatasetState in the DMS_Capture database
-            -- Call stack: UpdateContext->UpdateJobState->UpdateDMSDatasetState->UpdateDMSFileInfoXML->UpdateDatasetFileInfoXML
+            -- Error code 53600 is used by stored procedure update_dms_dataset_state in the DMS_Capture database
+            -- Call stack: update_context->update_job_state->update_dms_dataset_state->update_dms_file_info_xml->update_dataset_file_info_xml
             Set @myError = 53600
             Goto Done
 
@@ -799,7 +798,6 @@ Done:
         Exec PostUsageLogEntry 'UpdateDatasetFileInfoXML', @usageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [DDL_Viewer] AS [dbo]

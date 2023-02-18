@@ -15,7 +15,7 @@ CREATE PROCEDURE [dbo].[disable_archive_dependent_managers]
 **          07/24/2008 mem - Changed @ManagerTypeIDList from '1,2,3,4,8' to '2,3,8'
 **          07/24/2008 mem - Changed @ManagerTypeIDList from '2,3,8' to '8'
 **                         - Note that we do not include 15=CaptureTaskManager because capture tasks can still occur when the archive is unavailable
-**                         - However, you should run Stored Procedure EnableDisableArchiveStepTools in the DMS_Capture database to disable the archive-dependent step tools
+**                         - However, you should run Stored Procedure enable_disable_archive_step_tools in the DMS_Capture database to disable the archive-dependent step tools
 **          02/12/2020 mem - Rename parameter to @infoOnly
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
