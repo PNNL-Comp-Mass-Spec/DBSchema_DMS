@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 128 ******/
+/****** RowCount: 129 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -102,6 +102,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-2D-Formic',33,'Waters constant 
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Acetylome-2hr',120,'Waters LC, 2 hr separation',1,'LC-Acetylome',1,'8/11/2021 7:48:34 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_100min',37,'Waters constant flow, formic acid, 100 minute separation',0,'LC-Formic_2hr',1,'8/26/2010 12:24:53 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_10hr',45,'Waters constant flow, formic acid, 600 minute (10 hr) separation',0,'Other',1,'11/10/2011 7:38:11 AM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_150min',130,'Waters constant flow, formic acid, 150 minute separation',1,'LC-Formic_150min',1,'1/31/2023 4:11:11 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_20min',34,'Waters constant flow, formic acid, 20 minute separation',0,'LC-Formic_30min',0,'9/7/2010 10:08:49 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_2hr',100,'Waters constant flow, formic acid, 120 minute (2 hr) separation',1,'LC-Formic_2hr',1,'2/1/2017 8:33:12 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_30min',35,'Waters constant flow, formic acid, 30 minute separation',1,'LC-Formic_30min',0,'8/28/2010 1:03:43 PM')

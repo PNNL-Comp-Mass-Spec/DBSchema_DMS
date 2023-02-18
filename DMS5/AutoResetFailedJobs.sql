@@ -513,6 +513,8 @@ As
     END CATCH
 
     return @myError
+
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[AutoResetFailedJobs] TO [DDL_Viewer] AS [dbo]
 GO
