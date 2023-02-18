@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
 **          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
 **          02/14/2023 mem - Use new parameter names for ValidateRequestedRunBatchParams
+**          02/17/2023 mem - Use new parameter name when calling AddUpdateRequestedRunBatch
 **
 *****************************************************/
 (
@@ -426,7 +427,9 @@ As
             Declare @batchID Int = 0
 
             -- Auto-create a batch for the new requests
-            Exec @myError = AddUpdateRequestedRunBatch @id = @batchID output
+            --
+            Exec @myError = AddUpdateRequestedRunBatch
+                                            @id = @batchID output
                                            ,@name = @batchName
                                            ,@description = @batchDescription
                                            ,@requestedRunList = @requestedRunList
@@ -434,7 +437,7 @@ As
                                            ,@requestedBatchPriority = @batchPriority
                                            ,@requestedCompletionDate = @batchCompletionDate
                                            ,@justificationHighPriority = @batchPriorityJustification
-                                           ,@requestedInstrument = @instrumentGroupToUse
+                                           ,@requestedInstrumentGroup = @instrumentGroupToUse
                                            ,@comment = @batchComment
                                            ,@mode = @mode
                                            ,@message = @msg output
