@@ -80,7 +80,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Trigger [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Batches]
+CREATE TRIGGER [dbo].[trig_u_Requested_Run_Batches] on [dbo].[T_Requested_Run_Batches]
 After Update
 /****************************************************
 **
@@ -95,6 +95,7 @@ After Update
 **          08/01/2022 mem - Only update RDS_NameCode if the name code has changed; 
 **                           this is important for requested runs with BatchID = 0 (since we want to avoid 
 **                           updating large numbers of rows if the name code didn't actually change)
+**          02/21/2023 mem - Pass batch group ID to get_requested_run_name_code
 **    
 *****************************************************/
 AS
@@ -108,18 +109,19 @@ AS
        Update (Owner)
     Begin
         UPDATE T_Requested_Run
-        SET RDS_NameCode = dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
-                                                         RR.RDS_BatchID, RRB.Batch, RRB.Created,
+        SET RDS_NameCode = dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+                                                         RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
                                                          RR.RDS_type_ID, RR.RDS_Sec_Sep)
         FROM T_Requested_Run RR
              INNER JOIN inserted
                ON RR.RDS_BatchID = inserted.ID
              INNER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
-        WHERE RR.RDS_NameCode <> dbo.[GetRequestedRunNameCode](RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
-                                                               RR.RDS_BatchID, RRB.Batch, RRB.Created,
+        WHERE RR.RDS_NameCode <> dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
+                                                               RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
                                                                RR.RDS_type_ID, RR.RDS_Sec_Sep)
     End
+
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batches] ENABLE TRIGGER [trig_u_Requested_Run_Batches]
