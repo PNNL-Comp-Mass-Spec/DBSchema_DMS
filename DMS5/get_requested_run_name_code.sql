@@ -1,10 +1,10 @@
-/****** Object:  UserDefinedFunction [dbo].[GetRequestedRunNameCode] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_requested_run_name_code] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
+CREATE FUNCTION [dbo].[get_requested_run_name_code]
 /****************************************************
 **
 **  Desc:
@@ -12,7 +12,7 @@ CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
 **      This string is used when grouping requested runs for run planning purposes
 **
 **      The request name code will be based on the request name, date, requester PRN, dataset type, and separation type if @batchID = 0
-**      Otherwise, if @batchID is non-zero, it is based on the batch name, date, batch ID, dataset type, and separation type
+**      Otherwise, if @batchID is non-zero, it is based on the batch group ID, batch name, date, batch ID, dataset type, and separation type
 **
 **      Examples:
 **          GCM_20210825_R_POIR043_18_GC
@@ -26,6 +26,7 @@ CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
 **                         - Increased size of return string to varchar(64)
 **          08/26/2021 mem - Use Batch ID instead of PRN
 **          06/22/2022 mem - Remove parameter @batchRequesterPRN since unused
+**          02/21/2023 mem - Rename function and add parameter @batchGroupID
 **
 *****************************************************/
 (
@@ -34,6 +35,7 @@ CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
     @requesterPRN varchar(64),
     @batchID int,
     @batchName varchar(128),
+    @batchGroupID int,
     @batchCreated datetime,
     @datasetTypeID int,
     @separationType varchar(32)
@@ -41,7 +43,7 @@ CREATE FUNCTION [dbo].[GetRequestedRunNameCode]
 RETURNS varchar(64)
 AS
 BEGIN
-    Return CASE WHEN @batchID = 0
+    RETURN CASE WHEN Coalesce(@batchID, 0) = 0
                 THEN
                     SUBSTRING(@requestName, 1, 3) + '_' +
                     CONVERT(varchar(10), @requestCreated, 112) + '_' +
@@ -50,6 +52,10 @@ BEGIN
                     CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
                     IsNull(@separationType, '')
                 ELSE
+                    CASE WHEN Coalesce(@batchGroupID, 0) > 0 
+                         THEN CAST(@batchGroupID AS VarChar(12)) + '_' 
+                         ELSE '' 
+                    END +
                     SUBSTRING(@batchName, 1, 3) + '_' +
                     CONVERT(varchar(10), @batchCreated, 112) + '_' +
                     'B_' +
@@ -60,7 +66,4 @@ BEGIN
            END
 END
 
-
-GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunNameCode] TO [DDL_Viewer] AS [dbo]
 GO
