@@ -104,7 +104,8 @@ AS
 
     Set NoCount On
 
-    If Update (Batch) OR
+    If Update (Batch) Or
+       Update (Batch_Group_ID) OR
        Update (Created) OR
        Update (Owner)
     Begin
