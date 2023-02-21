@@ -111,16 +111,16 @@ AS
     Begin
         UPDATE T_Requested_Run
         SET RDS_NameCode = dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
-                                                         RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
-                                                         RR.RDS_type_ID, RR.RDS_Sec_Sep)
+                                                           RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
+                                                           RR.RDS_type_ID, RR.RDS_Sec_Sep)
         FROM T_Requested_Run RR
              INNER JOIN inserted
                ON RR.RDS_BatchID = inserted.ID
              INNER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
         WHERE RR.RDS_NameCode <> dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN, 
-                                                               RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
-                                                               RR.RDS_type_ID, RR.RDS_Sec_Sep)
+                                                                 RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
+                                                                 RR.RDS_type_ID, RR.RDS_Sec_Sep)
     End
 
 

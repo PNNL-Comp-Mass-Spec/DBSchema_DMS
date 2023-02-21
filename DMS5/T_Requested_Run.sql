@@ -293,7 +293,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Trigger trig_d_Requested_Run on dbo.T_Requested_Run
+
+CREATE TRIGGER [dbo].[trig_d_Requested_Run] on [dbo].[T_Requested_Run]
 For Delete
 /****************************************************
 **
@@ -336,7 +337,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create Trigger trig_i_Requested_Run on dbo.T_Requested_Run
+
+CREATE TRIGGER [dbo].[trig_i_Requested_Run] on [dbo].[T_Requested_Run]
 For Insert
 /****************************************************
 **
@@ -355,7 +357,8 @@ AS
 
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 11 AS Target_Type, inserted.ID, RRS.State_ID, 0, GetDate()
-	FROM inserted INNER JOIN T_Requested_Run_State_Name RRS
+	FROM inserted 
+         INNER JOIN T_Requested_Run_State_Name RRS
 		   ON inserted.RDS_Status = RRS.State_Name
 	ORDER BY inserted.ID
 
@@ -407,21 +410,21 @@ AS
     Begin
         UPDATE T_Requested_Run
         SET RDS_NameCode = dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN,
-                                                         RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
-                                                         RR.RDS_type_ID, RR.RDS_Sec_Sep)
+                                                           RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
+                                                           RR.RDS_type_ID, RR.RDS_Sec_Sep)
         FROM T_Requested_Run RR
              INNER JOIN inserted
                ON RR.ID = inserted.ID
              LEFT OUTER JOIN T_Requested_Run_Batches RRB
                ON RRB.ID = RR.RDS_BatchID
-        Where Coalesce(RR.RDS_NameCode, '') <> dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN,
-                                                                             RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
-                                                                             RR.RDS_type_ID, RR.RDS_Sec_Sep)
+        WHERE Coalesce(RR.RDS_NameCode, '') <> dbo.get_requested_run_name_code(RR.RDS_Name, RR.RDS_Created, RR.RDS_Requestor_PRN,
+                                                                               RR.RDS_BatchID, RRB.Batch, RRB.Batch_Group_ID, RRB.Created,
+                                                                               RR.RDS_type_ID, RR.RDS_Sec_Sep)
     End
 
     If Update(RDS_Status)
     Begin
-        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        INSERT INTO T_Event_Log (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
         SELECT 11 AS Target_Type, inserted.ID, RRSNew.State_ID, RRSOld.State_ID, GetDate()
         FROM deleted
              INNER JOIN inserted
@@ -441,6 +444,7 @@ AS
     FROM T_Requested_Run RR
          INNER JOIN inserted
            ON RR.ID = inserted.ID
+
     If Exists (SELECT * FROM deleted)
     Begin
         -- Update Trigger
@@ -448,7 +452,7 @@ AS
         -- Check for renamed requested run
         If Update(RDS_Name)
         Begin
-            INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+            INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name)
             SELECT 11 AS Target_Type,
                    inserted.ID,
                    deleted.RDS_Name,
@@ -464,7 +468,7 @@ AS
         -- If changing from null to a value, log only if another requested run already has the given Dataset ID
         If Update(DatasetID)
         Begin
-            INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+            INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name)
             SELECT 14 AS Target_Type,
                    inserted.ID,
                    Cast(deleted.DatasetID AS varchar(12)) + ': ' + Coalesce(OldDataset.Dataset_Num, '??'),
@@ -479,14 +483,14 @@ AS
                    ON deleted.DatasetID = OldDataset.Dataset_ID
                  LEFT OUTER JOIN T_Dataset AS NewDataset
                    ON inserted.DatasetID = NewDataset.Dataset_ID
-            WHERE NOT deleted.DatasetID IS Null And deleted.DatasetID <> Coalesce(inserted.DatasetID, 0)
+            WHERE NOT deleted.DatasetID IS Null AND deleted.DatasetID <> Coalesce(inserted.DatasetID, 0)
             ORDER BY inserted.ID
         End
                 
         -- Check for updated Experiment ID
         If Update(Exp_ID)
         Begin
-            INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+            INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name)
             SELECT 15 AS Target_Type,
                    inserted.ID,
                    Cast(deleted.Exp_ID AS varchar(12)) + ': ' + OldExperiment.Experiment_Num,
@@ -506,17 +510,17 @@ AS
     If Update(DatasetID)
     Begin
 
-         -- Check whether another requested run already has the new Dataset ID
-        INSERT INTO T_Entity_Rename_Log( Target_Type, Target_ID, Old_Name, New_Name )
+        -- Check whether another requested run already has the new Dataset ID
+        INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name)
         SELECT 14 AS Target_Type,
-                inserted.ID,
-                'Dataset ID ' + Cast(inserted.DatasetID AS varchar(12)) + ' is already referenced by Request ID ' + Cast(RR.ID As varchar(12)),
-                Cast(inserted.DatasetID AS varchar(12)) + ': ' + Coalesce(NewDataset.Dataset_Num, '??')
+               inserted.ID,
+               'Dataset ID ' + Cast(inserted.DatasetID AS varchar(12)) + ' is already referenced by Request ID ' + Cast(RR.ID As varchar(12)),
+               Cast(inserted.DatasetID AS varchar(12)) + ': ' + Coalesce(NewDataset.Dataset_Num, '??')
         FROM T_Requested_Run RR
-                INNER JOIN inserted
-                ON inserted.DatasetID = RR.DatasetID And
-                    inserted.ID <> RR.ID
-                LEFT OUTER JOIN T_Dataset AS NewDataset
+             INNER JOIN inserted
+                ON inserted.DatasetID = RR.DatasetID AND
+                   inserted.ID <> RR.ID
+             LEFT OUTER JOIN T_Dataset AS NewDataset
                 ON inserted.DatasetID = NewDataset.Dataset_ID
         WHERE Not inserted.DatasetID Is Null
         ORDER BY inserted.DatasetID, RR.ID
