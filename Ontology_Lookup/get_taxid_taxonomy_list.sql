@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetTaxIDTaxonomyList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_taxid_taxonomy_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetTaxIDTaxonomyList]
+CREATE FUNCTION [dbo].[get_taxid_taxonomy_list]
 /****************************************************
 **
 **  Desc:   Builds a delimited list of taxonomy information
@@ -15,11 +15,12 @@ CREATE FUNCTION [dbo].[GetTaxIDTaxonomyList]
 **  Auth:   mem
 **  Date:   03/02/2016 mem - Initial version
 **          03/03/2016 mem - Added @ExtendedInfo
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TaxonomyID int,
-    @ExtendedInfo tinyint
+    @taxonomyID int,
+    @extendedInfo tinyint
 )
 RETURNS varchar(4000)
 AS
@@ -29,7 +30,7 @@ BEGIN
     SELECT @list = @list + '|' +
                    [Rank] + ':' +
                    [Name]
-    FROM dbo.GetTaxIDTaxonomyTable ( @TaxonomyID )
+    FROM dbo.get_taxid_taxonomy_table ( @TaxonomyID )
     WHERE Entry_ID = 1 OR
           [Rank] <> 'no rank' OR
           @ExtendedInfo > 0
@@ -40,9 +41,9 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetTaxIDTaxonomyList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_taxid_taxonomy_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_taxid_taxonomy_list] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO [DMSReader] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_taxid_taxonomy_list] TO [DMSReader] AS [dbo]
 GO

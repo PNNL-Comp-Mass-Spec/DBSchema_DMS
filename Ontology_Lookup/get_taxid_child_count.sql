@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetTaxIDChildCount] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_taxid_child_count] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetTaxIDChildCount]
+CREATE FUNCTION [dbo].[get_taxid_child_count]
 /****************************************************
 **
 **  Desc:   Counts the number of nodes with Parent_Tax_ID equal to @TaxonomyID
@@ -14,10 +14,11 @@ CREATE FUNCTION [dbo].[GetTaxIDChildCount]
 **
 **  Auth:   mem
 **  Date:   03/02/2016 mem - Initial version
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TaxonomyID int
+    @taxonomyID int
 )
 RETURNS varchar(4000)
 AS
@@ -32,5 +33,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetTaxIDChildCount] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_taxid_child_count] TO [DDL_Viewer] AS [dbo]
 GO

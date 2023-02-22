@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewENVOTerms] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_envo_terms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewENVOTerms]
+CREATE PROCEDURE [dbo].[add_new_envo_terms]
 /****************************************************
 **
 **  Desc:
@@ -22,7 +22,8 @@ CREATE PROCEDURE [dbo].[AddNewENVOTerms]
 **      [GrandParent_term_ID]
 **
 **  Auth:   mem
-**  Date:   08/24/2017 mem - Initial Version (based on AddNewBTOTerms)
+**  Date:   08/24/2017 mem - Initial Version (based on add_new_bto_terms)
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

@@ -1,15 +1,16 @@
-/****** Object:  StoredProcedure [dbo].[UpdateBTOUsage] ******/
+/****** Object:  StoredProcedure [dbo].[update_bto_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateBTOUsage]
+CREATE PROCEDURE [dbo].[update_bto_usage]
 /****************************************************
 **
 **  Desc:   Updates the usage columns in T_CV_BTO
 **
 **  Auth:   mem
 **  Date:   11/08/2018 mem - Initial version
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -82,7 +83,7 @@ AS
         Begin
             Set @rowsUpdated = @rowsUpdated + @myRowCount
             Set @message = 'Updated ' + Cast(@myRowCount As varchar(12)) + ' ' +
-                           dbo.CheckPlural(@myRowCount, 'row', 'rows') + ' in T_CV_BTO'
+                           dbo.check_plural(@myRowCount, 'row', 'rows') + ' in T_CV_BTO'
         End
 
         UPDATE T_CV_BTO
@@ -100,7 +101,7 @@ AS
         Begin
             Set @rowsUpdated = @rowsUpdated + @myRowCount
             Set @message2 = 'Set usage stats to 0 for ' + Cast(@myRowCount As varchar(12)) + ' ' +
-                            dbo.CheckPlural(@myRowCount, 'row', 'rows') + ' in T_CV_BTO'
+                            dbo.check_plural(@myRowCount, 'row', 'rows') + ' in T_CV_BTO'
 
             If @message = ''
                 Set @message = @message2

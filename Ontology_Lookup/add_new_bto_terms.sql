@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewBTOTerms] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_bto_terms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewBTOTerms]
+CREATE PROCEDURE [dbo].[add_new_bto_terms]
 /****************************************************
 **
 **  Desc:
@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddNewBTOTerms]
 **
 **  Auth:   mem
 **  Date:   08/24/2017 mem - Initial Version
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -363,4 +364,5 @@ AS
     --
 Done:
     return @myError
+
 GO

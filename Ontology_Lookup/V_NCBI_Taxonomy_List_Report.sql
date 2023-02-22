@@ -3,14 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_NCBI_Taxonomy_List_Report]
 AS
 SELECT Nodes.tax_id,
        NodeNames.name,
        Nodes.rank,
        Nodes.parent_tax_id,
-       dbo.GetTaxIDChildCount(Nodes.Tax_ID) AS children,
+       dbo.get_taxid_child_count(Nodes.Tax_ID) AS children,
        ParentNodeName.Name AS parent_name,
        Nodes.embl_code,
        Division.Division_Name AS division,
@@ -35,7 +34,6 @@ FROM T_NCBI_Taxonomy_Names NodeNames
      LEFT OUTER JOIN T_NCBI_Taxonomy_Cached AS SynonymStats
        ON Nodes.Tax_ID = SynonymStats.Tax_ID
 WHERE (NodeNames.Name_Class = 'scientific name')
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_NCBI_Taxonomy_List_Report] TO [DDL_Viewer] AS [dbo]

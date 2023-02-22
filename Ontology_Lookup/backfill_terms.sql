@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[BackfillTerms] ******/
+/****** Object:  StoredProcedure [dbo].[backfill_terms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[BackfillTerms]
+CREATE PROCEDURE [dbo].[backfill_terms]
 /****************************************************
 **
 **  Desc:
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[BackfillTerms]
 **  Auth:   mem
 **  Date:   08/24/2017 mem - Initial Version
 **          03/28/2022 mem - Use new table names
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

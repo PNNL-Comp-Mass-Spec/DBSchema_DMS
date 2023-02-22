@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedNCBITaxonomy] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_ncbi_taxonomy] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedNCBITaxonomy]
+CREATE PROCEDURE [dbo].[update_cached_ncbi_taxonomy]
 /****************************************************
 **
 **  Desc: Updates data in T_NCBI_Taxonomy_Cached
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedNCBITaxonomy]
 **  Auth:   mem
 **  Date:   03/01/2016 mem - Initial version
 **          01/06/2022 mem - Implement support for @infoOnly
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -120,7 +121,7 @@ AS
     MERGE [dbo].[T_NCBI_Taxonomy_Cached] AS t
     USING (
         SELECT Tax_ID,
-               dbo.GetTaxIDSynonymList(TaxIDs.Tax_ID) AS Synonym_List
+               dbo.get_taxid_synonym_list(TaxIDs.Tax_ID) AS Synonym_List
         FROM T_NCBI_Taxonomy_Cached AS TaxIDs
         WHERE TaxIDs.Synonyms > 0
     ) AS s
@@ -149,5 +150,5 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedNCBITaxonomy] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_ncbi_taxonomy] TO [DDL_Viewer] AS [dbo]
 GO

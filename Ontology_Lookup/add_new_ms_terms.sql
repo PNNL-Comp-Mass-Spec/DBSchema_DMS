@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewMSTerms] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_ms_terms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewMSTerms]
+CREATE PROCEDURE [dbo].[add_new_ms_terms]
 /****************************************************
 **
 **  Desc:
@@ -29,10 +29,11 @@ CREATE PROCEDURE [dbo].[AddNewMSTerms]
 **          05/16/2018 mem - Add columns Parent_term_type and GrandParent_term_type
 **          04/03/2022 mem - Fix incorrect field name bug
 **          04/04/2022 mem - Update the merge query to support Parent_term_type being null
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceTableName varchar(24) = 'T_Tmp_PsiMS_2016June',
+    @sourceTableName varchar(24) = 'T_Tmp_PsiMS_2016June',
     @infoOnly tinyint = 1
 )
 AS
@@ -366,5 +367,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewMSTerms] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_ms_terms] TO [DDL_Viewer] AS [dbo]
 GO

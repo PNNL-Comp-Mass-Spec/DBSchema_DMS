@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateUserPermissions]
+CREATE PROCEDURE [dbo].[update_user_permissions]
 /****************************************************
 **
 **  Desc: Updates user permissions in the current DB
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissions]
 **
 **  Auth:   mem
 **  Date:   03/15/2016 mem - Initial Version for Ontology_Lookup
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
@@ -40,14 +41,14 @@ AS
     grant showplan to DMSReader
     grant showplan to DMSWebUser
 
-    GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO DMSReader
-    GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO DMSReader
+    GRANT EXECUTE ON [dbo].[get_taxid_taxonomy_list] TO DMSReader
+    GRANT SELECT ON [dbo].[get_taxid_taxonomy_table] TO DMSReader
 
-    GRANT EXECUTE ON [dbo].[GetTaxIDTaxonomyList] TO DMS_SP_User
-    GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO DMS_SP_User
+    GRANT EXECUTE ON [dbo].[get_taxid_taxonomy_list] TO DMS_SP_User
+    GRANT SELECT ON [dbo].[get_taxid_taxonomy_table] TO DMS_SP_User
 
     Return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_user_permissions] TO [DDL_Viewer] AS [dbo]
 GO

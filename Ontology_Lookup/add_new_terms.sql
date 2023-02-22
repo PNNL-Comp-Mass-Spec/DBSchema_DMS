@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewTerms] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_terms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewTerms]
+CREATE PROCEDURE [dbo].[add_new_terms]
 /****************************************************
 **
 **  Desc:
@@ -12,12 +12,13 @@ CREATE PROCEDURE [dbo].[AddNewTerms]
 **
 **  Auth:   mem
 **  Date:   05/13/2013 mem - Initial Version
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @OntologyName varchar(24) = 'PSI',  -- Examples: NEWT, MS, MOD, or PRIDE; used to find identifiers
-    @InfoOnly tinyint = 0,
-    @PreviewSql tinyint= 0
+    @ontologyName varchar(24) = 'PSI',  -- Examples: NEWT, MS, MOD, or PRIDE; used to find identifiers
+    @infoOnly tinyint = 0,
+    @previewSql tinyint= 0
 )
 AS
     declare @myError int
@@ -154,6 +155,7 @@ AS
     --
 Done:
     return @myError
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewTerms] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_terms] TO [DDL_Viewer] AS [dbo]
 GO

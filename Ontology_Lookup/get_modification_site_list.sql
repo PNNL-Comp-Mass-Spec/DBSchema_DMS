@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetModificationSiteList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_modification_site_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetModificationSiteList]
+CREATE FUNCTION [dbo].[get_modification_site_list]
 /****************************************************
 **
 **  Desc:
@@ -16,11 +16,12 @@ CREATE FUNCTION [dbo].[GetModificationSiteList]
 **  Auth:   mem
 **  Date:   05/15/2013 mem - Initial version
 **          03/29/2022 mem - Add support for returning all modification sites when @Hidden is greater than 1
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @UnimodID int,
-    @Hidden tinyint
+    @unimodID int,
+    @hidden tinyint
 )
 RETURNS
 @TableOfResults TABLE
@@ -48,5 +49,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetModificationSiteList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_modification_site_list] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,15 +1,16 @@
-/****** Object:  UserDefinedFunction [dbo].[GetTaxIDTaxonomyTable] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_taxid_taxonomy_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetTaxIDTaxonomyTable]
+CREATE FUNCTION [dbo].[get_taxid_taxonomy_table]
 /****************************************************
 **
 **  Desc:   Populates a table with the Taxonomy entries for the given TaxonomyID value
 **
 **  Auth:   mem
 **  Date:   03/02/2016 mem - Initial version
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,9 +55,9 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetTaxIDTaxonomyTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_taxid_taxonomy_table] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMS_SP_User] AS [dbo]
+GRANT SELECT ON [dbo].[get_taxid_taxonomy_table] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[GetTaxIDTaxonomyTable] TO [DMSReader] AS [dbo]
+GRANT SELECT ON [dbo].[get_taxid_taxonomy_table] TO [DMSReader] AS [dbo]
 GO

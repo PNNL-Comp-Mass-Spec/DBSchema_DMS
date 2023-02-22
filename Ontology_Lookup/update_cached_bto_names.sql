@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedBTONames] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_bto_names] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedBTONames]
+CREATE PROCEDURE [dbo].[update_cached_bto_names]
 /****************************************************
 **
 **  Desc: Updates data in T_CV_BTO_Cached_Names
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedBTONames]
 **  Auth:   mem
 **  Date:   09/01/2017 mem - Initial version
 **          04/07/2022 mem - Use column names instead of * when previewing updates
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
