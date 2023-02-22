@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DeleteOldEventsAndHistoricLogs]
 /****************************************************
 **
@@ -23,7 +22,7 @@ CREATE PROCEDURE [dbo].[DeleteOldEventsAndHistoricLogs]
     @yearFilter int = 0,        -- Use this to limit the number of rows to process to a single year
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0
@@ -70,21 +69,21 @@ As
 
     CREATE TABLE #Tmp_EventsToDelete (
         Event_ID int NOT NULL,
-	    Target_Type int NULL,
-	    Target_ID int NULL,
-	    Target_State smallint NULL,
-	    Prev_Target_State smallint NULL,
-	    Entered datetime NULL,
+        Target_Type int NULL,
+        Target_ID int NULL,
+        Target_State smallint NULL,
+        Prev_Target_State smallint NULL,
+        Entered datetime NULL,
         PRIMARY KEY CLUSTERED ( Event_ID)
     )
 
     CREATE TABLE #Tmp_LogEntriesToDelete (
         Entry_ID int NOT NULL,
-	    Posted_By varchar(64) NULL,
-	    Entered datetime NOT NULL,
-	    [Type] varchar(32) NULL,
-	    Message varchar(512) NULL,
-	    DBName varchar(64) NULL
+        Posted_By varchar(64) NULL,
+        Entered datetime NOT NULL,
+        [Type] varchar(32) NULL,
+        Message varchar(512) NULL,
+        DBName varchar(64) NULL
     )
 
     ---------------------------------------------------
@@ -283,6 +282,5 @@ Done:
     End
 
     Return @myError
-
 
 GO
