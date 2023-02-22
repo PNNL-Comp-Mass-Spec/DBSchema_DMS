@@ -3,50 +3,50 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddNewTermsDefaultOntologies
+CREATE PROCEDURE [dbo].[AddNewTermsDefaultOntologies]
 /****************************************************
 **
-**	Desc: 
-**		Adds new ontology terms to the ontology-specific tables for the default ontologies:
-**		BTO, GO, PSI_MI, PSI_Mod, PSI_MS, PRIDE, and NeWT
+**  Desc:
+**      Adds new ontology terms to the ontology-specific tables for the default ontologies:
+**      BTO, GO, PSI_MI, PSI_Mod, PSI_MS, PRIDE, and NeWT
 **
-**	Auth:	mem
-**	Date:	05/13/2013 mem - Initial Version
-**			12/04/2013 mem - Added CL
-**			03/17/2014 mem - Added DOID (disease ontology)
+**  Auth:   mem
+**  Date:   05/13/2013 mem - Initial Version
+**          12/04/2013 mem - Added CL
+**          03/17/2014 mem - Added DOID (disease ontology)
 **
 *****************************************************/
 (
-	@InfoOnly tinyint = 0,
-	@PreviewSql tinyint= 0
+    @InfoOnly tinyint = 0,
+    @PreviewSql tinyint= 0
 )
 AS
-	declare @myError int
-	declare @myRowCount int
-	set @myError = 0
-	set @myRowCount = 0
+    declare @myError int
+    declare @myRowCount int
+    set @myError = 0
+    set @myRowCount = 0
 
-	---------------------------------------------------
-	-- Validate the ontology name
-	---------------------------------------------------
-	--
+    ---------------------------------------------------
+    -- Validate the ontology name
+    ---------------------------------------------------
+    --
 
-	exec @myError = AddNewTerms @OntologyName='BTO',   @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
-	exec @myError = AddNewTerms @OntologyName='CL',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
-	exec @myError = AddNewTerms @OntologyName='GO',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
-	exec @myError = AddNewTerms @OntologyName='MI',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql		-- PSI_MI
-	exec @myError = AddNewTerms @OntologyName='MOD',   @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql		-- PSI_Mod
-	exec @myError = AddNewTerms @OntologyName='MS',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql		-- PSI_MS
-	exec @myError = AddNewTerms @OntologyName='PRIDE', @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
-	exec @myError = AddNewTerms @OntologyName='NEWT',  @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
-	exec @myError = AddNewTerms @OntologyName='DOID',  @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+    exec @myError = AddNewTerms @OntologyName='BTO',   @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+    exec @myError = AddNewTerms @OntologyName='CL',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+    exec @myError = AddNewTerms @OntologyName='GO',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+    exec @myError = AddNewTerms @OntologyName='MI',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql     -- PSI_MI
+    exec @myError = AddNewTerms @OntologyName='MOD',   @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql     -- PSI_Mod
+    exec @myError = AddNewTerms @OntologyName='MS',    @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql     -- PSI_MS
+    exec @myError = AddNewTerms @OntologyName='PRIDE', @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+    exec @myError = AddNewTerms @OntologyName='NEWT',  @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
+    exec @myError = AddNewTerms @OntologyName='DOID',  @InfoOnly=@InfoOnly, @PreviewSql=@PreviewSql
 
-	---------------------------------------------------
-	-- exit
-	---------------------------------------------------
-	--
+    ---------------------------------------------------
+    -- exit
+    ---------------------------------------------------
+    --
 Done:
-	return @myError
+    return @myError
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewTermsDefaultOntologies] TO [DDL_Viewer] AS [dbo]
 GO

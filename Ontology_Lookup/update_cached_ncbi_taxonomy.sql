@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateCachedNCBITaxonomy]
+CREATE PROCEDURE [dbo].[UpdateCachedNCBITaxonomy]
 /****************************************************
 **
 **  Desc: Updates data in T_NCBI_Taxonomy_Cached
@@ -12,14 +11,13 @@ CREATE Procedure [dbo].[UpdateCachedNCBITaxonomy]
 **  Auth:   mem
 **  Date:   03/01/2016 mem - Initial version
 **          01/06/2022 mem - Implement support for @infoOnly
-**    
+**
 *****************************************************/
 (
     @deleteExtras tinyint = 1,
     @infoOnly tinyint = 1
 )
-As
-    
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -27,7 +25,7 @@ As
 
     Set @deleteExtras = IsNull(@deleteExtras, 1)
     Set @infoOnly = IsNull(@infoOnly, 1)
-    
+
     If @infoOnly > 0
     Begin
         SELECT Sum(CASE
@@ -70,7 +68,7 @@ As
 
     Declare @tableName varchar(128)
     Set @tableName = 'T_NCBI_Taxonomy_Cached'
-     
+
     MERGE [dbo].[T_NCBI_Taxonomy_Cached] AS t
     USING (
         SELECT [Nodes].Tax_ID,
@@ -85,7 +83,7 @@ As
                                       COUNT(*) AS Synonyms
                                FROM T_NCBI_Taxonomy_Names NameList
                                     INNER JOIN T_NCBI_Taxonomy_Names PrimaryName
-                                      ON NameList.Tax_ID = PrimaryName.Tax_ID 
+                                      ON NameList.Tax_ID = PrimaryName.Tax_ID
                                          AND
                                          PrimaryName.Name_Class = 'scientific name'
                                     INNER JOIN T_NCBI_Taxonomy_Name_Class NameClass
@@ -102,7 +100,7 @@ As
         t.[Parent_Tax_ID] <> s.[Parent_Tax_ID] OR
         t.[Synonyms] <> s.[Synonyms]
         )
-    THEN UPDATE SET 
+    THEN UPDATE SET
         [Name] = s.[Name],
         [Rank] = s.[Rank],
         [Parent_Tax_ID] = s.[Parent_Tax_ID],
@@ -131,7 +129,7 @@ As
         ISNULL( NULLIF(t.[Synonym_List], s.[Synonym_List]),
             NULLIF(s.[Synonym_List], t.[Synonym_List])) IS NOT NULL
         )
-    THEN UPDATE SET 
+    THEN UPDATE SET
         Synonym_List = s.[Synonym_List];
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -146,10 +144,9 @@ As
     WHERE Synonyms = 0 And (Synonym_List is null or Synonym_List <> '')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
 Done:
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedNCBITaxonomy] TO [DDL_Viewer] AS [dbo]

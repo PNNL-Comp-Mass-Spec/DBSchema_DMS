@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[udfParseDelimitedIntegerList]
 /****************************************************
 **
@@ -90,7 +89,6 @@ BEGIN
 
     RETURN
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedIntegerList] TO [DDL_Viewer] AS [dbo]

@@ -3,22 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateBTOUsage]
+CREATE PROCEDURE [dbo].[UpdateBTOUsage]
 /****************************************************
 **
 **  Desc:   Updates the usage columns in T_CV_BTO
 **
 **  Auth:   mem
 **  Date:   11/08/2018 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
-    
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -62,13 +60,13 @@ As
            ON Target.Tissue_ID = SourceQ.Tissue_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-           
+
     If @infoOnly = 0
     Begin
         ---------------------------------------------------
         -- Update T_CV_BTO_Cached_Names
         ---------------------------------------------------
-        
+
         UPDATE T_CV_BTO
         SET Usage_Last_12_Months = Source.Usage_Last_12_Months,
             Usage_All_Time = Source.Usage_All_Time
@@ -83,7 +81,7 @@ As
         If @myRowCount > 0
         Begin
             Set @rowsUpdated = @rowsUpdated + @myRowCount
-            Set @message = 'Updated ' + Cast(@myRowCount As varchar(12)) + ' ' + 
+            Set @message = 'Updated ' + Cast(@myRowCount As varchar(12)) + ' ' +
                            dbo.CheckPlural(@myRowCount, 'row', 'rows') + ' in T_CV_BTO'
         End
 
@@ -101,7 +99,7 @@ As
         If @myRowCount > 0
         Begin
             Set @rowsUpdated = @rowsUpdated + @myRowCount
-            Set @message2 = 'Set usage stats to 0 for ' + Cast(@myRowCount As varchar(12)) + ' ' + 
+            Set @message2 = 'Set usage stats to 0 for ' + Cast(@myRowCount As varchar(12)) + ' ' +
                             dbo.CheckPlural(@myRowCount, 'row', 'rows') + ' in T_CV_BTO'
 
             If @message = ''
@@ -120,14 +118,13 @@ As
         ---------------------------------------------------
         -- Preview the usage stats
         ---------------------------------------------------
-        
+
         SELECT *
         FROM #Tmp_UsageStats
         ORDER BY Usage_All_Time DESC
     End
-        
+
 Done:
     return 0
-
 
 GO

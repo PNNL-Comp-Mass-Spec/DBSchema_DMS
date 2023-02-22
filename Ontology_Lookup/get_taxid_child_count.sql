@@ -3,35 +3,33 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetTaxIDChildCount]
 /****************************************************
 **
-**	Desc:	Counts the number of nodes with Parent_Tax_ID equal to @TaxonomyID
+**  Desc:   Counts the number of nodes with Parent_Tax_ID equal to @TaxonomyID
 **
-**	Return value: integer; 0 if no children
+**  Return value: integer; 0 if no children
 **
-**	Parameters: 
+**  Parameters:
 **
-**	Auth:	mem
-**	Date:	03/02/2016 mem - Initial version
-**    
+**  Auth:   mem
+**  Date:   03/02/2016 mem - Initial version
+**
 *****************************************************/
 (
-	@TaxonomyID int
+    @TaxonomyID int
 )
 RETURNS varchar(4000)
 AS
-	BEGIN
-		DECLARE @Children int = 0
-				
-		SELECT @Children = COUNT(*)
-		FROM T_NCBI_Taxonomy_Nodes
-		WHERE (Parent_Tax_ID = @TaxonomyID)
-		
-		RETURN @Children
-	END
+    BEGIN
+        DECLARE @Children int = 0
 
+        SELECT @Children = COUNT(*)
+        FROM T_NCBI_Taxonomy_Nodes
+        WHERE (Parent_Tax_ID = @TaxonomyID)
+
+        RETURN @Children
+    END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetTaxIDChildCount] TO [DDL_Viewer] AS [dbo]

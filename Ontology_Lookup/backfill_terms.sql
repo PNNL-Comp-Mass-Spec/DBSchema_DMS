@@ -3,14 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[BackfillTerms]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Adds new entries to tables T_Term and T_Term_Relationship using the specified T_CV table
 **
-**      This is required after adding new information to a T_CV table, 
+**      This is required after adding new information to a T_CV table,
 **      e.g., after adding new BTO terms to T_CV_BTO using a .owl file
 **
 **      The Ontology Detail Report uses view V_Ontology_Detail_Report
@@ -36,15 +35,15 @@ AS
 
     Declare @S varchar(2048) = ''
     Declare @ontologyID int = 0
-    
+
     ---------------------------------------------------
     -- Validate inputs
     ---------------------------------------------------
-    --    
+    --
     Set @sourceTable = IsNull(@sourceTable, '')
     Set @infoOnly = IsNull(@infoOnly, 1)
     Set @previewRelationshipUpdates = IsNull(@previewRelationshipUpdates, 1)
-    
+
     ---------------------------------------------------
     -- Validate the that the source table exists
     ---------------------------------------------------
@@ -59,7 +58,7 @@ AS
     -- Populate a temporary table with the source data
     -- We do this so we can keep track of which rows match existing entries
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_SourceData (
         Entry_ID int identity(1,1),
         [Term_PK] varchar(32),
@@ -73,7 +72,7 @@ AS
         [GrandParent_term_ID] varchar(32) NULL,
         [MatchesExisting] tinyint
     )
-    
+
     Set @S = ''
     Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf,'
     If @sourceTable = 'T_CV_BTO'
@@ -84,16 +83,16 @@ AS
     Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf, '
     If @sourceTable = 'T_CV_BTO'
         Set @S = @S + ' Synonyms,'
-        
+
     Set @S = @S + '   Parent_term_name, Parent_term_ID,'
     Set @S = @S + '   GrandParent_term_name, GrandParent_term_ID, 0 AS MatchesExisting'
     Set @S = @S + ' FROM [' + @sourceTable + ']'
     Set @S = @S + ' WHERE Parent_term_name <> '''' '
-    
+
     DECLARE @GetSourceData nvarchar(3000) = @S
-    
+
     EXEC sp_executesql @GetSourceData
-        
+
     ---------------------------------------------------
     -- Set MatchesExisting to 1 for rows that match an existing row in T_Term
     ---------------------------------------------------
@@ -115,7 +114,7 @@ AS
            ON S.Term_PK = T.term_pk
     GROUP BY T.ontology_id
     ORDER BY Count(*) DESC
-    
+
     If @infoOnly = 0
     Begin
 
@@ -134,7 +133,7 @@ AS
             T.[Identifier] <> S.[Identifier] OR
             T.[Is_Leaf] <> S.[Is_Leaf]
             )
-        THEN UPDATE SET 
+        THEN UPDATE SET
             [Term_Name] = S.[Term_Name],
             [Identifier] = S.[Identifier],
             [Is_Leaf] = S.[Is_Leaf],
@@ -160,14 +159,14 @@ AS
 
         ---------------------------------------------------
         -- Add/update parent/child relationships
-        ---------------------------------------------------                
-        
+        ---------------------------------------------------
+
         CREATE TABLE #Tmp_RelationshipsToAdd (
             Entry_ID int not null identity(1,1),
             Child_PK varchar(32) not null,
             Parent_PK varchar(32) not null
         )
-    
+
         CREATE TABLE #Tmp_RelationshipsToDelete (
             Relationship_ID int not null
         )
@@ -190,12 +189,12 @@ AS
         -- Determine the smallest ID in table T_Term_Relationship
         --
         Declare @autoNumberStartID int = 0
-        
+
         SELECT @autoNumberStartID = MIN(term_relationship_id) - 1
         FROM T_Term_Relationship
-                    
+
         IF @autoNumberStartID >= 0
-            Set @autoNumberStartID = -1        
+            Set @autoNumberStartID = -1
 
         If @previewRelationshipUpdates > 0
         Begin
@@ -229,9 +228,9 @@ AS
 
             SELECT 'Inserted ' + Cast(@myRowCount as varchar(9)) + ' new parent/child relationships into table T_Term_Relationship' AS Message
         End
-        
+
         -- Find extra relationships
-        --    
+        --
         INSERT INTO #Tmp_RelationshipsToDelete( Relationship_ID )
         SELECT T_Term_Relationship.term_relationship_id
         FROM ( SELECT DISTINCT SourceTable.Identifier,
@@ -243,17 +242,17 @@ AS
                       ON SourceTable.Parent_term_ID = T_Term.identifier
                WHERE (T_Term.ontology_id = @ontologyID) ) ValidRelationships
              RIGHT OUTER JOIN T_Term_Relationship
-               ON ValidRelationships.Child_PK = T_Term_Relationship.subject_term_pk 
+               ON ValidRelationships.Child_PK = T_Term_Relationship.subject_term_pk
                   AND
                   ValidRelationships.Parent_PK = T_Term_Relationship.object_term_pk
         WHERE (ValidRelationships.Parent_term_ID IS NULL) AND
               (T_Term_Relationship.ontology_id = @ontologyID)
-        
+
         If @previewRelationshipUpdates > 0
         Begin
             SELECT 'Delete relationship' as Action, *
             FROM T_Term_Relationship
-            WHERE term_relationship_id IN (Select Relationship_ID FROM #Tmp_RelationshipsToDelete)            
+            WHERE term_relationship_id IN (Select Relationship_ID FROM #Tmp_RelationshipsToDelete)
         End
         Else
         Begin
@@ -264,7 +263,7 @@ AS
 
             SELECT 'Deleted ' + Cast(@myRowCount as varchar(9)) + ' parent/child relationships in table T_Term_Relationship' AS Message
         End
-        
+
     End
 
     Else
@@ -272,7 +271,7 @@ AS
         ---------------------------------------------------
         -- Preview existing rows that would be updated
         ---------------------------------------------------
-        --        
+        --
         SELECT 'Existing item to update' as Item_Type,
                T.Term_PK,
                CASE WHEN T.Term_Name = S.Term_Name THEN T.Term_Name ELSE T.Term_Name + ' --> ' + S.Term_Name END Term_Name,
@@ -294,10 +293,10 @@ AS
               )
         UNION
         SELECT 'New item to add' as Item_Type,
-               Term_PK, 
-               Term_Name, 
-               Identifier, 
-               Cast(Max(Is_Leaf) AS varchar(16)), 
+               Term_PK,
+               Term_Name,
+               Identifier,
+               Cast(Max(Is_Leaf) AS varchar(16)),
                Null as Updated
         FROM #Tmp_SourceData
         WHERE MatchesExisting = 0
@@ -308,7 +307,7 @@ AS
         ---------------------------------------------------
         -- Preview parents to add
         ---------------------------------------------------
-        --    
+        --
         /*
         SELECT DISTINCT 'Missing parent/child relationship' as Relationship
                         SourceTable.Identifier AS Child,
@@ -333,6 +332,5 @@ AS
     --
 Done:
     return @myError
-
 
 GO

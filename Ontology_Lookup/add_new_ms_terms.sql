@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddNewMSTerms]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Adds new PSI-MS terms to T_CV_MS
 **
 **      The source table must have columns:
@@ -38,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddNewMSTerms]
 )
 AS
     Set NoCount On
-    
+
     declare @myError int
     declare @myRowCount int
     set @myError = 0
@@ -47,13 +46,13 @@ AS
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @SourceTableName = IsNull(@SourceTableName, '')
     Set @infoOnly = IsNull(@infoOnly, 1)
-        
+
     Declare @S varchar(1500) = ''
     Declare @AddNew nvarchar(3000) = ''
-    
+
     If Not Exists (Select * from sys.tables where [name] = @SourceTableName)
     Begin
         Select 'Source table not found: ' + @SourceTableName AS Message
@@ -64,7 +63,7 @@ AS
     -- Populate a temporary table with the source data
     -- We do this so we can keep track of which rows match existing entries
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_SourceData (
         Entry_ID int identity(1,1),
         [Term_PK] [varchar](255) NOT NULL,
@@ -79,7 +78,7 @@ AS
         [GrandParent_term_ID] [varchar](24) NULL,
         [MatchesExisting] tinyint
     )
-    
+
     Set @S = ''
     Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf,'
     Set @S = @S +                               ' Parent_term_type, Parent_term_name, Parent_term_ID, '
@@ -89,11 +88,11 @@ AS
     Set @S = @S + '        GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID, 0 AS MatchesExisting'
     Set @S = @S + ' FROM [' + @SourceTableName + ']'
     Set @S = @S + ' WHERE Parent_term_name <> '''' AND Definition NOT Like ''Obsolete%'' And Comment Not Like ''Obsolete%'' '
-    
+
     DECLARE @GetSourceData nvarchar(3000) = @S
-    
+
     EXEC sp_executesql @GetSourceData
-    
+
     If @infoOnly > 1
     Begin
         Print 'Populated #Tmp_SourceData using ' + @SourceTableName
@@ -102,7 +101,7 @@ AS
     ---------------------------------------------------
     -- Replace empty Grandparent term IDs and names with NULL
     ---------------------------------------------------
-    --    
+    --
     UPDATE #Tmp_SourceData
     SET GrandParent_term_type = Null,
         GrandParent_Term_ID = Null,
@@ -121,8 +120,8 @@ AS
     UPDATE #Tmp_SourceData
     SET MatchesExisting = 1
     FROM #Tmp_SourceData s INNER JOIN T_CV_MS t
-        ON t.Term_PK = s.Term_PK AND 
-            t.Parent_term_ID = s.Parent_term_ID AND 
+        ON t.Term_PK = s.Term_PK AND
+            t.Parent_term_ID = s.Parent_term_ID AND
             ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -131,7 +130,7 @@ AS
     -- Look for obsolete terms that need to be deleted
     ---------------------------------------------------
     --
-    Set @S = ''       
+    Set @S = ''
     Set @S = @S + ' SELECT @myRowCount = COUNT(*)'
     Set @S = @S + ' FROM ('
     Set @S = @S +   ' SELECT s.Term_PK, s.Comment, s.Definition'
@@ -139,7 +138,7 @@ AS
     Set @S = @S +        ' T_CV_MS t ON s.Term_PK = t.Term_PK'
     Set @S = @S +   ' WHERE (s.Parent_term_name = '''') AND '
     Set @S = @S +         ' (s.Definition LIKE ''Obsolete%'' OR s.Comment LIKE ''Obsolete%'')'
-    Set @S = @S +   ' UNION' 
+    Set @S = @S +   ' UNION'
     Set @S = @S +   ' SELECT s.Term_PK, s.Comment, s.Definition '
     Set @S = @S +   ' FROM T_CV_MS t INNER JOIN'
     Set @S = @S +      ' (SELECT Term_PK, Parent_term_ID, Comment, Definition'
@@ -150,7 +149,7 @@ AS
     Set @S = @S +       ' ON t.Term_PK = s.Term_PK AND '
     Set @S = @S +          ' t.Parent_term_ID = s.Parent_term_ID'
     Set @S = @S +   ' ) LookupQ'
-               
+
     Declare @FindObsoleteRows nvarchar(3000) = @S
     Declare @DeleteObsolete1 nvarchar(3000) = ''
     Declare @DeleteObsolete2 nvarchar(3000) = ''
@@ -170,9 +169,9 @@ AS
         Set @S = @S +      ' T_CV_MS t ON s.Term_PK = t.Term_PK'
         Set @S = @S + ' WHERE (s.Parent_term_name = '''') AND '
         Set @S = @S +       ' (s.Definition LIKE ''Obsolete%'' OR s.Comment LIKE ''Obsolete%'')'
-        
+
         Set @DeleteObsolete1 = @S
-        
+
         Set @S = ''
         Set @S = @S + ' DELETE T_CV_MS'
         Set @S = @S + ' FROM T_CV_MS t INNER JOIN'
@@ -183,10 +182,10 @@ AS
         Set @S = @S +     ' ) ObsoleteTerms '
         Set @S = @S +     ' ON t.Term_PK = ObsoleteTerms.Term_PK AND '
         Set @S = @S +        ' t.Parent_term_ID = ObsoleteTerms.Parent_term_ID'
-        
+
         Set @DeleteObsolete2 = @S
     End
-    
+
     If @infoOnly = 0
     Begin
         If @DeleteObsolete1 <> '' OR @DeleteObsolete2 <> ''
@@ -203,23 +202,23 @@ AS
             exec sp_executesql @DeleteObsolete2
             --
             SELECT @myError = @@error, @additionalRows = @@rowcount
-            
-            Set @myRowCount = @myRowCount + @additionalRows            
+
+            Set @myRowCount = @myRowCount + @additionalRows
             SELECT 'Deleted ' + Cast(@myRowCount as varchar(9)) + ' obsolete rows in T_CV_MS based on entries in ' + @SourceTableName AS Message
         End
-        
+
         ---------------------------------------------------
         -- Update existing rows
         ---------------------------------------------------
         --
         MERGE T_CV_MS AS t
-        USING (SELECT Term_PK, Term_Name, Identifier, Is_Leaf, 
-                      Parent_term_type, Parent_term_name, Parent_term_ID, 
+        USING (SELECT Term_PK, Term_Name, Identifier, Is_Leaf,
+                      Parent_term_type, Parent_term_name, Parent_term_ID,
                       GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID
                FROM #Tmp_SourceData
                WHERE MatchesExisting = 1) as s
-        ON ( t.Term_PK = s.Term_PK AND 
-             t.Parent_term_ID = s.Parent_term_ID AND 
+        ON ( t.Term_PK = s.Term_PK AND
+             t.Parent_term_ID = s.Parent_term_ID AND
              ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, ''))
         WHEN MATCHED AND (
             t.[Term_Name] <> s.[Term_Name] OR
@@ -233,7 +232,7 @@ AS
             ISNULL( NULLIF(t.[GrandParent_term_name], s.[GrandParent_term_name]),
                     NULLIF(s.[GrandParent_term_name], t.[GrandParent_term_name])) IS NOT NULL
             )
-        THEN UPDATE SET 
+        THEN UPDATE SET
             [Term_Name] = s.[Term_Name],
             [Identifier] = s.[Identifier],
             [Is_Leaf] = s.[Is_Leaf],
@@ -252,11 +251,11 @@ AS
         -- Add new rows
         ---------------------------------------------------
         --
-        INSERT INTO T_CV_MS (Term_PK, Term_Name, Identifier, Is_Leaf, 
-                             Parent_term_type, Parent_term_name, Parent_term_ID, 
+        INSERT INTO T_CV_MS (Term_PK, Term_Name, Identifier, Is_Leaf,
+                             Parent_term_type, Parent_term_name, Parent_term_ID,
                              GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID)
-        SELECT Term_PK, Term_Name, Identifier, Is_Leaf, 
-               Parent_term_type, Parent_term_name, Parent_term_ID, 
+        SELECT Term_PK, Term_Name, Identifier, Is_Leaf,
+               Parent_term_type, Parent_term_name, Parent_term_ID,
                GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID
         FROM #Tmp_SourceData
         WHERE MatchesExisting = 0
@@ -269,7 +268,7 @@ AS
         -- Uncomment to delete extra rows
         ---------------------------------------------------
         /*
-        DELETE t_cv_ms 
+        DELETE t_cv_ms
         FROM t_cv_ms t
              LEFT OUTER JOIN T_Tmp_PsiMS_2022Apr s
                ON t.Term_PK = s.Term_PK AND
@@ -283,23 +282,23 @@ AS
         ---------------------------------------------------
         -- Preview updates
         ---------------------------------------------------
-        
+
         If @DeleteObsolete1 <> '' OR @DeleteObsolete2 <> ''
         Begin
             print '-- Delete Obsolete rows'
             print @DeleteObsolete1
             print @DeleteObsolete2
-            
+
             Set @S = ''
             Set @S = @S + ' SELECT ''Obsolete term to delete'' as Item_Type, s.*, t.Entered, t.updated'
             Set @S = @S + ' FROM [' + @SourceTableName + '] s INNER JOIN'
             Set @S = @S +      ' T_CV_MS t ON s.Term_PK = t.Term_PK'
             Set @S = @S + ' WHERE (s.Definition LIKE ''Obsolete%'' OR s.Comment LIKE ''Obsolete%'')'
-            
+
             Declare @PreviewObsoleteData nvarchar(1000) = @S
-            
+
             Exec sp_executesql @PreviewObsoleteData
-            
+
         End
 
         If @infoOnly > 1
@@ -309,7 +308,7 @@ AS
         ---------------------------------------------------
         -- View existing rows that would be updated
         ---------------------------------------------------
-        --        
+        --
         SELECT 'Existing item to update' as Item_Type,
                t.Entry_ID,
                t.Term_PK,
@@ -329,24 +328,24 @@ AS
               ON t.Term_PK = s.Term_PK AND
                  t.Parent_term_ID = s.Parent_term_ID AND
                  ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
-        WHERE MatchesExisting=1 AND 
+        WHERE MatchesExisting=1 AND
               ( (t.Term_Name <> s.Term_Name) OR
                 (t.Identifier <> s.Identifier) OR
                 (t.Is_Leaf <> s.Is_Leaf) OR
                 (t.Parent_term_name <> s.Parent_term_name) OR
-                (ISNULL(NULLIF(t.GrandParent_term_name, s.GrandParent_term_name), 
+                (ISNULL(NULLIF(t.GrandParent_term_name, s.GrandParent_term_name),
                       NULLIF(s.GrandParent_term_name, t.GrandParent_term_name)) IS NOT NULL)
                )
         UNION
         SELECT 'New item to add' as Item_Type,
                0 AS Entry_ID,
-               Term_PK, 
-               Term_Name, 
-               Identifier, 
-               Cast(Is_Leaf AS varchar(16)), 
+               Term_PK,
+               Term_Name,
+               Identifier,
+               Cast(Is_Leaf AS varchar(16)),
                Parent_term_type,
                Parent_term_name,
-               Parent_term_ID, 
+               Parent_term_ID,
                GrandParent_term_type,
                GrandParent_term_name,
                GrandParent_term_ID,
@@ -358,7 +357,7 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
     End
-    
+
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
