@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteOldEventsAndHistoricLogs] ******/
+/****** Object:  StoredProcedure [dbo].[delete_old_events_and_historic_logs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteOldEventsAndHistoricLogs]
+CREATE PROCEDURE [dbo].[delete_old_events_and_historic_logs]
 /****************************************************
 **
 **  Desc:   Delete entries over 5 years old in T_Event_Log and T_Log_Entries
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[DeleteOldEventsAndHistoricLogs]
 **  Date:   06/08/2022 mem - Initial version
 **          06/09/2022 mem - Rename T_Historic_Log_Entries to T_Log_Entries
 **          08/26/2022 mem - Use new column name in T_Log_Entries
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -173,7 +174,7 @@ AS
 
         If @infoOnly = 0 And @eventsToDelete > 0
         Begin
-            Exec PostLogEntry 'Normal', @eventMessage, 'DeleteOldEventsAndHistoricLogs'
+            Exec post_log_entry 'Normal', @eventMessage, 'delete_old_events_and_historic_logs'
         End
     End
 
@@ -252,19 +253,19 @@ AS
 
         If @infoOnly = 0 And @logEntriesToDelete > 0
         Begin
-            Exec PostLogEntry 'Normal', @historicLogMessage, 'DeleteOldEventsAndHistoricLogs'
+            Exec post_log_entry 'Normal', @historicLogMessage, 'delete_old_events_and_historic_logs'
         End
     End
 
 Done:
     If @myError <> 0
     Begin
-        Set @message = 'Error in DeleteOldEventsAndHistoricLogs'
+        Set @message = 'Error in delete_old_events_and_historic_logs'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @infoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'DeleteOldEventsAndHistoricLogs'
+            Exec post_log_entry 'Error', @message, 'delete_old_events_and_historic_logs'
 
         Print @message
     End
@@ -272,13 +273,13 @@ Done:
     If Len(@eventMessage) > 0
     Begin
         Print @eventMessage
-        Set @message = dbo.AppendToText(@message, @eventMessage, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @eventMessage, 0, '; ', 1024)
     End
 
     If Len(@historicLogMessage) > 0
     Begin
         Print @historicLogMessage
-        Set @message = dbo.AppendToText(@message, @historicLogMessage, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @historicLogMessage, 0, '; ', 1024)
     End
 
     Return @myError

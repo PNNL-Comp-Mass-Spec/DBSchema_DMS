@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LocalErrorHandler] ******/
+/****** Object:  StoredProcedure [dbo].[local_error_handler] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LocalErrorHandler]
+CREATE PROCEDURE [dbo].[local_error_handler]
 /****************************************************
 **
 **  Desc:   This procedure should be called from within a Try...Catch block
@@ -16,16 +16,17 @@ CREATE PROCEDURE [dbo].[LocalErrorHandler]
 **  Date:   11/30/2006
 **          01/03/2008 mem - Added parameter @duplicateEntryHoldoffHours
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @CallingProcName varchar(128)='',           -- Optionally provide the calling procedure name; if not provided then uses ERROR_PROCEDURE()
-    @CallingProcLocation varchar(128)='',       -- Custom description of the location within the calling procedure within which the error occurred
-    @LogError tinyint = 0,                      -- Set to 1 to log the error in T_Log_Entries
-    @DisplayError tinyint = 0,                  -- Set to 1 to display the error via SELECT @message
-    @LogWarningErrorList varchar(512) = '1205', -- Comma separated list of errors that should be treated as warnings if logging to T_Log_Entries
-    @ErrorSeverity int=0 output,
-    @ErrorNum int=0 output,
+    @callingProcName varchar(128)='',           -- Optionally provide the calling procedure name; if not provided then uses ERROR_PROCEDURE()
+    @callingProcLocation varchar(128)='',       -- Custom description of the location within the calling procedure within which the error occurred
+    @logError tinyint = 0,                      -- Set to 1 to log the error in T_Log_Entries
+    @displayError tinyint = 0,                  -- Set to 1 to display the error via SELECT @message
+    @logWarningErrorList varchar(512) = '1205', -- Comma separated list of errors that should be treated as warnings if logging to T_Log_Entries
+    @errorSeverity int=0 output,
+    @errorNum int=0 output,
     @message varchar(512)='' output,            -- Populated with a description of the error
     @duplicateEntryHoldoffHours int = 0         -- Set this to a value greater than 0 to prevent duplicate entries being posted within the given number of hours
 )
@@ -79,7 +80,7 @@ AS
             Set @ErrorProc = @CallingProcName
         End
 
-        -- Update @CallingProcName using @ErrorProc (required for calling PostLogEntry)
+        -- Update @CallingProcName using @ErrorProc (required for calling post_log_entry)
         Set @CallingProcName = @ErrorProc
 
         If @ErrorNum = 0 And Len(@ErrorMessage) = 0
@@ -95,13 +96,13 @@ AS
         If @LogError <> 0
         Begin
             Set @CurrentLocation = 'Examining @LogWarningErrorList'
-            If Exists (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@LogWarningErrorList, ',') WHERE Value = @ErrorNum)
+            If Exists (SELECT Value FROM dbo.parse_delimited_integer_list(@LogWarningErrorList, ',') WHERE Value = @ErrorNum)
                 Set @LogErrorType = 'Warning'
             Else
                 Set @LogErrorType = 'Error'
 
-            Set @CurrentLocation = 'Calling PostLogEntry'
-            execute PostLogEntry @LogErrorType, @message, @CallingProcName, @duplicateEntryHoldoffHours
+            Set @CurrentLocation = 'Calling post_log_entry'
+            execute post_log_entry @LogErrorType, @message, @CallingProcName, @duplicateEntryHoldoffHours
         End
 
         If @DisplayError <> 0
@@ -109,7 +110,7 @@ AS
 
     End Try
     Begin Catch
-        Set @message = 'Error ' + @CurrentLocation + ' in LocalErrorHandler: ' + IsNull(ERROR_MESSAGE(), '?') + '; Error ' + Convert(varchar(12), IsNull(ERROR_NUMBER(), 0))
+        Set @message = 'Error ' + @CurrentLocation + ' in local_error_handler: ' + IsNull(ERROR_MESSAGE(), '?') + '; Error ' + Convert(varchar(12), IsNull(ERROR_NUMBER(), 0))
         Set @myError = ERROR_NUMBER()
         SELECT @message as Error_Description
     End Catch
@@ -117,5 +118,5 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[LocalErrorHandler] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[local_error_handler] TO [DDL_Viewer] AS [dbo]
 GO
