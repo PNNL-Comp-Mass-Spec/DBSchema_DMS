@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[PromoteProteinCollectionState]
 /****************************************************
 **
@@ -28,10 +27,9 @@ CREATE PROCEDURE [dbo].[PromoteProteinCollectionState]
     @addNewProteinHeaders tinyint = 1,
     @mostRecentMonths int = 12,            -- Used to filter protein collections that we will examine
     @infoOnly tinyint = 0,
-    @message varchar(255) = '' output 
+    @message varchar(255) = '' output
 )
 AS
-
     Set XACT_ABORT, nocount on
 
     Declare @myRowCount int = 0
@@ -43,19 +41,19 @@ AS
 
     Declare @nameFilter varchar(256)
     Declare @jobCount int
-    
+
     Declare @proteinCollectionsUpdated varchar(max)
     Declare @proteinCollectionCountUpdated int
-    
+
     Set @proteinCollectionCountUpdated = 0
     Set @proteinCollectionsUpdated = ''
-    
+
     Set @message = ''
 
     --------------------------------------------------------------
     -- Validate the inputs
     --------------------------------------------------------------
-    
+
     Set @addNewProteinHeaders = IsNull(@addNewProteinHeaders, 1)
 
     Set @mostRecentMonths = IsNull(@mostRecentMonths, 12)
@@ -76,15 +74,15 @@ AS
     declare @CurrentLocation varchar(128) = 'Start'
 
     Begin Try
-        
+
         Set @proteinCollectionID = 0
         Set @continue = 1
-        
+
         While @continue = 1
         Begin
             Set @CurrentLocation = 'Find the next Protein collection with state 1'
-            
-            SELECT TOP 1 @proteinCollectionID = Protein_Collection_ID, 
+
+            SELECT TOP 1 @proteinCollectionID = Protein_Collection_ID,
                          @proteinCollectionName = Collection_Name
             FROM T_Protein_Collections
             WHERE Collection_State_ID = 1 AND
@@ -93,7 +91,7 @@ AS
             ORDER BY Protein_Collection_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount <> 1
                 Set @continue = 0
             Else
@@ -104,7 +102,7 @@ AS
                     Print @CurrentLocation
 
                 Set @nameFilter = '%' + @proteinCollectionName + '%'
-                
+
                 Set @jobCount = 0
 
                 SELECT @jobCount = COUNT(*)
@@ -112,7 +110,7 @@ AS
                 WHERE ProteinCollectionList LIKE @nameFilter
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
                 If @jobCount > 0
                 Begin
                     Set @message = 'Updated state for Protein Collection "' + @proteinCollectionName + '" from 1 to 3 since ' + Convert(varchar(12), @jobCount) + ' jobs are defined in DMS with this protein collection'
@@ -120,7 +118,7 @@ AS
                     If @infoOnly = 0
                     Begin
                         Set @CurrentLocation = 'Update state for CollectionID ' + Convert(varchar(12), @proteinCollectionID)
-                        
+
                         UPDATE T_Protein_Collections
                         SET Collection_State_ID = 3
                         WHERE Protein_Collection_ID = @proteinCollectionID AND Collection_State_ID = 1
@@ -129,16 +127,16 @@ AS
                     End
                     Else
                         Print @message
-                
+
                     If Len(@proteinCollectionsUpdated) > 0
                         Set @proteinCollectionsUpdated = @proteinCollectionsUpdated + ', '
-                    
+
                     Set @proteinCollectionsUpdated = @proteinCollectionsUpdated + @proteinCollectionName
                     Set @proteinCollectionCountUpdated = @proteinCollectionCountUpdated + 1
                 End
             End
         End
-        
+
         Set @CurrentLocation = 'Done iterating'
 
         If @proteinCollectionCountUpdated = 0
@@ -151,22 +149,22 @@ AS
             If @proteinCollectionCountUpdated > 1
                 Set @message = 'Updated the state for ' + Convert(varchar(12), @proteinCollectionCountUpdated) + ' protein collections from 1 to 3 since existing jobs were found: ' + @proteinCollectionsUpdated
         End
-        
+
         If @infoOnly > 0
             Print @message
-            
+
         If @addNewProteinHeaders <> 0
             Exec AddNewProteinHeaders @infoOnly = @infoOnly
-            
+
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'PromoteProteinCollectionState')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
-        
+
 Done:
     Return @myError
 

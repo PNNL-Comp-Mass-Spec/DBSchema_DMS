@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateAnalysisJobProteinParameters]
 /****************************************************
 **
@@ -48,7 +47,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobProteinParameters]
     @protCollOptionsList varchar(256) output,
     @message varchar(512) output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -176,7 +175,7 @@ As
 
 
     /****************************************************************
-     ** Check Validity of Protein Collection Name List 
+     ** Check Validity of Protein Collection Name List
      ****************************************************************/
 
     If @protCollNameList <> 'na'
@@ -449,7 +448,6 @@ As
     End -- </a2>
 
     return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_Analysis] AS [dbo]

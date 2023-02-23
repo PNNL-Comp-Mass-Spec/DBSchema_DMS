@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DeleteProteinCollectionMembers]
 /****************************************************
 **
@@ -18,45 +17,45 @@ CREATE PROCEDURE [dbo].[DeleteProteinCollectionMembers]
 **          09/14/2015 mem - Added parameter @NumProteinsForReLoad
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
-**    
+**
 *****************************************************/
 (
     @collectionID int,
     @message varchar(512) output,
     @NumProteinsForReLoad int = 0        -- Number of proteins that will be associated with this collection after they are added to the database following this delete
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @NumProteinsForReLoad = IsNull(@NumProteinsForReLoad, 0)
-    set @message = ''    
-    
-    declare @msg varchar(256)    
+    set @message = ''
+
+    declare @msg varchar(256)
     declare @result int
-    
+
     ---------------------------------------------------
     -- Check if collection is OK to delete
     ---------------------------------------------------
-    
+
     If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @collectionID)
     Begin
         set @msg = 'Protein collection ID not found: ' + Cast(@collectionID as varchar(12))
-        RAISERROR (@msg, 10, 1)            
+        RAISERROR (@msg, 10, 1)
         return 51140
     End
-    
+
     declare @collectionState int
-    
+
     SELECT @collectionState = Collection_State_ID
     FROM T_Protein_Collections
     WHERE Protein_Collection_ID = @collectionID
-                    
+
     declare @collectionName varchar(128)
     declare @stateName varchar(64)
-    
+
     SELECT @collectionName = Collection_Name
     FROM T_Protein_Collections
     WHERE Protein_Collection_ID = @collectionID
@@ -65,14 +64,14 @@ As
     FROM T_Protein_Collection_States
     WHERE Collection_State_ID = @collectionState
 
-    if @collectionState > 2    
+    if @collectionState > 2
     begin
         set @msg = 'Cannot Delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
         RAISERROR (@msg,10, 1)
-            
+
         return 51140
     end
-    
+
     ---------------------------------------------------
     -- Start transaction
     ---------------------------------------------------
@@ -85,9 +84,9 @@ As
     -- delete the proteins for this protein collection
     ---------------------------------------------------
 
-    DELETE FROM T_Protein_Collection_Members 
+    DELETE FROM T_Protein_Collection_Members
     WHERE Protein_Collection_ID = @collectionID
-    
+
     if @@error <> 0
     begin
         rollback transaction @transName
@@ -102,9 +101,8 @@ As
     WHERE Protein_Collection_ID = @collectionID
 
     commit transaction @transname
-    
-    return 0
 
+    return 0
 
 GO
 GRANT EXECUTE ON [dbo].[DeleteProteinCollectionMembers] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

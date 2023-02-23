@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetProteinReferenceID]
 /****************************************************
 **
@@ -16,12 +15,12 @@ CREATE PROCEDURE [dbo].[GetProteinReferenceID]
 **          11/28/2005 kja - Changed for revised database architecture
 **          12/11/2012 mem - Removed commented-out code
 **          07/27/2022 mem - Removed protein name argument since unused
-**    
+**
 *****************************************************/
 (
     @nameDescHash varchar(40)       -- SHA-1 hash of: proteinName + "_" + description + "_" + proteinId;
 )
-As
+AS
     Declare @referenceID Int = 0
 
     SELECT @referenceID = Reference_ID

@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetArchivedFileIDForProteinCollectionList]
 /****************************************************
-** 
+**
 **  Desc:   Given a series of protein collection names, determine
 **          the entry in T_Archived_Output_Files that corresponds to the list
 **
@@ -18,7 +17,7 @@ CREATE PROCEDURE [dbo].[GetArchivedFileIDForProteinCollectionList]
 **  Date:   06/07/2006
 **          07/04/2006 mem - Updated to return the newest Archived File Collection ID when there is more than one possible match
 **          07/27/2022 mem - Switch from FileName to Collection_Name
-** 
+**
 *****************************************************/
 (
     @ProteinCollectionList varchar(2048),
@@ -27,9 +26,9 @@ CREATE PROCEDURE [dbo].[GetArchivedFileIDForProteinCollectionList]
     @ProteinCollectionCount int=0 output,
     @message varchar(512)='' output
 )
-As
+AS
     Set NoCount On
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
@@ -46,20 +45,20 @@ As
     Set @ArchivedFileID = 0
     Set @ProteinCollectionCount = 0
     Set @message = ''
-    
+
     If Len(@ProteinCollectionList) = 0
     Begin
         Set @message = 'Warning: Protein collection list is empty'
         Goto Done
     End
-    
+
     -----------------------------------------------------
     -- Create some temporary tables
     -----------------------------------------------------
     --
     if exists (select * from dbo.sysobjects where id = object_id(N'[#TmpProteinCollectionList]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
     drop table [#TmpProteinCollectionList]
-    
+
     CREATE TABLE dbo.#TmpProteinCollectionList (
         Unique_ID int identity(1,1),
         ProteinCollectionName varchar(512) NOT NULL
@@ -67,12 +66,12 @@ As
 
     if exists (select * from dbo.sysobjects where id = object_id(N'[#TmpArchived_Output_File_IDs]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
     drop table [#TmpArchived_Output_File_IDs]
-    
+
     CREATE TABLE dbo.#TmpArchived_Output_File_IDs (
         Archived_File_ID int NOT NULL,
         Valid_Member_Count int NOT NULL Default 0
     )
-    
+
     -----------------------------------------------------
     -- Parse the protein collection names and populate a temporary table
     -----------------------------------------------------
@@ -82,26 +81,26 @@ As
     FROM dbo.udfParseDelimitedList(@ProteinCollectionList, ',')
     --
     SELECT @myRowcount = @@rowcount, @myError = @@error
-    
+
     If @myError <> 0
     Begin
         Set @message = 'Error parsing the protein collection list: Code = ' + Convert(varchar(12), @myError)
         Goto Done
     End
-        
+
     If @myRowcount < 1
     Begin
         Set @message = 'Error parsing the protein collection list: could not find any entries'
         Goto Done
     End
-    
+
     -----------------------------------------------------
     -- Count the number of protein collection names present
     -----------------------------------------------------
     --
     Set @proteinCollectionName = ''
     Set @ProteinCollectionCount = 0
-    
+
     SELECT @proteinCollectionName = MIN(ProteinCollectionName),
            @ProteinCollectionCount = COUNT(*)
     FROM #TmpProteinCollectionList
@@ -140,7 +139,7 @@ As
         Set @message = 'Error querying the T_Archived_Output_File tables for the given protein collection list: Code = ' + Convert(varchar(12), @myError)
         Goto Done
     End
-    
+
     If @myRowcount < 1
     Begin
         Set @message = 'Warning: Could not find any archived output files '
@@ -148,11 +147,11 @@ As
             Set @message = @message + 'that contain "' + @ProteinCollectionList + '"'
         Else
             Set @message = @message + 'that only contain "' + @proteinCollectionName + '"'
-        
+
         Set @message = @message + ' and have Creation_Options "' + @CreationOptions + '"'
         Goto Done
     End
-    
+
     If @ProteinCollectionCount = 1
     Begin
         -----------------------------------------------------
@@ -183,7 +182,7 @@ As
         --
         Set @uniqueID = 0
         Set @ProteinCollectionCount = 0
-        
+
         Set @continue = 1
         While @continue = 1
         Begin -- <b>
@@ -194,7 +193,7 @@ As
             ORDER BY Unique_ID
             --
             SELECT @myRowcount = @@rowcount, @myError = @@error
-            
+
             If @myRowcount < 1
                 Set @continue = 0
             Else
@@ -207,14 +206,14 @@ As
                 WHERE PC.Collection_Name = @proteinCollectionName
                 --
                 SELECT @myRowcount = @@rowcount, @myError = @@error
-                
+
                 Set @ProteinCollectionCount = @ProteinCollectionCount + 1
-                
+
                 If @ProteinCollectionCount = 1
                     Set @proteinCollectionListClean = @proteinCollectionName
                 Else
                     Set @proteinCollectionListClean = @proteinCollectionListClean + ',' + @proteinCollectionName
-                
+
             End -- </c>
         End -- </b>
 
@@ -224,7 +223,7 @@ As
         -- Note that all of the entries in #TmpArchived_Output_File_IDs
         --  should contain the same number of protein collections,
         --  but only those entries that contain all of the collections
-        --  in #TmpProteinCollectionList will have Valid_Member_Count 
+        --  in #TmpProteinCollectionList will have Valid_Member_Count
         --  equal to @ProteinCollectionCount
         -----------------------------------------------------
         --

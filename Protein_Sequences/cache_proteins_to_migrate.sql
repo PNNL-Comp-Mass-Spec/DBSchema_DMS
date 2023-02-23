@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CacheProteinsToMigrate]
 /****************************************************
 **
@@ -18,7 +17,7 @@ CREATE PROCEDURE [dbo].[CacheProteinsToMigrate]
 (
     @proteinCollectionIdStart int = 0,          -- If non-zero, start with the given protein collection ID
     @infoOnly tinyint = 0,
-    @message varchar(255) = '' output 
+    @message varchar(255) = '' output
 )
 AS
     Set XACT_ABORT, nocount on
@@ -35,7 +34,7 @@ AS
     --------------------------------------------------------------
     -- Validate the inputs
     --------------------------------------------------------------
-    
+
     Set @proteinCollectionIdStart = IsNull(@proteinCollectionIdStart, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
@@ -59,9 +58,9 @@ AS
         --------------------------------------------------------------
         --
         Set @currentLocation = 'Iterate through the protein collections'
-        
+
         Set @continue = 1
-        
+
         While @continue = 1
         Begin -- <a>
 
@@ -72,7 +71,7 @@ AS
             ORDER BY Protein_Collection_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount = 0
                 Set @continue = 0
             Else
@@ -80,7 +79,7 @@ AS
                 SELECT @proteinCountTotal = Count(*)
                 FROM T_Protein_Collection_Members
                 WHERE Protein_Collection_ID = @proteinCollectionID
-                                
+
                 SELECT @proteinCountCached = Count(*)
                 FROM T_Migrate_Protein_Collection_Members
                 WHERE Protein_Collection_ID = @proteinCollectionID
@@ -124,7 +123,7 @@ AS
                                                  ON PCM.Protein_ID = P.Protein_ID
                                                LEFT OUTER JOIN T_Migrate_Proteins Target
                                                  ON P.Protein_ID = Target.Protein_ID
-                                          WHERE PCM.Protein_Collection_ID = @proteinCollectionID 
+                                          WHERE PCM.Protein_Collection_ID = @proteinCollectionID
                                                 AND
                                                 Target.Protein_ID IS NULL )
 
@@ -150,7 +149,7 @@ AS
                                                  ON PCM.Original_Reference_ID = N.Reference_ID
                                                LEFT OUTER JOIN T_Migrate_Protein_Names Target
                                                  ON N.Reference_ID = Target.Reference_ID
-                                          WHERE PCM.Protein_Collection_ID = @proteinCollectionID 
+                                          WHERE PCM.Protein_Collection_ID = @proteinCollectionID
                                                 AND
                                                 Target.Reference_ID IS NULL )
 
@@ -176,7 +175,7 @@ AS
                                                 ON PCM.Protein_ID = P.Protein_ID
                                               LEFT OUTER JOIN T_Migrate_Protein_Collection_Members Target
                                                 ON PCM.Member_ID = Target.Member_ID
-                                         WHERE PCM.Protein_Collection_ID = @proteinCollectionID 
+                                         WHERE PCM.Protein_Collection_ID = @proteinCollectionID
                                                AND
                                                Target.Member_ID IS NULL )
 
@@ -191,7 +190,7 @@ AS
                                                 ON PCM.Protein_ID = PH.Protein_ID
                                               LEFT OUTER JOIN T_Migrate_Protein_Headers Target
                                                 ON PCM.Protein_ID = Target.Protein_ID
-                                         WHERE PCM.Protein_Collection_ID = @proteinCollectionID 
+                                         WHERE PCM.Protein_Collection_ID = @proteinCollectionID
                                                AND
                                                Target.Protein_ID IS NULL )
 
@@ -219,20 +218,19 @@ AS
                 End -- </c>
             End -- </b>
         End -- </a>
-        
+
         Set @currentLocation = 'Done iterating'
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'CacheProteinsToMigrate')
-        exec LocalErrorHandler  @callingProcName, @currentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @callingProcName, @currentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
-        
+
 Done:
     Return @myError
-
 
 GO

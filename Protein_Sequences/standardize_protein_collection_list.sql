@@ -3,19 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[StandardizeProteinCollectionList]
 /****************************************************
 **
 **  Desc:
 **      Standardizes the order of protein collection names
-**      in a protein collection list, returning them in a 
+**      in a protein collection list, returning them in a
 **      canonical format such that internal_standard
 **      collections (type 5) are listed first, and then the
 **      remaining collections are listed alphabetically.
 **
-**      Note that this procedure does not validate the protein 
-**      collection names vs. those in T_Protein_Collections, 
+**      Note that this procedure does not validate the protein
+**      collection names vs. those in T_Protein_Collections,
 **      though it will correct capitalization errors
 **
 **    Return values: 0: success, otherwise, error code
@@ -26,28 +25,28 @@ CREATE PROCEDURE [dbo].[StandardizeProteinCollectionList]
 **          10/04/2007 mem - Increased @protCollNameList from varchar(2048) to varchar(max)
 **          06/24/2013 mem - Now removing duplicate protein collection names in @protCollNameList
 **          07/27/2022 mem - Switch from FileName to Collection_Name
-**    
+**
 *****************************************************/
 (
     @protCollNameList varchar(max) output,
     @message varchar(512)='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     -- Check for Null values
     SET @protCollNameList = ISNULL(@protCollNameList, '')
-    
+
     Declare @ProtCollNameListNew varchar(max)
     Set @ProtCollNameListNew = ''
 
     ---------------------------------------------------
-    -- Populate a temporary table with the protein collections 
+    -- Populate a temporary table with the protein collections
     -- in @protCollNameList
     ---------------------------------------------------
     If Not @protCollNameList IN ('', 'na')
@@ -70,7 +69,7 @@ As
         WHERE Len(Collection_Name) = 0
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-        
+
         -- Determine the Collection_Type_ID values for the entries in #TmpProteinCollections
         -- Additionally, correct any capitalization errors
         UPDATE #TmpProteinCollections
@@ -81,9 +80,9 @@ As
             T_Protein_Collection_Types PCT ON PC.Collection_Type_ID = PCT.Collection_Type_ID
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-        
+
         -- Populate @ProtCollNameListNew with any entries having Collection_Type_ID = 5
-        SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ',' 
+        SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ','
         FROM #TmpProteinCollections
         WHERE Collection_Type_ID = 5
         ORDER BY Collection_Name
@@ -91,7 +90,7 @@ As
         SELECT @myRowCount = @@rowcount, @myError = @@error
 
         -- Now populate @ProtCollNameListNew with any entries having Collection_Type_ID <> 4 and <> 5
-        SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ',' 
+        SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ','
         FROM #TmpProteinCollections
         WHERE Collection_Type_ID NOT IN (4,5)
         ORDER BY Collection_Name
@@ -99,7 +98,7 @@ As
         SELECT @myRowCount = @@rowcount, @myError = @@error
 
         -- Now populate @ProtCollNameListNew with any entries having Collection_Type_ID = 4
-        SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ',' 
+        SELECT @ProtCollNameListNew = @ProtCollNameListNew + Collection_Name + ','
         FROM #TmpProteinCollections
         WHERE Collection_Type_ID = 4
         ORDER BY Collection_Name
@@ -113,11 +112,11 @@ As
         -- Compare @ProtCollNameListNew to @protCollNameList to see if they differ
         If Replace(@protCollNameList, ' ', '') <> @ProtCollNameListNew
             Set @message = 'Protein collection list order has been standardized'
-            
+
         -- Copy to @protCollNameList
         Set @protCollNameList = @ProtCollNameListNew
     End
-    
+
 Done:
     return @myError
 

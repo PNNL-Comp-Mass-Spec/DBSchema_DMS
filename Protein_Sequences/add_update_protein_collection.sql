@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 /****************************************************
 **
@@ -22,7 +21,7 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **          01/20/2020 mem - Replace < and > with ( and ) in the source and description
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument @fileName to @collectionName
-**    
+**
 *****************************************************/
 (
     @collectionName varchar(128),         -- Protein collection name, which is typically the original FASTA file name but without the file extension
@@ -37,12 +36,12 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
     @mode varchar(12) = 'add',
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
@@ -58,14 +57,14 @@ As
 
     -- Make sure @@collectionName does not contain a space
     Set @collectionName = RTrim(@collectionName)
-    
+
     If @collectionName Like '% %'
     begin
         set @myError = 51001
         Set @message = 'Protein collection name contains a space: "' + @collectionName + '"'
         RAISERROR (@message, 10, 1)
     end
-    
+
     if @myError <> 0
     Begin
         -- Return zero, since we did not create a protein collection
@@ -79,42 +78,42 @@ As
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
-    
+
     declare @collectionID Int = 0
-    
+
     execute @collectionID = GetProteinCollectionID @collectionName
-    
+
     if @collectionID > 0 and @mode = 'add'
     begin
         -- Collection already exists; change @mode to 'update'
         set @mode = 'update'
     end
-    
+
     if @collectionID = 0 and @mode = 'update'
     begin
         -- Collection not found; change @mode to 'add'
         set @mode = 'add'
     end
-    
+
     -- Uncomment to debug
     --
     -- set @message = 'mode ' + @mode + ', collection '+ @collectionName
     -- exec PostLogEntry 'Debug', @message, 'AddUpdateProteinCollection'
     -- set @message=''
-    
+
     ---------------------------------------------------
     -- Start transaction
     ---------------------------------------------------
 
     declare @transName varchar(32) = 'AddProteinCollectionEntry'
     begin transaction @transName
-    
+
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
     if @mode = 'add'
     begin
-    
+
         INSERT INTO T_Protein_Collections (
             Collection_Name,
             Description,
@@ -128,13 +127,13 @@ As
             DateModified,
             Uploaded_By
         ) VALUES (
-            @collectionName, 
+            @collectionName,
             @description,
             @collectionSource,
             @collection_type,
             @collection_state,
             @primary_annotation_type_id,
-            @numProteins, 
+            @numProteins,
             @numResidues,
             GETDATE(),
             GETDATE(),
@@ -151,7 +150,7 @@ As
             -- Return zero, since we did not create a protein collection
             Return 0
         end
-    
+
 --            INSERT INTO T_Annotation_Groups (
 --            Protein_Collection_ID,
 --            Annotation_Group,
@@ -161,12 +160,12 @@ As
 --            0,
 --            @primary_annotation_type_id
 --            )
-        
+
     end
-    
+
     if @mode = 'update'
     begin
-        
+
         UPDATE T_Protein_Collections
         SET
             Description = @description,
@@ -175,7 +174,7 @@ As
             Collection_Type_ID = @collection_type,
             NumProteins = @numProteins,
             NumResidues = @numResidues,
-            DateModified = GETDATE()        
+            DateModified = GETDATE()
         WHERE Collection_Name = @collectionName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -189,17 +188,17 @@ As
             Return 0
         end
     end
-    
+
     commit transaction @transName
 
     -- Lookup the collection ID
     execute @collectionID = GetProteinCollectionID @collectionName
-    
+
     if @mode = 'add'
     begin
         set @transName = 'AddProteinCollectionEntry'
         begin transaction @transName
-    
+
         INSERT INTO T_Annotation_Groups (
             Protein_Collection_ID,
             Annotation_Group,
@@ -220,10 +219,10 @@ As
             -- Return zero, since we did not create a protein collection
             Return 0
         end
-        
+
         commit transaction @transName
     end
-        
+
     return @collectionID
 
 GO

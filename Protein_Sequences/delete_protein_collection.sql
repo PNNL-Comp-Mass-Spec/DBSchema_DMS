@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE PROCEDURE [dbo].[DeleteProteinCollection]
 /****************************************************
 **
@@ -20,25 +18,25 @@ CREATE PROCEDURE [dbo].[DeleteProteinCollection]
 **                         - Add RAISERROR calls with severity level 11 (forcing the Catch block to be entered)
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
-**    
+**
 *****************************************************/
 (
     @collectionID int,
     @message varchar(512)='' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @msg varchar(256)
 
     Declare @collectionName varchar(128)
     Declare @stateName varchar(64)
-    
+
     Declare @ArchivedFileID int
 
     Declare @CallingProcName varchar(128)
@@ -48,15 +46,15 @@ As
     Declare @logErrors tinyint = 0
 
     Begin Try
-        
-        Set @CurrentLocation = 'Examine @collectionState in T_Protein_Collections'    
-    
+
+        Set @CurrentLocation = 'Examine @collectionState in T_Protein_Collections'
+
         ---------------------------------------------------
         -- Check if collection is OK to delete
         ---------------------------------------------------
-        
+
         Declare @collectionState int
-        
+
         SELECT @collectionState = Collection_State_ID
         FROM T_Protein_Collections
         WHERE Protein_Collection_ID = @collectionID
@@ -69,23 +67,23 @@ As
             Print @message
             Goto Done
         End
-            
+
         SELECT @collectionName = Collection_Name
         FROM T_Protein_Collections
         WHERE Protein_Collection_ID = @collectionID
-        
+
         SELECT @stateName = State
         FROM T_Protein_Collection_States
         WHERE Collection_State_ID = @collectionState
 
-        If @collectionState > 2    
+        If @collectionState > 2
         Begin
             Set @msg = 'Cannot Delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
             RAISERROR (@msg, 10, 1)
-                
+
             return 51140
         End
-        
+
         Set @logErrors = 1
         ---------------------------------------------------
         -- Start transaction
@@ -107,7 +105,7 @@ As
             RAISERROR ('Protein collection members deletion was unsuccessful', 10, 1)
             return 51130
         End
-        
+
         -- Look for this collection's Archived_File_ID in T_Archived_Output_File_Collections_XRef
         Set @ArchivedFileID = -1
         SELECT TOP 1 @ArchivedFileID = Archived_File_ID
@@ -118,7 +116,7 @@ As
 
         -- Delete the entry from T_Archived_Output_File_Collections_XRef
         DELETE FROM T_Archived_Output_File_Collections_XRef
-        WHERE Protein_Collection_ID = @collectionID 
+        WHERE Protein_Collection_ID = @collectionID
         --
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -162,7 +160,7 @@ As
 
         If @myError <> 0
             RAISERROR ('Error deleting rows from T_Protein_Collections', 11, 1)
-        
+
         commit transaction @transname
 
     End Try
@@ -177,7 +175,7 @@ As
         Begin
             Declare @logMessage varchar(1024) = @message + '; Protein Collection ' + Cast(@collectionID As varchar(12))
             exec PostLogEntry 'Error', @logMessage, 'DeleteProteinCollection'
-        End 
+        End
 
         Print @message
         If @myError <> 0
@@ -185,8 +183,7 @@ As
 
     End Catch
 
-Done:    
+Done:
     return @myError
-
 
 GO

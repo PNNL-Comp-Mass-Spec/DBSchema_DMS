@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ResetIdentityFieldSeed]
 /****************************************************
 **
@@ -24,7 +23,6 @@ CREATE PROCEDURE [dbo].[ResetIdentityFieldSeed]
     @message varchar(255) = ''
 )
 AS
-
     Set NoCount On
 
     Declare @myRowCount int = 0
@@ -32,7 +30,7 @@ AS
 
     Declare @TableName varchar(100)
     Declare @FieldName varchar(100)
-    
+
     Declare @Sql nvarchar(2048)
     Declare @ParamDef nvarchar(1024)
 
@@ -40,14 +38,14 @@ AS
     Declare @CurrentIdentity int
     Declare @MaxValue int
     Declare @RowCount int
-    
+
     Declare @Continue int
     Declare @result int
     Declare @SeedToUse int
     Declare @IdentityUpdated tinyint
-    
+
     Set @message = ''
-    
+
     /*
     ** Use the following to find all tables in this DB that have identity columns
     **
@@ -71,7 +69,7 @@ AS
         Max_Value int NULL,
         Row_Count int NULL
     )
-    
+
     CREATE UNIQUE INDEX #IX_Tmp_TablesToUpdate ON #Tmp_TablesToUpdate (Table_Name ASC)
 
     --------------------------------------------------------------
@@ -97,12 +95,12 @@ AS
     INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Protein_Collections', 'Protein_Collection_ID')
     INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Protein_Names', 'Reference_ID')
     INSERT INTO #Tmp_TablesToUpdate (Table_Name, Field_Name) VALUES ('T_Proteins', 'Protein_ID')
-        
+
     --------------------------------------------------------------
     -- The following is used in the call to sp_executesql
     --------------------------------------------------------------
     --
-    set @ParamDef = '@IdentitySeed int output, @CurrentIdentity int output, @MaxValue int output, @RowCount int output'    
+    set @ParamDef = '@IdentitySeed int output, @CurrentIdentity int output, @MaxValue int output, @RowCount int output'
 
     --------------------------------------------------------------
     -- Loop through the entries in #Tmp_TablesToUpdate
@@ -122,7 +120,7 @@ AS
         ORDER BY Table_Name
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-        
+
         If @myRowCount < 1
             Set @Continue = 0
         Else
@@ -135,21 +133,21 @@ AS
             Set @CurrentIdentity = 0
             Set @MaxValue = 0
             Set @RowCount = 0
-            
+
             Set @Sql = ''
             Set @Sql = @Sql + ' SELECT @IdentitySeed = IDENT_SEED(''' + @TableName + '''),'
             Set @Sql = @Sql +        ' @CurrentIdentity = IDENT_CURRENT(''' + @TableName + '''),'
             Set @Sql = @Sql +        ' @MaxValue = IsNull(Max(' + @FieldName + '),0),'
             Set @Sql = @Sql +        ' @RowCount = COUNT(*)'
             Set @Sql = @Sql + ' FROM ' + @TableName
-            
-            exec @result = sp_executesql @Sql, @ParamDef, @IdentitySeed = @IdentitySeed output, 
-                                                          @CurrentIdentity = @CurrentIdentity output, 
+
+            exec @result = sp_executesql @Sql, @ParamDef, @IdentitySeed = @IdentitySeed output,
+                                                          @CurrentIdentity = @CurrentIdentity output,
                                                           @MaxValue = @MaxValue output,
                                                           @RowCount = @RowCount output
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             --------------------------------------------------------------
             -- Possibly update the identity
             --------------------------------------------------------------
@@ -169,11 +167,11 @@ AS
                         Else
                             Set @SeedToUse = @MaxValue
                     End
-                    DBCC CHECKIDENT (@TableName, RESEED, @SeedToUse) 
+                    DBCC CHECKIDENT (@TableName, RESEED, @SeedToUse)
                     Set @IdentityUpdated = 1
                 End
             End
-                
+
 
             UPDATE #Tmp_TablesToUpdate
             SET Identity_Seed = @IdentitySeed,
@@ -201,7 +199,7 @@ AS
            END AS Difference
     FROM #Tmp_TablesToUpdate
     ORDER BY Table_Name
-        
+
 Done:
     Return @myError
 
