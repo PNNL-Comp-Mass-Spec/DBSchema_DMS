@@ -1127,8 +1127,7 @@ AS
                                             -- Break out of the while loop
                                             Set @charIndex = Len(@affectedResidues)
                                         End
-
-                                        If Not @residueSymbol In ('*', '<', '>', '[', ']')
+                                        Else If Not @residueSymbol In ('*', '<', '>', '[', ']')
                                         Begin
                                             -- Terminal mod that targets specific residues
                                             -- Store this as a dynamic terminal mod
