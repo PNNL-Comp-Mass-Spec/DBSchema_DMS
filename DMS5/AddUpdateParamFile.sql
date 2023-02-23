@@ -27,6 +27,8 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 **          11/30/2018 mem - Make @paramFileID an input/output parameter
 **          11/04/2021 mem - Populate the Mod_List field using GetParamFileMassModCodeList
 **          04/11/2022 mem - Check for whitespace in @paramFileName
+**          02/23/2023 mem - Add mode 'previewadd'
+**                         - If the mode is 'previewadd', set @infoOnly to 1 when calling StoreParamFileMassMods
 **
 *****************************************************/
 (
@@ -38,7 +40,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
     @paramfileMassMods varchar(4000) = '',
     @replaceExistingMassMods tinyint = 0,
     @validateUnimod tinyint = 1,
-    @mode varchar(12) = 'add',                  -- 'add' or 'update'
+    @mode varchar(12) = 'add',                  -- 'add', 'previewadd', or 'update'
     @message varchar(512) output
 )
 As
@@ -51,6 +53,7 @@ As
 
     Declare @msg varchar(256)
     Declare @updateMassMods tinyint = 0
+    Declare @infoOnly tinyint
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -231,24 +234,25 @@ As
             Set @paramfileMassMods = ''
 
         If @paramfileMassMods <> '' And (
-            @mode = 'add' OR
+            @mode in ('add', 'previewadd') OR
             @mode = 'update' And @replaceExistingMassMods = 1 OR
             @mode = 'update' And @replaceExistingMassMods = 0 AND Not Exists (Select * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID))
         Begin -- <b>
 
             ---------------------------------------------------
-            -- Validate the mods
+            -- Validate the mods by calling StoreParamFileMassMods with @paramFileID = 0
             ---------------------------------------------------
 
-            -- Store the param file mass mods in T_Param_File_Mass_Mods
+            Set @infoOnly = Case When @mode Like 'preview%' Then 1 Else 0 End;
+
             exec @myError = StoreParamFileMassMods
-                 @paramFileID=0,
-                 @mods=@paramfileMassMods,
-                 @infoOnly=0,
-                 @replaceExisting=1,
-                 @validateUnimod=@validateUnimod,
-                 @paramFileType=@paramFileType,
-                 @message=@message output
+                 @paramFileID = 0,
+                 @mods = @paramfileMassMods,
+                 @infoOnly = @infoOnly,
+                 @replaceExisting = 1,
+                 @validateUnimod = @validateUnimod,
+                 @paramFileType = @paramFileType,
+                 @message = @message output
 
             If @myError <> 0
             Begin
