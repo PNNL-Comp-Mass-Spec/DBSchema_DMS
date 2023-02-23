@@ -4,13 +4,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE Procedure [dbo].[StoreParamFileMassMods]
+CREATE PROCEDURE [dbo].[StoreParamFileMassMods]
 /****************************************************
 **
 **  Stores (or validates) the dynamic and static mods to associate with a given parameter file
 **
-**  Format for MS-GF+, MSPathFinder, mzRefinery:
-**     The mod names listed in the 5th comma-separated column must be Unimod names 
+**  Format for MS-GF+, MSPathFinder, and mzRefinery:
+**     The mod names listed in the 5th comma-separated column must be UniMod names 
 **     and must match the Original_Source_Name values in T_Mass_Correction_Factors
 **
 **     StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex           # 4-plex iTraq
@@ -19,8 +19,28 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **
 **     DynamicMod=HO3P, STY, opt, any,            Phospho              # Phosphorylation STY
 **
+**  Format for DIA-NN:
+**     The format is Mod Name, Mass, Residues
+**     The Mod Name in the first column should be in the form UniMod:35
+**     If the mod does not have a UniMod ID, any name can be used, but @validateUnimod must then be set to 0 when calling this procedure
+**     The residue list can include 'n' for the peptide N-terminus or '*n' for the protein N-terminus
+**
+**     StaticMod=UniMod:737,   229.162933, n         # TMT6plex
+**     StaticMod=UniMod:737,   229.162933, K         # TMT6plex
+**     StaticMod=UniMod:2016,  304.207153, n         # TMT16plex (TMTpro)
+**     StaticMod=UniMod:2016,  304.207153, K         # TMT16plex
+**
+**     DynamicMod=UniMod:35,   15.994915,  M         # Oxidized methionine
+**     DynamicMod=UniMod:21,   79.966331,  STY       # Phosphorylated STY
+**     DynamicMod=UniMod:1,    42.010565,  *n        # Acetylation protein N-term
+**     DynamicMod=UniMod:34,   14.015650,  n         # N-terminal methylation
+**     DynamicMod=UniMod:121,  114.042927, K         # Lysine ubiquitinylation (K-GG)
+**
+**     Note that Static +57.021 on cysteine (carbamidomethylation) should be enabled using 
+**     StaticCysCarbamidomethyl=True (which corresponds to command line argument --unimod4)
+**
 **  Format for TopPIC:
-**     The format is Unimod Name, Mass, Residues, Position, UnimodID
+**     The format is UniMod Name, Mass, Residues, Position, UnimodID
 **     The UnimodName in the first column should match the Original_Source_Name values in T_Mass_Correction_Factors
 **
 **     StaticMod=Carbamidomethylation,57.021464,C,any,4
@@ -28,7 +48,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **     StaticMod=TMT6plex,229.1629,K,any,737
 **
 **     DynamicMod=Phospho,79.966331,STY,any,21
-**     DynamicMod=Oxidation,15.994915,CPKDNRY,any,35
+**     DynamicMod=Oxidation,15.994915,CMW,any,35
 **     DynamicMod=Methyl,14.015650,*,N-term,34
 **
 **  Format for MSFragger:
@@ -90,6 +110,7 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
 **          06/15/2021 mem - Remove UNION statements to avoid sorting
 **                         - Collapse isobaric mods into a single entry
 **          09/07/2021 mem - Add support for dynamic N-terminal TMT mods in MSFragger (notated with n^)
+**          02/23/2023 mem - Add support for DIA-NN
 **    
 *****************************************************/
 (
@@ -98,8 +119,8 @@ CREATE Procedure [dbo].[StoreParamFileMassMods]
     @infoOnly tinyint = 0,       -- 1 to print @row, 2 to show #Tmp_Residues for each modification
     @replaceExisting tinyint = 0,
     @validateUnimod tinyint = 1,
-    @paramFileType varchar(50) = '',    -- MSGFDB, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MS-GF+)
-    @message varchar(512)='' OUTPUT
+    @paramFileType varchar(50) = '',    -- MSGFDB, DIA-NN, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MS-GF+)
+    @message varchar(512) = '' OUTPUT
 )
 AS
     Set NoCount On
@@ -170,7 +191,7 @@ AS
         
         If @replaceExisting = 0 And Exists (SELECT * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @paramFileID)
         Begin
-        Set @message = 'Param File ID (' + Convert(varchar(12), @paramFileID) + ') has existing mods in T_Param_File_Mass_Mods but @replaceExisting = 0; unable to continue'
+            Set @message = 'Param File ID (' + Convert(varchar(12), @paramFileID) + ') has existing mods in T_Param_File_Mass_Mods but @replaceExisting = 0; unable to continue'
             Set @myError = 53003
             Goto Done
         End
@@ -190,7 +211,7 @@ AS
         End
     End
     
-    If Not @paramFileType In ('MSGFDB', 'TopPIC', 'MSFragger', 'MaxQuant')
+    If Not @paramFileType In ('MSGFDB', 'DIA-NN', 'TopPIC', 'MSFragger', 'MaxQuant')
     Begin
         Set @paramFileType = 'MSGFDB'
     End
@@ -368,6 +389,12 @@ AS
     Declare @location varchar(128)
     Declare @isobaricModIonNumber int
 
+    Declare @lookupUniModID tinyint
+    Declare @staticCysCarbamidomethyl tinyint
+
+    Declare @uniModIDText varchar(20)
+    Declare @uniModID int
+
     Declare @maxQuantModID int
 
     Declare @localSymbolID int = 0
@@ -401,6 +428,11 @@ AS
         -- StaticMod=144.102063,  *,  fix, N-term,    iTRAQ4plex         # 4-plex iTraq
         --   or
         -- DynamicMod=HO3P, STY, opt, any,            Phospho            # Phosphorylation STY
+
+        -- For DIA-NN
+        -- StaticMod=UniMod:737,   229.1629,   n         # TMT6plex
+        --   or
+        -- DynamicMod=UniMod:35,   15.994915,  M         # Oxidized methionine
         
         -- For TopPIC: 
         -- StaticMod=Carbamidomethylation,57.021464,C,any,4
@@ -539,9 +571,24 @@ AS
                 End
             End
 
+            If @paramFileType = 'DIA-NN'
+            Begin
+                -- Check for setting StaticCysCarbamidomethyl=True
+                If @row Like 'StaticCysCarbamidomethyl%=%True'
+                Begin
+                    Set @rowParsed = 1;
+
+                    -- Store this as a StaticMod entry, using the keyword StaticCysCarbamidomethyl
+                    INSERT INTO #Tmp_ModDef (EntryID, Value)
+                    VALUES (1, 'StaticMod=StaticCysCarbamidomethyl'),
+                           (2, '57.021465'),
+                           (3, 'C')
+                End
+            End
+
             If @rowParsed = 0
             Begin
-                -- MS-GF+ style mod
+                -- MS-GF+ style mod (also used by DIA-NN and TOPIC)
                 INSERT INTO #Tmp_ModDef (EntryID, Value)
                 SELECT EntryID, Value
                 FROM dbo.udfParseDelimitedListOrdered(@row, ',', 0)
@@ -597,10 +644,11 @@ AS
                         Where EntryID = 1
 
                         -- Assure that #Tmp_ModDef has at least 5 rows for MS-GF+ or TopPIC
+                        -- For DIA-NN, require at least 3 rows
                         -- For MSFragger, require at least 2 rows
                         -- For MaxQuant, there will just be 1 row, which has the MaxQuant-tracked mod name
                         --
-                        SELECT @rowCount = COUNT(*) 
+                        SELECT @rowCount = COUNT(*)
                         FROM #Tmp_ModDef
                 
                         Set @validRow = 1
@@ -626,7 +674,7 @@ AS
                                 -- TopPIC uses 'StaticMod=None' and 'DynamicMod=Defaults' to indicate no static or dynamic mods
                                 If Not @field in ('StaticMod=None', 'DynamicMod=None', 'DynamicMod=Defaults')
                                 Begin
-                                    Set @message = 'Aborting since row has ' + Cast(@rowCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @row
+                                    Set @message = 'Aborting since ' + @paramFileType + ' row has ' + Cast(@rowCount as varchar(4)) + ' comma-separated columns (should have 5 columns): ' + @row
                                     Set @myError = 53012
                                     
                                     If @infoOnly = 0
@@ -635,6 +683,12 @@ AS
                             End                            
                         End
                         
+                        If @paramFileType In ('DIA-NN') And @rowCount < 3
+                        Begin
+                            Set @validRow = 0
+                            Print 'Skipping row since not enough rows in #Tmp_ModDef: ' + @row
+                        End
+
                         If @paramFileType In ('MSFragger') And @rowCount < 2
                         Begin
                             Set @validRow = 0
@@ -645,7 +699,8 @@ AS
                         Begin
 
                             Set @field = ''
-                            If @paramFileType In ('TopPIC', 'MSFragger', 'MaxQuant')
+
+                            If @paramFileType In ('DIA-NN', 'TopPIC', 'MSFragger', 'MaxQuant')
                             Begin
                                 -- Mod defs for these tools don't include 'opt' or 'fix, so we update @field based on @modType
                                 If @modType = 'DynamicMod'
@@ -696,26 +751,104 @@ AS
 
                             DELETE FROM #Tmp_Residues
 
-                            If @paramFileType In ('MSGFDB', 'TopPIC')
+                            If @paramFileType In ('MSGFDB', 'DIA-NN', 'TopPIC')
                             Begin
                                 -----------------------------------------
-                                -- Determine the Mass_Correction_ID based on the Unimod name
+                                -- Determine the modification name (preferably UniMod name, but could also be a mass correction tag name)
+                                -----------------------------------------                        
+                                
+                                If @paramFileType In ('MSGFDB', 'TopPIC')
+                                Begin                                
+                                    SELECT @modName = LTrim(RTrim(Value))
+                                    FROM #Tmp_ModDef
+                                    WHERE @paramFileType = 'MSGFDB'  And EntryID = 5 Or
+                                          @paramFileType = 'TopPIC' And EntryID = 1
+                            
+                                    -- Auto change Glu->pyro-Glu to Dehydrated
+                                    -- Both have empirical formula H(-2) O(-1) but DMS can only associate one UniMod name with each unique empirical formula and Dehydrated is associated with H(-2) O(-1)                        
+                                    If @modName = 'Glu->pyro-Glu'
+                                        Set @modName = 'Dehydrated'                                
+                                End
+                                Else
+                                Begin
+                                    -- DIA-NN parameter file
+                                    --
+                                    SELECT @field = LTrim(RTrim(Value))
+                                    FROM #Tmp_ModDef
+                                    WHERE EntryID = 1
+
+                                    Set @lookupUniModID = 1
+                                    Set @staticCysCarbamidomethyl = 0
+
+                                    If Not @field Like 'UniMod:[0-9]%'
+                                    Begin
+                                        If @field = 'StaticCysCarbamidomethyl'
+                                        Begin
+                                            Set @field = 'UniMod:4'
+                                            Set @staticCysCarbamidomethyl = 1
+                                        End
+                                        Else
+                                        Begin
+                                            If @validateUnimod > 0
+                                            Begin
+                                                Set @message = 'Mod name "' + @field + '" is not in the expected form (e.g. UniMod:35); see row: ' + @row
+                                                Set @myError = 53016
+                                                Goto Done
+                                            End
+                                            Else
+                                            Begin
+                                                Set @lookupUniModID = 0
+                                            End
+                                        End
+                                    End
+
+                                    If @lookupUniModID = 0
+                                    Begin
+                                        Set @modName = @field
+                                    End
+                                    Else
+                                    Begin
+                                        Set @uniModIDText = Substring(@field, 8, 100)
+                                        Set @uniModID = Try_Parse(@uniModIDText As int)
+
+                                        If @uniModID Is Null
+                                        Begin
+                                            Set @message = 'UniMod ID "' + @uniModIDText + '" is not an integer; see row: ' + @row
+                                            Set @myError = 53017
+                                            Goto Done
+                                        End
+                                    
+                                        If @uniModID = 4 And @staticCysCarbamidomethyl = 0
+                                        Begin
+                                            Set @message = 'Define static Cys Carbamidomethyl using "StaticCysCarbamidomethyl=True", not using "StaticMod=UniMod:4"; see row: ' + @row
+                                            Set @myError = 53018
+                                            Goto Done
+                                        End
+
+                                        SELECT @modName = Name
+                                        FROM Ontology_Lookup.dbo.T_Unimod_Mods
+                                        WHERE Unimod_ID = @uniModID
+                                        --
+                                        SELECT @myRowCount = @@rowcount, @myError = @@error
+
+                                        If @myRowCount = 0
+                                        Begin
+                                            Set @message = 'UniMod ID "' + @field + '" not found in T_Unimod_Mods; see row: ' + @row
+                                            Set @myError = 53019
+                                            Goto Done
+                                        End
+                                    End
+                                End
+
+                                -----------------------------------------
+                                -- Determine the Mass_Correction_ID based on the UniMod name
                                 -----------------------------------------                        
                                 --
-                                SELECT @modName = LTrim(RTrim(Value))
-                                FROM #Tmp_ModDef
-                                WHERE @paramFileType = 'MSGFDB' And EntryID = 5 Or
-                                      @paramFileType = 'TopPIC' And EntryID = 1
-                            
-                                -- Auto change Glu->pyro-Glu to Dehydrated
-                                -- Both have empirical formula H(-2) O(-1) but DMS can only associate one Unimod name with each unique empirical formula and Dehydrated is associated with H(-2) O(-1)                        
-                                If @modName = 'Glu->pyro-Glu'
-                                    Set @modName = 'Dehydrated'                                
-                                --
-                                SELECT @massCorrectionID = Mass_Correction_ID, @modMass = Monoisotopic_Mass
+                                SELECT @massCorrectionID = Mass_Correction_ID, 
+                                       @modMass = Monoisotopic_Mass
                                 FROM T_Mass_Correction_Factors
                                 WHERE Original_Source_Name = @modName AND
-                                     (Original_Source = 'UniMod' OR @modName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose') Or @validateUnimod = 0)
+                                      (Original_Source = 'UniMod' OR @modName IN ('Heme_615','Dyn2DZ','DeoxyHex', 'Pentose') Or @validateUnimod = 0)
                                 --
                                 SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -764,6 +897,20 @@ AS
                                     Goto Done
                                 End
                             
+                                If @paramFileType = 'DIA-NN'
+                                Begin
+                                    SELECT @field = LTrim(RTrim(Value))
+                                    FROM #Tmp_ModDef
+                                    WHERE @paramFileType = 'DIA-NN' And EntryID = 3
+                                          
+                                    If @field = '*n'
+                                        Set @location = 'Prot-N-term'   -- Protein N-terminus
+                                    Else If ascii(@field) = 110
+                                        Set @location = 'N-term'        -- Peptide N-terminus (lowercase 'n' is ASCII 110)
+                                    Else
+                                        Set @location = 'any'
+                                End
+
                                 If @location = 'Prot-N-term'
                                 Begin
                                     Set @terminalMod = 1
@@ -789,12 +936,12 @@ AS
                                 End
                             
                                 -- Parse out the affected residue (or residues)
-                                -- N- or C-terminal mods use * for any residue at a terminus
+                                -- In MS-GF+ and TOPPIC, N- or C-terminal mods use * for any residue at a terminus
                                 --                        
                                 SELECT @field = LTrim(RTrim(Value))
                                 FROM #Tmp_ModDef
-                                WHERE @paramFileType = 'MSGFDB' And EntryID = 2 Or
-                                      @paramFileType = 'TopPIC' And EntryID = 3
+                                WHERE EntryID = 2 And @paramFileType In ('MSGFDB') Or
+                                      EntryID = 3 And @paramFileType In ('DIA-NN', 'TopPIC')
                             
                                 If @field = 'any'
                                 Begin
@@ -804,7 +951,7 @@ AS
                                 End
 
                                 Set @affectedResidues = @field
-                            End -- MS-GF+ and TopPIC
+                            End -- MS-GF+ , DIA-NN, and TopPIC
 
                             If @paramFileType In ('MSFragger')
                             Begin
@@ -820,7 +967,7 @@ AS
 
                                 If @modMassToFind Is Null
                                 Begin
-                                    Set @message = 'Mod mass "' + @field + '"is not a number; see row: ' + @row
+                                    Set @message = 'Mod mass "' + @field + '" is not a number; see row: ' + @row
                                     Set @myError = 53012
                                     Goto Done
                                 End
@@ -858,6 +1005,7 @@ AS
                                         -- (specified with add_Cterm_peptide or similar, 
                                         --  but we replaced that with a symbol earlier in this procedure)
                                         Set @terminalMod = 1
+
                                         INSERT INTO #Tmp_Residues (Residue_Symbol, Terminal_AnyAA) Values (@affectedResidues, 1)
                                         Set @affectedResidues= '*'
                                     End
@@ -973,6 +1121,13 @@ AS
                                 
                                     If @terminalMod = 1
                                     Begin
+                                        If @paramFileType = 'DIA-NN'
+                                        Begin
+                                            -- This should be a peptide or protein N-terminal mod
+                                            -- Break out of the while loop
+                                            Set @charIndex = Len(@affectedResidues)
+                                        End
+
                                         If Not @residueSymbol In ('*', '<', '>', '[', ']')
                                         Begin
                                             -- Terminal mod that targets specific residues
@@ -980,6 +1135,7 @@ AS
                                             UPDATE #Tmp_Residues 
                                             SET Terminal_AnyAA = 0
                                         
+                                            -- Break out of the while loop
                                             Set @charIndex = Len(@affectedResidues)
                                         End
                                     End
