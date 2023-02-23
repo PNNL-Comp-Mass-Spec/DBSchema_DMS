@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[UpdateProteinNameHash] ******/
+/****** Object:  StoredProcedure [dbo].[update_protein_name_hash] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateProteinNameHash]
+CREATE PROCEDURE [dbo].[update_protein_name_hash]
 /****************************************************
 **
-**  Desc: Updates t SHA1 fingerprint for a given Protein Reference Entry
+**  Desc: Updates the SHA1 fingerprint for a given Protein Reference Entry
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -16,11 +16,12 @@ CREATE PROCEDURE [dbo].[UpdateProteinNameHash]
 **
 **  Auth:   kja
 **  Date:   03/13/2006
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Reference_ID int,
-    @SHA1Hash varchar(40),
+    @reference_ID int,
+    @sha1Hash varchar(40),
     @message varchar(512) output
 )
 AS
@@ -39,7 +40,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'UpdateProteinNameHash'
+    set @transName = 'update_protein_name_hash'
     begin transaction @transName
 
 
@@ -50,7 +51,7 @@ AS
 
     UPDATE T_Protein_Names
     SET
-        Reference_Fingerprint = @SHA1Hash
+        Reference_Fingerprint = @sha1Hash
     WHERE (Reference_ID = @Reference_ID)
 
 
@@ -71,5 +72,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinNameHash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_protein_name_hash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

@@ -1,9 +1,10 @@
-/****** Object:  StoredProcedure [dbo].[PromoteProteinCollectionState] ******/
+/****** Object:  StoredProcedure [dbo].[promote_protein_collection_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PromoteProteinCollectionState]
+
+CREATE PROCEDURE [dbo].[promote_protein_collection_state]
 /****************************************************
 **
 **  Desc:   Examines protein collections with a state of 1
@@ -21,6 +22,7 @@ CREATE PROCEDURE [dbo].[PromoteProteinCollectionState]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          09/12/2016 mem - Add parameter @mostRecentMonths
 **          07/27/2022 mem - Adjust case of variable names
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -123,7 +125,7 @@ AS
                         SET Collection_State_ID = 3
                         WHERE Protein_Collection_ID = @proteinCollectionID AND Collection_State_ID = 1
 
-                        Exec PostLogEntry 'Normal', @message, 'PromoteProteinCollectionState'
+                        Exec post_log_entry 'Normal', @message, 'promote_protein_collection_state'
                     End
                     Else
                         Print @message
@@ -154,13 +156,13 @@ AS
             Print @message
 
         If @addNewProteinHeaders <> 0
-            Exec AddNewProteinHeaders @infoOnly = @infoOnly
+            Exec add_new_protein_headers @infoOnly = @infoOnly
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'PromoteProteinCollectionState')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'promote_protein_collection_state')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch

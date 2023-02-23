@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewProteinHeaders] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_protein_headers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewProteinHeaders]
+CREATE PROCEDURE [dbo].[add_new_protein_headers]
 /****************************************************
 **
 **  Desc:   Populates T_Protein_Headers with the first 50 residues of each protein in T_Proteins
@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[AddNewProteinHeaders]
 **  Auth:   mem
 **  Date:   04/08/2008
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ProteinIDStart int = 0,                    -- If 0, then this will be updated to one more than the maximum Protein_ID value in T_Protein_Headers
-    @MaxProteinsToProcess int = 0,              -- Set to a value > 0 to limit the number of proteins processed
-    @InfoOnly tinyint = 0,
+    @proteinIDStart int = 0,                    -- If 0, then this will be updated to one more than the maximum Protein_ID value in T_Protein_Headers
+    @maxProteinsToProcess int = 0,              -- Set to a value > 0 to limit the number of proteins processed
+    @infoOnly tinyint = 0,
     @message varchar(255) = '' output
 )
 AS
@@ -123,8 +124,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'AddNewProteinHeaders')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'add_new_protein_headers')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch

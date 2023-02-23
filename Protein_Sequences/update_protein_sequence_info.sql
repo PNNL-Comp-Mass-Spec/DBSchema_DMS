@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateProteinSequenceInfo] ******/
+/****** Object:  StoredProcedure [dbo].[update_protein_sequence_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateProteinSequenceInfo]
+CREATE PROCEDURE [dbo].[update_protein_sequence_info]
 /****************************************************
 **
 **  Desc: Adds a new protein sequence entry to T_Proteins
@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[UpdateProteinSequenceInfo]
 **
 **  Auth:   kja
 **  Date:   10/06/2004
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Protein_ID int,
+    @protein_ID int,
     @sequence text,
     @length int,
     @molecular_formula varchar(128),
@@ -121,5 +122,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinSequenceInfo] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_protein_sequence_info] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

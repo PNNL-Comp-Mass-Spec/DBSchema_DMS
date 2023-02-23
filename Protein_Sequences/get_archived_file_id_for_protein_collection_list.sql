@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetArchivedFileIDForProteinCollectionList] ******/
+/****** Object:  StoredProcedure [dbo].[get_archived_file_id_for_protein_collection_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetArchivedFileIDForProteinCollectionList]
+CREATE PROCEDURE [dbo].[get_archived_file_id_for_protein_collection_list]
 /****************************************************
 **
 **  Desc:   Given a series of protein collection names, determine
@@ -17,13 +17,14 @@ CREATE PROCEDURE [dbo].[GetArchivedFileIDForProteinCollectionList]
 **  Date:   06/07/2006
 **          07/04/2006 mem - Updated to return the newest Archived File Collection ID when there is more than one possible match
 **          07/27/2022 mem - Switch from FileName to Collection_Name
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ProteinCollectionList varchar(2048),
-    @CreationOptions varchar(512) = 'seq_direction=forward,filetype=fasta',
-    @ArchivedFileID int=0 output,
-    @ProteinCollectionCount int=0 output,
+    @proteinCollectionList varchar(2048),
+    @creationOptions varchar(512) = 'seq_direction=forward,filetype=fasta',
+    @archivedFileID int=0 output,
+    @proteinCollectionCount int=0 output,
     @message varchar(512)='' output
 )
 AS
@@ -78,7 +79,7 @@ AS
     --
     INSERT INTO #TmpProteinCollectionList (ProteinCollectionName)
     SELECT Value
-    FROM dbo.udfParseDelimitedList(@ProteinCollectionList, ',')
+    FROM dbo.parse_delimited_list(@ProteinCollectionList, ',')
     --
     SELECT @myRowcount = @@rowcount, @myError = @@error
 
@@ -247,7 +248,7 @@ Done:
     Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [MTS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_archived_file_id_for_protein_collection_list] TO [MTS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_archived_file_id_for_protein_collection_list] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

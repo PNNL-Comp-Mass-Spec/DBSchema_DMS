@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedProteinCollectionMembers] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_protein_collection_members] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedProteinCollectionMembers]
+CREATE PROCEDURE [dbo].[update_cached_protein_collection_members]
 /****************************************************
 **
 **  Desc:   Updates the information in T_Protein_Collection_Members_Cached
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedProteinCollectionMembers]
 **
 **  Auth:   mem
 **  Date:   06/24/2016 mem - Initial release
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -191,7 +192,7 @@ AS
         End
         Else
         Begin -- <b>
-            Set @currentRange = Cast(@currentRangeCount as varchar(9)) + ' protein ' + dbo.CheckPlural(@currentRangeCount, 'collection', 'collections') +
+            Set @currentRange = Cast(@currentRangeCount as varchar(9)) + ' protein ' + dbo.check_plural(@currentRangeCount, 'collection', 'collections') +
                                 ' (' + Cast(@currentRangeStart as varchar(9)) + ' to ' + Cast(@currentRangeEnd as varchar(9)) + ')'
 
             Print 'Processing ' + @currentRange
@@ -246,7 +247,7 @@ AS
             Begin
                 set @statusMsg = 'Inserted ' + Cast(@myRowCount as varchar(9)) + ' rows for ' + @currentRange
                 Print @statusMsg
-                exec PostLogEntry 'Normal', @statusMsg, 'UpdateCachedProteinCollectionMembers'
+                exec post_log_entry 'Normal', @statusMsg, 'update_cached_protein_collection_members'
             End
 
             ---------------------------------------------------
@@ -273,7 +274,7 @@ AS
             Begin
                 set @statusMsg = 'Deleted ' + Cast(@myRowCount as varchar(9)) + ' extra rows from T_Protein_Collection_Members_Cached for ' + @currentRange
                 Print @statusMsg
-                exec PostLogEntry 'Normal', @statusMsg, 'UpdateCachedProteinCollectionMembers'
+                exec post_log_entry 'Normal', @statusMsg, 'update_cached_protein_collection_members'
             End
 
             ---------------------------------------------------
@@ -355,7 +356,7 @@ AS
                                 ' in T_Protein_Collections'
                 print @statusMsg
 
-                exec PostLogEntry 'Warning', @statusMsg, 'UpdateCachedProteinCollectionMembers'
+                exec post_log_entry 'Warning', @statusMsg, 'update_cached_protein_collection_members'
             End -- </e>
 
         End -- </d>

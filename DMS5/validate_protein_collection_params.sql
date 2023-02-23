@@ -17,7 +17,7 @@ CREATE Procedure [dbo].[validate_protein_collection_params]
 **          05/15/2012 mem - Now verifying that @organismDBName is 'na' if @protCollNameList is defined, or vice versa
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          08/19/2013 mem - Auto-clearing @organismDBName if both @organismDBName and @protCollNameList are defined and @organismDBName is the auto-generated FASTA file for the specified protein collection
-**          07/12/2016 mem - Now using a synonym when calling ValidateAnalysisJobProteinParameters in the Protein_Sequences database
+**          07/12/2016 mem - Now using a synonym when calling validate_analysis_job_protein_parameters in the Protein_Sequences database
 **          04/11/2022 mem - Increase warning threshold for length of @protCollNameList to 4000
 **
 *****************************************************/

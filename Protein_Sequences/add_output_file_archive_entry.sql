@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddOutputFileArchiveEntry] ******/
+/****** Object:  StoredProcedure [dbo].[add_output_file_archive_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddOutputFileArchiveEntry]
+CREATE PROCEDURE [dbo].[add_output_file_archive_entry]
 /****************************************************
 **
 **  Desc: Adds a new entry to the T_Archived_Output_Files
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[AddOutputFileArchiveEntry]
 **
 **  Auth:   kja
 **  Date:   03/10/2006
-**
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[AddOutputFileArchiveEntry]
     @collection_string_hash varchar(40),
     @archived_file_path varchar(250) output,
     @message varchar(512) output
+
 )
 AS
     set nocount on
@@ -245,7 +246,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddOutputFileArchiveEntry'
+    set @transName = 'add_output_file_archive_entry'
     begin transaction @transName
 
 
@@ -470,11 +471,11 @@ AS
     return @Archive_Entry_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [proteinseqs\ftms] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [proteinseqs\ftms] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [svc-dms] AS [dbo]
 GO

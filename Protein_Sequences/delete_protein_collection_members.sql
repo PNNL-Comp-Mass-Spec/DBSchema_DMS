@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteProteinCollectionMembers] ******/
+/****** Object:  StoredProcedure [dbo].[delete_protein_collection_members] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteProteinCollectionMembers]
+CREATE PROCEDURE [dbo].[delete_protein_collection_members]
 /****************************************************
 **
 **  Desc:    Deletes Protein Collection Member Entries from a given Protein Collection ID
@@ -17,12 +17,13 @@ CREATE PROCEDURE [dbo].[DeleteProteinCollectionMembers]
 **          09/14/2015 mem - Added parameter @NumProteinsForReLoad
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @collectionID int,
     @message varchar(512) output,
-    @NumProteinsForReLoad int = 0        -- Number of proteins that will be associated with this collection after they are added to the database following this delete
+    @numProteinsForReLoad int = 0        -- Number of proteins that will be associated with this collection after they are added to the database following this delete
 )
 AS
     set nocount on
@@ -77,7 +78,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'DeleteProteinCollectionMembers'
+    set @transName = 'delete_protein_collection_members'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -105,5 +106,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[DeleteProteinCollectionMembers] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_protein_collection_members] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

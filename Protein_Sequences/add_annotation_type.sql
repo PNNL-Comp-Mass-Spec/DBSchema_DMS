@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddAnnotationType] ******/
+/****** Object:  StoredProcedure [dbo].[add_annotation_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddAnnotationType]
+CREATE PROCEDURE [dbo].[add_annotation_type]
 /****************************************************
 **
 **  Desc: Adds or changes an annotation naming authority
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[AddAnnotationType]
 **
 **  Auth:   kja
 **  Date:   01/11/2006
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,7 +45,7 @@ AS
     -- Does entry already exist?
     ---------------------------------------------------
 
-    execute @annType_id = GetAnnotationTypeID @name, @authID
+    execute @annType_id = get_annotation_type_id @name, @authID
 
     if @annType_id > 0
     begin
@@ -56,7 +57,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddNamingAuthority'
+    set @transName = 'add_naming_authority'
     begin transaction @transName
 
 
@@ -85,5 +86,5 @@ AS
     return @annType_id
 
 GO
-GRANT EXECUTE ON [dbo].[AddAnnotationType] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_annotation_type] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

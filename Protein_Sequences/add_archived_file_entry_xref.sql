@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddArchivedFileEntryXRef] ******/
+/****** Object:  StoredProcedure [dbo].[add_archived_file_entry_xref] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddArchivedFileEntryXRef]
+CREATE PROCEDURE [dbo].[add_archived_file_entry_xref]
 /****************************************************
 **
 **  Desc: Adds an Archived File Entry to T_Archived_Output_File_Collections_XRef
@@ -18,11 +18,12 @@ CREATE PROCEDURE [dbo].[AddArchivedFileEntryXRef]
 **  Auth:   kja
 **  Date:   03/17/2006 - kja
 **          03/12/2014 - Now validating @Collection_ID and @Archived_File_ID
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Collection_ID int,
-    @Archived_File_ID int,
+    @collection_ID int,
+    @archived_File_ID int,
     @message varchar(512) output
 )
 AS
@@ -57,7 +58,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddArchivedFileEntryXRef'
+    set @transName = 'add_archived_file_entry_xref'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -98,11 +99,11 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_archived_file_entry_xref] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [proteinseqs\ftms] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_archived_file_entry_xref] TO [proteinseqs\ftms] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_archived_file_entry_xref] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_archived_file_entry_xref] TO [svc-dms] AS [dbo]
 GO

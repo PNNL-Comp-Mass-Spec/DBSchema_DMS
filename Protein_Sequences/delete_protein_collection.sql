@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteProteinCollection] ******/
+/****** Object:  StoredProcedure [dbo].[delete_protein_collection] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteProteinCollection]
+CREATE PROCEDURE [dbo].[delete_protein_collection]
 /****************************************************
 **
 **  Desc: Deletes the given Protein Collection (use with caution)
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[DeleteProteinCollection]
 **                         - Add RAISERROR calls with severity level 11 (forcing the Catch block to be entered)
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -90,14 +91,14 @@ AS
         ---------------------------------------------------
 
         Declare @transName varchar(32)
-        Set @transName = 'DeleteProteinCollection'
+        Set @transName = 'delete_protein_collection'
         Begin transaction @transName
 
         ---------------------------------------------------
         -- Delete the collection members
         ---------------------------------------------------
 
-        exec @myError = DeleteProteinCollectionMembers @collectionID, @message = @message output
+        exec @myError = delete_protein_collection_members @collectionID, @message = @message output
 
         If @myError <> 0
         Begin
@@ -165,7 +166,7 @@ AS
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -174,7 +175,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Protein Collection ' + Cast(@collectionID As varchar(12))
-            exec PostLogEntry 'Error', @logMessage, 'DeleteProteinCollection'
+            exec post_log_entry 'Error', @logMessage, 'delete_protein_collection'
         End
 
         Print @message

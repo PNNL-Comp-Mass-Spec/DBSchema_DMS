@@ -1,10 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateFileArchiveEntryCollectionList] ******/
+/****** Object:  StoredProcedure [dbo].[update_file_archive_entry_collection_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateFileArchiveEntryCollectionList]
-
+CREATE PROCEDURE [dbo].[update_file_archive_entry_collection_list]
 /****************************************************
 **
 **  Desc: Updates the SHA1 fingerprint for a given Protein Description Entry
@@ -19,14 +18,15 @@ CREATE PROCEDURE [dbo].[UpdateFileArchiveEntryCollectionList]
 **  Date:   02/21/2007
 **          02/11/2009 mem - Added parameter @CollectionListHexHash
 **                         - Now storing @Sha1Hash in Authentication_Hash instead of in Collection_List_Hash
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Archived_File_Entry_ID int,
-    @ProteinCollectionList varchar(8000),
-    @SHA1Hash varchar(40),
+    @archived_File_Entry_ID int,
+    @proteinCollectionList varchar(8000),
+    @sha1Hash varchar(40),
     @message varchar(512) output,
-    @CollectionListHexHash varchar(128)
+    @collectionListHexHash varchar(128)
 )
 AS
     set nocount on
@@ -44,7 +44,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'UpdateFileArchiveEntryCollectionList'
+    set @transName = 'update_file_archive_entry_collection_list'
     begin transaction @transName
 
 
@@ -78,9 +78,9 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_file_archive_entry_collection_list] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [proteinseqs\ftms] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_file_archive_entry_collection_list] TO [proteinseqs\ftms] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_file_archive_entry_collection_list] TO [svc-dms] AS [dbo]
 GO

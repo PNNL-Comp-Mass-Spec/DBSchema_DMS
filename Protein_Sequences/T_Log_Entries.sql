@@ -27,8 +27,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE TRIGGER trig_u_T_Log_Entries ON T_Log_Entries 
+CREATE TRIGGER [dbo].[trig_u_T_Log_Entries] ON [dbo].[T_Log_Entries] 
 FOR UPDATE
 AS
 /****************************************************
@@ -62,7 +61,7 @@ AS
 		-- in the form: 2006-09-01 09:05:03
 
 		Declare @UserInfo varchar(128)
-		Set @UserInfo = dbo.udfTimeStampText(GetDate()) + '; ' + LEFT(SYSTEM_USER,75)
+		Set @UserInfo = dbo.time_stamp_text(GetDate()) + '; ' + LEFT(SYSTEM_USER,75)
 		Set @UserInfo = IsNull(@UserInfo, '')
 
 		UPDATE T_Log_Entries
@@ -76,7 +75,6 @@ AS
 				) LookupQ ON T_Log_Entries.Entry_ID = LookupQ.Entry_ID
 
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Log_Entries] ENABLE TRIGGER [trig_u_T_Log_Entries]

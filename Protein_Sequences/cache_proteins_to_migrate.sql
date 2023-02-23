@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CacheProteinsToMigrate] ******/
+/****** Object:  StoredProcedure [dbo].[cache_proteins_to_migrate] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CacheProteinsToMigrate]
+CREATE PROCEDURE [dbo].[cache_proteins_to_migrate]
 /****************************************************
 **
 **  Desc:
@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[CacheProteinsToMigrate]
 **  Auth:   mem
 **  Date:   07/26/2022
 **          07/27/2022 mem - Switch from FileName to Collection_Name
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -224,8 +225,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'CacheProteinsToMigrate')
-        exec LocalErrorHandler  @callingProcName, @currentLocation, @LogError = 1,
+        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'cache_proteins_to_migrate')
+        exec local_error_handler  @callingProcName, @currentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch

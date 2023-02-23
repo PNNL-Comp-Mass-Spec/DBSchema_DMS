@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StandardizeProteinCollectionList] ******/
+/****** Object:  StoredProcedure [dbo].[standardize_protein_collection_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StandardizeProteinCollectionList]
+CREATE PROCEDURE [dbo].[standardize_protein_collection_list]
 /****************************************************
 **
 **  Desc:
@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[StandardizeProteinCollectionList]
 **          10/04/2007 mem - Increased @protCollNameList from varchar(2048) to varchar(max)
 **          06/24/2013 mem - Now removing duplicate protein collection names in @protCollNameList
 **          07/27/2022 mem - Switch from FileName to Collection_Name
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -60,7 +61,7 @@ AS
         -- Split @protCollNameList on commas and populate #TmpProteinCollections
         INSERT INTO #TmpProteinCollections (Collection_Name)
         SELECT DISTINCT LTrim(RTrim(Value))
-        FROM dbo.udfParseDelimitedList(@protCollNameList, ',')
+        FROM dbo.parse_delimited_list(@protCollNameList, ',')
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -121,9 +122,9 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

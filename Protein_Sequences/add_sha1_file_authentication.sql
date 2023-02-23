@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddSHA1FileAuthentication] ******/
+/****** Object:  StoredProcedure [dbo].[add_sha1_file_authentication] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddSHA1FileAuthentication]
+CREATE PROCEDURE [dbo].[add_sha1_file_authentication]
 /****************************************************
 **
 **  Desc: Adds a SHA1 fingerprint to a given Protein Collection Entry
@@ -16,11 +16,12 @@ CREATE PROCEDURE [dbo].[AddSHA1FileAuthentication]
 **
 **  Auth:   kja
 **  Date:   04/15/2005
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Collection_ID int,
-    @CRC32FileHash varchar(8),
+    @collection_ID int,
+    @crc32FileHash varchar(8),
     @message varchar(512) output
 )
 AS
@@ -39,7 +40,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddCRC32FileAuthentication'
+    set @transName = 'add_crc32_file_authentication'
     begin transaction @transName
 
 
@@ -73,5 +74,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddSHA1FileAuthentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_sha1_file_authentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

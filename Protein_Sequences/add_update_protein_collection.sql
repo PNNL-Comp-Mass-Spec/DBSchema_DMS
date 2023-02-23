@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateProteinCollection] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_protein_collection] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
+CREATE PROCEDURE [dbo].[add_update_protein_collection]
 /****************************************************
 **
 **  Desc: Adds a new protein collection entry
@@ -13,7 +13,7 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **  Auth:   kja
 **  Date:   09/29/2004
 **          11/23/2005 KJA
-**          09/13/2007 mem - Now using GetProteinCollectionID instead of @@Identity to lookup the collection ID
+**          09/13/2007 mem - Now using get_protein_collection_id instead of @@Identity to lookup the collection ID
 **          01/18/2010 mem - Now validating that @@collectionName does not contain a space
 **                         - Now returns 0 if an error occurs; returns the protein collection ID if no errors
 **          11/24/2015 mem - Added @collectionSource
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollection]
 **          01/20/2020 mem - Replace < and > with ( and ) in the source and description
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument @fileName to @collectionName
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -81,7 +82,7 @@ AS
 
     declare @collectionID Int = 0
 
-    execute @collectionID = GetProteinCollectionID @collectionName
+    execute @collectionID = get_protein_collection_id @collectionName
 
     if @collectionID > 0 and @mode = 'add'
     begin
@@ -98,7 +99,7 @@ AS
     -- Uncomment to debug
     --
     -- set @message = 'mode ' + @mode + ', collection '+ @collectionName
-    -- exec PostLogEntry 'Debug', @message, 'AddUpdateProteinCollection'
+    -- exec post_log_entry 'Debug', @message, 'add_update_protein_collection'
     -- set @message=''
 
     ---------------------------------------------------
@@ -192,7 +193,7 @@ AS
     commit transaction @transName
 
     -- Lookup the collection ID
-    execute @collectionID = GetProteinCollectionID @collectionName
+    execute @collectionID = get_protein_collection_id @collectionName
 
     if @mode = 'add'
     begin
@@ -226,5 +227,5 @@ AS
     return @collectionID
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateProteinCollection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_protein_collection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

@@ -38,7 +38,7 @@ CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
     @infoOnly tinyint = 1,
     @message varchar(256) = '' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -82,9 +82,9 @@ As
         Begin
             -- Validate @newProteinCollectionList
 
-            exec @result = S_ValidateAnalysisJobProteinParameters
+            exec @result = s_validate_analysis_job_protein_parameters
                                 @organismName = 'None',
-                                @ownerPRN = 'H09090911',
+                                @ownerUsername = 'H09090911',
                                 @organismDBFileName = 'na',
                                 @protCollNameList = @newProteinCollectionList,
                                 @protCollOptionsList = 'seq_direction=forward,filetype=fasta',

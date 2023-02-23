@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateEncryptionMetadata] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_encryption_metadata] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateEncryptionMetadata]
+CREATE PROCEDURE [dbo].[add_update_encryption_metadata]
 /****************************************************
 **
 **  Desc: Adds encryption metadata for private collections
@@ -16,15 +16,16 @@ CREATE PROCEDURE [dbo].[AddUpdateEncryptionMetadata]
 **
 **  Auth:   kja
 **  Date:   04/14/2006
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 **
 **      (-50001) = Protein Collection ID not in T_Protein_Collections
 **
 *****************************************************/
 (
-    @Protein_Collection_ID int,
-    @Encryption_Passphrase varchar(64),
-    @Passphrase_SHA1_Hash varchar(40),
+    @protein_Collection_ID int,
+    @encryption_Passphrase varchar(64),
+    @passphrase_SHA1_Hash varchar(40),
     @message varchar(512) output
 )
 AS
@@ -68,7 +69,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddUpdateEncryptionMetadata'
+    set @transName = 'add_update_encryption_metadata'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -147,5 +148,5 @@ AS
     RETURN @passPhraseID
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateEncryptionMetadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_encryption_metadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

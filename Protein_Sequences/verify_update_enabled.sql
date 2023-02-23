@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[VerifyUpdateEnabled] ******/
+/****** Object:  StoredProcedure [dbo].[verify_update_enabled] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[VerifyUpdateEnabled]
+CREATE PROCEDURE [dbo].[verify_update_enabled]
 /****************************************************
 **
 **  Desc:
@@ -25,15 +25,16 @@ CREATE PROCEDURE [dbo].[VerifyUpdateEnabled]
 **          03/12/2006 mem - Altered behavior to set @UpdateEnabled to 0 if @StepName is not in T_Process_Step_Control
 **          03/13/2006 mem - Added support for Execution_State 3 (Pause with manual unpause)
 **          03/14/2006 mem - Now updating Pause_Length_Minutes in MT_Main.dbo.T_Current_Activity if any pausing occurs and Update_State = 2
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @StepName varchar(64) = 'PMT_Tag_DB_Update',
-    @CallingFunctionDescription varchar(128) = 'Unknown',
-    @AllowPausing tinyint = 0,                          -- Set to 1 to allow pausing if Execution_State is 2 or 3
-    @PostLogEntryIfDisabled tinyint = 1,
-    @MinimumHealthUpdateIntervalSeconds int = 5,        -- Minimum interval between updating the Last_Query fields
-    @UpdateEnabled tinyint = 0 output,
+    @stepName varchar(64) = 'PMT_Tag_DB_Update',
+    @callingFunctionDescription varchar(128) = 'Unknown',
+    @allowPausing tinyint = 0,                          -- Set to 1 to allow pausing if Execution_State is 2 or 3
+    @post_log_entryIfDisabled tinyint = 1,
+    @minimumHealthUpdateIntervalSeconds int = 5,        -- Minimum interval between updating the Last_Query fields
+    @updateEnabled tinyint = 0 output,
     @message varchar(255) = '' output
 )
 AS
@@ -102,7 +103,7 @@ AS
                 Set @message = 'Error examining state of processing step ' + @StepName + ' in MT_Main.dbo.T_Process_Step_Control'
             End
 
-            EXEC PostLogEntry 'Error', @message, 'VerifyUpdateEnabled', 1
+            EXEC post_log_entry 'Error', @message, 'verify_update_enabled', 1
 
             Set @ExecutionState = 0
         End -- </b1>
@@ -119,7 +120,7 @@ AS
                 If @PauseStartLogged = 0
                 Begin
                     Set @message = 'Pausing processing step ' + @StepName + ' (called by ' + @CallingFunctionDescription + ')'
-                    EXEC PostLogEntry 'Normal', @message, 'VerifyUpdateEnabled'
+                    EXEC post_log_entry 'Normal', @message, 'verify_update_enabled'
                     Set @message = ''
 
                     Set @PauseStartTime = GetDate()
@@ -181,7 +182,7 @@ AS
 
                     Set @message = 'Processing step ' + @StepName + ' has been paused for ' + Convert(varchar(9), @MaximumPauseLengthHours) + ' hours; updated Execution_State to 0 for this step and aborting the pause (called by ' + @CallingFunctionDescription + ')'
 
-                    EXEC PostLogEntry 'Error', @message, 'VerifyUpdateEnabled'
+                    EXEC post_log_entry 'Error', @message, 'verify_update_enabled'
 
                     Set @ExecutionState = 0
                     Set @PauseAborted = 1
@@ -239,7 +240,7 @@ AS
         If @PauseAborted = 0
         Begin
             Set @message = 'Resuming processing step ' + @StepName
-            EXEC PostLogEntry 'Normal', @message, 'VerifyUpdateEnabled'
+            EXEC post_log_entry 'Normal', @message, 'verify_update_enabled'
             Set @message = ''
         End
     End
@@ -251,10 +252,10 @@ AS
     Begin
         Set @message = 'Processing step ' + @StepName + ' is disabled in MT_Main; aborting processing (called by ' + @CallingFunctionDescription + ')'
 
-        If @PostLogEntryIfDisabled = 1
+        If @post_log_entryIfDisabled = 1
         Begin
             -- Post a warning to the log, but limit to one posting every hour
-            EXEC PostLogEntry 'Warning', @message, 'VerifyUpdateEnabled', 1
+            EXEC post_log_entry 'Warning', @message, 'verify_update_enabled', 1
         End
     End
 
@@ -262,7 +263,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[VerifyUpdateEnabled] TO [MTS_DB_Dev] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[verify_update_enabled] TO [MTS_DB_Dev] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[VerifyUpdateEnabled] TO [MTS_DB_Lite] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[verify_update_enabled] TO [MTS_DB_Lite] AS [dbo]
 GO

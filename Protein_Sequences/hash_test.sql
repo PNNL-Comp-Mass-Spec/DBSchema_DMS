@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[HashTest] ******/
+/****** Object:  StoredProcedure [dbo].[hash_test] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[HashTest]
+CREATE PROCEDURE [dbo].[hash_test]
     /*
     (
     @parameter1 int = 5,

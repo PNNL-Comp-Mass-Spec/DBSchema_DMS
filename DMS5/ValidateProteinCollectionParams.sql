@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Procedure [dbo].[ValidateProteinCollectionParams]
 /****************************************************
 ** 
@@ -18,7 +17,7 @@ CREATE Procedure [dbo].[ValidateProteinCollectionParams]
 **			05/15/2012 mem - Now verifying that @organismDBName is 'na' if @protCollNameList is defined, or vice versa
 **			09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **			08/19/2013 mem - Auto-clearing @organismDBName if both @organismDBName and @protCollNameList are defined and @organismDBName is the auto-generated FASTA file for the specified protein collection
-**			07/12/2016 mem - Now using a synonym when calling ValidateAnalysisJobProteinParameters in the Protein_Sequences database
+**			07/12/2016 mem - Now using a synonym when calling validate_analysis_job_protein_parameters in the Protein_Sequences database
 **          04/11/2022 mem - Increase warning threshold for length of @protCollNameList to 4000
 **    
 *****************************************************/
@@ -199,7 +198,7 @@ As
 		
 		if @debugMode <> 0
 		begin
-			Set @message =  'Calling S_ValidateAnalysisJobProteinParameters: ' +
+			Set @message =  'Calling s_validate_analysis_job_protein_parameters: ' +
 								IsNull(@organismName, '??') + '; ' +
 								IsNull(@ownerPRN, '??') + '; ' +
 								IsNull(@organismDBName, '??') + '; ' +
@@ -211,8 +210,8 @@ As
 			Set @message = ''
 		end
 							
-		-- Call ProteinSeqs.Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
-		exec @result = S_ValidateAnalysisJobProteinParameters
+		-- Call ProteinSeqs.Protein_Sequences.dbo.validate_analysis_job_protein_parameters
+		exec @result = s_validate_analysis_job_protein_parameters
 							@organismName,
 							@ownerPRN,
 							@organismDBName,
@@ -227,9 +226,7 @@ As
 		end
 	end
 	
-			
 	return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionParams] TO [DDL_Viewer] AS [dbo]

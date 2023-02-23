@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CompileUsageStats] ******/
+/****** Object:  StoredProcedure [dbo].[compile_usage_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CompileUsageStats]
+CREATE PROCEDURE [dbo].[compile_usage_stats]
 /****************************************************
 **
 **  Desc:
@@ -13,15 +13,16 @@ CREATE PROCEDURE [dbo].[CompileUsageStats]
 **
 **  Auth:   mem
 **  Date:   03/28/2008
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DisplayStats tinyint = 1,              -- If non-zero, then the values will be displayed as a ResultSet
-    @Tables int = 0 output,
-    @Rows int = 0 output,
-    @Columns int = 0 output,
-    @Cells bigint = 0 output,
-    @SpaceUsageMB real = 0 output,
+    @displayStats tinyint = 1,              -- If non-zero, then the values will be displayed as a ResultSet
+    @tables int = 0 output,
+    @rows int = 0 output,
+    @columns int = 0 output,
+    @cells bigint = 0 output,
+    @spaceUsageMB real = 0 output,
     @message varchar(255) = '' OUTPUT
 )
 AS

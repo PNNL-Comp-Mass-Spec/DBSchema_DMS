@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetProteinCollectionMemberCount] ******/
+/****** Object:  StoredProcedure [dbo].[get_protein_collection_member_count] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetProteinCollectionMemberCount]
+CREATE PROCEDURE [dbo].[get_protein_collection_member_count]
 /****************************************************
 **
 **  Desc: Gets Collection Member count for given Collection_ID
@@ -13,10 +13,11 @@ CREATE PROCEDURE [dbo].[GetProteinCollectionMemberCount]
 **
 **  Auth:   kja
 **  Date:   10/07/2004
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Collection_ID int
+    @collection_ID int
 )
 AS
     set nocount on
@@ -37,5 +38,5 @@ SELECT @Collection_Member_Count = COUNT(*)
     return(@Collection_Member_Count)
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinCollectionMemberCount] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_protein_collection_member_count] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

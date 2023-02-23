@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_ValidateAnalysisJobProteinParameters] ******/
-CREATE SYNONYM [dbo].[S_ValidateAnalysisJobProteinParameters] FOR [ProteinSeqs].[Protein_Sequences].[dbo].[ValidateAnalysisJobProteinParameters]
+/****** Object:  Synonym [dbo].[s_validate_analysis_job_protein_parameters] ******/
+CREATE SYNONYM [dbo].[s_validate_analysis_job_protein_parameters] FOR [ProteinSeqs].[Protein_Sequences].[dbo].[validate_analysis_job_protein_parameters]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_ValidateAnalysisJobProteinParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_validate_analysis_job_protein_parameters] TO [DDL_Viewer] AS [dbo]
 GO

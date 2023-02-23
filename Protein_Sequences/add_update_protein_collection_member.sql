@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateProteinCollectionMember_New] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_protein_collection_member] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateProteinCollectionMember_New]
+CREATE PROCEDURE [dbo].[add_update_protein_collection_member]
 /****************************************************
 **
 **  Desc: Adds a new protein collection member
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[AddUpdateProteinCollectionMember_New]
 **  Date:   10/06/2004
 **          11/23/2005 kja - Added parameters
 **          12/11/2012 mem - Removed transaction
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -103,5 +104,5 @@ AS
     return @member_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateProteinCollectionMember_New] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_protein_collection_member] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

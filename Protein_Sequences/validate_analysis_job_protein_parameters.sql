@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateAnalysisJobProteinParameters] ******/
+/****** Object:  StoredProcedure [dbo].[validate_analysis_job_protein_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateAnalysisJobProteinParameters]
+CREATE PROCEDURE [dbo].[validate_analysis_job_protein_parameters]
 /****************************************************
 **
 **  Desc:
@@ -19,7 +19,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobProteinParameters]
 **  Auth:   kja
 **  Date:   04/11/2006
 **          06/06/2006 mem - Updated Creation Options List logic to allow wider range of @protCollOptionsList values
-**          06/08/2006 mem - Added call to StandardizeProteinCollectionList to validate the order of @protCollNameList
+**          06/08/2006 mem - Added call to standardize_protein_collection_list to validate the order of @protCollNameList
 **          06/26/2006 mem - Updated to ignore @organismDBFileName If @protCollNameList is <> 'na'
 **          10/04/2007 mem - Expanded @protCollNameList from varchar(512) to varchar(max)
 **                         - Expanded @organismName from varchar(64) to varchar(128)
@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobProteinParameters]
 **          06/24/2013 mem - Now removing duplicate protein collection names in @protCollNameList
 **          07/27/2022 mem - Switch from FileName to Collection_Name in T_Protein_Collections
 **          01/06/2023 mem - Use new column name in view
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 **  Error Return Codes:
 **      (-50001) = both values cannot be blank or 'na'
@@ -41,7 +42,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobProteinParameters]
 *****************************************************/
 (
     @organismName varchar(128),
-    @ownerPRN varchar(30),
+    @ownerUsername varchar(30),
     @organismDBFileName varchar(128),
     @protCollNameList varchar(max) output,
     @protCollOptionsList varchar(256) output,
@@ -185,7 +186,7 @@ AS
 
         INSERT INTO @collListTable (Collection_Name)
         SELECT DISTINCT LTrim(RTrim(Value))
-        FROM dbo.udfParseDelimitedList(@protCollNameList, ',')
+        FROM dbo.parse_delimited_list(@protCollNameList, ',')
 
         DECLARE @cleanCollNameList varchar(max)
         Set @cleanCollNameList = ''
@@ -250,14 +251,14 @@ AS
             Begin -- <c2>
                 SELECT Authorization_ID
                 FROM T_Encrypted_Collection_Authorizations
-                WHERE Login_Name LIKE '%' + @ownerPRN + '%' AND
+                WHERE Login_Name LIKE '%' + @ownerUsername + '%' AND
                       Protein_Collection_ID = @currentCollectionID
 
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 If @myRowCount = 0
                 Begin
-                    Set @msg = @ownerPRN + ' is not authorized for the encrypted collection "' + @currentCollectionName + '"'
+                    Set @msg = @ownerUsername + ' is not authorized for the encrypted collection "' + @currentCollectionName + '"'
                     Set @message = @msg
                     RAISERROR (@msg, 10, 1)
                     return -50020
@@ -276,7 +277,7 @@ AS
 
         Set @protCollNameList = @cleanCollNameList
 
-        exec StandardizeProteinCollectionList @protCollNameList = @protCollNameList OUTPUT, @message = @message OUTPUT
+        exec standardize_protein_collection_list @protCollNameList = @protCollNameList OUTPUT, @message = @message OUTPUT
 
 
         /****************************************************************
@@ -450,9 +451,9 @@ AS
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StringToBase64] ******/
+/****** Object:  StoredProcedure [dbo].[string_to_base64] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StringToBase64]
+CREATE PROCEDURE [dbo].[string_to_base64]
 (
     @String VARCHAR(4000),
     @Base64 VARCHAR(4000) OUTPUT

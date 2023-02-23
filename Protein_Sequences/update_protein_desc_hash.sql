@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateProteinDescHash] ******/
+/****** Object:  StoredProcedure [dbo].[update_protein_desc_hash] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateProteinDescHash]
+CREATE PROCEDURE [dbo].[update_protein_desc_hash]
 /****************************************************
 **
 **  Desc: Updates the SHA1 fingerprint for a given Protein Description Entry
@@ -16,11 +16,12 @@ CREATE PROCEDURE [dbo].[UpdateProteinDescHash]
 **
 **  Auth:   kja
 **  Date:   02/21/2007
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Description_ID int,
-    @SHA1Hash varchar(40),
+    @description_ID int,
+    @sha1Hash varchar(40),
     @message varchar(512) output
 )
 AS
@@ -39,7 +40,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'UpdateProteinDescHash'
+    set @transName = 'update_protein_desc_hash'
     begin transaction @transName
 
 

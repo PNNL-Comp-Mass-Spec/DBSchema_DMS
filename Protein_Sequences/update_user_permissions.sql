@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateUserPermissions]
+CREATE PROCEDURE [dbo].[update_user_permissions]
 /****************************************************
 **
 **  Desc: Updates user permissions in the current DB
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissions]
 **          11/20/2006 mem - Added DMS Logins
 **          07/31/2012 mem - Removed references to emsl-prism.Users.DMS_JobRunner
 **                         - Added stored procedure and table permissions
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
@@ -166,54 +167,54 @@ AS
 
     -- Stored procedure permissions
 
-    GRANT EXECUTE ON [dbo].[AddAnnotationType] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddArchivedFileEntryXRef] TO [svc-dms] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddCollectionOrganismXRef] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddCRC32FileAuthentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddLegacyFileUploadRequest] TO [svc-dms] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddNamingAuthority] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry] TO [svc-dms] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddOutputFileArchiveEntry_New] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddProteinReference] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddProteinSequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddSHA1FileAuthentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateEncryptionMetadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateProteinCollection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateProteinCollectionMember] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[AddUpdateProteinCollectionMember_New] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[DeleteProteinCollectionMembers] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetAnnotationTypeID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [MTS_SP_User] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetArchivedFileIDForProteinCollectionList] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetNamingAuthorityID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetProteinCollectionID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetProteinCollectionMemberCount] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetProteinCollectionState] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetProteinID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetProteinIDFromName] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[GetProteinReferenceID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [DMS_Analysis] AS [dbo]
-    GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [DMS_User] AS [dbo]
-    GRANT EXECUTE ON [dbo].[StandardizeProteinCollectionList] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateFileArchiveEntryCollectionList] TO [svc-dms] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateProteinCollectionState] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateProteinNameHash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateProteinSequenceHash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateProteinSequenceInfo] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[UpdateUserPermissions] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_Analysis] AS [dbo]
-    GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [DMS_User] AS [dbo]
-    GRANT EXECUTE ON [dbo].[ValidateAnalysisJobProteinParameters] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_annotation_type] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_archived_file_entry_xref] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_archived_file_entry_xref] TO [svc-dms] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_collection_organism_xref] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_crc32_file_authentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_legacy_file_upload_request] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_legacy_file_upload_request] TO [svc-dms] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_naming_authority] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [svc-dms] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_output_file_archive_entry_New] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_protein_reference] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_protein_sequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_sha1_file_authentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_encryption_metadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_protein_collection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_protein_collectionMember] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[add_update_protein_collection_member] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[delete_protein_collection_members] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_annotation_type_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_archived_file_id_for_protein_collection_list] TO [MTS_SP_User] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_archived_file_id_for_protein_collection_list] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_naming_authority_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_protein_collection_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_protein_collection_member_count] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_protein_collection_state] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_protein_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_protein_id_from_name] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[get_protein_reference_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [DMS_Analysis] AS [dbo]
+    GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [DMS_User] AS [dbo]
+    GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_file_archive_entry_collection_list] TO [svc-dms] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_protein_collection_state] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_protein_name_hash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_protein_sequence_hash] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_protein_sequence_info] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[update_user_permissions] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+    GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [DMS_Analysis] AS [dbo]
+    GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [DMS_User] AS [dbo]
+    GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 
-    GRANT VIEW DEFINITION ON [dbo].[RebuildFragmentedIndices] TO [MTS_DB_Dev] AS [dbo]
-    GRANT VIEW DEFINITION ON [dbo].[RebuildFragmentedIndices] TO [MTS_DB_Lite] AS [dbo]
-    GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [MTS_DB_Dev] AS [dbo]
-    GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [MTS_DB_Lite] AS [dbo]
-    GRANT VIEW DEFINITION ON [dbo].[VerifyUpdateEnabled] TO [MTS_DB_Dev] AS [dbo]
-    GRANT VIEW DEFINITION ON [dbo].[VerifyUpdateEnabled] TO [MTS_DB_Lite] AS [dbo]
+    GRANT VIEW DEFINITION ON [dbo].[rebuild_fragmented_indices] TO [MTS_DB_Dev] AS [dbo]
+    GRANT VIEW DEFINITION ON [dbo].[rebuild_fragmented_indices] TO [MTS_DB_Lite] AS [dbo]
+    GRANT VIEW DEFINITION ON [dbo].[reindex_database] TO [MTS_DB_Dev] AS [dbo]
+    GRANT VIEW DEFINITION ON [dbo].[reindex_database] TO [MTS_DB_Lite] AS [dbo]
+    GRANT VIEW DEFINITION ON [dbo].[verify_update_enabled] TO [MTS_DB_Dev] AS [dbo]
+    GRANT VIEW DEFINITION ON [dbo].[verify_update_enabled] TO [MTS_DB_Lite] AS [dbo]
 
 
     -- Table permissions
@@ -300,5 +301,5 @@ AS
     Return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateUserPermissions] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_user_permissions] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

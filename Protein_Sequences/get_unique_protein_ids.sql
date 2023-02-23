@@ -1,19 +1,27 @@
-/****** Object:  StoredProcedure [dbo].[GetUniqueProteinIDs] ******/
+/****** Object:  StoredProcedure [dbo].[get_unique_protein_ids] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetUniqueProteinIDs]
--- =============================================
--- Author:      Ken Auberry
--- Create date: 2004-04-16
--- Description: Shows the Protein_IDs present in
---              collection_1 that are not in
---              collection_2
--- =============================================
+CREATE PROCEDURE [dbo].[get_unique_protein_ids]
+/****************************************************
+**
+**  Desc: Shows the Protein_IDs present in collection_1 that are not in collection_2
+**
+**  Return table
+**
+**  Parameters:
+**
+**
+**
+**  Auth:   kja
+**  Date:   04/16/2004
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**
+*****************************************************/
 (
-    @Collection_1 int,
-    @Collection_2 int
+    @collection_1 int,
+    @collection_2 int
 )
 AS
 BEGIN

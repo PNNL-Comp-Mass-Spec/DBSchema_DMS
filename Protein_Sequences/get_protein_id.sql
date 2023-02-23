@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetProteinID] ******/
+/****** Object:  StoredProcedure [dbo].[get_protein_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetProteinID]
+CREATE PROCEDURE [dbo].[get_protein_id]
 /****************************************************
 **
 **  Desc: Gets ProteinID for given length and SHA-1 Hash
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetProteinID]
 **
 **  Auth:   kja
 **  Date:   10/06/2004
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -29,5 +30,5 @@ AS
     return @Protein_ID
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_protein_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

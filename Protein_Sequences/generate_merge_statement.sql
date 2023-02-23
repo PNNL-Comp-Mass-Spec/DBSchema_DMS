@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GenerateMergeStatement] ******/
+/****** Object:  StoredProcedure [dbo].[generate_merge_statement] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GenerateMergeStatement]
+CREATE PROCEDURE [dbo].[generate_merge_statement]
 /****************************************************
 **
 **  Desc: Creates a Merge statement for the specified table
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[GenerateMergeStatement]
 **  Auth:   mem
 **  Date:   10/26/2015 mem - Initial version
 **          10/27/2015 mem - Add @includeCreateTableSql
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

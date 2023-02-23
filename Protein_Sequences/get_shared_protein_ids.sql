@@ -1,17 +1,25 @@
-/****** Object:  StoredProcedure [dbo].[GetSharedProteinIDs] ******/
+/****** Object:  StoredProcedure [dbo].[get_shared_protein_ids] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetSharedProteinIDs]
--- =============================================
--- Author:      Ken Auberry
--- Create date: 2004-04-16
--- Description: Shows the shared Protein_IDs for two collections
--- =============================================
+CREATE PROCEDURE [dbo].[get_shared_protein_ids]
+/****************************************************
+**
+**  Desc: Shows the shared Protein_IDs for two collections
+**
+**  Parameters:
+**
+**
+**
+**  Auth:   kja
+**  Date:   04/16/2004
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**
+*****************************************************/
 (
-    @Collection_1 int = 0,
-    @Collection_2 int = 0
+    @collection_1 int = 0,
+    @collection_2 int = 0
 )
 AS
 BEGIN

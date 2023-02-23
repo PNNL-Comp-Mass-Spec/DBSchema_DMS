@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetAnnotationTypeID] ******/
+/****** Object:  StoredProcedure [dbo].[get_annotation_type_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetAnnotationTypeID]
+CREATE PROCEDURE [dbo].[get_annotation_type_id]
 /****************************************************
 **
 **  Desc: Gets AnnotationTypeID for a given Annotation Name
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetAnnotationTypeID]
 **
 **  Auth:   kja
 **  Date:   01/11/2006
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -29,5 +30,5 @@ AS
     return @annType_id
 
 GO
-GRANT EXECUTE ON [dbo].[GetAnnotationTypeID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_annotation_type_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

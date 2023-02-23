@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddProteinSequence] ******/
+/****** Object:  StoredProcedure [dbo].[add_protein_sequence] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddProteinSequence]
+CREATE PROCEDURE [dbo].[add_protein_sequence]
 /****************************************************
 **
 **  Desc: Adds a new protein sequence entry to T_Proteins
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[AddProteinSequence]
 **  Auth:   kja
 **  Date:   10/06/2004
 **          12/11/2012 mem - Removed transaction
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -47,7 +48,7 @@ AS
     declare @Protein_ID int
     set @Protein_ID = 0
 
-    execute @Protein_ID = GetProteinID @length, @sha1_hash
+    execute @Protein_ID = get_protein_id @length, @sha1_hash
 
     if @Protein_ID > 0 and @mode = 'add'
     begin
@@ -96,5 +97,5 @@ AS
     return @Protein_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddProteinSequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_protein_sequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

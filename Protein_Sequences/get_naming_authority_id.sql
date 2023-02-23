@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetNamingAuthorityID] ******/
+/****** Object:  StoredProcedure [dbo].[get_naming_authority_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetNamingAuthorityID]
+CREATE PROCEDURE [dbo].[get_naming_authority_id]
 /****************************************************
 **
 **  Desc: Gets AuthorityID for a given Authority Name
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetNamingAuthorityID]
 **
 **  Auth:   kja
 **  Date:   12/16/2005
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,5 +29,5 @@ AS
     return @auth_id
 
 GO
-GRANT EXECUTE ON [dbo].[GetNamingAuthorityID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_naming_authority_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

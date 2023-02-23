@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 /****************************************************
 **
@@ -34,7 +33,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **  Auth:   grk
 **  Date:   04/04/2006 grk - supersedes MakeAnalysisJobX
 **          05/01/2006 grk - modified to conditionally call
-**                          Protein_Sequences.dbo.ValidateAnalysisJobProteinParameters
+**                          Protein_Sequences.dbo.validate_analysis_job_protein_parameters
 **          06/01/2006 grk - removed dataset archive state restriction
 **          08/30/2006 grk - removed restriction for dataset state verification that limited it to "add" mode (http://prismtrac.pnl.gov/trac/ticket/219)
 **          11/30/2006 mem - Now checking dataset type against AJT_allowedDatasetTypes in T_Analysis_Tool (Ticket #335)

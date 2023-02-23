@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDatasetTable]
 /****************************************************
 **
@@ -43,7 +42,7 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDatasetTable]
     @message varchar(512)='' output,
     @showDebug tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int = 0
@@ -441,8 +440,8 @@ As
         --  are listed first and that the original collection order is preserved
 		--
 		-- Note that ValidateAnalysisJobParameters will call ValidateProteinCollectionParams,
-		--  which calls S_ValidateAnalysisJobProteinParameters in the Protein_Sequences database,
-		--  and that procedure uses StandardizeProteinCollectionList to order the protein collections in a standard manner,
+		--  which calls s_validate_analysis_job_protein_parameters in the Protein_Sequences database,
+		--  and that procedure uses standardize_protein_collection_list to order the protein collections in a standard manner,
 		--  so the order here is not critical
         --
         -- The standard order is:
@@ -533,7 +532,6 @@ As
 
 Done:
     return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[ValidateProteinCollectionListForDatasetTable] TO [DMS_SP_User] AS [dbo]

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetIdentityFieldSeed] ******/
+/****** Object:  StoredProcedure [dbo].[reset_identity_field_seed] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ResetIdentityFieldSeed]
+CREATE PROCEDURE [dbo].[reset_identity_field_seed]
 /****************************************************
 **
 **  Desc:   Resets the identity field seed in the various
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[ResetIdentityFieldSeed]
 **          02/18/2007 mem - Ported to the Protein_Sequences DB
 **          12/05/2013 mem - Removed reference to Aux_Info table
 **          06/10/2022 mem - Rename primary key column in T_Archived_Output_File_Collections_XRef
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

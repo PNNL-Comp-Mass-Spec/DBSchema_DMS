@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CheckPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[check_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CheckPermissions]
+CREATE PROCEDURE [dbo].[check_permissions]
     /*
     (
     @parameter1 int = 5,

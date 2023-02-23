@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetProteinCollectionState] ******/
+/****** Object:  StoredProcedure [dbo].[get_protein_collection_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetProteinCollectionState]
+CREATE PROCEDURE [dbo].[get_protein_collection_state]
 /****************************************************
 **
 **  Desc: Gets Collection State Name for given CollectionID
@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[GetProteinCollectionState]
 **  Auth:   kja
 **  Date:   08/04/2005
 **          09/14/2015 mem - Now returning "Unknown" if the protein collection ID does not exist in T_Protein_Collections
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Collection_ID int,
-    @State_Name varchar(32) OUTPUT
+    @collection_ID int,
+    @state_Name varchar(32) OUTPUT
 )
 AS
     declare @State_ID int
@@ -41,5 +42,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinCollectionState] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_protein_collection_state] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

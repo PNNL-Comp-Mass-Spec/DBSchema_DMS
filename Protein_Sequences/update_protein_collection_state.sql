@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateProteinCollectionState] ******/
+/****** Object:  StoredProcedure [dbo].[update_protein_collection_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateProteinCollectionState]
+CREATE PROCEDURE [dbo].[update_protein_collection_state]
 /****************************************************
 **
 **  Desc: Adds a new protein collection member
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateProteinCollectionState]
 **
 **  Auth:   kja
 **  Date:   07/28/2005
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -57,7 +58,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'UpdateProteinCollectionState'
+    set @transName = 'update_protein_collection_state'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -87,5 +88,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinCollectionState] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_protein_collection_state] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

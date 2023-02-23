@@ -1,19 +1,20 @@
-/****** Object:  UserDefinedFunction [dbo].[udfGetFileNameFromPath] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_file_name_from_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udfGetFileNameFromPath]
+CREATE FUNCTION [dbo].[get_file_name_from_path]
 /****************************************************
 **  Looks for the final \ in @FilePath, then returns the filename after the slash
 **  If no slash in @FilePath, or if no text after the slash, then returns an empty string
 **
 **  Auth:   mem
 **  Date:   10/09/2006
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @FilePath varchar(4096)
+    @filePath varchar(4096)
 )
 RETURNS varchar(2048)
 AS
@@ -44,5 +45,5 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[udfGetFileNameFromPath] TO [MTUser] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_file_name_from_path] TO [MTUser] AS [dbo]
 GO

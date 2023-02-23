@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateProteinCollectionCounts] ******/
+/****** Object:  StoredProcedure [dbo].[update_protein_collection_counts] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateProteinCollectionCounts]
+CREATE PROCEDURE [dbo].[update_protein_collection_counts]
 /****************************************************
 **
 **  Desc: Updates the protein and residue counts tracked in T_Protein_Collections for the given collection
@@ -12,12 +12,13 @@ CREATE PROCEDURE [dbo].[UpdateProteinCollectionCounts]
 **
 **  Auth:   mem
 **  Date:   09/14/2015 mem - Initial release
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Collection_ID int,
-    @NumProteins int,
-    @NumResidues int,
+    @collection_ID int,
+    @numProteins int,
+    @numResidues int,
     @message varchar(256)='' output
 )
 AS
@@ -41,5 +42,5 @@ AS
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateProteinCollectionCounts] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_protein_collection_counts] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

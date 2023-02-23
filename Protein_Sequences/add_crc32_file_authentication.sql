@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddCRC32FileAuthentication] ******/
+/****** Object:  StoredProcedure [dbo].[add_crc32_file_authentication] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddCRC32FileAuthentication]
+CREATE PROCEDURE [dbo].[add_crc32_file_authentication]
 /****************************************************
 **
 **  Desc: Adds a CRC32 fingerprint to a given Protein Collection Entry
@@ -17,11 +17,12 @@ CREATE PROCEDURE [dbo].[AddCRC32FileAuthentication]
 **  Auth:   kja
 **  Date:   04/15/2005
 **          07/20/2015 mem - Added parameters @numProteins and @totalResidueCount
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Collection_ID int,
-    @CRC32FileHash varchar(8),
+    @collection_ID int,
+    @crc32FileHash varchar(8),
     @message varchar(512) output,
     @numProteins int = 0,           -- The number of proteins for this protein collection; used to update T_Protein_Collections
     @totalResidueCount int = 0      -- The number of residues for this protein collection; used to update T_Protein_Collections
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddCRC32FileAuthentication'
+    set @transName = 'add_crc32_file_authentication'
     begin transaction @transName
 
 
@@ -79,5 +80,5 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[AddCRC32FileAuthentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_crc32_file_authentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

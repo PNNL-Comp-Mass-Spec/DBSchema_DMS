@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddCollectionOrganismXRef] ******/
+/****** Object:  StoredProcedure [dbo].[add_collection_organism_xref] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddCollectionOrganismXRef]
+CREATE PROCEDURE [dbo].[add_collection_organism_xref]
 /****************************************************
 **
 **  Desc: Adds an entry to T_Collection_Organism_Xref
@@ -16,11 +16,12 @@ CREATE PROCEDURE [dbo].[AddCollectionOrganismXRef]
 **  Auth:   kja
 **  Date:   06/01/2006
 **          08/15/2006 mem - Updated to return @member_ID if the mapping already exists, or 0 or a negative number if it doesn't
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Protein_Collection_ID int,
-    @Organism_ID int,
+    @protein_Collection_ID int,
+    @organism_ID int,
     @message varchar(256) output
 )
 AS
@@ -39,7 +40,7 @@ AS
     -- Does entry already exist?
     ---------------------------------------------------
 
-    --execute @auth_id = GetNamingAuthorityID @name
+    --execute @auth_id = get_naming_authority_id @name
 
     SELECT @member_ID = ID FROM T_Collection_Organism_Xref
     WHERE (Protein_Collection_ID = @Protein_Collection_ID AND
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'AddNamingAuthority'
+    set @transName = 'add_naming_authority'
     begin transaction @transName
 
 
@@ -84,5 +85,5 @@ AS
     return @member_ID
 
 GO
-GRANT EXECUTE ON [dbo].[AddCollectionOrganismXRef] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_collection_organism_xref] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

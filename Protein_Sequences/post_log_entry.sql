@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[post_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PostLogEntry]
+CREATE PROCEDURE [dbo].[post_log_entry]
 /****************************************************
 **
 **  Desc: Put new entry into the main log table
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[PostLogEntry]
 **          02/17/2005 mem - Added parameter @duplicateEntryHoldoffHours
 **          05/31/2007 mem - Expanded the size of @type, @message, and @postedBy
 **          08/25/2022 mem - Use new column name
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

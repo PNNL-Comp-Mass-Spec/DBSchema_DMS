@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddProteinReference] ******/
+/****** Object:  StoredProcedure [dbo].[add_protein_reference] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddProteinReference]
+CREATE PROCEDURE [dbo].[add_protein_reference]
 /****************************************************
 **
 **  Desc: Adds a new protein reference entry to T_Protein_Names
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[AddProteinReference]
 **          12/11/2012 mem - Removed transaction
 **          01/10/2013 mem - Now validating that @maxProteinNameLength is between 25 and 125; changed @maxProteinNameLength to 32
 **          07/27/2022 mem - Rename arguments
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -115,5 +116,5 @@ AS
     return @referenceID
 
 GO
-GRANT EXECUTE ON [dbo].[AddProteinReference] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_protein_reference] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO

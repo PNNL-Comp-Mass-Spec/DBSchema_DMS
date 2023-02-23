@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetProteinCollectionID] ******/
+/****** Object:  StoredProcedure [dbo].[get_protein_collection_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetProteinCollectionID]
+CREATE PROCEDURE [dbo].[get_protein_collection_id]
 /****************************************************
 **
 **  Desc: Gets CollectionID for given FileName
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetProteinCollectionID]
 **          06/26/2019 mem - Add comments and convert tabs to spaces
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionName
+**          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,5 +29,5 @@ AS
     return @collectionID
 
 GO
-GRANT EXECUTE ON [dbo].[GetProteinCollectionID] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_protein_collection_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
 GO
