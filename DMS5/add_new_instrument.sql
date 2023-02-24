@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddNewInstrument]
 /****************************************************
 **
@@ -69,7 +68,7 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
     @autoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
     @message varchar(512) output
 )
-As
+AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -395,7 +394,6 @@ As
     commit transaction @transName
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewInstrument] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 /****************************************************
 **
@@ -45,7 +44,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
     @instrumentsToProcess varchar(255) = '',
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -205,9 +204,9 @@ As
                                                     ON InstName.Instrument_ID = InstMapping.DMS_Instrument_ID
                                              WHERE Not EUS_Instrument_ID Is Null
                                              GROUP BY EUS_Instrument_ID
-                                             HAVING Count(*) > 1 
+                                             HAVING Count(*) > 1
                                            ) LookupQ
-                                    ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID 
+                                    ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID
                            ) FilterQ
                 ON #Tmp_Instruments.EUS_Instrument_ID = FilterQ.EUS_Instrument_ID
 
@@ -295,8 +294,8 @@ As
                             If @infoOnly > 0
                             Begin
                                 Print 'Call UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument +
-                                      ', target month ' + 
-                                      Cast(Year(@currentInstrumentUsageMonth) As varchar(12)) + '-' + 
+                                      ', target month ' +
+                                      Cast(Year(@currentInstrumentUsageMonth) As varchar(12)) + '-' +
                                       Cast(Month(@currentInstrumentUsageMonth) As varchar(12))
                             End
 

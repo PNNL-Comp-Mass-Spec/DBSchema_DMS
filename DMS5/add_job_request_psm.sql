@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddJobRequestPSM]
 /****************************************************
 **
-**  Desc: 
-**  Create a job from simplified interface 
-**    
+**  Desc:
+**  Create a job from simplified interface
+**
 **  Return values: 0: success, otherwise, error code
 **
 **
@@ -27,7 +26,7 @@ CREATE PROCEDURE [dbo].[AddJobRequestPSM]
 (
     @requestID int output,
     @requestName varchar(128),
-    @datasets varchar(max) output,    
+    @datasets varchar(max) output,
     @comment varchar(512),
     @ownerPRN varchar(64),
     @organismName varchar(128),
@@ -35,7 +34,7 @@ CREATE PROCEDURE [dbo].[AddJobRequestPSM]
     @protCollOptionsList varchar(256),
     @toolName varchar(64),
     @jobTypeName varchar(64),
-    @ModificationDynMetOx varchar(24),    
+    @ModificationDynMetOx varchar(24),
     @ModificationStatCysAlk varchar(24),
     @ModificationDynSTYPhos varchar(24),
     @mode varchar(12) = 'add',            -- 'add', 'preview', or 'debug'
@@ -44,43 +43,43 @@ CREATE PROCEDURE [dbo].[AddJobRequestPSM]
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
-    Declare @DebugMode tinyint = 0
-    Declare @previewMode tinyint = 0    
 
-    Begin Try                
+    Declare @DebugMode tinyint = 0
+    Declare @previewMode tinyint = 0
+
+    Begin Try
         ---------------------------------------------------
-        -- 
+        --
         ---------------------------------------------------
-        
-        
-        If @mode = 'debug'    
+
+
+        If @mode = 'debug'
         Begin --<debug>
-            set @message = 'Debug mode; nothing to do'                    
-        End --<debug>               
+            set @message = 'Debug mode; nothing to do'
+        End --<debug>
 
         ---------------------------------------------------
         -- add mode
         ---------------------------------------------------
-        
+
         If @mode in ('add', 'preview')
         Begin --<add>
 
             If @mode = 'preview'
                 Set @previewMode = 1
-                    
+
             Declare
-                @DynMetOxEnabled TINYINT = 0,    
+                @DynMetOxEnabled TINYINT = 0,
                 @StatCysAlkEnabled tinyint = 0,
                 @DynSTYPhosEnabled tinyint = 0
-                
-            SELECT @DynMetOxEnabled =   CASE WHEN @ModificationDynMetOx = 'Yes'    THEN 1 ELSE 0 END 
-            SELECT @StatCysAlkEnabled = CASE WHEN @ModificationStatCysAlk = 'Yes'  THEN 1 ELSE 0 END 
-            SELECT @DynSTYPhosEnabled = CASE WHEN @ModificationDynSTYPhos = 'Yes'  THEN 1 ELSE 0 END 
-                
+
+            SELECT @DynMetOxEnabled =   CASE WHEN @ModificationDynMetOx = 'Yes'    THEN 1 ELSE 0 END
+            SELECT @StatCysAlkEnabled = CASE WHEN @ModificationStatCysAlk = 'Yes'  THEN 1 ELSE 0 END
+            SELECT @DynSTYPhosEnabled = CASE WHEN @ModificationDynSTYPhos = 'Yes'  THEN 1 ELSE 0 END
+
             EXEC @myError = CreatePSMJobRequest
                                 @requestID = @requestID output,
                                 @requestName = @requestName ,
@@ -88,8 +87,8 @@ AS
                                 @toolName = @toolName ,
                                 @jobTypeName = @jobTypeName ,
                                 @protCollNameList = @protCollNameList ,
-                                @protCollOptionsList = @protCollOptionsList ,       
-                                @DynMetOxEnabled = @DynMetOxEnabled,    
+                                @protCollOptionsList = @protCollOptionsList ,
+                                @DynMetOxEnabled = @DynMetOxEnabled,
                                 @StatCysAlkEnabled = @StatCysAlkEnabled,
                                 @DynSTYPhosEnabled = @DynSTYPhosEnabled,
                                 @comment = @comment ,

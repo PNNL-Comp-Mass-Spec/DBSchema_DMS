@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateRequestUsers]
 /****************************************************
 **
 **  Desc:
-**      Validates the requested personnel and assigned personnel 
+**      Validates the requested personnel and assigned personnel
 **      for a Data Analysis Request or Sample Prep Request
 **
 **  Return values: 0: success, otherwise, error code
@@ -25,7 +24,7 @@ CREATE PROCEDURE [dbo].[ValidateRequestUsers]
     @requireValidRequestedPersonnel tinyint = 1,
     @message varchar(1024) Output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -197,7 +196,6 @@ As
     End -- </a>
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateRequestUsers] TO [DDL_Viewer] AS [dbo]

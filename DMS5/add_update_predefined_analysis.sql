@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
 /****************************************************
 **
@@ -83,7 +82,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
     @PropagationMode varchar(24)='Export',
     @SpecialProcessing varchar(512)=''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int = 0
@@ -452,7 +451,7 @@ As
         --
         SELECT @creator = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -652,7 +651,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [DDL_Viewer] AS [dbo]

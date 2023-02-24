@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ReportTissueUsageStats]
 /****************************************************
 **
@@ -19,7 +18,7 @@ CREATE PROCEDURE [dbo].[ReportTissueUsageStats]
     @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
     @organismIDFilterList varchar(2000) = '',   -- Comma separate list of organism IDs
     @instrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed); if empty, dataset stats are not returned
-    @message varchar(256) = '' output    
+    @message varchar(256) = '' output
 )
 AS
     Set XACT_ABORT, nocount on
@@ -36,7 +35,7 @@ AS
 
     Declare @logErrors tinyint = 1
 
-    BEGIN TRY 
+    BEGIN TRY
 
     --------------------------------------------------------------------
     -- Validate the inputs
@@ -45,7 +44,7 @@ AS
     Set @campaignIDFilterList = LTrim(RTrim(IsNull(@campaignIDFilterList, '')))
     Set @organismIDFilterList = LTrim(RTrim(IsNull(@organismIDFilterList, '')))
     Set @instrumentFilterList = LTrim(RTrim(IsNull(@instrumentFilterList, '')))
-    
+
     Set @message = ''
 
     --------------------------------------------------------------------
@@ -56,9 +55,9 @@ AS
         Campaign_ID int NOT NULL,
         Fraction_EMSL_Funded float NULL
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_CampaignFilter ON #Tmp_CampaignFilter (Campaign_ID)
-        
+
     Exec @result = PopulateCampaignFilterTable @campaignIDFilterList, @message=@message output
 
     If @result <> 0
@@ -74,9 +73,9 @@ AS
     CREATE TABLE #Tmp_InstrumentFilter (
         Instrument_ID int NOT NULL
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_InstrumentFilter ON #Tmp_InstrumentFilter (Instrument_ID)
-    
+
     If Len(@instrumentFilterList) > 0
     Begin
         Exec @result = PopulateInstrumentFilterTable @instrumentFilterList, @message=@message output
@@ -87,7 +86,7 @@ AS
             RAISERROR (@message, 11, 15)
         End
     End
-    
+
     --------------------------------------------------------------------
     -- Populate a temporary table with the organisms to filter on
     --------------------------------------------------------------------
@@ -96,16 +95,16 @@ AS
         Organism_ID int NOT NULL,
         Organism_Name varchar(128) NULL
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_OrganismFilter ON #Tmp_OrganismFilter (Organism_ID)
-    
+
     If @organismIDFilterList <> ''
-    Begin    
+    Begin
         INSERT INTO #Tmp_OrganismFilter (Organism_ID)
         SELECT DISTINCT Value
         FROM dbo.udfParseDelimitedIntegerList(@organismIDFilterList, ',')
         ORDER BY Value
-        
+
         -- Look for invalid Organism ID values
         Set @msg = ''
         SELECT @msg = Convert(varchar(12), OrgFilter.Organism_ID) + ',' + @msg
@@ -115,12 +114,12 @@ AS
         WHERE Org.Organism_ID IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
-        If @myRowCount > 0 
+
+        If @myRowCount > 0
         Begin
             -- Remove the trailing comma
             Set @message = Substring(@msg, 1, Len(@msg)-1)
-            
+
             If @myRowCount = 1
                 set @msg = 'Invalid Organism ID: ' + @msg
             Else
@@ -137,7 +136,7 @@ AS
         FROM T_Organisms
         ORDER BY Organism_ID
     End
-    
+
     --------------------------------------------------------------------
     -- Determine the start and end dates
     --------------------------------------------------------------------
@@ -149,7 +148,7 @@ AS
         Set @logErrors = 0
         RAISERROR (@message, 11, 15)
     End
-   
+
     ---------------------------------------------------
     -- Generate the report
     ---------------------------------------------------
@@ -215,7 +214,7 @@ AS
     Else
     Begin
         -- Use experiment creation time for the date filter
-       
+
         SELECT E.EX_Tissue_ID AS Tissue_ID,
                BTO.Tissue,
                Count(E.Exp_ID) AS Experiments,
@@ -244,21 +243,20 @@ AS
     End
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-           
+
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'ReportTissueUsageStats'
         End
     END CATCH
-    
-    RETURN @myError
 
+    RETURN @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ReportTissueUsageStats] TO [DDL_Viewer] AS [dbo]

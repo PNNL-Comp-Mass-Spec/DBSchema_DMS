@@ -3,29 +3,28 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AutoAnnotateBrokenInstrumentLongIntervals]
 /****************************************************
 **
-**  Desc:  Updates the comments for long intervals in table T_Run_Interval 
+**  Desc:  Updates the comments for long intervals in table T_Run_Interval
 **         to be 'Broken[100%]' for instruments with status 'broken'
 **
 **  Auth:   mem
 **  Date:   05/12/2022 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @targetDate datetime,       -- Date used to determine the target year and month to examine; if null, will examine the previous month
     @infoOnly tinyint = 1,
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
     Set ANSI_PADDING ON
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @targetMonth int
     Declare @targetYear int
 
@@ -40,12 +39,12 @@ As
     Declare @runIntervalID int
 
     Set @message = ''
-     
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AutoAnnotateBrokenInstrumentLongIntervals', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -55,7 +54,7 @@ As
     ---------------------------------------------------
     -- Validate inputs
     ---------------------------------------------------
-    
+
     BEGIN Try
 
         Set @targetDate = IsNull(@targetDate, DateAdd(Month, -1, GetDate()))
@@ -69,7 +68,7 @@ As
 
         CREATE TABLE #Tmp_BrokenInstruments (
             Instrument_ID int NOT NULL,
-            Instrument varchar(64)   
+            Instrument varchar(64)
         )
 
         CREATE TABLE #Tmp_IntervalsToUpdate (
@@ -101,7 +100,7 @@ As
             Else
             Begin -- <b>
                 DELETE FROM #Tmp_IntervalsToUpdate
-            
+
                 INSERT INTO #Tmp_IntervalsToUpdate( IntervalID )
                 SELECT ID
                 FROM T_Run_Interval
@@ -127,7 +126,7 @@ As
                 Begin
                     Set @updateIntervals = 1
                 End
-                        
+
                 Set @runIntervalId = -1
 
                 While @updateIntervals > 0
@@ -174,9 +173,9 @@ As
         End -- </a>
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;

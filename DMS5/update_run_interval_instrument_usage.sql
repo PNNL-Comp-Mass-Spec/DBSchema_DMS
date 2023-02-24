@@ -3,17 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateRunIntervalInstrumentUsage]
 /****************************************************
 **
-**  Desc:   Determines the instrument associated with the given run interval ID 
-**          then calls UpdateDatasetIntervalForMultipleInstruments 
+**  Desc:   Determines the instrument associated with the given run interval ID
+**          then calls UpdateDatasetIntervalForMultipleInstruments
 **          (which calls UpdateDatasetInterval and UpdateEMSLInstrumentUsageReport)
 **
 **  Auth:   mem
 **  Date:   02/15/2022 mem - Initial version
-**   
+**
 *****************************************************/
 (
     @runIntervalId int,
@@ -22,7 +21,7 @@ CREATE PROCEDURE [dbo].[UpdateRunIntervalInstrumentUsage]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -39,7 +38,7 @@ As
     Set @daysToProcess = IsNull(@daysToProcess, 90)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
-    
+
     Set @callingUser = IsNull(@callingUser, '')
     if @callingUser = ''
         Set @callingUser = suser_sname()
@@ -47,15 +46,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateRunIntervalInstrumentUsage', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
     IF @runIntervalId < 0
     Begin
@@ -63,7 +62,7 @@ As
         RAISERROR (@message, 11, 10)
         Goto Done
     End
-    
+
     -- Lookup the instrument associated with the run interval
     SELECT @instrumentName = Instrument
     FROM T_Run_Interval
@@ -76,7 +75,7 @@ As
         Set @message = 'Run Interval ID ' + Cast(@runIntervalId As varchar(12)) + ' does not exist; cannot determine the instrument'
         RAISERROR (@message, 11, 16)
     End
-    
+
     Set @logErrors = 1
 
     If @infoOnly = 0
@@ -92,20 +91,19 @@ As
                                                      @message = @message output
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
-        If @logErrors > 0    
+
+        If @logErrors > 0
             Exec PostLogEntry 'Error', @message, 'UpdateRunIntervalInstrumentUsage'
     END CATCH
 
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRunIntervalInstrumentUsage] TO [DDL_Viewer] AS [dbo]

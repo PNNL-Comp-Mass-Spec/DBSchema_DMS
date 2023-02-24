@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateRunOpLog]
 /****************************************************
 **
-**  Desc:   Update selected items from instrument run 
+**  Desc:   Update selected items from instrument run
 **          tracking-related entities
 **
 **          @changes tracks the updates to be applied, in XML format
@@ -38,7 +37,7 @@ AS
     Set XACT_ABORT, NOCOUNT ON
     Set CONCAT_NULL_YIELDS_NULL ON
     Set ANSI_PADDING ON
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
     Set @message = ''
@@ -55,8 +54,8 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateRunOpLog', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -101,7 +100,7 @@ AS
         -- Create temp table to hold interval changes
         -- and populate it from the input XML
         ---------------------------------------------------
-        
+
         CREATE TABLE #INTCHG (
             id int,
             note NVARCHAR(2048)
@@ -118,21 +117,21 @@ AS
         -- Loop through requested run changes
         -- and validate and update
         -----------------------------------------------------------
-        Declare 
+        Declare
             @AutoPopulateUserListIfBlank tinyint = 1,
             @eusUsageTypeID INT,
             @eusUsageType varchar(50),
             @eusProposalID varchar(10),
             @eusUsersList varchar(1024),
             @StatusID int
-    
+
         Set @prevID = 0
         Set @curID = 0
         Set @done = 0
-        WHILE @done = 0 
+        WHILE @done = 0
         BEGIN --<a>
             Set @curID = 0
-            SELECT TOP 1 
+            SELECT TOP 1
                 @curID = request,
                 @prevID = request,
                 @eusUsageType = usage,
@@ -142,12 +141,12 @@ AS
             FROM #RRCHG
             WHERE request > @prevID
             ORDER BY request
-            
+
             IF @curID = 0
-            BEGIN 
+            BEGIN
                 Set @done = 1
             END
-            ELSE 
+            ELSE
             BEGIN --<c>
                 exec @myError = ValidateEUSUsage
                             @eusUsageType output,
@@ -156,7 +155,7 @@ AS
                             @eusUsageTypeID output,
                             @msg output,
                             @AutoPopulateUserListIfBlank
-                
+
                 If @myError <> 0
                 Begin
                     RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
@@ -166,8 +165,8 @@ AS
                 -- Update the requested run
                 -----------------------------------------------------------
 
-                UPDATE T_Requested_Run 
-                Set 
+                UPDATE T_Requested_Run
+                Set
                     RDS_EUS_Proposal_ID = @eusProposalID,
                     RDS_EUS_UsageType = @eusUsageTypeID
                 WHERE (ID = @curID)
@@ -198,34 +197,34 @@ AS
         END --<a>
 
         ---------------------------------------------------
-        -- Loop though long intervals and update 
+        -- Loop though long intervals and update
         ---------------------------------------------------
         --
         Declare @comment varchar(MAX)
         Declare @invalidUsage tinyint = 0
         Declare @invalidEntries int = 0
-        
+
         Set @prevID = 0
         Set @curID = 0
         Set @done = 0
-        WHILE @done = 0 
+        WHILE @done = 0
         BEGIN --<x>
             Set @curID = 0
-            SELECT TOP 1 
+            SELECT TOP 1
                 @curID = id,
                 @prevID = id,
                 @comment = note
             FROM #INTCHG
             WHERE id > @prevID
             ORDER BY id
-            
+
             IF @curID = 0
-            BEGIN 
+            BEGIN
                 Set @done = 1
             END
-            ELSE 
+            ELSE
             BEGIN --<y>
-            
+
                 exec @myError = AddUpdateRunInterval
                                             @curID,
                                             @comment,
@@ -246,7 +245,7 @@ AS
                 Begin
                     RAISERROR ('AddUpdateRunInterval: %s', 11, 20, @msg)
                 End
-                    
+
             END --<y>
         END --<x>
 
@@ -261,9 +260,9 @@ AS
             Set @msg = 'Parse ' + dbo.CheckPlural(@invalidEntries, 'error', 'errors') + ': ' + @message
             RAISERROR (@msg, 11, 21)
         End
-        
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
         -- Rollback any open transactions
@@ -275,7 +274,7 @@ AS
             Exec PostLogEntry 'Error', @message, 'UpdateRunOpLog'
         End
     END CATCH
-    
+
     RETURN @myError
 
 GO

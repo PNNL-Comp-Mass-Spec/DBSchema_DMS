@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ParseUsageText]
 /****************************************************
 **
@@ -333,7 +332,6 @@ AS
     END CATCH
 
     RETURN @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [DDL_Viewer] AS [dbo]

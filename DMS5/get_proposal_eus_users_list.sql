@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetProposalEUSUsersList]
 /****************************************************
 **
@@ -18,7 +17,7 @@ CREATE FUNCTION [dbo].[GetProposalEUSUsersList]
 **                         - Now excluding users with State_ID 5="No longer associated with proposal"
 **          06/13/2013 mem - Added mode 'L' (last names only)
 **          02/19/2018 mem - Added parameter @maxUsers
-**    
+**
 *****************************************************/
 (
     @proposalID varchar(10),
@@ -26,7 +25,7 @@ CREATE FUNCTION [dbo].[GetProposalEUSUsersList]
     @maxUsers int = 5
 )
 RETURNS varchar(4000)
-As
+AS
     BEGIN
 
     If @maxUsers <= 0
@@ -37,7 +36,7 @@ As
     BEGIN
         set @list = null
 
-        SELECT TOP ( @maxUsers ) 
+        SELECT TOP ( @maxUsers )
             @list = COALESCE(@list + ', ', '') + CAST(U.Person_ID AS varchar(12))
         FROM T_EUS_Proposal_Users P
              INNER JOIN T_EUS_Users U
@@ -45,14 +44,14 @@ As
         WHERE P.Proposal_ID = @proposalID AND
               P.State_ID <> 5
         ORDER BY P.Person_ID
-    
+
     END
 
     IF @mode = 'N'
     BEGIN
         set @list = null
 
-        SELECT TOP ( @maxUsers ) 
+        SELECT TOP ( @maxUsers )
             @list = COALESCE(@list + '; ', '') + U.NAME_FM
         FROM T_EUS_Proposal_Users P
              INNER JOIN T_EUS_Users U
@@ -60,7 +59,7 @@ As
         WHERE P.Proposal_ID = @proposalID AND
               P.State_ID <> 5
         ORDER BY U.NAME_FM
-    
+
     END
 
 
@@ -68,21 +67,21 @@ As
     BEGIN
         set @list = null
 
-        SELECT TOP ( @maxUsers )  
+        SELECT TOP ( @maxUsers )
             @list = COALESCE(@list + '; ', '') + U.Last_Name
         FROM
             T_EUS_Proposal_Users P INNER JOIN
-            T_EUS_Users U ON P.Person_ID = U.PERSON_ID    
-        WHERE P.Proposal_ID = @proposalID AND 
+            T_EUS_Users U ON P.Person_ID = U.PERSON_ID
+        WHERE P.Proposal_ID = @proposalID AND
               P.State_ID <> 5
         ORDER BY U.Last_Name
     END
-    
+
     IF @mode = 'V'
     BEGIN
         set @list = null
 
-        SELECT TOP ( @maxUsers ) 
+        SELECT TOP ( @maxUsers )
             @list = COALESCE(@list + '; ', '') + U.NAME_FM + ' (' + CAST(U.Person_ID AS varchar(12)) + ')'
         FROM T_EUS_Proposal_Users P
              INNER JOIN T_EUS_Users U
@@ -90,7 +89,7 @@ As
         WHERE P.Proposal_ID = @proposalID AND
               P.State_ID <> 5
         ORDER BY U.NAME_FM
-    
+
     END
 
     RETURN @list

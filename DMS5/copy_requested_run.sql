@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CopyRequestedRun]
 /****************************************************
 **
@@ -40,7 +39,7 @@ CREATE PROCEDURE [dbo].[CopyRequestedRun]
     @callingUser varchar(128) = '',
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -379,7 +378,6 @@ As
     --
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CopyRequestedRun] TO [DDL_Viewer] AS [dbo]

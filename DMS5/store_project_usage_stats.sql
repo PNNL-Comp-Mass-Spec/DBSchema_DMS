@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[StoreProjectUsageStats]
 /****************************************************
 **
@@ -396,7 +395,6 @@ Done:
 
     --
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreProjectUsageStats] TO [DDL_Viewer] AS [dbo]

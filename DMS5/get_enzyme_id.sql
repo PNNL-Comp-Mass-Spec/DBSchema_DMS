@@ -3,33 +3,33 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetEnzymeID
+CREATE PROCEDURE [dbo].[GetEnzymeID]
 /****************************************************
 **
-**	Desc: Gets enzymeID for given enzyme name
+**  Desc: Gets enzymeID for given enzyme name
 **
-**	Return values: 0: failure, otherwise, enzyme ID
+**  Return values: 0: failure, otherwise, enzyme ID
 **
-**	Parameters: 
+**  Parameters:
 **
-**	Auth:	jds
-**	Date:	08/25/2004
-**			08/03/2017 mem - Add Set NoCount On
-**    
+**  Auth:   jds
+**  Date:   08/25/2004
+**          08/03/2017 mem - Add Set NoCount On
+**
 *****************************************************/
 (
-	@enzymeName varchar(50) = " "
+    @enzymeName varchar(50) = " "
 )
-As
-	Set NoCount On
-	
-	Declare @enzymeID int = 0
-	
-	SELECT @enzymeID = Enzyme_ID
-	FROM T_Enzymes
-	WHERE Enzyme_Name = @enzymeName
+AS
+    Set NoCount On
 
-	return @enzymeID
+    Declare @enzymeID int = 0
+
+    SELECT @enzymeID = Enzyme_ID
+    FROM T_Enzymes
+    WHERE Enzyme_Name = @enzymeName
+
+    return @enzymeID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetEnzymeID] TO [DDL_Viewer] AS [dbo]

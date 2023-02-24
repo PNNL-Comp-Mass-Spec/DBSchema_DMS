@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 /****************************************************
 **
@@ -104,7 +103,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
     @SpecialProcessingWaitUntilReady tinyint = 0,   -- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
     @infoOnly tinyint = 0                           -- When 1, preview the change even when @mode is 'add' or 'update'
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -876,7 +875,6 @@ As
 Done:
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [DDL_Viewer] AS [dbo]

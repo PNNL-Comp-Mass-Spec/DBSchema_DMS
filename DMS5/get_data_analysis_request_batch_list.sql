@@ -3,21 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetDataAnalysisRequestBatchList]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Builds delimited list of batch IDs
 **      associated with the given data analysis request
 **
 **  Return value: delimited list
 **
-**  Parameters: 
+**  Parameters:
 **
 **  Auth:   mem
 **  Date:   03/25/2022 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @dataAnalysisRequestID int
@@ -26,7 +25,7 @@ RETURNS varchar(max)
 AS
 BEGIN
     Declare @list varchar(max) = ''
-        
+
     SELECT @list = @list + CASE
                                WHEN @list = '' THEN cast(Batch_ID as varchar(12))
                                ELSE ', ' + cast(Batch_ID as varchar(12))
@@ -37,6 +36,5 @@ BEGIN
 
     RETURN @list
 END
-
 
 GO

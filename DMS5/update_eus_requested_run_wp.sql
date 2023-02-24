@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateEUSRequestedRunWP]
+CREATE PROCEDURE [dbo].[UpdateEUSRequestedRunWP]
 /****************************************************
 **
 **  Desc:

@@ -3,44 +3,44 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-create FUNCTION GetPermissions
+CREATE FUNCTION [dbo].[GetPermissions]
 /****************************************************
 **
-**	Desc: 
+**  Desc:
 **  Builds delimited list of users/roles
 **  that have granted access to object
 **
-**	Return value: delimited list
+**  Return value: delimited list
 **
-**	Parameters: 
+**  Parameters:
 **
-**		Auth: grk
-**		Date: 2/15/2005
-**    
+**  Auth:   grk
+**  Date:   02/15/2005
+**
 *****************************************************/
 (
-@name varchar(128)
+    @name varchar(128)
 )
 RETURNS varchar(1024)
 AS
-	BEGIN
-		declare @list varchar(1024)
-		set @list = ''
-		
-		SELECT 
- 			@list = @list + CASE 
-								WHEN @list = '' THEN USER_NAME(sysprotects.uid)
-								ELSE ', ' + USER_NAME(sysprotects.uid)
-							END
-		FROM 
- 			sysprotects 
-		WHERE
-			sysprotects.id = OBJECT_ID(@name)
-		
-		--if @list = '' set @list = '(unknown)'
+    BEGIN
+        declare @list varchar(1024)
+        set @list = ''
 
-		RETURN @list
-	END
+        SELECT
+            @list = @list + CASE
+                                WHEN @list = '' THEN USER_NAME(sysprotects.uid)
+                                ELSE ', ' + USER_NAME(sysprotects.uid)
+                            END
+        FROM
+            sysprotects
+        WHERE
+            sysprotects.id = OBJECT_ID(@name)
+
+        --if @list = '' set @list = '(unknown)'
+
+        RETURN @list
+    END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetPermissions] TO [DDL_Viewer] AS [dbo]

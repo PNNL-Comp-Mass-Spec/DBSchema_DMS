@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AutoUpdateDatasetSeparationType]
 /****************************************************
-** 
-**  Desc:   Possibly update the separation type for the specified datasets, 
+**
+**  Desc:   Possibly update the separation type for the specified datasets,
 **          based on the current separation type name and acquisition length
-** 
+**
 **  Auth:   mem
 **  Date:   10/09/2020
-**    
+**
 *****************************************************/
 (
     @startDatasetId int,
@@ -20,9 +19,9 @@ CREATE PROCEDURE [dbo].[AutoUpdateDatasetSeparationType]
     @infoOnly tinyint = 1,              -- Set to 2 to view detailed messages
     @message varchar(512) = '' output
 )
-As
+AS
     Set NoCount On
-    
+
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
 
@@ -33,7 +32,7 @@ As
 
     Declare @datasetId int = @startDatasetId - 1
     Declare @acqLengthMinutes int
-    
+
     Declare @continue int
     Declare @sortID int
 
@@ -56,17 +55,17 @@ As
     )
 
     CREATE UNIQUE INDEX #IX_TmpUpdateStats ON #TmpUpdateStats (SeparationType, UpdatedSeparationType)
-    
+
     ---------------------------------------------------
     -- Loop through the datasets
     ---------------------------------------------------
     --
     While @datasetId <= @endDatasetId
     Begin
-        SELECT TOP 1 
-            @datasetId = Dataset_ID, 
+        SELECT TOP 1
+            @datasetId = Dataset_ID,
             @datasetName = Dataset_Num,
-            @separationType = DS_sec_sep, 
+            @separationType = DS_sec_sep,
             @acqLengthMinutes = Acq_Length_Minutes
         FROM T_Dataset
         Where Dataset_ID > @datasetId
@@ -95,7 +94,7 @@ As
                     Print 'Would update separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for dataset ' + @datasetName
                 End
                 Else
-                Begin 
+                Begin
                     Update T_Dataset
                     Set DS_sec_sep = @optimalSeparationType
                     Where Dataset_ID = @datasetId
@@ -120,7 +119,7 @@ As
                     WHERE SeparationType = @separationType AND
                           UpdatedSeparationType = @optimalSeparationType
                 End
-                
+
             End
 
             Set @datasetsProcessed = @datasetsProcessed + 1
@@ -138,7 +137,7 @@ As
     FROM #TmpUpdateStats
          INNER JOIN ( SELECT SeparationType,
                              UpdatedSeparationType,
-                             ROW_NUMBER() OVER ( ORDER BY SeparationType, UpdatedSeparationType ) AS 
+                             ROW_NUMBER() OVER ( ORDER BY SeparationType, UpdatedSeparationType ) AS
                                SortID
                       FROM #TmpUpdateStats ) SortingQ
            ON #TmpUpdateStats.SeparationType = SortingQ.SeparationType AND
@@ -149,11 +148,11 @@ As
     ---------------------------------------------------
     --
     SELECT SeparationType, UpdatedSeparationType, UpdateCount
-    FROM #TmpUpdateStats 
+    FROM #TmpUpdateStats
     ORDER BY SortID
 
     If @infoOnly = 0
-    Begin    
+    Begin
         ---------------------------------------------------
         -- Log the update stats
         ---------------------------------------------------
@@ -164,7 +163,7 @@ As
 
         While @continue > 0
         Begin
-            SELECT Top 1 
+            SELECT Top 1
                  @separationType = SeparationType,
                  @optimalSeparationType = UpdatedSeparationType,
                  @updateCount = UpdateCount,
@@ -182,7 +181,7 @@ As
             Else
             Begin
                 Set @message = 'Changed separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for ' + CAST(@updateCount as varchar(12)) + ' dataset'
-                
+
                 If @updateCount > 1
                 Begin
                     Set @message = @message + 's'

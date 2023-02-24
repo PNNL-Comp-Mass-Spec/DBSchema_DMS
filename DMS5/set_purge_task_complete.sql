@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.SetPurgeTaskComplete
+CREATE PROCEDURE [dbo].[SetPurgeTaskComplete]
 /****************************************************
 **
 **  Desc:   Sets archive state of dataset record given by @datasetNum
@@ -40,7 +39,7 @@ CREATE PROCEDURE dbo.SetPurgeTaskComplete
     @completionCode int = 0,    -- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Archive offline, 9 = Preview purge
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -325,7 +324,6 @@ Done:
     end
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [DDL_Viewer] AS [dbo]

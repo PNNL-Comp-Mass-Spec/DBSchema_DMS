@@ -3,29 +3,28 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION dbo.GetDatasetPredefineJobCount
+CREATE FUNCTION [dbo].[GetDatasetPredefineJobCount]
 /****************************************************
 **
-**	Desc: Returns a count of the number of predefined jobs created for this dataset
+**  Desc: Returns a count of the number of predefined jobs created for this dataset
 **
-**	Auth:	mem
-**	Date:	07/25/2017 mem - Initial version
-**    
+**  Auth:   mem
+**  Date:   07/25/2017 mem - Initial version
+**
 *****************************************************/
 (
-	@datasetID INT
+    @datasetID INT
 )
 RETURNS int
 AS
 BEGIN
-	DECLARE @result int
+    DECLARE @result int
 
-	SELECT @result = SUM(jobs_created)
+    SELECT @result = SUM(jobs_created)
     FROM T_Predefined_Analysis_Scheduling_Queue
-	WHERE Dataset_ID = @datasetID
+    WHERE Dataset_ID = @datasetID
 
-	RETURN IsNull(@result, 0)
+    RETURN IsNull(@result, 0)
 END
 
 GO

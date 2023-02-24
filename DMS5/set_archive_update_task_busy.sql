@@ -3,66 +3,65 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[SetArchiveUpdateTaskBusy]
+CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskBusy]
 /****************************************************
 **
-**	Desc: 
-**	Sets appropriate dataset state to busy
+**  Desc:
+**  Sets appropriate dataset state to busy
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Parameters: 
+**  Parameters:
 **
-**	Auth: grk
-**	Date: 12/15/2009
-**		  09/02/2011 mem - Now calling PostUsageLogEntry
-**    
+**  Auth:   grk
+**  Date:   12/15/2009
+**          09/02/2011 mem - Now calling PostUsageLogEntry
+**
 *****************************************************/
 (
-	@datasetNum varchar(128),
-	@StorageServerName VARCHAR(64),
-	@message varchar(512) output
+    @datasetNum varchar(128),
+    @StorageServerName VARCHAR(64),
+    @message varchar(512) output
 )
-As
-	set nocount on
+AS
+    set nocount on
 
-	declare @myError int
-	set @myError = 0
+    declare @myError int
+    set @myError = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+    declare @myRowCount int
+    set @myRowCount = 0
 
-	set @message = '' 
-	
-	UPDATE
-		T_Dataset_Archive
-	SET
-		AS_update_state_ID = 3,
-		AS_update_processor = @StorageServerName
-	FROM
-		T_Dataset_Archive
-		INNER JOIN T_Dataset ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
-	WHERE
-		T_Dataset.Dataset_Num = @datasetNum		
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Update operation failed'
-	end
+    set @message = ''
 
-	---------------------------------------------------
-	-- Log SP usage
-	---------------------------------------------------
+    UPDATE
+        T_Dataset_Archive
+    SET
+        AS_update_state_ID = 3,
+        AS_update_processor = @StorageServerName
+    FROM
+        T_Dataset_Archive
+        INNER JOIN T_Dataset ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
+    WHERE
+        T_Dataset.Dataset_Num = @datasetNum
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Update operation failed'
+    end
 
-	Declare @UsageMessage varchar(512)
-	Set @UsageMessage = 'Dataset: ' + @datasetNum
-	Exec PostUsageLogEntry 'SetArchiveUpdateTaskBusy', @UsageMessage
+    ---------------------------------------------------
+    -- Log SP usage
+    ---------------------------------------------------
+
+    Declare @UsageMessage varchar(512)
+    Set @UsageMessage = 'Dataset: ' + @datasetNum
+    Exec PostUsageLogEntry 'SetArchiveUpdateTaskBusy', @UsageMessage
 
 
-	RETURN @myError
+    RETURN @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskBusy] TO [DDL_Viewer] AS [dbo]

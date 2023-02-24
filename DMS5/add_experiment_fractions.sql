@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddExperimentFractions]
 /****************************************************
 **
@@ -12,7 +11,7 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Auth:  grk
+**  Auth:   grk
 **  Date:   05/28/2005
 **          05/29/2005 grk - Added mods to better work with entry page
 **          05/31/2005 grk - Added mods for separate group members table
@@ -853,7 +852,6 @@ AS
     End CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddExperimentFractions] TO [DDL_Viewer] AS [dbo]

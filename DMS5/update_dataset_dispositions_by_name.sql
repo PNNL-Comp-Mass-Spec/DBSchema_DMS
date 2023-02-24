@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
+CREATE PROCEDURE [dbo].[UpdateDatasetDispositionsByName]
 /****************************************************
 **
 **  Desc:
@@ -35,7 +34,7 @@ CREATE Procedure [dbo].[UpdateDatasetDispositionsByName]
     @message varchar(1024) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -47,40 +46,40 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-   
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateDatasetDispositionsByName', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input parameters
     ---------------------------------------------------
-     
+
     Set @rating = IsNull(@rating, '')
     Set @recycleRequest = IsNull(@recycleRequest, '')
     Set @comment = IsNull(@comment, '')
-    
+
     If Not @recycleRequest IN ('yes', 'no')
     Begin
         set @message = 'RecycleRequest must be Yes or No (currently "' + @recycleRequest + '")'
         RAISERROR (@message, 11, 11)
     End
-    
+
     ---------------------------------------------------
     -- Create a table variable for holding dataset names and IDs
     ---------------------------------------------------
-    -- 
+    --
     --
     Declare @tbl table (
         DatasetID varchar(12),
         DatasetName varchar(128)
     )
-   
+
     --------------------------------------------------
     -- add datasets from input list to table
     ---------------------------------------------------
@@ -120,7 +119,7 @@ As
     ---------------------------------------------------
     --
     Declare @datasetIDList varchar(6000) = ''
-    
+
     SELECT @datasetIDList = @datasetIDList + CASE
                                                  WHEN @datasetIDList = '' THEN ''
                                                  ELSE ', '
@@ -147,7 +146,7 @@ As
     ---------------------------------------------------
 
     set @datasetIDList = ''
-    
+
     select @datasetIDList =  @datasetIDList + case when @datasetIDList = '' then '' else ', ' end + DatasetID
     from @tbl
     --
@@ -175,15 +174,15 @@ As
                         @mode,
                         @message output,
                         @callingUser
-    
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositionsByName'

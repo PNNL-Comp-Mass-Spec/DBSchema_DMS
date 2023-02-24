@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
 /****************************************************
 **
@@ -49,7 +48,7 @@ CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -483,7 +482,6 @@ As
     End CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateReferenceCompound] TO [DDL_Viewer] AS [dbo]

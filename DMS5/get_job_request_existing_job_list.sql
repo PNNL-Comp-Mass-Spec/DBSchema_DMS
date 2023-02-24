@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetJobRequestExistingJobList]
 /****************************************************
 **
@@ -40,7 +39,6 @@ AS
 
         RETURN @list
     END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetJobRequestExistingJobList] TO [DDL_Viewer] AS [dbo]

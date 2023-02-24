@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
 /****************************************************
 **
 **  Desc:   Sets state of dataset record given by @datasetNum
-**          according to given completion code and 
+**          according to given completion code and
 **          adjusts related database entries accordingly.
 **
 **  Return values: 0: success, otherwise, error code
@@ -16,7 +15,7 @@ CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
 **  Auth:   11/04/2002 grk - Initial release
 **          08/06/2003 grk - added handling for "Not Ready" state
 **          11/13/2003 dac - changed "FTICR" instrument class to "Finnigan_FTICR" following instrument class renaming
-**          06/21/2005 grk - added handling "requires_preparation" 
+**          06/21/2005 grk - added handling "requires_preparation"
 **          09/25/2007 grk - return result from DoDatasetCompletionActions (http://prismtrac.pnl.gov/trac/ticket/537)
 **          10/09/2007 grk - limit number of retries (ticket 537)
 **          12/16/2007 grk - add completion code '100' for use by capture broker
@@ -27,7 +26,7 @@ CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          06/13/2018 mem - Add support for @completionCode 101
 **          08/08/2018 mem - Add @completionState 14 (Duplicate Dataset Files)
-**    
+**
 *****************************************************/
 (
     @datasetNum varchar(128),
@@ -35,18 +34,18 @@ CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
     @message varchar(512) output,
     @failureMessage varchar(512) = ''
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
     Set @failureMessage = IsNull(@failureMessage, '')
-    
+
     Declare @maxRetries int
     Set @maxRetries = 20
-    
+
     Declare @datasetID int
     Declare @datasetState int
     Declare @completionState int
@@ -54,7 +53,7 @@ As
     Declare @instrumentClass varchar(32)
     Declare @doPrep tinyint
     Declare @Comment varchar(512)
-    
+
        ---------------------------------------------------
     -- resolve dataset into instrument class
     ---------------------------------------------------
@@ -77,18 +76,18 @@ As
         Set @message = 'Could not get dataset ID for dataset ' + @datasetNum
         goto done
     End
-    
+
     ---------------------------------------------------
     -- Define @completionState based on @completionCode
     ---------------------------------------------------
-    
+
     If @completionCode = 0
     Begin
         If @doPrep > 0
             Set @completionState = 6 -- received
         Else
             Set @completionState = 3 -- normal completion
-    End    
+    End
     Else If @completionCode = 1
     Begin
         Set @completionState = 5 -- capture failed
@@ -133,8 +132,8 @@ As
             Set @completionState = 5 -- capture failed
             Set @message = 'Number of capture retries exceeded limit of ' + cast(@maxRetries as varchar(12)) + ' for dataset "' + @datasetNum + '"'
             exec PostLogEntry
-                    'Error', 
-                    @message, 
+                    'Error',
+                    @message,
                     'SetCaptureTaskComplete'
             Set @message = ''
         End
@@ -151,25 +150,25 @@ As
     ---------------------------------------------------
     --
     Set @Comment = IsNull(@Comment, '')
-    
+
     If @completionState = 3
     Begin
         -- Dataset successfully captured
         -- Remove error messages of the form Error while copying \\15TFTICR64\data\ ...
-        
+
         exec CleanupDatasetComments @DatasetID, @infoonly=0
-        
+
     End
-    
+
     If @completionState = 5 And @failureMessage <> ''
     Begin
         -- Add @failureMessage to the dataset comment (If not yet present)
-        Set @Comment = dbo.AppendToText(@Comment, @failureMessage, 0, '; ', 512)    
-        
+        Set @Comment = dbo.AppendToText(@Comment, @failureMessage, 0, '; ', 512)
+
         UPDATE T_Dataset
         SET DS_Comment = @Comment
         WHERE Dataset_ID = @DatasetID
-            
+
     End
 
     ---------------------------------------------------
@@ -186,12 +185,11 @@ Done:
     Set @UsageMessage = 'Dataset: ' + @datasetNum
     Exec PostUsageLogEntry 'SetCaptureTaskComplete', @UsageMessage
 
-    If @message <> '' 
+    If @message <> ''
     Begin
         RAISERROR (@message, 10, 1)
     End
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskComplete] TO [DDL_Viewer] AS [dbo]

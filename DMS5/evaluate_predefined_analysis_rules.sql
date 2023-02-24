@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 /****************************************************
 **
@@ -89,7 +88,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
     @CreateJobsForUnreviewedDatasets tinyint = 1,    -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
     @AnalysisToolNameFilter varchar(128) = ''        -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
 )
-As
+AS
     Set nocount on
 
     Declare @myError Int =  0
@@ -988,7 +987,6 @@ As
     ---------------------------------------------------
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DDL_Viewer] AS [dbo]

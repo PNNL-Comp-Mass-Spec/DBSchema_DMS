@@ -3,27 +3,26 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetUserID]
 /****************************************************
 **
-**	Desc: Gets UserID for given user PRN
+**  Desc: Gets UserID for given user PRN
 **
-**	Return values: 0: failure, otherwise, user ID
+**  Return values: 0: failure, otherwise, user ID
 **
-**	Auth:	grk
-**	Date:	01/26/2001
-**			08/03/2017 mem - Add set nocount on
+**  Auth:   grk
+**  Date:   01/26/2001
+**          08/03/2017 mem - Add set nocount on
 **          10/22/2020 mem - Add support for names of the form 'LastName, FirstName (Username)'
-**    
+**
 *****************************************************/
 (
-	@userPRN varchar(80) = ''
+    @userPRN varchar(80) = ''
 )
-As
-	set nocount on
-	
-	Declare @userID int = 0
+AS
+    set nocount on
+
+    Declare @userID int = 0
     Declare @startLoc INT
 
     If @userPRN LIKE '%(%)'
@@ -34,12 +33,12 @@ As
             Set @userPRN = Substring(@userPRN, @startLoc + 1, LEN(@userPRN) - @startLoc - 1)
         End
     End
-    
+
     SELECT @userID = ID
     FROM T_Users
-	WHERE U_PRN = @userPRN
+    WHERE U_PRN = @userPRN
 
-	return @userID
+    return @userID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetUserID] TO [DDL_Viewer] AS [dbo]

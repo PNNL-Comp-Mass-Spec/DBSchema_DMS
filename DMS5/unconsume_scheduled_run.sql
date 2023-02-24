@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UnconsumeScheduledRun]
 /****************************************************
 **
@@ -63,7 +62,7 @@ CREATE PROCEDURE [dbo].[UnconsumeScheduledRun]
     @message varchar(1024) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError Int = 0
@@ -409,8 +408,6 @@ As
 
     commit transaction @transName
     return 0
-
-
 
 GO
 GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [D3L243] AS [dbo]

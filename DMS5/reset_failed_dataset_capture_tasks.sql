@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
 /****************************************************
-** 
+**
 **  Desc:   Looks for dataset entries with state=5 (Capture Failed)
 **          and a comment that indicates that we should be able to automatically
 **          retry capture.  For example:
@@ -14,7 +13,7 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
 **            "Dataset not ready: Exception validating constant file size"
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   mem
 **  Date:   10/25/2016 mem - Initial version
 **          10/27/2016 mem - Update T_Log_Entries in DMS_Capture
@@ -27,7 +26,7 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
 **          08/16/2017 mem - Look for 'Authentication failure: The user name or password is incorrect'
 **          05/28/2019 mem - Use a holdoff of 15 minutes for authentication errors
 **          08/25/2022 mem - Use new column name in T_Log_Entries
-**  
+**
 *****************************************************/
 (
     @resetHoldoffHours real = 2,            -- Holdoff time to apply to column DS_Last_Affected
@@ -36,9 +35,9 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
     @message varchar(512) = '' output,      -- Status message
     @resetCount int = 0 output              -- Number of datasets that were reset
 )
-As
+AS
     Set XACT_ABORT, nocount on
-    
+
     declare @myError int
     declare @myRowCount int
     Set @myError = 0
@@ -54,10 +53,10 @@ As
 
     Set @message = ''
     Set @resetCount = 0
-    
+
     If @maxDatasetsToReset <= 0
         Set @maxDatasetsToReset = 1000000
-    
+
     BEGIN TRY
 
         ------------------------------------------------
@@ -69,7 +68,7 @@ As
             Dataset varchar(128) not null,
             Reset_Comment varchar(128) not null
         )
-        
+
         ------------------------------------------------
         -- Populate a temporary table with datasets
         -- that have Dataset State 5=Capture Failed
@@ -79,7 +78,7 @@ As
         INSERT INTO #Tmp_Datasets( Dataset_ID,
                                    Dataset,
                                    Reset_Comment )
-        SELECT TOP ( @maxDatasetsToReset ) 
+        SELECT TOP ( @maxDatasetsToReset )
                Dataset_ID,
                Dataset_Num AS Dataset,
                '' as Reset_Comment
@@ -91,7 +90,7 @@ As
                DS_comment LIKE '%Error running OpenChrom%') AND
                DS_Last_Affected < DateAdd(Minute, -@resetHoldoffHours * 60, GetDate())
         UNION
-        SELECT TOP ( @maxDatasetsToReset ) 
+        SELECT TOP ( @maxDatasetsToReset )
                Dataset_ID,
                Dataset_Num AS Dataset,
                '' as Reset_Comment
@@ -102,7 +101,7 @@ As
         ORDER BY Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
         Begin
             Set @message = 'No candidate datasets were found to reset'
@@ -112,11 +111,11 @@ As
         End
         Else
         Begin -- <a>
-        
+
             ------------------------------------------------
             -- Look for datasets that have been reset more than 4 times
             ------------------------------------------------
-            
+
             UPDATE #Tmp_Datasets
             SET Reset_Comment = 'Capture of dataset has been attempted 5 times; will not reset'
             WHERE Dataset_ID IN ( SELECT DS.Dataset_ID
@@ -130,10 +129,10 @@ As
                                         EL.Prev_Target_State = 5
                                   GROUP BY DS.Dataset_ID
                                   HAVING (COUNT(*) > 4) )
-                
+
             If @infoOnly <> 0
             Begin -- <b1>
-            
+
                 ------------------------------------------------
                 -- Preview the datasets to reset
                 ------------------------------------------------
@@ -157,12 +156,12 @@ As
             End -- </b1>
             Else
             Begin -- <b2>
-            
+
                 ------------------------------------------------
                 -- Possibly post log error messages for datasets with a reset comment,
                 -- then remove those datasets from #Tmp_Datasets
                 ------------------------------------------------
-                --            
+                --
                 INSERT INTO T_Log_Entries( posted_by,
                                            Entered,
                                            [Type],
@@ -179,7 +178,7 @@ As
                       Logs.Message IS NULL
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
                 DELETE FROM #Tmp_Datasets
                 WHERE Reset_Comment <> ''
 
@@ -198,25 +197,25 @@ As
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 Set @resetCount = @myRowCount
-                
+
                 If @resetCount > 0
                 Begin -- <c>
-                    Set @message = 'Reset dataset state from "Capture Failed" to "New" for ' + Cast(@resetCount as varchar(9)) + 
+                    Set @message = 'Reset dataset state from "Capture Failed" to "New" for ' + Cast(@resetCount as varchar(9)) +
                                 dbo.CheckPlural(@resetCount, ' Dataset', ' Datasets')
                     Exec PostLogEntry 'Normal', @message, 'ResetFailedDatasetCaptureTasks'
-                        
+
                     ------------------------------------------------
                     -- Look for log entries in DMS_Capture to auto-update
                     ------------------------------------------------
                     --
-                    
+
                     Declare @DatasetID int = -1
-                    Declare @DatasetName varchar(128)                
+                    Declare @DatasetName varchar(128)
                     Declare @continue tinyint = 1
-                    
+
                     While @continue = 1
                     Begin -- <d>
-                    
+
                         SELECT TOP 1 @DatasetID = Dataset_ID,
                                     @DatasetName = Dataset
                         FROM #Tmp_Datasets
@@ -243,13 +242,13 @@ As
                         End -- </e>
                     End -- </d>
                 End -- </c>
-                        
+
             End -- </b2>
         End -- </a>
-        
+
     END TRY
-    BEGIN CATCH 
-        EXEC FormatErrorMessage @message output, @myError output        
+    BEGIN CATCH
+        EXEC FormatErrorMessage @message output, @myError output
         Exec PostLogEntry 'Error', @message, 'ResetFailedDatasetCaptureTasks'
     END CATCH
 

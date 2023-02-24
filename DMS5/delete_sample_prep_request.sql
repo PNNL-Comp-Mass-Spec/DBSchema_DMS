@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DeleteSamplePrepRequest]
 /****************************************************
 **
@@ -28,7 +27,7 @@ CREATE PROCEDURE [dbo].[DeleteSamplePrepRequest]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
@@ -132,7 +131,6 @@ As
     ---------------------------------------------------
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteSamplePrepRequest] TO [DDL_Viewer] AS [dbo]

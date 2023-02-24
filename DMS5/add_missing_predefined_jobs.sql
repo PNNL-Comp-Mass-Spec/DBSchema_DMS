@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddMissingPredefinedJobs]
 /****************************************************
 **
@@ -48,7 +47,7 @@ CREATE PROCEDURE [dbo].[AddMissingPredefinedJobs]
     @campaignFilter varchar(128) = '',                          -- Optional: if not blank, filters on the given campaign name
     @datasetIDFilterList varchar(1024) = ''                     -- Comma-separated list of Dataset IDs to process
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError INT = 0
@@ -188,7 +187,7 @@ As
         Set @message = 'Error populating #Tmp_DatasetsToProcess'
         Goto Done
     End
-    
+
     IF @infoOnly > 1 AND EXISTS (SELECT * FROM #TmpDatasetIDFilterList)
     Begin
         SELECT 'Debug_Output #1' AS Status,
@@ -227,7 +226,7 @@ As
     WHERE DTP.Process_Dataset > 0
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myError <> 0
     BEGIN
         Set @message = 'Error setting Process_Dataset to 0 in #Tmp_DatasetsToProcess for datasets that have existing jobs'
@@ -273,7 +272,7 @@ As
         Set @message = 'Error setting Process_Dataset to 0 in #Tmp_DatasetsToProcess for datasets in T_Predefined_Analysis_Scheduling_Queue_History'
         Goto Done
     END
-    
+
     IF @infoOnly > 1 AND EXISTS (SELECT * FROM #TmpDatasetIDFilterList)
     Begin
         SELECT 'Debug_Output #3' AS Status,
@@ -534,7 +533,6 @@ As
 
 Done:
     return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[AddMissingPredefinedJobs] TO [D3L243] AS [dbo]

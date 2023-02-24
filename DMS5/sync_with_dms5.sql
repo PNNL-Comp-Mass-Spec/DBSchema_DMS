@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[SyncWithDMS5]
 /****************************************************
 **
@@ -46,7 +45,7 @@ CREATE PROCEDURE [dbo].[SyncWithDMS5]
     @yearsToCopy int = 2,                -- Used when importing experiments, datasets, and/or jobs
     @message varchar(255) = '' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0

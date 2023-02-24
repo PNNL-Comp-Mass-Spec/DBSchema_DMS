@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetFileAttachmentPath]
 /****************************************************
 **
@@ -55,7 +54,7 @@ CREATE FUNCTION [dbo].[GetFileAttachmentPath]
     @entityID varchar(256)            -- Entity ID, though for Campaign, Dataset, Experiment, and Sample Prep Request supports both entity ID or entity name
 )
 Returns varchar(256)
-As
+AS
 Begin
     Declare @spreadFolder varchar(24) = 'spread'
     Declare @created DateTime = '1/1/1900'

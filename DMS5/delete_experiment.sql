@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DeleteExperiment]
 /****************************************************
 **
@@ -35,7 +34,7 @@ CREATE PROCEDURE [dbo].[DeleteExperiment]
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -384,7 +383,6 @@ As
     commit transaction @transName
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [DDL_Viewer] AS [dbo]

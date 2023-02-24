@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[PopulateCampaignFilterTable]
+CREATE PROCEDURE [dbo].[PopulateCampaignFilterTable]
 /****************************************************
-** 
-**  Desc:   Populates temp table #Tmp_CampaignFilter 
+**
+**  Desc:   Populates temp table #Tmp_CampaignFilter
 **          based on the comma-separated campaign IDs in @campaignIDFilterList
 **
 **  The calling procedure must create the temporary table:
@@ -15,19 +14,19 @@ CREATE Procedure [dbo].[PopulateCampaignFilterTable]
 **        Campaign_ID int NOT NULL,
 **        Fraction_EMSL_Funded float NULL
 **    )
-**        
+**
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Date:   07/22/2019 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -37,12 +36,12 @@ As
     Set @message = ''
 
     If @campaignIDFilterList <> ''
-    Begin    
+    Begin
         INSERT INTO #Tmp_CampaignFilter (Campaign_ID)
         SELECT DISTINCT Value
         FROM dbo.udfParseDelimitedIntegerList(@campaignIDFilterList, ',')
         ORDER BY Value
-        
+
         -- Look for invalid Campaign ID values
         Set @msg = ''
         SELECT @msg = Convert(varchar(12), CF.Campaign_ID) + ',' + @msg
@@ -52,12 +51,12 @@ As
         WHERE C.Campaign_ID IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
-        If @myRowCount > 0 
+
+        If @myRowCount > 0
         Begin
             -- Remove the trailing comma
             Set @msg = Substring(@msg, 1, Len(@msg)-1)
-            
+
             If @myRowCount = 1
                 set @msg = 'Invalid Campaign ID: ' + @msg
             Else

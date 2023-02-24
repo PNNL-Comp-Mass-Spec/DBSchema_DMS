@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[ValidateWildcardFilter]
 /****************************************************
 **
@@ -20,10 +19,10 @@ CREATE FUNCTION [dbo].[ValidateWildcardFilter]
     @wildcardFilter varchar(4000)          -- Filter text to examine
 )
     Returns varchar(4000)
-As
+AS
 Begin
     Set @wildcardFilter = IsNull(@wildcardFilter, '')
-    
+
     If Len(IsNull(@wildcardFilter, '')) > 0
     Begin
         -- Add wildcards if @wildcardFilter doesn't contain a percent sign

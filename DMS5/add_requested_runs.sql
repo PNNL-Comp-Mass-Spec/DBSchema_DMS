@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddRequestedRuns]
 /****************************************************
 **
@@ -84,7 +83,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
     @batchComment varchar(512),
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError Int = 0
@@ -473,7 +472,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [DDL_Viewer] AS [dbo]

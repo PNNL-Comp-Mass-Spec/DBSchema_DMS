@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateWellplate]
 /****************************************************
 **
@@ -26,7 +25,7 @@ CREATE PROCEDURE [dbo].[AddUpdateWellplate]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -170,7 +169,6 @@ As
     end -- update mode
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateWellplate] TO [DDL_Viewer] AS [dbo]

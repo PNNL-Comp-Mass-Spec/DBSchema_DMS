@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateEUSInstrumentsFromEUSImports]
 /****************************************************
 **
@@ -22,7 +21,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSInstrumentsFromEUSImports]
 (
     @message varchar(512) = '' output
 )
-As
+AS
     Set Nocount On
 
     Declare @myError int = 0
@@ -143,7 +142,6 @@ Done:
     Exec PostUsageLogEntry 'UpdateEUSInstrumentsFromEUSImports', @usageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInstrumentsFromEUSImports] TO [DDL_Viewer] AS [dbo]

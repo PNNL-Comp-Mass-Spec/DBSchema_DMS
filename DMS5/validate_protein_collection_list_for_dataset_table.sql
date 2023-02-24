@@ -438,11 +438,11 @@ AS
         -- The Order By statements in this query assure that the
         --  internal standard collections and contaminant collections
         --  are listed first and that the original collection order is preserved
-		--
-		-- Note that ValidateAnalysisJobParameters will call ValidateProteinCollectionParams,
-		--  which calls s_validate_analysis_job_protein_parameters in the Protein_Sequences database,
-		--  and that procedure uses standardize_protein_collection_list to order the protein collections in a standard manner,
-		--  so the order here is not critical
+        --
+        -- Note that ValidateAnalysisJobParameters will call ValidateProteinCollectionParams,
+        --  which calls s_validate_analysis_job_protein_parameters in the Protein_Sequences database,
+        --  and that procedure uses standardize_protein_collection_list to order the protein collections in a standard manner,
+        --  so the order here is not critical
         --
         -- The standard order is:
         --  Internal Standards, Normal Protein Collections, Contaminant collections

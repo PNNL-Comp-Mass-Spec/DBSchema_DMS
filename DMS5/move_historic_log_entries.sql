@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
 /****************************************************
 **
-**  Desc:   Move log entries from the main log table into the 
+**  Desc:   Move log entries from the main log table into the
 **          historic log table (insert and then delete)
 **
 **  Auth:   grk
@@ -20,16 +19,16 @@ CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
 **          06/09/2022 mem - Rename target table from T_Historic_Log_Entries to T_Log_Entries
 **                         - No longer store the database name in the target table
 **          08/26/2022 mem - Use new column name in T_Log_Entries
-**    
+**
 *****************************************************/
 (
     @intervalHrs int = 336
 )
-As
+AS
     Set nocount On
 
     Declare @cutoffDateTime datetime
-    
+
     -- Require that @intervalHrs be at least 120
     If IsNull(@intervalHrs, 0) < 120
         Set @intervalHrs = 120
@@ -37,7 +36,7 @@ As
     set @cutoffDateTime = dateadd(hour, -1 * @intervalHrs, getdate())
 
     set nocount off
-    
+
     -- Start transaction
     --
     Declare @transName varchar(64)
@@ -47,8 +46,8 @@ As
     -- Delete log entries that we do not want to move to the DMS Historic Log DB
     DELETE FROM dbo.T_Log_Entries
     WHERE Entered < @cutoffDateTime AND
-         ( message IN ('Archive or update complete for all available tasks', 
-                       'Verfication complete for all available tasks', 
+         ( message IN ('Archive or update complete for all available tasks',
+                       'Verfication complete for all available tasks',
                        'Capture complete for all available tasks') OR
            message LIKE '%: No Data Files to import.' OR
            message LIKE '%: Completed task'           OR
@@ -62,7 +61,7 @@ As
         RAISERROR ('Error removing unwanted log entries from T_Log_Entries', 10, 1)
         return 51179
     end
-    
+
     -- Copy entries into the historic log database
     --
     INSERT INTO DMSHistoricLog.dbo.T_Log_Entries (Entry_ID, posted_by, Entered, Type, message)
@@ -94,11 +93,10 @@ As
             10, 1)
         return 51181
     end
-    
-    commit transaction @transName
-    
-    return 0
 
+    commit transaction @transName
+
+    return 0
 
 GO
 GRANT ALTER ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]

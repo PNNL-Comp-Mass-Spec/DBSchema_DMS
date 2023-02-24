@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateAuxInfoDefinition]
 /****************************************************
 **
@@ -35,7 +34,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfoDefinition]
     @param3 varchar(128) = '',
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -462,7 +461,6 @@ As
     end -- mode 'UpdateItem'
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfoDefinition] TO [DDL_Viewer] AS [dbo]

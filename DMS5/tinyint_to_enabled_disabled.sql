@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[TinyintToEnabledDisabled]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Returns the text 'Disabled' if @value is 0 or null, otherwise returns 'Enabled'
 **
 **  Auth:   mem
 **  Date:   11/14/2012 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @value tinyint
@@ -25,7 +24,7 @@ Begin
         Set @text = 'Disabled'
     Else
         Set @text = 'Enabled'
-    
+
     Return @text
 End
 

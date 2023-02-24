@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
 /****************************************************
 **
@@ -33,11 +32,11 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
 **            <InstrumentFile Hash="4677d34d0f02999f5bddd01fc30b6941f64841da" HashType="SHA1" Size="3555625312">Sample_Name_W_F20.raw</InstrumentFile>
 **          </InstrumentFiles>
 **          <DeviceList>
-**            <Device Type="MS" Number="1" Name="Q Exactive HF-X Orbitrap" Model="Q Exactive HF-X Orbitrap" 
+**            <Device Type="MS" Number="1" Name="Q Exactive HF-X Orbitrap" Model="Q Exactive HF-X Orbitrap"
 **                    SerialNumber="Exactive Series slot #6000" SoftwareVersion="2.9-290033/2.9.0.2926">
 **              Mass Spectrometer
 **            </Device>
-**            <Device Type="Analog" Number="1" Name="Dionex.PumpNCS3500RS" Model="NCS-3500RS" 
+**            <Device Type="Analog" Number="1" Name="Dionex.PumpNCS3500RS" Model="NCS-3500RS"
 **                    SerialNumber="8140000" SoftwareVersion="">
 **              Analog device #1
 **            </Device>
@@ -48,7 +47,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
 **
 **  Auth:   mem
 **  Date:   03/01/2020 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @datasetID int = 0,                 -- If this value is 0, will determine the dataset ID using the contents of @deviceInfoXML by looking for <Dataset>DatasetName</Dataset>
@@ -57,7 +56,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
     @infoOnly tinyint = 0,
     @skipValidation tinyint = 0         -- When 1, if @datasetID is non-zero, skip calling GetDatasetDetailsFromDatasetInfoXML
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -68,18 +67,18 @@ As
 
     Declare @msg Varchar(1024)
     Declare @datasetIdText varchar(12) = Cast(@datasetID as varchar(12))
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateDatasetDeviceInfoXML', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     -----------------------------------------------------------
     -- Create a temp table to hold the data
     -----------------------------------------------------------
@@ -111,11 +110,11 @@ As
         -- Examine the XML to determine the dataset name and update or validate @datasetID
         ---------------------------------------------------
         --
-        Exec GetDatasetDetailsFromDatasetInfoXML 
-            @datasetInfoXML, 
-            @datasetID = @datasetID Output, 
-            @datasetName = @datasetName Output, 
-            @message = @message Output, 
+        Exec GetDatasetDetailsFromDatasetInfoXML
+            @datasetInfoXML,
+            @datasetID = @datasetID Output,
+            @datasetName = @datasetName Output,
+            @message = @message Output,
             @returnCode = @myError Output
 
         If @myError <> 0
@@ -144,8 +143,8 @@ As
         Device_Software_Version,
         Device_Description
     )
-    SELECT Device_Type, Device_Number_Text, 
-           Device_Name, Device_Model, Device_Serial_Number, 
+    SELECT Device_Type, Device_Number_Text,
+           Device_Name, Device_Model, Device_Serial_Number,
            Device_Software_Version, Device_Description
     FROM ( SELECT xmlNode.value('@Type', 'varchar(64)') AS Device_Type,
                   xmlNode.value('@Number', 'varchar(128)') AS Device_Number_Text,
@@ -156,7 +155,7 @@ As
                   xmlNode.value('.', 'varchar(128)') AS Device_Description
            FROM @datasetInfoXML.nodes('/DatasetInfo/AcquisitionInfo/DeviceList/Device') AS R(xmlNode)
     ) LookupQ
-    WHERE Not Device_Type IS NULL     
+    WHERE Not Device_Type IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -194,7 +193,7 @@ As
         ---------------------------------------------------
         --
         INSERT INTO T_Dataset_Device(
-            Device_Type, Device_Number,    
+            Device_Type, Device_Number,
             Device_Name, Device_Model,
             Serial_Number, Software_Version,
             Device_Description )
@@ -210,7 +209,7 @@ As
         ORDER BY Src.Device_Type DESC, Src.Device_Number
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-   
+
         ---------------------------------------------------
         -- Look, again for matching devices in T_Dataset_Device
         ---------------------------------------------------
@@ -238,7 +237,7 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         INSERT INTO T_Dataset_Device_Map( Dataset_ID, Device_ID )
-        SELECT DISTINCT @datasetID, 
+        SELECT DISTINCT @datasetID,
                         Src.Device_ID
         FROM @DatasetDevicesTable Src
         WHERE NOT Src.Device_ID IS NULL
@@ -249,7 +248,7 @@ As
     Else
     Begin
         -- Preview new devices
-        SELECT 'New device' As Info_Message, 
+        SELECT 'New device' As Info_Message,
                Src.Device_Type,
                Src.Device_Number,
                Src.Device_Name,
@@ -281,18 +280,17 @@ Done:
     Begin
         If @message = ''
             Set @message = 'Error in UpdateDatasetDeviceInfoXML'
-        
+
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
-        
+
         If @InfoOnly = 0
             Exec PostLogEntry 'Error', @message, 'UpdateDatasetDeviceInfoXML'
     End
-    
+
     If Len(@message) > 0 AND @InfoOnly <> 0
         Print @message
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDeviceInfoXML] TO [DDL_Viewer] AS [dbo]

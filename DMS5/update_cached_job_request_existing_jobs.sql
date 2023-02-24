@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCachedJobRequestExistingJobs]
 /****************************************************
 **
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedJobRequestExistingJobs]
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int = 0
@@ -344,7 +343,6 @@ As
 Done:
     -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedJobRequestExistingJobs'
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedJobRequestExistingJobs] TO [DDL_Viewer] AS [dbo]

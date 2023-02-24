@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetBatchGroupRequestedRunList]
 /****************************************************
 **
@@ -36,7 +35,6 @@ BEGIN
 
     RETURN @list
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetBatchGroupRequestedRunList] TO [DDL_Viewer] AS [dbo]

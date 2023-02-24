@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateOrganismListForBiomaterial]
 /****************************************************
 **
@@ -17,7 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateOrganismListForBiomaterial]
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/06/2018 mem - Fix delete bug in Merge statement
 **          03/31/2021 mem - Expand Organism_Name, @unknownOrganism, and @newOrganismName to varchar(128)
-**    
+**
 *****************************************************/
 (
     @biomaterialName varchar(64),      -- Biomaterial name, aka cell culture
@@ -30,13 +29,13 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     Declare @biomaterialID int = 0
     Declare @entryID int
     Declare @continue tinyint
-    
+
     Declare @matchCount int
     Declare @unknownOrganism varchar(128)
     Declare @newOrganismName varchar(128)
@@ -45,8 +44,8 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateOrganismListForBiomaterial', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -56,9 +55,9 @@ AS
     ---------------------------------------------------
     -- Resolve biomaterial name to ID
     ---------------------------------------------------
-    --    
+    --
     SELECT @biomaterialID = CC_ID
-    FROM T_Cell_Culture 
+    FROM T_Cell_Culture
     WHERE CC_Name = @biomaterialName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -80,7 +79,7 @@ AS
         set @message= 'Cannot update biomaterial "' + @biomaterialName + '": organism list cannot be null'
         Goto Done
     End
-    
+
     Set @organismList = LTrim(RTrim(@organismList))
     If @organismList = ''
     Begin
@@ -90,16 +89,16 @@ AS
         WHERE Biomaterial_ID = @biomaterialID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         UPDATE T_Cell_Culture
         Set Cached_Organism_List = ''
         WHERE CC_ID = @biomaterialID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         GOTO Done
     End
-    
+
     ---------------------------------------------------
     -- Create a temp table to hold the list of organism names and IDs for this biomaterial item
     ---------------------------------------------------
@@ -146,13 +145,13 @@ AS
 
     ---------------------------------------------------
     -- Look for entries in #Tmp_BiomaterialOrganisms where Organism_Name did not resolve to an Organism_ID
-    -- In case a portion of an organism name was entered, or in case a short name was used, 
+    -- In case a portion of an organism name was entered, or in case a short name was used,
     -- try-to auto-resolve using the OG_Name column in T_Organisms
     ---------------------------------------------------
-    
+
     Set @entryID = 0
     Set @continue = 1
-    
+
     While @continue = 1
     Begin -- <a>
         SELECT TOP 1 @entryID = EntryID,
@@ -162,7 +161,7 @@ AS
         ORDER BY EntryID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
         Begin
             Set @continue = 0
@@ -170,9 +169,9 @@ AS
         Else
         Begin -- <b>
             Set @matchCount = 0
-            
+
             exec AutoResolveOrganismName @unknownOrganism, @matchCount output, @newOrganismName output, @newOrganismID output
-                        
+
             If @matchCount = 1
             Begin
                 -- Single match was found; update Organism_Name and Organism_ID in #Tmp_BiomaterialOrganisms
@@ -184,7 +183,7 @@ AS
             End
         End -- </b>
     End -- </a>
-    
+
     ---------------------------------------------------
     -- Error if any of the organism names could not be resolved
     ---------------------------------------------------
@@ -192,7 +191,7 @@ AS
     Declare @list varchar(512) = ''
     --
     SELECT
-        @list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + Organism_Name 
+        @list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + Organism_Name
     FROM #Tmp_BiomaterialOrganisms
     WHERE Organism_ID IS NULL
     ORDER BY Organism_Name
@@ -242,7 +241,7 @@ AS
     WHERE CC_ID = @biomaterialID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
 Done:
 
     ---------------------------------------------------

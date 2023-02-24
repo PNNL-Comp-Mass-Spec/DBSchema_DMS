@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateRequestedRunCopyFactors]
 /****************************************************
 **
@@ -25,7 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunCopyFactors]
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = ''
 )
-As
+AS
     SET NOCOUNT ON
 
     Declare @myError int = 0
@@ -148,7 +147,6 @@ As
     Exec PostUsageLogEntry 'UpdateRequestedRunCopyFactors', @UsageMessage
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunCopyFactors] TO [DDL_Viewer] AS [dbo]

@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateMaterialLocation]
+CREATE PROCEDURE [dbo].[UpdateMaterialLocation]
 /****************************************************
 **
 **  Desc:   Change properties of a single material location item
@@ -15,7 +14,7 @@ CREATE Procedure [dbo].[UpdateMaterialLocation]
 **
 **  Auth:   mem
 **  Date:   08/27/2018 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @locationTag varchar(64),
@@ -24,7 +23,7 @@ CREATE Procedure [dbo].[UpdateMaterialLocation]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -45,15 +44,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateMaterialLocation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
         -----------------------------------------------------------
         -- Validate the inputs
@@ -83,7 +82,7 @@ As
         -- Validate @locationTag and retrieve the current status
         -----------------------------------------------------------
 
-        SELECT @locationId = ID, 
+        SELECT @locationId = ID,
                @oldComment = IsNull(Comment, ''),
                @containerLimit = Container_Limit,
                @oldStatus = [Status]
@@ -125,8 +124,8 @@ As
 
             If @activeContainers > 0
             Begin
-                Set @errorMessage = 'Location cannot be set to inactive because it has ' + 
-                                    Cast(@activeContainers As varchar(12)) + ' active ' + 
+                Set @errorMessage = 'Location cannot be set to inactive because it has ' +
+                                    Cast(@activeContainers As varchar(12)) + ' active ' +
                                     dbo.CheckPlural(@activeContainers, 'container', 'containers')
                 RAISERROR (@errorMessage, 11, 91)
             End
@@ -156,7 +155,7 @@ As
                 RAISERROR (@errorMessage, 11, 91)
             End
 
-            Set @logMessage = 'Material location status changed from ' + @oldStatus + ' to ' + @status + 
+            Set @logMessage = 'Material location status changed from ' + @oldStatus + ' to ' + @status +
                               ' by ' + @callingUser + ' for material location ' + @locationTag
 
             Exec PostLogEntry 'Normal', @logMessage, 'UpdateMaterialLocation'
@@ -167,7 +166,7 @@ As
         If @oldComment <> @comment
         Begin
             -- Update the comment
-            
+
             Update T_Material_Locations
             Set Comment = @comment
             Where ID = @locationId
@@ -184,35 +183,34 @@ As
             Begin
                 If @comment = ''
                 Begin
-                    Set @logMessage = 'Material location comment "' + @oldComment + '" removed by ' + 
+                    Set @logMessage = 'Material location comment "' + @oldComment + '" removed by ' +
                                       @callingUser + ' for material location ' + @locationTag
 
                 End
                 Else
                 Begin
-                    Set @logMessage = 'Material location comment changed from "' + 
+                    Set @logMessage = 'Material location comment changed from "' +
                                       @oldComment + '" to "' + @comment + '" by ' +
                                       @callingUser + ' for material location ' + @locationTag
                 End
-        
+
                 Exec PostLogEntry 'Normal', @logMessage, 'UpdateMaterialLocation'
             End
 
         End
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
-                
+
         If @logErrors > 0
         Begin
-            Set @logMessage = @message + '; Location tag ' + @locationTag        
+            Set @logMessage = @message + '; Location tag ' + @locationTag
             exec PostLogEntry 'Error', @logMessage, 'UpdateMaterialLocation'
         End
 
     END CATCH
     RETURN @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialLocation] TO [DDL_Viewer] AS [dbo]

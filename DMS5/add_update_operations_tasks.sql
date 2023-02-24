@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 /****************************************************
 **
-**  Desc: 
-**      Adds new or edits existing item in T_Operations_Tasks 
+**  Desc:
+**      Adds new or edits existing item in T_Operations_Tasks
 **
 **  Auth:   grk
-**  Date:   09/01/2012 
+**  Date:   09/01/2012
 **          11/19/2012 grk - Added work package and closed date
 **          11/04/2013 grk - Added @hoursSpent
 **          02/23/2016 mem - Add set XACT_ABORT on
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **                         - Remove parameter @hoursSpent
 **          05/16/2022 mem - Do not log data validation errors
 **          11/18/2022 mem - Rename parameter to @task
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
@@ -45,14 +44,14 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     SET @message = ''
-    
+
     Declare @closed datetime = null
     Declare @taskTypeID Int
     Declare @labID Int
@@ -61,15 +60,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateOperationsTasks', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin TRY 
+    Begin TRY
 
     ---------------------------------------------------
     -- Validate input fields
@@ -80,10 +79,10 @@ As
     Set @labName = IsNull(@labName, 'Undefined')
 
     If @status IN ('Completed', 'Not Implemented')
-    Begin 
-        SET @closed = GETDATE() 
-    End 
-    
+    Begin
+        SET @closed = GETDATE()
+    End
+
     ---------------------------------------------------
     -- Resolve task type name to task type ID
     ---------------------------------------------------
@@ -98,7 +97,7 @@ As
     Begin
         RAISERROR ('Unrecognized task type name', 11, 16)
     End
-        
+
     ---------------------------------------------------
     -- Resolve lab name to ID
     ---------------------------------------------------
@@ -136,12 +135,12 @@ As
         --
         If @myError <> 0 OR @tmp = 0
             RAISERROR ('No entry could be found in database for update', 11, 16)
-            
+
         If @curStatus IN ('Completed', 'Not Implemented')
-        Begin 
+        Begin
             SET @closed = @curClosed
-        End 
-        
+        End
+
     End
 
     Set @logErrors = 1
@@ -164,15 +163,15 @@ As
             Status,
             Priority,
             Work_Package,
-            Closed             
+            Closed
         ) VALUES(
             @taskTypeID,
-            @task, 
-            @requester, 
-            @requestedPersonnel, 
-            @assignedPersonnel, 
-            @description, 
-            @comments, 
+            @task,
+            @requester,
+            @requestedPersonnel,
+            @assignedPersonnel,
+            @description,
+            @comments,
             @labID,
             @status,
             @priority,
@@ -195,7 +194,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Set @myError = 0
         --
@@ -224,21 +223,20 @@ As
     ---------------------------------------------------
     ---------------------------------------------------
     End TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
         End
     End CATCH
-    
-    return @myError
 
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateOperationsTasks] TO [DDL_Viewer] AS [dbo]

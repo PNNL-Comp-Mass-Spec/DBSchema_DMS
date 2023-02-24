@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[AppendToText]
 /****************************************************
 **
@@ -20,7 +19,7 @@ CREATE FUNCTION [dbo].[AppendToText]
 **
 *****************************************************/
 (
-    @text varchar(1024), 
+    @text varchar(1024),
     @addnlText varchar(1024),
     @addDuplicateText tinyint = 0,
     @delimiter varchar(10) = '; ',
@@ -29,9 +28,9 @@ CREATE FUNCTION [dbo].[AppendToText]
     RETURNS varchar(1024)
 AS
 Begin
- 
+
     Declare @charLoc int
-    
+
     If IsNull(@text, '') = ''
         Set @text = ''
 
@@ -39,7 +38,7 @@ Begin
     Begin
         Set @charLoc = 0
         Set @charLoc = CharIndex(@addnlText, @text)
-        
+
         If @charLoc = 0 Or @addDuplicateText <> 0
         Begin
             If @text = ''
@@ -56,22 +55,21 @@ Begin
                 End
                 Else
                 Begin
-                    Set @text = @text + @delimiter 
+                    Set @text = @text + @delimiter
                 End
 
                 Set @text = @text + @addnlText
             End
         End
     End
-    
+
     If @maxLength > 0 And Len(@text) > @maxLength
     Begin
         Set @text = Substring(@text, 1, @maxLength)
     End
 
-    Return @text 
+    Return @text
 End
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AppendToText] TO [DDL_Viewer] AS [dbo]

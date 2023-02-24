@@ -10,15 +10,15 @@ CREATE PROCEDURE [dbo].[UpdateDatasetInstrument]
 **          Typically used for datasets that are new and failed capture
 **          due to the instrument name being wrong (e.g. 15T_FTICR instead of 15T_FTICR_Imaging)
 **
-**          However, set @updateCaptured to 1 to also allow 
+**          However, set @updateCaptured to 1 to also allow
 **          changing the instrument of a dataset that was already successfully captured
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   mem
 **  Date:   04/30/2019 mem - Initial Version
 **          01/05/2023 mem - Use new column names in V_Storage_List_Report
-**    
+**
 *****************************************************/
 (
     @datasetName Varchar(128),
@@ -38,16 +38,16 @@ AS
     ----------------------------------------------------------
     -- Validate the inputs
     ----------------------------------------------------------
-    
+
     Set @datasetName = IsNull(@datasetName, '')
-    Set @newInstrument = IsNull(@newInstrument, '')     
+    Set @newInstrument = IsNull(@newInstrument, '')
     Set @infoOnly = IsNull(@infoOnly, 1)
     Set @updateCaptured = IsNull(@updateCaptured, 0)
     Set @message = ''
 
     ----------------------------------------------------------
     -- Lookup the dataset id and dataset state
-    ----------------------------------------------------------    
+    ----------------------------------------------------------
 
     Declare @datasetId int = 0
     Declare @state int = 0
@@ -75,7 +75,7 @@ AS
     FROM T_Dataset
     WHERE Dataset_Num = @datasetName
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount = 0 Or IsNull(@datasetId, 0) = 0
     Begin
@@ -90,7 +90,7 @@ AS
         Set @myError = 50001
         Goto Done
     End
-        
+
     -- Find the capture job for this dataset
     SELECT @captureJob = Job,
            @stepState = State
@@ -98,7 +98,7 @@ AS
     WHERE Dataset_ID = @datasetId AND
             Tool = 'DatasetCapture'
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount = 0 Or IsNull(@captureJob, 0) = 0
     Begin
@@ -113,17 +113,17 @@ AS
         Set @myError = 50003
         Goto Done
     End
-    
+
     If @stepState = 6
     Begin
         Set @deleteCaptureJob = 1
     End
-    
+
     SELECT @instrumentNameOld = IN_name
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentIdOld
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
     SELECT @instrumentIdNew = Instrument_ID,
            @instrumentNameNew = IN_name,
@@ -131,18 +131,18 @@ AS
     FROM T_Instrument_Name
     WHERE IN_name = @newInstrument
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
     If @myRowCount = 0 Or IsNull(@instrumentIdNew, 0) = 0
     Begin
         Set @message = 'New instrument not found: ' + @newInstrument
         Set @myError = 50000
         Goto Done
     End
-    
+
     Exec @storagePathIdNew = GetInstrumentStoragePathForNewDatasets @instrumentIdNew, @datasetCreated, @AutoSwitchActiveStorage=0, @infoOnly=0
 
-    
+
     SELECT @storagePathNew = dbo.udfCombinePaths(vol_client, storage_path)
     FROM V_Storage_List_Report
     WHERE ID = @storagePathIdNew
@@ -156,7 +156,7 @@ AS
         SELECT @storagePathNew = dbo.udfCombinePaths(vol_client, storage_path)
         FROM V_Storage_List_Report
         WHERE ID = @storagePathIdNew
-        
+
         SELECT ID,
                Dataset,
                Experiment,
@@ -181,7 +181,7 @@ AS
     FROM T_Storage_Path
     WHERE SP_Path_ID = @storagePathIdNew
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myRowCount = 0
     Begin
@@ -195,13 +195,13 @@ AS
 
     Declare @instrumentUpdateTran Varchar(32) = 'Instrument update'
     Begin Tran @instrumentUpdateTran
-    
+
     Update T_Dataset
     Set DS_instrument_name_ID = @instrumentIdNew,
         DS_storage_path_ID = @storagePathIdNew
     Where Dataset_ID = @datasetId
     --
-	SELECT @myError = @@error, @myRowCount = @@rowcount
+    SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
@@ -219,7 +219,7 @@ AS
             Instrument_Class = @instrumentClassNew
         Where Job = @captureJob And Dataset_ID = @datasetId
         --
-	    SELECT @myError = @@error, @myRowCount = @@rowcount
+        SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
@@ -235,7 +235,7 @@ AS
         Delete DMS_Capture.dbo.T_Jobs
         Where Job = @captureJob And Dataset_ID = @datasetId
         --
-	    SELECT @myError = @@error, @myRowCount = @@rowcount
+        SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
@@ -248,7 +248,7 @@ AS
         Set DS_state_ID = 1
         Where Dataset_ID = @datasetId
         --
-	    SELECT @myError = @@error, @myRowCount = @@rowcount
+        SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
@@ -260,7 +260,7 @@ AS
 
     Set @message = 'Changed instrument from ' + @instrumentNameOld + ' to ' + @instrumentNameNew + ' ' +
                    'for dataset ' + @datasetName + ', Dataset_ID ' + Cast(@datasetId As Varchar(12)) + '; ' +
-                   'Storage path ID changed from ' + 
+                   'Storage path ID changed from ' +
                    Cast(@storagePathIdOld As Varchar(12)) + ' to ' + Cast(@storagePathIdNew As Varchar(12))
 
     Exec PostLogEntry 'Normal', @message, 'UpdateDatasetInstrument'
@@ -281,6 +281,5 @@ Done:
     End
 
     Return @myError
-
 
 GO

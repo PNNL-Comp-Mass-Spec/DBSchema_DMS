@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[StoreQuameterResults]
 /****************************************************
 **
@@ -42,7 +41,7 @@ CREATE PROCEDURE [dbo].[StoreQuameterResults]
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -449,7 +448,6 @@ Done:
         Exec PostUsageLogEntry 'StoreQuameterResults', @UsageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreQuameterResults] TO [DDL_Viewer] AS [dbo]

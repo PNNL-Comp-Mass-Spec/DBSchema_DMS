@@ -3,19 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[RenameUser]
 /****************************************************
 **
 **  Desc:   Renames a user in T_Users and other tracking tables
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   10/31/2014 mem - Initial version
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
-**    
+**
 *****************************************************/
 (
     @OldUserName varchar(50) = '',
@@ -32,8 +31,8 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'RenameUser', @raiseError = 1
     If @authorized = 0
     Begin
@@ -64,7 +63,7 @@ AS
         Set @message = 'Usernames are identical; nothing to do'
         Goto Done
     End
-    
+
     --------------------------------------------
     -- Examine T_Users
     --------------------------------------------
@@ -74,11 +73,11 @@ AS
         Set @message = 'User ' + @OldUserName + ' does not exist in T_Users; nothing to do'
         Goto Done
     End
-    
+
     If Exists (Select * From T_Users Where U_PRN = @NewUserName)
     Begin
         Set @message = 'Cannot rename ' + @OldUserName + ' to ' + @NewUserName + ' because the new username already exists in T_Users'
-        
+
         If Substring(@OldUserName, 1, Len(@NewUserName)) = @NewUserName
         Begin
             Set @message = @message + '. Will check for required renames in other tables'
@@ -87,19 +86,19 @@ AS
         Else
         Begin
             Set @message = @message + '. The new username is too different than the old username; aborting'
-            
+
             Select @message as TheMessage
-            
+
             Goto Done
-        End    
+        End
     End
     Else
     Begin
-        
+
         If @InfoOnly <> 0
         Begin
             SELECT 'Preview of rename from ' + @OldUserName + ' to ' + @NewUserName as TheMessage
-            
+
             SELECT *
             FROM T_Users
             WHERE U_PRN IN (@OldUserName, @NewUserName)
@@ -107,7 +106,7 @@ AS
         Else
         Begin
             SELECT 'Renaming ' + @OldUserName + ' to ' + @NewUserName as TheMessage
-            
+
             Update T_Users
             Set U_PRN = @NewUserName
             WHERE U_PRN = @OldUserName
@@ -121,19 +120,19 @@ AS
             SELECT *
             FROM T_Dataset
             WHERE DS_Oper_PRN IN (@OldUserName, @NewUserName)
-            
+
             SELECT *
             FROM T_Experiments
             WHERE EX_researcher_PRN IN (@OldUserName, @NewUserName)
-            
+
             SELECT *
             FROM T_Requested_Run
             WHERE RDS_Requestor_PRN IN (@OldUserName, @NewUserName)
-            
+
             SELECT *
             FROM DMS_Data_Package.dbo.T_Data_Package
             WHERE Owner IN (@OldUserName, @NewUserName)
-            
+
             SELECT *
             FROM DMS_Data_Package.dbo.T_Data_Package
             WHERE Requester IN (@OldUserName, @NewUserName)
@@ -171,7 +170,7 @@ Done:
 
     If @message <> ''
         print @message
-    
+
     return @myError
 
 GO

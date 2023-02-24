@@ -3,22 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetMaterialContainerCampaignList]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Builds delimited list of campaigns represented
 **      by items in the given container
 **
 **  Return value: delimited list
-** 
-**  Parameters: 
+**
+**  Parameters:
 **
 **  Auth:   grk
 **  Date:   08/24/2010 grk
 **          12/04/2017 mem - Use Coalesce instead of a Case statement
-**    
+**
 *****************************************************/
 (
     @containerID INT,
@@ -28,13 +27,13 @@ RETURNS varchar(1024)
 AS
 BEGIN
     declare @list varchar(8000) = null
-		
+
     If @count = 0
     RETURN ''
-		
+
     If @containerID < 1000
     BEGIN
-	   SET @list = '(temporary)'
+       SET @list = '(temporary)'
     END
     ELSE
         SELECT @list = Coalesce(@list + ', ' + Campaign_Name, Campaign_Name)
@@ -56,7 +55,6 @@ BEGIN
 
     RETURN IsNull(@list, '')
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetMaterialContainerCampaignList] TO [DDL_Viewer] AS [dbo]

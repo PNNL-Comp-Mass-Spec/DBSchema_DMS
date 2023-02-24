@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCachedDatasetInstruments]
 /****************************************************
 **
@@ -13,17 +12,17 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetInstruments]
 **
 **  Auth:   mem
 **  Date:   04/15/2019 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @processingMode tinyint = 0,            -- 0 to only add new datasets; 1 to add new datasets and update existing information
     @datasetId Int = 0,                     -- When non-zero, a single dataset ID to add / update
     @infoOnly tinyint = 0,
-    @message varchar(512) = '' output    
+    @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
@@ -35,7 +34,7 @@ As
     Set @datasetId = IsNull(@datasetId, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
-    
+
     If @datasetId > 0 And @infoOnly = 0
     Begin
         MERGE [dbo].[T_Cached_Dataset_Instruments] AS t
@@ -51,7 +50,7 @@ As
             t.[Instrument_ID] <> s.[Instrument_ID] OR
             t.[Instrument] <> s.[Instrument]
             )
-        THEN UPDATE SET 
+        THEN UPDATE SET
             [Instrument_ID] = s.[Instrument_ID],
             [Instrument] = s.[Instrument]
         WHEN NOT MATCHED BY TARGET THEN
@@ -68,7 +67,7 @@ As
     --
     If @processingMode = 0 Or @infoOnly > 0
     Begin
-    
+
         If @infoOnly > 0
         Begin
             ------------------------------------------------
@@ -91,7 +90,7 @@ As
 
             If @myRowCount = 0
                 Select 'No datasets need to be added to T_Cached_Dataset_Instruments' As Status
-        End    
+        End
         Else
         Begin
             ------------------------------------------------
@@ -118,7 +117,7 @@ As
         End
 
     End
-    
+
     If @processingMode > 0
     Begin
 
@@ -171,7 +170,7 @@ As
                 t.[Instrument_ID] <> s.[Instrument_ID] OR
                 t.[Instrument] <> s.[Instrument]
                 )
-            THEN UPDATE SET 
+            THEN UPDATE SET
                 [Instrument_ID] = s.[Instrument_ID],
                 [Instrument] = s.[Instrument]
             WHEN NOT MATCHED BY TARGET THEN
@@ -182,9 +181,9 @@ As
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount > 0
-                Set @message = dbo.AppendToText(@message, 
-                                                Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset was updated', ' datasets were updated') + ' via a merge', 
-                                                0, '; ', 512)              
+                Set @message = dbo.AppendToText(@message,
+                                                Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset was updated', ' datasets were updated') + ' via a merge',
+                                                0, '; ', 512)
         End
 
     End
@@ -192,7 +191,6 @@ As
 Done:
     -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetInstruments'
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedDatasetInstruments] TO [DDL_Viewer] AS [dbo]

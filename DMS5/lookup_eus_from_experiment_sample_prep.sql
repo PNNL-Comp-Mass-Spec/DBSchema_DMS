@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[LookupEUSFromExperimentSamplePrep]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Get values for EUS field from the sample prep request
-**      associated with the given experiment (if there is one) 
+**      associated with the given experiment (if there is one)
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -27,18 +26,18 @@ CREATE PROCEDURE [dbo].[LookupEUSFromExperimentSamplePrep]
     @eusUsersList varchar(1024) output,     -- If this is "(lookup)", will override with the EUS info from the sample prep request (if found)
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
 
     Set @eusUsageType = Ltrim(Rtrim(IsNull(@eusUsageType, '')))
     Set @eusProposalID = Ltrim(Rtrim(IsNull(@eusProposalID, '')))
     Set @eusUsersList = Ltrim(Rtrim(IsNull(@eusUsersList, '')))
-    
+
     ---------------------------------------------------
     -- Find associated sample prep request for experiment
     ---------------------------------------------------

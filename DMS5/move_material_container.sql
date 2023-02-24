@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[MoveMaterialContainer]
 /****************************************************
 **
@@ -21,7 +20,7 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainer]
 **  Date:   12/19/2018 mem - Initial release
 **          12/20/2018 mem - Include container name in warnings
 **          03/02/2022 mem - Compare current container location to @newLocation before validating @oldLocation
-**    
+**
 *****************************************************/
 (
     @container varchar(128),
@@ -31,7 +30,7 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainer]
     @infoOnly tinyint = 1,
     @message varchar(512) = '' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0
@@ -50,8 +49,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'MoveMaterialContainer', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -72,7 +71,7 @@ As
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-        
+
     If Len(@container) = 0
     Begin
         set @message = 'Container name cannot be empty'
@@ -154,7 +153,7 @@ As
         Set @mode = 'Update'
     End
 
-    Exec @myError = AddUpdateMaterialContainer @container = @container 
+    Exec @myError = AddUpdateMaterialContainer @container = @container
                                               ,@type = @containerType
                                               ,@location = @newLocation
                                               ,@comment = @containerComment
@@ -177,7 +176,7 @@ As
 
         Select @message As Comment
     End
-        
+
     return @myError
 
 GO

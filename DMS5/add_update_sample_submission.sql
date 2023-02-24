@@ -3,286 +3,286 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE AddUpdateSampleSubmission
+CREATE PROCEDURE [dbo].[AddUpdateSampleSubmission]
 /****************************************************
 **
-**  Desc: 
-**    Adds new or edits existing item in 
+**  Desc:
+**    Adds new or edits existing item in
 **    T_Sample_Submission
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Parameters:
 **
-**    Auth: grk
-**    Date: 04/23/2010
+**  Auth:   grk
+**  Date:   04/23/2010
 **          04/30/2010 grk - Added call to CallSendMessage
 **          09/23/2011 grk - Accomodate researcher field in AssureMaterialContainersExist
-**			02/06/2013 mem - Added logic to prevent duplicate entries
-**			12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
-**			03/26/2015 mem - Update duplicate sample submission message
-**			02/23/2016 mem - Add set XACT_ABORT on
-**			04/12/2017 mem - Log exceptions to T_Log_Entries
-**			06/13/2017 mem - Use SCOPE_IDENTITY()
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
-**			08/18/2017 mem - Disable logging certain messages to T_Log_Entries
+**          02/06/2013 mem - Added logic to prevent duplicate entries
+**          12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
+**          03/26/2015 mem - Update duplicate sample submission message
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/13/2017 mem - Use SCOPE_IDENTITY()
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int OUTPUT,
-	@Campaign varchar(64),
-	@ReceivedBy varchar(64),
-	@ContainerList varchar(1024) OUTPUT,
-	@NewContainerComment varchar(1024),
-	@Description varchar(4096),
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @ID int OUTPUT,
+    @Campaign varchar(64),
+    @ReceivedBy varchar(64),
+    @ContainerList varchar(1024) OUTPUT,
+    @NewContainerComment varchar(1024),
+    @Description varchar(4096),
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
-As
-	Set XACT_ABORT, nocount on
+AS
+    Set XACT_ABORT, nocount on
 
-	Declare @myError int = 0
-	Declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	Set @message = ''
+    Set @message = ''
 
-	Declare @msg VARCHAR(512) = ''
-	Declare @logErrors tinyint = 0
-	
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateSampleSubmission', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    Declare @msg VARCHAR(512) = ''
+    Declare @logErrors tinyint = 0
 
-	Begin TRY 
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    Declare @authorized tinyint = 0
+    Exec @authorized = VerifySPAuthorized 'AddUpdateSampleSubmission', @raiseError = 1
+    If @authorized = 0
+    Begin
+        THROW 51000, 'Access denied', 1;
+    End
 
-	Set @Campaign = IsNull(@Campaign, '')
-	If @Campaign = ''
-		RAISERROR('Campaign name cannot be empty', 11, 15)
-	
-	Set @ContainerList = IsNull(@ContainerList, '')
-	If @ContainerList = ''
-		RAISERROR('Container list cannot be empty', 11, 16)
-	
-	Set @ReceivedBy = IsNull(@ReceivedBy, '')
-	If @ReceivedBy = ''
-		RAISERROR('Received by name cannot be empty', 11, 17)
-		
-	Set @NewContainerComment = IsNull(@NewContainerComment, '')
-	
-	Set @Description = IsNull(@Description, '')
-	If @Description = ''
-		RAISERROR('Description cannot be blank', 11, 18)
+    Begin TRY
 
-	---------------------------------------------------
-	-- Resolve Campaign ID
-	---------------------------------------------------
-	--
-	Declare @CampaignID int
-	SET @CampaignID = 0
-	SELECT
-		@CampaignID = Campaign_ID
-	FROM
-		T_Campaign
-	WHERE
-		Campaign_Num = @Campaign
-	--
-	IF @CampaignID = 0
-		RAISERROR('Campaign "%s" could not be found', 11, 19, @Campaign)
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Resolve PRN
-	---------------------------------------------------
-	--
-	Declare @Researcher VARCHAR(128)
-	Declare @ReceivedByUserID int
-	Set @ReceivedByUserID = 0
-	
-	SELECT 
-		@ReceivedByUserID = ID,
-		@Researcher = Name_with_PRN
-	FROM T_Users 
-	WHERE U_PRN = @ReceivedBy
-	--
-	IF @CampaignID = 0
-		RAISERROR('Username "%s" could not be found', 11, 20, @ReceivedBy)
+    Set @Campaign = IsNull(@Campaign, '')
+    If @Campaign = ''
+        RAISERROR('Campaign name cannot be empty', 11, 15)
 
-	---------------------------------------------------
-	-- Is entry already in database? (only applies to updates)
-	---------------------------------------------------
+    Set @ContainerList = IsNull(@ContainerList, '')
+    If @ContainerList = ''
+        RAISERROR('Container list cannot be empty', 11, 16)
 
-	If @mode = 'update'
-	Begin
-		-- cannot update a non-existent entry
-		--
-		Declare @tmp int = 0
-		--
-		SELECT @tmp = ID
-		FROM  T_Sample_Submission
-		WHERE (ID = @ID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		If @myError <> 0 OR @tmp = 0
-			RAISERROR ('No entry could be found in database for update', 11, 21)
-	End
-	
-	---------------------------------------------------
-	-- Define the transaction name
-	---------------------------------------------------
-	Declare @transName varchar(32) = 'AddUpdateSampleSubmission'
+    Set @ReceivedBy = IsNull(@ReceivedBy, '')
+    If @ReceivedBy = ''
+        RAISERROR('Received by name cannot be empty', 11, 17)
 
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
-	--
-	If @Mode = 'add'
-	Begin
+    Set @NewContainerComment = IsNull(@NewContainerComment, '')
 
-		---------------------------------------------------
-		-- verify container list
-		---------------------------------------------------
-		--
-		Declare @cl varchar(1024) = @ContainerList
-		--
-		EXEC @myError = AssureMaterialContainersExist
-							@ContainerList = @cl OUTPUT,
-							@Comment = '',
-							@Type = '',
-							@Researcher = @Researcher,
-							@mode = 'verify_only',
-							@message = @msg output,
-							@callingUser = ''
-		--
-		IF @myError <> 0
-			RAISERROR('AssureMaterialContainersExist: %s', 11, 22, @msg)
+    Set @Description = IsNull(@Description, '')
+    If @Description = ''
+        RAISERROR('Description cannot be blank', 11, 18)
 
-		---------------------------------------------------
-		-- Verify that this doesn't duplicate an existing sample submission request
-		---------------------------------------------------
-		Set @ID = -1
-		--
-		SELECT @ID = ID
-		FROM T_Sample_Submission
-		WHERE Campaign_ID = @CampaignID AND Received_By_User_ID = @ReceivedByUserID AND Description = @Description
-		
-		If @ID > 0
-			RAISERROR('New sample submission is duplicate of existing sample submission, ID %d; both have identical Campaign, Received By User, and Description', 11, 23, @ID)
-		
-		Set @logErrors = 1
-	
-		---------------------------------------------------
-		-- Add the new data
-		--
-		Begin transaction @transName
+    ---------------------------------------------------
+    -- Resolve Campaign ID
+    ---------------------------------------------------
+    --
+    Declare @CampaignID int
+    SET @CampaignID = 0
+    SELECT
+        @CampaignID = Campaign_ID
+    FROM
+        T_Campaign
+    WHERE
+        Campaign_Num = @Campaign
+    --
+    IF @CampaignID = 0
+        RAISERROR('Campaign "%s" could not be found', 11, 19, @Campaign)
 
-		INSERT INTO T_Sample_Submission (
-			Campaign_ID,
-			Received_By_User_ID,
-			Container_List,
-			Description,
-			Storage_Path
-		) VALUES (
-			@CampaignID,
-			@ReceivedByUserID,
-			@ContainerList,
-			@Description,
-			NULL
-		)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		If @myError <> 0
-			RAISERROR ('Insert operation failed', 11, 24)
+    ---------------------------------------------------
+    -- Resolve PRN
+    ---------------------------------------------------
+    --
+    Declare @Researcher VARCHAR(128)
+    Declare @ReceivedByUserID int
+    Set @ReceivedByUserID = 0
 
-		-- Return ID of newly created entry
-		--
-		set @ID = SCOPE_IDENTITY()
+    SELECT
+        @ReceivedByUserID = ID,
+        @Researcher = Name_with_PRN
+    FROM T_Users
+    WHERE U_PRN = @ReceivedBy
+    --
+    IF @CampaignID = 0
+        RAISERROR('Username "%s" could not be found', 11, 20, @ReceivedBy)
 
-		---------------------------------------------------
-		-- add containers (as needed)
-		--
-		Declare @Comment varchar(1024)
-		If @NewContainerComment = ''
-			Set @Comment = '(created via sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
-		Else
-			Set @Comment = @NewContainerComment + ' (sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
-		--
-		EXEC @myError = AssureMaterialContainersExist
-						@ContainerList = @ContainerList OUTPUT,
-						@Comment = @Comment,
-						@Type = 'Box',
-						@Researcher = @Researcher,
-						@mode = 'create',
-						@message = @msg output,
-						@callingUser = @callingUser
-		--
-		IF @myError <> 0
-			RAISERROR('AssureMaterialContainersExist: %s', 11, 25, @message)
+    ---------------------------------------------------
+    -- Is entry already in database? (only applies to updates)
+    ---------------------------------------------------
 
-		---------------------------------------------------
-		-- update container list for sample submission
-		--
-		UPDATE T_Sample_Submission 
-		SET Container_List = @ContainerList 
-		WHERE ID = @ID
-			
-		commit transaction @transName
+    If @mode = 'update'
+    Begin
+        -- cannot update a non-existent entry
+        --
+        Declare @tmp int = 0
+        --
+        SELECT @tmp = ID
+        FROM  T_Sample_Submission
+        WHERE (ID = @ID)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0 OR @tmp = 0
+            RAISERROR ('No entry could be found in database for update', 11, 21)
+    End
 
-	End -- add mode
+    ---------------------------------------------------
+    -- Define the transaction name
+    ---------------------------------------------------
+    Declare @transName varchar(32) = 'AddUpdateSampleSubmission'
 
-	---------------------------------------------------
-	-- action for update mode
-	---------------------------------------------------
-	--
-	If @Mode = 'update' 
-	Begin
-		Set @logErrors = 1
-	
-		Set @myError = 0
-		--
-		UPDATE T_Sample_Submission
-		SET Campaign_ID = @CampaignID,
-		    Received_By_User_ID = @ReceivedByUserID,
-		    Container_List = @ContainerList,
-		    Description = @Description
-		WHERE (ID = @ID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		If @myError <> 0
-			RAISERROR ('Update operation failed: "%d"', 11, 26, @ID)
+    ---------------------------------------------------
+    -- action for add mode
+    ---------------------------------------------------
+    --
+    If @Mode = 'add'
+    Begin
 
-	End -- update mode
+        ---------------------------------------------------
+        -- verify container list
+        ---------------------------------------------------
+        --
+        Declare @cl varchar(1024) = @ContainerList
+        --
+        EXEC @myError = AssureMaterialContainersExist
+                            @ContainerList = @cl OUTPUT,
+                            @Comment = '',
+                            @Type = '',
+                            @Researcher = @Researcher,
+                            @mode = 'verify_only',
+                            @message = @msg output,
+                            @callingUser = ''
+        --
+        IF @myError <> 0
+            RAISERROR('AssureMaterialContainersExist: %s', 11, 22, @msg)
 
-	End TRY
-	Begin CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
-		
-		-- rollback any open transactions
-		IF (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
+        ---------------------------------------------------
+        -- Verify that this doesn't duplicate an existing sample submission request
+        ---------------------------------------------------
+        Set @ID = -1
+        --
+        SELECT @ID = ID
+        FROM T_Sample_Submission
+        WHERE Campaign_ID = @CampaignID AND Received_By_User_ID = @ReceivedByUserID AND Description = @Description
 
-		If @logErrors > 0
-		Begin
-			Exec PostLogEntry 'Error', @message, 'AddUpdateSampleSubmission'
-		End
-	End CATCH
-	return @myError
+        If @ID > 0
+            RAISERROR('New sample submission is duplicate of existing sample submission, ID %d; both have identical Campaign, Received By User, and Description', 11, 23, @ID)
+
+        Set @logErrors = 1
+
+        ---------------------------------------------------
+        -- Add the new data
+        --
+        Begin transaction @transName
+
+        INSERT INTO T_Sample_Submission (
+            Campaign_ID,
+            Received_By_User_ID,
+            Container_List,
+            Description,
+            Storage_Path
+        ) VALUES (
+            @CampaignID,
+            @ReceivedByUserID,
+            @ContainerList,
+            @Description,
+            NULL
+        )
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Insert operation failed', 11, 24)
+
+        -- Return ID of newly created entry
+        --
+        set @ID = SCOPE_IDENTITY()
+
+        ---------------------------------------------------
+        -- add containers (as needed)
+        --
+        Declare @Comment varchar(1024)
+        If @NewContainerComment = ''
+            Set @Comment = '(created via sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
+        Else
+            Set @Comment = @NewContainerComment + ' (sample submission ' + CONVERT(VARCHAR(12), @ID) + ')'
+        --
+        EXEC @myError = AssureMaterialContainersExist
+                        @ContainerList = @ContainerList OUTPUT,
+                        @Comment = @Comment,
+                        @Type = 'Box',
+                        @Researcher = @Researcher,
+                        @mode = 'create',
+                        @message = @msg output,
+                        @callingUser = @callingUser
+        --
+        IF @myError <> 0
+            RAISERROR('AssureMaterialContainersExist: %s', 11, 25, @message)
+
+        ---------------------------------------------------
+        -- update container list for sample submission
+        --
+        UPDATE T_Sample_Submission
+        SET Container_List = @ContainerList
+        WHERE ID = @ID
+
+        commit transaction @transName
+
+    End -- add mode
+
+    ---------------------------------------------------
+    -- action for update mode
+    ---------------------------------------------------
+    --
+    If @Mode = 'update'
+    Begin
+        Set @logErrors = 1
+
+        Set @myError = 0
+        --
+        UPDATE T_Sample_Submission
+        SET Campaign_ID = @CampaignID,
+            Received_By_User_ID = @ReceivedByUserID,
+            Container_List = @ContainerList,
+            Description = @Description
+        WHERE (ID = @ID)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        If @myError <> 0
+            RAISERROR ('Update operation failed: "%d"', 11, 26, @ID)
+
+    End -- update mode
+
+    End TRY
+    Begin CATCH
+        EXEC FormatErrorMessage @message output, @myError output
+
+        -- rollback any open transactions
+        IF (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
+
+        If @logErrors > 0
+        Begin
+            Exec PostLogEntry 'Error', @message, 'AddUpdateSampleSubmission'
+        End
+    End CATCH
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSampleSubmission] TO [DDL_Viewer] AS [dbo]

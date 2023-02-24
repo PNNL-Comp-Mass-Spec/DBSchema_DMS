@@ -3,19 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[LoadMetadataForMultipleExperiments]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Load metadata for experiments in given list
 **
-**  Return values: 
+**  Return values:
 **      0: success, otherwise, error code
 **
 **      Returns recordset containing keyword-value pairs for all metadata items
 **
-**  Parameters: 
+**  Parameters:
 **      This stored procedure expects that its caller
 **      will have loaded a temporary table (named #exp)
 **      with all the experiment names that it should
@@ -29,13 +28,13 @@ CREATE PROCEDURE [dbo].[LoadMetadataForMultipleExperiments]
 **  Date:   11/01/2006
 **          07/06/2022 mem - Use new aux info definition view name
 **          02/08/2023 bcg - Update to use V_Biomaterial_Metadata
-**    
+**
 *****************************************************/
- (
-  @Options varchar(256), -- ignore for now
-  @message varchar(512) output
- )
-As
+(
+    @Options varchar(256), -- ignore for now
+    @message varchar(512) output
+)
+AS
     set nocount on
 
     declare @myError int
@@ -47,10 +46,10 @@ As
     set @message = ''
 
     ---------------------------------------------------
-    -- load experiment tracking info for experiments 
+    -- load experiment tracking info for experiments
     -- in given list
     ---------------------------------------------------
- 
+
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT Name , '', 'Experiment', 'Name', MD.[Name]
     FROM V_Experiment_Metadata MD
@@ -133,25 +132,25 @@ As
     --
 
     ---------------------------------------------------
-    -- load experiment aux info for experiments 
+    -- load experiment aux info for experiments
     -- in given list
     ---------------------------------------------------
     --
     INSERT INTO #metaD(mExp, mCC,  mAType, mTag, mVal)
     SELECT
         T.Experiment_Num, '', 'Experiment', AI.Category + '.' + AI.Subcategory + '.' + AI.Item AS Tag, AI.Value
-    FROM 
+    FROM
         T_Experiments T INNER JOIN
         V_Aux_Info_Value AI ON T.Exp_ID = AI.Target_ID
     WHERE
-        (AI.Target = 'Experiment') AND 
+        (AI.Target = 'Experiment') AND
         (T.Experiment_Num IN (SELECT mExp FROM #exp))
 
     ---------------------------------------------------
-    -- load cell culture tracking info for experiments 
+    -- load cell culture tracking info for experiments
     -- in given list
     ---------------------------------------------------
- 
+
     INSERT INTO #metaD(mExp, mCC, mAType, mTag, mVal)
     SELECT EX.Experiment_Num, MD.Name, 'Cell Culture', 'Name', MD.[Name]
     FROM T_Experiment_Cell_Cultures INNER JOIN
@@ -216,7 +215,7 @@ As
     WHERE (EX.Experiment_Num IN (SELECT mExp FROM #exp) )
 
     ---------------------------------------------------
-    -- load cell culture Aux Info for experiments 
+    -- load cell culture Aux Info for experiments
     -- in given list
     ---------------------------------------------------
     --
@@ -229,7 +228,7 @@ As
         T_Experiment_Cell_Cultures ON T.CC_ID = T_Experiment_Cell_Cultures.CC_ID INNER JOIN
         T_Experiments ON T_Experiment_Cell_Cultures.Exp_ID = T_Experiments.Exp_ID
     WHERE
-        AI.Target = 'Cell Culture' AND 
+        AI.Target = 'Cell Culture' AND
         (T_Experiments.Experiment_Num IN (SELECT mExp FROM #exp))
     ORDER BY T_Experiments.Experiment_Num, T.CC_Name
 

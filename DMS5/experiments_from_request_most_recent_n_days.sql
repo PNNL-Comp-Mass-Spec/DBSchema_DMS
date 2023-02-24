@@ -3,39 +3,37 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION dbo.ExperimentsFromRequestMostRecentNDays
+CREATE FUNCTION [dbo].[ExperimentsFromRequestMostRecentNDays]
 /****************************************************
 **
-**	Desc: 
-**		Returns count of number of experiments made
+**  Desc:
+**      Returns count of number of experiments made
 **      from given sample prep request
 **
-**		Only includes experiments created within the most recent N days, specified by @days
+**      Only includes experiments created within the most recent N days, specified by @days
 **
 **
-**	Auth:	mem
-**	Date:	03/26/2013 mem - Initial version
-**			01/30/2017 mem - Switch from DateDiff to DateAdd
-**    
+**  Auth:   mem
+**  Date:   03/26/2013 mem - Initial version
+**          01/30/2017 mem - Switch from DateDiff to DateAdd
+**
 *****************************************************/
 (
-	@requestID int,
-	@days int
+    @requestID int,
+    @days int
 )
 RETURNS int
 AS
-	BEGIN
-		declare @n int
-		
-		SELECT @n = COUNT(*)
-		FROM   T_Experiments
-		WHERE EX_sample_prep_request_ID = @requestID AND
-		      EX_created > DateAdd(Day, -ISNULL(@days, 1), GetDate())
-		
- 		RETURN @n
-	END
+    BEGIN
+        declare @n int
 
+        SELECT @n = COUNT(*)
+        FROM   T_Experiments
+        WHERE EX_sample_prep_request_ID = @requestID AND
+              EX_created > DateAdd(Day, -ISNULL(@days, 1), GetDate())
+
+        RETURN @n
+    END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ExperimentsFromRequestMostRecentNDays] TO [DDL_Viewer] AS [dbo]

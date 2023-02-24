@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskComplete]
 /****************************************************
 **
@@ -32,7 +31,7 @@ CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskComplete]
     @completionCode int = 0,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -130,7 +129,6 @@ Done:
     Exec PostUsageLogEntry 'SetArchiveUpdateTaskComplete', @UsageMessage
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [DDL_Viewer] AS [dbo]

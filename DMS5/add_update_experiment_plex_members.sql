@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
+CREATE PROCEDURE [dbo].[AddUpdateExperimentPlexMembers]
 /****************************************************
 **
-**	Desc:   Adds new or updates existing rows in T_Experiment_Plex_Members
+**  Desc:   Adds new or updates existing rows in T_Experiment_Plex_Members
 **          Can either provide data via @plexMembers or via channel-specific parameters
 **
 **          @plexMembers is a table listing Experiment ID values by channel or by tag
@@ -18,36 +17,36 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **
 ** Example 1:
 **     Channel, Exp_ID, Channel Type, Comment
-**     1, 212457, Normal, 
-**     2, 212458, Normal, 
-**     3, 212458, Normal, 
+**     1, 212457, Normal,
+**     2, 212458, Normal,
+**     3, 212458, Normal,
 **     4, 212459, Normal, Optionally define a comment
-**     5, 212460, Normal, 
-**     6, 212461, Normal, 
-**     7, 212462, Normal, 
-**     8, 212463, Normal, 
-**     9, 212464, Normal, 
-**     10, 212465, Normal, 
+**     5, 212460, Normal,
+**     6, 212461, Normal,
+**     7, 212462, Normal,
+**     8, 212463, Normal,
+**     9, 212464, Normal,
+**     10, 212465, Normal,
 **     11, 212466, Reference, This is a pooled reference
 **
 **
 ** Example 2:
 **     Tag, Exp_ID, Channel Type, Comment
-**     126, 212457, Normal, 
-**     127N, 212458, Normal, 
-**     127C, 212458, Normal, 
+**     126, 212457, Normal,
+**     127N, 212458, Normal,
+**     127C, 212458, Normal,
 **     128N, 212459, Normal, Optionally define a comment
 **     128C, 212460
 **     129N, 212461
 **     129C, 212462
-**     130N, 212463, Normal, 
-**     130C, 212464, Normal, 
+**     130N, 212463, Normal,
+**     130C, 212464, Normal,
 **     131N, 212465
 **     131C, 212466, Reference, This is a pooled reference
 **
 ** Example 3:
 **     Tag, Experiment, Channel Type, Comment
-**     126, CPTAC_UCEC_Ref, Reference, 
+**     126, CPTAC_UCEC_Ref, Reference,
 **     127N, CPTAC_UCEC_C3N-00858, Normal, Aliquot: CPT007832 0004
 **     127C, CPTAC_UCEC_C3N-00858, Normal, Aliquot: CPT007836 0001
 **     128N, CPTAC_UCEC_C3L-01252, Normal, Aliquot: CPT008062 0001
@@ -58,8 +57,8 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **     130C, CPTAC_UCEC_C3L-01248, Normal, Aliquot: CPT008030 0003
 **     131, CPTAC_UCEC_C3N-00850, Normal, Aliquot: CPT002781 0003
 **
-**	Auth:	mem
-**	Date:	11/19/2018 mem - Initial version
+**  Auth:   mem
+**  Date:   11/19/2018 mem - Initial version
 **          11/28/2018 mem - Allow the second column in the plex table to have experiment names instead of IDs
 **                         - Make @expIdChannel and @channelType parameters optional
 **                         - Add @comment parameters
@@ -72,10 +71,10 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
 **          11/09/2021 mem - Update @mode to support 'preview'
 **          04/18/2022 mem - Update to support TMT 18 by adding channels 17 and 18
 **          04/20/2022 mem - Fix typo in variable names
-**    
+**
 *****************************************************/
 (
-	@plexExperimentIdOrName varchar(130) output, -- Input/output parameter; used by the experiment_plex_members page family when copying an entry and changing the plex Exp_ID.  Accepts name or ID as input, but the output is always ID
+    @plexExperimentIdOrName varchar(130) output, -- Input/output parameter; used by the experiment_plex_members page family when copying an entry and changing the plex Exp_ID.  Accepts name or ID as input, but the output is always ID
     @plexMembers varchar(4000),                  -- Table of Channel to Exp_ID mapping (see above for examples)
     @expIdChannel1 varchar(130)='',              -- Experiment ID or Experiment Name or ExpID:ExperimentName
     @expIdChannel2 varchar(130)='',
@@ -131,20 +130,20 @@ CREATE Procedure [dbo].[AddUpdateExperimentPlexMembers]
     @comment16 varchar(512)='',
     @comment17 varchar(512)='',
     @comment18 varchar(512)='',
-	@mode varchar(12) = 'add',		-- 'add', 'update', 'check_add', 'check_update', or 'preview'
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''		
+    @mode varchar(12) = 'add',      -- 'add', 'update', 'check_add', 'check_update', or 'preview'
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
-As
-	Set XACT_ABORT, nocount on
+AS
+    Set XACT_ABORT, nocount on
 
-	Declare @myError int = 0
-	Declare @myRowCount int = 0
-	
-	Set @message = ''
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-	Declare @msg varchar(256)
-	Declare @logErrors tinyint = 0
+    Set @message = ''
+
+    Declare @msg varchar(256)
+    Declare @logErrors tinyint = 0
 
     Declare @plexExperimentId int
 
@@ -156,9 +155,9 @@ As
     Declare @continue tinyint
     Declare @parseColData tinyint
     Declare @value varchar(2048)
-	
+
     Declare @charIndex int
-    
+
     Declare @plexExperimentName varchar(128) = ''
 
     Declare @currentPlexExperimentId Int
@@ -170,24 +169,24 @@ As
     Declare @actionMessage varchar(128)
     Declare @expIdList Varchar(512) = ''
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateExperimentPlexMembers', @raiseError = 1
-	If @authorized = 0
-	Begin;
-		THROW 51000, 'Access denied', 1;
-	End;
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
 
-	BEGIN TRY 
+    Declare @authorized tinyint = 0
+    Exec @authorized = VerifySPAuthorized 'AddUpdateExperimentPlexMembers', @raiseError = 1
+    If @authorized = 0
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
 
-	---------------------------------------------------
-	-- Validate input fields
-	---------------------------------------------------
+    BEGIN TRY
 
-	-- Set @compoundName = LTrim(RTrim(IsNull(@compoundName, '')))	
+    ---------------------------------------------------
+    -- Validate input fields
+    ---------------------------------------------------
+
+    -- Set @compoundName = LTrim(RTrim(IsNull(@compoundName, '')))
 
     If @plexExperimentIdOrName Is Null
     Begin
@@ -212,16 +211,16 @@ As
         End
     End
 
-    -- Assure that @plexExperimentIdOrName has Experiment ID 
+    -- Assure that @plexExperimentIdOrName has Experiment ID
     Set @plexExperimentIdOrName = Cast(@plexExperimentId As varchar(12))
-    
+
     Set @plexMembers = IsNull(@plexMembers, '')
-    
-	Set @mode = IsNull(@mode, 'check_add')
 
-	Set @callingUser = IsNull(@callingUser, '')
+    Set @mode = IsNull(@mode, 'check_add')
 
-	Set @myError = 0
+    Set @callingUser = IsNull(@callingUser, '')
+
+    Set @myError = 0
 
     ---------------------------------------------------
     -- Lookup the label associated with @plexExperimentId
@@ -253,35 +252,35 @@ As
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-	---------------------------------------------------
-	-- Create a temporary table to track the mapping info
-	---------------------------------------------------
-    
+    ---------------------------------------------------
+    -- Create a temporary table to track the mapping info
+    ---------------------------------------------------
+
     CREATE TABLE #TmpExperiment_Plex_Members (
-	    [Channel] [tinyint] NOT NULL,
-	    [Exp_ID] [int] NOT NULL,
-	    [Channel_Type_ID] [tinyint] NOT NULL,
-	    [Comment] [varchar](512) Null,
+        [Channel] [tinyint] NOT NULL,
+        [Exp_ID] [int] NOT NULL,
+        [Channel_Type_ID] [tinyint] NOT NULL,
+        [Comment] [varchar](512) Null,
         [ValidExperiment] tinyint Not Null
     )
-    
+
     Create Unique Clustered Index #IX_TmpExperiment_Plex_Members On #TmpExperiment_Plex_Members ([Channel])
 
     CREATE TABLE #TmpDatabaseUpdates (
         ID int IDENTITY (1,1) NOT NULL,
         Message varchar(128) NOT NULL
     )
-            
+
     Create Unique Clustered Index #IX_TmpDatabaseUpdates On #TmpDatabaseUpdates (ID)
 
-	---------------------------------------------------
-	-- Parse @plexMembers
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Parse @plexMembers
+    ---------------------------------------------------
 
-	If Len(@plexMembers) > 0
-	Begin -- <ParsePlexMembers>
-		-- Split @plexMembers on newline characters
-        
+    If Len(@plexMembers) > 0
+    Begin -- <ParsePlexMembers>
+        -- Split @plexMembers on newline characters
+
         Create Table #TmpRowData (Entry_ID int, [Value] varchar(2048))
 
         Create Table #TmpColData (Entry_ID int, [Value] varchar(2048))
@@ -325,7 +324,7 @@ As
 
             If @myRowCount = 0
             Begin
-                Set @continue = 0                
+                Set @continue = 0
             End
             Else
             Begin -- <ItemFound>
@@ -421,7 +420,7 @@ As
 
                     Set @firstLineParsed = 1
                     Set @parseColData = 0
-                End -- </ParseHeaders>                    
+                End -- </ParseHeaders>
 
                 If @parseColData > 0
                 Begin -- <ParseColData>
@@ -488,7 +487,7 @@ As
 
                             Set @channelNum = Null
 
-                            SELECT Top 1 @channelNum = Channel      
+                            SELECT Top 1 @channelNum = Channel
                             FROM T_Sample_Labelling_Reporter_Ions
                             WHERE Label = @experimentLabel And (Tag_Name = @tagName Or [MASIC_Name] = @tagName)
                             --
@@ -503,7 +502,7 @@ As
                     End -- </TagName>
 
                     Set @experimentId = Try_Cast(@experimentIdOrName As integer)
-                  
+
                     If @experimentId Is Null
                     Begin
                         -- Not an integer; is it a valid experiment name?
@@ -519,8 +518,8 @@ As
                                 Set @message = 'Experiment not found for channel ' + Cast(@channelNum As varchar(12))
                             Else
                                 Set @message = 'Experiment not found for tag ' + @tagName
-                            
-                            Set @message = @message + ' (specify an experiment ID or name): ' + @experimentIdOrName + 
+
+                            Set @message = @message + ' (specify an experiment ID or name): ' + @experimentIdOrName +
                                                       ' (see row ' + Cast(@entryID As varchar(12)) + ' of the Plex Members table)'
                             RAISERROR (@message, 11, 118)
                         End
@@ -574,7 +573,7 @@ As
 
             End -- </ItemFound>
         End  -- </WhileLoop>
-	End -- <ParsePlexMembers>
+    End -- <ParsePlexMembers>
 
     ---------------------------------------------------
     -- Check whether we even need to parse the individual parameters
@@ -590,12 +589,12 @@ As
         -- Step through the @expIdChannel and @channelType fields to define info for channels not defined in the Plex Members table
 
         CREATE TABLE #TmpExperiment_Plex_Members_From_Params (
-	        [Channel] [tinyint] NOT NULL,
+            [Channel] [tinyint] NOT NULL,
             [ExperimentInfo] varchar(130) NULL,
             [ChannelType] varchar(64) NULL,
             [Comment] varchar(512) NULL
-	    )
-        
+        )
+
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (1,  @expIdChannel1,  @channelType1,  @comment1)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (2,  @expIdChannel2,  @channelType2,  @comment2)
         Insert Into #TmpExperiment_Plex_Members_From_Params Values (3,  @expIdChannel3,  @channelType3,  @comment3)
@@ -657,7 +656,7 @@ As
                         -- No colon (or the first character is a colon)
                         -- First try to match experiment ID
                         Set @experimentId = Try_Cast(@experimentIdOrName As int)
-                    
+
                         If @experimentId Is Null
                         Begin
                             -- No match; try to match experiment name
@@ -735,7 +734,7 @@ As
     Declare @invalidExperimentCount int = 0
 
     SELECT @invalidExperimentCount = Count(*)
-    FROM #TmpExperiment_Plex_Members 
+    FROM #TmpExperiment_Plex_Members
     WHERE ValidExperiment = 0
 
     If IsNull(@invalidExperimentCount, 0) > 0
@@ -743,7 +742,7 @@ As
         If @invalidExperimentCount = 1
         Begin
             SELECT @message = 'Invalid Experiment ID: ' +  Cast(Exp_ID As varchar(12))
-            FROM #TmpExperiment_Plex_Members 
+            FROM #TmpExperiment_Plex_Members
             WHERE ValidExperiment = 0
         End
         Else
@@ -751,7 +750,7 @@ As
             Set @message = 'Invalid Experiment IDs: '
 
             SELECT @message = @message + Cast(Exp_ID As varchar(12)) + ','
-            FROM #TmpExperiment_Plex_Members 
+            FROM #TmpExperiment_Plex_Members
             WHERE ValidExperiment = 0
 
             Set @message= Substring(@message, 1, Len(@message) - 1)
@@ -760,15 +759,15 @@ As
         RAISERROR (@message, 11, 118)
     End
 
-	Set @logErrors = 1
-	
-	---------------------------------------------------
-	-- Action for add, update, or preview mode
-	---------------------------------------------------
-	
-	If @mode IN ('add', 'update', 'preview')
-	Begin -- <AddOrUpdate>
-    
+    Set @logErrors = 1
+
+    ---------------------------------------------------
+    -- Action for add, update, or preview mode
+    ---------------------------------------------------
+
+    If @mode IN ('add', 'update', 'preview')
+    Begin -- <AddOrUpdate>
+
         ---------------------------------------------------
         -- Create a temporary table to hold the experiment IDs that will be updated with the plex info in #TmpExperiment_Plex_Members
         ---------------------------------------------------
@@ -812,7 +811,7 @@ As
             WHERE EG.Parent_Exp_ID = @plexExperimentId AND
                   E.Experiment_Num <> 'Placeholder'
             --
-            SELECT @myError = @@error, @myRowCount = @@rowcount        
+            SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
         ---------------------------------------------------
@@ -824,7 +823,7 @@ As
 
         Set @currentPlexExperimentId = 0
         Set @continue = 1
-        
+
         While @continue = 1
         Begin -- <WhileLoop>
 
@@ -837,7 +836,7 @@ As
 
             If @myRowCount = 0
             Begin
-                Set @continue = 0                
+                Set @continue = 0
             End
             Else
             Begin
@@ -879,7 +878,7 @@ As
                 Else
                 Begin  -- <AddUpdatePlexInfo>
                     MERGE [dbo].[T_Experiment_Plex_Members] AS t
-                    USING (SELECT Channel, Exp_ID, Channel_Type_ID, [Comment] 
+                    USING (SELECT Channel, Exp_ID, Channel_Type_ID, [Comment]
                            FROM #TmpExperiment_Plex_Members) as s
                     ON ( t.[Channel] = s.[Channel] AND t.[Plex_Exp_ID] = @currentPlexExperimentId)
                     WHEN MATCHED AND (
@@ -888,7 +887,7 @@ As
                         ISNULL( NULLIF(t.[Comment], s.[Comment]),
                                 NULLIF(s.[Comment], t.[Comment])) IS NOT NULL
                         )
-                    THEN UPDATE SET 
+                    THEN UPDATE SET
                         [Exp_ID] = s.[Exp_ID],
                         [Channel_Type_ID] = s.[Channel_Type_ID],
                         [Comment] = s.[Comment]
@@ -896,19 +895,19 @@ As
                         INSERT([Plex_Exp_ID], [Channel], [Exp_ID], [Channel_Type_ID], [Comment])
                         VALUES(@currentPlexExperimentId, s.[Channel], s.[Exp_ID], s.[Channel_Type_ID], s.[Comment])
                     WHEN NOT MATCHED BY SOURCE And T.Plex_exp_id = @currentPlexExperimentId THEN DELETE;
-		            --
+                    --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
                     --
-		            If @myError <> 0
-		            Begin
-			            Set @msg = 'Update operation failed: "' + @currentPlexExperimentId + '"'
-			            RAISERROR (@msg, 11, 18)
-		            End
+                    If @myError <> 0
+                    Begin
+                        Set @msg = 'Update operation failed: "' + @currentPlexExperimentId + '"'
+                        RAISERROR (@msg, 11, 18)
+                    End
 
                     If Len(@callingUser) > 0
                     Begin
                         -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
-                        --            
+                        --
                         Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @currentPlexExperimentId, @CallingUser
                     End
                 End  -- </AddUpdatePlexInfo>
@@ -930,12 +929,12 @@ As
         Else If @mode = 'preview'
         Begin
             SELECT @targetPlexExperimentCount = Count(*)
-            FROM #TmpDatabaseUpdates            
+            FROM #TmpDatabaseUpdates
 
             SELECT @targetAddCount = Count(*)
             FROM #TmpDatabaseUpdates
             WHERE Message Like 'Would add %'
-            
+
             SELECT @targetUpdateCount = Count(*)
             FROM #TmpDatabaseUpdates
             WHERE Message like 'Would update %'
@@ -946,7 +945,7 @@ As
 
             If @targetPlexExperimentCount > 1
             Begin
-            
+
                 If @targetAddCount = @targetPlexExperimentCount
                 Begin
                     -- Adding plex members for all of the target experiments
@@ -965,7 +964,7 @@ As
 
                     Set @entryId = 2
                     While @entryID <= @targetPlexExperimentCount And @entryID <= 7
-                    Begin                
+                    Begin
                         SELECT @msg = Message
                         FROM #TmpDatabaseUpdates
                         WHERE ID = @entryID
@@ -987,25 +986,25 @@ As
             End
         End
 
-	End -- </AddOrUpdate>
+    End -- </AddOrUpdate>
 
-	End TRY
-	Begin CATCH 
-		EXEC FormatErrorMessage @message output, @myError output
-		
-		-- Rollback any open transactions
-		If (XACT_STATE()) <> 0
-			ROLLBACK TRANSACTION;
+    End TRY
+    Begin CATCH
+        EXEC FormatErrorMessage @message output, @myError output
 
-		If @logErrors > 0
-		Begin
-			Declare @logMessage varchar(1024) = @message + '; Plex Exp ID ' + @plexExperimentIdOrName
-			exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperimentPlexMembers'
-		End
+        -- Rollback any open transactions
+        If (XACT_STATE()) <> 0
+            ROLLBACK TRANSACTION;
 
-	End CATCH
+        If @logErrors > 0
+        Begin
+            Declare @logMessage varchar(1024) = @message + '; Plex Exp ID ' + @plexExperimentIdOrName
+            exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperimentPlexMembers'
+        End
 
-	return @myError
+    End CATCH
+
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentPlexMembers] TO [DDL_Viewer] AS [dbo]

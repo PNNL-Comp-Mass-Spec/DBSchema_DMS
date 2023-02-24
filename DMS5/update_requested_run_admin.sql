@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateRequestedRunAdmin]
 /****************************************************
 **
@@ -42,7 +41,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAdmin]
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = ''
 )
-As
+AS
     SET NOCOUNT ON
 
     Declare @myError int = 0
@@ -317,7 +316,6 @@ Done:
 
 DoneNoLog:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [DDL_Viewer] AS [dbo]

@@ -3,14 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 /****************************************************
 **
 **  Desc:
 **      Adds new or edits existing Data Analysis Request
 **
-**      The analysis request must be associated with 
+**      The analysis request must be associated with
 **      at least one of the following data containers:
 **        - One or more requested run batches
 **        - Data package
@@ -51,7 +50,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
     @message varchar(1024) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -323,7 +322,7 @@ As
     WHERE Charge_Code = @workPackage
 
     ---------------------------------------------------
-    -- Determine the number of datasets in the batch(s), data package, 
+    -- Determine the number of datasets in the batch(s), data package,
     -- and/or experiment group for this Data Analysis Request
     ---------------------------------------------------
 
@@ -349,9 +348,9 @@ As
                ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
         GROUP BY RR.RDS_BatchID
     End
-    
+
     If @dataPackageDefined > 0
-    Begin    
+    Begin
         INSERT INTO #Tmp_DatasetCountsByContainerType( ContainerType, ContainerID, SortWeight, DatasetCount )
         SELECT 'Data Package', @dataPackageID, 1 As SortWeight, Count(DISTINCT D.Dataset_ID) AS DatasetCount
         FROM S_V_Data_Package_Datasets_Export DataPkgDatasets
@@ -803,7 +802,6 @@ As
     End Catch
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataAnalysisRequest] TO [DDL_Viewer] AS [dbo]

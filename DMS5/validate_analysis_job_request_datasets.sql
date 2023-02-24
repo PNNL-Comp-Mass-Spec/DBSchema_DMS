@@ -3,25 +3,24 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[ValidateAnalysisJobRequestDatasets]
+CREATE PROCEDURE [dbo].[ValidateAnalysisJobRequestDatasets]
 /****************************************************
 **
-**  Desc:   Validates datasets in temporary table #TD 
-**          The calling procedure must create #TD and populate it with the dataset names; 
+**  Desc:   Validates datasets in temporary table #TD
+**          The calling procedure must create #TD and populate it with the dataset names;
 **          the remaining columns in the table will be populated by this procedure
 **
 **      CREATE TABLE #TD (
 **          Dataset_Num varchar(128),
 **          Dataset_ID int NULL,
-**          IN_class varchar(64) NULL, 
-**          DS_state_ID int NULL, 
+**          IN_class varchar(64) NULL,
+**          DS_state_ID int NULL,
 **          AS_state_ID int NULL,
 **          Dataset_Type varchar(64) NULL,
 **          DS_rating smallint NULL,
 **      )
 **
-**  Return values: 
+**  Return values:
 **      0 if no problems
 **      Error code if a problem; @message will contain the error message
 **
@@ -48,17 +47,17 @@ CREATE Procedure [dbo].[ValidateAnalysisJobRequestDatasets]
     @allowNonReleasedDatasets tinyint = 0,                -- When 1, allow datasets to have a rating of "Not Released"
     @showDebugMessages tinyint = 0                        -- 1 to print @message strings; 2 to also see the contents of #TD
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
-    
+
     set @message = ''
-    
+
     Set @autoRemoveNotReleasedDatasets = IsNull(@autoRemoveNotReleasedDatasets, 0)
     Set @showDebugMessages = IsNull(@showDebugMessages, 0)
-    
+
     ---------------------------------------------------
     -- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
     ---------------------------------------------------
@@ -97,43 +96,43 @@ As
         FROM #TD
         ORDER BY Dataset_Num
     End
-            
+
     ---------------------------------------------------
     -- Make sure none of the datasets has a rating of -5 (Not Released)
     ---------------------------------------------------
     --
     Declare @list varchar(4000)
     Declare @NotReleasedCount int = 0
-    
+
     SELECT @NotReleasedCount = COUNT(*)
     FROM #TD
     WHERE DS_Rating = -5
-    
+
     If @NotReleasedCount > 0 And @allowNonReleasedDatasets = 0
     Begin
         Set @list = ''
-        
+
         SELECT @list = @list + Dataset_Num + ', '
         FROM #TD
         WHERE DS_Rating = -5
         ORDER BY Dataset_Num
-        
+
         -- Remove the trailing comma If the length is less than 400 characters, otherwise truncate
         If Len(@list) < 400
             Set @list = Left(@list, Len(@list)-1)
         Else
             Set @list = Left(@list, 397) + '...'
-        
+
         If @autoRemoveNotReleasedDatasets = 0
         Begin
             if @NotReleasedCount = 1
                 set @message = 'Dataset is "Not Released": ' + @list
             else
                 set @message = Convert(varchar(12), @NotReleasedCount) + ' datasets are "Not Released": ' + @list
-                
+
             if @showDebugMessages <> 0
                 print @message
-                
+
             return 50101
         End
         Else
@@ -142,13 +141,13 @@ As
 
             if @showDebugMessages <> 0
                 print @message
-            
+
             DELETE FROM #TD
             WHERE DS_Rating = -5
-            
+
         End
     End
-    
+
     ---------------------------------------------------
     -- Verify that datasets in list all exist
     ---------------------------------------------------
@@ -177,7 +176,7 @@ As
             print @message
 
         return 51007
-    end    
+    end
 
     ---------------------------------------------------
     -- Verify state of datasets
@@ -210,7 +209,7 @@ As
             print @message
 
         return 51007
-    end    
+    end
 
     ---------------------------------------------------
     -- Verify rating of datasets
@@ -240,7 +239,7 @@ As
             print @message
 
         return 51007
-    end    
+    end
 
     ---------------------------------------------------
     -- Do not allow high res datasets to be mixed with low res datasets
@@ -249,7 +248,7 @@ As
     --
     Declare @HMSCount int = 0
     Declare @MSCount int = 0
-    
+
     SELECT @HMSCount = COUNT(*)
     FROM #TD
     WHERE Dataset_Type LIKE 'hms%' OR
@@ -260,18 +259,17 @@ As
     FROM #TD
     WHERE Dataset_Type LIKE 'MS%' OR
           Dataset_Type LIKE 'IMS-MS%'
-    
+
     If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen', 'MaxQuant', 'MSFragger')
-    Begin        
+    Begin
         Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests. You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
         if @showDebugMessages <> 0
             print @message
 
         return 51009
-    End    
-        
-    return 0
+    End
 
+    return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobRequestDatasets] TO [DDL_Viewer] AS [dbo]

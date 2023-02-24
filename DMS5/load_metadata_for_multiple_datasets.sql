@@ -3,19 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[LoadMetadataForMultipleDatasets]
 /****************************************************
 **
 **  Desc:
 **      Load metadata for datasets in given list
 **
-**  Return values: 
+**  Return values:
 **      0: success, otherwise, error code
-**                    
+**
 **      Returns recordset containing keyword-value pairs for all metadata items
 **
-**  Parameters: 
+**  Parameters:
 **      This stored procedure expects that its caller
 **      will have loaded a temporary table (named #dst)
 **      with all the dataset names that it should
@@ -29,26 +28,26 @@ CREATE PROCEDURE [dbo].[LoadMetadataForMultipleDatasets]
 **  Date:   11/01/2006
 **          05/30/2007 grk - Added "ORDER BY" for migration to SS2005 (ticket #226)
 **          07/06/2022 mem - Use new aux info definition view name
-**    
+**
 *****************************************************/
  (
     @Options varchar(256), -- ignore for now
     @message varchar(512) output
  )
-As
+AS
     set nocount on
- 
+
     declare @myError int = 0
     declare @myRowCount int = 0
 
     set @message = ''
- 
+
 
     ---------------------------------------------------
-    -- load dataset tracking info for datasets 
+    -- load dataset tracking info for datasets
     -- in given list
     ---------------------------------------------------
- 
+
     INSERT INTO #metaD(mDst, mAType, mTag, mVal)
     SELECT Name , 'Dataset', 'Name', MD.[Name]
     FROM V_Dataset_Metadata MD
@@ -166,7 +165,7 @@ As
     --
 
     ---------------------------------------------------
-    -- get auxiliary data for dataset 
+    -- get auxiliary data for dataset
     -- and insert it into temporary table
     ---------------------------------------------------
 
@@ -174,7 +173,7 @@ As
     SELECT 'Dataset', AI.Category + '.' + AI.Subcategory + '.' + AI.Item AS Tag, AI.Value
     FROM T_Dataset T INNER JOIN
          V_Aux_Info_Value AI ON T.Dataset_ID = AI.Target_ID
-    WHERE (AI.Target = 'Dataset') AND 
+    WHERE (AI.Target = 'Dataset') AND
     (T.Dataset_Num IN (SELECT mDST FROM #dst))
     ORDER BY SC, SS, SI
     --

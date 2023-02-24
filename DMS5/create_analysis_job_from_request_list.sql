@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 /****************************************************
 **
@@ -33,7 +32,7 @@ CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
     @associatedProcessorGroup varchar(64) = '',     -- Processor group name
     @propagationMode varchar(24) = 'Export'         -- 'Export' or 'No Export'
 )
-As
+AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -280,8 +279,6 @@ ReportResults:
     ORDER BY requestID
 
     Return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [DDL_Viewer] AS [dbo]

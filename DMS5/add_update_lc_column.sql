@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddUpdateLCColumn]
+CREATE PROCEDURE [dbo].[AddUpdateLCColumn]
 /****************************************************
 **
 **  Desc: Adds a new entry to LC Column table
@@ -39,29 +38,29 @@ CREATE Procedure [dbo].[AddUpdateLCColumn]
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-    
+
     Declare @msg varchar(256)
     Declare @logErrors tinyint = 1
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateLCColumn', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
@@ -72,7 +71,7 @@ As
         Set @myError = 51110
         RAISERROR ('Column name was blank', 11, 1)
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -117,7 +116,7 @@ As
     --
     SELECT @stateID = LCS_ID
     FROM T_LC_Column_State_Name
-    WHERE LCS_Name = @state    
+    WHERE LCS_Name = @state
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -182,12 +181,12 @@ As
     -- Action for update mode
     ---------------------------------------------------
 
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin
         Set @myError = 0
         --
-        UPDATE T_LC_Column 
-        Set 
+        UPDATE T_LC_Column
+        Set
             SC_Column_Number = @columnNumber,
             SC_Packing_Mfg = @packingMfg,
             SC_Packing_Type = @packingType,
@@ -211,13 +210,13 @@ As
     End -- update mode
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'

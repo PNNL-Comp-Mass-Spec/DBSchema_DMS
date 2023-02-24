@@ -3,22 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCartParameters]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Changes cart parameters for given requested run
 **      This procedure is used by AddUpdateDataset
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters: 
+**  Parameters:
 **    @mode      - type of update begin performed
 **    @requestID - ID of scheduled run being updated
 **    @newValue  - new vale that is being set, or value retured
 **                 depending on mode
-**    @message   - blank if update was successful,        
+**    @message   - blank if update was successful,
 **                 description of error if not
 **
 **  Auth:   grk
@@ -29,7 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateCartParameters]
 **          04/02/2013 mem - Now using @message to return errors looking up cart name from T_LC_Cart
 **          01/09/2017 mem - Update @message when using RAISERROR
 **          01/10/2023 mem - Include previous @message text when updating @message
-**    
+**
 *****************************************************/
 (
     @mode varchar(32), -- 'CartName', 'RunStart', 'RunFinish', 'RunStatus', 'InternalStandard'
@@ -37,12 +36,12 @@ CREATE PROCEDURE [dbo].[UpdateCartParameters]
     @newValue varchar(512) output,
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     Declare @msg varchar(256)
@@ -77,7 +76,7 @@ As
         RAISERROR (@msg, 10, 1)
         return 52131
     end
-    
+
     if @mode = 'CartName'
     begin
         ---------------------------------------------------
@@ -97,7 +96,7 @@ As
         begin
             set @message = 'Error trying to look up cart ID using "' + @newValue + '"'
         end
-        else 
+        else
         if @cartID = 0
         begin
             set @myError = 52117
@@ -110,9 +109,9 @@ As
             UPDATE T_Requested_Run
             SET    RDS_Cart_ID = @cartID
             WHERE (ID = @requestID AND RDS_Cart_ID <> @cartID)
-            --    
+            --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myError = 0 And @myRowCount < 1
                 Set @myRowCount = 1
 
@@ -127,8 +126,8 @@ As
     begin
         UPDATE T_Requested_Run
         SET    RDS_note = @newValue
-        WHERE (ID = @requestID)    
-        --    
+        WHERE (ID = @requestID)
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     end
 
@@ -138,25 +137,25 @@ As
             set @dt = getdate()
         else
             set @dt = cast(@newValue as datetime)
-    
+
         UPDATE T_Requested_Run
         SET    RDS_Run_Start = @dt
-        WHERE (ID = @requestID)    
-        --    
+        WHERE (ID = @requestID)
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     end
 
     if @mode = 'RunFinish'
-    begin        
+    begin
         if @newValue = ''
             set @dt = getdate()
         else
             set @dt = cast(@newValue as datetime)
-    
+
         UPDATE T_Requested_Run
         SET     RDS_Run_Finish = @dt
-        WHERE (ID = @requestID)    
-        --    
+        WHERE (ID = @requestID)
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     end
 
@@ -164,8 +163,8 @@ As
     begin
         UPDATE T_Requested_Run
         SET    RDS_Internal_Standard = @newValue
-        WHERE (ID = @requestID)    
-        --    
+        WHERE (ID = @requestID)
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     end
 
@@ -186,10 +185,9 @@ As
         Set @message = 'operation failed for mode ' + @mode + ' (' + Coalesce(@message, '??') + ')'
         RAISERROR ('operation failed: "%s"', 10, 1, @mode)
         return 51310
-    end    
+    end
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [DDL_Viewer] AS [dbo]

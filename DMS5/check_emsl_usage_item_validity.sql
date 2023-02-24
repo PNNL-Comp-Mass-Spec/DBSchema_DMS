@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 /****************************************************
 **
@@ -30,7 +29,7 @@ CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
     @Seq int
 )
 RETURNS varchar(4096)
-As
+AS
 Begin
     Declare @Message varchar(4096) = ''
 

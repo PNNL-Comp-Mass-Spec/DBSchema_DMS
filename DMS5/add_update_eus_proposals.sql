@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddUpdateEUSProposals]
+CREATE PROCEDURE [dbo].[AddUpdateEUSProposals]
 /****************************************************
 **
 **  Desc: Adds new or updates existing EUS Proposals in database
@@ -13,7 +12,7 @@ CREATE Procedure [dbo].[AddUpdateEUSProposals]
 **
 **  Auth:   jds
 **  Date:   08/15/2006
-**          11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)  
+**          11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)
 **          04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
 **          10/13/2015 mem - Added @EUSProposalType
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
@@ -22,12 +21,12 @@ CREATE Procedure [dbo].[AddUpdateEUSProposals]
 **                         - Rename @EUSPropState to @EUSPropStateID and make it an int instead of varchar
 **                         - Add Try/Catch error handling
 **                         - Fix merge query bug
-**    
+**
 *****************************************************/
 (
-    @EUSPropID varchar(10), 
+    @EUSPropID varchar(10),
     @EUSPropStateID int,                      -- 1=New, 2=Active, 3=Inactive, 4=No Interest
-    @EUSPropTitle varchar(2048), 
+    @EUSPropTitle varchar(2048),
     @EUSPropImpDate varchar(50),
     @EUSUsersList varchar(4096),
     @EUSProposalType varchar(100),
@@ -35,29 +34,29 @@ CREATE Procedure [dbo].[AddUpdateEUSProposals]
     @mode varchar(12) = 'add',                -- Add or Update
     @message varchar(512) output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
-         
+
     Declare @msg varchar(256)
     Declare @logErrors tinyint = 1
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateEUSProposals', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate input fields
@@ -89,7 +88,7 @@ As
     Set @EUSPropImpDate = IsNull(@EUSPropImpDate, '')
     If LEN(@EUSPropImpDate) < 1
         Set @EUSPropImpDate = Convert(varchar(50), GetDate(), 120)
-        
+
     If ISDATE(@EUSPropImpDate) <> 1
     Begin
         Set @logErrors = 0
@@ -103,15 +102,15 @@ As
         Set @msg = 'An "Active" EUS Proposal must have at least 1 associated EMSL User'
         RAISERROR (@msg, 11, 4)
     End
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
 
     Declare @TempEUSPropID varchar(10) = '0'
     --
-    SELECT @tempEUSPropID = Proposal_ID 
-    FROM T_EUS_Proposals 
+    SELECT @tempEUSPropID = Proposal_ID
+    FROM T_EUS_Proposals
     WHERE Proposal_ID = @EUSPropID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -166,16 +165,16 @@ As
     Begin
 
         INSERT INTO T_EUS_Proposals (
-            Proposal_ID, 
-            [Title], 
-            State_ID, 
+            Proposal_ID,
+            [Title],
+            State_ID,
             Import_Date,
             Proposal_Type,
             Proposal_ID_AutoSupersede
         ) VALUES (
-            @EUSPropID, 
-            @EUSPropTitle, 
-            @EUSPropStateID, 
+            @EUSPropID,
+            @EUSPropTitle,
+            @EUSPropStateID,
             @EUSPropImpDate,
             @EUSProposalType,
             @autoSupersedeProposalID
@@ -196,14 +195,14 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin
         Set @myError = 0
         --
-        UPDATE T_EUS_Proposals 
-        SET 
-            [Title] = @EUSPropTitle, 
-            State_ID = @EUSPropStateID, 
+        UPDATE T_EUS_Proposals
+        SET
+            [Title] = @EUSPropTitle,
+            State_ID = @EUSPropStateID,
             Import_Date = @EUSPropImpDate,
             Proposal_Type = @EUSProposalType,
             Proposal_ID_AutoSupersede = @autoSupersedeProposalID
@@ -238,7 +237,7 @@ As
     INSERT INTO #tempEUSUsers (Person_ID)
     SELECT EUS_Person_ID
     FROM ( SELECT CAST(Item AS int) AS EUS_Person_ID
-           FROM MakeTableFromList ( @eusUsersList ) 
+           FROM MakeTableFromList ( @eusUsersList )
          ) SourceQ
          INNER JOIN T_EUS_Users
            ON SourceQ.EUS_Person_ID = T_EUS_Users.Person_ID
@@ -250,21 +249,21 @@ As
         Set @message = 'Error trying to add user to temporary user table'
         RAISERROR (@msg, 11, 13)
     End
-    
+
     ---------------------------------------------------
-    -- Add associations between proposal and users 
+    -- Add associations between proposal and users
     -- who are in list, but not in association table
     ---------------------------------------------------
     --
     Declare @ProposalUserStateID int
-    
+
     If @EUSPropStateID IN (1,2)
         Set @ProposalUserStateID = 1
     Else
         Set @ProposalUserStateID = 2
-        
+
     MERGE T_EUS_Proposal_Users AS target
-    USING 
+    USING
         (  SELECT @EUSPropID AS Proposal_ID,
                   Person_ID,
                   'Y' AS Of_DMS_Interest
@@ -273,7 +272,7 @@ As
     ON (target.Proposal_ID = source.Proposal_ID AND
         target.Person_ID = source.Person_ID)
     WHEN MATCHED AND IsNull(target.State_ID, 0) NOT IN (@ProposalUserStateID, 4)
-        THEN UPDATE 
+        THEN UPDATE
             Set State_ID = @ProposalUserStateID,
                 Last_Affected = GetDate()
     WHEN Not Matched THEN
@@ -294,21 +293,20 @@ As
     End
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'
         End
     END Catch
-    
-    return @myError
 
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateEUSProposals] TO [DDL_Viewer] AS [dbo]

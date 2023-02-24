@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[DeleteAnalysisRequest]
+CREATE PROCEDURE [dbo].[DeleteAnalysisRequest]
 /****************************************************
 **
 **  Desc: Delete the analysis job request if it is not associated with any jobs
@@ -17,13 +16,13 @@ CREATE Procedure [dbo].[DeleteAnalysisRequest]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/30/2019 mem - Delete datasets from T_Analysis_Job_Request_Datasets
-**    
+**
 *****************************************************/
 (
     @requestID int,
     @message varchar(512) output
 )
-As    
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -34,14 +33,14 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DeleteAnalysisRequest', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Does request exist?
     ---------------------------------------------------
@@ -91,7 +90,7 @@ As
         set @myError = 10
         goto Done
     end
-    
+
     ---------------------------------------------------
     -- Delete the analysis request
     ---------------------------------------------------
@@ -113,12 +112,10 @@ As
     end
 
     ---------------------------------------------------
-    -- 
+    --
     ---------------------------------------------------
 Done:
     return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisRequest] TO [DDL_Viewer] AS [dbo]

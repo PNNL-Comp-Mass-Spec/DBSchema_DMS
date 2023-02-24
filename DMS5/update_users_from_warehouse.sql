@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateUsersFromWarehouse]
+CREATE PROCEDURE [dbo].[UpdateUsersFromWarehouse]
 /****************************************************
 **
 **  Desc:   Updates user information in T_Users using linked server SQLSRVPROD02
@@ -23,7 +22,7 @@ CREATE Procedure [dbo].[UpdateUsersFromWarehouse]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/14/2016 mem - Add check for duplicate names
 **          08/22/2018 mem - Tabs to spaces
-**    
+**
 *****************************************************/
 (
     @infoOnly tinyint = 0,
@@ -31,14 +30,14 @@ CREATE Procedure [dbo].[UpdateUsersFromWarehouse]
 )
 AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
         ----------------------------------------------------------
-        -- Create a temporary table to track the user information 
+        -- Create a temporary table to track the user information
         -- stored in the data warehouse
         ----------------------------------------------------------
         --
@@ -52,7 +51,7 @@ AS
             Active varchar(8) NOT NULL,         -- Y if an active login; N if a former staff member
             UpdateRequired tinyint NOT NULL     -- Initially 0; this procedure will set this to 1 for staff that need to be updated
         )
-        
+
         CREATE CLUSTERED INDEX IX_Tmp_UserInfo_ID ON #Tmp_UserInfo (ID)
 
         ----------------------------------------------------------
@@ -81,8 +80,8 @@ AS
         WHERE U.U_update = 'Y'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
-        
+
+
         ----------------------------------------------------------
         -- Obtain info for associates
         ----------------------------------------------------------
@@ -114,7 +113,7 @@ AS
               Target.ID IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         ----------------------------------------------------------
         -- Look for users that need to be updated
         ----------------------------------------------------------
@@ -142,12 +141,12 @@ AS
             NewName varchar(128) NULL,
             Conflict tinyint not null Default 0
         )
-        
+
         CREATE CLUSTERED INDEX IX_Tmp_NamesAfterUpdate_ID ON #Tmp_NamesAfterUpdate (ID)
-        CREATE INDEX IX_Tmp_NamesAfterUpdate_Name ON #Tmp_NamesAfterUpdate (NewName)        
+        CREATE INDEX IX_Tmp_NamesAfterUpdate_Name ON #Tmp_NamesAfterUpdate (NewName)
 
         -- Store the names of the users that will be updated
-        --        
+        --
         INSERT INTO #Tmp_NamesAfterUpdate (ID, OldName, NewName)
         SELECT U.ID, U.U_Name, IsNull(Src.U_Name, U.U_Name) AS NewName
         FROM T_Users U
@@ -176,21 +175,21 @@ AS
                            HAVING COUNT(*) > 1 )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         Select @myRowCount = COUNT(*)
-        FROM #Tmp_NamesAfterUpdate 
+        FROM #Tmp_NamesAfterUpdate
         WHERE Conflict = 1
 
         If @myRowCount > 0
         Begin
-        
+
             Set @message ='User update would result in ' + dbo.CheckPlural(@myRowCount, 'a duplicate name: ', 'duplicate names: ')
-            
+
             SELECT @message = @message + IsNull(OldName, '??? Undefined ???')  + ' --> ' + IsNull(NewName, '??? Undefined ???') + ', '
             FROM #Tmp_NamesAfterUpdate
             WHERE Conflict = 1
             ORDER BY NewName, OldName
-            
+
             -- Remove the trailing comma
             Set @message = RTrim(@message)
             Set @message = Left(@message, Len(@message)-1)
@@ -199,7 +198,7 @@ AS
                 Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
             Else
                 SELECT @message as Warning
-                
+
         End
 
         If @infoOnly = 0
@@ -211,8 +210,8 @@ AS
                 ----------------------------------------------------------
                 --
                 UPDATE T_Users
-                SET U_Name = CASE WHEN ISNULL(NameConflicts.Conflict, 0) = 1 
-                                  THEN U.U_Name 
+                SET U_Name = CASE WHEN ISNULL(NameConflicts.Conflict, 0) = 1
+                                  THEN U.U_Name
                                   ELSE IsNull(Src.U_Name, U.U_Name) End,
                     U_email = IsNull(Src.Email, U.U_email),
                     U_domain = IsNull(Src.Domain, U.U_domain),
@@ -227,15 +226,15 @@ AS
                 WHERE UpdateRequired = 1
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
                 If @myRowCount > 0
                 Begin
                     Set @message = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'user', 'users') + ' using the PNNL Data Warehouse'
                     print @message
-                    
+
                     Exec PostLogEntry 'Normal', @message, 'UpdateUsersFromWarehouse'
                 End
-                
+
             COMMIT TRANSACTION
 
         End
@@ -266,7 +265,7 @@ AS
         DECLARE @tblUserProblems TABLE ( ID      int NOT NULL,
                                          Warning varchar(128),
                                          NetworkLogin varchar(32) NULL )
-        
+
         INSERT INTO @tblUserProblems (ID, Warning, NetworkLogin)
         SELECT U.ID,
                'User not found in the Data Warehouse',
@@ -278,24 +277,24 @@ AS
               Src.ID IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
 
         If @infoOnly = 0 And @myRowCount > 0
         Begin
             Set @message = dbo.CheckPlural(@myRowCount, 'User', 'Users') + ' not found in the Data Warehouse: '
-            
+
             SELECT @message = @message + IsNull(U.U_HID, '??? Undefined U_HID for ID=' + Convert(varchar(12), U.ID) + ' ???') + ', '
             FROM T_Users U
                     INNER JOIN @tblUserProblems M
                     ON U.ID = M.ID
             ORDER BY U.ID
-            
+
             -- Remove the trailing comma
             Set @message = RTrim(@message)
             Set @message = Left(@message, Len(@message)-1)
-            
+
             Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
-            
+
             DELETE FROM @tblUserProblems
         End
 
@@ -314,31 +313,31 @@ AS
               IsNull(Src.NetworkLogin, '') <> ''
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-            
-    
+
+
         If @infoOnly = 0 And @myRowCount > 0
         Begin
             Set @message = dbo.CheckPlural(@myRowCount, 'User', 'Users') + ' with mismatch between U_PRN in DMS and NetworkLogin in Warehouse: '
-            
-            SELECT @message = @message + IsNull(U.U_PRN, '??? Undefined U_PRN for ID=' + Convert(varchar(12), U.ID) + ' ???') + 
+
+            SELECT @message = @message + IsNull(U.U_PRN, '??? Undefined U_PRN for ID=' + Convert(varchar(12), U.ID) + ' ???') +
                               '<>' + IsNull(M.NetworkLogin, '??') + ', '
             FROM T_Users U
                  INNER JOIN @tblUserProblems M
                    ON U.ID = M.ID
             ORDER BY U.ID
-            
+
             -- Remove the trailing comma
             Set @message = RTrim(@message)
             Set @message = Left(@message, Len(@message)-1)
-            
+
             Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
-            
+
             DELETE FROM @tblUserProblems
         End
 
 
         If @infoOnly <> 0 And Exists (SELECT * from @tblUserProblems)
-        Begin        
+        Begin
                 SELECT M.Warning,
                        U.ID,
                        IsNull(U.U_HID, '??? Undefined U_HID for ID=' + Convert(varchar(12), U.ID) + ' ???') AS U_HID,
@@ -355,17 +354,17 @@ AS
                        ON U.ID = M.ID
                 ORDER BY U.ID
         End
-        
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
         Declare @msg varchar(512) = ERROR_MESSAGE()
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         Exec PostLogEntry 'Error', @msg, 'UpdateUsersFromWarehouse'
 
     END CATCH

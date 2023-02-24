@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[StoreDTARefMassErrorStats]
 /****************************************************
 **
@@ -38,7 +37,7 @@ CREATE PROCEDURE [dbo].[StoreDTARefMassErrorStats]
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -335,7 +334,6 @@ Done:
         Exec PostUsageLogEntry 'StoreDTARefMassErrorStats', @UsageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[StoreDTARefMassErrorStats] TO [DDL_Viewer] AS [dbo]

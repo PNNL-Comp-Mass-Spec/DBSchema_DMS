@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 /****************************************************
 **  Desc:
@@ -514,7 +513,6 @@ AS
 
         RETURN
     END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageDailyDetails] TO [DDL_Viewer] AS [dbo]

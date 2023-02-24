@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 /****************************************************
 **
@@ -48,7 +47,7 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
     @outputFormat varchar(12) = 'details',  -- 'details', 'rollup', 'check', 'report'
     @message varchar(512) = '' Output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -414,7 +413,7 @@ As
         ---------------------------------------------------
 
         DELETE FROM #TQ WHERE [Interval] = 0
-        
+
         IF @outputFormat = 'debug1'
         BEGIN
             SELECT * FROM #TQ

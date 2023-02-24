@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[DoMaterialContainerOperation]
+CREATE PROCEDURE [dbo].[DoMaterialContainerOperation]
 /****************************************************
 **
 **  Desc: Do an operation on a container, using the container name
@@ -21,7 +20,7 @@ CREATE Procedure [dbo].[DoMaterialContainerOperation]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Prevent updating containers of type 'na'
 **          07/07/2022 mem - Include container name when logging error messages from UpdateMaterialContainers
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
@@ -31,12 +30,12 @@ CREATE Procedure [dbo].[DoMaterialContainerOperation]
     @message varchar(512) output,
     @callingUser varchar (128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
 
     Declare @msg varchar(512) = ''
@@ -45,15 +44,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoMaterialContainerOperation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -109,7 +108,7 @@ As
     End
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
 
         -- Rollback any open transactions
@@ -122,7 +121,7 @@ As
                 Set @msg = @message
             Else
                 Set @msg = @message + ' (container ' + @name + ')'
-            
+
             Exec PostLogEntry 'Error', @msg, 'DoMaterialContainerOperation'
         End
 

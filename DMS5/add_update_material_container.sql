@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 /****************************************************
 **
@@ -25,7 +24,7 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **          12/19/2018 mem - Standardize the researcher name
 **          11/11/2019 mem - If @researcher is 'na' or 'none', store an empty string in the Researcher column of T_Material_Containers
 **          07/02/2021 mem - Require that the researcher is a valid DMS user
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -37,10 +36,10 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
     @barcode varchar(32),
     @researcher varchar(128),       -- Supports 'Zink, Erika M (D3P704)' or simply 'D3P704'
     @mode varchar(12) = 'add',      -- 'Add', 'update', or 'preview'
-    @message varchar(512) output, 
+    @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0
@@ -53,8 +52,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateMaterialContainer', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -92,14 +91,14 @@ As
             Set @message = 'Error trying to auto-generate the container name'
             Return 51000
         End
-        
+
         Set @container = 'MC-' + cast(@tmp as varchar(12))
     End
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-        
+
     If Len(@container) = 0
     Begin
         Set @message = 'Container name cannot be empty'
@@ -116,22 +115,22 @@ As
     Begin
         Set @type = 'Box'
     End
-    
+
     If Not @type In ('Box', 'Bag', 'Wellplate')
     Begin
         Set @message = 'Container type must be Box, Bag, or Wellplate, not ' + @type
         Return 51004
     End
-    
+
     If @type = 'na'
     Begin
         Set @message = 'Containers of type "na" cannot be updated via the website; contact a DMS admin'
         Return 51006
     End
-        
+
     ---------------------------------------------------
     -- Validate the researcher name
-    ---------------------------------------------------        
+    ---------------------------------------------------
 
     Declare @matchCount int
     Declare @researcherPRN varchar(64)
@@ -148,7 +147,7 @@ As
     If @matchCount = 1
     Begin
         -- Single match found; update @researcher to be in the form 'Zink, Erika M (D3P704)'
-        
+
         SELECT @researcher = Name_with_PRN
         FROM T_Users
         WHERE U_PRN = @researcherPRN
@@ -177,10 +176,10 @@ As
     Declare @curType varchar(32) = ''
     Declare @curStatus varchar(32) = ''
     --
-    SELECT 
+    SELECT
         @containerID = ID,
         @curLocationID = Location_ID,
-        @curType = Type, 
+        @curType = Type,
         @curStatus = Status
     FROM  T_Material_Containers
     WHERE (Tag = @container)
@@ -212,11 +211,11 @@ As
     Declare @locationID int = 0
     Declare @limit int = 0
     --
-    SELECT 
-        @locationID = ID, 
+    SELECT
+        @locationID = ID,
         @limit = Container_Limit
     FROM T_Material_Locations
-    WHERE Tag = @location    
+    WHERE Tag = @location
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -258,15 +257,15 @@ As
             Return 51022
         End
     End
-    
+
     ---------------------------------------------------
     -- Resolve current Location id to name
     ---------------------------------------------------
 
     Declare @curLocationName varchar(125) = ''
     --
-    SELECT @curLocationName = Tag 
-    FROM T_Material_Locations 
+    SELECT @curLocationName = Tag
+    FROM T_Material_Locations
     WHERE ID = @curLocationID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -276,7 +275,7 @@ As
         Set @message = 'Error resolving name of current Location, ' + @curLocationName
         Return 510027
     End
-    
+
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
@@ -284,7 +283,7 @@ As
     If @mode = 'add'
     Begin -- <add>
         -- future: accept '<next bag>' or '<next box> and generate container name
-            
+
         INSERT INTO T_Material_Containers( Tag,
                                            [Type],
                                            [Comment],
@@ -303,7 +302,7 @@ As
         End
 
         -- Material movement logging
-        --    
+        --
         exec PostMaterialLogEntry
              'Container Creation',
              @container,
@@ -318,7 +317,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin -- <update>
         Set @myError = 0
         --
@@ -340,7 +339,7 @@ As
         End
 
         -- Material movement logging
-        --    
+        --
         If @curLocationName <> @location
         Begin
             exec PostMaterialLogEntry

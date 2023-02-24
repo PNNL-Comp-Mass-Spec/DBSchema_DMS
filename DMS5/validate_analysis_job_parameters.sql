@@ -109,7 +109,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
     @priority int = 2 output,
     @showDebugMessages tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -222,7 +222,7 @@ As
     SELECT @toolActive = AJT_Active,
            @settingsFileRequired = SettingsFileRequired,
            @paramFileRequired = ParamFileRequired
-    FROM T_Analysis_Tool 
+    FROM T_Analysis_Tool
     WHERE AJT_toolID = @analysisToolID
 
     ---------------------------------------------------
@@ -280,8 +280,8 @@ As
     --
     Set @datasetList = ''
     --
-    SELECT @datasetList = @datasetList + 
-                          CASE WHEN @datasetList = '' 
+    SELECT @datasetList = @datasetList +
+                          CASE WHEN @datasetList = ''
                                THEN Dataset_Num
                                ELSE ', ' + Dataset_Num
                           END
@@ -321,8 +321,8 @@ As
     --
     Set @datasetList = ''
     --
-    SELECT @datasetList = @datasetList + 
-                          CASE WHEN @datasetList = '' 
+    SELECT @datasetList = @datasetList +
+                          CASE WHEN @datasetList = ''
                                THEN Dataset_Num
                                ELSE ', ' + Dataset_Num
                           END
@@ -364,11 +364,11 @@ As
     ---------------------------------------------------
     -- Check for settings file or parameter file being 'na' when not allowed
     ---------------------------------------------------
-    
+
     If @settingsFileRequired > 0 And @settingsFileName = 'na'
     Begin
         Set @message = 'A settings file is required for analysis tool "' + @toolName + '"'
-        
+
         If @showDebugMessages <> 0
             print @message
 
@@ -378,7 +378,7 @@ As
     If @paramFileRequired > 0 And @paramFileName = 'na'
     Begin
         Set @message = 'A parameter file is required for analysis tool "' + @toolName + '"'
-        
+
         If @showDebugMessages <> 0
             print @message
 

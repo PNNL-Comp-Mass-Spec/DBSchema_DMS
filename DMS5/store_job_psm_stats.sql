@@ -3,18 +3,17 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[StoreJobPSMStats]
+CREATE PROCEDURE [dbo].[StoreJobPSMStats]
 /****************************************************
 **
-**    Desc: Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
+**  Desc: Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
 **
-**    Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**    Parameters:
+**  Parameters:
 **
-**    Auth: mem
-**    Date: 02/21/2012 mem - Initial version
+**  Auth:   mem
+**  Date:   02/21/2012 mem - Initial version
 **          05/08/2012 mem - Added @fdrThreshold, @totalPSMsFDRFilter, @uniquePeptidesFDRFilter, and @uniqueProteinsFDRFilter
 **          01/17/2014 mem - Added @msgfThresholdIsEValue
 **          01/21/2016 mem - Added @percentMSnScansNoPSM and @maximumScanGapAdjacentMSn
@@ -52,7 +51,7 @@ CREATE Procedure [dbo].[StoreJobPSMStats]
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -84,7 +83,7 @@ As
     Set @dynamicReporterIon = IsNull(@dynamicReporterIon, 0)
     Set @percentPSMsMissingNTermReporterIon = IsNull(@percentPSMsMissingNTermReporterIon, 0)
     Set @percentPSMsMissingReporterIon = IsNull(@percentPSMsMissingReporterIon, 0)
-    
+
     Set @uniqueAcetylPeptidesFDR = IsNull(@uniqueAcetylPeptidesFDR, 0)
 
     ---------------------------------------------------

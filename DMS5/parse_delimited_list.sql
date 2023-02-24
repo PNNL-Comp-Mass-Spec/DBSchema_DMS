@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-    
 CREATE FUNCTION [dbo].[udfParseDelimitedList]
 /****************************************************
 **
@@ -28,7 +27,7 @@ CREATE FUNCTION [dbo].[udfParseDelimitedList]
 **          03/17/2017 mem - Add parameter @callingProcedure
 **                         - Add optional call to PostUsageLogEntry
 **          11/19/2018 mem - Add special handling if @delimeter is CR, LF, or CRLF
-**  
+**
 ****************************************************/
 (
     @delimitedList varchar(max),
@@ -38,7 +37,7 @@ CREATE FUNCTION [dbo].[udfParseDelimitedList]
 RETURNS @tmpValues TABLE(Value varchar(2048))
 AS
 BEGIN
-    
+
     Declare @continue tinyint
     Declare @startPosition int
 
@@ -57,19 +56,19 @@ BEGIN
     --  - Enable xp_cmdshell
     --  - Enable the Server Proxy Account
     --  - Grant execute on master..xp_cmdshell to DMSWebUser and any other user that will call this udf
-    
+
     --DECLARE @SQL varchar(500)
     --SELECT @SQL = '"C:\Program Files (x86)\Windows Resource Kits\Tools\Now.exe" ' + @procedureNameForUsageLog + ' >> C:\temp\UsageLogStats.txt'
     --EXEC master..xp_cmdshell @SQL
 
-    
+
     Set @delimitedList = IsNull(@delimitedList, '')
-    
+
     If @delimiter Like '%' + Char(13) + '%' Or
        @delimiter Like '%' + Char(10) + '%'
     Begin
         Set @delimiterIsCRorLF = 1
-        
+
         -- The logic below will match either CR or LF, so it doesn't matter what @delimiter is
         Set @delimiter = char(10)
     End
@@ -115,7 +114,7 @@ BEGIN
                     Set @delimiterPos = @crPos
                 Else If @lfPos > 0
                     Set @delimiterPos = @lfPos
-                Else 
+                Else
                     Set @delimiterPos = 0
             End
             Else
@@ -147,12 +146,12 @@ BEGIN
                     INSERT INTO @tmpValues (Value)
                     VALUES (@value)
                 End
-                
+
             End -- </c>
 
             Set @startPosition = @delimiterPos + 1
         End -- </b>
-        
+
         /*
          * The following is an alternative method, using a Numbers table
          * This method is faster than the above Loop-based method, but it
@@ -162,7 +161,7 @@ BEGIN
          *
          * Numbers table creation:
             -- DECLARE @UpperLimit INT = 1000000;
-            -- 
+            --
             -- WITH n(rn) AS (
             --   SELECT ROW_NUMBER() OVER (ORDER BY s1.[object_id])
             --   FROM sys.all_columns AS s1
@@ -172,7 +171,7 @@ BEGIN
             -- INTO dbo.T_Numbers
             -- FROM n
             -- WHERE rn <= @UpperLimit;
-            -- 
+            --
             -- CREATE UNIQUE CLUSTERED INDEX IX_Numbers_Number ON dbo.T_Numbers([Number])
             -- -- WITH (DATA_COMPRESSION = PAGE);
          *
@@ -181,7 +180,7 @@ BEGIN
                vn = ROW_NUMBER() OVER ( PARTITION BY [Value] ORDER BY rn ),
                [Value]
             FROM ( SELECT rn = ROW_NUMBER() OVER ( ORDER BY CHARINDEX(@Delim, @List + @Delim) ),
-                      [Value] = LTRIM(RTRIM(SUBSTRING(@List, [Number], 
+                      [Value] = LTRIM(RTRIM(SUBSTRING(@List, [Number],
                                               CHARINDEX(@Delim, @List + @Delim, [Number]) - [Number])))
                FROM dbo.T_Numbers
                WHERE [Number] <= LEN(@List) AND
@@ -191,10 +190,9 @@ BEGIN
          */
 
     End -- </a>
-    
+
     RETURN
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedList] TO [DDL_Viewer] AS [dbo]

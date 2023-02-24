@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[StoreDatasetFileInfo]
+CREATE PROCEDURE [dbo].[StoreDatasetFileInfo]
 /****************************************************
-** 
+**
 **  Desc:   Stores SHA-1 hash info or file size info for dataset files
 **
 **          By default, only adds new data to T_Dataset_Files; will not replace existing values.
@@ -36,26 +35,26 @@ CREATE Procedure [dbo].[StoreDatasetFileInfo]
 **
 **  Example 3 column input (Dataset Name):
 **
-**    2c6f81f3b421ac9780bc3dc61133e13c9add9097	DATA.MS	Bet_Se_Pel_M
-**    f3bba221c7d794826eadda5d8bd8ebffd1c7fe15	DATA.MS	Bet_Se_CoC_Med_M
-**    2ce8bafc5506c76ef99343e882f1ed3e55e528f4	DATA.MS	Bet_Rg_Pel_M
+**    2c6f81f3b421ac9780bc3dc61133e13c9add9097  DATA.MS Bet_Se_Pel_M
+**    f3bba221c7d794826eadda5d8bd8ebffd1c7fe15  DATA.MS Bet_Se_CoC_Med_M
+**    2ce8bafc5506c76ef99343e882f1ed3e55e528f4  DATA.MS Bet_Rg_Pel_M
 **
 **  Example 3 column input (Dataset ID):
 **
-**    800076cfee2f23efa076394676db9a46c317ed0a	ser	739716
-**    6f4959e18d1ddc0ed0a11fc1ba7028a369ba4c25	ser	739715
-**    16ba36087f53684be77e3512ea131331044dda63	ser	739714
+**    800076cfee2f23efa076394676db9a46c317ed0a  ser 739716
+**    6f4959e18d1ddc0ed0a11fc1ba7028a369ba4c25  ser 739715
+**    16ba36087f53684be77e3512ea131331044dda63  ser 739714
 **
 **  Example 3 column input with file size, file name, and Dataset Name
-**    4609024	DATA.MS	Bet_Rg_Pel_M
-**    2072576	DATA.MS	Bet_Se_CoC_Med_M
-**    4979200	DATA.MS	Bet_Se_Pel_M
+**    4609024   DATA.MS Bet_Rg_Pel_M
+**    2072576   DATA.MS Bet_Se_CoC_Med_M
+**    4979200   DATA.MS Bet_Se_Pel_M
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   mem
 **  Date:   04/02/2019 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @datasetFileInfo varchar(max),          -- hash codes and file names
@@ -63,9 +62,9 @@ CREATE Procedure [dbo].[StoreDatasetFileInfo]
     @infoOnly tinyint = 0,
     @updateExisting Varchar(12) = ''
 )
-As
+AS
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -79,14 +78,14 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'StoreDatasetFileHashInfo', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     -----------------------------------------------------------
     -- Create temp tables to hold the data
     -----------------------------------------------------------
@@ -97,14 +96,14 @@ As
     )
 
     CREATE UNIQUE INDEX #IX_#mp_FileData_EntryID ON #Tmp_FileData (EntryID)
-    
+
     CREATE TABLE #Tmp_DataColumns (
         EntryID int NOT NULL,
         Value varchar(2048) NULL
     )
-    
+
     CREATE UNIQUE INDEX #IX_Tmp_DataColumns_EntryID ON #Tmp_DataColumns (EntryID)
-        
+
     CREATE TABLE #Tmp_HashUpdates (
         Dataset_ID int NOT NULL,
         InstFilePath varchar(512) NOT NULL,     -- Relative file path of the instrument ifle
@@ -112,7 +111,7 @@ As
     )
 
     CREATE UNIQUE INDEX #IX_Tmp_HashUpdates ON #Tmp_HashUpdates (Dataset_ID, InstFilePath)
-    
+
     CREATE TABLE #Tmp_SizeUpdates (
         Dataset_ID int NOT NULL,
         InstFilePath varchar(512) NOT NULL,     -- Relative file path of the instrument ifle
@@ -142,7 +141,7 @@ As
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @updateExisting= IsNull(@updateExisting, '')
@@ -158,31 +157,31 @@ As
         Set @delimiter = CHAR(10)
     Else
         Set @delimiter = CHAR(13)
-    
+
     INSERT INTO #Tmp_FileData (Value)
     Select Value
     FROM dbo.udfParseDelimitedList(@datasetFileInfo, @delimiter, 'StoreDatasetFileInfo')
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
-    
+
     If Not Exists (SELECT * FROM #Tmp_FileData)
     Begin
         Set @message = 'Nothing returned when splitting the Dataset File List on CR or LF'
         Set @myError = 53004
         Goto Done
     End
-    
+
     Declare @Continue tinyint = 1
     Declare @EntryID int = 0
     Declare @EntryIDEnd int = 0
-    
+
     Declare @charIndex int
     Declare @colCount Int
     Declare @lastPeriodLoc int
     Declare @skipRow Tinyint
 
     Declare @Row varchar(2048)
-    
+
     Declare @fileHashOrSize varchar(128)
     Declare @datasetNameOrId varchar(255)
 
@@ -192,13 +191,13 @@ As
 
     -- Relative file path (simply filename if the file is in the dataset directory)
     Declare @filePath varchar(225)
-    
+
     Declare @existingSize Bigint
     Declare @existingHash Varchar(64)
 
     SELECT @EntryIDEnd = MAX(EntryID)
     FROM #Tmp_FileData
-    
+
     -----------------------------------------
     -- Parse the host list
     -----------------------------------------
@@ -211,7 +210,7 @@ As
         ORDER BY EntryID
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-        
+
         -- @Row should now be empty, or contain something like the following:
 
         -- Hash and Filename
@@ -221,28 +220,28 @@ As
         -- 1,729,715,419 01CPTAC_CompRefCO_W_PNNL_20170123_B1S5_f01_19Mar17_Bane_Rep-16-12-04.raw
 
         -- Hash, Filename, DatasetName
-        -- 2c6f81f3b421ac9780bc3dc61133e13c9add9097	DATA.MS	Bet_Se_Pel_M
+        -- 2c6f81f3b421ac9780bc3dc61133e13c9add9097 DATA.MS Bet_Se_Pel_M
 
         -- Hash, Filename, DatasetId
-        -- 800076cfee2f23efa076394676db9a46c317ed0a	ser	739716
+        -- 800076cfee2f23efa076394676db9a46c317ed0a ser 739716
 
         -- FileSize, Filename, DatasetName
-        -- 4609024	DATA.MS	Bet_Rg_Pel_M
-        
+        -- 4609024  DATA.MS Bet_Rg_Pel_M
+
         Set @Row = Replace (@Row, CHAR(10), '')
         Set @Row = Replace (@Row, CHAR(13), '')
         Set @Row = LTrim(RTrim(IsNull(@Row, '')))
 
         -- Replace tabs with spaces
         Set @Row = Replace (@Row, CHAR(9), ' ')
-        
+
         If @Row <> ''
         Begin -- <b>
 
             -- Split the row on spaces
             TRUNCATE TABLE #Tmp_DataColumns
             Set @delimiter = ' '
-            
+
             INSERT INTO #Tmp_DataColumns (EntryID, Value)
             SELECT EntryID, Value
             FROM dbo.udfParseDelimitedListOrdered(@Row, @delimiter, 0)
@@ -346,7 +345,7 @@ As
                     Insert Into #Tmp_Warnings (Warning, RowText) Values('Skipping row since file path (typically filename) is blank', @Row)
                     Set @skipRow= 1
                 End
-                
+
                 If @skipRow = 0
                 Begin
                     -- Determine whether we're entering hash values or file sizes
@@ -435,16 +434,16 @@ As
                     End -- </g>
 
                 End -- </e>
-            End -- </c>            
+            End -- </c>
         End -- </b>
     End -- </a>
-    
+
     If @infoOnly <> 0
     Begin
         -----------------------------------------------
         -- Preview the data, then exit
         -----------------------------------------------
-        
+
         Declare @itemsToUpdate Int = 0
 
         If Exists (Select * From #Tmp_HashUpdates)
@@ -464,26 +463,26 @@ As
             SELECT @myRowCount = @@rowcount, @myError = @@error
             Set @itemsToUpdate = @itemsToUpdate + @myRowCount
         End
-        
+
         If @itemsToUpdate = 0
         Begin
             Select 'No valid data was found in @datasetFileInfo' As Warning
         End
         Goto Done
     End
-    
+
     -----------------------------------------------
     -- Add/Update hash info in T_Dataset_Files using a Merge statement
     -----------------------------------------------
     --
     MERGE T_Dataset_Files As target
-    USING 
+    USING
         (SELECT Dataset_ID, InstFilePath, InstFileHash
          FROM #Tmp_HashUpdates
         ) AS Source (Dataset_ID, InstFilePath, InstFileHash)
     ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath)
-    WHEN Matched 
-        THEN UPDATE 
+    WHEN Matched
+        THEN UPDATE
             Set File_Hash = Source.InstFileHash,
                 Deleted = 0
     WHEN Not Matched THEN
@@ -492,7 +491,7 @@ As
     OUTPUT Inserted.Dataset_ID,
            'File Hash', $action,
            Null, Inserted.File_Hash
-    INTO #Tmp_SummaryOfChanges;   
+    INTO #Tmp_SummaryOfChanges;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -507,13 +506,13 @@ As
     -----------------------------------------------
     --
     MERGE T_Dataset_Files As target
-    USING 
+    USING
         (SELECT Dataset_ID, InstFilePath, InstFileSize
          FROM #Tmp_SizeUpdates
         ) AS Source (Dataset_ID, InstFilePath, InstFileSize)
     ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath)
-    WHEN Matched 
-        THEN UPDATE 
+    WHEN Matched
+        THEN UPDATE
             Set File_Size_Bytes = Source.InstFileSize,
                 Deleted = 0
     WHEN Not Matched THEN
@@ -533,8 +532,8 @@ As
     End
 
     Insert Into #Tmp_UpdatedDatasets (Dataset_ID)
-    SELECT Dataset_ID FROM #Tmp_HashUpdates 
-    UNION 
+    SELECT Dataset_ID FROM #Tmp_HashUpdates
+    UNION
     SELECT Dataset_ID FROM #Tmp_SizeUpdates
 
     -----------------------------------------------
@@ -549,9 +548,9 @@ As
                              File_Size_Bytes,
                              File_Hash,
                              Dataset_File_ID,
-                             Row_Number() OVER ( 
-                                PARTITION BY Dataset_ID 
-                                ORDER BY Deleted ASC, File_Size_Bytes DESC 
+                             Row_Number() OVER (
+                                PARTITION BY Dataset_ID
+                                ORDER BY Deleted ASC, File_Size_Bytes DESC
                                 ) AS Size_Rank
                       FROM T_Dataset_Files
                       WHERE Dataset_ID In (SELECT Dataset_ID FROM #Tmp_UpdatedDatasets)
@@ -559,7 +558,7 @@ As
            ON Target.Dataset_File_ID = SrcQ.Dataset_File_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     Set @message = 'Dataset info update successful'
 
     -----------------------------------------------
@@ -600,10 +599,10 @@ Done:
     Begin
         If @message = ''
             Set @message = 'Error in StoreDatasetFileInfo'
-        
+
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
     End
-    
+
     ---------------------------------------------------
     -- Log SP usage
     ---------------------------------------------------
@@ -619,9 +618,8 @@ Done:
 
     If Len(@message) > 0
         SELECT @message As Message
-    
+
     --
     Return @myError
-
 
 GO

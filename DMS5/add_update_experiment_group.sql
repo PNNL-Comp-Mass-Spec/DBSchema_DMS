@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
 /****************************************************
 **
@@ -39,7 +38,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
     @mode varchar(12) = 'add',          -- 'add' or 'update'
     @message varchar(512) output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -244,7 +243,7 @@ As
         --
         SELECT @researcher = U_PRN
         FROM T_Users
-	    WHERE ID = @userID
+        WHERE ID = @userID
     End
     Else
     Begin
@@ -407,7 +406,6 @@ As
     commit transaction @transName
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentGroup] TO [DDL_Viewer] AS [dbo]

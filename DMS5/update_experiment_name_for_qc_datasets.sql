@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateExperimentNameForQCDatasets]
+CREATE PROCEDURE [dbo].[UpdateExperimentNameForQCDatasets]
 /****************************************************
 **
 **  Desc:   Assures that the dataset name associated with QC datasets matches the dataset name
@@ -13,13 +12,13 @@ CREATE Procedure [dbo].[UpdateExperimentNameForQCDatasets]
 **
 **  Auth:   mem
 **  Date:   08/09/2018 mem - Initial version
-**    
+**
 *****************************************************/
 (
     @infoOnly tinyint = 1,
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount On
 
     Declare @myError int = 0;
@@ -34,7 +33,7 @@ As
 
     set @infoOnly = IsNull(@infoOnly, 1);
     set @message = '';
-    
+
     ---------------------------------------------------
     -- Create some temporary tables
     ---------------------------------------------------
@@ -56,7 +55,7 @@ As
     );
 
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_DatasetsToUpdate ON #Tmp_DatasetsToUpdate(Dataset_ID, ID);
-    
+
     ---------------------------------------------------
     -- Find the QC experiments to process
     -- This list is modelled after the list in UDF GetDatasetPriority
@@ -153,7 +152,7 @@ As
                DTU.OldExperiment,
                DTU.NewExperiment,
                DTU.NewExpID,
-               dbo.AppendToText(DS.DS_Comment, 'Switched experiment from ' + DTU.OldExperiment + 
+               dbo.AppendToText(DS.DS_Comment, 'Switched experiment from ' + DTU.OldExperiment +
                                                ' to ' + DTU.NewExperiment + ' on ' + @dateStamp, 0, ';', 512) As [Comment]
         FROM T_Dataset DS
              INNER JOIN #Tmp_DatasetsToUpdate DTU
@@ -179,20 +178,20 @@ As
     End
     Else
     Begin
-    
+
         ---------------------------------------------------
         -- Update the experiments associated with the datasets
         ---------------------------------------------------
         --
         UPDATE T_Dataset
-        SET Exp_ID= DTU.NewExpID, 
-            DS_comment = dbo.AppendToText(DS.DS_Comment, 'Switched experiment from ' + DTU.OldExperiment + 
+        SET Exp_ID= DTU.NewExpID,
+            DS_comment = dbo.AppendToText(DS.DS_Comment, 'Switched experiment from ' + DTU.OldExperiment +
                                                          ' to ' + DTU.NewExperiment + ' on ' + @dateStamp, 0, ';', 512)
         FROM T_Dataset DS
             INNER JOIN #Tmp_DatasetsToUpdate DTU On DS.Dataset_ID = DTU.Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         Declare @msg varchar(128) = 'Updated the experiment name for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowcount, ' QC dataset',  ' QC datasets')
 
         Exec PostLogEntry 'Normal', @msg, 'UpdateExperimentNameForQCDatasets'
@@ -204,7 +203,7 @@ Done:
     -- Done
     ---------------------------------------------------
     --
-    
+
     return 0
 
 GO

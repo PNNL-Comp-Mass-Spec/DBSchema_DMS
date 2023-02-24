@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[MoveMaterialContainers]
 /****************************************************
 **
@@ -30,7 +29,7 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainers]
     @message varchar(255) = '' output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
@@ -318,7 +317,6 @@ Done:
     End
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[MoveMaterialContainers] TO [DDL_Viewer] AS [dbo]

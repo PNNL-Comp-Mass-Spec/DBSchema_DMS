@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 /****************************************************
 **
@@ -72,7 +71,7 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
     @message varchar(512) output,
        @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -504,7 +503,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateCampaign] TO [DDL_Viewer] AS [dbo]

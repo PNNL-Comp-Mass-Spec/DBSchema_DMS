@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateProteinCollectionUsage]
 /****************************************************
 **
@@ -26,7 +25,6 @@ CREATE PROCEDURE [dbo].[UpdateProteinCollectionUsage]
     @message varchar(255) = '' output
 )
 AS
-
     Set XACT_ABORT, nocount on
 
     Declare @myRowCount int = 0
@@ -159,7 +157,6 @@ AS
 
 Done:
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateProteinCollectionUsage] TO [DDL_Viewer] AS [dbo]

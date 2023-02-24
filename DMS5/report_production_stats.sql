@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ReportProductionStats]
 /****************************************************
 **
@@ -314,7 +313,7 @@ AS
     WHERE DS.EMSL_Funded = 0 And CC.SubAccount_Title LIKE '%Wiley Environmental%'
     --
     SELECT @myRowCount = @@RowCount
-    
+
     If @showDebug > 0 And @myRowCount > 0
     Begin
         Select 'After updating EMSL_Funded for work packages with SubAccount containing "Wiley Environmental"' As Status, EMSL_Funded, Count(*) As Datasets, Min(Dataset_ID) As Dataset_ID_First, Max(Dataset_ID) As Dataset_ID_Last
@@ -480,7 +479,6 @@ AS
     END CATCH
 
     RETURN @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ReportProductionStats] TO [DDL_Viewer] AS [dbo]

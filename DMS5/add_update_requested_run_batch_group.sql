@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[add_update_requested_run_batch_group]
 /****************************************************
 **
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch_group]
     @mode varchar(12) = 'add',              -- 'add', 'update', or 'PreviewAdd'
     @message varchar(512) Output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -389,7 +388,6 @@ As
     END CATCH
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run_batch_group] TO [DDL_Viewer] AS [dbo]

@@ -3,26 +3,25 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
 /****************************************************
 **
 **  Desc:
-**		Updates selected EMSL instrument usage report items
+**      Updates selected EMSL instrument usage report items
 **
-**		This procedure appears to be unused in 2017
+**      This procedure appears to be unused in 2017
 **
 **  Parameters:
 **
-**  Auth:	grk
-**  Date:	08/31/2012 grk - Initial release
+**  Auth:   grk
+**  Date:   08/31/2012 grk - Initial release
 **          09/11/2012 grk - fixed update SQL
-**			04/11/2017 mem - Replace column Usage with Usage_Type
+**          04/11/2017 mem - Replace column Usage with Usage_Type
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **
 *****************************************************/
 (
-	@Year int = 2012 ,
+    @Year int = 2012 ,
     @Month int = 8 ,
     @Instrument varchar(64) = '',
     @Type varchar(32) = '',
@@ -36,159 +35,159 @@ CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
     @DoUpdate TINYINT = 0
 )
 AS
-	SET NOCOUNT ON
+    SET NOCOUNT ON
 
-	Declare @myError int
-	Declare @myRowCount int
-	Set @myError = 0
-	Set @myRowCount = 0
+    Declare @myError int
+    Declare @myRowCount int
+    Set @myError = 0
+    Set @myRowCount = 0
 
-	---------------------------------------------------
-	-- Validate the inputs
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------
 
-	Set @Month = IsNull(@Month, 0)
-	Set @Year = IsNull(@Year, 0)
+    Set @Month = IsNull(@Month, 0)
+    Set @Year = IsNull(@Year, 0)
 
-	Set @Instrument = IsNull(@Instrument, '')
-	Set @Type = IsNull(@Type, '')
-	Set @Usage = IsNull(@Usage, '')
-	Set @Proposal = IsNull(@Proposal, '')
-	Set @Users = IsNull(@Users, '')
+    Set @Instrument = IsNull(@Instrument, '')
+    Set @Type = IsNull(@Type, '')
+    Set @Usage = IsNull(@Usage, '')
+    Set @Proposal = IsNull(@Proposal, '')
+    Set @Users = IsNull(@Users, '')
 
     -- Assure that @Operator is either an integer or null
     Set @Operator = Try_Convert(int, @Operator)
 
-	Set @NewValue = IsNull(@NewValue, '')
+    Set @NewValue = IsNull(@NewValue, '')
 
-	Declare @instrumentID int = 0
-	Declare @usageTypeID tinyint = 0
+    Declare @instrumentID int = 0
+    Declare @usageTypeID tinyint = 0
 
-	If @Instrument <> ''
-	Begin
-		SELECT @instrumentID = Instrument_ID
-		FROM T_Instrument_Name
-		WHERE IN_name = @Instrument
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+    If @Instrument <> ''
+    Begin
+        SELECT @instrumentID = Instrument_ID
+        FROM T_Instrument_Name
+        WHERE IN_name = @Instrument
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @instrumentID = 0
-		Begin
-			RAISERROR ('Instrument not found: "%s"', 11, 4, @Instrument)
-		End
-	End
+        If @instrumentID = 0
+        Begin
+            RAISERROR ('Instrument not found: "%s"', 11, 4, @Instrument)
+        End
+    End
 
-	If @Usage <> ''
-	Begin
-		SELECT @usageTypeID = ID
-		FROM T_EMSL_Instrument_Usage_Type
-		WHERE [Name] = @Usage
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
+    If @Usage <> ''
+    Begin
+        SELECT @usageTypeID = ID
+        FROM T_EMSL_Instrument_Usage_Type
+        WHERE [Name] = @Usage
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-		If @usageTypeID = 0
-		Begin
-			RAISERROR ('Usage type not found: "%s"', 11, 4, @Usage)
-		End
-	End
+        If @usageTypeID = 0
+        Begin
+            RAISERROR ('Usage type not found: "%s"', 11, 4, @Usage)
+        End
+    End
 
-	---------------------------------------------------
-	-- Temp table to hold keys to affected items
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Temp table to hold keys to affected items
+    ---------------------------------------------------
 
-	CREATE TABLE #TX (
-		Seq int
-	)
+    CREATE TABLE #TX (
+        Seq int
+    )
 
-	---------------------------------------------------
-	-- Get keys to affected items
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Get keys to affected items
+    ---------------------------------------------------
 
-	INSERT INTO #TX ( Seq )
-	SELECT  Seq
-	FROM    T_EMSL_Instrument_Usage_Report
-	WHERE   ( Month = @Month )
-			AND ( Year = @Year )
-			AND (( @instrumentID = 0 ) OR ( DMS_Inst_ID = @instrumentID ))
-			AND (( @Type = '' ) OR ( Type = @Type ))
-			AND (( @usageTypeID = 0 ) OR ( Usage_Type = @usageTypeID ))
-			AND (( @Proposal = '' ) OR ( Proposal = @Proposal ))
-			AND (( @Users = '' ) OR ( Users = @Users ))
-			AND (( @Operator Is Null ) OR ( Operator = @Operator ))
+    INSERT INTO #TX ( Seq )
+    SELECT  Seq
+    FROM    T_EMSL_Instrument_Usage_Report
+    WHERE   ( Month = @Month )
+            AND ( Year = @Year )
+            AND (( @instrumentID = 0 ) OR ( DMS_Inst_ID = @instrumentID ))
+            AND (( @Type = '' ) OR ( Type = @Type ))
+            AND (( @usageTypeID = 0 ) OR ( Usage_Type = @usageTypeID ))
+            AND (( @Proposal = '' ) OR ( Proposal = @Proposal ))
+            AND (( @Users = '' ) OR ( Users = @Users ))
+            AND (( @Operator Is Null ) OR ( Operator = @Operator ))
 
-	---------------------------------------------------
-	-- Display affected items or make change
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Display affected items or make change
+    ---------------------------------------------------
 
-	IF @DoUpdate = 0
-	BEGIN
-		SELECT *
-		FROM #TX INNER JOIN dbo.T_EMSL_Instrument_Usage_Report TD ON #TX.Seq = TD.Seq
-	END
-	ELSE
-		BEGIN
+    IF @DoUpdate = 0
+    BEGIN
+        SELECT *
+        FROM #TX INNER JOIN dbo.T_EMSL_Instrument_Usage_Report TD ON #TX.Seq = TD.Seq
+    END
+    ELSE
+        BEGIN
 
-		IF @FieldName = 'Proposal'
-		BEGIN
-			UPDATE TD
-			SET Proposal = @NewValue
-			FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
-		END
+        IF @FieldName = 'Proposal'
+        BEGIN
+            UPDATE TD
+            SET Proposal = @NewValue
+            FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
+        END
 
-		IF @FieldName = 'Usage'
-		BEGIN
-			If @NewValue <> ''
-			Begin
-				Declare @newUsageTypeID tinyint = 0
+        IF @FieldName = 'Usage'
+        BEGIN
+            If @NewValue <> ''
+            Begin
+                Declare @newUsageTypeID tinyint = 0
 
-				SELECT @newUsageTypeID = ID
-				FROM T_EMSL_Instrument_Usage_Type
-				WHERE [Name] = @NewValue
-				--
-				SELECT @myError = @@error, @myRowCount = @@rowcount
+                SELECT @newUsageTypeID = ID
+                FROM T_EMSL_Instrument_Usage_Type
+                WHERE [Name] = @NewValue
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
 
-				If @myRowCount = 0 Or @newUsageTypeID = 0
-				Begin
-					RAISERROR ('Invalid usage type: "%s"', 11, 4, @NewValue)
-				End
-				Else
-				Begin
-					UPDATE TD
-					SET Usage_Type = @newUsageTypeID
-					FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
-				End
-			End
-		END
+                If @myRowCount = 0 Or @newUsageTypeID = 0
+                Begin
+                    RAISERROR ('Invalid usage type: "%s"', 11, 4, @NewValue)
+                End
+                Else
+                Begin
+                    UPDATE TD
+                    SET Usage_Type = @newUsageTypeID
+                    FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
+                End
+            End
+        END
 
-		IF @FieldName = 'Users'
-		BEGIN
-			UPDATE TD
-			SET Users = @NewValue
-			FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
-		END
+        IF @FieldName = 'Users'
+        BEGIN
+            UPDATE TD
+            SET Users = @NewValue
+            FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
+        END
 
-		IF @FieldName = 'Operator'
-		BEGIN
-		    -- Store null if @NewValue is not an integer
-			UPDATE TD
-			SET Operator = Try_Convert(int, @NewValue)
-			FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
-		END
+        IF @FieldName = 'Operator'
+        BEGIN
+            -- Store null if @NewValue is not an integer
+            UPDATE TD
+            SET Operator = Try_Convert(int, @NewValue)
+            FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
+        END
 
-		IF @FieldName = 'Comment'
-		BEGIN
-			UPDATE TD
-			SET Comment = @NewValue
-			FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
-		END
-	END
+        IF @FieldName = 'Comment'
+        BEGIN
+            UPDATE TD
+            SET Comment = @NewValue
+            FROM T_EMSL_Instrument_Usage_Report TD INNER JOIN #TX ON #TX.Seq = TD.Seq
+        END
+    END
 
-	---------------------------------------------------
-	--
-	---------------------------------------------------
+    ---------------------------------------------------
+    --
+    ---------------------------------------------------
 
-	DROP TABLE #TX
-	RETURN
+    DROP TABLE #TX
+    RETURN
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[EditEMSLInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]

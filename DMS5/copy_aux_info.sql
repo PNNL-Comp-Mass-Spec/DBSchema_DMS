@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CopyAuxInfo]
 /****************************************************
 **
@@ -327,7 +326,6 @@ end
     ---------------------------------------------------
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfo] TO [DDL_Viewer] AS [dbo]

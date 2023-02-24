@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 /****************************************************
 **
@@ -59,7 +58,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
     @message varchar(512) Output,
     @useRaiseError tinyint = 1                      -- When 1, use Raiserror; when 0, return a non-zero value if an error
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -437,11 +436,11 @@ As
             If Coalesce(@batchGroupID, 0) = 0
                 Set @message = 'Removed batch from batch group ' + Cast(@existingBatchGroupID As Varchar(12))
             Else
-                Set @message = 'Moved batch from batch group ' + Cast(@existingBatchGroupID As Varchar(12)) + ' to batch group ' +  + Cast(@batchGroupID As Varchar(12))        
+                Set @message = 'Moved batch from batch group ' + Cast(@existingBatchGroupID As Varchar(12)) + ' to batch group ' +  + Cast(@batchGroupID As Varchar(12))
         End
 
         If Coalesce(@batchGroupID, 0) > 0
-        Begin  
+        Begin
             Declare @matchCount Int
             Declare @duplicateBatchID int
             Declare @duplicateMessage Varchar(128)
@@ -460,14 +459,14 @@ As
                       Batch_Group_Order = @batchGroupOrder And
                       ID <> @id
 
-                Set @duplicateMessage = 'Warning, both this batch and batch ' + Cast(@duplicateBatchID AS varchar(12)) + 
+                Set @duplicateMessage = 'Warning, both this batch and batch ' + Cast(@duplicateBatchID AS varchar(12)) +
                                         ' have batch group order = ' + Cast(@batchGroupOrder AS varchar(12))
 
                 Set @message = dbo.AppendToText(@message, @duplicateMessage, 0, '; ', 512)
             End
         End
-        
-    End 
+
+    End
 
     ---------------------------------------------------
     -- Update stats in T_Cached_Requested_Run_Batch_Stats
@@ -491,8 +490,6 @@ As
     END CATCH
 
     return @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [DDL_Viewer] AS [dbo]

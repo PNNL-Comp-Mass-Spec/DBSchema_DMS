@@ -3,46 +3,45 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DumpMetadataForMultipleDatasets]
 /****************************************************
 **
-**	Desc: Dump metadata for datasets in given list
+**  Desc: Dump metadata for datasets in given list
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **                    recordset containing keyword-value pairs
 **                    for all metadata items
 **
-**	Parameters: 
+**  Parameters:
 **
-**		Auth: grk
-**		Date: 11/01/2006
-**    
+**  Auth:   grk
+**  Date:   11/01/2006
+**
 *****************************************************/
- (
-  @dataset_List varchar(7000),
-  @Options varchar(256), -- ignore for now
-  @message varchar(512) output
- )
-As
-	set nocount on
- 
-	declare @myError int
-	set @myError = 0
+(
+    @dataset_List varchar(7000),
+    @Options varchar(256), -- ignore for now
+    @message varchar(512) output
+)
+AS
+    set nocount on
 
-	declare @myRowCount int
-	set @myRowCount = 0
+    declare @myError int
+    set @myError = 0
 
-	set @message = ''
- 
-	---------------------------------------------------
-	-- temporary table to hold list of datasets
-	---------------------------------------------------
+    declare @myRowCount int
+    set @myRowCount = 0
 
-	Create Table #dst
-	(
-	mDst varchar(128) Not Null,
-	)
+    set @message = ''
+
+    ---------------------------------------------------
+    -- temporary table to hold list of datasets
+    ---------------------------------------------------
+
+    Create Table #dst
+    (
+    mDst varchar(128) Not Null,
+    )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -53,25 +52,25 @@ As
       return  @myError
     end
 
-	---------------------------------------------------
-	-- load temporary table with list of datasets
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- load temporary table with list of datasets
+    ---------------------------------------------------
 
-	INSERT INTO #dst (mDst) 
-	SELECT Item FROM dbo.MakeTableFromList(@dataset_List)
+    INSERT INTO #dst (mDst)
+    SELECT Item FROM dbo.MakeTableFromList(@dataset_List)
 
-	---------------------------------------------------
-	-- temporary table to hold metadata
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- temporary table to hold metadata
+    ---------------------------------------------------
 
-	Create Table #metaD
-	(
-	seq int IDENTITY(1,1) NOT NULL,
-	mDst varchar(128) Not Null,
-	mAType varchar(32) Null,
-	mTag varchar(200) Not Null,
-	mVal varchar(512)  Null
-	)
+    Create Table #metaD
+    (
+    seq int IDENTITY(1,1) NOT NULL,
+    mDst varchar(128) Not Null,
+    mAType varchar(32) Null,
+    mTag varchar(200) Not Null,
+    mVal varchar(512)  Null
+    )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -82,12 +81,12 @@ As
       return  @myError
     end
 
-	---------------------------------------------------
-	-- load dataset tracking info for datasets 
-	-- in given list
-	---------------------------------------------------
- 
- 	exec @myError = LoadMetadataForMultipleDatasets @Options, @message output
+    ---------------------------------------------------
+    -- load dataset tracking info for datasets
+    -- in given list
+    ---------------------------------------------------
+
+    exec @myError = LoadMetadataForMultipleDatasets @Options, @message output
     --
     if @myError <> 0
     begin
@@ -95,17 +94,17 @@ As
       return  @myError
     end
 
-	---------------------------------------------------
-	-- dump temporary metadata table
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- dump temporary metadata table
+    ---------------------------------------------------
 
-	select 
-		mDst as [Dataset Name], 
-		mAType as [Attribute Type], 
-		mTag as [Attribute Name], 
-		mVal as [Attribute Value] 
-	from #metaD
-	order by mDst, seq
+    select
+        mDst as [Dataset Name],
+        mAType as [Attribute Type],
+        mTag as [Attribute Name],
+        mVal as [Attribute Value]
+    from #metaD
+    order by mDst, seq
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -120,8 +119,7 @@ As
  -------------------------------------------------------------------------------------------------------
 
 Done:
-	return @myError
-
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DumpMetadataForMultipleDatasets] TO [DDL_Viewer] AS [dbo]

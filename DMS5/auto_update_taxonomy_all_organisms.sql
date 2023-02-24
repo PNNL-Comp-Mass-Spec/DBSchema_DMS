@@ -3,22 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AutoUpdateTaxonomyAllOrganisms]
 /****************************************************
 **
-**  Desc:   Auto-defines the taxonomy for all organisms 
+**  Desc:   Auto-defines the taxonomy for all organisms
 **          using the NCBI_Taxonomy_ID value defined for each organism
 **
 **  Auth:    mem
 **  Date:    03/02/2016 mem - Initial version
 **           03/31/2021 mem - Expand OrganismName to varchar(128)
-**    
+**
 *****************************************************/
 (
     @infoOnly tinyint = 1            -- 1 to preview results
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -29,26 +28,26 @@ As
     ---------------------------------------------------
 
     CREATE TABLE #Tmp_OrganismsToUpdate (
-        OrganismID int not null, 
-        OrganismName varchar(128) not null, 
+        OrganismID int not null,
+        OrganismName varchar(128) not null,
         NCBITaxonomyID int not null,
-        OldDomain varchar(64), 
-        NewDomain varchar(64), 
-        OldKingdom varchar(64),  
-        NewKingdom varchar(64), 
-        OldPhylum varchar(64),   
-        NewPhylum varchar(64), 
-        OldClass varchar(64),    
-        NewClass varchar(64), 
-        OldOrder varchar(64),    
-        NewOrder varchar(64), 
-        OldFamily varchar(64),   
-        NewFamily varchar(64), 
-        OldGenus varchar(128),    
-        NewGenus varchar(128), 
-        OldSpecies varchar(128),  
-        NewSpecies varchar(128), 
-        OldStrain varchar(128),   
+        OldDomain varchar(64),
+        NewDomain varchar(64),
+        OldKingdom varchar(64),
+        NewKingdom varchar(64),
+        OldPhylum varchar(64),
+        NewPhylum varchar(64),
+        OldClass varchar(64),
+        NewClass varchar(64),
+        OldOrder varchar(64),
+        NewOrder varchar(64),
+        OldFamily varchar(64),
+        NewFamily varchar(64),
+        OldGenus varchar(128),
+        NewGenus varchar(128),
+        OldSpecies varchar(128),
+        NewSpecies varchar(128),
+        OldStrain varchar(128),
         NewStrain  varchar(128)
     )
 
@@ -85,7 +84,7 @@ As
 
     While @organismID > -1
     Begin -- <WhileLoop>
-    
+
         SELECT TOP 1 @ncbiTaxonomyID = NCBI_Taxonomy_ID,
                      @organismName = OG_name,
                      @organismID = Organism_ID,
@@ -101,7 +100,7 @@ As
         FROM T_Organisms
         WHERE Organism_ID > @organismID AND
               NOT NCBI_Taxonomy_ID IS NULL
-        ORDER BY Organism_ID         
+        ORDER BY Organism_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -123,8 +122,8 @@ As
             Set @orgGenus   = @oldGenus
             Set @orgSpecies = @oldSpecies
             Set @orgStrain  = @oldStrain
-                
-            EXEC GetTaxonomyValueByTaxonomyID 
+
+            EXEC GetTaxonomyValueByTaxonomyID
                     @ncbiTaxonomyID,
                     @orgDomain =  @orgDomain output,
                     @orgKingdom = @orgKingdom output,
@@ -147,14 +146,14 @@ As
                 @orgSpecies <> @oldSpecies OR
                 @orgStrain  <> @oldStrain
             Begin -- <ValuesDiffer>
-            
+
                 ---------------------------------------------------
                 -- New data to preview or store
                 ---------------------------------------------------
 
                 If @infoOnly <> 0
                 Begin
-                    INSERT INTO #Tmp_OrganismsToUpdate( 
+                    INSERT INTO #Tmp_OrganismsToUpdate(
                                     OrganismID, OrganismName, NCBITaxonomyID,
                                     OldDomain,  NewDomain,
                                     OldKingdom, NewKingdom,
@@ -165,20 +164,20 @@ As
                                     OldGenus,   NewGenus,
                                     OldSpecies, NewSpecies,
                                     OldStrain,  NewStrain )
-                    VALUES( @organismID, @organismName, @ncbiTaxonomyID, 
-                            @oldDomain,  @orgDomain, 
-                            @oldKingdom, @orgKingdom, 
-                            @oldPhylum,  @orgPhylum, 
-                            @oldClass,   @orgClass, 
-                            @oldOrder,   @orgOrder, 
-                            @oldFamily,  @orgFamily, 
-                            @oldGenus,   @orgGenus, 
-                            @oldSpecies, @orgSpecies, 
+                    VALUES( @organismID, @organismName, @ncbiTaxonomyID,
+                            @oldDomain,  @orgDomain,
+                            @oldKingdom, @orgKingdom,
+                            @oldPhylum,  @orgPhylum,
+                            @oldClass,   @orgClass,
+                            @oldOrder,   @orgOrder,
+                            @oldFamily,  @orgFamily,
+                            @oldGenus,   @orgGenus,
+                            @oldSpecies, @orgSpecies,
                             @oldStrain,  @orgStrain)
                 End
                 Else
                 Begin
-                
+
                     UPDATE T_Organisms
                     SET OG_Domain =  @orgDomain,
                         OG_Kingdom = @orgKingdom,
@@ -190,13 +189,13 @@ As
                         OG_Species = @orgSpecies,
                         OG_Strain =  @orgStrain
                     WHERE Organism_ID = @organismID
-                    
+
                 End -- </InfoOnly>
-                    
+
             End -- </ValuesDiffer>
 
         End -- </MatchFound>
-        
+
     End -- </WhileLoop>
 
     If @infoOnly <> 0
@@ -205,9 +204,8 @@ As
         FROM #Tmp_OrganismsToUpdate
         ORDER BY OrganismID
     End
-    
+
     return 0
-    
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AutoUpdateTaxonomyAllOrganisms] TO [DDL_Viewer] AS [dbo]

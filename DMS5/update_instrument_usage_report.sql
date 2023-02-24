@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 /****************************************************
 **
@@ -49,7 +48,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
     Set CONCAT_NULL_YIELDS_NULL ON
     Set ANSI_PADDING ON
@@ -351,7 +350,6 @@ As
             ROLLBACK TRANSACTION;
     END CATCH
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateLCCart]
 /****************************************************
 **
@@ -33,7 +32,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCart]
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AutoUpdateJobPriorities]
 /****************************************************
 **
@@ -27,7 +26,7 @@ CREATE PROCEDURE [dbo].[AutoUpdateJobPriorities]
     @infoOnly tinyint = 1,
     @message varchar(128) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0

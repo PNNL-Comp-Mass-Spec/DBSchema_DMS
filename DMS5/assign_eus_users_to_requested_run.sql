@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AssignEUSUsersToRequestedRun]
 /****************************************************
 **
@@ -29,7 +28,7 @@ CREATE PROCEDURE [dbo].[AssignEUSUsersToRequestedRun]
     @eusUsersList varchar(1024) = '',           -- Comma separated list of EUS user IDs (integers)
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -162,7 +161,6 @@ As
     end
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AssignEUSUsersToRequestedRun] TO [DDL_Viewer] AS [dbo]

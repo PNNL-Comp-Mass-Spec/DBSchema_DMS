@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 /****************************************************
-** 
+**
 **  Desc:   Updates the information for the dataset specified by @datasetID
 **          If @datasetID is 0, will use the dataset name defined in @datasetInfoXML
 **          If @datasetID is non-zero, will validate that the Dataset Name in the XML corresponds
@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 **            </InstrumentFile>
 **          </InstrumentFiles>
 **          <DeviceList>
-**            <Device Type="MS" Number="1" Name="Q Exactive Plus Orbitrap" Model="Q Exactive Plus" 
+**            <Device Type="MS" Number="1" Name="Q Exactive Plus Orbitrap" Model="Q Exactive Plus"
 **                    SerialNumber="Exactive Series slot #300" SoftwareVersion="2.8-280502/2.8.1.2806">
 **              Mass Spectrometer
 **            </Device>
@@ -57,7 +57,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 **      </DatasetInfo>
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   mem
 **  Date:   05/03/2010 mem - Initial version
 **          05/13/2010 mem - Added parameter @validateDatasetType
@@ -85,7 +85,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 **          02/14/2022 mem - Log an error if the acquisition length is overly long
 **          06/13/2022 mem - Update call to GetDatasetScanTypeList since now a scalar-valued function
 **          08/25/2022 mem - Use new column name in T_Log_Entries
-**    
+**
 *****************************************************/
 (
     @datasetID int = 0,                     -- If this value is 0, will determine the dataset name using the contents of @datasetInfoXML
@@ -94,9 +94,9 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
     @infoOnly tinyint = 0,
     @validateDatasetType tinyint = 1        -- If non-zero, will call ValidateDatasetType after updating T_Dataset_ScanTypes
 )
-As
+AS
     set nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -105,7 +105,7 @@ As
 
     Declare @startTime varchar(32)
     Declare @endTime varchar(32)
-    
+
     Declare @acqTimeStart datetime
     Declare @acqTimeEnd datetime
     Declare @acqLengthMinutes int
@@ -120,14 +120,14 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoXML', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     -----------------------------------------------------------
     -- Create temp tables to hold the data
     -----------------------------------------------------------
@@ -162,14 +162,14 @@ As
         ScanCount int NULL,
         ScanFilter varchar(256) NULL
     )
-    
+
     Declare @InstrumentFilesTable table (
         InstFilePath varchar(512) NOT NULL,     -- Relative file path of the instrument ifle
         InstFileHash varchar(64) NULL,
         InstFileHashType varchar(32) NULL,      -- Should always be SHA1
         InstFileSize bigint NULL
     )
-    
+
     Declare @DuplicateDatasetsTable Table (
         Dataset_ID int NOT NULL,
         MatchingFileCount int NOT NULL,
@@ -179,28 +179,28 @@ As
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @datasetID = IsNull(@datasetID, 0)
     Set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @validateDatasetType = IsNull(@validateDatasetType, 1)
-    
+
     ---------------------------------------------------
     -- Examine the XML to determine the dataset name and update or validate @datasetID
     ---------------------------------------------------
     --
-    Exec GetDatasetDetailsFromDatasetInfoXML 
-        @datasetInfoXML, 
-        @datasetID = @datasetID Output, 
-        @datasetName = @datasetName Output, 
-        @message = @message Output, 
+    Exec GetDatasetDetailsFromDatasetInfoXML
+        @datasetInfoXML,
+        @datasetID = @datasetID Output,
+        @datasetName = @datasetName Output,
+        @message = @message Output,
         @returnCode = @myError Output
 
     If @myError <> 0
     Begin
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Parse the contents of @datasetInfoXML to populate @DSInfoTable
     -- Skip the StartTime and EndTime values for now since they might have invalid dates
@@ -235,7 +235,7 @@ As
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,       
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,
             @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MS)[1]', 'real') AS TIC_Max_MS,
             @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MSn)[1]', 'real') AS TIC_Max_MSn,
             @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MS)[1]', 'real') AS BPI_Max_MS,
@@ -256,7 +256,7 @@ As
         set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Make sure Dataset_ID is up-to-date in @DSInfoTable
     ---------------------------------------------------
@@ -284,17 +284,17 @@ As
     Else
     Begin
         -- End Time is invalid
-        -- If the start time is valid, add the acquisition time length to the End time 
+        -- If the start time is valid, add the acquisition time length to the End time
         -- (though, typically, If one is invalid the other will be invalid too)
         -- IMS .UIMF files acquired in summer 2010 had StartTime values of 0410-08-29 (year 410) due to a bug
-                
+
         If Not @acqTimeStart Is Null
         Begin
             SELECT @acqTimeEnd = DateAdd(minute, AcqTimeMinutes, @acqTimeStart)
             FROM @DSInfoTable
         End
     End
-        
+
     UPDATE @DSInfoTable
     Set Acq_Time_Start = @acqTimeStart,
         Acq_Time_End = @acqTimeEnd
@@ -308,10 +308,10 @@ As
     SELECT ScanType, ScanCount, ScanFilter
     FROM ( SELECT xmlNode.value('.', 'varchar(64)') AS ScanType,
                   xmlNode.value('@ScanCount', 'int') AS ScanCount,
-                  xmlNode.value('@ScanFilterText', 'varchar(256)') AS ScanFilter        
+                  xmlNode.value('@ScanFilterText', 'varchar(256)') AS ScanFilter
            FROM @datasetInfoXML.nodes('/DatasetInfo/ScanTypes/ScanType') AS R(xmlNode)
     ) LookupQ
-    WHERE Not ScanType IS NULL     
+    WHERE Not ScanType IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -338,7 +338,7 @@ As
     Begin
         set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
-    End    
+    End
 
     ---------------------------------------------------
     -- Validate the hash type
@@ -351,20 +351,20 @@ As
     WHERE Not InstFileHashType In ('SHA1')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myRowCount > 1
     Begin
-        set @msg = 'Unrecognized file hash type: ' + @unrecognizedHashType + '; all rows in T_Dataset_File are assumed to be SHA1. ' + 
+        set @msg = 'Unrecognized file hash type: ' + @unrecognizedHashType + '; all rows in T_Dataset_File are assumed to be SHA1. ' +
                    'Will add the file info anyway, but this hashtype could be problematic elsewhere'
 
         Exec PostLogEntry 'Error', @msg, 'UpdateDatasetFileInfoXML'
-    End    
+    End
 
     ---------------------------------------------------
     -- Check whether this is a duplicate dataset
     -- Look for an existing dataset with the same file hash values but a different dataset ID
     ---------------------------------------------------
-    
+
     Declare @instrumentFileCount int = 0
 
     SELECT @instrumentFileCount = Count(*)
@@ -407,16 +407,16 @@ As
         If Exists (SELECT * FROM @DuplicateDatasetsTable WHERE MatchingFileCount >= @instrumentFileCount And Allow_Duplicates = 0)
         Begin
             SELECT TOP 1 @duplicateDatasetID = Dataset_ID
-            FROM @DuplicateDatasetsTable 
+            FROM @DuplicateDatasetsTable
             WHERE MatchingFileCount >= @instrumentFileCount And Allow_Duplicates = 0
             ORDER BY Dataset_ID Desc
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             -- Duplicate dataset found: DatasetID 693058 has the same instrument file as DatasetID 692115; see table T_Dataset_Files
-            Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' + 
-                                              Cast(@duplicateDatasetID As varchar(12)) + '; ' + 
-                                              'to allow this duplicate, set Allow_Duplicates to true for DatasetID ' + 
+            Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' +
+                                              Cast(@duplicateDatasetID As varchar(12)) + '; ' +
+                                              'to allow this duplicate, set Allow_Duplicates to true for DatasetID ' +
                                               Cast(@duplicateDatasetID As varchar(12)) + ' in table T_Dataset_Files'
 
             -- The message "Duplicate dataset found" is used by a SQL Server Agent job that notifies admins hourly if a duplicate dataset is uploaded
@@ -434,22 +434,22 @@ As
         If Exists (SELECT * FROM @DuplicateDatasetsTable WHERE MatchingFileCount >= @instrumentFileCount And Allow_Duplicates = 1)
         Begin
             SELECT TOP 1 @duplicateDatasetID = Dataset_ID
-            FROM @DuplicateDatasetsTable 
+            FROM @DuplicateDatasetsTable
             WHERE MatchingFileCount >= @instrumentFileCount And Allow_Duplicates = 1
             ORDER BY Dataset_ID Desc
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' + 
+            Set @duplicateDatasetInfoSuffix = ' has the same instrument file as DatasetID ' +
                                               Cast(@duplicateDatasetID As varchar(12)) + '; see table T_Dataset_Files'
-                                                          
-            Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: ' + 
+
+            Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: ' +
                        'DatasetID ' + Cast(@datasetIdText As varchar(12)) + @duplicateDatasetInfoSuffix
 
             Exec PostLogEntry 'Warning', @msg, 'UpdateDatasetFileInfoXML'
         End
     End
-    
+
     -----------------------------------------------
     -- Possibly update the separation type for the dataset
     -----------------------------------------------
@@ -489,16 +489,16 @@ As
         -----------------------------------------------
         -- Preview the data, then exit
         -----------------------------------------------
-        
+
         SELECT *, @separationType As Separation_Type, @optimalSeparationType as Optimal_Separation_Type
         FROM @DSInfoTable
 
         SELECT *
         FROM @ScanTypesTable
-        
+
         SELECT *
         FROM @InstrumentFilesTable
-        
+
         Exec UpdateDatasetDeviceInfoXML @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=1, @skipValidation=1
 
         Goto Done
@@ -510,7 +510,7 @@ As
 
     -- First look for any entries in the temporary table
     -- where Acq_Time_Start is Null while Acq_Time_End is defined
-    --    
+    --
     UPDATE @DSInfoTable
     SET Acq_Time_Start = Acq_Time_End
     WHERE Acq_Time_Start IS NULL AND NOT Acq_Time_End IS NULL
@@ -539,9 +539,9 @@ As
         Update @DSInfoTable
         Set Acq_Time_End = DateAdd(Hour, 1, Acq_Time_Start)
 
-        Set @message = 
-            'Acquisition length for dataset ' + @datasetName + ' is over 7 days; ' + 
-            'the Acq_Time_End value (' + Convert(varchar(24), @acqTimeEnd, 121) + ') is likely invalid, ' + 
+        Set @message =
+            'Acquisition length for dataset ' + @datasetName + ' is over 7 days; ' +
+            'the Acq_Time_End value (' + Convert(varchar(24), @acqTimeEnd, 121) + ') is likely invalid, ' +
             'relative to Acq_Time_Start (' + Convert(varchar(24), @acqTimeStart, 121) + '); ' +
             'setting Acq_Time_End to be 60 minutes after Acq_Time_Start'
 
@@ -551,22 +551,22 @@ As
     -----------------------------------------------
     -- Update T_Dataset with any new or changed values
     -- If Acq_Time_Start Is Null or is <= 1/1/1900 then
-    --  the DS_Created time is used for both 
+    --  the DS_Created time is used for both
     --  Acq_Time_Start and Acq_Time_End
     -----------------------------------------------
-    
+
     UPDATE T_Dataset
     SET Acq_Time_Start= CASE WHEN IsNull(NewInfo.Acq_Time_Start, '1/1/1900') <= '1/1/1900'
-                        THEN DS.DS_Created 
+                        THEN DS.DS_Created
                         ELSE NewInfo.Acq_Time_Start END,
-        Acq_Time_End =  CASE WHEN IsNull(NewInfo.Acq_Time_Start, '1/1/1900') <= '1/1/1900' 
-                        THEN DS.DS_Created 
+        Acq_Time_End =  CASE WHEN IsNull(NewInfo.Acq_Time_Start, '1/1/1900') <= '1/1/1900'
+                        THEN DS.DS_Created
                         ELSE NewInfo.Acq_Time_End END,
-        Scan_Count = NewInfo.ScanCount, 
-        File_Size_Bytes = NewInfo.FileSizeBytes, 
-        File_Info_Last_Modified = GetDate()        
-    FROM @DSInfoTable NewInfo INNER JOIN 
-         T_Dataset DS ON 
+        Scan_Count = NewInfo.ScanCount,
+        File_Size_Bytes = NewInfo.FileSizeBytes,
+        File_Info_Last_Modified = GetDate()
+    FROM @DSInfoTable NewInfo INNER JOIN
+         T_Dataset DS ON
           NewInfo.Dataset_Name = DS.Dataset_Num
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -575,16 +575,16 @@ As
     Begin
         set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
-    End    
+    End
 
     -----------------------------------------------
     -- Add/Update T_Dataset_Info using a MERGE statement
     -----------------------------------------------
     --
     MERGE T_Dataset_Info AS target
-    USING 
+    USING
         (Select Dataset_ID, ScanCountMS, ScanCountMSn,
-                Elution_Time_Max, AcqTimeMinutes, 
+                Elution_Time_Max, AcqTimeMinutes,
                 TIC_Max_MS, TIC_Max_MSn,
                 BPI_Max_MS, BPI_Max_MSn,
                 TIC_Median_MS, TIC_Median_MSn,
@@ -593,7 +593,7 @@ As
                 CentroidScanCount_MS, CentroidScanCount_MSn
          FROM @DSInfoTable
         ) AS Source (Dataset_ID, ScanCountMS, ScanCountMSn,
-                     Elution_Time_Max, AcqTimeMinutes, 
+                     Elution_Time_Max, AcqTimeMinutes,
                      TIC_Max_MS, TIC_Max_MSn,
                      BPI_Max_MS, BPI_Max_MSn,
                      TIC_Median_MS, TIC_Median_MSn,
@@ -601,8 +601,8 @@ As
                      ProfileScanCount_MS, ProfileScanCount_MSn,
                      CentroidScanCount_MS, CentroidScanCount_MSn)
     ON (target.Dataset_ID = Source.Dataset_ID)
-    WHEN Matched 
-        THEN UPDATE 
+    WHEN Matched
+        THEN UPDATE
             Set ScanCountMS = Source.ScanCountMS,
                 ScanCountMSn = Source.ScanCountMSn,
                 Elution_Time_Max = Source.Elution_Time_Max,
@@ -620,12 +620,12 @@ As
                 CentroidScanCount_MSn = Source.CentroidScanCount_MSn,
                 Last_Affected = GetDate()
     WHEN Not Matched THEN
-        INSERT (Dataset_ID, ScanCountMS, 
-                ScanCountMSn, Elution_Time_Max, 
-                TIC_Max_MS, TIC_Max_MSn, 
-                BPI_Max_MS, BPI_Max_MSn, 
-                TIC_Median_MS, TIC_Median_MSn, 
-                BPI_Median_MS, BPI_Median_MSn, 
+        INSERT (Dataset_ID, ScanCountMS,
+                ScanCountMSn, Elution_Time_Max,
+                TIC_Max_MS, TIC_Max_MSn,
+                BPI_Max_MS, BPI_Max_MSn,
+                TIC_Median_MS, TIC_Median_MSn,
+                BPI_Median_MS, BPI_Median_MSn,
                 ProfileScanCount_MS, ProfileScanCount_MSn,
                 CentroidScanCount_MS, CentroidScanCount_MSn,
                 Last_Affected )
@@ -645,11 +645,11 @@ As
     Begin
         set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
-    End    
+    End
 
     -----------------------------------------------
     -- Cannot use a Merge statement on T_Dataset_ScanTypes
-    --  since some datasets (e.g. MRM) will have multiple entries 
+    --  since some datasets (e.g. MRM) will have multiple entries
     --  of the same scan type but different ScanFilter values
     -- Instead, delete existing rows then add new ones
     -----------------------------------------------
@@ -670,7 +670,7 @@ As
     Begin
         set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
         Goto Done
-    End    
+    End
 
     -----------------------------------------------
     -- Update the Scan_Types field in T_Dataset_Info for this dataset
@@ -690,18 +690,18 @@ As
     -----------------------------------------------
     --
     MERGE T_Dataset_Files As target
-    USING 
+    USING
         (SELECT @datasetID, InstFilePath, InstFileSize, InstFileHash
          FROM @InstrumentFilesTable
         ) AS Source (Dataset_ID, InstFilePath, InstFileSize, InstFileHash)
     ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath)
-    WHEN Matched 
-        THEN UPDATE 
+    WHEN Matched
+        THEN UPDATE
             Set File_Size_Bytes = Source.InstFileSize,
                 File_Hash = Source.InstFileHash,
                 Deleted = 0
     WHEN Not Matched THEN
-        INSERT (Dataset_ID, File_Path, 
+        INSERT (Dataset_ID, File_Path,
                 File_Size_Bytes, File_Hash)
         VALUES (Source.Dataset_ID, Source.InstFilePath, Source.InstFileSize, Source.InstFileHash)
     ;
@@ -723,7 +723,7 @@ As
               Target.File_Path = Source.InstFilePath
     WHERE Target.Dataset_ID = @datasetID AND
           Target.Deleted = 0 AND
-          Source.InstFilePath IS NULL     
+          Source.InstFilePath IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -739,12 +739,12 @@ As
                              File_Size_Bytes,
                              File_Hash,
                              Dataset_File_ID,
-                             Row_Number() OVER ( 
-                                PARTITION BY Dataset_ID 
-                                ORDER BY Deleted ASC, File_Size_Bytes DESC 
+                             Row_Number() OVER (
+                                PARTITION BY Dataset_ID
+                                ORDER BY Deleted ASC, File_Size_Bytes DESC
                                 ) AS Size_Rank
                       FROM T_Dataset_Files
-                      WHERE Dataset_ID = @datasetID 
+                      WHERE Dataset_ID = @datasetID
                     ) SrcQ
            ON Target.Dataset_File_ID = SrcQ.Dataset_File_ID
     --
@@ -758,7 +758,7 @@ As
     Begin
         exec dbo.ValidateDatasetType @datasetID, @message=@message output, @infoonly=@infoOnly
     End
-    
+
     -----------------------------------------------
     -- Add/update T_Dataset_Device_Map
     -----------------------------------------------
@@ -766,7 +766,7 @@ As
     Exec UpdateDatasetDeviceInfoXML @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=0, @skipValidation=1
 
     Set @message = 'Dataset info update successful'
-    
+
 Done:
 
     -- Note: ignore error code 53600; a log message has already been made
@@ -774,13 +774,13 @@ Done:
     Begin
         If @message = ''
             Set @message = 'Error in UpdateDatasetFileInfoXML'
-        
+
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
-        
+
         If @InfoOnly = 0
             Exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML'
     End
-    
+
     If Len(@message) > 0 AND @InfoOnly <> 0
         Print @message
 

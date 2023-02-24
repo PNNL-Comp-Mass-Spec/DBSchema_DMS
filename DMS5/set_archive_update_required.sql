@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[SetArchiveUpdateRequired]
 /****************************************************
 **
@@ -25,7 +24,7 @@ CREATE PROCEDURE [dbo].[SetArchiveUpdateRequired]
     @datasetNum varchar(128),
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0
@@ -110,7 +109,6 @@ Done:
     Exec PostUsageLogEntry 'SetArchiveUpdateRequired', @UsageMessage
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [DDL_Viewer] AS [dbo]

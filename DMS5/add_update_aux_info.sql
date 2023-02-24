@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
 /****************************************************
 **
@@ -41,7 +40,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfo]
     @mode varchar(12) = 'add',              -- add, update, check_add, check_update, or check_only
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int= 0
@@ -84,7 +83,7 @@ As
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
-    
+
     Set @targetName = Ltrim(Rtrim(Coalesce(@targetName, '')))
     Set @targetEntityName = Ltrim(Rtrim(Coalesce(@targetEntityName, '')))
     Set @categoryName = Ltrim(Rtrim(Coalesce(@categoryName, '')))
@@ -104,14 +103,14 @@ As
     ---------------------------------------------------
 
     Declare @targetID int = 0
-    
+
     Set @targetID = Try_Parse(@targetEntityName as int)
 
     If @targetName = 'SamplePrepRequest' And @targetID Is Null
     Begin
         Set @msg = 'Cannot update aux info for the sample prep request since argument @targetEntityName is not an integer: ' + @targetEntityName
         RAISERROR (@msg, 11, 1)
-    End 
+    End
     Else If @targetID Is Null
     Begin -- <a1>
         ---------------------------------------------------
@@ -330,7 +329,6 @@ As
     End CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfo] TO [DDL_Viewer] AS [dbo]

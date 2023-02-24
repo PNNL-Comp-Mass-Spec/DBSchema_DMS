@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCachedRequestedRunBatchStats]
 /****************************************************
 **
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedRequestedRunBatchStats]
     @batchID Int = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
     Set ansi_warnings off
 
@@ -263,6 +262,5 @@ As
     ;
 
     Return @myError
-
 
 GO

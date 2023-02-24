@@ -3,25 +3,24 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[DoMaterialItemOperation]
+CREATE PROCEDURE [dbo].[DoMaterialItemOperation]
 /****************************************************
 **
 **  Desc: Do an operation on an item, using the item name
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Auth: grk
-**  Date: 07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
-**        10/01/2009 mem - Expanded error message
-**        08/19/2010 grk - Add try-catch for error handling
-**        02/23/2016 mem - Add Set XACT_ABORT on
-**        04/12/2017 mem - Log exceptions to T_Log_Entries
-**        06/16/2017 mem - Restrict access using VerifySPAuthorized
-**        08/01/2017 mem - Use THROW if not authorized
-**        09/25/2019 mem - Allow @name to be an experiment ID, which happens if "Retire Experiment" is clicked at https://dms2.pnl.gov/experimentid/show/123456
-**        05/24/2022 mem - Validate parameters
-**    
+**  Auth:   grk
+**  Date:   07/23/2008 grk - Initial version (ticket http://prismtrac.pnl.gov/trac/ticket/603)
+**          10/01/2009 mem - Expanded error message
+**          08/19/2010 grk - Add try-catch for error handling
+**          02/23/2016 mem - Add Set XACT_ABORT on
+**          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**          09/25/2019 mem - Allow @name to be an experiment ID, which happens if "Retire Experiment" is clicked at https://dms2.pnl.gov/experimentid/show/123456
+**          05/24/2022 mem - Validate parameters
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
 *****************************************************/
@@ -31,12 +30,12 @@ CREATE Procedure [dbo].[DoMaterialItemOperation]
     @message varchar(512) output,
     @callingUser varchar (128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @logErrors Tinyint = 0
     Declare @msg varchar(512)
     Declare @experimentID int
@@ -46,15 +45,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoMaterialItemOperation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin TRY 
+    Begin TRY
 
     ---------------------------------------------------
     -- Verify input values
@@ -74,7 +73,7 @@ As
         Set @msg = 'Material item operation mode must be retire_biomaterial or retire_experiment, not ' + @mode
         RAISERROR (@msg, 11, 1)
     End
-    
+
     If @name = ''
     Begin
         Set @msg = 'Material name not defined; cannot retire'
@@ -94,7 +93,7 @@ As
         --
         SELECT @tmpID = CC_ID
         FROM T_Cell_Culture
-        WHERE CC_Name = @name    
+        WHERE CC_Name = @name
     End
 
     If @mode = 'retire_experiment'
@@ -115,7 +114,7 @@ As
             WHERE Experiment_Num = @name
         End
     End
-    
+
     If @tmpID = 0
     Begin
         Set @msg = 'Could not find the material item for mode "' + @mode + '", name "' + @name + '"'
@@ -130,7 +129,7 @@ As
         -- Call the material update function
         ---------------------------------------------------
         --
-        Declare 
+        Declare
             @iMode varchar(32),
             @itemList varchar(4096),
             @itemType varchar(128),
@@ -151,7 +150,7 @@ As
                 @comment,
                 @msg output,
                 @callingUser
-        
+
         If @myError <> 0
         Begin
             RAISERROR (@msg, 11, 1)
@@ -159,13 +158,13 @@ As
     End
 
     End TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
+
         If @logErrors > 0
         Begin
             Exec PostLogEntry 'Error', @message, 'DoMaterialItemOperation'

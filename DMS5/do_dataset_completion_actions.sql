@@ -3,17 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[DoDatasetCompletionActions]
+CREATE PROCEDURE [dbo].[DoDatasetCompletionActions]
 /****************************************************
 **
 **  Desc: Sets state of dataset record given by @datasetNum
-**        according to given completion code and 
+**        according to given completion code and
 **        adjusts related database entries accordingly.
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters: 
+**  Parameters:
 **
 **  Auth:   grk
 **  Date:   11/04/2002
@@ -26,30 +25,30 @@ CREATE Procedure [dbo].[DoDatasetCompletionActions]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/08/2018 mem - Add state 14 (Duplicate dataset files)
-**    
+**
 *****************************************************/
 (
     @datasetNum varchar(128),
     @completionState int = 0, -- 3 (complete), 5 (capture failed), 6 (received), 8 (prep. failed), 9 (not ready), 14 (Duplicate Dataset Files)
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     declare @myError int = 0
     declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     declare @datasetID int
     declare @datasetState int
-    declare @datasetRating smallint 
+    declare @datasetRating smallint
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoDatasetCompletionActions', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -73,7 +72,7 @@ As
         set @message = 'Could not get dataset ID for dataset ' + @datasetNum
         goto done
     end
-    
+
     ---------------------------------------------------
     -- verify that datset is in correct state
     ---------------------------------------------------
@@ -101,8 +100,8 @@ As
         set @message = 'Transition 2 not allowed: ' + @datasetNum
         goto done
     end
-    
- 
+
+
     ---------------------------------------------------
     -- Set up proper compression state
     -- Note: as of February 2010, datasets no longer go through "prep"
@@ -112,7 +111,7 @@ As
     declare @compressonState int
     declare @compressionDate datetime
     --
-    -- if dataset is in preparation, 
+    -- if dataset is in preparation,
     -- compression fields must be marked with values
     -- appropriate to success or failure
     --
@@ -129,7 +128,7 @@ As
                 set @compressionDate = getdate()
             end
     end
-    
+
     --
     ---------------------------------------------------
     -- Start transaction
@@ -138,17 +137,17 @@ As
     declare @transName varchar(32)
     set @transName = 'SetCaptureComplete'
     begin transaction @transName
-    
+
     ---------------------------------------------------
     -- Update state of dataset
     ---------------------------------------------------
     --
-    UPDATE T_Dataset 
-    SET 
+    UPDATE T_Dataset
+    SET
         DS_state_ID = @completionState,
-        DS_Comp_State = @compressonState, 
+        DS_Comp_State = @compressonState,
         DS_Compress_Date = @compressionDate
-    WHERE 
+    WHERE
         (Dataset_ID = @datasetID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -160,9 +159,9 @@ As
         set @message = 'Update was unsuccessful for dataset ' + @datasetNum
         goto done
     end
-    
+
     ---------------------------------------------------
-    -- Skip further changes if completion was anything 
+    -- Skip further changes if completion was anything
     -- other than normal completion
     ---------------------------------------------------
 
@@ -187,9 +186,9 @@ As
         set @message = 'Update was unsuccessful for archive table ' + @datasetNum
         goto done
     end
-    
+
     commit transaction @transName
-    
+
     ---------------------------------------------------
     -- Schedule default analyses for this dataset
     -- Call SchedulePredefinedAnalyses even if the rating is -10 = Unreviewed
@@ -202,12 +201,11 @@ As
     ---------------------------------------------------
     --
 Done:
-    if @message <> '' 
+    if @message <> ''
     begin
         RAISERROR (@message, 10, 1)
     end
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoDatasetCompletionActions] TO [DDL_Viewer] AS [dbo]

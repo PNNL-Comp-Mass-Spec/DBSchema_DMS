@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 /****************************************************
 **
@@ -115,7 +114,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
     @autoRemoveNotReleasedDatasets tinyint = 0,
     @callingUser varchar(128)=''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError INT = 0
@@ -570,7 +569,7 @@ As
     Begin
         RAISERROR ('Use a data package to define datasets when performing a match-between-runs search with MaxQuant', 11, 4)
     End
-    
+
     ---------------------------------------------------
     -- If mode is add, force @state to 'new'
     ---------------------------------------------------
@@ -771,7 +770,6 @@ As
 
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [DDL_Viewer] AS [dbo]

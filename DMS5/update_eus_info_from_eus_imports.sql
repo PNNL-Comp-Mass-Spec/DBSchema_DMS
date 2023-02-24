@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateEUSInfoFromEUSImports]
+CREATE PROCEDURE [dbo].[UpdateEUSInfoFromEUSImports]
 /****************************************************
 **
 **  Desc:
@@ -27,7 +26,7 @@ CREATE Procedure [dbo].[UpdateEUSInfoFromEUSImports]
     @updateUsersOnInactiveProposals tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -114,7 +113,6 @@ As
     Exec PostUsageLogEntry 'UpdateEUSInfoFromEUSImports', @usageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DDL_Viewer] AS [dbo]

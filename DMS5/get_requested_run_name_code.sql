@@ -52,9 +52,9 @@ BEGIN
                     CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
                     IsNull(@separationType, '')
                 ELSE
-                    CASE WHEN Coalesce(@batchGroupID, 0) > 0 
-                         THEN CAST(@batchGroupID AS VarChar(12)) + '_' 
-                         ELSE '' 
+                    CASE WHEN Coalesce(@batchGroupID, 0) > 0
+                         THEN CAST(@batchGroupID AS VarChar(12)) + '_'
+                         ELSE ''
                     END +
                     SUBSTRING(@batchName, 1, 3) + '_' +
                     CONVERT(varchar(10), @batchCreated, 112) + '_' +

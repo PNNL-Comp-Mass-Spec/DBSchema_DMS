@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[SyncJobParamAndSettingsWithRequest]
 /****************************************************
 **
@@ -29,7 +28,7 @@ CREATE PROCEDURE [dbo].[SyncJobParamAndSettingsWithRequest]
     @infoOnly tinyint = 0,
     @message varchar(255) = '' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int

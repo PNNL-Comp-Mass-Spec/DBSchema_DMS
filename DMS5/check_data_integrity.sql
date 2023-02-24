@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CheckDataIntegrity]
 /****************************************************
 **
@@ -11,11 +10,11 @@ CREATE PROCEDURE [dbo].[CheckDataIntegrity]
 **          Intended to be run daily with @logErrors = 1
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   mem
 **  Date:   06/10/2016 mem - Initial Version
 **          06/12/2018 mem - Send @maxLength to AppendToText
-**    
+**
 *****************************************************/
 (
     @logErrors tinyint = 1,
@@ -34,13 +33,13 @@ AS
     ----------------------------------------------------------
     -- Validate the inputs
     ----------------------------------------------------------
-    
+
     Set @logErrors = IsNull(@logErrors, 1)
     Set @message = ''
 
     ----------------------------------------------------------
     -- Look for datasets that map to multiple requested runs
-    ----------------------------------------------------------    
+    ----------------------------------------------------------
 
     Declare @datasetCount int
     Declare @firstDatasetID int
@@ -70,10 +69,10 @@ AS
             Exec PostLogEntry 'Error', @errMsg, 'CheckDataIntegrity'
             Print @errMsg
         End
-        
+
         set @message = dbo.AppendToText(@message, @errMsg, 0, '; ', 512)
-    End    
-    
+    End
+
      ---------------------------------------------------
     -- Done
      ---------------------------------------------------

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
 /****************************************************
 **
@@ -36,7 +35,7 @@ CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
     @userID int output,                         -- Output: user_id for @ownerUsername
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -222,6 +221,5 @@ As
     END CATCH
 
     return @myError
-
 
 GO

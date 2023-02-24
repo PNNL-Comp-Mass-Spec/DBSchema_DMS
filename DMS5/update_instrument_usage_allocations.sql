@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocations]
 /****************************************************
 **
@@ -49,7 +48,7 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocations]
     @callingUser varchar(128) = '',
     @infoOnly tinyint = 0                    -- Set to 1 to preview the changes that would be made
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int = 0
@@ -307,7 +306,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageAllocations] TO [DDL_Viewer] AS [dbo]

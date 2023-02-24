@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateSeparationType]
 /****************************************************
 **
@@ -29,7 +28,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSeparationType]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -63,13 +62,13 @@ As
     End
 
     ---------------------------------------------------
-	-- Convert text state to integer
+    -- Convert text state to integer
     ---------------------------------------------------
     Declare @stateInt integer = 0
-	If @state = 'Active'
-		Set @stateInt = 1
-	Else
-		Set @stateInt = 0
+    If @state = 'Active'
+        Set @stateInt = 1
+    Else
+        Set @stateInt = 0
 
     ---------------------------------------------------
     -- Validate the cart configuration name
@@ -96,13 +95,13 @@ As
     End
 
     ---------------------------------------------------
-	-- Validate the sample type and get the ID
+    -- Validate the sample type and get the ID
     ---------------------------------------------------
-	Declare @sampleTypeID integer = 0
-	Begin
-		SELECT @sampleTypeID = SampleType_ID
-		FROM T_Secondary_Sep_SampleType
-		WHERE Name = @sampleType
+    Declare @sampleTypeID integer = 0
+    Begin
+        SELECT @sampleTypeID = SampleType_ID
+        FROM T_Secondary_Sep_SampleType
+        WHERE Name = @sampleType
 
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -112,7 +111,7 @@ As
             RAISERROR (@message, 10, 1)
             Return 51007
         End
-	End
+    End
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
@@ -293,7 +292,6 @@ As
     End -- update mode
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSeparationType] TO [DDL_Viewer] AS [dbo]

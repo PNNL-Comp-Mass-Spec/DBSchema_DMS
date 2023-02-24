@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
+CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobProcessors]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Analysis_Job_Processors
@@ -12,299 +12,299 @@ CREATE PROCEDURE dbo.AddUpdateAnalysisJobProcessors
 **
 **  Parameters:
 **
-** Auth:	grk
-** Date:	02/15/2007 (ticket 389)
+** Auth:    grk
+** Date:    02/15/2007 (ticket 389)
 **          02/23/2007 grk - added @AnalysisToolsList stuff
-**			03/15/2007 mem - Tweaked invalid tool name error message
-**			02/13/2008 mem - Now assuring that @AnalysisToolsList results in a non-redundant list of analysis tool names (Ticket #643)
-**			03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
-**			06/13/2017 mem - Use SCOPE_IDENTITY()
-**			06/16/2017 mem - Restrict access using VerifySPAuthorized
-**			08/01/2017 mem - Use THROW if not authorized
-**    
+**          03/15/2007 mem - Tweaked invalid tool name error message
+**          02/13/2008 mem - Now assuring that @AnalysisToolsList results in a non-redundant list of analysis tool names (Ticket #643)
+**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
+**          06/13/2017 mem - Use SCOPE_IDENTITY()
+**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          08/01/2017 mem - Use THROW if not authorized
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-	@ID int output,
-	@State char(1),
-	@ProcessorName varchar(64),
-	@Machine varchar(64),
-	@Notes varchar(512),
-	@AnalysisToolsList varchar(1024),
-	@mode varchar(12) = 'add', -- or 'update'
-	@message varchar(512) output,
-	@callingUser varchar(128) = ''
+    @ID int output,
+    @State char(1),
+    @ProcessorName varchar(64),
+    @Machine varchar(64),
+    @Notes varchar(512),
+    @AnalysisToolsList varchar(1024),
+    @mode varchar(12) = 'add', -- or 'update'
+    @message varchar(512) output,
+    @callingUser varchar(128) = ''
 )
-As
-	set nocount on
+AS
+    set nocount on
 
-	declare @myError int = 0
-	declare @myRowCount int = 0
-	
-	set @message = ''
+    declare @myError int = 0
+    declare @myRowCount int = 0
 
-	---------------------------------------------------
-	-- Verify that the user can execute this procedure from the given client host
-	---------------------------------------------------
-		
-	Declare @authorized tinyint = 0	
-	Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobProcessors', @raiseError = 1
-	If @authorized = 0
-	Begin
-		THROW 51000, 'Access denied', 1;
-	End
+    set @message = ''
 
-	---------------------------------------------------
-	-- Create temporary table to hold list of analysis tools
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
 
-	CREATE TABLE #TD (
-		ToolName varchar(128),
-		ToolID int null
-	)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Failed to create temporary table'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+    Declare @authorized tinyint = 0
+    Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobProcessors', @raiseError = 1
+    If @authorized = 0
+    Begin
+        THROW 51000, 'Access denied', 1;
+    End
 
-	---------------------------------------------------
-	-- Populate table from dataset list  
-	---------------------------------------------------
-	--
-	INSERT INTO #TD
-		(ToolName)
-	SELECT
-		DISTINCT Item
-	FROM
-		MakeTableFromList(@AnalysisToolsList)
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error populating temporary table'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+    ---------------------------------------------------
+    -- Create temporary table to hold list of analysis tools
+    ---------------------------------------------------
 
-	---------------------------------------------------
-	-- Get tool ID for each tool in temp table  
-	---------------------------------------------------
-	--
-	UPDATE T  
-	SET T.ToolID = AJT_toolID
-	FROM #TD T INNER JOIN T_Analysis_Tool ON T.ToolName = AJT_toolName
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error updating temporary table'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
+    CREATE TABLE #TD (
+        ToolName varchar(128),
+        ToolID int null
+    )
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Failed to create temporary table'
+        RAISERROR (@message, 10, 1)
+        return 51007
+    end
 
-	---------------------------------------------------
-	-- Any invalid tool names?
-	---------------------------------------------------
-	--
-	declare @tmp int
-	set @tmp = -1
-	--
-	SELECT @tmp = count(*)
-	FROM #TD
-	WHERE ToolID is null
-	--
-	SELECT @myError = @@error, @myRowCount = @@rowcount
-	--
-	if @myError <> 0
-	begin
-		set @message = 'Error looking for invalid tool names'
-		RAISERROR (@message, 10, 1)
-		return 51007
-	end
-	--
-	if @tmp <> 0
-	begin
-		SELECT TOP 1 @message = ToolName
-		FROM #TD
-		WHERE ToolID is null
-		
-		set @message = 'Invalid tool name: ' + IsNull(@message, '??')
-		RAISERROR (@message, 10, 1)
-		return 51008
-	end
+    ---------------------------------------------------
+    -- Populate table from dataset list
+    ---------------------------------------------------
+    --
+    INSERT INTO #TD
+        (ToolName)
+    SELECT
+        DISTINCT Item
+    FROM
+        MakeTableFromList(@AnalysisToolsList)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error populating temporary table'
+        RAISERROR (@message, 10, 1)
+        return 51007
+    end
 
-	---------------------------------------------------
-	-- Is entry already in database? (only applies to updates)
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- Get tool ID for each tool in temp table
+    ---------------------------------------------------
+    --
+    UPDATE T
+    SET T.ToolID = AJT_toolID
+    FROM #TD T INNER JOIN T_Analysis_Tool ON T.ToolName = AJT_toolName
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error updating temporary table'
+        RAISERROR (@message, 10, 1)
+        return 51007
+    end
 
-	if @mode = 'update'
-	begin
-		-- cannot update a non-existent entry
-		--
-		set @tmp = 0
-		--
-		SELECT @tmp = ID
-		FROM  T_Analysis_Job_Processors
-		WHERE (ID = @ID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0 OR @tmp = 0
-		begin
-			set @message = 'Cannot update processor ID ' + Convert(varchar(12), @ID) + '; existing entry not found in the database'
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
-	end
+    ---------------------------------------------------
+    -- Any invalid tool names?
+    ---------------------------------------------------
+    --
+    declare @tmp int
+    set @tmp = -1
+    --
+    SELECT @tmp = count(*)
+    FROM #TD
+    WHERE ToolID is null
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+    --
+    if @myError <> 0
+    begin
+        set @message = 'Error looking for invalid tool names'
+        RAISERROR (@message, 10, 1)
+        return 51007
+    end
+    --
+    if @tmp <> 0
+    begin
+        SELECT TOP 1 @message = ToolName
+        FROM #TD
+        WHERE ToolID is null
 
-	---------------------------------------------------
-	-- set up transaction name
-	---------------------------------------------------
-	declare @transName varchar(32)
-	set @transName = 'AddUpdateAnalysisJobProcessors'
+        set @message = 'Invalid tool name: ' + IsNull(@message, '??')
+        RAISERROR (@message, 10, 1)
+        return 51008
+    end
 
-	---------------------------------------------------
-	-- action for add mode
-	---------------------------------------------------
-	if @Mode = 'add'
-	begin
-		---------------------------------------------------
-		-- start transaction
-		--
-		begin transaction @transName
+    ---------------------------------------------------
+    -- Is entry already in database? (only applies to updates)
+    ---------------------------------------------------
 
-		INSERT INTO T_Analysis_Job_Processors (
-			State, 
-			Processor_Name, 
-			Machine, 
-			Notes
-		) VALUES (
-			@State, 
-			@ProcessorName, 
-			@Machine, 
-			@Notes
-		)
-		/**/
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Insert operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51007
-		end
+    if @mode = 'update'
+    begin
+        -- cannot update a non-existent entry
+        --
+        set @tmp = 0
+        --
+        SELECT @tmp = ID
+        FROM  T_Analysis_Job_Processors
+        WHERE (ID = @ID)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0 OR @tmp = 0
+        begin
+            set @message = 'Cannot update processor ID ' + Convert(varchar(12), @ID) + '; existing entry not found in the database'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        end
+    end
 
-		-- return ID of newly created entry
-		--
-		set @ID = SCOPE_IDENTITY()
+    ---------------------------------------------------
+    -- set up transaction name
+    ---------------------------------------------------
+    declare @transName varchar(32)
+    set @transName = 'AddUpdateAnalysisJobProcessors'
 
-		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
-		If Len(@callingUser) > 0
-			Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
+    ---------------------------------------------------
+    -- action for add mode
+    ---------------------------------------------------
+    if @Mode = 'add'
+    begin
+        ---------------------------------------------------
+        -- start transaction
+        --
+        begin transaction @transName
 
-	end -- add mode
+        INSERT INTO T_Analysis_Job_Processors (
+            State,
+            Processor_Name,
+            Machine,
+            Notes
+        ) VALUES (
+            @State,
+            @ProcessorName,
+            @Machine,
+            @Notes
+        )
+        /**/
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            rollback transaction @transName
+            set @message = 'Insert operation failed'
+            RAISERROR (@message, 10, 1)
+            return 51007
+        end
 
-	---------------------------------------------------
-	-- action for update mode
-	---------------------------------------------------
-	--
-	if @Mode = 'update' 
-	begin
-		set @myError = 0
+        -- return ID of newly created entry
+        --
+        set @ID = SCOPE_IDENTITY()
 
-		---------------------------------------------------
-		-- start transaction
-		--
-		begin transaction @transName
+        -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
+        If Len(@callingUser) > 0
+            Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
 
-		UPDATE T_Analysis_Job_Processors 
-		SET 
-			State = @State, 
-			Processor_Name = @ProcessorName, 
-			Machine = @Machine, 
-			Notes = @Notes
-		WHERE (ID = @ID)
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Update operation failed: "' + @ID + '"'
-			RAISERROR (@message, 10, 1)
-			return 51004
-		end
+    end -- add mode
 
-		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
-		If Len(@callingUser) > 0
-			Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
+    ---------------------------------------------------
+    -- action for update mode
+    ---------------------------------------------------
+    --
+    if @Mode = 'update'
+    begin
+        set @myError = 0
 
-	end -- update mode
+        ---------------------------------------------------
+        -- start transaction
+        --
+        begin transaction @transName
 
-	---------------------------------------------------
-	-- action for both modes
-	---------------------------------------------------
+        UPDATE T_Analysis_Job_Processors
+        SET
+            State = @State,
+            Processor_Name = @ProcessorName,
+            Machine = @Machine,
+            Notes = @Notes
+        WHERE (ID = @ID)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            rollback transaction @transName
+            set @message = 'Update operation failed: "' + @ID + '"'
+            RAISERROR (@message, 10, 1)
+            return 51004
+        end
 
-	if @Mode = 'add' or @Mode = 'update' 
-	begin
-		---------------------------------------------------
-		-- remove any references to tools that are not in the list
-		--
-		DELETE FROM T_Analysis_Job_Processor_Tools
-		WHERE Processor_ID = @ID AND Tool_ID NOT IN (SELECT ToolID FROM #TD)		
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Remove tool reference operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51004
-		end
+        -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
+        If Len(@callingUser) > 0
+            Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
 
-		---------------------------------------------------
-		-- add references to tools that are in the list, but not in the table
-		--
-		INSERT INTO T_Analysis_Job_Processor_Tools
-			(Tool_ID, Processor_ID)
-		SELECT	ToolID, @ID
-		FROM #TD	
-		WHERE NOT ToolID IN
-			(
-				SELECT Tool_ID
-				FROM T_Analysis_Job_Processor_Tools
-				WHERE (Processor_ID = @ID)	
-			)	
-		--
-		SELECT @myError = @@error, @myRowCount = @@rowcount
-		--
-		if @myError <> 0
-		begin
-			rollback transaction @transName
-			set @message = 'Add tool reference operation failed'
-			RAISERROR (@message, 10, 1)
-			return 51004
-		end
-		
-		-- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Tools
-		If Len(@callingUser) > 0
-			Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Tools', 'Processor_ID', @ID, @CallingUser
-			
-		commit transaction @transName
-	end -- add or update mode
+    end -- update mode
 
-	return @myError
+    ---------------------------------------------------
+    -- action for both modes
+    ---------------------------------------------------
+
+    if @Mode = 'add' or @Mode = 'update'
+    begin
+        ---------------------------------------------------
+        -- remove any references to tools that are not in the list
+        --
+        DELETE FROM T_Analysis_Job_Processor_Tools
+        WHERE Processor_ID = @ID AND Tool_ID NOT IN (SELECT ToolID FROM #TD)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            rollback transaction @transName
+            set @message = 'Remove tool reference operation failed'
+            RAISERROR (@message, 10, 1)
+            return 51004
+        end
+
+        ---------------------------------------------------
+        -- add references to tools that are in the list, but not in the table
+        --
+        INSERT INTO T_Analysis_Job_Processor_Tools
+            (Tool_ID, Processor_ID)
+        SELECT  ToolID, @ID
+        FROM #TD
+        WHERE NOT ToolID IN
+            (
+                SELECT Tool_ID
+                FROM T_Analysis_Job_Processor_Tools
+                WHERE (Processor_ID = @ID)
+            )
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        if @myError <> 0
+        begin
+            rollback transaction @transName
+            set @message = 'Add tool reference operation failed'
+            RAISERROR (@message, 10, 1)
+            return 51004
+        end
+
+        -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Tools
+        If Len(@callingUser) > 0
+            Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Tools', 'Processor_ID', @ID, @CallingUser
+
+        commit transaction @transName
+    end -- add or update mode
+
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DDL_Viewer] AS [dbo]

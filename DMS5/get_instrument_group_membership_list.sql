@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetInstrumentGroupMembershipList]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Builds delimited list of associated instruments
 **      for given instrument group
 **
@@ -17,7 +16,7 @@ CREATE FUNCTION [dbo].[GetInstrumentGroupMembershipList]
 **  Date:   08/30/2010 grk - Initial version
 **          11/18/2019 mem - Add parameters @activeOnly and @maximumLength
 **          02/18/2021 mem - Add @activeOnly=2 which formats the instruments as a vertical bar separated list of instrument name and instrument ID
-**    
+**
 *****************************************************/
 (
     @instrumentGroup varchar(64),
@@ -28,7 +27,7 @@ RETURNS varchar(4000)
 AS
     BEGIN
         Declare @list varchar(4000) = ''
-        
+
         -- When @activeOnly is 2, the instrument list will be in the form:
         -- InstrumentName:InstrumentID|InstrumentName:InstrumentID|InstrumentName:InstrumentID
         -- Additionally, if the instrument is inactive of offsite, the instrument name will show that in parentheses, with inactive taking precedence
@@ -51,8 +50,8 @@ AS
             Set @maximumLength = 10
         End
 
-        SELECT @list = @list + CASE WHEN @list = '' THEN '' ELSE @delimiter END + 
-                       IN_name + 
+        SELECT @list = @list + CASE WHEN @list = '' THEN '' ELSE @delimiter END +
+                       IN_name +
                        CASE When @activeOnly = 2 AND IN_Status = 'inactive' THEN ' (' + IN_status + ')' ELSE '' END +
                        CASE When @activeOnly = 2 AND IN_Status <> 'inactive' AND IN_operations_role = 'Offsite' THEN ' (' + IN_operations_role + ')' ELSE '' END +
                        CASE When @activeOnly = 2 THEN ':' + CAST(Instrument_ID as VARCHAR(12)) ELSE '' END

@@ -3,19 +3,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetDatasetStatsByCampaign]
 /****************************************************
 **
-**  Desc: 
-**      Returns a table summarizing datasets stats, 
+**  Desc:
+**      Returns a table summarizing datasets stats,
 **      grouped by campaign, work package, and instrument over the given time frame
 **
 **  Auth:   mem
 **  Date:   06/07/2019 mem - Initial release
 **          06/10/2019 mem - Add parameters @excludeQCAndBlankWithoutWP, @campaignNameExclude, and @instrumentBuilding
 **          03/24/2020 mem - Add parameter @excludeAllQCAndBlank
-**    
+**
 *****************************************************/
 (
     @mostRecentWeeks int = 20,
@@ -31,14 +30,13 @@ CREATE PROCEDURE [dbo].[GetDatasetStatsByCampaign]
     @message varchar(512) ='' OUTPUT
 )
 AS
-
     Set NoCount On
 
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+
     Declare @msg varchar(256)
-    
+
     Declare @sql nvarchar(2000)
     Declare @sqlParams nvarchar(1000)
 
@@ -46,7 +44,7 @@ AS
     Declare @optionalBuildingNot varchar(16) = ''
 
     Declare @totalRuntimeHours float
-    
+
     -----------------------------------------
     -- Validate the inputs
     -----------------------------------------
@@ -94,7 +92,7 @@ AS
     Set @campaignNameFilter = dbo.ValidateWildcardFilter(@campaignNameFilter)
     Set @campaignNameExclude = dbo.ValidateWildcardFilter(@campaignNameExclude)
     Set @instrumentBuilding = dbo.ValidateWildcardFilter(@instrumentBuilding)
-    
+
     If @previewSql > 0 And @campaignNameFilter <> ''
     Begin
         Print 'Filtering on campaign name matching ''' + @campaignNameFilter + ''''
@@ -116,14 +114,14 @@ AS
     --
 
     Create Table #Tmp_CampaignDatasetStats (
-        Campaign Varchar(128) Not Null, 
-        WorkPackage Varchar(16) Null, 
+        Campaign Varchar(128) Not Null,
+        WorkPackage Varchar(16) Null,
         FractionEMSLFunded Decimal(3,2) Null,
-        RuntimeHours decimal(9,1) Not Null, 
-        Datasets int Not Null, 
+        RuntimeHours decimal(9,1) Not Null,
+        Datasets int Not Null,
         Building Varchar(64) Not Null,
-        Instrument Varchar(64) Not Null, 
-        RequestMin int Not Null, 
+        Instrument Varchar(64) Not Null,
+        RequestMin int Not Null,
         RequestMax Int Not Null
     )
 
@@ -135,7 +133,7 @@ AS
     Set @sql = @sql + ' INSERT INTO #Tmp_CampaignDatasetStats (Campaign, WorkPackage, FractionEMSLFunded, RuntimeHours, Datasets, Building, Instrument, RequestMin, RequestMax)'
     Set @sql = @sql + ' SELECT C.Campaign_Num AS Campaign,'
     Set @sql = @sql +        ' RR.RDS_WorkPackage AS WorkPackage,'
-    Set @sql = @sql +        ' C.CM_Fraction_EMSL_FUnded AS FractionEMSLFunded,'    
+    Set @sql = @sql +        ' C.CM_Fraction_EMSL_FUnded AS FractionEMSLFunded,'
     Set @sql = @sql +        ' Cast(Sum(DS.Acq_Length_Minutes) / 60.0 AS decimal(9,1)) AS RuntimeHours,'
     Set @sql = @sql +        ' Count(*) AS Datasets,'
     Set @sql = @sql +        ' InstName.Building,'
@@ -199,7 +197,7 @@ AS
         Set @sql = @sql +    ', InstName.IN_name'
     End
 
-    Set @sqlParams = '@mostRecentWeeks int, @campaignNameFilter varchar(128), @campaignNameExclude varchar(128), ' + 
+    Set @sqlParams = '@mostRecentWeeks int, @campaignNameFilter varchar(128), @campaignNameExclude varchar(128), ' +
                      '@instrumentBuilding varchar(64), @startDate DateTime, @endDate DateTime'
 
     -----------------------------------------
@@ -219,8 +217,8 @@ AS
             @instrumentBuilding=@instrumentBuilding,
             @startdate=@startdate,
             @endDate=@endDate
-    	--
-    	SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
         -----------------------------------------
         -- Determine the total runtime

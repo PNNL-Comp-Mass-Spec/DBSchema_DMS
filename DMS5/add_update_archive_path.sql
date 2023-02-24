@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddUpdateArchivePath]
+CREATE PROCEDURE [dbo].[AddUpdateArchivePath]
 /****************************************************
 **
 **  Desc:   Adds new or updates existing archive paths in database
@@ -19,7 +18,7 @@ CREATE Procedure [dbo].[AddUpdateArchivePath]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/16/2022 mem - Change RAISERROR severity to 11 (required so that the web page shows the error message)
-**    
+**
 *****************************************************/
 (
     @ArchiveID varchar(32) output,            -- ID value (as a string)
@@ -32,27 +31,27 @@ CREATE Procedure [dbo].[AddUpdateArchivePath]
     @mode varchar(12) = 'add',                -- 'add' or 'update'
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     Declare @msg varchar(256)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateArchivePath', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
@@ -129,7 +128,7 @@ As
     declare @tempArchiveID int
     if @ArchiveFunction <> 'Active'
     begin
-        SELECT @tempArchiveID = AP_Path_ID 
+        SELECT @tempArchiveID = AP_Path_ID
         FROM T_Archive_Path
         WHERE AP_Path_ID = @ArchiveID AND AP_Function = 'Active'
         if @tempArchiveID <> 0
@@ -151,10 +150,10 @@ As
     execute @instrumentIDTemp = GetActiveInstrumentID @instrumentName
     if @instrumentIDTemp <> 0 and @ArchiveFunction = 'Active'
     begin
-        UPDATE T_Archive_Path 
+        UPDATE T_Archive_Path
         SET AP_Function = 'Old'
-        WHERE AP_Path_ID in (Select AP_Path_ID FROM T_Instrument_Name 
-            INNER JOIN T_Archive_Path ON Instrument_ID = AP_Instrument_Name_ID 
+        WHERE AP_Path_ID in (Select AP_Path_ID FROM T_Instrument_Name
+            INNER JOIN T_Archive_Path ON Instrument_ID = AP_Instrument_Name_ID
             and IN_name = @instrumentName and AP_Function = 'Active')
     end
 
@@ -168,12 +167,12 @@ As
     begin
 
         INSERT INTO T_Archive_Path (
-            AP_Archive_Path, 
-            AP_Server_Name, 
+            AP_Archive_Path,
+            AP_Server_Name,
             AP_Instrument_Name_ID,
             AP_network_share_path,
-            Note, 
-            AP_Function 
+            Note,
+            AP_Function
         ) VALUES (
             @ArchivePath,
             @ArchiveServer,
@@ -204,13 +203,13 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    if @Mode = 'update' 
+    if @Mode = 'update'
     begin
 
         set @myError = 0
         --
-        UPDATE T_Archive_Path 
-        SET 
+        UPDATE T_Archive_Path
+        SET
             AP_Archive_Path = @ArchivePath,
             AP_Server_Name = @ArchiveServer,
             AP_Instrument_Name_ID = @instrumentID,

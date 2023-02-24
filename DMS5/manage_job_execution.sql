@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ManageJobExecution]
 /****************************************************
 **
@@ -28,20 +27,20 @@ CREATE PROCEDURE [dbo].[ManageJobExecution]
     @parameters text = '',
     @result varchar(4096) output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @jobCount int = 0
     Set @result = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'ManageJobExecution', @raiseError = 1
     If @authorized = 0
     Begin
@@ -58,22 +57,22 @@ As
     ---------------------------------------------------
     --  get action and value parameters
     ---------------------------------------------------
-    
+
     Declare @action varchar(64)
     Set @action = ''
 
     SELECT @action = xmlNode.value('.', 'nvarchar(64)')
     FROM   @paramXML.nodes('//action') AS R(xmlNode)
-    
+
     Declare @value varchar(512)
     Set @value = ''
 
     SELECT @value = xmlNode.value('.', 'nvarchar(512)')
     FROM   @paramXML.nodes('//value') AS R(xmlNode)
-    
+
     ---------------------------------------------------
     -- Create temporary table to hold list of jobs
-    -- and populate it from job list  
+    -- and populate it from job list
     ---------------------------------------------------
     CREATE TABLE #TAJ (
         Job int
@@ -92,10 +91,10 @@ As
     End
 
     Set @jobCount = @myRowCount
-    
+
 
     ---------------------------------------------------
-    -- Set up default arguments 
+    -- Set up default arguments
     -- for calling UpdateAnalysisJobs
     ---------------------------------------------------
     --
@@ -119,7 +118,7 @@ As
     Declare @callingUser varchar(128)               = ''
 
     ---------------------------------------------------
-    -- Change affected calling arguments based on 
+    -- Change affected calling arguments based on
     -- command action and value
     ---------------------------------------------------
     --
@@ -130,7 +129,7 @@ As
             SELECT @state = AJS_name
             FROM T_Analysis_State_Name
             WHERE (AJS_stateID = 8)
-            
+
         If @value = 'Release'
         Begin
             -- Release (unhold)
@@ -138,7 +137,7 @@ As
             FROM T_Analysis_State_Name
             WHERE (AJS_stateID = 1)
         End
-        
+
         If @value = 'Reset'
         Begin
             -- Reset
@@ -150,12 +149,12 @@ As
             WHERE (AJS_stateID = 1)
         End
     End
-    
+
     If(@action = 'priority')
     Begin
         Set @priority = @value
     End
-    
+
     If(@action = 'group')
     Begin
         Set @associatedProcessorGroup = @value
@@ -196,10 +195,10 @@ As
         Else
             Set @result = 'Unknown error calling UpdateAnalysisJobsWork; '
     End
-    Else    
+    Else
     Begin
         Set @result = @message
-        
+
         If IsNull(@result, '') = ''
         Begin
             Set @result = 'Empty message returned by UpdateAnalysisJobsWork.  '
@@ -208,9 +207,8 @@ As
             Set @result = @result + 'There were ' + convert(varchar(12), @jobCount) + ' jobs in the list: '
         End
     End
-    
-    return @myError
 
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ManageJobExecution] TO [DDL_Viewer] AS [dbo]

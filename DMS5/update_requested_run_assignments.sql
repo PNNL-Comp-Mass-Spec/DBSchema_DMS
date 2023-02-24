@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 /****************************************************
 **
@@ -60,8 +59,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
     @message varchar(512)='' output,
     @callingUser varchar(128) = ''
 )
-As
-
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -479,7 +477,7 @@ As
             End -- </b>
 
             Set @message = 'Deleted ' + Convert(varchar(12), @countDeleted) + ' requested run'
-            
+
             If @countDeleted > 1
                 Set @message = @message + 's'
 
@@ -513,7 +511,7 @@ As
 
     Declare @usageMessage varchar(512)
     Set @usageMessage = 'Updated ' + Convert(varchar(12), @requestCount) + ' requested run'
-    
+
     If @requestCount <> 1
         Set @usageMessage = @usageMessage + 's'
 
@@ -526,7 +524,6 @@ As
     End
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [DDL_Viewer] AS [dbo]

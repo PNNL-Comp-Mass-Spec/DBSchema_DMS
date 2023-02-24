@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[DeleteAnalysisJob]
+CREATE PROCEDURE [dbo].[DeleteAnalysisJob]
 /****************************************************
 **
 **  Desc:   Deletes given analysis job from the analysis job table
-**          and all referencing tables 
+**          and all referencing tables
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -35,20 +34,20 @@ CREATE Procedure [dbo].[DeleteAnalysisJob]
     @callingUser varchar(128) = '',
     @infoonly tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     Set @jobNum = IsNull(@jobNum, '')
-    Set @infoonly = IsNull(@infoonly, 0)    
+    Set @infoonly = IsNull(@infoonly, 0)
 
     Declare @message varchar(512)
     Declare @msg varchar(128)
 
     Declare @jobID int = Try_Cast(@jobNum as int)
-    
+
     If @jobID is null
     Begin
         Set @msg = 'Job number is not numeric: ' + @jobNum
@@ -59,14 +58,14 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DeleteAnalysisJob', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     -------------------------------------------------------
     -- Validate that the job exists
     -------------------------------------------------------
@@ -96,10 +95,10 @@ As
         -------------------------------------------------------
         --
         Declare @transName varchar(32) = 'DeleteAnalysisJob'
-        Begin transaction @transName    
+        Begin transaction @transName
 
-        
-        -------------------------------------------------------    
+
+        -------------------------------------------------------
         -- Delete the job from T_Reporter_Ion_Observation_Rates (if it exists)
         -------------------------------------------------------
         --
@@ -108,11 +107,11 @@ As
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        -------------------------------------------------------    
-        -- Delete the job from T_Analysis_Job 
+        -------------------------------------------------------
+        -- Delete the job from T_Analysis_Job
         -------------------------------------------------------
         --
-        DELETE FROM T_Analysis_Job 
+        DELETE FROM T_Analysis_Job
         WHERE (AJ_jobID = @jobID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -123,7 +122,7 @@ As
             RAISERROR ('Delete job operation failed', 10, 1)
             return 54451
         End
-        
+
         Print 'Deleted analysis job ' + Cast(@jobID As varchar(12)) + ' from T_Analysis_Job in DMS5'
 
         -------------------------------------------------------
@@ -137,17 +136,17 @@ As
 
             Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
         End
-        
+
         commit transaction @transName
     End
-    
+
     -------------------------------------------------------
     -- Also delete from the DMS_Pipeline database if the state is New, Failed, or Holding
     -- Ignore any jobs with running job steps (though if the step started over 48 hours ago, ignore that job step)
     -------------------------------------------------------
     --
     exec S_DeleteJobIfNewOrFailed @jobID, @callingUser, @message output, @infoonly
-    
+
     return 0
 
 GO

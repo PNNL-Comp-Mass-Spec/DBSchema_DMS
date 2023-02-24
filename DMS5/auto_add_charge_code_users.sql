@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AutoAddChargeCodeUsers]
+CREATE PROCEDURE [dbo].[AutoAddChargeCodeUsers]
 /****************************************************
 **
 **  Desc:   Examines the responsible user for active Charge_Codes with one or more sample prep requests or requested runs
@@ -29,32 +28,32 @@ CREATE Procedure [dbo].[AutoAddChargeCodeUsers]
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-     
+
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
-    
+
     Set @infoOnly = IsNull(@infoOnly, 0)
     set @message = ''
 
     ---------------------------------------------------
     -- Create temporary table to keep track of users to add
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_NewUsers (
         Payroll varchar(12),
-        HID varchar(12),    
+        HID varchar(12),
         LastName_FirstName varchar(128),
-        Network_ID varchar(12) NULL,    
+        Network_ID varchar(12) NULL,
         DMS_ID int NULL
     )
 
-    BEGIN TRY 
+    BEGIN TRY
 
         INSERT INTO #Tmp_NewUsers (Payroll, HID)
         SELECT CC.Resp_PRN, MAX(CC.Resp_HID)
@@ -66,8 +65,8 @@ As
               (CC.Usage_SamplePrep > 0 OR
                CC.Usage_RequestedRun > 0)
         GROUP BY CC.Resp_PRN
-    
-        
+
+
         UPDATE #Tmp_NewUsers
         SET Network_ID = W.Network_ID,
             LastName_FirstName = PREFERRED_NAME_FM
@@ -80,7 +79,7 @@ As
         Begin
             If Exists (SELECT * FROM #Tmp_NewUsers WHERE NOT Network_ID Is Null)
             Begin
-        
+
 
                 INSERT INTO T_Users( U_PRN,         -- Network_ID (aka login) goes in the U_PRN field
                                      U_Name,
@@ -104,11 +103,11 @@ As
                 if @myError <> 0
                 begin
                     set @message = 'Error auto-adding new users'
-                    
+
                     Exec PostLogEntry 'Error', @message, 'AutoAddChargeCodeUsers'
                     return 51100
                 end
-                
+
                 If @myRowCount > 0
                 Begin
                     Set @message = 'Auto added ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' user', ' users') + ' to T_Users since they are associated with charge codes used by DMS'
@@ -128,12 +127,12 @@ As
                 ---------------------------------------------------
 
                 Declare @OperationID int = 0
-                
+
                 SELECT @OperationID = ID
                 FROM T_User_Operations
                 WHERE Operation ='DMS_Guest'
-                
-                
+
+
                 If IsNull(@OperationID, 0) = 0
                 Begin
                     Set @message = 'User operation DMS_Guest not found in T_User_Operations'
@@ -144,7 +143,7 @@ As
                     SELECT DMS_ID, @OperationID
                     FROM #Tmp_NewUsers
                 End
-                
+
             End
         End
         Else
@@ -153,21 +152,21 @@ As
             SELECT *
             FROM #Tmp_NewUsers
             WHERE NOT Network_ID Is Null
-            
+
         End
 
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'AutoAddChargeCodeUsers'
     END CATCH
-    
+
     return 0
 
 GO

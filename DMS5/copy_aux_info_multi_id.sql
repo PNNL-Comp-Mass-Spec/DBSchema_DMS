@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CopyAuxInfoMultiID]
 /****************************************************
 **
@@ -407,7 +406,6 @@ AS
     ---------------------------------------------------
 Done:
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfoMultiID] TO [DDL_Viewer] AS [dbo]

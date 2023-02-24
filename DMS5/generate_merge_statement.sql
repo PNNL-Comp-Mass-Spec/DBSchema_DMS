@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[GenerateMergeStatement]
+CREATE PROCEDURE [dbo].[GenerateMergeStatement]
 /****************************************************
 **
 **  Desc:   Creates a Merge statement for the specified table
@@ -19,7 +18,7 @@ CREATE Procedure [dbo].[GenerateMergeStatement]
 **          11/30/2018 mem - Use DELETE FROM instead of Truncate
 **          11/06/2019 mem - Add an additional test to the WHEN NOT MATCHED BY SOURCE clause
 **          01/06/2022 mem - Fix bug showing target table name in the action table
-**    
+**
 *****************************************************/
 (
     @tableName varchar(128),
@@ -29,14 +28,14 @@ CREATE Procedure [dbo].[GenerateMergeStatement]
     @includeCreateTableSql tinyint = 1,        -- When @includeActionSummary is non-zero, includes the T-SQL for creating table #Tmp_SummaryOfChanges
     @message varchar(512) = '' output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     Declare @newLine varchar(2) = Char(13) + Char(10)
-    
+
     Set @tableName = IsNull(@tableName, '')
     Set @sourceDatabase = IsNull(@sourceDatabase, '')
     Set @includeDeleteTest = IsNull(@includeDeleteTest, 1)
@@ -57,7 +56,7 @@ As
         PRINT @message
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Validate the table name
     ---------------------------------------------------
@@ -72,11 +71,11 @@ As
     ---------------------------------------------------
     -- Populate a table with list of data types that we can compare
     ---------------------------------------------------
-    
+
     Declare @PrimaryKeyColumns TABLE  (ColumnName varchar(255) NOT NULL, user_type_id int not NULL, IsNumberCol tinyint NOT NULL, IsDateCol tinyint NOT NULL)
     Declare @UpdatableColumns TABLE  (ColumnName varchar(255) NOT NULL, user_type_id int not NULL, is_nullable tinyint NOT NULL)
     Declare @InsertableColumns TABLE (ColumnName varchar(255) NOT NULL)
-    
+
     Declare @Types TABLE (user_type_id int not NULL, [IsNumber] tinyint NOT null, [IsDate] tinyint NOT null)
 
     INSERT Into @Types Values (36, 0, 0)  -- uniqueidentifier; compatible with IsNull(ColumnName, '')
@@ -123,21 +122,21 @@ As
             Print 'Set @tableName = ''' + @tableName + ''''
             Print ''
         End
-        
+
         Print 'DELETE FROM #Tmp_SummaryOfChanges'
     End
 
     ---------------------------------------------------
     -- Turn identity insert off for tables with identities
     ---------------------------------------------------
-    
+
     Declare @TableHasIdentity int = objectproperty(object_id(@tableName), 'TableHasIdentity')
-    
+
     If @TableHasIdentity = 1
     Begin
-        PRINT 'SET IDENTITY_INSERT [dbo].[' + @tableName + '] ON;'        
+        PRINT 'SET IDENTITY_INSERT [dbo].[' + @tableName + '] ON;'
     End
-    
+
     ---------------------------------------------------
     -- Construct the merge statment
     ---------------------------------------------------
@@ -178,7 +177,7 @@ As
     -- Use the primary key(s) to define the column(s) to join on
     --
     SET @list = ''
-    
+
     SELECT @list = @list + 't.[' + ColumnName + '] = s.[' + ColumnName + '] AND '
     FROM @PrimaryKeyColumns
 
@@ -206,14 +205,14 @@ As
     End
     Else
     Begin -- <UpdateMatchingRows>
-          
+
         ---------------------------------------------------
         -- SQL for updating when rows match
         -- Do not update primary keys or identity columns
         ---------------------------------------------------
         --
         PRINT 'WHEN MATCHED AND ('
-            
+
         ---------------------------------------------------
         -- SQL to determine if matched rows have different values
         --
@@ -229,7 +228,7 @@ As
         --               NULLIF(Source.Field1, Target.Field1)
         --         ) IS NOT NULL
         ---------------------------------------------------
-        
+
         Declare @WhereListA varchar(max) = ''
         Declare @WhereListB varchar(max) = ''
 
@@ -239,10 +238,10 @@ As
         FROM @UpdatableColumns
         WHERE is_nullable = 0 AND
               user_type_id <> 241   -- Exclude XML columns
-        
+
 
         -- Compare the nullable columns
-        --    
+        --
         SELECT @WhereListB = @WhereListB + '    ISNULL( NULLIF(t.[' + [ColumnName] +  '], s.[' + [ColumnName] +']),' + @newLine
                                          + '            NULLIF(s.[' + [ColumnName] +'], t.[' + [ColumnName] +  '])) IS NOT NULL OR' + @newLine
         FROM @UpdatableColumns C
@@ -253,17 +252,17 @@ As
 
         -- Compare XML columns
         --
-        SELECT @WhereListB = @WhereListB + '    ISNULL(Cast(t.[' + [ColumnName] + '] AS varchar(max)), '''') <>' + 
+        SELECT @WhereListB = @WhereListB + '    ISNULL(Cast(t.[' + [ColumnName] + '] AS varchar(max)), '''') <>' +
                                            '    ISNULL(Cast(s.[' + [ColumnName] + '] AS varchar(max)), '''') OR' + @newLine
         FROM @UpdatableColumns C
             INNER JOIN @Types T
             ON C.user_type_id = T.user_type_id
         WHERE C.user_type_id = 241
-        
+
         -- Remove the trailing OR's
         If @WhereListA <> ''
             Set @WhereListA = Left(@WhereListA, Len(@WhereListA) - 5)
-        
+
         If @WhereListB <> ''
             Set @WhereListB = Left(@WhereListB, Len(@WhereListB) - 5)
 
@@ -289,10 +288,10 @@ As
 
         -- Remove the trailing comma
         PRINT 'THEN UPDATE SET ' + @newLine + left(@list, len(@list) - 3)
-    
+
     End -- </UpdateMatchingRows>
-    
-    
+
+
     ---------------------------------------------------
     -- SQL for inserting new rows
     ---------------------------------------------------
@@ -311,8 +310,8 @@ As
         Set @message = 'Error: table ' + @tableName + ' does not have any columns compatible with a merge statement'
         PRINT @message
         Goto Done
-    End    
-    
+    End
+
     SET @list = ''
     SELECT @list = @list + '[' + ColumnName +'], '
     FROM @InsertableColumns
@@ -349,18 +348,18 @@ As
         PRINT ';'
     Else
     Begin -- <ActionSummaryTable>
-    
+
         ---------------------------------------------------
         -- SQL to populate the action summary table
         ---------------------------------------------------
         --
         PRINT 'OUTPUT ''' + @tableName + ''', $action,'
-        
+
         Declare @continue tinyint = 1
         Declare @CurrentColumn varchar(128) = ''
         Declare @IsNumberColumn tinyint
         Declare @IsDateColumn tinyint
-        
+
         Declare @InsertedList varchar(1024) = ''
         Declare @DeletedList varchar(1024) = ''
         Declare @castCharCount varchar(2)
@@ -371,7 +370,7 @@ As
         --
         While @continue = 1
         Begin -- <IteratePrimaryKeys>
-        
+
             SELECT Top 1 @CurrentColumn = ColumnName,
                          @IsNumberColumn = IsNumberCol,
                          @IsDateColumn = IsDateCol
@@ -380,20 +379,20 @@ As
             ORDER BY ColumnName
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount = 0
                 Set @continue = 0
             Else
             Begin -- <UpdateInsertdDeletedLists>
 
-                If @InsertedList <> '' 
+                If @InsertedList <> ''
                 Begin
                     -- Concatenate updated values
                     --
                     Set @InsertedList = @InsertedList + ' + '', '' + '
                     Set @DeletedList  = @DeletedList  + ' + '', '' + '
                 End
-                
+
                 If @IsNumberColumn = 0 And @IsDateColumn = 0
                 Begin
                     -- Text column
@@ -402,21 +401,21 @@ As
                     Set @DeletedList =  @DeletedList +  'Deleted.['  + @CurrentColumn + ']'
                 End
                 Else
-                Begin                    
+                Begin
                     -- Number or Date column
                     --
-                                        
+
                     If @IsDateColumn = 0
                         Set @castCharCount = '12'  -- varchar(12)
                     Else
                         Set @castCharCount = '32'  -- varchar(32)
-                        
+
                     Set @InsertedList = @InsertedList + 'Cast(Inserted.[' + @CurrentColumn + '] as varchar(' + @castCharCount + '))'
                     Set @DeletedList =  @DeletedList +  'Cast(Deleted.['  + @CurrentColumn + '] as varchar(' + @castCharCount + '))'
                 End
-                
+
             End -- </UpdateInsertdDeletedLists>
-            
+
         End -- </IteratePrimaryKeys>
 
         PRINT '       ' + @InsertedList + ','
@@ -426,16 +425,16 @@ As
         PRINT '--'
         PRINT 'SELECT @myError = @@error, @myRowCount = @@rowcount'
         PRINT ''
-        
+
     End -- </ActionSummaryTable>
-    
+
     ---------------------------------------------------
     -- Turn identity insert back on for tables with identities
     ---------------------------------------------------
-        
-    If @TableHasIdentity = 1 
+
+    If @TableHasIdentity = 1
         PRINT 'SET IDENTITY_INSERT [dbo].[' + @tableName + '] OFF;' + @newLine
-    
+
 Done:
     return 0
 

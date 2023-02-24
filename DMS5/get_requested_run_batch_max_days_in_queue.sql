@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetRequestedRunBatchMaxDaysInQueue]
 /****************************************************
 **
@@ -24,7 +23,7 @@ RETURNS int
 AS
 BEGIN
     Declare @daysInQueue int
-    
+
     SELECT @daysInQueue = MAX(QT.days_in_queue)
     FROM T_Requested_Run RR
          INNER JOIN V_Requested_Run_Queue_Times QT
@@ -34,7 +33,6 @@ BEGIN
 
     RETURN @daysInQueue;
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunBatchMaxDaysInQueue] TO [DDL_Viewer] AS [dbo]

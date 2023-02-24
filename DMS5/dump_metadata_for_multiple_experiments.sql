@@ -3,45 +3,45 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE DumpMetadataForMultipleExperiments
+CREATE PROCEDURE [dbo].[DumpMetadataForMultipleExperiments]
 /****************************************************
 **
-**	Desc: Dump metadata for experiments in given list
+**  Desc: Dump metadata for experiments in given list
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **                    recordset containing keyword-value pairs
 **                    for all metadata items
 **
-**	Parameters: 
+**  Parameters:
 **
-**		Auth: grk
-**		Date: 11/1/2006
-**    
+**  Auth:   grk
+**  Date:   11/1/2006
+**
 *****************************************************/
- (
-  @Experiment_List varchar(7000),
-  @Options varchar(256), -- ignore for now
-  @message varchar(512) output
- )
-As
-	set nocount on
+(
+    @Experiment_List varchar(7000),
+    @Options varchar(256), -- ignore for now
+    @message varchar(512) output
+)
+AS
+    set nocount on
 
-	declare @myError int
-	set @myError = 0
+    declare @myError int
+    set @myError = 0
 
-	declare @myRowCount int
-	set @myRowCount = 0
+    declare @myRowCount int
+    set @myRowCount = 0
 
-	set @message = ''
+    set @message = ''
 
-	---------------------------------------------------
-	-- temporary table to hold list of experiments
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- temporary table to hold list of experiments
+    ---------------------------------------------------
 
-	Create Table #exp
-	(
-	mExp varchar(50) Not Null,
-	)
+    Create Table #exp
+    (
+    mExp varchar(50) Not Null,
+    )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -52,25 +52,25 @@ As
       return  @myError
     end
 
-	---------------------------------------------------
-	-- load temporary table with list of experiments
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- load temporary table with list of experiments
+    ---------------------------------------------------
 
-	INSERT INTO #exp (mExp) 
-	SELECT Item FROM dbo.MakeTableFromList(@Experiment_List)
+    INSERT INTO #exp (mExp)
+    SELECT Item FROM dbo.MakeTableFromList(@Experiment_List)
 
-	---------------------------------------------------
-	-- temporary table to hold metadata
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- temporary table to hold metadata
+    ---------------------------------------------------
 
-	Create Table #metaD
-	(
-	mExp varchar(50) Not Null,
-	mCC varchar(64) Null,
-	mAType varchar(32) Null,
-	mTag varchar(200) Not Null,
-	mVal varchar(512)  Null
-	)
+    Create Table #metaD
+    (
+    mExp varchar(50) Not Null,
+    mCC varchar(64) Null,
+    mAType varchar(32) Null,
+    mTag varchar(200) Not Null,
+    mVal varchar(512)  Null
+    )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -81,12 +81,12 @@ As
       return  @myError
     end
 
-	---------------------------------------------------
-	-- load experiment tracking info for experiments 
-	-- in given list
-	---------------------------------------------------
- 
-	exec @myError = LoadMetadataForMultipleExperiments @Options, @message output
+    ---------------------------------------------------
+    -- load experiment tracking info for experiments
+    -- in given list
+    ---------------------------------------------------
+
+    exec @myError = LoadMetadataForMultipleExperiments @Options, @message output
     --
     if @myError <> 0
     begin
@@ -94,18 +94,18 @@ As
       return  @myError
     end
 
-	---------------------------------------------------
-	-- dump temporary metadata table
-	---------------------------------------------------
+    ---------------------------------------------------
+    -- dump temporary metadata table
+    ---------------------------------------------------
 
-	select 
-		mExp as [Experiment Name], 
-		mCC as [Cell Culture Name], 
-		mAType as [Attribute Type], 
-		mTag as [Attribute Name],  
-		mVal as [Attribute Value] 
-	from #metaD
-	order by mExp, mCC
+    select
+        mExp as [Experiment Name],
+        mCC as [Cell Culture Name],
+        mAType as [Attribute Type],
+        mTag as [Attribute Name],
+        mVal as [Attribute Value]
+    from #metaD
+    order by mExp, mCC
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -116,7 +116,7 @@ As
       return  @myError
     end
 
-	return @myError
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DumpMetadataForMultipleExperiments] TO [DDL_Viewer] AS [dbo]

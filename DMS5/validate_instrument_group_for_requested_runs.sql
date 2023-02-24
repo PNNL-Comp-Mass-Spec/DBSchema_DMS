@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateInstrumentGroupForRequestedRuns]
 /****************************************************
 **
@@ -223,6 +222,5 @@ AS
     END CATCH
 
     Return @myError
-
 
 GO

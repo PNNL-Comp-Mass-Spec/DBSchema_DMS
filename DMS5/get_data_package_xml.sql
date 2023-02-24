@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetDataPackageXML]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Get XML description of data package contents
 **
 **  Auth:   grk
@@ -16,7 +15,7 @@ CREATE FUNCTION [dbo].[GetDataPackageXML]
 **          06/08/2022 mem - Rename package type field to Package_Type
 **                         - Rename package comment field to Package_Comment
 **          06/18/2022 mem - Add support for returning XML for all of the sections by setting @options to 'All'
-**    
+**
 *****************************************************/
 (
     @DataPackageID INT,
@@ -39,11 +38,11 @@ BEGIN
         Set @includeAll = 0;
 
     SET @result = @result + '<data_package>'  + @crlf
-    
+
     ---------------------------------------------------
     -- data package parameters
     ---------------------------------------------------
-    
+
     If @includeAll > 0 Or CHARINDEX('Parameters', @options) > 0
     BEGIN --<a>
         SET @result = @result + '<general>' + @crlf
@@ -68,27 +67,27 @@ BEGIN
         WHERE   ID = @DataPackageID
         FOR     XML AUTO, TYPE
         )
-        
+
         SET @result = @result + CONVERT(VARCHAR(MAX), @paramXML)
-    
+
         SET @result = @result + @crlf + '</general>' + @crlf
     END --<a>
 
     ---------------------------------------------------
     -- experiment details
     ---------------------------------------------------
-    
+
     If @includeAll > 0 Or CHARINDEX('Experiments', @options) > 0
     BEGIN --<e>
         SET @result = @result + @crlf + '<experiments>' + @crlf
-    
+
         DECLARE @experimentXML XML
         SET @experimentXML = (
         SELECT * FROM (
-            SELECT 
+            SELECT
                     Experiment_ID,
                     Experiment,
-                    TRG.OG_name AS Organism, 
+                    TRG.OG_name AS Organism,
                     TC.Campaign_Num AS Campaign,
                     Created,
                     TEX.EX_reason AS Reason,
@@ -100,7 +99,7 @@ BEGIN
             WHERE   TDPE.Data_Package_ID = @DataPackageID
             ) experiment
         FOR XML AUTO, TYPE
-        )        
+        )
         SET @result = @result + CONVERT(VARCHAR(MAX), @experimentXML)
 
         SET @result = @result + @crlf + '</experiments>' + @crlf
@@ -113,7 +112,7 @@ BEGIN
     If @includeAll > 0 Or CHARINDEX('Datasets', @options) > 0
     BEGIN --<d>
         SET @result = @result + @crlf + '<datasets>' + @crlf
-    
+
         DECLARE @datasetXML XML
         SET @datasetXML = (
         SELECT * FROM (
@@ -129,7 +128,7 @@ BEGIN
             WHERE   TDPD.Data_Package_ID = @DataPackageID
             ) dataset
         FOR XML AUTO, TYPE
-        )        
+        )
         SET @result = @result + CONVERT(VARCHAR(MAX), @datasetXML)
 
         SET @result = @result + @crlf + '</datasets>' + @crlf
@@ -142,7 +141,7 @@ BEGIN
     If @includeAll > 0 Or CHARINDEX('Jobs', @options) > 0
     BEGIN --<b>
         SET @result = @result + @crlf + '<jobs>' + @crlf
-    
+
         DECLARE @jobXML XML
         SET @jobXML = (
         SELECT * FROM (
@@ -156,33 +155,33 @@ BEGIN
                     VMA.Comment,
                     VMA.State,
                     DPJ.Package_Comment
-            FROM  S_V_Data_Package_Analysis_Jobs_Export AS DPJ 
+            FROM  S_V_Data_Package_Analysis_Jobs_Export AS DPJ
                     INNER JOIN V_Mage_Analysis_Jobs AS VMA  ON VMA.Job = DPJ.Job
-            WHERE DPJ.Data_Package_ID = @DataPackageID 
+            WHERE DPJ.Data_Package_ID = @DataPackageID
             ) job
         FOR XML AUTO, TYPE
-        )        
+        )
         SET @result = @result + CONVERT(VARCHAR(MAX), @jobXML)
-        
+
         SET @result = @result + @crlf + '</jobs>' + @crlf
     END --<b>
 
     ---------------------------------------------------
     -- job archive paths
     ---------------------------------------------------
-    
+
     If @includeAll > 0 Or CHARINDEX('Paths', @options) > 0
     BEGIN --<c>
-        
+
         SET @result = @result + @crlf + '<paths>'
-        
+
         ---------------------------------------------------
         -- data package path
         ---------------------------------------------------
-        
+
         DECLARE @dpPathXML XML
         SET @dpPathXML = (
-            SELECT 
+            SELECT
                     REPLACE(Storage_Path_Relative, '\', '/') AS Storage_Path
             FROM    S_V_Data_Package_Export AS data_package_path
             WHERE   ID = @DataPackageID
@@ -209,16 +208,16 @@ BEGIN
             WHERE   TDPD.Data_Package_ID = @DataPackageID
             ) dataset_path
         FOR XML AUTO, TYPE
-        )        
+        )
         SET @result = @result + @crlf + @crlf
         SET @result = @result + '<!-- Copy the each dataset folder and its file contents -->' + @crlf
         SET @result = @result + '<!-- (do not copy any subfolders). -->' + @crlf
         SET @result = @result + CONVERT(VARCHAR(MAX), @dsPathXML)
-        
+
         ---------------------------------------------------
         -- job paths
         ---------------------------------------------------
-        
+
         DECLARE @jobPathXML XML
         SET @jobPathXML = (
         SELECT * FROM (
@@ -236,19 +235,18 @@ BEGIN
             WHERE DPJ.Data_Package_ID = @DataPackageID
             ) job_path
         FOR XML AUTO, TYPE
-        )            
+        )
         SET @result = @result + @crlf + @crlf
         SET @result = @result + '<!-- Copy each job results folder and its contents -->' + @crlf
         SET @result = @result + CONVERT(VARCHAR(MAX), @jobPathXML)
-        
+
         SET @result = @result + @crlf + '</paths>' + @crlf
     END --<c>
-    
-    SET @result = @result + @crlf + '</data_package>'    
+
+    SET @result = @result + @crlf + '</data_package>'
 
     RETURN @result
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDataPackageXML] TO [DDL_Viewer] AS [dbo]

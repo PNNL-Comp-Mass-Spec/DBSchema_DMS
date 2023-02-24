@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[DoAnalysisJobOperation]
+CREATE PROCEDURE [dbo].[DoAnalysisJobOperation]
 /****************************************************
 **
 **  Desc:   Perform analysis job operation defined by 'mode'
@@ -23,7 +22,7 @@ CREATE Procedure [dbo].[DoAnalysisJobOperation]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/27/2018 mem - Rename @previewMode to @infoonly
-**    
+**
 *****************************************************/
 (
     @jobNum varchar(32),
@@ -31,38 +30,38 @@ CREATE Procedure [dbo].[DoAnalysisJobOperation]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
-    
+
     Declare @msg varchar(256)
 
     Declare @jobID int
     Declare @state int
-    
+
     Declare @result int
 
     Declare @infoonly tinyint = 0
-    
+
     If @mode Like 'preview%'
         Set @infoonly = 1
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoAnalysisJobOperation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-        
-    BEGIN TRY 
+
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Delete job if it is in "new" or "failed" state
@@ -70,21 +69,21 @@ As
 
     if @mode in ('delete', 'previewDelete')
     begin
-        
+
         ---------------------------------------------------
         -- delete the job
         ---------------------------------------------------
-        
+
         execute @result = DeleteNewAnalysisJob @jobNum, @msg output, @callingUser, @infoonly
         --
         if @result <> 0
         begin
             RAISERROR (@msg, 11, 1)
         end
-        
+
         return 0
     end -- mode 'delete'
-    
+
     ---------------------------------------------------
     -- Legacy mode; not supported
     ---------------------------------------------------
@@ -93,25 +92,25 @@ As
     begin
         set @msg = 'Warning: the reset mode does not do anything in procedure DoAnalysisJobOperation'
         RAISERROR (@msg, 11, 3)
-        
+
         return 0
     end -- mode 'reset'
-    
+
     ---------------------------------------------------
     -- Mode was unrecognized
     ---------------------------------------------------
-    
+
     set @msg = 'Mode "' + @mode +  '" was unrecognized'
     RAISERROR (@msg, 11, 2)
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'DoAnalysisJobOperation'
     END CATCH
     return @myError

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateInstrumentClass]
 /****************************************************
 **
@@ -55,7 +54,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentClass]
     @mode varchar(12) = 'update',       -- Note that 'add' is not allowed in this procedure; instead directly edit table T_Instrument_Class
     @message varchar(512) output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -168,7 +167,6 @@ As
     END Catch
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentClass] TO [DDL_Viewer] AS [dbo]

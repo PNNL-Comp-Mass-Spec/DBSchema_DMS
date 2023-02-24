@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 /****************************************************
 **
@@ -141,7 +140,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @logDebugMessages tinyint = 0,
     @resolvedInstrumentInfo varchar(256) = '' output      -- Output parameter that lists the the instrument group, run type, and separation group; used by AddRequestedRuns when previewing updates
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -1030,7 +1029,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [DDL_Viewer] AS [dbo]

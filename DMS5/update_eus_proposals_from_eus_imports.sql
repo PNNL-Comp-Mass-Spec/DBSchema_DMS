@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 /****************************************************
 **
@@ -32,7 +31,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 (
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -144,9 +143,9 @@ As
             Set @message = ''
         End
 
-        ---------------------------------------------------        
+        ---------------------------------------------------
         -- Add new proposal types to T_EUS_Proposal_Type
-        ---------------------------------------------------        
+        ---------------------------------------------------
 
         INSERT INTO T_EUS_Proposal_Type( Proposal_Type,
                                          Proposal_Type_Name,
@@ -159,8 +158,8 @@ As
                ON EUP.Proposal_Type = EPT.Proposal_Type
         WHERE NOT EUP.Proposal_Type IS NULL AND
               EPT.Proposal_Type_Name IS NULL
-	    --
-	    SELECT @myError = @@error, @myRowCount = @@rowcount
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
         Begin
@@ -192,7 +191,6 @@ Done:
     Exec PostUsageLogEntry 'UpdateEUSProposalsFromEUSImports', @usageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSProposalsFromEUSImports] TO [DDL_Viewer] AS [dbo]

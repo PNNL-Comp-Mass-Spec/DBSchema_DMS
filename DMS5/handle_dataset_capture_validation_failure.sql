@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
 /****************************************************
 **
@@ -35,7 +34,7 @@ CREATE PROCEDURE [dbo].[HandleDatasetCaptureValidationFailure]
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int
@@ -151,7 +150,6 @@ As
     End
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[HandleDatasetCaptureValidationFailure] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[PopulateParamFileInfoTableSequest]
 /****************************************************
 **
@@ -23,7 +22,7 @@ CREATE PROCEDURE [dbo].[PopulateParamFileInfoTableSequest]
     @ParamFileInfoColumnList varchar(512)='' output,
     @message varchar(512) = '' output
 )
-As
+AS
     set nocount on
 
     declare @myError int
@@ -173,7 +172,6 @@ As
     -----------------------------------------------------------
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[PopulateParamFileInfoTableSequest] TO [DDL_Viewer] AS [dbo]

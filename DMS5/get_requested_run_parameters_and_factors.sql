@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetRequestedRunParametersAndFactors]
 /****************************************************
 **
@@ -104,7 +103,6 @@ AS
 
     --
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunParametersAndFactors] TO [DDL_Viewer] AS [dbo]

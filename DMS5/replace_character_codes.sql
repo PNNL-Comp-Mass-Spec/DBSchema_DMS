@@ -3,25 +3,24 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[ReplaceCharacterCodes]
 /****************************************************
 **
-**	Desc:	Replaces character codes with punctuation marks
+**  Desc:   Replaces character codes with punctuation marks
 **
-**	Returns the updated string
+**  Returns the updated string
 **
-**	Auth:	mem
-**	Date:	02/25/2021 mem - Initial version
+**  Auth:   mem
+**  Date:   02/25/2021 mem - Initial version
 **
 *****************************************************/
 (
-	@text varchar(2048)				-- Text to update
+    @text varchar(2048)             -- Text to update
 )
-	RETURNS varchar(2048)
+    RETURNS varchar(2048)
 AS
 Begin
- 
+
     Set @text = IsNull(@text, '')
 
     If @text LIKE '%&quot;%'
@@ -32,10 +31,9 @@ Begin
 
     If @text LIKE '%&amp;%'
         Set @text = Replace(@text, '&amp;', '&')
-	
-	Return @text 
-End
 
+    Return @text
+End
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ReplaceCharacterCodes] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
 /****************************************************
 **
@@ -18,7 +17,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          02/27/2019 mem - Use T_Storage_Path_Hosts instead of SP_URL
 **          09/06/2022 mem - When @processingMode is 3, update datasets in batches (to decrease the likelihood of deadlock issues)
-**    
+**
 *****************************************************/
 (
     @processingMode tinyint = 0,        -- 0 to only process new datasets and datasets with UpdateRequired = 1
@@ -28,9 +27,9 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
     @message varchar(512) = '' output,
     @showDebug tinyint = 0
 )
-As
+AS
     Set nocount on
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
@@ -58,13 +57,13 @@ As
                ORDER BY Dataset_ID DESC ) LookupQ
     End
 
-    
+
     ------------------------------------------------
     -- Add new datasets to T_Cached_Dataset_Folder_Paths
     ------------------------------------------------
     --
     INSERT INTO T_Cached_Dataset_Folder_Paths (Dataset_ID,
-                                               DS_RowVersion,                                               
+                                               DS_RowVersion,
                                                UpdateRequired )
     SELECT DS.Dataset_ID,
            DS.DS_RowVersion,
@@ -78,7 +77,7 @@ As
                          INNER JOIN T_Archive_Path AP
                            ON DA.AS_storage_path_ID = AP.AP_path_ID
            ON DS.Dataset_ID = DA.AS_Dataset_ID
-    WHERE DS.Dataset_ID >= @minimumDatasetID AND 
+    WHERE DS.Dataset_ID >= @minimumDatasetID AND
           DFP.Dataset_ID IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -137,10 +136,10 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
-            Set @message = dbo.AppendToText(@message, 
-                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on SPath_RowVersion', 
+            Set @message = dbo.AppendToText(@message,
+                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on SPath_RowVersion',
                                             0, '; ', 512)
-        
+
         ------------------------------------------------
         -- Find existing entries with a mismatch in DS_RowVersion
         ------------------------------------------------
@@ -156,12 +155,12 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
-            Set @message = dbo.AppendToText(@message, 
-                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion', 
+            Set @message = dbo.AppendToText(@message,
+                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion',
                                             0, '; ', 512)
 
     End
-    
+
     If @processingMode < 3
     Begin
         If @showDebug > 0
@@ -178,21 +177,21 @@ As
         UPDATE T_Cached_Dataset_Folder_Paths
         SET DS_RowVersion = DS.DS_RowVersion,
             SPath_RowVersion = SPath.SPath_RowVersion,
-            Dataset_Folder_Path = ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client, 
+            Dataset_Folder_Path = ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client,
                                          dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))), ''),
             Archive_Folder_Path = CASE
                                       WHEN AP.AP_network_share_path IS NULL THEN ''
-                                      ELSE dbo.udfCombinePaths(AP.AP_network_share_path, 
+                                      ELSE dbo.udfCombinePaths(AP.AP_network_share_path,
                                                                ISNULL(DS.DS_folder_name, DS.Dataset_Num))
                                   END,
             MyEMSL_Path_Flag = '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)),
             -- Old: Dataset_URL =             SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/',
             Dataset_URL = CASE WHEN SPath.SP_function Like '%inbox%'
                           THEN ''
-                          ELSE SPH.URL_Prefix + 
-                               SPH.Host_Name + SPH.DNS_Suffix + '/' + 
+                          ELSE SPH.URL_Prefix +
+                               SPH.Host_Name + SPH.DNS_Suffix + '/' +
                                Replace([SP_path], '\', '/')
-                          END + 
+                          END +
                           ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/',
             UpdateRequired = 0,
             Last_Affected = GetDate()
@@ -223,7 +222,7 @@ As
             Else
                 Print 'Updating cached paths all rows in T_Cached_Dataset_Folder_Paths; note that batch size is 0, which should never be the case'
         End
-        
+
         Set @continue = 1
         Set @datasetIdStart = 0
 
@@ -241,7 +240,7 @@ As
 
             ------------------------------------------------
             -- Update all of the entries (if the stored value disagrees)
-            --        
+            --
             -- Note that this merge statement runs 2x slower than the query above
             -- If you update this merge statement, be sure to update the query
             ------------------------------------------------
@@ -251,21 +250,21 @@ As
                 SELECT DS.Dataset_ID,
                        DS.DS_RowVersion AS DS_RowVersion,
                        SPath.SPath_RowVersion AS SPath_RowVersion,
-                       ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client, 
+                       ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client,
                               dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))), '') AS Dataset_Folder_Path,
                        CASE
                            WHEN AP.AP_network_share_path IS NULL THEN ''
-                           ELSE dbo.udfCombinePaths(AP.AP_network_share_path, 
+                           ELSE dbo.udfCombinePaths(AP.AP_network_share_path,
                                                     ISNULL(DS.DS_folder_name, DS.Dataset_Num))
                        END AS Archive_Folder_Path,
                        '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)) AS MyEMSL_Path_Flag,
                        -- Old:             SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL
                        CASE WHEN SPath.SP_function Like '%inbox%'
                             THEN ''
-                            ELSE SPH.URL_Prefix + 
-                                 SPH.Host_Name + SPH.DNS_Suffix + '/' + 
+                            ELSE SPH.URL_Prefix +
+                                 SPH.Host_Name + SPH.DNS_Suffix + '/' +
                                  Replace([SP_path], '\', '/')
-                            END + 
+                            END +
                             ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL
                 FROM T_Dataset DS
                      INNER JOIN T_Cached_Dataset_Folder_Paths DFP
@@ -281,15 +280,15 @@ As
                 WHERE DS.Dataset_ID BETWEEN @datasetIdStart AND @datasetIdEnd
             ) AS Source (Dataset_ID, DS_RowVersion, SPath_RowVersion, Dataset_Folder_Path, Archive_Folder_Path, MyEMSL_Path_Flag, Dataset_URL)
             ON (target.Dataset_ID = source.Dataset_ID)
-            WHEN Matched AND 
+            WHEN Matched AND
                             (   IsNull(target.DS_RowVersion,        0) <> IsNull(source.DS_RowVersion,        0) OR
                                 IsNull(target.SPath_RowVersion,     0) <> IsNull(source.SPath_RowVersion,     0) OR
                                 IsNull(target.Dataset_Folder_Path, '') <> IsNull(source.Dataset_Folder_Path, '') OR
                                 IsNull(target.Archive_Folder_Path, '') <> IsNull(source.Archive_Folder_Path, '') OR
                                 IsNull(target.MyEMSL_Path_Flag,    '') <> IsNull(source.MyEMSL_Path_Flag,    '') OR
-                                IsNull(target.Dataset_URL,         '') <> IsNull(source.Dataset_URL,         '')                        
+                                IsNull(target.Dataset_URL,         '') <> IsNull(source.Dataset_URL,         '')
                             )
-            THEN UPDATE 
+            THEN UPDATE
                  Set DS_RowVersion = source.DS_RowVersion,
                      SPath_RowVersion = source.SPath_RowVersion,
                      Dataset_Folder_Path = source.Dataset_Folder_Path,
@@ -318,19 +317,18 @@ As
             End
         End
     End
-    
+
     If @myRowCount > 0
     Begin
         Set @message = dbo.AppendToText(@message,
-                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Folder_Paths', 
+                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Folder_Paths',
                                         0, '; ', 512)
-                                        
+
         -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetFolderPaths'
     End
-    
+
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCachedDatasetFolderPaths] TO [DDL_Viewer] AS [dbo]

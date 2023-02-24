@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
 /****************************************************
 **
@@ -18,7 +17,7 @@ CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   03/30/2011 
+**  Date:   03/30/2011
 **          03/30/2011 grk - Don't allow duplicate entries
 **          12/16/2011 mem - Convert null descriptions to empty strings
 **          02/23/2016 mem - Add Set XACT_ABORT on
@@ -28,7 +27,7 @@ CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/11/2021 mem - Store integers in Entity_ID_Value
 **          03/27/2022 mem - Assure that Active is 1 when updating an existing file attachment
-**    
+**
 *****************************************************/
 (
     @id int,
@@ -43,7 +42,7 @@ CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -54,15 +53,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateFileAttachment', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin TRY 
+    Begin TRY
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
@@ -74,16 +73,16 @@ As
         Set @tmp = 0
 
         SELECT @tmp = ID
-        FROM  T_File_Attachment        
+        FROM  T_File_Attachment
         WHERE (ID = @id)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         -- cannot update a non-existent entry
         If @myError <> 0 OR @tmp = 0
             RAISERROR ('No entry could be found in database for update', 11, 16)
     End
-    
+
     If @mode = 'add'
     Begin
         -- When a file attachment is deleted the database record is not deleted
@@ -104,7 +103,7 @@ As
             Set @mode = 'update'
             Set @id = @tmp
         End
-    End 
+    End
 
     ---------------------------------------------------
     -- Action for add mode
@@ -122,19 +121,19 @@ As
             File_Size_Bytes,
             Archive_Folder_Path,
             File_Mime_Type,
-            Active) 
+            Active)
         VALUES (
-            @fileName, 
-            IsNull(@description, ''), 
-            @entityType, 
-            @entityID, 
-            Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container') 
-                 Then Null 
-                 Else Try_Cast(@entityID As Int) 
+            @fileName,
+            IsNull(@description, ''),
+            @entityType,
+            @entityID,
+            Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container')
+                 Then Null
+                 Else Try_Cast(@entityID As Int)
             End,
-            @callingUser, 
+            @callingUser,
             @fileSizeBytes,
-            @archiveFolderPath, 
+            @archiveFolderPath,
             @fileMimeType,
             1
         )
@@ -154,7 +153,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Set @myError = 0
 
@@ -162,10 +161,10 @@ As
         Set Description = IsNull(@description, ''),
             Entity_Type = @entityType,
             Entity_ID = @entityID,
-            Entity_ID_Value = 
-                Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container') 
-                     Then Null 
-                     Else Try_Cast(@entityID As Int) 
+            Entity_ID_Value =
+                Case When @entityType In ('campaign', 'cell_culture', 'experiment', 'material_container')
+                     Then Null
+                     Else Try_Cast(@entityID As Int)
                 End,
             File_Size_Bytes = @fileSizeBytes,
             Last_Affected = GETDATE(),
@@ -182,13 +181,13 @@ As
     End -- update mode
 
     End TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'AddUpdateFileAttachment'
     End CATCH
 

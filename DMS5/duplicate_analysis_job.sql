@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
 /****************************************************
 **
@@ -28,7 +27,7 @@ CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
     @infoOnly tinyint = 0,                  -- 0 to create the job, 1 to preview
     @message varchar(512) = '' output       -- Output message
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -188,7 +187,6 @@ As
 Done:
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DuplicateAnalysisJob] TO [DDL_Viewer] AS [dbo]

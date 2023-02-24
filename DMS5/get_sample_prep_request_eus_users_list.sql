@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetSamplePrepRequestEUSUsersList]
 /****************************************************
 **
@@ -19,7 +18,7 @@ CREATE FUNCTION [dbo].[GetSamplePrepRequestEUSUsersList]
 **  Date:   05/01/2014
 **          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
-**    
+**
 *****************************************************/
 (
     @requestID int,
@@ -47,29 +46,28 @@ Begin
             SELECT @list = CAST(EU.Person_ID AS varchar(12))
             FROM T_EUS_Users EU
             Where EU.PERSON_ID = @eusUserID
-        END    
-        
+        END
+
         IF @mode = 'N'
         BEGIN
             SELECT @list = EU.NAME_FM
             FROM T_EUS_Users EU
-            Where EU.PERSON_ID = @eusUserID   
-        END    
-        
+            Where EU.PERSON_ID = @eusUserID
+        END
+
         IF @mode = 'V'
         BEGIN
             SELECT @list = NAME_FM + ' (' + CAST(EU.PERSON_ID AS varchar(12)) + ')'
             FROM T_EUS_Users EU
-            Where EU.PERSON_ID = @eusUserID   
-        
+            Where EU.PERSON_ID = @eusUserID
+
             if @list = '' set @list = '(none)'
-        END    
+        END
     End
 
     RETURN @list
 
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetSamplePrepRequestEUSUsersList] TO [DDL_Viewer] AS [dbo]

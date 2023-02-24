@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
 /****************************************************
 **
@@ -17,7 +16,7 @@ CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
 **          10/17/2013 mem - Expanded @modDescription to varchar(128)
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
 **          04/02/2020 mem - Expand @modName to varchar(32)
-**    
+**
 *****************************************************/
 (
     @modName varchar(32),
@@ -26,12 +25,12 @@ CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
     @modAffectedAtom char(1) = '-',
     @message varchar(512) output
 )
-As
+AS
     Set NoCount On
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @msg varchar(256)
 
     ---------------------------------------------------
@@ -52,7 +51,7 @@ As
         set @myError = 51001
         RAISERROR ('modDescription was blank', 10, 1)
     end
-    
+
     if @myError <> 0
         return @myError
 
@@ -63,7 +62,7 @@ As
     Declare @MassCorrectionID int = 0
     --
     execute @MassCorrectionID = GetMassCorrectionID @modMassChange
-    
+
     -- Cannot create an entry that already exists
 
     if @MassCorrectionID <> 0
@@ -72,20 +71,20 @@ As
         RAISERROR (@msg, 10, 1)
         return 51003
     end
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
-    
+
     execute @MassCorrectionID = GetMassCorrectionIDFromName @modName
-            
+
     if @MassCorrectionID <> 0
     begin
         set @msg = 'Cannot Add: Mass Correction "' + @modName + '" already exists'
         RAISERROR (@msg, 10, 1)
         return 51004
     end
-    
+
     ---------------------------------------------------
     -- Start transaction
     ---------------------------------------------------
@@ -108,8 +107,8 @@ As
             Affected_Atom,
             Original_Source
         ) VALUES (
-            @modName, 
-            @modDescription, 
+            @modName,
+            @modDescription,
             Round(@modMassChange,4),
             @modAffectedAtom,
             'PNNL'

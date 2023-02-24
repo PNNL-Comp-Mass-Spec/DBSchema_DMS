@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCedure [dbo].[DuplicateParamFileMassMods]
+CREATE PROCEDURE [dbo].[DuplicateParamFileMassMods]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Copies the mass modification definitions from
 **      an existing parameter file to a new parameter file
 **
 **      Requires that the new parameter file exists in
-**      T_Param_Files, but does not yet have any entries 
+**      T_Param_Files, but does not yet have any entries
 **      in T_Param_File_Mass_Mods
 **
 **      If @UpdateParamEntries = 1, then will also populate T_Param_Entries
@@ -22,7 +21,7 @@ CREATE PROCedure [dbo].[DuplicateParamFileMassMods]
 **          07/01/2009 mem - Added parameter @DestParamFileID
 **          07/22/2009 mem - Now returning the suggested query for tweaking the newly entered mass mods
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
-**    
+**
 *****************************************************/
 (
     @SourceParamFileID int,
@@ -38,15 +37,15 @@ AS
     Declare @myError int = 0
 
     Declare @S varchar(2048)
-                         
+
     -----------------------------------------
     -- Validate the input parameters
     -----------------------------------------
-    
+
     Set @UpdateParamEntries = IsNull(@UpdateParamEntries, 1)
     Set @InfoOnly = IsNull(@InfoOnly, 0)
     Set @message = ''
-    
+
     If @SourceParamFileID Is Null Or @DestParamFileID Is Null
     Begin
         Set @message = 'Both the source and target parameter file ID must be defined; unable to continue'
@@ -68,13 +67,13 @@ AS
     Set @S = @S +        ' ON PFMM.Local_Symbol_ID = SLS.Local_Symbol_ID'
     Set @S = @S +      ' WHERE (PFMM.Param_File_ID = ' + Convert(varchar(12), @DestParamFileID) + ')'
     Set @S = @S + ' ORDER BY PFMM.Param_File_ID, PFMM.Local_Symbol_ID, R.Residue_Symbol'
-    
+
     Print @S
 
     -----------------------------------------
     -- Make sure the parameter file IDs are valid
     -----------------------------------------
-    
+
     If Not Exists (SELECT * FROM T_Param_Files WHERE Param_File_ID = @SourceParamFileID)
     Begin
         Set @message = 'Source Param File ID (' + Convert(varchar(12), @SourceParamFileID) + ') not found in T_Param_Files; unable to continue'
@@ -90,7 +89,7 @@ AS
     End
 
     -----------------------------------------
-    -- Make sure the destination parameter file does not yet have any mass mods defined    
+    -- Make sure the destination parameter file does not yet have any mass mods defined
     -----------------------------------------
 
     If Exists (SELECT * FROM T_Param_File_Mass_Mods WHERE Param_File_ID = @DestParamFileID)
@@ -112,20 +111,20 @@ AS
 
     If @InfoOnly <> 0
     Begin
-        SELECT PFMM.*, R.Residue_Symbol, MCF.Mass_Correction_Tag, 
-            MCF.Monoisotopic_Mass, SLS.Local_Symbol, 
+        SELECT PFMM.*, R.Residue_Symbol, MCF.Mass_Correction_Tag,
+            MCF.Monoisotopic_Mass, SLS.Local_Symbol,
             R.Description AS Residue_Desc,
             @DestParamFileID AS Destination_Param_File_ID
         FROM dbo.T_Param_File_Mass_Mods PFMM INNER JOIN
-            dbo.T_Residues R ON 
+            dbo.T_Residues R ON
             PFMM.Residue_ID = R.Residue_ID INNER JOIN
-            dbo.T_Mass_Correction_Factors MCF ON 
+            dbo.T_Mass_Correction_Factors MCF ON
             PFMM.Mass_Correction_ID = MCF.Mass_Correction_ID INNER JOIN
-            dbo.T_Seq_Local_Symbols_List SLS ON 
+            dbo.T_Seq_Local_Symbols_List SLS ON
             PFMM.Local_Symbol_ID = SLS.Local_Symbol_ID
         WHERE (PFMM.Param_File_ID = @SourceParamFileID)
         ORDER BY PFMM.Param_File_ID, PFMM.Local_Symbol_ID, R.Residue_Symbol
-        
+
         If @UpdateParamEntries <> 0
         Begin
             SELECT PE.*, @DestParamFileID AS Destination_Param_File_ID
@@ -179,7 +178,7 @@ AS
             ORDER BY Entry_Sequence_Order
             --
             SELECT @myRowCount = @@rowcount, @myError = @@error
-            
+
         End
 
         SELECT *
@@ -188,11 +187,11 @@ AS
 
 
     End
-    
+
 Done:
     If Len(@message) > 0
         SELECT @message As Message
-    
+
     --
     Return @myError
 

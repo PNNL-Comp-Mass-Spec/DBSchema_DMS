@@ -3,39 +3,39 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetNextInstrumentDataset
+CREATE FUNCTION [dbo].[GetNextInstrumentDataset]
 /****************************************************
 **
-**	Desc: 
+**  Desc:
 **  Returns ID of first dataset
 **  that was run on given instrument after given time
 **
-**	Return value: 
+**  Return value:
 **
-**	Parameters: 
+**  Parameters:
 **
-**	Auth:	grk
-**	Date:	05/16/2011
-**    
+**  Auth:   grk
+**  Date:   05/16/2011
+**
 *****************************************************/
 (
-	@instrumentID INT,
-	@start datetime
+    @instrumentID INT,
+    @start datetime
 )
-RETURNS INT 
+RETURNS INT
 AS
-	BEGIN
-		declare @result int
-		set @result = 0
+    BEGIN
+        declare @result int
+        set @result = 0
 
-		SELECT TOP(1) @result = Dataset_ID
-		FROM    dbo.T_Dataset
-		WHERE   DS_instrument_name_ID = @instrumentID
-				AND Acq_Time_Start > @start
-		ORDER BY Acq_Time_Start
+        SELECT TOP(1) @result = Dataset_ID
+        FROM    dbo.T_Dataset
+        WHERE   DS_instrument_name_ID = @instrumentID
+                AND Acq_Time_Start > @start
+        ORDER BY Acq_Time_Start
 
-		RETURN @result
-	END
+        RETURN @result
+    END
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetNextInstrumentDataset] TO [DDL_Viewer] AS [dbo]
 GO

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateEUSUsersFromEUSImports]
 /****************************************************
 **
@@ -29,7 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSUsersFromEUSImports]
     @updateUsersOnInactiveProposals tinyint = 0,
     @message varchar(512) = '' output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -83,7 +82,7 @@ As
                FROM dbo.V_NEXUS_Import_Proposal_Participants Source
                     INNER JOIN ( SELECT PROPOSAL_ID
                                  FROM T_EUS_Proposals
-                                 WHERE State_ID IN (1,2) Or 
+                                 WHERE State_ID IN (1,2) Or
                                        @updateUsersOnInactiveProposals > 0 And State_ID <> 4   -- State for is "No Interest"
                                 ) DmsEUSProposals
                       ON Source.project_id = DmsEUSProposals.PROPOSAL_ID
@@ -152,7 +151,7 @@ As
         Where IsNull(First_Name, '') = '' And CharIndex(',', Name_FM) > 1
 
         Update T_EUS_Users
-        Set Last_Name = SubString(Name_FM, 1, CharIndex(',', Name_FM) - 1) 
+        Set Last_Name = SubString(Name_FM, 1, CharIndex(',', Name_FM) - 1)
         Where IsNull(Last_Name, '') = '' And CharIndex(',', Name_FM) > 1
 
 
@@ -283,7 +282,6 @@ Done:
     Exec PostUsageLogEntry 'UpdateEUSUsersFromEUSImports', @usageMessage
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DDL_Viewer] AS [dbo]

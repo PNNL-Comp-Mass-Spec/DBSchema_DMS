@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetMassCorrectionIDFromName]
 /****************************************************
 **
@@ -16,20 +15,20 @@ CREATE PROCEDURE [dbo].[GetMassCorrectionIDFromName]
 **          08/03/2017 mem - Add Set NoCount On
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
 **          04/02/2020 mem - Expand @modName to varchar(32)
-**    
+**
 *****************************************************/
 (
     @modName varchar(32)
 )
-As
+AS
     Set NoCount On
 
     Declare @MassCorrectionID int = 0
-        
+
     SELECT @MassCorrectionID = Mass_Correction_ID
     FROM T_Mass_Correction_Factors
-    WHERE Mass_Correction_Tag = @modName        
-    
+    WHERE Mass_Correction_Tag = @modName
+
     return @MassCorrectionID
 
 GO

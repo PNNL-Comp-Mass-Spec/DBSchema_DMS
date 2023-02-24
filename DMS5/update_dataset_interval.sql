@@ -3,19 +3,17 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
 /****************************************************
 **
-**  Desc: 
-**      Updates dataset interval and creates entries 
-**      for long intervals in the intervals table 
+**  Desc:
+**      Updates dataset interval and creates entries
+**      for long intervals in the intervals table
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   02/08/2012 
+**  Date:   02/08/2012
 **          02/10/2012 mem - Now updating Acq_Length_Minutes in T_Dataset
 **          02/13/2012 grk - Raised @maxNormalInterval to ninety minutes
 **          02/15/2012 mem - No longer updating Acq_Length_Minutes in T_Dataset since now a computed column
@@ -31,7 +29,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/03/2019 mem - Use EUS_Instrument_ID for DMS instruments that share a single eusInstrumentId
-**    
+**
 *****************************************************/
 (
     @instrumentName varchar(64),
@@ -48,21 +46,21 @@ AS
 
     set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
-    
+
     Declare @maxNormalInterval int = dbo.GetLongIntervalThreshold()
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateDatasetInterval', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
         ---------------------------------------------------
         -- Make sure @instrumentName is valid (and is properly capitalized)
@@ -74,13 +72,13 @@ AS
         SELECT @instrumentNameMatch = IN_Name
         FROM T_Instrument_Name
         WHERE IN_Name = @instrumentName
-        
+
         If IsNull(@instrumentNameMatch, '') = ''
         Begin
             Set @message = 'Unknown instrument: ' + @instrumentName
             If @infoOnly <> 0
                 Print @message
-        
+
             return 0
         End
         Else
@@ -102,7 +100,7 @@ AS
             Duration int,                -- Duration of run, in minutes
             [Interval] INT NULL
         )
-                
+
         ---------------------------------------------------
         -- Auto switch to @eusInstrumentId if needed
         ---------------------------------------------------
@@ -119,7 +117,7 @@ AS
                           HAVING Count(*) > 1 ) LookupQ
                ON InstMapping.EUS_Instrument_ID = LookupQ.EUS_Instrument_ID
         WHERE InstName.IN_name = @instrumentName
-            
+
         If @eusInstrumentId > 0
         Begin
             INSERT INTO #Tmp_Durations (
@@ -179,17 +177,17 @@ AS
 
         Declare @maxSeq Int
 
-        SELECT @maxSeq = MAX(Seq) 
+        SELECT @maxSeq = MAX(Seq)
         FROM #Tmp_Durations
 
-        Declare @start DATETIME, @end DATETIME, @interval INT 
+        Declare @start DATETIME, @end DATETIME, @interval INT
         Declare @index INT = 1
         Declare @seqIncrement INT = 1
 
         WHILE @index < @maxSeq
         BEGIN
             SET @start = NULL
-            SET @end = NULL 
+            SET @end = NULL
 
             SELECT @start = Time_Start
             FROM #Tmp_Durations
@@ -203,15 +201,15 @@ AS
                                 WHEN @start <= @end THEN 0
                                 ELSE ISNULL(DATEDIFF(MINUTE, @end, @start), 0)
                             END
-            
+
             -- Make sure that start and end times are not null
             --
             IF (NOT @start IS NULL) AND (NOT @end IS NULL)
-            BEGIN 
+            BEGIN
                 UPDATE #Tmp_Durations
                 SET [Interval] = ISNULL(@interval, 0)
                 WHERE Seq = @index
-            END 
+            END
 
             SET @index = @index + @seqIncrement
         END
@@ -245,11 +243,11 @@ AS
         End
         Else
         Begin
-        
+
             ---------------------------------------------------
             -- Start a transaction
             ---------------------------------------------------
-        
+
             Declare @transName varchar(32) = 'UpdateDatasetInterval'
 
             BEGIN TRANSACTION @transName
@@ -257,7 +255,7 @@ AS
             ---------------------------------------------------
             -- Update intervals in dataset table
             ---------------------------------------------------
-            
+
             UPDATE DS
             SET Interval_to_Next_DS = #Tmp_Durations.[Interval]
             FROM T_Dataset DS
@@ -296,29 +294,29 @@ AS
                    ON DS.DS_instrument_name_ID = InstName.Instrument_ID
             WHERE NOT #Tmp_Durations.Dataset_ID IN ( SELECT ID FROM T_Run_Interval ) AND
                   #Tmp_Durations.[Interval] > @maxNormalInterval
-                  
+
             ---------------------------------------------------
             -- Delete "short" long intervals
             -- (intervals that are less than threshold)
             ---------------------------------------------------
-            
+
             DELETE FROM T_Run_Interval
             WHERE (Interval < @maxNormalInterval)
-                  
+
             COMMIT TRANSACTION @transName
         End
-        
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'UpdateDatasetInterval'
     END CATCH
-    
+
     If @infoOnly <> 0 and @myError <> 0
         Print @message
 

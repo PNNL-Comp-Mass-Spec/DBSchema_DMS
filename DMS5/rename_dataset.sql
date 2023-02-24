@@ -6,12 +6,12 @@ GO
 CREATE PROCEDURE [dbo].[RenameDataset]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Renames a dataset in T_Dataset
 **      Renames associated jobs in the DMS_Capture and DMS_Pipeline databases
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   mem
 **          01/25/2013 mem - Initial version
 **          07/08/2016 mem - Now show old/new names and jobs even when @infoOnly is 0
@@ -32,7 +32,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          11/05/2021 mem - Add more MASIC file names and rename files in any MzRefinery directories
 **          07/21/2022 mem - Move misplaced 'cd ..' and add missing 'rem'
 **          10/10/2022 mem - Add @newRequestedRunID; if defined (and active), associate the dataset with this Request ID and use it to update the dataset's experiment
-**    
+**
 *****************************************************/
 (
     @datasetNameOld varchar(128) = '',          -- Existing dataset name
@@ -54,7 +54,7 @@ AS
     Declare @datasetFolderPath varchar(255) = ''
     Declare @storageServerSharePath varchar(255)
     Declare @lastSlashReverseText int
-    
+
     Declare @newExperimentID Int
     Declare @newExperiment Varchar(128)
     Declare @requestedRunState varchar(32)
@@ -68,13 +68,13 @@ AS
 
     Declare @jobsToUpdate table (Job int not null)
     Declare @job int = 0
-    
+
     Declare @suffixID int
     Declare @fileSuffix varchar(64)
-    
+
     Declare @continue tinyint
     Declare @continue2 tinyint
-    
+
     Declare @toolBaseName varchar(64)
     Declare @resultsFolder varchar(128)
     Declare @mzRefineryOutputFolder varchar(128)
@@ -82,8 +82,8 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'RenameDataset', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -185,7 +185,7 @@ AS
         Set @message = 'Dataset not found using either the old name or the new name (' +  @datasetNameOld + ' or ' + @datasetNameNew + ')'
         Goto Done
     End
-      
+
     If @newRequestedRunID = 0
     Begin
         Set @message = 'Specify the new requested run ID using @newRequestedRunID (must be active); use -1 to leave the requested run ID unchanged'
@@ -229,9 +229,9 @@ AS
     -- Lookup acquisition metadata stored in T_Requested_Run
     SELECT @oldRequestedRunID = ID,
            @runStart = RDS_Run_Start,
-           @runFinish = RDS_Run_Finish, 
-           @cartId = RDS_Cart_ID, 
-           @cartConfigID = RDS_Cart_Config_ID, 
+           @runFinish = RDS_Run_Finish,
+           @cartId = RDS_Cart_ID,
+           @cartConfigID = RDS_Cart_Config_ID,
            @cartColumn = RDS_Cart_Col
     FROM T_Requested_Run
     WHERE DatasetID = @datasetID
@@ -246,10 +246,10 @@ AS
 
     -- Lookup the experiment name for @newExperimentID
     SELECT @newExperiment = Experiment_Num
-    FROM T_Experiments        
+    FROM T_Experiments
     WHERE Exp_ID = @newExperimentID
 
-    If @infoOnly = 0 
+    If @infoOnly = 0
     Begin
         --------------------------------------------
         -- Rename the dataset in T_Dataset
@@ -262,12 +262,12 @@ AS
                    @datasetNameNew AS Dataset_Name_New,
                    DS.Dataset_ID,
                    DS.DS_Created   AS Dataset_Created,
-                   CASE WHEN DS.Exp_ID = @newExperimentID 
-                        THEN Cast(DS.Exp_ID As Varchar(12)) + ' (Unchanged)' 
+                   CASE WHEN DS.Exp_ID = @newExperimentID
+                        THEN Cast(DS.Exp_ID As Varchar(12)) + ' (Unchanged)'
                         ELSE Cast(DS.Exp_ID As Varchar(12)) + ' -> ' + Cast(@newExperimentID As Varchar(12))
                    END AS Experiment_ID,
-                   CASE WHEN E.Experiment_Num = @newExperiment 
-                        THEN E.Experiment_Num + ' (Unchanged)' 
+                   CASE WHEN E.Experiment_Num = @newExperiment
+                        THEN E.Experiment_Num + ' (Unchanged)'
                         ELSE E.Experiment_Num + ' -> ' + @newExperiment
                    END AS Experiment
             FROM T_Dataset DS
@@ -276,7 +276,7 @@ AS
             WHERE DS.Dataset_Num IN (@datasetNameOld, @datasetNameNew)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             -- Rename the dataset and update the experiment ID (if changed)
             UPDATE T_Dataset
             SET Dataset_Num = @datasetNameNew,
@@ -288,7 +288,7 @@ AS
 
             Set @message = 'rem Renamed dataset "' + @datasetNameOld + '" to "' + @datasetNameNew + '"'
             print @message
-                
+
             Exec PostLogEntry 'Normal', @message, 'RenameDataset'
         End
 
@@ -325,12 +325,12 @@ AS
                    @datasetNameNew AS Dataset_Name_New,
                    Dataset_ID,
                    DS_Created      AS Dataset_Created,
-                   CASE WHEN DS.Exp_ID = @newExperimentID 
-                        THEN Cast(DS.Exp_ID As Varchar(12)) + ' (Unchanged)' 
+                   CASE WHEN DS.Exp_ID = @newExperimentID
+                        THEN Cast(DS.Exp_ID As Varchar(12)) + ' (Unchanged)'
                         ELSE Cast(DS.Exp_ID As Varchar(12)) + ' -> ' + Cast(@newExperimentID As Varchar(12))
                    END AS Experiment_ID,
-                   CASE WHEN E.Experiment_Num = @newExperiment 
-                        THEN E.Experiment_Num + ' (Unchanged)' 
+                   CASE WHEN E.Experiment_Num = @newExperiment
+                        THEN E.Experiment_Num + ' (Unchanged)'
                         ELSE E.Experiment_Num + ' -> ' + @newExperiment
                    END AS Experiment
             FROM T_Dataset DS
@@ -348,7 +348,7 @@ AS
                    File_Hash
             FROM T_Dataset_Files
             WHERE Dataset_ID = @datasetID
-        End        
+        End
 
     End
 
@@ -418,17 +418,17 @@ AS
     --------------------------------------------
     --
     DELETE FROM @jobsToUpdate
-    
+
     INSERT INTO @jobsToUpdate (Job)
-    SELECT Job 
-    FROM DMS_Capture.dbo.T_Jobs 
+    SELECT Job
+    FROM DMS_Capture.dbo.T_Jobs
     WHERE dataset = @datasetNameOld
     ORDER BY Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     SELECT Job AS Capture_Job, Script, State, Dataset, @datasetNameNew as Dataset_Name_New, Dataset_ID, Imported
-    FROM DMS_Capture.dbo.T_Jobs 
+    FROM DMS_Capture.dbo.T_Jobs
     WHERE Job In (Select Job from @jobsToUpdate)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -452,19 +452,19 @@ AS
         SELECT TOP 1 @job = Job
         FROM @jobsToUpdate
         WHERE Job > @job
-        ORDER BY Job        
+        ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
             Set @continue = 0
         Else
         Begin
-        
+
             exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
             exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
-            
-            UPDATE DMS_Capture.dbo.T_Jobs 
+
+            UPDATE DMS_Capture.dbo.T_Jobs
             Set Dataset = @datasetNameNew
             WHERE Job = @job
             --
@@ -473,23 +473,23 @@ AS
         End
 
     End
-    
+
     --------------------------------------------
     -- Update jobs in the DMS_Pipeline database
     --------------------------------------------
     --
     DELETE FROM @jobsToUpdate
-    
+
     INSERT INTO @jobsToUpdate (Job)
-    SELECT Job 
-    FROM DMS_Pipeline.dbo.T_Jobs 
+    SELECT Job
+    FROM DMS_Pipeline.dbo.T_Jobs
     WHERE Dataset = @datasetNameOld
     ORDER BY Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     SELECT Job AS Pipeline_Job, Script, State, Dataset, @datasetNameNew as Dataset_Name_New, Dataset_ID, Imported
-    FROM DMS_Pipeline.dbo.T_Jobs 
+    FROM DMS_Pipeline.dbo.T_Jobs
     WHERE Job In (Select Job from @jobsToUpdate)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -503,25 +503,25 @@ AS
     Begin
         Set @continue = 0
     End
-    
+
     While @continue = 1
     Begin
         SELECT TOP 1 @job = Job
         FROM @jobsToUpdate
         WHERE Job > @job
-        ORDER BY Job        
+        ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
             Set @continue = 0
         Else
         Begin
-        
+
             exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0
             exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoOnly=0
-            
-            UPDATE DMS_Pipeline.dbo.T_Jobs 
+
+            UPDATE DMS_Pipeline.dbo.T_Jobs
             Set Dataset = @datasetNameNew
             WHERE Job = @job
             --
@@ -529,7 +529,7 @@ AS
 
         End
     End
-    
+
     --------------------------------------------
     -- Show commands for renaming the dataset directory and .raw file
     --------------------------------------------
@@ -549,36 +549,36 @@ AS
     )
 
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_Extensions_ID on #Tmp_Extensions(SuffixID)
-    CREATE UNIQUE INDEX #IX_Tmp_Extensions_Suffix on #Tmp_Extensions(FileSuffix)    
+    CREATE UNIQUE INDEX #IX_Tmp_Extensions_Suffix on #Tmp_Extensions(FileSuffix)
 
     DELETE FROM @jobsToUpdate
-    
+
     -- Find jobs associated with this dataset
     -- Only shows jobs that would be exported to MTS
     -- If the dataset has rating Not Released, no jobs will appear in V_Analysis_Job_Export
     INSERT INTO @jobsToUpdate (Job)
-    SELECT Job 
+    SELECT Job
     FROM V_Analysis_Job_Export
     WHERE @infoOnly=0 And Dataset = @datasetNameNew Or @infoOnly <> 0 And Dataset = @datasetNameOld
     ORDER BY Job
-    
+
     Set @continue = 1
     Set @job = 0
-    
+
     Declare @jobFileUpdateCount int = 0
-    
+
     While @continue > 0
     Begin -- <jobLoop>
 
         SELECT TOP 1 @job = Job
         FROM @jobsToUpdate
         WHERE Job > @job
-        ORDER BY Job        
+        ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         DELETE FROM #Tmp_Extensions
-        
+
         If @myRowCount = 0
         Begin
             --------------------------------------------
@@ -587,8 +587,8 @@ AS
             --
             Set @continue = 0
             Set @resultsFolder = 'QC'
-            
-            Insert Into #Tmp_Extensions (FileSuffix) Values 
+
+            Insert Into #Tmp_Extensions (FileSuffix) Values
                 ('_BPI_MS.png'),('_BPI_MSn.png'),
                 ('_HighAbu_LCMS.png'),('_HighAbu_LCMS_MSn.png'),
                 ('_LCMS.png'),('_LCMS_MSn.png'),
@@ -609,18 +609,18 @@ AS
             Begin
                 If @toolBaseName = 'Decon2LS'
                 Begin
-                    Insert Into #Tmp_Extensions (FileSuffix) Values 
+                    Insert Into #Tmp_Extensions (FileSuffix) Values
                         ('_isos.csv'), ('_scans.csv'),
                         ('_BPI_MS.png'), ('_HighAbu_LCMS.png'), ('_HighAbu_LCMS_zoom.png'),
                         ('_LCMS.png'), ('_LCMS_zoom.png'),
                         ('_TIC.png'), ('_log.txt')
                 End
-                
+
                 If @toolBaseName = 'MASIC'
                 Begin
-                    Insert Into #Tmp_Extensions (FileSuffix) Values 
-                        ('_MS_scans.csv'), ('_MSMS_scans.csv'),('_MSMethod.txt'), 
-                        ('_ScanStats.txt'), ('_ScanStatsConstant.txt'), ('_ScanStatsEx.txt'), 
+                    Insert Into #Tmp_Extensions (FileSuffix) Values
+                        ('_MS_scans.csv'), ('_MSMS_scans.csv'),('_MSMethod.txt'),
+                        ('_ScanStats.txt'), ('_ScanStatsConstant.txt'), ('_ScanStatsEx.txt'),
                         ('_SICstats.txt'),('_DatasetInfo.xml'),('_SICs.zip'),
                         ('_PeakAreaHistogram.png'),('_PeakWidthHistogram.png'),
                         ('_RepIonObsRate.png'),
@@ -631,7 +631,7 @@ AS
 
                 If @toolBaseName Like 'MSGFPlus%'
                 Begin
-                    Insert Into #Tmp_Extensions (FileSuffix) Values 
+                    Insert Into #Tmp_Extensions (FileSuffix) Values
                         ('_msgfplus.mzid.gz'),('_msgfplus_fht.txt'), ('_msgfplus_fht_MSGF.txt'),
                         ('_msgfplus_PepToProtMap.txt'), ('_msgfplus_PepToProtMapMTS.txt'),
                         ('_msgfplus_syn.txt'), ('_msgfplus_syn_ModDetails.txt'),
@@ -643,21 +643,21 @@ AS
                 End
             End
         End
-        
+
         If @jobFileUpdateCount = 0 And Exists (Select * From @jobsToUpdate)
             Print 'rem Example commands for renaming job files'
 
         Print ''
         Print 'cd ' + @resultsFolder
-        
+
         If Exists (Select * From #Tmp_Extensions)
             Set @continue2 = 1
         Else
             Set @continue2 = 0
-            
+
         Set @suffixID = 0
         Set @fileSuffix = ''
-        
+
         While @continue2 = 1
         Begin
             SELECT TOP 1 @suffixID = SuffixID,
@@ -677,7 +677,7 @@ AS
             End
 
         End
-        
+
         If @resultsFolder = 'QC'
         Begin
             Print ''
@@ -704,8 +704,8 @@ AS
             Print 'move index_new.html index.html'
         End
 
-        Print 'cd ..'        
-        
+        Print 'cd ..'
+
         -- Look for a MzRefinery directory for this dataset
         Set @mzRefineryOutputFolder = ''
 
@@ -732,7 +732,7 @@ AS
 
             Print 'rem ToDo: rename or delete the .mzML.gz file at:'
             Print 'cat ' + @datasetNameNew + '.mzML.gz_CacheInfo.txt'
-            Print 'cd ..'        
+            Print 'cd ..'
         End
 
     End -- </jobLoop>
@@ -746,7 +746,7 @@ AS
     Begin
         Select 'See the console output for ' + Cast(@jobFileUpdateCount as varchar(9)) + ' dataset/job file update commands' as Comment
     End
-    
+
      ---------------------------------------------------
      -- Done
      ---------------------------------------------------
@@ -756,7 +756,7 @@ Done:
     Begin
         Select @message as Message
     End
-    
+
     return @myError
 
 GO

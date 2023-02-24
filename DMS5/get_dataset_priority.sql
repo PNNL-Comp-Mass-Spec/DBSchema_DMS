@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetDatasetPriority]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **       Determines if the dataset name warrants preferential processing priority
 **       This procedure is used by AddNewDataset to auto-release QC_Shew datasets
 **
@@ -27,7 +26,7 @@ CREATE FUNCTION [dbo].[GetDatasetPriority]
 **          05/07/2015 mem - Added QC_Shew_TEDDY
 **          08/08/2018 mem - Added QC_Mam and QC_PP_MCF-7
 **          06/27/2019 mem - Renamed from DatasetPreference to GetDatasetPriority
-**    
+**
 *****************************************************/
 (
     @datasetNum varchar(128)
@@ -51,10 +50,9 @@ BEGIN
     Begin
         Set @result = 0
     End
-    
+
     Return @result
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetDatasetPriority] TO [DDL_Viewer] AS [dbo]

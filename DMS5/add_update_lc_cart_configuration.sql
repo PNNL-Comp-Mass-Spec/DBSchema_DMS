@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
 /****************************************************
 **
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
 **          03/03/2017 mem - Add parameter @entryUser
 **          09/17/2018 mem - Update cart config name error message
 **          03/03/2021 mem - Update admin-required message
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -61,7 +60,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -79,7 +78,7 @@ As
     Set @entryUser = IsNull(@entryUser, '')
     Set @callingUser = IsNull(@callingUser, '')
     Set @mode = IsNull(@mode, 'add')
-    
+
     If @state = ''
         Set @state = 'Active'
 
@@ -88,7 +87,7 @@ As
     -- Note that table T_LC_Cart_Configuration also has a check constraint on the Cart_Config_State field
     --
     -- Override can only be used when @callingUser is a user with DMS_Infrastructure_Administration privileges
-    -- When @state is Override, the state will be left unchanged, but data can still be updated 
+    -- When @state is Override, the state will be left unchanged, but data can still be updated
     -- even if the cart config is already associated with datasets
     ---------------------------------------------------
     --
@@ -106,12 +105,12 @@ As
         If @entryUser = ''
             Set @entryUser = @callingUser
     End
-    
+
     If @state = 'Override' and @mode <> 'Update'
     Begin
         Set @message = 'Cart config state must be Active, Inactive, or Invalid when @mode is ' + @mode + '; ' + @state + ' is not allowed'
     End
-    
+
     ---------------------------------------------------
     -- Validate the cart configuration name
     -- First assure that it does not have invalid characters and is long enough
@@ -141,21 +140,21 @@ As
     --
     Declare @underscoreLoc int
     Declare @cartName varchar(128)
-    
+
     Set @underscoreLoc = CharIndex('_', @configName)
-    
+
     If @underscoreLoc <=1
     Begin
     Set @message = 'Cart Config name must start with a valid LC cart name, followed by an underscore'
         RAISERROR (@message, 10, 1)
         Return 51006
     End
-        
+
     Set @cartName = Substring(@configName, 1, @underscoreLoc-1)
 
     If @cartName = 'Unknown'
         Set @cartName= 'No_Cart'
-        
+
     ---------------------------------------------------
     -- Resolve cart name to ID
     ---------------------------------------------------
@@ -193,11 +192,11 @@ As
         Declare @oldState varchar(24) = ''
         Declare @ignoreDatasetChecks tinyint = 0
         Declare @existingEntryUser varchar(128) = ''
-        
+
         SELECT @existingName = Cart_Config_Name,
                @oldState = Cart_Config_State,
                @existingEntryUser = Entered_By
-        FROM T_LC_Cart_Configuration 
+        FROM T_LC_Cart_Configuration
         WHERE Cart_Config_ID = @ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -237,13 +236,13 @@ As
         If @configName <> @existingName
         Begin
             Declare @conflictID int = 0
-            
+
             SELECT @conflictID = Cart_Config_ID
             FROM T_LC_Cart_Configuration
             WHERE Cart_Config_Name = @configName
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
             If @conflictID > 0
             Begin
                 Set @message = 'Cannot rename config from ' + @existingName + ' to ' + @configName + ' because the new name is already in use by ID ' + Cast(@conflictID as varchar(9))
@@ -256,7 +255,7 @@ As
         Begin
             Set @entryUser = @existingEntryUser
         End
-        
+
         ---------------------------------------------------
         -- Only allow updating the state of Cart Config items that are associated with a dataset
         ---------------------------------------------------
@@ -265,43 +264,43 @@ As
         Begin
             Declare @datasetCount int = 0
             Declare @maxDatasetID int = 0
-            
+
             SELECT @datasetCount = Count(*),
                    @maxDatasetID = Max(Dataset_ID)
             FROM T_Dataset
             WHERE Cart_Config_ID = @ID
-            
+
             Declare @datasetDescription varchar(196)
             Declare @datasetName varchar(128)
-            
+
             SELECT @datasetName = Dataset_Num
             FROM T_Dataset
             WHERE Dataset_ID = @maxDatasetID
-            
+
             If @datasetCount = 1
                 Set @datasetDescription = 'dataset ' + @datasetName
-            Else            
+            Else
                 Set @datasetDescription = Cast(@datasetCount as varchar(9)) + ' datasets'
 
             If @state <> @oldState
             Begin
-                UPDATE T_LC_Cart_Configuration 
+                UPDATE T_LC_Cart_Configuration
                 SET Cart_Config_State = @state
                 WHERE Cart_Config_ID = @ID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
                 Set @message = 'Updated state to ' + @state + '; any other changes were ignored because this cart config is associated with ' + @datasetDescription
                 Return 0
             End
 
-            Set @message = 'LC cart config ID ' + Cast(@ID as varchar(9)) + ' is associated with ' + @datasetDescription + 
+            Set @message = 'LC cart config ID ' + Cast(@ID as varchar(9)) + ' is associated with ' + @datasetDescription +
                            ', most recently ' + @datasetName + '; contact a DMS admin to update the configuration (using special state Override)'
 
             RAISERROR (@message, 10, 1)
             Return 51010
         End
-        
+
     End
 
     ---------------------------------------------------
@@ -317,7 +316,7 @@ As
             Return 51011
         End
     End
-    
+
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
@@ -357,36 +356,36 @@ As
                                              Updated,
                                              Updated_By )
         VALUES (
-            @configName, 
-            @cartID, 
-            @description, 
-            @autosampler, 
-            @customValveConfig, 
+            @configName,
+            @cartID,
+            @description,
+            @autosampler,
+            @customValveConfig,
             @pumps,
-            @primaryInjectionVolume, 
-            @primaryMobilePhases, 
+            @primaryInjectionVolume,
+            @primaryMobilePhases,
             @primaryTrapColumn,
             @primaryTrapFlowRate,
             @primaryTrapTime,
             @primaryTrapMobilePhase,
-            @primaryAnalyticalColumn, 
-            @primaryColumnTemperature, 
+            @primaryAnalyticalColumn,
+            @primaryColumnTemperature,
             @primaryAnalyticalFlowRate,
-            @primaryGradient, 
-            @massSpecStartDelay, 
-            @upstreamInjectionVolume, 
+            @primaryGradient,
+            @massSpecStartDelay,
+            @upstreamInjectionVolume,
             @upstreamMobilePhases,
-            @upstreamTrapColumn, 
-            @upstreamTrapFlowRate, 
+            @upstreamTrapColumn,
+            @upstreamTrapFlowRate,
             @upstreamAnalyticalColumn,
-            @upstreamColumnTemperature, 
-            @upstreamAnalyticalFlowRate, 
+            @upstreamColumnTemperature,
+            @upstreamAnalyticalFlowRate,
             @upstreamFractionationProfile,
             @upstreamFractionationDetails,
-            @state, 
-            GetDate(), 
+            @state,
+            GetDate(),
             @entryUser,
-            GetDate(), 
+            GetDate(),
             @callingUser
         )
         --
@@ -409,7 +408,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Set @myError = 0
         --
@@ -423,7 +422,7 @@ As
             Primary_Injection_Volume = @primaryInjectionVolume,
             Primary_Mobile_Phases = @primaryMobilePhases,
             Primary_Trap_Column = @primaryTrapColumn,
-            Primary_Trap_Flow_Rate = @primaryTrapFlowRate,            
+            Primary_Trap_Flow_Rate = @primaryTrapFlowRate,
             Primary_Trap_Time = @primaryTrapTime,
             Primary_Trap_Mobile_Phase = @primaryTrapMobilePhase,
             Primary_Analytical_Column = @primaryAnalyticalColumn,
@@ -454,11 +453,10 @@ As
             RAISERROR (@message, 10, 1)
             Return 51013
         End
-        
+
     End -- update mode
 
-  Return @myError
-
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfiguration] TO [DDL_Viewer] AS [dbo]

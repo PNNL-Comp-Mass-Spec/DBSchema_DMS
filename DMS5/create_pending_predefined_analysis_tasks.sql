@@ -3,17 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 /****************************************************
-** 
+**
 **  Desc:
 **      Creates job for new entries in T_Predefined_Analysis_Scheduling_Queue
 **
-**      Should be called periodically by a SQL Server Agent job 
+**      Should be called periodically by a SQL Server Agent job
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   grk
 **  Date:   08/26/2010 grk - initial release
 **          08/26/2010 mem - Added @MaxDatasetsToProcess and @InfoOnly
@@ -22,7 +21,7 @@ CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 **          07/21/2016 mem - Fix logic error examining @myError
 **          05/30/2018 mem - Do not create predefined jobs for inactive datasets
 **          03/25/2020 mem - Append a row to T_Predefined_Analysis_Scheduling_Queue_History for each dataset processed
-**    
+**
 *****************************************************/
 (
     @MaxDatasetsToProcess int = 0,            -- Set to a positive number to limit the number of affected datasets
@@ -30,7 +29,7 @@ CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 )
 AS
     Set nocount on
-    
+
     Declare @myError INT = 0
     Declare @myRowCount INT = 0
 
@@ -53,18 +52,18 @@ AS
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-     
+
     Set @MaxDatasetsToProcess = IsNull(@MaxDatasetsToProcess, 0)
     Set @InfoOnly = IsNull(@InfoOnly, 0)
-    
+
     ---------------------------------------------------
     -- Process "New" entries in T_Predefined_Analysis_Scheduling_Queue
     ---------------------------------------------------
-     
+
     Set @done = 0
     Set @currentItemID = 0
     Set @DatasetsProcessed = 0
-     
+
     While @done = 0
     Begin
         SET @datasetName = ''
@@ -87,7 +86,7 @@ AS
         ORDER BY SQ.Item ASC
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
         If @myRowCount = 0
         Begin
             SET @done = 1
@@ -113,8 +112,8 @@ AS
             End
             Else
             Begin
-                    
-                EXEC @myError = dbo.CreatePredefinedAnalysesJobs 
+
+                EXEC @myError = dbo.CreatePredefinedAnalysesJobs
                                                 @datasetName,
                                                 @callingUser,
                                                 @AnalysisToolNameFilter,
@@ -125,7 +124,7 @@ AS
                                                 @JobsCreated output
 
             End
-        
+
             If @InfoOnly = 0
             Begin
                 UPDATE dbo.T_Predefined_Analysis_Scheduling_Queue
@@ -141,20 +140,20 @@ AS
                 WHERE Item = @currentItemID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
-                
+
                 INSERT INTO T_Predefined_Analysis_Scheduling_Queue_History( Dataset_ID, DS_Rating, Jobs_Created )
                 VALUES(@datasetID, @datasetRatingID, ISNULL(@JobsCreated, 0))
             END
 
             Set @DatasetsProcessed = @DatasetsProcessed + 1
-        End 
-        
+        End
+
         If @MaxDatasetsToProcess > 0 And @DatasetsProcessed >= @MaxDatasetsToProcess
         Begin
             Set @done = 1
         End
-    End 
-    
+    End
+
     If @InfoOnly <> 0
     Begin
         If @DatasetsProcessed = 0
@@ -165,12 +164,11 @@ AS
             If @DatasetsProcessed <> 1
                 Set @message = @message + 's'
         End
-        
+
         Print @message
     End
 
     REturn 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreatePendingPredefinedAnalysesTasks] TO [DDL_Viewer] AS [dbo]

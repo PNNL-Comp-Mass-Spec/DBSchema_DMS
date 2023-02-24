@@ -3,17 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetMyEMSLTransactionIdURLs]
 /****************************************************
 **
-**  Desc: Returns a comma separated list of the URLs 
+**  Desc: Returns a comma separated list of the URLs
 **  to view files associated with each transaction IDs for this dataset ID
 **
 **  Auth:   mem
 **  Date:   02/28/2018 mem - Initial version
 **          02/03/2023 bcg - Update column names for S_V_MyEMSL_DatasetID_TransactionID
-**    
+**
 *****************************************************/
 (
     @datasetID INT

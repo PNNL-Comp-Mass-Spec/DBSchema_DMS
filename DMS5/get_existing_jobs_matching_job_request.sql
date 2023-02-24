@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetExistingJobsMatchingJobRequest]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Builds delimited list of existing jobs
 **      for the given analysis job request, searching
 **      for the jobs using the analysis tool name, parameter
-**      file name, and settings file name specified by the 
-**      analysis request.  For Peptide_Hit tools, also uses 
+**      file name, and settings file name specified by the
+**      analysis request.  For Peptide_Hit tools, also uses
 **      organism DB file name and organism name and
 **      protein collection list and protein options list
 **
@@ -30,7 +29,7 @@ CREATE FUNCTION [dbo].[GetExistingJobsMatchingJobRequest]
 **          07/30/2019 mem - Get dataset ID from T_Analysis_Job_Request_Datasets
 **          07/31/2019 mem - Remove unused table from query join list
 **          06/30/2022 mem - Rename parameter file variable
-**    
+**
 *****************************************************/
 (
     @requestID int
@@ -53,7 +52,7 @@ BEGIN
             @proteinCollectionList varchar(4000),
             @proteinOptionsList varchar(256),
             @specialProcessing varchar(512)
-        
+
     -- Lookup the entries for @RequestID in T_Analysis_Job_Request
     --
     SELECT @analysisToolName = AJR.AJR_analysisToolName,
@@ -80,9 +79,9 @@ BEGIN
         WHERE AJT_toolName = @analysisToolName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
         Set @resultType = IsNull(@resultType, 'Unknown')
-            
+
         -- When looking for existing jobs, if the analysis tool is not a Peptide_Hit tool,
         --  then we ignore OrganismDBName, Organism Name, Protein Collection List, and Protein Options List
         --
@@ -105,7 +104,7 @@ BEGIN
               AJ.AJ_settingsFileName = @settingsFileName AND
               ISNULL(AJ.AJ_specialProcessing, '') = ISNULL(@specialProcessing, '') AND
               (@resultType NOT LIKE '%Peptide_Hit%' OR
-               @resultType LIKE '%Peptide_Hit%' AND 
+               @resultType LIKE '%Peptide_Hit%' AND
                (
                    (    @proteinCollectionList <> 'na' AND
                         AJ.AJ_proteinCollectionList = @proteinCollectionList AND
@@ -122,10 +121,9 @@ BEGIN
         ORDER BY AJ.AJ_jobID
 
     End
-        
+
     RETURN
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetExistingJobsMatchingJobRequest] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[RefreshCachedMTSPeakMatchingTasks]
 /****************************************************
 **
@@ -29,7 +28,6 @@ CREATE PROCEDURE [dbo].[RefreshCachedMTSPeakMatchingTasks]
     @message varchar(255) = '' output
 )
 AS
-
     Set XACT_ABORT, nocount on
 
     Declare @myRowCount int
@@ -42,41 +40,41 @@ AS
     Declare @MaxInt int
     Set @MaxInt = 2147483647
 
-    
+
     Declare @MergeUpdateCount int
     Declare @MergeInsertCount int
     Declare @MergeDeleteCount int
-    
+
     Set @MergeUpdateCount = 0
     Set @MergeInsertCount = 0
     Set @MergeDeleteCount = 0
 
     ---------------------------------------------------
     -- Create the temporary table that will be used to
-    -- track the number of inserts, updates, and deletes 
+    -- track the number of inserts, updates, and deletes
     -- performed by the MERGE statement
     ---------------------------------------------------
-    
+
     CREATE TABLE #Tmp_UpdateSummary (
         UpdateAction varchar(32)
     )
-    
+
     CREATE CLUSTERED INDEX #IX_Tmp_UpdateSummary ON #Tmp_UpdateSummary (UpdateAction)
-    
-        
+
+
     Declare @FullRefreshPerformed tinyint
-    
+
     declare @CallingProcName varchar(128)
     declare @CurrentLocation varchar(128)
     Set @CurrentLocation = 'Start'
-    
+
     Begin Try
         Set @CurrentLocation = 'Validate the inputs'
 
         -- Validate the inputs
         Set @JobMinimum = IsNull(@JobMinimum, 0)
         Set @JobMaximum = IsNull(@JobMaximum, 0)
-        
+
         If @JobMinimum = 0 AND @JobMaximum = 0
         Begin
             Set @FullRefreshPerformed = 1
@@ -91,7 +89,7 @@ AS
         End
 
         Set @CurrentLocation = 'Update T_MTS_Cached_Data_Status'
-        -- 
+        --
         Exec UpdateMTSCachedDataStatus 'T_MTS_Peak_Matching_Tasks_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = @JobMinimum
 
 
@@ -101,26 +99,26 @@ AS
         ---------------------------------------------------
         --
         MERGE T_MTS_Peak_Matching_Tasks_Cached AS target
-        USING 
-            ( SELECT    Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment, 
-                        State_ID, Task_Server, Task_Database, Task_ID, 
-                        Assigned_Processor_Name, Tool_Version, DMS_Job_Count, 
+        USING
+            ( SELECT    Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment,
+                        State_ID, Task_Server, Task_Database, Task_ID,
+                        Assigned_Processor_Name, Tool_Version, DMS_Job_Count,
                         DMS_Job, Output_Folder_Path, Results_URL,
                         AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
-                        AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
+                        AMT_Count_10pct_FDR, AMT_Count_25pct_FDR,
                         AMT_Count_50pct_FDR, Refine_Mass_Cal_PPMShift,
-                        MD_ID, QID, 
+                        MD_ID, QID,
                         Ini_File_Name, Comparison_Mass_Tag_Count, MD_State
-              FROM ( SELECT Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment, 
-                            State_ID, Task_Server, Task_Database, Task_ID, 
-                            Assigned_Processor_Name, Tool_Version, DMS_Job_Count, 
+              FROM ( SELECT Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment,
+                            State_ID, Task_Server, Task_Database, Task_ID,
+                            Assigned_Processor_Name, Tool_Version, DMS_Job_Count,
                             DMS_Job, Output_Folder_Path, Results_URL,
                             AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
-                            AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
+                            AMT_Count_10pct_FDR, AMT_Count_25pct_FDR,
                             AMT_Count_50pct_FDR, Refine_Mass_Cal_PPMShift,
                             MD_ID, QID,
                             Ini_File_Name, Comparison_Mass_Tag_Count, MD_State,
-                            RANK() OVER ( PARTITION BY tool_name, task_server, task_database, task_id 
+                            RANK() OVER ( PARTITION BY tool_name, task_server, task_database, task_id
                                           ORDER BY MTS_Job_ID DESC ) AS TaskStartRank
                     FROM S_MTS_Peak_Matching_Tasks AS PMT
                     WHERE MTS_Job_ID >= @JobMinimum AND
@@ -129,14 +127,14 @@ AS
             ) AS Source (Tool_Name, MTS_Job_ID, Job_Start, Job_Finish, Comment,
                          State_ID, Task_Server, Task_Database, Task_ID,
                          Assigned_Processor_Name, Tool_Version, DMS_Job_Count,
-                         DMS_Job, Output_Folder_Path, Results_URL, 
+                         DMS_Job, Output_Folder_Path, Results_URL,
                          AMT_Count_1pct_FDR, AMT_Count_5pct_FDR,
-                         AMT_Count_10pct_FDR, AMT_Count_25pct_FDR, 
+                         AMT_Count_10pct_FDR, AMT_Count_25pct_FDR,
                          AMT_Count_50pct_FDR, Refine_Mass_Cal_PPMShift,
-                         MD_ID, QID, 
+                         MD_ID, QID,
                          Ini_File_Name, Comparison_Mass_Tag_Count, MD_State)
         ON (target.MTS_Job_ID = source.MTS_Job_ID AND target.DMS_Job = source.DMS_Job)
-        WHEN Matched AND 
+        WHEN Matched AND
                     (   IsNull(target.Job_Start,'') <> IsNull(source.Job_Start,'') OR
                         IsNull(target.Job_Finish,'') <> IsNull(source.Job_Finish,'') OR
                         target.State_ID <> source.State_ID OR
@@ -151,14 +149,14 @@ AS
                         IsNull(target.AMT_Count_10pct_FDR, 0) <> source.AMT_Count_10pct_FDR OR
                         IsNull(target.AMT_Count_25pct_FDR, 0) <> source.AMT_Count_25pct_FDR OR
                         IsNull(target.AMT_Count_50pct_FDR, 0) <> source.AMT_Count_50pct_FDR OR
-                        IsNull(target.Refine_Mass_Cal_PPMShift, -9999) <> source.Refine_Mass_Cal_PPMShift OR                        
+                        IsNull(target.Refine_Mass_Cal_PPMShift, -9999) <> source.Refine_Mass_Cal_PPMShift OR
                         IsNull(target.MD_ID, -1) <> source.MD_ID OR
                         IsNull(target.QID, -1) <> source.QID OR
                         IsNull(target.Ini_File_Name, '') <> source.Ini_File_Name OR
                         IsNull(target.Comparison_Mass_Tag_Count, -1) <> source.Comparison_Mass_Tag_Count OR
                         IsNull(target.MD_State, 49) <> source.MD_State
                     )
-            THEN UPDATE 
+            THEN UPDATE
                 Set Tool_Name = source.Tool_Name,
                     Job_Start = source.Job_Start,
                     Job_Finish = source.Job_Finish,
@@ -172,59 +170,59 @@ AS
                     DMS_Job_Count = source.DMS_Job_Count,
                     Output_Folder_Path = source.Output_Folder_Path,
                     Results_URL = source.Results_URL,
-                    AMT_Count_1pct_FDR = source.AMT_Count_1pct_FDR, 
+                    AMT_Count_1pct_FDR = source.AMT_Count_1pct_FDR,
                     AMT_Count_5pct_FDR = source.AMT_Count_5pct_FDR,
-                    AMT_Count_10pct_FDR = source.AMT_Count_10pct_FDR,  
-                    AMT_Count_25pct_FDR = source.AMT_Count_25pct_FDR,  
+                    AMT_Count_10pct_FDR = source.AMT_Count_10pct_FDR,
+                    AMT_Count_25pct_FDR = source.AMT_Count_25pct_FDR,
                     AMT_Count_50pct_FDR = source.AMT_Count_50pct_FDR,
                     Refine_Mass_Cal_PPMShift = source.Refine_Mass_Cal_PPMShift,
                     MD_ID = source.MD_ID,
                     QID = source.QID,
-                    Ini_File_Name = source.Ini_File_Name, 
-                    Comparison_Mass_Tag_Count = source.Comparison_Mass_Tag_Count, 
+                    Ini_File_Name = source.Ini_File_Name,
+                    Comparison_Mass_Tag_Count = source.Comparison_Mass_Tag_Count,
                     MD_State = source.MD_State
         WHEN Not Matched THEN
-            INSERT (    Tool_Name, 
-                        MTS_Job_ID, 
-                        Job_Start, 
-                        Job_Finish, 
-                        Comment, 
-                        State_ID, 
-                        Task_Server, 
-                        Task_Database, 
-                        Task_ID, 
-                        Assigned_Processor_Name, 
-                        Tool_Version, 
-                        DMS_Job_Count, 
-                        DMS_Job, 
-                        Output_Folder_Path, 
+            INSERT (    Tool_Name,
+                        MTS_Job_ID,
+                        Job_Start,
+                        Job_Finish,
+                        Comment,
+                        State_ID,
+                        Task_Server,
+                        Task_Database,
+                        Task_ID,
+                        Assigned_Processor_Name,
+                        Tool_Version,
+                        DMS_Job_Count,
+                        DMS_Job,
+                        Output_Folder_Path,
                         Results_URL,
-                        AMT_Count_1pct_FDR, 
+                        AMT_Count_1pct_FDR,
                         AMT_Count_5pct_FDR,
-                        AMT_Count_10pct_FDR, 
-                        AMT_Count_25pct_FDR, 
+                        AMT_Count_10pct_FDR,
+                        AMT_Count_25pct_FDR,
                         AMT_Count_50pct_FDR,
                         Refine_Mass_Cal_PPMShift,
                         MD_ID,
                         QID,
-                        Ini_File_Name, 
-                        Comparison_Mass_Tag_Count, 
+                        Ini_File_Name,
+                        Comparison_Mass_Tag_Count,
                         MD_State
                     )
-            VALUES (source.Tool_Name, source.MTS_Job_ID, source.Job_Start, source.Job_Finish, source.Comment, 
-                    source.State_ID, source.Task_Server, source.Task_Database, source.Task_ID, 
-                    source.Assigned_Processor_Name, source.Tool_Version, source.DMS_Job_Count, 
+            VALUES (source.Tool_Name, source.MTS_Job_ID, source.Job_Start, source.Job_Finish, source.Comment,
+                    source.State_ID, source.Task_Server, source.Task_Database, source.Task_ID,
+                    source.Assigned_Processor_Name, source.Tool_Version, source.DMS_Job_Count,
                     source.DMS_Job, source.Output_Folder_Path, source.Results_URL,
                     source.AMT_Count_1pct_FDR, source.AMT_Count_5pct_FDR,
-                    source.AMT_Count_10pct_FDR, source.AMT_Count_25pct_FDR, 
+                    source.AMT_Count_10pct_FDR, source.AMT_Count_25pct_FDR,
                     source.AMT_Count_50pct_FDR, source.Refine_Mass_Cal_PPMShift,
                     source.MD_ID, source.QID,
                     source.Ini_File_Name, source.Comparison_Mass_Tag_Count, source.MD_State)
         WHEN NOT MATCHED BY SOURCE And @FullRefreshPerformed <> 0 THEN
-            DELETE 
+            DELETE
         OUTPUT $action INTO #Tmp_UpdateSummary
         ;
-    
+
         if @myError <> 0
         begin
             set @message = 'Error merging S_MTS_Peak_Matching_Tasks with T_MTS_Peak_Matching_Tasks_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
@@ -272,35 +270,35 @@ AS
                                 ON PM.DMS_Job = J.AJ_jobID
                         WHERE NOT (PM.Refine_Mass_Cal_PPMShift IS NULL) AND
                                 PM.DMS_Job >= @JobMinimum AND
-                                PM.DMS_Job <= @JobMaximum 
+                                PM.DMS_Job <= @JobMaximum
                         ) SourceQ
             ON DQC.Dataset_ID = SourceQ.Dataset_ID AND SourceQ.TaskRank = 1
         WHERE ISNULL(DQC.MassErrorPPM_VIPER, -99999) <> SourceQ.PPMShift_VIPER OR
               ISNULL(DQC.AMTs_10pct_FDR, -1) <> SourceQ.AMT_Count_10pct_FDR OR
               ISNULL(DQC.AMTs_25pct_FDR, -1) <> SourceQ.AMT_Count_25pct_FDR
-        
+
 
 
         Set @CurrentLocation = 'Update stats in T_MTS_Cached_Data_Status'
         --
-        -- 
-        Exec UpdateMTSCachedDataStatus 'T_MTS_Peak_Matching_Tasks_Cached', 
-                                            @IncrementRefreshCount = 1, 
-                                            @InsertCountNew = @MergeInsertCount, 
-                                            @UpdateCountNew = @MergeUpdateCount, 
+        --
+        Exec UpdateMTSCachedDataStatus 'T_MTS_Peak_Matching_Tasks_Cached',
+                                            @IncrementRefreshCount = 1,
+                                            @InsertCountNew = @MergeInsertCount,
+                                            @UpdateCountNew = @MergeUpdateCount,
                                             @DeleteCountNew = @MergeDeleteCount,
-                                            @FullRefreshPerformed = @FullRefreshPerformed, 
+                                            @FullRefreshPerformed = @FullRefreshPerformed,
                                             @LastRefreshMinimumID = @JobMinimum
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTSAnalysisJobInfo')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, 
+        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
-        Goto Done        
+        Goto Done
     End Catch
-            
+
 Done:
     Return @myError
 

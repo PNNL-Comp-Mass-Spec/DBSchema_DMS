@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[UpdateJobProgress]
+CREATE PROCEDURE [dbo].[UpdateJobProgress]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Updates column Progress in table T_Analysis_Job
 **      Note that a progress of -1 is used for failed jobs
 **      Jobs in state 1=New or 8=Holding will have a progress of 0
@@ -18,7 +17,7 @@ CREATE Procedure [dbo].[UpdateJobProgress]
 **  Date:   09/01/2016 mem - Initial version
 **          10/30/2017 mem - Consider long-running job steps when computing Runtime_Predicted_Minutes
 **                         - Set progress to 0 for inactive jobs (state 13)
-**    
+**
 *****************************************************/
 (
     @mostRecentDays int = 32,   -- Used to select jobs to update; matches jobs created or changed within the given number of days
@@ -28,23 +27,23 @@ CREATE Procedure [dbo].[UpdateJobProgress]
 AS
     Set NoCount On
 
-    Declare @myRowCount int    
+    Declare @myRowCount int
     Declare @myError int
     Set @myRowCount = 0
     Set @myError = 0
-    
+
     -----------------------------------------
     -- Validate the input parameters
     -----------------------------------------
-    
+
     Set @Job = IsNull(@Job, 0)
     Set @mostRecentDays = IsNull(@mostRecentDays, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
-    
+
     -----------------------------------------
     -- Create some temporary tables
     -----------------------------------------
-    
+
     CREATE TABLE #Tmp_JobsToUpdate (
         Job int not null,
         State int not null,
@@ -56,10 +55,10 @@ AS
         Runtime_Predicted_Minutes real null,
         ETA_Minutes real null
     )
-    
+
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_JobsToUpdate_Job ON #Tmp_JobsToUpdate (Job)
     CREATE INDEX #IX_Tmp_JobsToUpdate_State ON #Tmp_JobsToUpdate (State)
-    
+
     -----------------------------------------
     -- Find the jobs to update
     -----------------------------------------
@@ -71,7 +70,7 @@ AS
             Print 'Job not found ' + Cast(@job as varchar(12))
             Goto Done
         End
-        
+
         INSERT INTO #Tmp_JobsToUpdate (Job, State, Progress_Old)
         SELECT AJ_JobID, AJ_StateID, Progress
         FROM T_Analysis_Job
@@ -88,15 +87,15 @@ AS
         Else
         Begin
             Declare @DateThreshold datetime = DateAdd(day, -@mostRecentDays, GetDate())
-            
+
             INSERT INTO #Tmp_JobsToUpdate (Job, State, Progress_Old)
             SELECT AJ_JobID, AJ_StateID, Progress
             FROM T_Analysis_Job
-            WHERE AJ_Created >= @DateThreshold OR 
+            WHERE AJ_Created >= @DateThreshold OR
                   AJ_Start >= @DateThreshold
         End
     End
-    
+
     -----------------------------------------
     -- Update progress and ETA for failed jobs
     -- This logic is also used by trigger trig_u_AnalysisJob
@@ -108,7 +107,7 @@ AS
     WHERE State = 5
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
-    
+
     -----------------------------------------
     -- Update progress and ETA for new, holding, inactive, or Special Proc. Waiting jobs
     -- This logic is also used by trigger trig_u_AnalysisJob
@@ -120,7 +119,7 @@ AS
     WHERE State In (1, 8, 13, 19)
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
-    
+
     -----------------------------------------
     -- Update progress and ETA for completed jobs
     -- This logic is also used by trigger trig_u_AnalysisJob
@@ -132,8 +131,8 @@ AS
     WHERE State In (4, 7, 14)
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
-    
-    
+
+
     -----------------------------------------
     -- Determine the incremental progress for running jobs
     -----------------------------------------
@@ -152,33 +151,33 @@ AS
                       FROM ( SELECT JS.Job,
                                     COUNT(*) AS Steps,
                                     SUM(CASE WHEN JS.State IN (3, 5) THEN 1 ELSE 0 END) AS StepsCompleted,
-                                    SUM(CASE WHEN JS.State = 3 THEN 0 
-                                             ELSE JS.Job_Progress * Tools.AvgRuntime_Minutes 
+                                    SUM(CASE WHEN JS.State = 3 THEN 0
+                                             ELSE JS.Job_Progress * Tools.AvgRuntime_Minutes
                                         END) AS WeightedProgressSum,
                                     SUM(RunTime_Minutes) AS TotalRuntime_Minutes
                              FROM S_V_Pipeline_Job_Steps JS
                                   INNER JOIN S_T_Pipeline_Step_Tools Tools
                                     ON JS.Tool = Tools.Name
-                                  INNER JOIN ( SELECT Job 
-                                               FROM #Tmp_JobsToUpdate 
+                                  INNER JOIN ( SELECT Job
+                                               FROM #Tmp_JobsToUpdate
                                                WHERE State = 2
                                              ) JTU ON JS.Job = JTU.Job
-                             GROUP BY JS.Job 
+                             GROUP BY JS.Job
                            ) ProgressQ
                            INNER JOIN ( SELECT JS.Job,
                                                SUM(Tools.AvgRuntime_Minutes) AS WeightSum
                                         FROM S_V_Pipeline_Job_Steps JS
                                              INNER JOIN S_T_Pipeline_Step_Tools Tools
                                                ON JS.Tool = Tools.Name
-                                             INNER JOIN ( SELECT Job 
-                                                          FROM #Tmp_JobsToUpdate 
+                                             INNER JOIN ( SELECT Job
+                                                          FROM #Tmp_JobsToUpdate
                                                           WHERE State = 2
                                                         ) JTU ON JS.Job = JTU.Job
                                         WHERE JS.State <> 3
-                                        GROUP BY JS.Job 
+                                        GROUP BY JS.Job
                                       ) WeightSumQ
                              ON ProgressQ.Job = WeightSumQ.Job AND
-                                WeightSumQ.WeightSum > 0 
+                                WeightSumQ.WeightSum > 0
                            ) Source
            ON Source.Job = Target.Job
     --
@@ -209,7 +208,7 @@ AS
     --
     UPDATE #Tmp_JobsToUpdate
     SET Runtime_Predicted_Minutes = RunningStepsQ.RunTime_Predicted_Minutes,
-        Progress_New = CASE WHEN RunningStepsQ.Runtime_Predicted_Minutes > 0 
+        Progress_New = CASE WHEN RunningStepsQ.Runtime_Predicted_Minutes > 0
                             THEN CurrentRuntime_Minutes * 100.0 / RunningStepsQ.Runtime_Predicted_Minutes
                             ELSE Progress_New
                        END
@@ -223,7 +222,7 @@ AS
                              ON JS.Job = JTU.Job
                       WHERE JS.RunTime_Minutes > 30 AND
                             JS.State IN (4, 9)        -- Running or Running_Remote
-                      GROUP BY JS.Job 
+                      GROUP BY JS.Job
                     ) RunningStepsQ
            ON Target.Job = RunningStepsQ.Job
     WHERE RunningStepsQ.RunTime_Predicted_Minutes > Target.Runtime_Predicted_Minutes
@@ -249,7 +248,7 @@ AS
         -----------------------------------------
         -- Preview updated progress
         -----------------------------------------
-        
+
         If @infoOnly = 1
         Begin
             -- Summarize the changes
@@ -287,7 +286,7 @@ AS
         -----------------------------------------
         -- Update the progress
         -----------------------------------------
-        --        
+        --
         UPDATE T_Analysis_Job
         SET Progress = Src.Progress_New,
             ETA_Minutes = Src.ETA_Minutes
@@ -299,17 +298,16 @@ AS
               Target.AJ_StateID IN (4,7,14) AND (Target.Progress IS NULL Or Target.ETA_Minutes IS NULL)
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-        
+
         -- If @myRowCount > 0
         --      Print 'Updated progress for ' + Cast(@myRowCount as varchar(12)) + ' jobs'
 
     End
 
-    
+
 Done:
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateJobProgress] TO [DDL_Viewer] AS [dbo]

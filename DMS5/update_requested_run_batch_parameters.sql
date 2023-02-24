@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
 /****************************************************
 **
@@ -47,7 +46,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = ''
 )
-As
+AS
     SET NOCOUNT ON
 
     Declare @myError INT = 0
@@ -382,8 +381,6 @@ As
         Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunBatchParameters'
     END CATCH
     RETURN @myError
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [DDL_Viewer] AS [dbo]

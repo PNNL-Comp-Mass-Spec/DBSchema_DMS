@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatchSpreadsheet]
 /****************************************************
 **
@@ -13,8 +12,8 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatchSpreadsheet]
 **
 **  Parameters:
 **
-**    Auth: jds
-**    Date: 05/18/2009
+**  Auth:   jds
+**  Date:   05/18/2009
 **          08/27/2010 mem - Expanded @RequestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
@@ -37,7 +36,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatchSpreadsheet]
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -48,8 +47,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRunBatchSpreadsheet', @raiseError = 1
     If @authorized = 0
     Begin;

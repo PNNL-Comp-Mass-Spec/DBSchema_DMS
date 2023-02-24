@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdatePrepLCColumn]
 /****************************************************
 **
@@ -38,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCColumn]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 /****************************************************
 **
@@ -58,7 +57,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @mode varchar(12) = 'update',               -- Note that 'add' is not allowed in this procedure; instead use https://dms2.pnl.gov/new_instrument/create (which in turn calls AddNewInstrument)
     @message varchar(512) = '' output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -204,7 +203,6 @@ As
     END Catch
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [DDL_Viewer] AS [dbo]

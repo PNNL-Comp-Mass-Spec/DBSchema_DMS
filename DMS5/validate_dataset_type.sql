@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateDatasetType]
 /****************************************************
 **
@@ -41,7 +40,7 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
     @infoOnly tinyint = 0,
     @autoDefineOnAllMismatches tinyint = 1
 )
-As
+AS
     set nocount on
 
     Declare @myError Int = 0

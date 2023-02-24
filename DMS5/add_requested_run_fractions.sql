@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 /****************************************************
 **
@@ -55,7 +54,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
     @callingUser varchar(128) = '',
     @logDebugMessages tinyint = 0
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -901,7 +900,6 @@ As
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunFractions] TO [DDL_Viewer] AS [dbo]

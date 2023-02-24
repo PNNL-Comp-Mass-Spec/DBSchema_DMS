@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[StoreReporterIonObsStats]
+CREATE PROCEDURE [dbo].[StoreReporterIonObsStats]
 /****************************************************
 **
-**    Desc: Updates the reporter ion observation stats in T_Reporter_Ion_Observation_Rates for the specified analysis job
+**  Desc: Updates the reporter ion observation stats in T_Reporter_Ion_Observation_Rates for the specified analysis job
 **
-**    Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**    Auth: mem
-**    Date: 07/30/2020 mem - Initial version
+**  Auth:   mem
+**  Date:   07/30/2020 mem - Initial version
 **          07/31/2020 mem - Use "WITH EXECUTE AS OWNER" to allow for inserting data into T_Reporter_Ion_Observation_Rates using sp_executesql
 **                         - Without this, svc-dms reports "INSERT permission was denied"
 **          08/12/2020 mem - Replace @observationStatsAll with @medianIntensitiesTopNPct
@@ -27,7 +26,7 @@ CREATE Procedure [dbo].[StoreReporterIonObsStats]
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
-WITH EXECUTE AS OWNER 
+WITH EXECUTE AS OWNER
 AS
     set nocount on
 
@@ -66,7 +65,7 @@ AS
         Set @message = 'Job not found in T_Analysis_Job: ' + CAST(@job AS varchar(19))
         return 50000
     End
-    
+
     -----------------------------------------------
     -- Validate the reporter ion
     -----------------------------------------------
@@ -81,25 +80,25 @@ AS
     -----------------------------------------------
     -- Populate temporary tables with the data in @observationStatsTopNPct and @medianIntensitiesTopNPct
     -----------------------------------------------
-    
+
     CREATE TABLE #TmpRepIonObsStatsTopNPct
     (
         Channel int Not Null,
-		Observation_Rate varchar(2048),
+        Observation_Rate varchar(2048),
         Observation_Rate_Value float Null,
     )
-    
+
     CREATE TABLE #TmpRepIonIntensities
     (
         Channel int Not Null,
-		Median_Intensity varchar(2048),
+        Median_Intensity varchar(2048),
         Median_Intensity_Value int Null,
     )
-    
+
     INSERT INTO #TmpRepIonObsStatsTopNPct (Channel, Observation_Rate)
     SELECT EntryID, Value
     FROM dbo.udfParseDelimitedListOrdered(@observationStatsTopNPct, ',', 0)
-    
+
     INSERT INTO #TmpRepIonIntensities (Channel, Median_Intensity)
     SELECT EntryID, Value
     FROM dbo.udfParseDelimitedListOrdered(@medianIntensitiesTopNPct, ',', 0)

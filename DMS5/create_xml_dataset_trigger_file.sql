@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CreateXmlDatasetTriggerFile]
 /****************************************************
 **  Desc:   Creates an XML dataset trigger file to deposit into a directory
@@ -51,7 +50,7 @@ CREATE PROCEDURE [dbo].[CreateXmlDatasetTriggerFile]
     @LC_Cart_Config     varchar(128),
     @message            varchar(512) output
 )
-As
+AS
 set nocount on
 
     Declare @myError int = 0
@@ -255,7 +254,6 @@ Done:
     End
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreateXmlDatasetTriggerFile] TO [DDL_Viewer] AS [dbo]

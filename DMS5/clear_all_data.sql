@@ -3,27 +3,26 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ClearAllData]
 /****************************************************
-** 
-**    Desc: 
-**        This is a DANGEROUS procedure that will clear all
-**        data from all of the tables in this database
 **
-**        This is useful for creating test databases
-**        or for migrating the DMS databases to a new laboratory
+**  Desc:
+**      This is a DANGEROUS procedure that will clear all
+**      data from all of the tables in this database
 **
-**    Return values: 0: success, otherwise, error code
-** 
-**    Parameters:
+**      This is useful for creating test databases
+**      or for migrating the DMS databases to a new laboratory
 **
-**    Auth: mem
-**    Date: 08/21/2015 mem - Initial release
+**  Return values: 0: success, otherwise, error code
+**
+**  Parameters:
+**
+**  Auth:   mem
+**  Date:   08/21/2015 mem - Initial release
 **          09/16/2015 mem - Added exclusions for entries related to in-silico instrument 'DMS_Pipeline_Data'
 **          10/29/2015 mem - Disabling functionality via a goto (for safety)
 **          01/19/2018 mem - Add additional freezers to exclude when updating T_Material_Locations
-**    
+**
 *****************************************************/
 (
     @ServerNameFailsafe varchar(64) = 'Pass in the name of the current server to confirm that you truly want to delete data',
@@ -31,9 +30,9 @@ CREATE PROCEDURE [dbo].[ClearAllData]
     @infoOnly tinyint = 1,
     @message varchar(255) = '' output
 )
-As
+AS
     Set NoCount On
-    
+
     declare @myRowCount int
     declare @myError int
     set @myRowCount = 0
@@ -53,19 +52,19 @@ As
     -------------------------------------------------
     -- Verify that we truly should do this
     -------------------------------------------------
-    
+
     If @ServerNameFailsafe <> @@ServerName
     Begin
-        set @message = 'You must enter the name of the server hosting this database'        
+        set @message = 'You must enter the name of the server hosting this database'
         Goto Done
     End
-    
-    Declare @userDate date 
+
+    Declare @userDate date
     set @userDate = Convert(date, @CurrentDateFailsafe)
-    
+
     If IsNull(@userDate, '') = '' OR @userDate <> Cast(GetDate() as Date)
     Begin
-        set @message = 'You must set @CurrentDateFailsafe to the current date, in the form yyyy-mm-dd'        
+        set @message = 'You must set @CurrentDateFailsafe to the current date, in the form yyyy-mm-dd'
         Goto Done
     End
 
@@ -98,7 +97,7 @@ As
             DROP INDEX IX_T_Analysis_Job_DatasetID_JobID_StateID ON dbo.T_Analysis_Job
             DROP INDEX IX_T_Analysis_Job_AJ_StateID_AJ_JobID ON dbo.T_Analysis_Job
         End
-        
+
         If Exists (SELECT * FROM sys.indexes WHERE name = 'IX_T_Dataset_DateSortKey')
         Begin
             DROP INDEX IX_T_Dataset_DateSortKey ON dbo.T_Dataset
@@ -123,7 +122,7 @@ As
             DROP INDEX IX_T_Dataset_Dataset_Num ON dbo.T_Dataset
             DROP INDEX IX_T_Dataset_Created ON dbo.T_Dataset
         End
-        
+
         IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_T_Analysis_Job_T_Analysis_Job_Batches')
             ALTER TABLE dbo.T_Analysis_Job
                 DROP CONSTRAINT FK_T_Analysis_Job_T_Analysis_Job_Batches
@@ -172,7 +171,7 @@ As
         IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_T_Experiment_Group_Members_T_Experiments')
             ALTER TABLE dbo.T_Experiment_Group_Members
                 DROP CONSTRAINT FK_T_Experiment_Group_Members_T_Experiments
-    
+
         IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_T_Instrument_Name_T_storage_path_SourcePathID')
             ALTER TABLE dbo.T_Instrument_Name
                 DROP CONSTRAINT FK_T_Instrument_Name_T_storage_path_SourcePathID
@@ -194,7 +193,7 @@ As
                 DROP CONSTRAINT FK_T_Research_Team_Membership_T_Research_Team
 
     End
-    
+
     -------------------------------------------------
     -- Truncate tables
     -------------------------------------------------
@@ -215,12 +214,12 @@ As
 
         DELETE FROM T_Analysis_Job_Batches
         WHERE NOT Batch_ID IN (Select AJ_BatchID FROM T_Analysis_Job)
-        
+
         DELETE FROM T_Analysis_Job_ID
         WHERE NOT ID IN (Select AJ_JobID FROM T_Analysis_Job)
 
         DELETE FROM T_Analysis_Job_Processor_Group_Associations
-        WHERE NOT Job_ID IN (Select AJ_JobID FROM T_Analysis_Job) 
+        WHERE NOT Job_ID IN (Select AJ_JobID FROM T_Analysis_Job)
 
         DELETE T_Analysis_Job_Processor_Group_Membership
         FROM T_Analysis_Job_Processor_Group_Membership AJPGM
@@ -236,38 +235,38 @@ As
 
         DELETE FROM T_Analysis_Job_Processor_Group
         WHERE ID NOT IN (100, 115, 151)
-       
+
         DELETE FROM T_Analysis_Job_Processors
         WHERE NOT Processor_Name LIKE 'Pub-10-%' AND
               NOT Processor_Name LIKE 'Pub-80-%'
-        
+
         DELETE FROM T_Analysis_Job_Request
         WHERE AJR_RequestID > 1 AND
               AJR_RequestID NOT IN
               ( SELECT DISTINCT T_Analysis_Job_Request.AJR_requestID
                 FROM T_Instrument_Name
                     INNER JOIN T_Dataset
-                    ON T_Instrument_Name.Instrument_ID 
+                    ON T_Instrument_Name.Instrument_ID
                         = T_Dataset.DS_instrument_name_ID
                     INNER JOIN T_Analysis_Job
                     ON T_Dataset.Dataset_ID = T_Analysis_Job.AJ_datasetID
                     INNER JOIN T_Analysis_Job_Request
-                    ON T_Analysis_Job.AJ_requestID 
+                    ON T_Analysis_Job.AJ_requestID
                         = T_Analysis_Job_Request.AJR_requestID
                 WHERE (T_Instrument_Name.IN_name = 'CBSS_Orb1') )
-    
+
         DELETE FROM T_Dataset_Archive
-        WHERE NOT AS_Dataset_ID IN 
+        WHERE NOT AS_Dataset_ID IN
               ( SELECT T_Dataset.Dataset_ID
                 FROM T_Dataset
                     INNER JOIN T_Instrument_Name
-                    ON T_Dataset.DS_instrument_name_ID 
+                    ON T_Dataset.DS_instrument_name_ID
                         = T_Instrument_Name.Instrument_ID
                 WHERE (T_Instrument_Name.IN_name = 'CBSS_Orb1') )
-                
+
         DELETE FROM T_Archive_Path
         WHERE AP_instrument_name_ID > 0 AND
-              NOT AP_Path_ID IN 
+              NOT AP_Path_ID IN
               ( SELECT T_Archive_Path.AP_path_ID
                 FROM T_Archive_Path
                     INNER JOIN T_Dataset_Archive
@@ -275,7 +274,7 @@ As
                     INNER JOIN T_Dataset
                         ON T_Dataset_Archive.AS_Dataset_ID = T_Dataset.Dataset_ID
                     INNER JOIN T_Instrument_Name
-                        ON T_Dataset.DS_instrument_name_ID 
+                        ON T_Dataset.DS_instrument_name_ID
                         = T_Instrument_Name.Instrument_ID
                 WHERE (T_Instrument_Name.IN_name = 'CBSS_Orb1') )
 
@@ -289,7 +288,7 @@ As
 
         DELETE FROM T_Requested_Run_Batches
         WHERE ID > 0
-    
+
         DELETE FROM T_Dataset
         WHERE NOT (Dataset_ID IN
                (SELECT T_Dataset.Dataset_ID
@@ -303,16 +302,16 @@ As
                           INNER JOIN T_Experiments
                             ON T_Experiment_Cell_Cultures.Exp_ID = T_Experiments.Exp_ID
                      WHERE (T_Experiments.Experiment_Num = 'Placeholder') OR
-                           (T_Experiment_Cell_Cultures.Exp_ID IN 
+                           (T_Experiment_Cell_Cultures.Exp_ID IN
                             ( SELECT T_Experiments.Exp_ID
                               FROM T_Instrument_Name
                                    INNER JOIN T_Dataset
-                                     ON T_Instrument_Name.Instrument_ID 
+                                     ON T_Instrument_Name.Instrument_ID
                                         = T_Dataset.DS_instrument_name_ID
                                    INNER JOIN T_Experiments
                                      ON T_Dataset.Exp_ID = T_Experiments.Exp_ID
                               WHERE (T_Instrument_Name.IN_name = 'CBSS_Orb1') )) OR
-                           (T_Experiment_Cell_Cultures.Exp_ID IN 
+                           (T_Experiment_Cell_Cultures.Exp_ID IN
                             ( SELECT DISTINCT T_Requested_Run.Exp_ID
                               FROM T_Experiments
                                    INNER JOIN T_Requested_Run
@@ -344,13 +343,13 @@ As
 
         DELETE T_Experiment_Groups
         FROM T_Experiment_Groups LEFT OUTER JOIN
-        T_Experiment_Group_Members ON 
+        T_Experiment_Group_Members ON
         T_Experiment_Groups.Group_ID = T_Experiment_Group_Members.Group_ID
         WHERE (T_Experiment_Group_Members.Exp_ID IS NULL)
-                                 
-        DELETE FROM T_Sample_Prep_Request_Items 
+
+        DELETE FROM T_Sample_Prep_Request_Items
         WHERE ID > 0
-                                    
+
         DELETE FROM T_Sample_Prep_Request
         WHERE ID > 0
 
@@ -361,7 +360,7 @@ As
 
         DELETE FROM T_EUS_Proposals
         WHERE Proposal_ID <> 1000
-            
+
         DELETE FROM T_Cell_Culture
         WHERE CC_Name <> '(none)' AND
               NOT CC_ID IN ( SELECT ECC.CC_ID
@@ -370,7 +369,7 @@ As
         ON ECC.CC_ID = C.CC_ID )
 
         DELETE FROM T_Storage_Path
-        WHERE (SP_path <> '(none)') AND 
+        WHERE (SP_path <> '(none)') AND
               (SP_instrument_name <> 'DMS_Pipeline_Data') AND
               (NOT (SP_path_ID IN
                (SELECT T_Storage_Path.SP_path_ID
@@ -391,13 +390,13 @@ As
         DELETE T_EMSL_DMS_Instrument_Mapping
         FROM T_EMSL_DMS_Instrument_Mapping
             LEFT OUTER JOIN T_Instrument_Name
-                ON T_EMSL_DMS_Instrument_Mapping.DMS_Instrument_ID = T_Instrument_Name.Instrument_ID 
+                ON T_EMSL_DMS_Instrument_Mapping.DMS_Instrument_ID = T_Instrument_Name.Instrument_ID
                     AND
-                    T_Instrument_Name.IN_Name <> 'CBSS_Orb1'               
+                    T_Instrument_Name.IN_Name <> 'CBSS_Orb1'
 
         DELETE FROM T_Prep_LC_Run
         WHERE ID > 0
-  
+
         DELETE T_Prep_LC_Column
         WHERE column_name <> 'IgY12_LC10_01'
 
@@ -412,10 +411,10 @@ As
         FROM T_Instrument_Class
              INNER JOIN T_Analysis_Tool_Allowed_Instrument_Class
                ON T_Instrument_Class.IN_class = T_Analysis_Tool_Allowed_Instrument_Class.Instrument_Class
-        WHERE (NOT (T_Instrument_Class.IN_class IN ('IN_class', 'Agilent_Ion_Trap', 'Agilent_TOF_V2', 
+        WHERE (NOT (T_Instrument_Class.IN_class IN ('IN_class', 'Agilent_Ion_Trap', 'Agilent_TOF_V2',
               'BrukerFT_BAF', 'BrukerMALDI_Imaging_V2', 'BrukerTOF_BAF', 'Data_Folders', 'Finnigan_Ion_Trap',
               'IMS_Agilent_TOF', 'LTQ_FT', 'Thermo_Exactive', 'Triple_Quad', 'PrepHPLC')))
-        
+
         DELETE FROM T_Instrument_Operation_History
         WHERE Instrument <> 'None'
 
@@ -431,15 +430,15 @@ As
         WHERE SC_Column_Number <> 'unknown'
 
         DELETE FROM T_Material_Containers
-        WHERE NOT Tag IN ('na', 'Staging', 'MC-1348') AND 
+        WHERE NOT Tag IN ('na', 'Staging', 'MC-1348') AND
               NOT ID IN (SELECT EX_Container_ID FROM T_Experiments)
-       
+
         DELETE FROM T_Material_Locations
-        WHERE NOT Tag IN ('None', '-20_Staging', '-20_Met_Staging', '-80_Staging', 
+        WHERE NOT Tag IN ('None', '-20_Staging', '-20_Met_Staging', '-80_Staging',
                            'Phosphopep_Staging', 'QC_Staging')
                AND Freezer_Tag <> '-80 BSF1206A'
              AND NOT ID IN (SELECT Location_ID FROM T_Material_Containers)
-              
+
         UPDATE T_MTS_Cached_Data_Status
         SET Refresh_Count = 0,
             Insert_Count = 0,
@@ -667,7 +666,7 @@ As
 
         TRUNCATE TABLE T_Notification_Entity_User
 
-        
+
         DELETE FROM T_Users
         WHERE (NOT (ID IN
                (SELECT ID
@@ -683,14 +682,14 @@ As
              SELECT DISTINCT AJR_requestor
              FROM T_Analysis_Job_Request
              UNION
-             SELECT Received_by_user_id 
+             SELECT Received_by_user_id
              FROM T_Sample_Submission
              UNION
              SELECT DISTINCT T_Users.ID
              FROM T_Experiments INNER JOIN
                 T_Users ON T_Experiments.EX_researcher_PRN = T_Users.U_PRN INNER JOIN
                 T_Instrument_Name INNER JOIN
-                T_Dataset ON T_Instrument_Name.Instrument_ID = T_Dataset.DS_instrument_name_ID ON 
+                T_Dataset ON T_Instrument_Name.Instrument_ID = T_Dataset.DS_instrument_name_ID ON
                 T_Experiments.Exp_ID = T_Dataset.Exp_ID
              WHERE (T_Instrument_Name.IN_name = 'CBSS_Orb1')))) AND
              NOT U_PRN IN (
@@ -712,9 +711,9 @@ As
         TRUNCATE TABLE T_Analysis_Job_Status_History
         TRUNCATE TABLE T_Analysis_Status_Monitor_Params
         TRUNCATE TABLE T_Archive_Space_Usage
-        
+
         DELETE FROM T_Attachments
-        
+
         TRUNCATE TABLE T_AuxInfo_Value
         TRUNCATE TABLE T_Cached_Dataset_Folder_Paths
         TRUNCATE TABLE T_Cached_Instrument_Usage_by_Proposal
@@ -729,12 +728,12 @@ As
         TRUNCATE TABLE T_EMSL_Instrument_Allocation
         TRUNCATE TABLE T_EMSL_Instrument_Usage_Report
         TRUNCATE TABLE T_Entity_Rename_Log
-        
+
         DELETE FROM T_EUS_Users WHERE PERSON_ID <> 1000
-        
+
         TRUNCATE TABLE T_Event_Log
         TRUNCATE TABLE T_Experiment_Group_Members
-        
+
         TRUNCATE TABLE T_Factor
         TRUNCATE TABLE T_Factor_Log
         TRUNCATE TABLE T_File_Attachment
@@ -771,9 +770,9 @@ As
     End
     Else
     Begin
-    
+
         SELECT 'Data would be deleted from a large number of tables' as Msg
-        
+
     End
 
     -------------------------------------------------
@@ -782,7 +781,7 @@ As
 
     If @infoOnly = 0
     Begin
-                
+
         alter table T_Analysis_Job add
             constraint FK_T_Analysis_Job_T_Dataset foreign key(AJ_datasetID) references T_Dataset(Dataset_ID),
             constraint FK_T_Analysis_Job_T_Analysis_Job_Batches foreign key(AJ_batchID) references T_Analysis_Job_Batches(Batch_ID),
@@ -907,17 +906,17 @@ As
 
         alter table T_Param_File_Mass_Mods add
             constraint FK_T_Param_File_Mass_Mods_T_Param_Files foreign key(Param_File_ID) references T_Param_Files(Param_File_ID) on update cascade;
-    
+
         ENABLE TRIGGER trig_ud_T_Analysis_Job on T_Analysis_Job;
         ENABLE TRIGGER trig_ud_T_Dataset on T_Dataset;
         ENABLE TRIGGER trig_ud_T_Experiments on T_Experiments;
 
     End
-            
+
 Done:
     If @message <> ''
         Print @message
-        
+
     return @myError
 
 GO

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentAcqOverlapData]
 /****************************************************
 **
@@ -19,7 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentAcqOverlapData]
 *****************************************************/
 (
     @instrument varchar(64),
-    @year int,					        -- If 0, process all rows for the given instrument
+    @year int,                          -- If 0, process all rows for the given instrument
     @month int,                         -- If 0, do not filter on month
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0               -- Preview updates if non-zero; if 2 also show the contents of #Tmp_DatasetStartTimes; if 3 also show #Tmp_UpdatesToApply without joining to T_EMSL_Instrument_Usage_Report
@@ -177,7 +176,7 @@ AS
 
         If @infoOnly = 0
         Begin
-            -- Set Dataset_ID_Acq_Overlap to Null for any entries where it is currently not null, 
+            -- Set Dataset_ID_Acq_Overlap to Null for any entries where it is currently not null,
             -- yet there is only one dataset (or interval) for the given start time
             --
             UPDATE T_EMSL_Instrument_Usage_Report
@@ -193,7 +192,7 @@ AS
                       InstUsage.Start = FilterQ.StartTime
             WHERE NOT Dataset_ID_Acq_Overlap IS NULL
         End
-        
+
         If @infoOnly = 2
         Begin
             Select *
@@ -222,8 +221,8 @@ AS
                 -- Find the best dataset ID to represent the group of datasets (or group of intervals) that start at @startTime
                 -- Choose the dataset (or interval) with the longest runtime
                 --   If ties, sort by dataset name
-                
-                -- If a dataset was deleted from DMS then re-uploaded under a new name, 
+
+                -- If a dataset was deleted from DMS then re-uploaded under a new name,
                 -- table T_EMSL_Instrument_Usage_Report may have two rows for the dataset
                 -- Since this query uses an inner join, it will grab the Dataset_ID of the existing dataset
 
@@ -299,8 +298,8 @@ AS
                           InstUsage.[Type] = @itemType
                     ORDER BY CASE WHEN InstUsage.Dataset_ID = @datasetID And Seq = @lastSeq THEN 1
                                   WHEN InstUsage.Dataset_ID = @datasetID THEN 2
-                                  ELSE 3 
-                             END, 
+                                  ELSE 3
+                             END,
                              DS.Dataset_Num
                 End
             End

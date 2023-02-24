@@ -3,40 +3,40 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetFactorList
+CREATE FUNCTION [dbo].[GetFactorList]
 /****************************************************
 **
-**	Desc: 
+**  Desc:
 **  Builds a delimited list of factors
 **  (as name/value pairs) for given
 **  requested run
 **
-**	Return value: delimited list
+**  Return value: delimited list
 **
-**	Parameters: 
+**  Parameters:
 **
-**	Auth:	grk
-**	Date:	05/17/2011
-**    
-*****************************************************/ 
-( 
-	@requestID INT 
+**  Auth:   grk
+**  Date:   05/17/2011
+**
+*****************************************************/
+(
+    @requestID INT
 )
 RETURNS VARCHAR(256)
-AS 
+AS
     BEGIN
         DECLARE @list VARCHAR(256)
         SET @list = ''
 
-		IF NOT @requestID IS NULL 
-		BEGIN 
-			SELECT  @list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + [Name] + ':' + [Value]
-			FROM    T_Factor F
-			WHERE   ( TYPE = 'Run_Request' )
-					AND ( TargetID = @requestID )
-			ORDER BY [Name]
+        IF NOT @requestID IS NULL
+        BEGIN
+            SELECT  @list = @list + CASE WHEN @list = '' THEN '' ELSE ', ' END + [Name] + ':' + [Value]
+            FROM    T_Factor F
+            WHERE   ( TYPE = 'Run_Request' )
+                    AND ( TargetID = @requestID )
+            ORDER BY [Name]
         END
-	
+
         RETURN @list
     END
 GO

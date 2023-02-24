@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[FindLogEntry]
 /****************************************************
 **
@@ -33,7 +32,7 @@ CREATE PROCEDURE [dbo].[FindLogEntry]
     @MessageText varchar(500) = '',
     @message varchar(512) ='' output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -106,7 +105,6 @@ As
     end
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [DDL_Viewer] AS [dbo]

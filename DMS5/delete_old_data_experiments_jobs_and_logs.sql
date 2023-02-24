@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DeleteOldDataExperimentsJobsAndLogs]
 /****************************************************
 **
@@ -849,7 +848,6 @@ AS
 Done:
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DeleteOldDataExperimentsJobsAndLogs] TO [DDL_Viewer] AS [dbo]

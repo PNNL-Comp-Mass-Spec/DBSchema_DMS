@@ -3,29 +3,29 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION dbo.GetFiscalYearFromDate
+CREATE FUNCTION [dbo].[GetFiscalYearFromDate]
 /****************************************************
 **
-**	Desc: 
+**  Desc:
 **  Returns Fiscal year for given date
 **
-**	Return value: person
+**  Return value: person
 **
-**	Parameters: 
+**  Parameters:
 **
-**	Auth:	grk
-**	Date:	07/18/2011
-**    
+**  Auth:   grk
+**  Date:   07/18/2011
+**
 *****************************************************/
 (
-	@RawDate Datetime 
+    @RawDate Datetime
 )
 RETURNS VARCHAR(32)
 AS
-	BEGIN
-	DECLARE @yr Datetime = CASE WHEN DATEPART(mm, @RawDate) > 9 THEN DATEADD(YY, 1, @RawDate) ELSE @RawDate END 
-	RETURN 'FY_' + RIGHT(CONVERT(VARCHAR(24), @yr, 101), 2)
-	END
+    BEGIN
+    DECLARE @yr Datetime = CASE WHEN DATEPART(mm, @RawDate) > 9 THEN DATEADD(YY, 1, @RawDate) ELSE @RawDate END
+    RETURN 'FY_' + RIGHT(CONVERT(VARCHAR(24), @yr, 101), 2)
+    END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetFiscalYearFromDate] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateBiomaterial]
 /****************************************************
 **
@@ -62,7 +61,7 @@ CREATE PROCEDURE [dbo].[AddUpdateBiomaterial]
     @cellLine varchar(64) = '',
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -491,7 +490,6 @@ As
     End CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateBiomaterial] TO [DDL_Viewer] AS [dbo]

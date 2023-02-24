@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateResearchTeamForCampaign]
 /****************************************************
 **
@@ -22,7 +21,7 @@ CREATE PROCEDURE [dbo].[UpdateResearchTeamForCampaign]
 **          08/22/2017 mem - Validate @campaignNum
 **          08/20/2021 mem - Use Select Distinct to avoid duplicates
 **          02/17/2022 mem - Update error message and convert tabs to spaces
-**    
+**
 *****************************************************/
 (
     @campaignNum varchar(64),               -- Campaign name (required if @researchTeamID is 0)
@@ -41,12 +40,12 @@ AS
 
     declare @myError int = 0
     declare @myRowCount int = 0
-    
+
     set @message = ''
 
     Declare @entryID int
     Declare @continue tinyint
-    
+
     Declare @matchCount int
     Declare @unknownPRN varchar(64)
     Declare @newPRN varchar(64)
@@ -55,25 +54,25 @@ AS
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'UpdateResearchTeamForCampaign', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
+
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
-    
+
     Set @campaignNum = IsNull(@campaignNum, '')
-    
+
     ---------------------------------------------------
     -- Make new research team if ID is 0
     ---------------------------------------------------
 
-    If @researchTeamID = 0 
+    If @researchTeamID = 0
     Begin
         If @campaignNum = ''
         Begin
@@ -81,7 +80,7 @@ AS
             set @message = 'Campaign name is blank; cannot create a new research team'
             GOTO Done
         End
-        
+
         INSERT INTO T_Research_Team (
             Team,
             Description,
@@ -105,7 +104,7 @@ AS
     Else
     Begin
         -- Update Collaborators
-        
+
         UPDATE dbo.T_Research_Team
         SET Collaborators = @collaborators
         WHERE ID = @researchTeamID
@@ -118,8 +117,8 @@ AS
             GOTO Done
         End
     End
-    
-    If @researchTeamID = 0 
+
+    If @researchTeamID = 0
     Begin
         set @message = 'Research team ID was not valid'
         GOTO Done
@@ -255,10 +254,10 @@ AS
     -- Look for entries in #Tmp_TeamMembers where User_PRN did not resolve to a User_ID
     -- In case a name was entered (instead of a PRN), try-to auto-resolve using the U_Name column in T_Users
     ---------------------------------------------------
-    
+
     Set @entryID = 0
     Set @continue = 1
-    
+
     While @continue = 1
     Begin
         SELECT TOP 1 @entryID = EntryID,
@@ -268,15 +267,15 @@ AS
         ORDER BY EntryID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount = 0
             Set @continue = 0
         Else
         Begin
             Set @matchCount = 0
-            
+
             exec AutoResolveNameToPRN @unknownPRN, @matchCount output, @newPRN output, @newUserID output
-                        
+
             If @matchCount = 1
             Begin
                 -- Single match was found; update User_PRN in #Tmp_TeamMembers
@@ -287,9 +286,9 @@ AS
 
             End
         End
-        
+
     End
-    
+
     ---------------------------------------------------
     -- Error if any PRN or role did not resolve to ID
     ---------------------------------------------------
@@ -342,7 +341,7 @@ AS
         set @myError = 51001
         GOTO Done
     End
- 
+
     ---------------------------------------------------
     -- Clean out any existing membership
     ---------------------------------------------------

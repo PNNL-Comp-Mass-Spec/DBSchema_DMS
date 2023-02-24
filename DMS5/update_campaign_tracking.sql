@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCampaignTracking]
 /****************************************************
 **
@@ -19,7 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateCampaignTracking]
 **          04/15/2015 mem - Added Data_Package_Count
 **          08/29/2018 mem - Added Sample_Submission_Count and Sample_Submission_Most_Recent
 **          08/30/2018 mem - Use merge instead of truncate
-**    
+**
 *****************************************************/
 AS
     Declare @message varchar(512)
@@ -28,7 +27,7 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     ----------------------------------------------------------
@@ -54,8 +53,8 @@ AS
         Sample_Prep_Request_Most_Recent datetime NULL,
         Most_Recent_Activity datetime NULL,
         CONSTRAINT PK_Tmp_CampaignStats PRIMARY KEY CLUSTERED (Campaign_ID ASC)
-    ) 
-     
+    )
+
     ----------------------------------------------------------
     -- Make entry in results table for each campaign
     ----------------------------------------------------------
@@ -250,7 +249,7 @@ AS
     ----------------------------------------------------------
     -- Update T_Campaign_Tracking using #Tmp_CampaignStats
     ----------------------------------------------------------
-    --        
+    --
     MERGE T_Campaign_Tracking AS T
     USING (SELECT * FROM #Tmp_CampaignStats) as s
     ON ( t.C_ID = s.Campaign_ID)
@@ -282,7 +281,7 @@ AS
         ISNULL( NULLIF(t.Most_Recent_Activity, s.Most_Recent_Activity),
                 NULLIF(s.Most_Recent_Activity, t.Most_Recent_Activity)) IS NOT NULL
         )
-    THEN UPDATE SET 
+    THEN UPDATE SET
         Sample_Submission_Count = s.Sample_Submission_Count,
         Cell_Culture_Count = s.Cell_Culture_Count,
         Experiment_Count = s.Experiment_Count,
@@ -305,7 +304,6 @@ AS
     WHEN NOT MATCHED BY SOURCE THEN DELETE;
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCampaignTracking] TO [DDL_Viewer] AS [dbo]

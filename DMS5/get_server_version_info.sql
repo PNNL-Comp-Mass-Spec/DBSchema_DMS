@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetServerVersionInfo]
 /****************************************************
 **
@@ -24,7 +23,7 @@ CREATE PROCEDURE [dbo].[GetServerVersionInfo]
     @VersionBuild int = 0 OUTPUT,
     @ServicePack varchar(24)='' OUTPUT
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int
@@ -101,7 +100,6 @@ As
 
 Done:
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [DDL_Viewer] AS [dbo]

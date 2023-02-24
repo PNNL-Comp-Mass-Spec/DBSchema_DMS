@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.GetRequestedRunFactorsForEdit
+CREATE PROCEDURE [dbo].[GetRequestedRunFactorsForEdit]
 /****************************************************
 **
 **  Desc:
 **        Returns the factors associated with the
 **        run requests given by the itemList
 **
-**    Auth: grk
-**    Date: 02/20/2010
+**  Auth:   grk
+**  Date:   02/20/2010
 **          03/02/2010 grk - added status field to requested run
 **          03/08/2010 grk - improved field validation
 **          03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
@@ -113,7 +112,6 @@ AS
 
     --
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForEdit] TO [DDL_Viewer] AS [dbo]

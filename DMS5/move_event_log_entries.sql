@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[MoveEventLogEntries]
+CREATE PROCEDURE [dbo].[MoveEventLogEntries]
 /****************************************************
 **
 **  Desc:   Move log entries from event log into the historic log (insert and then delete)
@@ -15,12 +14,12 @@ CREATE Procedure [dbo].[MoveEventLogEntries]
 **          10/04/2011 mem - Removed @DBName parameter
 **          07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **          06/08/2022 mem - Rename column Index to Event_ID
-**    
+**
 *****************************************************/
 (
     @intervalDays int = 365
 )
-As
+AS
     Set nocount on
 
     Declare @cutoffDateTime datetime
@@ -35,7 +34,7 @@ As
     set @DBName = DB_NAME()
 
     set nocount off
-    
+
     -- Start transaction
     --
     Declare @transName varchar(64) = 'TRAN_MoveEventLogEntries'
@@ -43,7 +42,7 @@ As
     begin transaction @transName
 
     -- Copy entries into the historic log database
-    --    
+    --
     INSERT INTO DMSHistoricLog.dbo.T_Event_Log( Event_ID,
                                                 Target_Type,
                                                 Target_ID,
@@ -82,9 +81,9 @@ As
             10, 1)
         return 51181
     end
-    
+
     commit transaction @transName
-    
+
     return 0
 
 GO

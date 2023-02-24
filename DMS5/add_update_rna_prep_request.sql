@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
 /****************************************************
 **
@@ -52,15 +51,15 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     Set @message = ''
-    
-    Declare @msg varchar(512) 
+
+    Declare @msg varchar(512)
 
     Declare @currentStateID int
 
@@ -73,24 +72,24 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateRNAPrepRequest', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin Try 
+    Begin Try
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
     --
     Set @InstrumentName = IsNull(@InstrumentName, '')
-    
+
     Set @DatasetType = IsNull(@DatasetType, '')
- 
+
     ---------------------------------------------------
     -- Validate dataset type
     ---------------------------------------------------
@@ -99,11 +98,11 @@ As
     Begin
         If IsNull(@DatasetType, '') = ''
             RAISERROR ('Dataset type cannot be empty since the Instrument Name is defined', 11, 118)
-    
+
         ---------------------------------------------------
         -- Validate the instrument name
         ---------------------------------------------------
-                
+
         If NOT EXISTS (SELECT * FROM T_Instrument_Name WHERE IN_Name = @InstrumentName)
         Begin
             -- Check whether @InstrumentName actually has an instrument group
@@ -117,7 +116,7 @@ As
         ---------------------------------------------------
         -- Determine the Instrument Group
         ---------------------------------------------------
-        
+
         SELECT TOP 1 @InstrumentGroup = IN_Group
         FROM T_Instrument_Name
         WHERE IN_Name = @InstrumentName
@@ -125,18 +124,18 @@ As
         ---------------------------------------------------
         -- validate instrument group and dataset type
         ---------------------------------------------------
-        
+
         Declare @datasetTypeID int
         --
         exec @myError = ValidateInstrumentGroupAndDatasetType
                                 @DatasetType,
                                 @instrumentGroup,
                                 @datasetTypeID output,
-                                @msg output 
+                                @msg output
         If @myError <> 0
             RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
-    End                
-                            
+    End
+
     ---------------------------------------------------
     -- Resolve campaign ID
     ---------------------------------------------------
@@ -166,14 +165,14 @@ As
     Begin
         Set @EstimatedCompletionDate = CONVERT(datetime, @EstimatedCompletion)
     End
-  
+
     ---------------------------------------------------
     -- Force values of some properties for add mode
     ---------------------------------------------------
-  
+
     If @mode = 'add'
     Begin
-        Set @State = 'Pending Approval'        
+        Set @State = 'Pending Approval'
     End
 
     ---------------------------------------------------
@@ -193,12 +192,12 @@ As
     --
     If @StateID = 0
         RAISERROR ('No entry could be found in database for state "%s"', 11, 23, @State)
-    
+
     ---------------------------------------------------
     -- Validate EUS type, proposal, and user list
     --
-    -- This procedure accepts a list of EUS User IDs, 
-    -- so we convert to a string before calling it, 
+    -- This procedure accepts a list of EUS User IDs,
+    -- so we convert to a string before calling it,
     -- then convert back to an integer afterward
     ---------------------------------------------------
 
@@ -233,7 +232,7 @@ As
     ---------------------------------------------------
 
     Declare @allowNoneWP tinyint = 0
-    
+
     exec @myError = ValidateWP
                         @workPackageNumber,
                         @allowNoneWP,
@@ -242,7 +241,7 @@ As
     If @myError <> 0
         RAISERROR ('ValidateWP: %s', 11, 1, @msg)
 
-    If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')       
+    If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')
         Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 512)
     Else
     Begin
@@ -253,10 +252,10 @@ As
     -- Make sure the Work Package is capitalized properly
     --
     SELECT @workPackageNumber = Charge_Code
-    FROM T_Charge_Code 
+    FROM T_Charge_Code
     WHERE Charge_Code = @workPackageNumber
 
-    
+
     ---------------------------------------------------
     -- Is entry already in database?
     ---------------------------------------------------
@@ -267,10 +266,10 @@ As
         --
         Declare @tmp int = 0
         Declare @RequestTypeExisting varchar(16)
-        Set @currentStateID = 0        
+        Set @currentStateID = 0
         --
-        SELECT 
-            @tmp = ID, 
+        SELECT
+            @tmp = ID,
             @RequestTypeExisting = Request_Type,
             @currentStateID = State
         FROM  T_Sample_Prep_Request
@@ -302,12 +301,12 @@ As
         --
         If @myError <> 0 OR @myRowCount> 0
             RAISERROR ('Cannot add: Request "%s" already in database', 11, 8, @RequestName)
-            
+
         -- Make sure the work package number is not inactive
         --
         Declare @ActivationState tinyint = 10
         Declare @ActivationStateName varchar(128)
-        
+
         SELECT @ActivationState = CCAS.Activation_State,
                @ActivationStateName = CCAS.Activation_State_Name
         FROM T_Charge_Code CC
@@ -324,53 +323,53 @@ As
     ---------------------------------------------------
     If @Mode = 'add'
     Begin
-            
+
         INSERT INTO T_Sample_Prep_Request (
-            Request_Name, 
-            Requester_PRN, 
+            Request_Name,
+            Requester_PRN,
             Reason,
-            Organism, 
-            Biohazard_Level, 
-            Campaign, 
-            Number_of_Samples, 
-            Sample_Name_List, 
-            Sample_Type, 
-            Prep_Method, 
-            Sample_Naming_Convention, 
+            Organism,
+            Biohazard_Level,
+            Campaign,
+            Number_of_Samples,
+            Sample_Name_List,
+            Sample_Type,
+            Prep_Method,
+            Sample_Naming_Convention,
             Estimated_Completion,
-            Work_Package_Number, 
-            EUS_UsageType, 
-            EUS_Proposal_ID, 
+            Work_Package_Number,
+            EUS_UsageType,
+            EUS_Proposal_ID,
             EUS_User_ID,
-            Instrument_Analysis_Specifications, 
-            State, 
+            Instrument_Analysis_Specifications,
+            State,
             Instrument_Group,
-            Instrument_Name, 
+            Instrument_Name,
             Dataset_Type,
-            Request_Type                    
+            Request_Type
         ) VALUES (
-            @RequestName, 
-            @RequesterPRN, 
+            @RequestName,
+            @RequesterPRN,
             @Reason,
             @Organism,
             @BiohazardLevel,
-            @Campaign, 
-            @NumberofSamples, 
-            @SampleNameList, 
-            @SampleType, 
-            @PrepMethod, 
-            @SampleNamingConvention, 
+            @Campaign,
+            @NumberofSamples,
+            @SampleNameList,
+            @SampleType,
+            @PrepMethod,
+            @SampleNamingConvention,
             @EstimatedCompletionDate,
-            @WorkPackageNumber, 
+            @WorkPackageNumber,
             @eusUsageType,
             @eusProposalID,
             @eusUserID,
-            @InstrumentAnalysisSpecifications, 
+            @InstrumentAnalysisSpecifications,
             @StateID,
             @InstrumentGroup,
             @InstrumentName,
             @DatasetType,
-            @RequestType                    
+            @RequestType
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -384,7 +383,7 @@ As
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser, 
+            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser,
                                     @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
     End -- Add mode
@@ -393,32 +392,32 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin
         Set @myError = 0
         --
-        UPDATE T_Sample_Prep_Request 
-        SET 
-            Request_Name = @RequestName, 
-            Requester_PRN = @RequesterPRN, 
+        UPDATE T_Sample_Prep_Request
+        SET
+            Request_Name = @RequestName,
+            Requester_PRN = @RequesterPRN,
             Reason = @Reason,
-            Organism = @Organism, 
-            Biohazard_Level = @BiohazardLevel, 
-            Campaign = @Campaign, 
-            Number_of_Samples = @NumberofSamples, 
-            Sample_Name_List = @SampleNameList, 
-            Sample_Type = @SampleType, 
-            Prep_Method = @PrepMethod, 
-            Sample_Naming_Convention = @SampleNamingConvention, 
+            Organism = @Organism,
+            Biohazard_Level = @BiohazardLevel,
+            Campaign = @Campaign,
+            Number_of_Samples = @NumberofSamples,
+            Sample_Name_List = @SampleNameList,
+            Sample_Type = @SampleType,
+            Prep_Method = @PrepMethod,
+            Sample_Naming_Convention = @SampleNamingConvention,
             Estimated_Completion = @EstimatedCompletionDate,
-            Work_Package_Number = @WorkPackageNumber, 
+            Work_Package_Number = @WorkPackageNumber,
             EUS_Proposal_ID = @eusProposalID,
             EUS_UsageType = @eusUsageType,
             EUS_User_ID = @eusUserID,
-            Instrument_Analysis_Specifications = @InstrumentAnalysisSpecifications, 
+            Instrument_Analysis_Specifications = @InstrumentAnalysisSpecifications,
             State = @StateID,
             Instrument_Group = @InstrumentGroup,
-            Instrument_Name = @InstrumentName, 
+            Instrument_Name = @InstrumentName,
             Dataset_Type = @DatasetType
         WHERE (ID = @ID)
         --
@@ -429,7 +428,7 @@ As
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser, 
+            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser,
                                     @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
     End -- update mode
@@ -437,11 +436,11 @@ As
     End Try
     Begin Catch
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'AddUpdateRNAPrepRequest'
     End Catch
     return @myError

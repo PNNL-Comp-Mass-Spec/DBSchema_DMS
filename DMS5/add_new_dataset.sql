@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddNewDataset]
 /****************************************************
 **
@@ -429,7 +428,6 @@ AS
     ---------------------------------------------------
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [DDL_Viewer] AS [dbo]

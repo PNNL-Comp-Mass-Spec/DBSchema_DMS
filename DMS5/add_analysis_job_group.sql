@@ -104,7 +104,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0

@@ -3,74 +3,73 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE dbo.MarkPurgedJobs
+CREATE PROCEDURE [dbo].[MarkPurgedJobs]
 /****************************************************
-** 
-**	Desc:	Updates AJ_Purged to be 1 for the jobs in @JobList
-**			This procedure is called by the SpaceManager
 **
-**	Return values: 0: success, otherwise, error code
-** 
-**	Auth:	mem
-**	Date:	06/13/2012
-**    
+**  Desc:   Updates AJ_Purged to be 1 for the jobs in @JobList
+**          This procedure is called by the SpaceManager
+**
+**  Return values: 0: success, otherwise, error code
+**
+**  Auth:   mem
+**  Date:   06/13/2012
+**
 *****************************************************/
 (
-	@JobList varchar(4000),
-	@InfoOnly tinyint = 1
+    @JobList varchar(4000),
+    @InfoOnly tinyint = 1
 )
-As
-	Set nocount on
-	
-	Declare @myRowCount int
-	Declare @myError int
-	Set @myRowCount = 0
-	Set @myError = 0
+AS
+    Set nocount on
 
-	---------------------------------------------------------
-	-- Validate the inputs
-	---------------------------------------------------------
-	--
+    Declare @myRowCount int
+    Declare @myError int
+    Set @myRowCount = 0
+    Set @myError = 0
 
-	Set @JobList = IsNull(@JobList, '')
-	Set @InfoOnly = IsNull(@InfoOnly, 0)
-	
-	---------------------------------------------------------
-	-- Populate a temporary table with the jobs in @JobList
-	---------------------------------------------------------
-	--
-	CREATE TABLE #Tmp_JobList (
-		Job int
-	)
-	
-	INSERT INTO #Tmp_JobList (Job)
-	SELECT Value
-	FROM dbo.udfParseDelimitedIntegerList(@JobList, ',')
-	
-	If @InfoOnly <> 0
-	Begin
-		-- Preview the jobs
-		--
-		SELECT J.AJ_JobID AS Job, J.AJ_Purged as Job_Purged
-		FROM T_Analysis_Job J INNER JOIN 
-			 #Tmp_JobList L ON J.AJ_JobID = L.Job
-		ORDER BY AJ_JobID
-	End
-	Else
-	Begin
-		-- Update AJ_Purged
-		--
-		UPDATE T_Analysis_Job
-		SET AJ_Purged = 1
-		FROM T_Analysis_Job J INNER JOIN 
-			 #Tmp_JobList L ON J.AJ_JobID = L.Job
-		WHERE J.AJ_Purged = 0
-		
-	End
-	
+    ---------------------------------------------------------
+    -- Validate the inputs
+    ---------------------------------------------------------
+    --
+
+    Set @JobList = IsNull(@JobList, '')
+    Set @InfoOnly = IsNull(@InfoOnly, 0)
+
+    ---------------------------------------------------------
+    -- Populate a temporary table with the jobs in @JobList
+    ---------------------------------------------------------
+    --
+    CREATE TABLE #Tmp_JobList (
+        Job int
+    )
+
+    INSERT INTO #Tmp_JobList (Job)
+    SELECT Value
+    FROM dbo.udfParseDelimitedIntegerList(@JobList, ',')
+
+    If @InfoOnly <> 0
+    Begin
+        -- Preview the jobs
+        --
+        SELECT J.AJ_JobID AS Job, J.AJ_Purged as Job_Purged
+        FROM T_Analysis_Job J INNER JOIN
+             #Tmp_JobList L ON J.AJ_JobID = L.Job
+        ORDER BY AJ_JobID
+    End
+    Else
+    Begin
+        -- Update AJ_Purged
+        --
+        UPDATE T_Analysis_Job
+        SET AJ_Purged = 1
+        FROM T_Analysis_Job J INNER JOIN
+             #Tmp_JobList L ON J.AJ_JobID = L.Job
+        WHERE J.AJ_Purged = 0
+
+    End
+
 Done:
-	Return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [DDL_Viewer] AS [dbo]

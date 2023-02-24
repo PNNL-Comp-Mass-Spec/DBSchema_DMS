@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[MakeFactorCrosstabSQL_Ex]
 /****************************************************
 **
@@ -106,7 +105,6 @@ AS
 
     If @FactorNameList <> ''
         Set @Sql = @Sql + ' LEFT OUTER JOIN (' + @CrossTabSql + ') CrosstabQ ON UQ.Request = CrossTabQ.TargetID'
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL_Ex] TO [DDL_Viewer] AS [dbo]

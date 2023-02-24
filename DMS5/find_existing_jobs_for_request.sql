@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[FindExistingJobsForRequest]
 /****************************************************
 **
@@ -20,7 +19,7 @@ CREATE PROCEDURE [dbo].[FindExistingJobsForRequest]
 **          05/28/2015 mem - Removed reference to T_Analysis_Job_Processor_Group
 **          07/30/2019 mem - After obtaining the actual matching jobs using GetRunRequestExistingJobListTab, compare to the cached values in T_Analysis_Job_Request_Existing_Jobs; call UpdateCachedJobRequestExistingJobs if a mismatch
 **          07/31/2019 mem - Use new function name, GetExistingJobsMatchingJobRequest
-**    
+**
 *****************************************************/
 (
     @requestID int,
@@ -31,12 +30,12 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @cachedCount int = 0
     Declare @misMatchCount Int = 0
 
     Set @message = ''
-    
+
     Create Table #Tmp_ExistingJobs (
         Job Int Not null
     )
@@ -58,7 +57,7 @@ AS
         Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
     End
     Else
-    Begin    
+    Begin
         SELECT @misMatchCount = Count(*)
         FROM #Tmp_ExistingJobs J
         Left Outer Join T_Analysis_Job_Request_Existing_Jobs AJR

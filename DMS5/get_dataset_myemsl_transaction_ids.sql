@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetDatasetMyEMSLTransactionIDs]
 /****************************************************
 **
@@ -12,7 +11,7 @@ CREATE FUNCTION [dbo].[GetDatasetMyEMSLTransactionIDs]
 **  Auth:   mem
 **  Date:   02/28/2018 mem - Initial version
 **          02/03/2023 bcg - Update column names for S_V_MyEMSL_DatasetID_TransactionID
-**    
+**
 *****************************************************/
 (
     @datasetID INT
@@ -29,7 +28,7 @@ BEGIN
     FROM S_V_MyEMSL_DatasetID_TransactionID
     WHERE Dataset_ID = @datasetID AND
           Verified > 0
-    
+
     RETURN IsNull(@list, '')
 END
 

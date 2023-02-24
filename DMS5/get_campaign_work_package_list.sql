@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetCampaignWorkPackageList]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Builds a delimited list of work packages for the given campaign
 **
 **  Return value: delimited list
@@ -15,7 +14,7 @@ CREATE FUNCTION [dbo].[GetCampaignWorkPackageList]
 **  Auth:   mem
 **  Date:   06/07/2019 mem - Initial version
 **          06/11/2022 mem - Exclude null values and empty strings from the list
-**    
+**
 *****************************************************/
 (
     @campaignName Varchar(128)
@@ -37,10 +36,10 @@ AS
                       ON DS.Exp_ID = E.Exp_ID
                     INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
-               WHERE C.Campaign_Num = @campaignName And 
+               WHERE C.Campaign_Num = @campaignName And
                      Len(Ltrim(Rtrim(Coalesce(RR.RDS_WorkPackage, '')))) > 0
              ) LookupQ
-    
+
         RETURN @list
     END
 

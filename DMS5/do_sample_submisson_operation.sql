@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DoSampleSubmissonOperation]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Performs operation given by @mode on entity given by @ID
 **
 **      Note: this procedure has not been used since 2012
@@ -22,7 +21,7 @@ CREATE PROCEDURE [dbo].[DoSampleSubmissonOperation]
 **                         - Add call to PostUsageLogEntry
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/12/2023 mem - Remove call to CallSendMessage since it was deprecated in 2016
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
@@ -32,19 +31,19 @@ CREATE PROCEDURE [dbo].[DoSampleSubmissonOperation]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     declare @myError int = 0
     declare @myRowCount int = 0
 
     set @message = ''
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoSampleSubmissonOperation', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -72,7 +71,7 @@ As
             -- if storage path not defined, get valid path ID and update sample submission
             --
             IF @storagePath = 0
-            BEGIN 
+            BEGIN
                 --
                 SELECT @storagePath = ID
                 FROM T_Prep_File_Storage
@@ -95,12 +94,12 @@ As
         end
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         Exec PostLogEntry 'Error', @message, 'DoSampleSubmissonOperation'
     END CATCH
-        
+
     ---------------------------------------------------
     -- Log SP usage
     ---------------------------------------------------
@@ -109,12 +108,12 @@ As
     Begin
         Declare @UsageMessage varchar(512)
         Set @UsageMessage = 'Performed submission operation for submission ID ' + Cast(@ID as varchar(12)) + '; mode ' + @mode
-        
+
         Set @UsageMessage = @UsageMessage + '; user ' + IsNull(@callingUser, '??')
-        
+
         Exec PostUsageLogEntry 'DoSampleSubmissonOperation', @UsageMessage, @MinimumUpdateInterval=2
     End
-    
+
     return @myError
 
 GO

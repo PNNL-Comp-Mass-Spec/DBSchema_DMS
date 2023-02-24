@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetFiscalYearStart]
 /****************************************************
 **
@@ -14,7 +13,7 @@ CREATE FUNCTION [dbo].[GetFiscalYearStart]
 **  Auth:   grk
 **  Date:   07/18/2011 grk - Initial Version
 **          02/10/2022 mem - Update to work properly when running between January 1 and September 30
-**    
+**
 *****************************************************/
 (
     @numberOfRecentYears int

@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[udfParseDelimitedListOrdered]
-/****************************************************    
+/****************************************************
 **
 **  Parses the text in @delimitedList and returns a table
 **  containing the values. The table includes column EntryID
-**  to allow the calling procedure to sort the data based on the 
+**  to allow the calling procedure to sort the data based on the
 **  data order in @delimitedList.  The first row will have EntryID = 1
 **
 **  @delimitedList should be of the form 'Value1,Value2'
@@ -25,45 +24,45 @@ CREATE FUNCTION [dbo].[udfParseDelimitedListOrdered]
 **          03/27/2013 mem - Now replacing Tab characters, carriage returns and line feeds with @delimiter
 **          11/19/2018 mem - Add special handling if @delimeter is CR, LF, or CRLF
 **                         - Add parameter @maxRows
-**  
+**
 ****************************************************/
 (
     @delimitedList varchar(max),
     @delimiter varchar(2) = ',',
     @maxRows int = 0               -- Optionally set this to a positive number to limit the number of rows returned in @tmpValues.
-                                   -- This is useful if you are parsing a comma-separated list of items, 
+                                   -- This is useful if you are parsing a comma-separated list of items,
                                    -- and the final item is a comment field, which itself might contain commas.
 )
 RETURNS @tmpValues TABLE(EntryID int NOT NULL, Value varchar(2048) NULL)
 AS
 BEGIN
-    
+
     Declare @continue tinyint
     Declare @startPosition int
 
     Declare @delimiterPos int
     Declare @crPos int
     Declare @lfPos int
-    
+
     Declare @delimiterIsCRorLF tinyint = 0
 
     Declare @value varchar(2048)
     Declare @entryID int = 1
-    
+
     Set @delimitedList = IsNull(@delimitedList, '')
-    
+
     If @delimiter Like '%' + Char(13) + '%' Or
        @delimiter Like '%' + Char(10) + '%'
     Begin
         Set @delimiterIsCRorLF = 1
-        
+
         -- The logic below will match either CR or LF, so it doesn't matter what @delimiter is
         Set @delimiter = char(10)
     End
 
     If Len(@delimitedList) > 0
     Begin -- <a>
-        
+
         If @delimiterIsCRorLF = 0
         Begin
             -- Replace any CR or LF characters with @delimiter
@@ -102,7 +101,7 @@ BEGIN
                     Set @delimiterPos = @crPos
                 Else If @lfPos > 0
                     Set @delimiterPos = @lfPos
-                Else 
+                Else
                     Set @delimiterPos = 0
             End
             Else
@@ -129,7 +128,7 @@ BEGIN
                             Set @value = ''
                         Else If @value = char(13)
                             Set @value = ''
-                    End                    
+                    End
                 End
                 Else
                 Begin
@@ -151,7 +150,7 @@ BEGIN
 
                     INSERT INTO @tmpValues (EntryID, Value)
                     VALUES (@entryID, @value)
-                
+
                     Set @entryID = @entryID + 1
                 End
             End -- </c>
@@ -160,7 +159,7 @@ BEGIN
 
         End -- </b>
     End -- </a>
-    
+
     RETURN
 END
 

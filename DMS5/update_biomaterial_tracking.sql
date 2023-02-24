@@ -3,20 +3,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCellCultureTracking]
 /****************************************************
 **
 **  Desc: Updates summary stats in T_Cell_Culture_Tracking
 **
 **  Return values: 0: success, otherwise, error code
-**    
+**
 **
 **  Auth:   grk
 **  Date:   10/20/2002
 **          11/15/2007 mem - Switched to Truncate Table for improved performance (Ticket:576)
 **          08/30/2018 mem - Use merge instead of truncate
-**    
+**
 *****************************************************/
 AS
     Declare @message varchar(512)
@@ -25,7 +24,7 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     set @message = ''
 
     ----------------------------------------------------------
@@ -38,8 +37,8 @@ AS
         Dataset_Count int NOT NULL,
         Job_Count int NOT NULL,
         CONSTRAINT PK_Tmp_CellCultureStats PRIMARY KEY CLUSTERED ( CC_ID Asc)
-    ) 
-     
+    )
+
     ----------------------------------------------------------
     -- Make entry in results table for each cell culture
     ----------------------------------------------------------
@@ -53,8 +52,8 @@ AS
     FROM T_Cell_Culture
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-     
-     
+
+
     ----------------------------------------------------------
     -- Update experiment count statistics
     ----------------------------------------------------------
@@ -65,7 +64,7 @@ AS
          INNER JOIN ( SELECT CC_ID,
                              COUNT(Exp_ID) AS Cnt
                       FROM T_Experiment_Cell_Cultures
-                      GROUP BY CC_ID 
+                      GROUP BY CC_ID
                      ) AS S
            ON #Tmp_CellCultureStats.CC_ID = S.CC_ID
 
@@ -84,7 +83,7 @@ AS
                              ON T_Experiment_Cell_Cultures.Exp_ID = T_Experiments.Exp_ID
                            INNER JOIN T_Dataset
                              ON T_Experiments.Exp_ID = T_Dataset.Exp_ID
-                      GROUP BY T_Experiment_Cell_Cultures.CC_ID 
+                      GROUP BY T_Experiment_Cell_Cultures.CC_ID
                      ) AS S
            ON #Tmp_CellCultureStats.CC_ID = S.CC_ID
 
@@ -104,14 +103,14 @@ AS
                              ON T_Experiments.Exp_ID = T_Dataset.Exp_ID
                            INNER JOIN T_Analysis_Job
                              ON T_Dataset.Dataset_ID = T_Analysis_Job.AJ_datasetID
-                      GROUP BY T_Experiment_Cell_Cultures.CC_ID 
+                      GROUP BY T_Experiment_Cell_Cultures.CC_ID
                      ) AS S
            ON #Tmp_CellCultureStats.CC_ID = S.CC_ID
 
     ----------------------------------------------------------
     -- Update T_Cell_Culture_Tracking using #Tmp_CellCultureStats
     ----------------------------------------------------------
-    --        
+    --
     MERGE T_Cell_Culture_Tracking AS t
     USING (SELECT * FROM #Tmp_CellCultureStats) as s
     ON ( t.CC_ID = s.CC_ID)
@@ -120,7 +119,7 @@ AS
         t.Dataset_Count <> s.Dataset_Count OR
         t.Job_Count <> s.Job_Count
         )
-    THEN UPDATE SET 
+    THEN UPDATE SET
         Experiment_Count = s.Experiment_Count,
         Dataset_Count = s.Dataset_Count,
         Job_Count = s.Job_Count
@@ -129,9 +128,8 @@ AS
         VALUES(s.CC_ID, s.Experiment_Count, s.Dataset_Count, s.Job_Count)
     WHEN NOT MATCHED BY SOURCE THEN DELETE
     ;
-    
-    return @myError
 
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[UpdateCellCultureTracking] TO [DDL_Viewer] AS [dbo]

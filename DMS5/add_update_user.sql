@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddUpdateUser]
+CREATE PROCEDURE [dbo].[AddUpdateUser]
 /****************************************************
 **
 **  Desc:
@@ -47,7 +46,7 @@ CREATE Procedure [dbo].[AddUpdateUser]
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -271,7 +270,6 @@ As
     END CATCH
 
     Return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [DDL_Viewer] AS [dbo]

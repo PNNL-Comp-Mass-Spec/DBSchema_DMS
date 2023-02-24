@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 /****************************************************
 **
@@ -57,7 +56,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
     @addingItem tinyint = 0,                    -- When @experimentID or @campaignID is non-zero, set this to 1 if creating a new prep request or new requested run
     @infoOnly tinyint = 0                       -- When 1, show debug info
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -663,7 +662,6 @@ As
     End
 
     return 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [DDL_Viewer] AS [dbo]

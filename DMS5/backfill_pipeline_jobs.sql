@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
 /****************************************************
 **
@@ -400,28 +399,28 @@ AS
                     -- Dataset names can only contain letters, underscores, or dashes (see function ValidateChars)
 
                     Set @dataset = Replace(@dataset, ' ', '_')
-                                              
+
                     Set @validCh = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'
                     Set @position = 1
-	                Set @numCh = Len(@dataset)
+                    Set @numCh = Len(@dataset)
                     Set @cleanName = ''
 
-	                WHILE @position <= @numCh
-		            BEGIN
-			            Set @ch = SUBSTRING(@dataset, @position, 1)
+                    WHILE @position <= @numCh
+                    BEGIN
+                        Set @ch = SUBSTRING(@dataset, @position, 1)
 
-			            -- Note thate @ch will have a length of 0 if it is a space, but we replaced spaces with underscores above, so @ch should always be a valid character
-			            If Len(@ch) > 0
-			            Begin
-				            If CHARINDEX(@ch, @validCh) = 0
-					            Set @cleanName = @cleanName + '_'
+                        -- Note thate @ch will have a length of 0 if it is a space, but we replaced spaces with underscores above, so @ch should always be a valid character
+                        If Len(@ch) > 0
+                        Begin
+                            If CHARINDEX(@ch, @validCh) = 0
+                                Set @cleanName = @cleanName + '_'
                             Else
                                 Set @cleanName = @cleanName + @ch
-			            End
-				
-			            Set @position = @position + 1
-		            END
-	                        
+                        End
+
+                        Set @position = @position + 1
+                    END
+
                     Set @dataset = @cleanName
 
                     ------------------------------------------------
@@ -734,7 +733,6 @@ NextJob:
 Done:
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[BackfillPipelineJobs] TO [DDL_Viewer] AS [dbo]

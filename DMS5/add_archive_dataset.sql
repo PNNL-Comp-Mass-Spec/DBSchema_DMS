@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Procedure [dbo].[AddArchiveDataset]
+CREATE PROCEDURE [dbo].[AddArchiveDataset]
 /****************************************************
 **
 **  Desc:   Make new entry into the archive table
@@ -27,14 +26,14 @@ CREATE Procedure [dbo].[AddArchiveDataset]
 (
     @datasetID int
 )
-As
+AS
     Set Nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     Declare @message varchar(512) = ''
-    
+
     ---------------------------------------------------
     -- Don't allow duplicate dataset IDs in table
     ---------------------------------------------------
@@ -49,11 +48,11 @@ As
     ---------------------------------------------------
     -- Lookup the Instrument ID and dataset state
     ---------------------------------------------------
-    
+
     Declare @instrumentID int = 0
     Declare @datasetStateId Int = 0
     --
-    SELECT @instrumentID = DS_instrument_name_ID, 
+    SELECT @instrumentID = DS_instrument_name_ID,
            @datasetStateId = DS_state_ID
     FROM T_Dataset
     WHERE Dataset_ID = @DatasetID
@@ -96,7 +95,7 @@ As
         RAISERROR (@message, 10, 1)
         Return 51105
     End
-    
+
     ---------------------------------------------------
     -- Lookup the purge policy for this instrument
     ---------------------------------------------------
@@ -104,17 +103,17 @@ As
     Declare @purgePolicy tinyint = 0
     Declare @purgePriority tinyint = 0
     Declare @purgeHoldoffMonths tinyint = 0
-    
+
     SELECT @purgePolicy = Default_Purge_Policy,
            @purgePriority = Default_Purge_Priority,
            @purgeHoldoffMonths = Storage_Purge_Holdoff_Months
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentID
-    
+
     Set @purgePolicy = IsNull(@purgePolicy, 0)
     Set @purgePriority = IsNull(@purgePriority, 3)
     Set @purgeHoldoffMonths = IsNull(@purgeHoldoffMonths, 1)
-        
+
     ---------------------------------------------------
     -- Make entry into archive table
     ---------------------------------------------------
@@ -141,7 +140,7 @@ As
         )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     If @myRowCount <> 1
     Begin
         RAISERROR ('Error adding new entry to T_Dataset_Archive', 10, 1)

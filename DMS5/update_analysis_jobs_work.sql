@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateAnalysisJobsWork]
 /****************************************************
 **
@@ -71,7 +70,7 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobsWork]
     @callingUser varchar(128) = '',
     @disableRaiseError tinyint = 0
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0

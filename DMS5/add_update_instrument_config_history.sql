@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateInstrumentConfigHistory]
 /****************************************************
 **
@@ -19,7 +18,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentConfigHistory]
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/30/2018 mem - Make @id an output parameter
 **                           Validate @dateOfChange
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
@@ -34,7 +33,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentConfigHistory]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -45,8 +44,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentConfigHistory', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -58,9 +57,9 @@ As
     ---------------------------------------------------
 
     IF @postedBy IS NULL OR @postedBy = ''
-    BEGIN 
+    BEGIN
         Set @postedBy = @callingUser
-    END 
+    END
 
     Declare @validatedDate datetime = Try_Cast(@dateOfChange As datetime)
     If @validatedDate Is Null
@@ -101,8 +100,8 @@ As
     ---------------------------------------------------
     if @Mode = 'add'
     begin
-    
-        INSERT INTO T_Instrument_Config_History ( 
+
+        INSERT INTO T_Instrument_Config_History (
             Instrument,
             Date_Of_Change,
             Description,
@@ -110,11 +109,11 @@ As
             Entered,
             EnteredBy
         ) VALUES (
-            @instrument, 
-            @validatedDate, 
-            @description, 
-            @note, 
-            getdate(), 
+            @instrument,
+            @validatedDate,
+            @description,
+            @note,
+            getdate(),
             @postedBy
         )
         --
@@ -137,7 +136,7 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    if @Mode = 'update' 
+    if @Mode = 'update'
     begin
         UPDATE T_Instrument_Config_History
         SET Instrument = @instrument,
@@ -158,7 +157,6 @@ As
     end -- update mode
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentConfigHistory] TO [DDL_Viewer] AS [dbo]

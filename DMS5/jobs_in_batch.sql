@@ -3,32 +3,30 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE FUNCTION dbo.JobsInBatch
+CREATE FUNCTION [dbo].[JobsInBatch]
 /****************************************************
 **
-**	Desc: 
-**		returns count of number of jobs in given batch
+**  Desc:
+**      returns count of number of jobs in given batch
 **
 **
-**		Auth: grk
-**		Date: 2/27/2004
-**    
+**  Auth:   grk
+**  Date:   2/27/2004
+**
 *****************************************************/
-	(
-	@batchID int
-	)
+    (
+    @batchID int
+    )
 RETURNS int
 AS
-	BEGIN
-		declare @n int
-		SELECT     @n = COUNT(*) 
-		FROM         T_Analysis_Job
-		WHERE     (AJ_batchID = @batchID)
-		
- 		RETURN @n
-	END
+    BEGIN
+        declare @n int
+        SELECT     @n = COUNT(*)
+        FROM         T_Analysis_Job
+        WHERE     (AJ_batchID = @batchID)
 
+        RETURN @n
+    END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[JobsInBatch] TO [DDL_Viewer] AS [dbo]

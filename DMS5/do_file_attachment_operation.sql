@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE PROCEDURE [dbo].[DoFileAttachmentOperation] 
+CREATE PROCEDURE [dbo].[DoFileAttachmentOperation]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **    Performs operation given by @mode
 **    on entity given by @ID
 **
@@ -16,12 +15,12 @@ CREATE PROCEDURE [dbo].[DoFileAttachmentOperation]
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   09/05/2012 
+**  Date:   09/05/2012
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using VerifySPAuthorized
 **          08/01/2017 mem - Use THROW if not authorized
-**    
+**
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
@@ -31,7 +30,7 @@ CREATE PROCEDURE [dbo].[DoFileAttachmentOperation]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -40,8 +39,8 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'DoFileAttachmentOperation', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -50,8 +49,8 @@ As
 
     Set @message = ''
 
-    BEGIN TRY 
-    
+    BEGIN TRY
+
         ---------------------------------------------------
         -- "Delete" the attachment
         -- In reality, we change active to 0
@@ -59,7 +58,7 @@ As
         --
         If @mode = 'delete'
         Begin
-            UPDATE T_File_Attachment 
+            UPDATE T_File_Attachment
             SET Active = 0
             WHERE ID = @ID
             --
@@ -74,13 +73,13 @@ As
         End
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'DoFileAttachmentOperation'
     END CATCH
 

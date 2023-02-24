@@ -3,18 +3,17 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfoByID]
 /****************************************************
 **
 **  Desc:   Returns run tracking information for given EUS Instrument ID
 **          Modeled after GetRunTrackingMonthlyInfo
-**    
+**
 **  Auth:   mem
 **  Date:   02/14/2012 mem - Initial release
 **          04/27/2020 mem - Update data validation checks
 **                         - Make several columns in the output table nullable
-**    
+**
 *****************************************************/
 (
     @eusInstrumentId Int,
@@ -39,7 +38,7 @@ AS
     BEGIN
         Declare @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
         Declare @message varchar(512) = ''
-    
+
         ---------------------------------------------------
         -- check arguments
         ---------------------------------------------------
@@ -47,7 +46,7 @@ AS
         IF ISNULL(@year, 0) = 0 OR ISNULL(@month, 0) = 0 OR ISNULL(@eusInstrumentId, 0) = 0
         BEGIN
             INSERT INTO @TX (Seq, Dataset) VALUES (1, 'Bad arguments')
-            RETURN 
+            RETURN
         END
 
         ---------------------------------------------------
@@ -66,19 +65,19 @@ AS
         IF ISNULL(@instrumentIDFirst, 0) = 0
         BEGIN
             INSERT INTO @TX (Seq, Dataset) VALUES (1, 'Unrecognized EUS ID; no DMS instruments are mapped to EUS Instrument ID ' + Cast(@eusInstrumentId As Varchar(12)))
-            RETURN 
+            RETURN
         END
 
         ---------------------------------------------------
-        -- Set up dates for beginning and end of month 
+        -- Set up dates for beginning and end of month
         ---------------------------------------------------
-        
+
         Declare @startDate varchar(16) = @month + '/1/' + @year
         Declare @firstDayOfStartingMonth datetime = CONVERT(datetime, @startDate, 102);
         Declare @firstDayOfTrailingMonth datetime = DATEADD(MONTH, 1, @firstDayOfStartingMonth)
 
         ---------------------------------------------------
-        -- Get datasets whose start time falls within month 
+        -- Get datasets whose start time falls within month
         ---------------------------------------------------
         Declare @seqIncrement INT = 1
         Declare @seqOffset INT = 0
@@ -94,7 +93,7 @@ AS
             Duration,
             [Interval],
             Instrument
-        )        
+        )
         SELECT (@seqIncrement * ((ROW_NUMBER() OVER ( ORDER BY TD.Acq_Time_Start ASC )) - 1) + 1) + @seqOffset AS 'Seq',
                TD.Dataset_ID AS ID,
                TD.Dataset_Num AS Dataset,
@@ -121,22 +120,22 @@ AS
         Declare @firstRunSeq int
         Declare @lastRunSeq int
         SELECT @firstRunSeq = MIN(Seq), @lastRunSeq = MAX(Seq) FROM @TX
-        
+
         Declare @firstStart datetime
         SELECT @firstStart = Time_Start FROM @TX WHERE Seq = @firstRunSeq
-        
+
         Declare @initialGap INT = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @firstStart)
-        
+
         -- get preceeding dataset (latest with starting time preceding this month)
         --
         IF DATEDIFF(MINUTE, @firstDayOfStartingMonth, @firstStart) > @maxNormalInterval
-        BEGIN 
+        BEGIN
             Declare @precID INT
-            Declare @precDataset varchar(128) 
+            Declare @precDataset varchar(128)
             Declare @precStart datetime
-            Declare @precEnd datetime 
+            Declare @precEnd datetime
             Declare @precDuration INT
-            Declare @precInterval INT 
+            Declare @precInterval INT
 
             SELECT TOP 1 @precID = TD.Dataset_ID,
                          @precDataset = TD.Dataset_Num,
@@ -151,20 +150,20 @@ AS
                   TD.Acq_Time_Start < @firstDayOfStartingMonth AND
                   TD.Acq_Time_Start > DATEADD(DAY, -90, @firstDayOfStartingMonth)
             ORDER BY TD.Acq_Time_Start DESC
-            
-            -- if preceeding dataset's end time is before start of month, 
+
+            -- if preceeding dataset's end time is before start of month,
             -- zero the duration and truncate the interval
             -- othewise just truncate the duration
             --
             IF @precEnd < @firstDayOfStartingMonth
-            BEGIN 
+            BEGIN
                 Set @precDuration = 0
                 Set @precInterval = @initialGap
             END
             ELSE
-            BEGIN 
+            BEGIN
                 Set @precDuration = DATEDIFF(MINUTE, @firstDayOfStartingMonth, @precStart)
-            END 
+            END
 
             -- Add preceeding dataset record (with truncated duration/interval)
             -- at beginning of results
@@ -178,14 +177,14 @@ AS
                              Duration,
                              [Interval],
                              Instrument )
-            Values (@firstRunSeq - 1, 
-                    @precDataset, 
-                    @precID, 
+            Values (@firstRunSeq - 1,
+                    @precDataset,
+                    @precID,
                     1,                -- Day of month
-                    @precStart, 
-                    @precEnd, 
+                    @precStart,
+                    @precEnd,
                     @precDuration,
-                    @precInterval, 
+                    @precInterval,
                     @instrumentIDFirst)
         END
 
@@ -193,14 +192,14 @@ AS
         -- Need to truncate part of last run or following
         -- interval that hangs over end of month
         ---------------------------------------------------
-        
+
         -- If end of last run hangs over start of succeeding month,
         -- truncate duration and set interval to zero.
 
         -- Otherwise, if interval hangs over succeeding month, truncate it
         --
-        Declare @lastRunStart datetime 
-        Declare @lastRunEnd datetime 
+        Declare @lastRunStart datetime
+        Declare @lastRunEnd datetime
         Declare @lastRunInterval int
 
         SELECT @lastRunStart = Time_Start,
@@ -208,14 +207,14 @@ AS
                @lastRunInterval = [Interval]
         FROM @TX
         WHERE Seq = @lastRunSeq
-        
+
         IF @lastRunEnd > @firstDayOfTrailingMonth
-        BEGIN 
+        BEGIN
             UPDATE @TX
             SET [Interval] = 0,
                 Duration = DATEDIFF(MINUTE, @lastRunStart, @firstDayOfTrailingMonth)
             WHERE Seq = @lastRunSeq
-        END 
+        END
         ELSE IF DATEADD(MINUTE, @lastRunInterval, @lastRunEnd) > @firstDayOfTrailingMonth
         BEGIN
             UPDATE @TX

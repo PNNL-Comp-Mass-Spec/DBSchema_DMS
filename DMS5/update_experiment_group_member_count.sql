@@ -3,38 +3,37 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateExperimentGroupMemberCount]
 /****************************************************
 **
-**	Desc: 
-**	    Updates the MemberCount value for either the 
+**  Desc:
+**      Updates the MemberCount value for either the
 **      specific experiment group or for all experiment groups
 **
-**	Return values: 0: success, otherwise, error code
+**  Return values: 0: success, otherwise, error code
 **
-**	Auth:	mem
-**	Date:	12/06/2018 mem - Initial version
-**    
+**  Auth:   mem
+**  Date:   12/06/2018 mem - Initial version
+**
 *****************************************************/
 (
-	@groupID int = 0,           -- 0 to Update all groups
-	@message varchar(512) = '' output
+    @groupID int = 0,           -- 0 to Update all groups
+    @message varchar(512) = '' output
 )
-As
-	Declare @myError int = 0
-	Declare @myRowCount int = 0
+AS
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
-	-- Validate inputs
-	---------------------------------------------------
+    -- Validate inputs
+    ---------------------------------------------------
 
     Set @groupID = IsNull(@groupID, 0)
-	Set @message = ''
+    Set @message = ''
 
     If @groupID <= 0
     Begin
-    
+
         UPDATE T_Experiment_Groups
         SET MemberCount = LookupQ.MemberCount
         FROM T_Experiment_Groups EG
@@ -58,23 +57,23 @@ As
     End
     Else
     Begin
-    
+
         Declare @memberCount Int = 0
-            
+
         SELECT @memberCount = Count(*)
         FROM T_Experiment_Group_Members
-        WHERE Group_ID = @groupID 
+        WHERE Group_ID = @groupID
         GROUP BY Group_ID
 
         UPDATE T_Experiment_Groups
         SET MemberCount = IsNull(@memberCount, 0)
-        WHERE Group_ID = @groupID 
+        WHERE Group_ID = @groupID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         Set @message = 'Experiment group ' + Cast(@groupID As Varchar(12)) + ' now has ' + Cast(@myRowCount As Varchar(12)) + ' members'
     End
-    	
-	return 0
+
+    return 0
 
 GO

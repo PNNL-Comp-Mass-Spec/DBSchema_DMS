@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
 /****************************************************
 **
@@ -17,7 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
 **          06/12/2018 mem - Send @maxLength to AppendToText
 **          07/31/2020 mem - Update MASIC_Directory_Name
 **          09/06/2022 mem - When @processingMode is 3, update datasets in batches (to decrease the likelihood of deadlock issues)
-**    
+**
 *****************************************************/
 (
     @processingMode tinyint = 0,        -- 0 to only process new datasets and datasets with UpdateRequired = 1
@@ -27,12 +26,12 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
     @message varchar(512) = '' output,
     @showDebug tinyint = 0
 )
-As
+AS
     Set nocount on
-    
+
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+
     Declare @minimumDatasetID int = 0
 
     Declare @datasetIdStart int
@@ -59,14 +58,14 @@ As
                FROM T_Dataset
                ORDER BY Dataset_ID DESC ) LookupQ
     End
-    
+
     ------------------------------------------------
     -- Add new datasets to T_Cached_Dataset_Links
     ------------------------------------------------
     --
     INSERT INTO T_Cached_Dataset_Links (Dataset_ID,
                                         DS_RowVersion,
-                                        SPath_RowVersion,                                          
+                                        SPath_RowVersion,
                                         UpdateRequired )
     SELECT DS.Dataset_ID,
            DS.DS_RowVersion,
@@ -76,8 +75,8 @@ As
          INNER JOIN T_Cached_Dataset_Folder_Paths DFP
            ON DS.Dataset_ID = DFP.Dataset_ID
          LEFT OUTER JOIN T_Cached_Dataset_Links DL
-           ON DL.Dataset_ID = DS.Dataset_ID         
-    WHERE DS.Dataset_ID >= @minimumDatasetID AND 
+           ON DL.Dataset_ID = DS.Dataset_ID
+    WHERE DS.Dataset_ID >= @minimumDatasetID AND
           DL.Dataset_ID IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -139,10 +138,10 @@ As
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
-            Set @message = dbo.AppendToText(@message, 
-                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion or SPath_RowVersion', 
+            Set @message = dbo.AppendToText(@message,
+                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion or SPath_RowVersion',
                                             0, '; ', 512)
-                                            
+
     End
 
     If @processingMode < 1
@@ -154,11 +153,11 @@ As
 
         ------------------------------------------------
         -- Iterate over datasets with UpdateRequired > 0  (since there should not be many)
-        -- For each, make sure they have an up-to-date MASIC_Directory_Name 
-        -- 
+        -- For each, make sure they have an up-to-date MASIC_Directory_Name
+        --
         -- This query should be kept in sync with the bulk update query below
         ------------------------------------------------
-        
+
         Set @continue = 1
         Set @datasetID = 0
 
@@ -184,7 +183,7 @@ As
                 FROM ( SELECT OrderQ.DatasetID,
                               OrderQ.Job,
                               OrderQ.MasicDirectoryName,
-                              Row_Number() OVER ( PARTITION BY OrderQ.DatasetID 
+                              Row_Number() OVER ( PARTITION BY OrderQ.DatasetID
                                                   ORDER BY OrderQ.JobStateRank ASC, OrderQ.Job DESC ) AS JobRank
                        FROM ( SELECT J.AJ_DatasetID AS DatasetID,
                                      J.AJ_jobID AS Job,
@@ -199,8 +198,8 @@ As
                                      ON J.AJ_analysisToolID = T.AJT_toolID
                               WHERE J.AJ_datasetID = @datasetID AND
                                     T.AJT_toolName LIKE 'MASIC%' AND
-                                    NOT J.AJ_resultsFolderName IS NULL 
-                            ) OrderQ 
+                                    NOT J.AJ_resultsFolderName IS NULL
+                            ) OrderQ
                      ) RankQ
                 WHERE JobRank = 1
                 --
@@ -235,7 +234,7 @@ As
                 Print 'Updating MASIC_Directory_Name in T_Cached_Dataset_Links where UpdateRequired is 1 (bulk update)'
             End
         End
-        
+
         Set @continue = 1
         Set @datasetIdStart = 0
 
@@ -260,7 +259,7 @@ As
                               FROM ( SELECT OrderQ.DatasetID,
                                             OrderQ.Job,
                                             OrderQ.MasicDirectoryName,
-                                            Row_Number() OVER ( PARTITION BY OrderQ.DatasetID 
+                                            Row_Number() OVER ( PARTITION BY OrderQ.DatasetID
                                                                 ORDER BY OrderQ.JobStateRank ASC, OrderQ.Job DESC ) AS JobRank
                                      FROM ( SELECT J.AJ_DatasetID AS DatasetID,
                                                    J.AJ_jobID AS Job,
@@ -276,9 +275,9 @@ As
                                             WHERE T.AJT_toolName LIKE 'MASIC%' AND
                                                   NOT J.AJ_resultsFolderName IS NULL AND
                                                   J.AJ_DatasetID BETWEEN @datasetIdStart AND @datasetIdEnd
-                                          ) OrderQ 
+                                          ) OrderQ
                                     ) RankQ
-                              WHERE JobRank = 1 
+                              WHERE JobRank = 1
                            ) JobDirectoryQ
                    ON Target.Dataset_ID = JobDirectoryQ.DatasetID
             WHERE (Target.UpdateRequired > 0 OR
@@ -321,9 +320,9 @@ As
         UPDATE T_Cached_Dataset_Links
         SET DS_RowVersion = DFP.DS_RowVersion,
             SPath_RowVersion = DFP.SPath_RowVersion,
-            Dataset_Folder_Path = CASE 
+            Dataset_Folder_Path = CASE
                 WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
-                ELSE CASE 
+                ELSE CASE
                         WHEN DA.AS_instrument_data_purged > 0 THEN 'Raw Data Purged: ' + DFP.Dataset_Folder_Path
                         ELSE DFP.Dataset_Folder_Path
                      END
@@ -342,9 +341,9 @@ As
                 ELSE DFP.Dataset_URL + J.AJ_resultsFolderName + '/'
                 END,
             QC_Metric_Stats = CASE
-                WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN 
+                WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
                         'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
-                WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN 
+                WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
                         'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
                 ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
                 END,
@@ -365,7 +364,7 @@ As
                              INNER JOIN T_Archive_Path AP
                                ON DA.AS_storage_path_ID = AP.AP_path_ID
                ON DS.Dataset_ID = DA.AS_Dataset_ID
-        WHERE DL.UpdateRequired = 1        
+        WHERE DL.UpdateRequired = 1
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -398,7 +397,7 @@ As
 
             ------------------------------------------------
             -- Update all of the entries (if the stored value disagrees)
-            --        
+            --
             -- Note that this merge statement runs 2x slower than the query above
             -- If you update this merge statement, be sure to update the query
             ------------------------------------------------
@@ -408,9 +407,9 @@ As
                 SELECT DS.Dataset_ID,
                        DFP.DS_RowVersion,
                        DFP.SPath_RowVersion,
-                       CASE 
+                       CASE
                         WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
-                        ELSE CASE 
+                        ELSE CASE
                                 WHEN DA.AS_instrument_data_purged > 0 THEN 'Raw Data Purged: ' + DFP.Dataset_Folder_Path
                                 ELSE DFP.Dataset_Folder_Path
                             END
@@ -429,9 +428,9 @@ As
                         ELSE DFP.Dataset_URL + J.AJ_resultsFolderName + '/'
                         END AS QC_2D,
                        CASE
-                        WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN 
+                        WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
                                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
-                        WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN 
+                        WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
                                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
                         ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
                         END AS QC_Metric_Stats
@@ -453,7 +452,7 @@ As
                 WHERE DS.Dataset_ID BETWEEN @datasetIdStart AND @datasetIdEnd
             ) AS Source (Dataset_ID, DS_RowVersion, SPath_RowVersion, Dataset_Folder_Path, Archive_Folder_Path, MyEMSL_URL, QC_Link, QC_2D, QC_Metric_Stats)
             ON (target.Dataset_ID = source.Dataset_ID)
-            WHEN Matched AND 
+            WHEN Matched AND
                             (   target.DS_RowVersion <> source.DS_RowVersion OR
                                 target.SPath_RowVersion <> source.SPath_RowVersion OR
                                 IsNull(target.Dataset_Folder_Path, '') <> IsNull(source.Dataset_Folder_Path, '') OR
@@ -463,7 +462,7 @@ As
                                 IsNull(target.QC_2D, '') <> IsNull(source.QC_2D, '') OR
                                 IsNull(target.QC_Metric_Stats, '') <> IsNull(source.QC_Metric_Stats, '')
                             )
-            THEN UPDATE 
+            THEN UPDATE
                  Set DS_RowVersion = source.DS_RowVersion,
                      SPath_RowVersion = source.SPath_RowVersion,
                      Dataset_Folder_Path = source.Dataset_Folder_Path,
@@ -477,7 +476,7 @@ As
             ;
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @datasetBatchSize <= 0
             Begin
                 Set @continue = 0
@@ -495,16 +494,16 @@ As
 
         End
     End
-    
+
     If @myRowCount > 0
     Begin
         Set @message = dbo.AppendToText(@message,
-                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Links', 
+                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Links',
                                         0, '; ', 512)
-                                        
+
         -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetLinks'
     End
-    
+
 Done:
     return @myError
 

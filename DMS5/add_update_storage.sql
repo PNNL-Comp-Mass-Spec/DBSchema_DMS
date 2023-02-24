@@ -3,37 +3,36 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateStorage]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Adds new or updates existing storage path
 **      (saves current state of storage and instrument
 **      tables in backup tables)
 **
 **       Mode    Function:                Action
-**               (cur.)    (new)    
+**               (cur.)    (new)
 **       ----    ------    -----         --------------------
-**    
+**
 **       Add     (any)     raw-storage   Change any existing raw-storage
 **                                       for instrument to old-storage,
 **                                       then set assigned storage of
 **                                       instrument to new path
-**    
+**
 **       Update  old       raw-storage   Change any existing raw-storage
 **                                       for instrument to old-storage,
 **                                       then set assigned storage of
 **                                       instrument to new path
-**    
+**
 **       Update  raw       old-storage   Not allowed
-**    
+**
 **       Add     (any)     inbox         Not allowed if there is
 **                                       an existing inbox path
 **                                       for the instrument
-**    
+**
 **       Update  inbox     (any)         Not allowed
-**    
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -48,7 +47,7 @@ CREATE PROCEDURE [dbo].[AddUpdateStorage]
 **
 *****************************************************/
 (
-    @path varchar(255), 
+    @path varchar(255),
     @volNameClient varchar(128),
     @volNameServer varchar(128),
     @storFunction varchar(50),                -- 'inbox', 'old-storage', or 'raw-storage'
@@ -59,24 +58,24 @@ CREATE PROCEDURE [dbo].[AddUpdateStorage]
     @mode varchar(12) = 'add',                -- 'add' or 'update'
     @message varchar(512) output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Set @message = ''
 
     Declare @result int
-    
-    Declare @msg varchar(256)    
+
+    Declare @msg varchar(256)
     Declare @machineName varchar(64)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateStorage', @raiseError = 1
     If @authorized = 0
     Begin;
@@ -114,29 +113,29 @@ As
         RAISERROR (@msg, 10, 1)
         return 51036
     End
-    
+
     Set @urlDomain = ISNULL(@urlDomain, '')
 
     ---------------------------------------------------
     -- Resolve machine name
     ---------------------------------------------------
-    
+
     If @storFunction = 'inbox'
         Set @machineName = replace(@volNameServer, '\', '')
     Else
         Set @machineName = replace(@volNameClient, '\', '')
-    
+
     ---------------------------------------------------
     -- Verify instrument name
     ---------------------------------------------------
-    
+
     IF NOT Exists (SELECT * FROM T_Instrument_Name WHERE IN_name = @instrumentName)
     Begin
         Set @msg = 'Unknown instrument "' + @instrumentName + '"'
         RAISERROR (@msg, 10, 1)
         return 51038
     End
-    
+
     ---------------------------------------------------
     -- Only one input path allowed for given instrument
     ---------------------------------------------------
@@ -145,8 +144,8 @@ As
 
     SELECT @num = count(SP_path_ID)
     FROM T_Storage_Path
-    WHERE 
-        (SP_instrument_name = @instrumentName) AND 
+    WHERE
+        (SP_instrument_name = @instrumentName) AND
         (SP_function = @storFunction)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -174,14 +173,14 @@ As
     --
     If @mode = 'update'
     Begin
-        SELECT 
+        SELECT
             @tmpID = SP_path_ID,
             @oldFunction = SP_function
         FROM T_Storage_Path
         WHERE (SP_path_ID = @spID)
         --
         If @tmpID = 0
-        Begin    
+        Begin
             Set @msg = 'Cannot update:  Storage path "' + @ID + '" is not in database '
             RAISERROR (@msg, 10, 1)
             return 51004
@@ -191,13 +190,13 @@ As
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
-    
+
     If @mode = 'add'
     Begin
-    
+
         -- Check for an existing row to avoid adding a duplicate
         Declare @existingID int = -1
-        
+
         SELECT @existingID = SP_path_ID
         FROM T_Storage_Path
         WHERE SP_path = @path AND
@@ -207,7 +206,7 @@ As
               SP_machine_name = @machineName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         Declare @storagePathID Int
 
         If @myRowCount > 0
@@ -240,7 +239,7 @@ As
             End
 
             ---------------------------------------------------
-            -- Clean up any existing raw-storage assignments 
+            -- Clean up any existing raw-storage assignments
             -- for instrument
             ---------------------------------------------------
             --
@@ -253,16 +252,16 @@ As
                 --
                 SELECT @message = @message + cast(SP_path_ID as varchar(12)) + ', '
                 FROM T_Storage_Path
-                WHERE (SP_function = 'raw-storage') AND 
-                   (SP_instrument_name = @instrumentName)            
+                WHERE (SP_function = 'raw-storage') AND
+                   (SP_instrument_name = @instrumentName)
 
-                -- Set any existing raw-storage paths for instrument 
+                -- Set any existing raw-storage paths for instrument
                 -- already in storage table to old-storage
                 --
                 UPDATE T_Storage_Path
                 SET SP_function = 'old-storage'
-                WHERE 
-                    (SP_function = 'raw-storage') AND 
+                WHERE
+                    (SP_function = 'raw-storage') AND
                     (SP_instrument_name = @instrumentName)
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -275,7 +274,7 @@ As
                     return 51042
                 End
 
-                Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage' 
+                Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage'
             End
 
             ---------------------------------------------------
@@ -288,8 +287,8 @@ As
                 --
                 SELECT @tmpID = SP_path_ID
                 FROM T_Storage_Path
-                WHERE 
-                    (SP_function = 'inbox') AND 
+                WHERE
+                    (SP_function = 'inbox') AND
                     (SP_instrument_name = @instrumentName)
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -311,11 +310,11 @@ As
             Declare @newID int
             --
             INSERT INTO T_Storage_Path (
-                SP_path, 
-                SP_vol_name_client, 
-                SP_vol_name_server, 
-                SP_function, 
-                SP_instrument_name, 
+                SP_path,
+                SP_vol_name_client,
+                SP_vol_name_server,
+                SP_function,
+                SP_instrument_name,
                 SP_description,
                 SP_machine_name,
                 SP_URL_Domain
@@ -339,7 +338,7 @@ As
                 RAISERROR (@msg, 10, 1)
                 return 51007
             End
-        
+
             commit transaction @transName
 
             Set @storagePathID = @newID
@@ -391,7 +390,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Set @myError = 0
 
@@ -417,7 +416,7 @@ As
         End
 
         ---------------------------------------------------
-        -- Clean up any existing raw-storage assignments 
+        -- Clean up any existing raw-storage assignments
         -- for instrument when changing to new raw-storage path
         ---------------------------------------------------
         --
@@ -430,16 +429,16 @@ As
             --
             SELECT @message = @message + cast(SP_path_ID as varchar(12)) + ', '
             FROM T_Storage_Path
-            WHERE (SP_function = 'raw-storage') AND 
-               (SP_instrument_name = @instrumentName)            
+            WHERE (SP_function = 'raw-storage') AND
+               (SP_instrument_name = @instrumentName)
 
-            -- Set any existing raw-storage paths for instrument 
+            -- Set any existing raw-storage paths for instrument
             -- already in storage table to old-storage
             --
             UPDATE T_Storage_Path
             SET SP_function = 'old-storage'
-            WHERE 
-                (SP_function = 'raw-storage') AND 
+            WHERE
+                (SP_function = 'raw-storage') AND
                 (SP_instrument_name = @instrumentName)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -470,7 +469,7 @@ As
                 return 51043
             End
 
-            Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage' 
+            Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage'
         End
 
         ---------------------------------------------------
@@ -499,16 +498,16 @@ As
         End
 
         ---------------------------------------------------
-        -- 
+        --
         ---------------------------------------------------
         --
         UPDATE T_Storage_Path
-        SET 
-            SP_path =@path, 
-            SP_vol_name_client =@volNameClient, 
-            SP_vol_name_server =@volNameServer, 
-            SP_function =@storFunction, 
-            SP_instrument_name =@instrumentName, 
+        SET
+            SP_path =@path,
+            SP_vol_name_client =@volNameClient,
+            SP_vol_name_server =@volNameServer,
+            SP_function =@storFunction,
+            SP_instrument_name =@instrumentName,
             SP_description =@description,
             SP_machine_name = @machineName
         WHERE (SP_path_ID = @spID)
@@ -522,7 +521,7 @@ As
             RAISERROR (@msg, 10, 1)
             return 51004
         End
-        
+
         commit transaction @transName
 
     End -- update mode

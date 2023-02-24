@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[MakeAutomaticRequestedRunFactors]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Create reqeusted run factors from metadata values
 **
 **  Auth:   grk
@@ -15,7 +14,7 @@ CREATE PROCEDURE [dbo].[MakeAutomaticRequestedRunFactors]
 **          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
 **          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
 **          06/10/2022 mem - Exit the procedure if @batchID is 0 or null
-**    
+**
 *****************************************************/
 (
     @batchID int,
@@ -23,8 +22,8 @@ CREATE PROCEDURE [dbo].[MakeAutomaticRequestedRunFactors]
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = ''
 )
-As
-    SET NOCOUNT ON 
+AS
+    SET NOCOUNT ON
 
     Declare @myError Int = 0
     Declare @myRowCount int = 0
@@ -58,15 +57,15 @@ As
           (NOT (T_Dataset.Acq_Time_Start IS NULL))
     ORDER BY T_Dataset.Acq_Time_Start
     --
-    SELECT 
+    SELECT
         @factorList = @factorList +
-        '<r ' + 
-        'i="' + CONVERT(VARCHAR(12), Request) + '" ' + 
+        '<r ' +
+        'i="' + CONVERT(VARCHAR(12), Request) + '" ' +
         'f="Actual_Run_Order" ' +
         'v="' + CONVERT(VARCHAR(12), Seq) + '" ' +
-        '/>' 
+        '/>'
     FROM #REQ
-    
+
     -----------------------------------------------------------
     -- Update factors
     -----------------------------------------------------------
@@ -75,9 +74,9 @@ As
     Begin
         RETURN @myError
     End
-    
+
     If @callingUser = ''
-    BEGIN 
+    BEGIN
         SET @callingUser = dbo.GetUserLoginWithoutDomain('')
     END
 
@@ -85,7 +84,7 @@ As
                             @factorList,
                             @message OUTPUT,
                             @callingUser
-                            
+
     RETURN @myError
 
 GO

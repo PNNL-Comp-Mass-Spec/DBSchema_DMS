@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
 /****************************************************
 **
@@ -14,7 +13,7 @@ CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
 **          03/03/2016 mem - Auto define Phylum as Community when @NCBITaxonomyID is 48479
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          08/08/2022 mem - Use Substring instead of Replace when removing genus name from species name
-**    
+**
 *****************************************************/
 (
     @ncbiTaxonomyID int,                    -- TaxonomyID value to lookup; ignored if @previewResults > 0 and the organism has NCBI_Taxonomy_ID defined in T_Organisms
@@ -29,7 +28,7 @@ CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
     @orgStrain varchar(128)=''  output,     -- input/output value
     @previewResults int = 0                 -- Less than 0 to preview results for @ncbiTaxonomyID; greater than 0 to preview results for the given OrganismID in T_Organisms
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -40,7 +39,7 @@ As
     ---------------------------------------------------
 
     Set @ncbiTaxonomyID = IsNull(@ncbiTaxonomyID, 0)
-    
+
     Set @orgDomain = IsNull(@orgDomain, '')
     Set @orgKingdom = IsNull(@orgKingdom, '')
     Set @orgPhylum = IsNull(@orgPhylum, '')
@@ -49,17 +48,17 @@ As
     Set @orgFamily = IsNull(@orgFamily, '')
     Set @orgGenus = IsNull(@orgGenus, '')
     Set @orgSpecies = IsNull(@orgSpecies, '')
-    Set @orgStrain = IsNull(@orgStrain, '')    
-    
+    Set @orgStrain = IsNull(@orgStrain, '')
+
     Set @previewResults = IsNull(@previewResults, 0)
 
     Declare @organismName varchar(128)= '[No Organism]'
-    
+
     If @previewResults > 0
     Begin
         Declare @newNCBITaxonomyID int
-        
-        Select @newNCBITaxonomyID = NCBI_Taxonomy_ID, 
+
+        Select @newNCBITaxonomyID = NCBI_Taxonomy_ID,
                @organismName = OG_name,
                @orgDomain = OG_Domain,
                @orgKingdom = OG_Kingdom,
@@ -74,7 +73,7 @@ As
         WHERE Organism_ID = @previewResults
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        
+
         If @myRowCount <> 1
         Begin
             Declare @message varchar(128) = 'Organism ID ' + Cast(@previewResults as varchar(12)) + ' not found; nothing to preview'
@@ -84,16 +83,16 @@ As
 
         If IsNull(@newNCBITaxonomyID, 0) > 0
             Set @ncbiTaxonomyID = @newNCBITaxonomyID
-            
+
     End
-        
+
     If @ncbiTaxonomyID = 0
         Return 0
 
     ---------------------------------------------------
     -- Declare variables to hold the updated data
     ---------------------------------------------------
-    
+
     Declare @newDomain varchar(64) =   @orgDomain
     Declare @newKingdom varchar(64) =  @orgKingdom
     Declare @newPhylum varchar(64) =   @orgPhylum
@@ -103,7 +102,7 @@ As
     Declare @newGenus varchar(128) =   @orgGenus
     Declare @newSpecies varchar(128) = @orgSpecies
     Declare @newStrain varchar(128)  = @orgStrain
-        
+
     ---------------------------------------------------
     -- Create a temporary table
     ---------------------------------------------------
@@ -117,7 +116,7 @@ As
     ---------------------------------------------------
     -- Lookup the taxonomy data
     ---------------------------------------------------
-    
+
     INSERT INTO #Tmp_TaxonomyInfo( Entry_ID, [Rank], [Name] )
     SELECT Entry_ID,
            [Rank],
@@ -131,17 +130,17 @@ As
         ---------------------------------------------------
         -- Populate the taxonomy variables
         ---------------------------------------------------
-        
+
         -- Superkingdom
         exec UpdateTaxonomyItemIfDefined 'superkingdom', @newDomain output
-        
+
         -- Subkingdom, Kingdom
         exec UpdateTaxonomyItemIfDefined 'subkingdom', @newKingdom output
         exec UpdateTaxonomyItemIfDefined 'kingdom', @newKingdom output
 
         If @newKingdom = '' And @newDomain = 'bacteria'
             Set @newKingdom = 'Prokaryote'
-            
+
         -- Subphylum, phylum
         exec UpdateTaxonomyItemIfDefined 'subphylum', @newPhylum output
         exec UpdateTaxonomyItemIfDefined 'phylum', @newPhylum output
@@ -187,7 +186,7 @@ As
         If @taxonomyRank = 'no rank' And @taxonomyName <> 'environmental samples'
         Begin
             Set @newStrain = @taxonomyName
-            
+
             -- Remove genus and species if present
             Set @newStrain = LTrim(Replace(LTrim(Replace(@newStrain, @newGenus, '')), @newSpecies, ''))
         End
@@ -209,9 +208,9 @@ As
         If Len(IsNull(@newFamily,  '')) = 0 Set @newFamily = 'na'
         If Len(IsNull(@newGenus,   '')) = 0 Set @newGenus = 'na'
         If Len(IsNull(@newSpecies, '')) = 0 Set @newSpecies = 'na'
-                    
+
     End
-    
+
     ---------------------------------------------------
     -- Possibly preview the old / new values
     ---------------------------------------------------
@@ -240,23 +239,22 @@ As
                 @orgStrain AS Strain,
                 @newStrain AS Strain_New
     End
-    
+
     ---------------------------------------------------
     -- Update the output variables
     ---------------------------------------------------
     --
-    Set @orgDomain   = @newDomain  
-    Set @orgKingdom  = @newKingdom 
-    Set @orgPhylum   = @newPhylum  
-    Set @orgClass    = @newClass   
-    Set @orgOrder    = @newOrder   
-    Set @orgFamily   = @newFamily  
-    Set @orgGenus    = @newGenus   
-    Set @orgSpecies  = @newSpecies 
-    Set @orgStrain   = @newStrain  
-        
-    return 0
+    Set @orgDomain   = @newDomain
+    Set @orgKingdom  = @newKingdom
+    Set @orgPhylum   = @newPhylum
+    Set @orgClass    = @newClass
+    Set @orgOrder    = @newOrder
+    Set @orgFamily   = @newFamily
+    Set @orgGenus    = @newGenus
+    Set @orgSpecies  = @newSpecies
+    Set @orgStrain   = @newStrain
 
+    return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetTaxonomyValueByTaxonomyID] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
 /****************************************************
 **
@@ -13,7 +12,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   02/15/2012 
+**  Date:   02/15/2012
 **          02/15/2012 grk - modified percentage parameters
 **          03/03/2012 grk - changed to embedded usage tags
 **          03/07/2012 mem - Now populating Last_Affected and Entered_By
@@ -28,7 +27,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
 **                         - Pass @ID and @invalidUsage to ParseUsageText
 **          05/03/2019 mem - Update comments
 **          02/15/2022 mem - Update error messages and rename variables
-**   
+**
 *****************************************************/
 (
     @ID int,
@@ -39,7 +38,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
     @showDebug tinyint = 0,
     @invalidUsage tinyint = 0 output    -- Set to 1 if the usage text in @comment cannot be parsed (or if the total percentage is not 100); UpdateRunOpLog uses this to skip invalid entries
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -55,9 +54,9 @@ As
     Set @message = ''
     Set @showDebug = IsNull(@showDebug, 0)
     Set @invalidUsage = 0
-    
+
     Declare @logErrors tinyint = 0
-    
+
     Set @callingUser = IsNull(@callingUser, '')
     if @callingUser = ''
         Set @callingUser = suser_sname()
@@ -65,15 +64,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateRunInterval', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
-    
-    BEGIN TRY 
+
+    BEGIN TRY
 
     IF @ID < 0
     Begin
@@ -81,7 +80,7 @@ As
         RAISERROR (@message, 11, 10)
         Goto Done
     End
-    
+
     ---------------------------------------------------
     -- Validate usage and comment
     -- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
@@ -94,18 +93,18 @@ As
     --
     -- Since @validateTotal is set to 1, if the percentages do not add up to 100%, ParseUsageText will raise an error (and @usageXML will be null)
     ---------------------------------------------------
-    
+
     DECLARE @usageXML XML
     DECLARE @cleanedComment VARCHAR(MAX) = @comment
-    
+
     If @showDebug > 0
         print 'Calling ParseUsageText'
-        
+
     EXEC @myError = ParseUsageText @cleanedComment output, @usageXML output, @message output, @seq=@ID, @showDebug=@showDebug, @validateTotal = 1, @invalidUsage=@invalidUsage output
-    
+
     If @showDebug > 0
         print 'ParseUsageText returned ' + Cast(@myError as varchar(9))
-        
+
     IF @myError <> 0
     Begin
         If @myError BETWEEN 1 and 255
@@ -113,12 +112,12 @@ As
         Else
             RAISERROR (@message, 11, 12)
     End
-    
+
     If @showDebug > 0
         print '@myError is 0 after ParseUsageText'
-    
+
     Set @logErrors = 1
-    
+
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
@@ -139,7 +138,7 @@ As
             RAISERROR (@message, 11, 16)
         End
     End
-    
+
     ---------------------------------------------------
     -- Add mode is not supported
     ---------------------------------------------------
@@ -148,7 +147,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         set @myError = 0
         --
@@ -167,14 +166,14 @@ As
     End -- update mode
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-        
-        If @logErrors > 0    
+
+        If @logErrors > 0
             Exec PostLogEntry 'Error', @message, 'AddUpdateRunInterval'
     END CATCH
 

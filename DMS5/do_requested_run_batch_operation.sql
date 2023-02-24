@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DoRequestedRunBatchOperation]
 /****************************************************
 **
@@ -30,7 +29,7 @@ CREATE PROCEDURE [dbo].[DoRequestedRunBatchOperation]
     @mode varchar(12), -- 'LockBatch', 'UnlockBatch', 'delete'; Supported, but unused in July 2017 are 'FreeMembers', 'GrantHiPri', 'DenyHiPri'
     @message varchar(512) output
 )
-As
+AS
     set nocount on
 
     Declare @myError int = 0
@@ -260,7 +259,6 @@ As
     set @message = 'Mode "' + @mode +  '" was unrecognized'
     RAISERROR (@message, 10, 1)
     return 51222
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [DDL_Viewer] AS [dbo]

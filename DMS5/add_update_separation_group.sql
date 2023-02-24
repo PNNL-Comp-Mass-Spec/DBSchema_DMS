@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateSeparationGroup]
 /****************************************************
 **
-**  Desc:   Adds new or edits existing item in T_Separation_Group 
+**  Desc:   Adds new or edits existing item in T_Separation_Group
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -30,26 +29,26 @@ CREATE PROCEDURE [dbo].[AddUpdateSeparationGroup]
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
-    Declare @myRowCount int =0 
+    Declare @myRowCount int =0
 
     Declare @datasetTypeID int
-    
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdateSeparationGroup', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    Begin TRY 
+    Begin TRY
 
     ---------------------------------------------------
     -- Validate input fields
@@ -61,7 +60,7 @@ As
     Set @fractionCount = IsNull(@fractionCount, 0)
 
     Set @message = ''
-    
+
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
@@ -73,7 +72,7 @@ As
         Declare @tmp varchar(64) = ''
         --
         SELECT @tmp = Sep_Group
-        FROM  T_Separation_Group        
+        FROM  T_Separation_Group
         WHERE (Sep_Group = @separationGroup)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -89,7 +88,7 @@ As
     If @Mode = 'add'
     Begin
 
-        INSERT INTO T_Separation_Group( Sep_Group,                                        
+        INSERT INTO T_Separation_Group( Sep_Group,
                                         [Comment],
                                         Active,
                                         Sample_Prep_Visible,
@@ -107,7 +106,7 @@ As
     -- Action for update mode
     ---------------------------------------------------
     --
-    If @Mode = 'update' 
+    If @Mode = 'update'
     Begin
         set @myError = 0
         --
@@ -126,18 +125,17 @@ As
     End -- update mode
 
     END TRY
-    Begin CATCH 
+    Begin CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
-            
+
         Exec PostLogEntry 'Error', @message, 'AddUpdateSeparationGroup'
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSeparationGroup] TO [DDL_Viewer] AS [dbo]

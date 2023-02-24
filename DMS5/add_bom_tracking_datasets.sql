@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
 /****************************************************
 **
@@ -30,7 +29,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
     @mode varchar(12) = 'add',              -- 'add, 'info' (just show instrument names), or 'debug' (call AddBOMTrackingDataset and preview tracking datasets)
     @callingUser varchar(128)  = 'D3E154'   -- Ron Moore
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -86,7 +85,7 @@ As
             End
             Else
             Begin --<a>
-                If @mode in ('debug', 'info') 
+                If @mode in ('debug', 'info')
                 Begin
                     PRINT '->' + @instrumentName
                 End

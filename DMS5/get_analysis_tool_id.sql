@@ -3,31 +3,31 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE GetAnalysisToolID
+CREATE PROCEDURE [dbo].[GetAnalysisToolID]
 /****************************************************
 **
-**	Desc: Gets toolID for given dataset name
+**  Desc: Gets toolID for given dataset name
 **
-**	Return values: 0: failure, otherwise, dataset ID
+**  Return values: 0: failure, otherwise, dataset ID
 **
-**	Auth:	grk
-**	Date:	01/26/2001
-**			08/03/2017 mem - Add Set NoCount On
-**    
+**  Auth:   grk
+**  Date:   01/26/2001
+**          08/03/2017 mem - Add Set NoCount On
+**
 *****************************************************/
 (
-	@toolName varchar(80) = " "
+    @toolName varchar(80) = " "
 )
-As
-	Set NoCount On
+AS
+    Set NoCount On
 
-	Declare @toolID int = 0
+    Declare @toolID int = 0
 
-	SELECT @toolID = AJT_toolID
-	FROM T_Analysis_Tool
-	WHERE AJT_toolName = @toolName
+    SELECT @toolID = AJT_toolID
+    FROM T_Analysis_Tool
+    WHERE AJT_toolName = @toolName
 
-	return @toolID
+    return @toolID
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolID] TO [DDL_Viewer] AS [dbo]
 GO

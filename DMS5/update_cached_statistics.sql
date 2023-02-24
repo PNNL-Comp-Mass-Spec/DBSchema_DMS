@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 /****************************************************
 **
@@ -41,7 +40,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
     @updateJobRequestStatistics tinyint = 1 ,       -- When non-zero, update T_Analysis_Job_Request
     @showRuntimeStats tinyint = 0
 )
-As
+AS
     Set nocount on
 
     Declare @myRowCount int = 0
@@ -465,7 +464,6 @@ As
 
 Done:
     return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[UpdateCachedStatistics] TO [D3L243] AS [dbo]

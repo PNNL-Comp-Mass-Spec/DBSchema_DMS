@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[GetOperationDMSUsersNameList]
 /****************************************************
 **
@@ -18,7 +17,7 @@ CREATE FUNCTION [dbo].[GetOperationDMSUsersNameList]
 **          11/17/2016 mem - Add parameter @formatAsTable
 **                         - Also change parameter @operationID to an integer
 **          08/24/2018 mem - Tabs to spaces
-**    
+**
 *****************************************************/
 (
     @operationID int,
@@ -29,7 +28,7 @@ AS
 BEGIN
 
     Set @formatAsTable = IsNull(@formatAsTable, 0)
-    
+
     Declare @list varchar(8000) = ''
 
     If @formatAsTable = 1
@@ -41,7 +40,7 @@ BEGIN
         WHERE O.Op_ID = @operationID AND
               (U.U_Status = 'Active')
         ORDER BY U.U_Name
-        
+
     End
     Else
     Begin
@@ -57,11 +56,10 @@ BEGIN
 
     -- Trim the trailing vertical bar or semicolon
     If @list <> ''
-        Set @list = Substring(@list, 1, Len(@list)-1)            
-    
+        Set @list = Substring(@list, 1, Len(@list)-1)
+
     Return @list
 END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[GetOperationDMSUsersNameList] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[DuplicateDataset]
 /****************************************************
 **
@@ -31,7 +30,7 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
     @infoOnly tinyint = 1,                      -- 0 to create the dataset, 1 to preview
     @message varchar(512) = '' output           -- Output message
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -208,7 +207,7 @@ As
             --
             SELECT @operPRN = U_PRN
             FROM T_Users
-    	    WHERE ID = @userID
+            WHERE ID = @userID
         End
         Else
         Begin
@@ -416,6 +415,5 @@ As
 Done:
 
     return @myError
-
 
 GO

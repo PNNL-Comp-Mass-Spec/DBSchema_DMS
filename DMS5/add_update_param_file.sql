@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 /****************************************************
 **
@@ -43,7 +42,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
     @mode varchar(12) = 'add',                  -- 'add', 'previewadd', or 'update'
     @message varchar(512) output
 )
-As
+AS
     Set nocount on
 
     Declare @myError int = 0
@@ -391,7 +390,6 @@ As
 
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [DDL_Viewer] AS [dbo]

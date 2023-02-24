@@ -3,14 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 /****************************************************
-** 
+**
 **  Desc: Schedules analysis jobs for dataset according to defaults
 **
 **  Return values: 0: success, otherwise, error code
-** 
+**
 **  Auth:   grk
 **  Date:   06/29/2005 grk - Supersedes "ScheduleDefaultAnalyses"
 **          03/28/2006 grk - Added protein collection fields
@@ -23,7 +22,7 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **          05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @infoOnly
 **          07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
 **          07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
-**          08/26/2010 grk - This was cloned from SchedulePredefinedAnalyses; added try-catch error handling 
+**          08/26/2010 grk - This was cloned from SchedulePredefinedAnalyses; added try-catch error handling
 **          08/26/2010 mem - Added output parameter @JobsCreated
 **          02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **          04/11/2011 mem - Updated call to AddUpdateAnalysisJob
@@ -53,9 +52,9 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
     @message VARCHAR(max) output,
     @JobsCreated int = 0 output
 )
-As
+AS
     Set XACT_ABORT, nocount on
-    
+
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -64,23 +63,23 @@ As
     Declare @ErrorMessage varchar(512)
     Declare @NewMessage varchar(512)
     Declare @logMessage varchar(512)
-        
+
     Declare @CreateJob tinyint = 1
     Declare @JobFailCount int = 0
     Declare @JobFailErrorCode int = 0
-    
+
     Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
     Set @ExcludeDatasetsNotReleased = IsNull(@ExcludeDatasetsNotReleased, 1)
     Set @PreventDuplicateJobs = IsNull(@PreventDuplicateJobs, 1)
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     BEGIN TRY
-    
+
     ---------------------------------------------------
     -- Temporary job holding table to receive created jobs
     -- This table is populated in EvaluatePredefinedAnalysisRules
     ---------------------------------------------------
-    
+
     CREATE TABLE #JX (
         predefine_id int,
         dataset varchar(128),
@@ -91,7 +90,7 @@ As
         organismDBName varchar(128),
         organismName varchar(128),
         proteinCollectionList varchar(4000),
-        proteinOptionsList varchar(256), 
+        proteinOptionsList varchar(256),
         ownerPRN varchar(128),
         comment varchar(128),
         associatedProcessorGroup varchar(64),
@@ -108,7 +107,7 @@ As
         Set @message = 'Could not create temporary table'
         RAISERROR (@message, 11, 10)
     End
-    
+
     ---------------------------------------------------
     -- Populate the job holding table (#JX)
     ---------------------------------------------------
@@ -119,10 +118,10 @@ As
     If @result <> 0
     Begin
         Set @ErrorMessage = 'EvaluatePredefinedAnalysisRules returned error code ' + Convert(varchar(12), @result)
-    
+
         If Not IsNull(@message, '') = ''
             Set @ErrorMessage = @ErrorMessage + '; ' + @message
-        
+
         Set @message = @ErrorMessage
         RAISERROR (@message, 11, 11)
     End
@@ -145,20 +144,20 @@ As
     Declare @propagationMode tinyint
     Declare @propagationModeText varchar(24)
     Declare @specialProcessing varchar(512)
-        
+
     Declare @jobNum varchar(32)
     Declare @ownerPRN varchar(32)
-    
+
     Declare @associatedProcessorGroup varchar(64)
     Set @associatedProcessorGroup = ''
 
     -- keep track of how many jobs have been scheduled
     --
     Set @jobsCreated = 0
-    
+
     Declare @done tinyint
     Set @done = 0
-    
+
     Declare @currID int
     Set @currID = 0
 
@@ -198,7 +197,7 @@ As
         End
         Else
         Begin -- <b>
-        
+
             If @AnalysisToolNameFilter = ''
             Begin
                 Set @CreateJob = 1
@@ -226,7 +225,7 @@ As
 
             If @CreateJob <> 0
             Begin -- <c>
-            
+
                 If @infoOnly <> 0
                 Begin
                     Print ''
@@ -252,7 +251,7 @@ As
                             @propagationMode = @propagationModeText,
                             @stateName = 'new',
                             @jobNum = @jobNum output,
-                            @mode = 'add',                
+                            @mode = 'add',
                             @message = @NewMessage output,
                             @callingUser = @callingUser,
                             @PreventDuplicateJobs = @PreventDuplicateJobs,
@@ -264,14 +263,14 @@ As
                 -- If there was an error creating the job, remember it
                 -- otherwise bump the job count
                 --
-                If @result = 0 
+                If @result = 0
                 Begin
                     If @infoOnly = 0
                     Begin
-                        Set @jobsCreated = @jobsCreated + 1 
+                        Set @jobsCreated = @jobsCreated + 1
                     End
                 End
-                Else 
+                Else
                 Begin -- <d>
                     If @message = ''
                     Begin
@@ -282,7 +281,7 @@ As
                         Set @message = @message + '; ' + @NewMessage
                     End
 
-                    -- ResultCode 52500 means a duplicate job exists; that error can be ignored                    
+                    -- ResultCode 52500 means a duplicate job exists; that error can be ignored
                     If @result <> 52500
                     Begin -- <e>
                         -- Append the @result ID to @message
@@ -290,11 +289,11 @@ As
                         Set @JobFailCount = @JobFailCount + 1
                         If @JobFailErrorCode = 0
                             Set @JobFailErrorCode = @result
-                            
+
                         Set @message = @message + ' [' + convert(varchar(12), @result) + ']'
-                        
+
                         Set @logMessage = @NewMessage
-                        
+
                         If CharIndex(@datasetName, @logMessage) < 1
                         Begin
                             Set @logMessage = @logMessage + '; Dataset ' + @datasetName + ', '
@@ -308,12 +307,12 @@ As
 
                         exec PostLogEntry 'Error', @logMessage, 'CreatePredefinedAnalysesJobs'
                     End -- </e>
-                    
+
                 End -- </d>
-            
+
             End -- </c>
         End -- </b>
-        
+
     End -- </b>
 
     ---------------------------------------------------
@@ -323,17 +322,17 @@ As
     Set @NewMessage = 'Created ' + convert(varchar(12), @jobsCreated) + ' job'
     If @jobsCreated <> 1
         Set @NewMessage = @NewMessage + 's'
-    
+
     If @message <> ''
     Begin
         -- @message might look like this: Dataset rating (-10) does not allow creation of jobs: 47538_Pls_FF_IGT_23_25Aug10_Andromeda_10-07-10
         -- If it does, update @message to remove the dataset name
-        
+
         Set @message = Replace(@message, 'does not allow creation of jobs: ' + @datasetName, 'does not allow creation of jobs')
-        
+
         Set @NewMessage = @NewMessage + '; ' + @message
     End
-    
+
     Set @message = @NewMessage
 
     If @JobFailCount > 0 and @myError = 0
@@ -347,16 +346,15 @@ As
             Set @myError = 2
         End
     End
-    
+
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         Exec PostLogEntry 'Error', @message, 'CreatePredefinedAnalysesJobs'
     END CATCH
-    
-    return @myError
 
+    return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[CreatePredefinedAnalysesJobs] TO [DDL_Viewer] AS [dbo]

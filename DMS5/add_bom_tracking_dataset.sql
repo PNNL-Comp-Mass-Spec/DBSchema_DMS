@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
 /****************************************************
 **
 **  Desc:
 **      Adds new tracking dataset for the beginning of the month (BOM)
-**      for the given year, month, and instrument 
+**      for the given year, month, and instrument
 **
 **      If @month is 'next', adds a tracking dataset for the beginning of the next month
 **
@@ -36,7 +35,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
     @message varchar(512) output,
     @callingUser varchar(128)  = 'D3E154'   -- Ron Moore
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -103,8 +102,8 @@ As
 
         Declare @instID INT = 0
 
-        SELECT @instID = Instrument_ID 
-        FROM dbo.T_Instrument_Name 
+        SELECT @instID = Instrument_ID
+        FROM dbo.T_Instrument_Name
         WHERE IN_name = @instrumentName
 
         If @instID = 0
@@ -129,8 +128,8 @@ As
         Declare @conflictingDataset varchar(128) = ''
         Declare @datasetID Int = 0
 
-        SELECT @conflictingDataset = Dataset_Num 
-        FROM dbo.T_Dataset 
+        SELECT @conflictingDataset = Dataset_Num
+        FROM dbo.T_Dataset
         WHERE Acq_Time_Start = @bom AND DS_instrument_name_ID = @instID
 
         If (@conflictingDataset <> '')
@@ -146,7 +145,7 @@ As
               (Not (Acq_Time_End IS NULL)) AND
               @bom BETWEEN Acq_Time_Start AND Acq_Time_End AND
               DS_instrument_name_ID = @instID
-        
+
         If (@conflictingDataset <> '')
         Begin
             RAISERROR ('Tracking dataset would overlap existing dataset "%s", Dataset ID %d', 11, 23, @conflictingDataset, @datasetID)

@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Adds new or edits existing item in T_Prep_LC_Run
 **
 **  Auth:   grk
@@ -33,7 +32,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
     @prepRunName varchar(128),
     @instrument varchar(128),
     @type varchar(64),
-    @lcColumn varchar(128),    
+    @lcColumn varchar(128),
     @lcColumn2 varchar(128),
     @comment varchar(1024),
     @guardColumn varchar(12),
@@ -44,17 +43,17 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
     @numberOfRuns varchar(12),
     @instrumentPressure varchar(32),
     @qualityControl varchar(2048),
-    @datasets varchar(MAX),    
+    @datasets varchar(MAX),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @itemCount Int
     Declare @integerCount int
     Declare @tmp int = 0
@@ -64,15 +63,15 @@ As
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
-        
-    Declare @authorized tinyint = 0    
+
+    Declare @authorized tinyint = 0
     Exec @authorized = VerifySPAuthorized 'AddUpdatePrepLCRun', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
-    BEGIN TRY 
+    BEGIN TRY
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -101,7 +100,7 @@ As
         FROM dbo.udfParseDelimitedIntegerList ( @samplePrepRequest, ',' )
 
         If @itemCount = 0 Or @itemCount <> @integerCount
-        Begin        
+        Begin
             Set @message = 'The sample prep request list should be one or more sample prep request IDs (integers), separated by commas'
             RAISERROR (@message, 11, 7)
         End
@@ -166,7 +165,7 @@ As
             SamplePrepRequest,
             Number_Of_Runs,
             Instrument_Pressure,
-            Quality_Control    
+            Quality_Control
         ) VALUES (
             @prepRunName,
             @instrument,
@@ -181,7 +180,7 @@ As
             @samplePrepRequest,
             @numberOfRuns,
             @instrumentPressure,
-            @qualityControl 
+            @qualityControl
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -195,9 +194,9 @@ As
 
         INSERT INTO dbo.T_Prep_LC_Run_Dataset
                 ( Prep_LC_Run_ID, Dataset_ID )
-        SELECT @id AS Prep_LC_Run_ID, Dataset_ID 
-        FROM #DSL                
-        
+        SELECT @id AS Prep_LC_Run_ID, Dataset_ID
+        FROM #DSL
+
         Commit transaction @transName
     End -- add mode
 
@@ -205,10 +204,10 @@ As
     -- action for update mode
     ---------------------------------------------------
     --
-    If @mode = 'update' 
+    If @mode = 'update'
     Begin
         Begin transaction @transName
-        
+
         UPDATE T_Prep_LC_Run
         SET Prep_Run_Name = @prepRunName,
             Instrument = @instrument,
@@ -234,29 +233,28 @@ As
         -- add new datasets
         INSERT INTO dbo.T_Prep_LC_Run_Dataset
                 ( Prep_LC_Run_ID, Dataset_ID )
-        SELECT @id AS Prep_LC_Run_ID, Dataset_ID 
+        SELECT @id AS Prep_LC_Run_ID, Dataset_ID
         FROM #DSL
         WHERE NOT #DSL.Dataset_ID IN (SELECT Dataset_ID FROM T_Prep_LC_Run_Dataset WHERE Prep_LC_Run_ID = @id)
-        
+
         -- Delete removed datasets
         DELETE FROM T_Prep_LC_Run_Dataset
-        WHERE Prep_LC_Run_ID = @id AND 
+        WHERE Prep_LC_Run_ID = @id AND
               NOT T_Prep_LC_Run_Dataset.Dataset_ID IN (SELECT Dataset_ID FROM #DSL)
 
         Commit transaction @transName
     End -- update mode
 
     END TRY
-    BEGIN CATCH 
+    BEGIN CATCH
         EXEC FormatErrorMessage @message output, @myError output
-        
+
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
     END Catch
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [DDL_Viewer] AS [dbo]

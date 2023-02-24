@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateDataset]
 /****************************************************
 **
@@ -144,7 +143,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataset]
     @lcCartConfig varchar(128) = '',
     @logDebugMessages tinyint = 0
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -1656,7 +1655,6 @@ As
     End CATCH
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataset] TO [DDL_Viewer] AS [dbo]

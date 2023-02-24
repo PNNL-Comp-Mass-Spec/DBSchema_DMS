@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 /****************************************************
 **
@@ -141,7 +140,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
     @message varchar(1024) output,
     @callingUser varchar(128) = ''
 )
-As
+AS
     Set XACT_ABORT, nocount on
 
     Declare @myError int = 0
@@ -219,12 +218,12 @@ As
             Set @requestName = Replace(@requestName, Char(10), ' ')
         End
 
-	    If CharIndex(Char(13), @requestName) > 0
+        If CharIndex(Char(13), @requestName) > 0
         Begin
         Set @requestName = Replace(@requestName, Char(13), ' ')
         End
 
-	    If CharIndex(Char(9), @requestName) > 0
+        If CharIndex(Char(9), @requestName) > 0
         Begin
             Set @requestName = Replace(@requestName, Char(9), ' ')
         End
@@ -411,11 +410,11 @@ As
 
     Declare @result Int
 
-    Exec @result = ValidateRequestUsers 
-        @requestName, 'AddUpdateSamplePrepRequest', 
-        @requestedPersonnel = @requestedPersonnel Output, 
-        @assignedPersonnel = @assignedPersonnel Output, 
-        @requireValidRequestedPersonnel= 1, 
+    Exec @result = ValidateRequestUsers
+        @requestName, 'AddUpdateSamplePrepRequest',
+        @requestedPersonnel = @requestedPersonnel Output,
+        @assignedPersonnel = @assignedPersonnel Output,
+        @requireValidRequestedPersonnel= 1,
         @message = @message Output
 
     If @result > 0
@@ -808,7 +807,6 @@ As
     End Catch
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [DDL_Viewer] AS [dbo]
