@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindDataset] ******/
+/****** Object:  StoredProcedure [dbo].[find_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE [dbo].[FindDataset]
+CREATE PROCEDURE [dbo].[find_dataset]
 /****************************************************
 **
 **  Desc:
@@ -17,29 +17,30 @@ CREATE PROCEDURE [dbo].[FindDataset]
 **  Auth:   grk
 **  Date:   07/06/2005
 **          12/20/2006 mem - Now querying V_Find_Dataset using dynamic SQL (Ticket #349)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID varchar(20) = '',
-    @Dataset varchar(128) = '',
-    @Experiment varchar(50) = '',
-    @Campaign varchar(50) = '',
-    @State varchar(50) = '',
-    @Instrument varchar(24) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
-    @Comment varchar(500) = '',
-    @Operator varchar(50) = '',
-    @Rating varchar(32) = '',
-    @DatasetFolderPath varchar(511) = '',
-    @AcqStart_After varchar(20) = '',
-    @AcqStart_Before varchar(20) = '',
-    @AcqLength_min varchar(20) = '',
-    @AcqLength_max varchar(20) = '',
-    @ScanCount_min varchar(20) = '',
-    @ScanCount_max varchar(20) = '',
+    @id varchar(20) = '',
+    @dataset varchar(128) = '',
+    @experiment varchar(50) = '',
+    @campaign varchar(50) = '',
+    @state varchar(50) = '',
+    @instrument varchar(24) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
+    @comment varchar(500) = '',
+    @operator varchar(50) = '',
+    @rating varchar(32) = '',
+    @datasetFolderPath varchar(511) = '',
+    @acqStart_After varchar(20) = '',
+    @acqStart_Before varchar(20) = '',
+    @acqLength_min varchar(20) = '',
+    @acqLength_max varchar(20) = '',
+    @scanCount_min varchar(20) = '',
+    @scanCount_max varchar(20) = '',
     @message varchar(512) output
 )
 AS
@@ -186,11 +187,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_dataset] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindDataset] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_dataset] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindDataset] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_dataset] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateRequestedRunBatchParams] ******/
+/****** Object:  StoredProcedure [dbo].[validate_requested_run_batch_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
+CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
 /****************************************************
 **
 **  Desc: Validates values for creating/updating a requested run batch
@@ -11,11 +11,12 @@ CREATE PROCEDURE [dbo].[ValidateRequestedRunBatchParams]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:   05/29/2021 mem - Refactored code from AddUpdateRequestedRunBatch
+**  Date:   05/29/2021 mem - Refactored code from add_update_requested_run_batch
 **          05/31/2021 mem - Add support for @mode = 'PreviewAdd'
 **          02/14/2023 mem - Rename username and requested instrument group parameters
 **                         - Update error message
 **          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -150,15 +151,15 @@ AS
         End
 
         ---------------------------------------------------
-        -- Resolve user ID for owner PRN
+        -- Resolve user ID for owner username
         ---------------------------------------------------
 
-        execute @userID = GetUserID @ownerUsername
+        execute @userID = get_user_id @ownerUsername
 
         If @userID > 0
         Begin
-            -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-            -- Assure that @ownerPRN contains simply the username
+            -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+            -- Assure that @ownerUsername contains simply the username
             --
             SELECT @ownerUsername = U_PRN
             FROM T_Users
@@ -166,18 +167,18 @@ AS
         End
         Else
         Begin
-            -- Could not find entry in database for username @ownerPRN
+            -- Could not find entry in database for username @ownerUsername
             -- Try to auto-resolve the name
 
             Declare @matchCount int
-            Declare @newPRN varchar(64)
+            Declare @newUsername varchar(64)
 
-            exec AutoResolveNameToPRN @ownerUsername, @matchCount output, @newPRN output, @userID output
+            exec auto_resolve_name_to_username @ownerUsername, @matchCount output, @newUsername output, @userID output
 
             If @matchCount = 1
             Begin
-                -- Single match found; update @ownerPRN
-                Set @ownerUsername = @newPRN
+                -- Single match found; update @ownerUsername
+                Set @ownerUsername = @newUsername
             End
             Else
             Begin
@@ -211,13 +212,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ValidateRequestedRunBatchParams'
+        Exec post_log_entry 'Error', @message, 'validate_requested_run_batch_params'
     END CATCH
 
     return @myError

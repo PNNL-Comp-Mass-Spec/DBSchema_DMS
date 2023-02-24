@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEUSUsersFromEUSImports] ******/
+/****** Object:  StoredProcedure [dbo].[update_eus_users_from_eus_imports] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEUSUsersFromEUSImports]
+CREATE PROCEDURE [dbo].[update_eus_users_from_eus_imports]
 /****************************************************
 **
 **  Desc:   Updates associated EUS user associations for
@@ -17,11 +17,12 @@ CREATE PROCEDURE [dbo].[UpdateEUSUsersFromEUSImports]
 **          03/25/2011 mem - Updated to remove entries from T_EUS_Proposal_Users if the row is no longer in V_EUS_Import_Proposal_Participants yet the proposal is still active
 **          04/01/2011 mem - No longer removing entries from T_EUS_Proposal_Users; now changing to state 5="No longer associated with proposal"
 **                         - Added support for state 4="Permanently associated with proposal"
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          03/19/2012 mem - Now populating T_EUS_Users.HID
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/12/2021 mem - Use new NEXUS-based views
 **                         - Add option to update EUS Users for Inactive proposals
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -113,7 +114,7 @@ AS
         if @myError <> 0
         begin
             Set @message = 'Error merging V_NEXUS_Import_Proposal_Participants with T_EUS_Users (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'UpdateEUSUsersFromEUSImports'
+            execute post_log_entry 'Error', @message, 'update_eus_users_from_eus_imports'
             goto Done
         end
 
@@ -140,7 +141,7 @@ AS
             If @mergeDeleteCount > 0
                 Set @message = @message + '; ' + Convert(varchar(12), @mergeDeleteCount) + ' deleted'
 
-            Exec PostLogEntry 'Normal', @message, 'UpdateEUSUsersFromEUSImports'
+            Exec post_log_entry 'Normal', @message, 'update_eus_users_from_eus_imports'
             Set @message = ''
         End
 
@@ -195,7 +196,7 @@ AS
         if @myError <> 0
         begin
             Set @message = 'Error merging V_NEXUS_Import_Proposal_Participants with T_EUS_Proposal_Users (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'UpdateEUSUsersFromEUSImports'
+            execute post_log_entry 'Error', @message, 'update_eus_users_from_eus_imports'
             goto Done
         end
 
@@ -255,15 +256,15 @@ AS
             If @mergeDeleteCount > 0
                 Set @message = @message + '; ' + Convert(varchar(12), @mergeDeleteCount) + ' deleted'
 
-            Exec PostLogEntry 'Normal', @message, 'UpdateEUSUsersFromEUSImports'
+            Exec post_log_entry 'Normal', @message, 'update_eus_users_from_eus_imports'
             Set @message = ''
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateEUSUsersFromEUSImports')
-        exec LocalErrorHandler  @callingProcName, @currentLocation, @LogError = 1,
+        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'update_eus_users_from_eus_imports')
+        exec local_error_handler  @callingProcName, @currentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -279,20 +280,20 @@ Done:
     ---------------------------------------------------
 
     Declare @usageMessage varchar(512) = ''
-    Exec PostUsageLogEntry 'UpdateEUSUsersFromEUSImports', @usageMessage
+    Exec post_usage_log_entry 'update_eus_users_from_eus_imports', @usageMessage
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_users_from_eus_imports] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT ALTER ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
+GRANT ALTER ON [dbo].[update_eus_users_from_eus_imports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_eus_users_from_eus_imports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_users_from_eus_imports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSUsersFromEUSImports] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_users_from_eus_imports] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEUSUsersFromEUSImports] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_eus_users_from_eus_imports] TO [PNL\D3M578] AS [dbo]
 GO

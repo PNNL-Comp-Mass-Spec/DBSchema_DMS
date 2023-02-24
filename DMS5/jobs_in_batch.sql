@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[JobsInBatch] ******/
+/****** Object:  UserDefinedFunction [dbo].[jobs_in_batch] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[JobsInBatch]
+CREATE FUNCTION [dbo].[jobs_in_batch]
 /****************************************************
 **
 **  Desc:
@@ -11,12 +11,13 @@ CREATE FUNCTION [dbo].[JobsInBatch]
 **
 **
 **  Auth:   grk
-**  Date:   2/27/2004
+**  Date:   02/27/2004
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
-    (
+(
     @batchID int
-    )
+)
 RETURNS int
 AS
     BEGIN
@@ -29,5 +30,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[JobsInBatch] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[jobs_in_batch] TO [DDL_Viewer] AS [dbo]
 GO

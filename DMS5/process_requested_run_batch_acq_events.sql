@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ProcessRequestedRunBatchAcqEvents] ******/
+/****** Object:  StoredProcedure [dbo].[process_requested_run_batch_acq_events] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ProcessRequestedRunBatchAcqEvents]
+CREATE PROCEDURE [dbo].[process_requested_run_batch_acq_events]
 /****************************************************
 **
 **  Desc:
@@ -15,8 +15,9 @@ CREATE PROCEDURE [dbo].[ProcessRequestedRunBatchAcqEvents]
 **
 **  Auth:   grk
 **  Dte:    03/29/2010 grk - Initial release
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,7 +29,7 @@ AS
     declare @myError int
     set @myError = 0
 
-    DECLARE @callingUser varchar(128) = dbo.GetUserLoginWithoutDomain('')
+    DECLARE @callingUser varchar(128) = dbo.get_user_login_without_domain('')
 
     DECLARE @message varchar(512)
     SET @message = ''
@@ -86,7 +87,7 @@ AS
         BEGIN
             DELETE FROM #BL WHERE BatchID = @batchID
             --
-            EXEC @myError = MakeAutomaticRequestedRunFactors @batchID, 'actual_run_order', @message OUTPUT, @callingUser
+            EXEC @myError = make_automatic_requested_run_factors @batchID, 'actual_run_order', @message OUTPUT, @callingUser
             IF @myError <> 0
                 SET @done = 1
         END
@@ -97,8 +98,9 @@ AS
     ---------------------------------------------------
     --
     RETURN @myError
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[ProcessRequestedRunBatchAcqEvents] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[process_requested_run_batch_acq_events] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ProcessRequestedRunBatchAcqEvents] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[process_requested_run_batch_acq_events] TO [Limited_Table_Write] AS [dbo]
 GO

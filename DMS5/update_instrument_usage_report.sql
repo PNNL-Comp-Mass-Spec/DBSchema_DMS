@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateInstrumentUsageReport] ******/
+/****** Object:  StoredProcedure [dbo].[update_instrument_usage_report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
+CREATE PROCEDURE [dbo].[update_instrument_usage_report]
 /****************************************************
 **
 **  Desc:  Update requested EMSL instument usage table from input XML list
@@ -20,21 +20,22 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageReport]
 **
 **  Auth:   grk
 **  Date:   10/07/2012
-**          10/09/2012 grk - Enabled 10 day edit cutoff and UpdateDatasetInterval for 'reload'
+**          10/09/2012 grk - Enabled 10 day edit cutoff and update_dataset_interval for 'reload'
 **          11/21/2012 mem - Extended cutoff for 'reload' to be 45 days instead of 10 days
 **          01/09/2013 mem - Extended cutoff for 'reload' to be 90 days instead of 45 days
 **          04/03/2013 grk - Made Usage editable
 **          04/04/2013 grk - Clearing Usage on reload
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
 **          04/11/2017 mem - Now using fields DMS_Inst_ID and Usage_Type in T_EMSL_Instrument_Usage_Report
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          05/03/2019 mem - Pass 0 to UpdateEMSLInstrumentUsageReport for @eusInstrumentID
+**          05/03/2019 mem - Pass 0 to update_emsl_instrument_usage_report for @eusInstrumentID
 **          09/10/2019 mem - Extended cutoff for 'update' to be 365 days instead of 90 days
 **                         - Changed the cutoff for reload to 60 days
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -73,7 +74,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageReport', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_instrument_usage_report', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -84,7 +85,7 @@ AS
     ---------------------------------------------------
 
     If IsNull(@callingUser, '') = ''
-        Set @callingUser = dbo.GetUserLoginWithoutDomain('')
+        Set @callingUser = dbo.get_user_login_without_domain('')
 
     Declare @instrumentID int = 0
 
@@ -138,7 +139,7 @@ AS
 
     -- Uncomment to debug
     -- Declare @debugMessage varchar(1024) = 'Operation: ' + @operation + '; Instrument: ' + @instrument + '; ' + @year + '-' + @month + '; ' + Cast(@factorList As varchar(1024))
-    -- Exec PostLogEntry 'Debug', @debugMessage, 'UpdateInstrumentUsageReport'
+    -- Exec post_log_entry 'Debug', @debugMessage, 'update_instrument_usage_report'
 
     -----------------------------------------------------------
     -- Copy @factorList text variable into the XML variable
@@ -301,7 +302,7 @@ AS
                   @month = [Month] AND
                   (@instrument = '' OR DMS_Inst_ID = @instrumentID)
 
-            EXEC UpdateDatasetInterval @instrument, @startOfMonth, @endOfMonth, @message output
+            EXEC update_dataset_interval @instrument, @startOfMonth, @endOfMonth, @message output
 
             Set @operation = 'refresh'
         END
@@ -310,7 +311,7 @@ AS
         BEGIN
             IF Len(ISNULL(@instrument, '')) > 0
             BEGIN
-                EXEC @myError = UpdateEMSLInstrumentUsageReport @instrument, 0, @endOfMonth, @msg output
+                EXEC @myError = update_emsl_instrument_usage_report @instrument, 0, @endOfMonth, @msg output
                 IF(@myError <> 0)
                     RAISERROR (@msg, 11, 6)
             END
@@ -335,7 +336,7 @@ AS
                     END
                     ELSE
                     BEGIN --<y>
-                        EXEC UpdateEMSLInstrumentUsageReport @inst, 0, @endOfMonth, @msg output
+                        EXEC update_emsl_instrument_usage_report @inst, 0, @endOfMonth, @msg output
                     END  --<y>
                 END --<x>
             END --<m>
@@ -343,7 +344,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -352,9 +353,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageReport] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_instrument_usage_report] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_instrument_usage_report] TO [DMS2_SP_User] AS [dbo]
 GO

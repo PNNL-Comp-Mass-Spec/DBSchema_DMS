@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RunBlitzChecks] ******/
+/****** Object:  StoredProcedure [dbo].[run_blitz_checks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RunBlitzChecks]
+CREATE PROCEDURE [dbo].[run_blitz_checks]
 /****************************************************
 **
 **  Run various Blitz First Responder server health checks
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[RunBlitzChecks]
 **  Auth:   mem
 **  Date:   05/25/2017 mem - Initial version
 **          04/04/2018 mem - Add argument @BringThePain
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -30,7 +31,7 @@ CREATE PROCEDURE [dbo].[RunBlitzChecks]
     @outputTableBlitz nvarchar(255) = 'T_Blitz_Results',
     @outputTableBlitzCache nvarchar(255) = 'T_BlitzCache_Results',
     @outputTableBlitzIndex nvarchar(255) = 'T_BlitzIndex_Results',
-    @BringThePain tinyint = 1                       -- When 1, use @BringThePain to 1 when calling sp_blitz (but not with the other SPs); when 2, use @BringThePain = 1 for all SPs
+    @bringThePain tinyint = 1                       -- When 1, use @BringThePain to 1 when calling sp_blitz (but not with the other SPs); when 2, use @BringThePain = 1 for all SPs
 )
 AS
     Set XACT_ABORT, nocount on
@@ -142,7 +143,7 @@ AS
 
             INSERT INTO #DBList (DBName)
             SELECT Value
-            FROM dbo.udfParseDelimitedList(@blitzIndexDatabaseList, ',', 'RunBlitzChecks')
+            FROM dbo.parse_delimited_list(@blitzIndexDatabaseList, ',', 'run_blitz_checks')
 
             Declare @dbName varchar(255) = ''
             Declare @continue tinyint = 1

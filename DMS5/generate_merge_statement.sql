@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GenerateMergeStatement] ******/
+/****** Object:  StoredProcedure [dbo].[generate_merge_statement] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GenerateMergeStatement]
+CREATE PROCEDURE [dbo].[generate_merge_statement]
 /****************************************************
 **
 **  Desc:   Creates a Merge statement for the specified table
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[GenerateMergeStatement]
 **          11/30/2018 mem - Use DELETE FROM instead of Truncate
 **          11/06/2019 mem - Add an additional test to the WHEN NOT MATCHED BY SOURCE clause
 **          01/06/2022 mem - Fix bug showing target table name in the action table
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -439,5 +440,5 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GenerateMergeStatement] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[generate_merge_statement] TO [DDL_Viewer] AS [dbo]
 GO

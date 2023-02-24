@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeAutomaticRequestedRunFactors] ******/
+/****** Object:  StoredProcedure [dbo].[make_automatic_requested_run_factors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeAutomaticRequestedRunFactors]
+CREATE PROCEDURE [dbo].[make_automatic_requested_run_factors]
 /****************************************************
 **
 **  Desc:
@@ -11,9 +11,10 @@ CREATE PROCEDURE [dbo].[MakeAutomaticRequestedRunFactors]
 **
 **  Auth:   grk
 **  Date:   03/23/2010 grk - initial release
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
 **          06/10/2022 mem - Exit the procedure if @batchID is 0 or null
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -77,10 +78,10 @@ AS
 
     If @callingUser = ''
     BEGIN
-        SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+        SET @callingUser = dbo.get_user_login_without_domain('')
     END
 
-    EXEC @myError = UpdateRequestedRunFactors
+    EXEC @myError = update_requested_run_factors
                             @factorList,
                             @message OUTPUT,
                             @callingUser
@@ -88,9 +89,9 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeAutomaticRequestedRunFactors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_automatic_requested_run_factors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MakeAutomaticRequestedRunFactors] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[make_automatic_requested_run_factors] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeAutomaticRequestedRunFactors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_automatic_requested_run_factors] TO [Limited_Table_Write] AS [dbo]
 GO

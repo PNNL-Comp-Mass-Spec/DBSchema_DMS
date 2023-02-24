@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobStatusHistory] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_status_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateJobStatusHistory]
+CREATE PROCEDURE [dbo].[update_job_status_history]
 /****************************************************
 **
 **  Desc:
@@ -18,11 +18,12 @@ CREATE PROCEDURE [dbo].[UpdateJobStatusHistory]
 **  Auth:   mem
 **  Date:   03/31/2005
 **          05/12/2005 mem - Changed default for @DatabaseName to be ''
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MinimumTimeIntervalHours integer = 1,  -- Set this to 0 to force the addition of new data to T_Analysis_Job_Status_History
-    @DatabaseName varchar(64) = '',         -- Database containing T_Analysis_Job table; leave blank to use the current database
+    @minimumTimeIntervalHours integer = 1,  -- Set this to 0 to force the addition of new data to T_Analysis_Job_Status_History
+    @databaseName varchar(64) = '',         -- Database containing T_Analysis_Job table; leave blank to use the current database
     @message varchar(128) = '' OUTPUT
 )
 AS
@@ -86,7 +87,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobStatusHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_status_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobStatusHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_status_history] TO [Limited_Table_Write] AS [dbo]
 GO

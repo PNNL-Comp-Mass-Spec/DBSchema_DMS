@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateExperimentGroup] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_experiment_group] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
+CREATE PROCEDURE [dbo].[add_update_experiment_group]
 /****************************************************
 **
 **  Desc: Adds new or edits existing Experiment Group
@@ -17,24 +17,25 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentGroup]
 **          11/10/2011 grk - Added Tab field
 **          02/20/2013 mem - Now reporting invalid experiment names
 **          06/13/2017 mem - Use SCOPE_IDENTITY
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
-**          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
+**          12/06/2018 mem - Call update_experiment_group_member_count to update T_Experiment_Groups
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          11/18/2022 mem - Rename parameter to @groupName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int output,
-    @GroupType varchar(50),
+    @id int output,
+    @groupType varchar(50),
     @groupName VARCHAR(128),                -- User-defined name for this experiment group (previously @tab)
-    @Description varchar(512),
-    @ExperimentList varchar(MAX),
-    @ParentExp varchar(50),
-    @Researcher VARCHAR(50),
+    @description varchar(512),
+    @experimentList varchar(MAX),
+    @parentExp varchar(50),
+    @researcher VARCHAR(50),
     @mode varchar(12) = 'add',          -- 'add' or 'update'
     @message varchar(512) output
 )
@@ -53,7 +54,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateExperimentGroup', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_experiment_group', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -63,12 +64,12 @@ AS
     -- Resolve parent experiment name to ID
     ---------------------------------------------------
 
-    Declare @ParentExpID Int = 0
+    Declare @ParentExperimentID Int = 0
     --
     If @ParentExp <> ''
     Begin
 
-        SELECT @ParentExpID = Exp_ID
+        SELECT @ParentExperimentID = Exp_ID
         FROM T_Experiments
         WHERE Experiment_Num = @ParentExp
         --
@@ -77,19 +78,19 @@ AS
         If @myError <> 0
         Begin
             Set @logErrors = 1
-            Set @message = 'Error trying to find existing entry for Parent Exp_ID ' + Cast(@ParentExpID As Varchar(12))
+            Set @message = 'Error trying to find existing entry for Parent Exp_ID ' + Cast(@ParentExperimentID As Varchar(12))
             RAISERROR (@message, 10, 1)
             return 51004
         End
     End
 
-    If @ParentExpID = 0
+    If @ParentExperimentID = 0
     Begin
-        SELECT @ParentExpID = Exp_ID
+        SELECT @ParentExperimentID = Exp_ID
         FROM T_Experiments
         Where Experiment_Num = 'Placeholder'
 
-        If IsNull(@ParentExpID, 0) = 0
+        If IsNull(@ParentExperimentID, 0) = 0
         Begin
             Set @logErrors = 1
             Set @message = 'Unable to determine the Exp_ID for the Placeholder experiment'
@@ -159,7 +160,7 @@ AS
                      Exp_ID )
     SELECT cast(Item AS varchar(50)) AS Experiment_Num,
            0 AS Exp_ID
-    FROM dbo.MakeTableFromList ( @ExperimentList )
+    FROM dbo.make_table_from_list ( @ExperimentList )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -230,15 +231,15 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve researcher PRN
+    -- Resolve researcher username
     ---------------------------------------------------
 
     Declare @userID int
-    execute @userID = GetUserID @researcher
+    execute @userID = get_user_id @researcher
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @researcher contains simply the username
         --
         SELECT @researcher = U_PRN
@@ -247,23 +248,23 @@ AS
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @researcher
+        -- Could not find entry in database for username @researcher
         -- Try to auto-resolve the name
 
         Declare @MatchCount int
-        Declare @NewPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @researcher, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @researcher, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
             -- Single match found; update @researcher
-            Set @researcher = @NewPRN
+            Set @researcher = @newUsername
         End
         Else
         Begin
             Set @logErrors = 0
-            Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+            Set @message = 'Could not find entry in database for researcher username "' + @researcher + '"'
             RAISERROR (@message, 10, 1)
             return 51037
         End
@@ -274,7 +275,7 @@ AS
     -- Start transaction
     --
     Declare @transName varchar(32)
-    Set @transName = 'AddUpdateExperimentGroup'
+    Set @transName = 'add_update_experiment_group'
     Begin transaction @transName
 
     ---------------------------------------------------
@@ -295,7 +296,7 @@ AS
             @GroupType,
             getdate(),
             @Description,
-            @ParentExpID,
+            @ParentExperimentID,
             @Researcher,
             @groupName
         )
@@ -328,7 +329,7 @@ AS
         UPDATE T_Experiment_Groups
         SET EG_Group_Type = @GroupType,
             EG_Description = @Description,
-            Parent_Exp_ID = @ParentExpID,
+            Parent_Exp_ID = @ParentExperimentID,
             Researcher = @Researcher,
             Group_Name = @groupName
         WHERE (Group_ID = @ID)
@@ -392,12 +393,12 @@ AS
 
         -- Update MemberCount
         --
-        Exec @myError = UpdateExperimentGroupMemberCount @groupID = @ID
+        Exec @myError = update_experiment_group_member_count @groupID = @ID
 
         If @myError <> 0
         Begin
             rollback transaction @transName
-            RAISERROR ('Failed trying to update MemberCount using UpdateExperimentGroupMemberCount', 10, 1)
+            RAISERROR ('Failed trying to update MemberCount using update_experiment_group_member_count', 10, 1)
             return 51005
         End
 
@@ -408,11 +409,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentGroup] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_group] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperimentGroup] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_experiment_group] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperimentGroup] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_experiment_group] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentGroup] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_group] TO [Limited_Table_Write] AS [dbo]
 GO

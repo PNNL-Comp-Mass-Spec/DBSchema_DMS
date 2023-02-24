@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMyEMSLUrlWork] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_myemsl_url_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMyEMSLUrlWork]
+CREATE FUNCTION [dbo].[get_myemsl_url_work]
 /****************************************************
 **
 **  Desc:
@@ -11,11 +11,12 @@ CREATE FUNCTION [dbo].[GetMyEMSLUrlWork]
 **
 **  Auth:   mem
 **  Date:   09/12/2013
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @KeyName varchar(128),
-    @Value varchar(256)
+    @keyName varchar(128),
+    @value varchar(256)
 )
 RETURNS varchar(1024)
 AS
@@ -34,7 +35,7 @@ BEGIN
     Declare @Json varchar(1024)
     Set @Json = '{ "pacifica-search-simple": { "v": 1, "facets_set": [{"key": "' + @KeyName + '", "value":"' + @Value + '"}] } }'
 
-    Declare @EncodedText varchar(1024) = dbo.EncodeBase64(@Json)
+    Declare @EncodedText varchar(1024) = dbo.encode_base64(@Json)
 
     Declare @Url varchar(1024) = 'https://my.emsl.pnl.gov/myemsl/search/simple/' + @EncodedText
 
@@ -42,5 +43,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMyEMSLUrlWork] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_myemsl_url_work] TO [DDL_Viewer] AS [dbo]
 GO

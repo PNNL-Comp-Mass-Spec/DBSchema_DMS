@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreReporterIonObsStats] ******/
+/****** Object:  StoredProcedure [dbo].[store_reporter_ion_obs_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreReporterIonObsStats]
+CREATE PROCEDURE [dbo].[store_reporter_ion_obs_stats]
 /****************************************************
 **
 **  Desc: Updates the reporter ion observation stats in T_Reporter_Ion_Observation_Rates for the specified analysis job
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[StoreReporterIonObsStats]
 **          07/31/2020 mem - Use "WITH EXECUTE AS OWNER" to allow for inserting data into T_Reporter_Ion_Observation_Rates using sp_executesql
 **                         - Without this, svc-dms reports "INSERT permission was denied"
 **          08/12/2020 mem - Replace @observationStatsAll with @medianIntensitiesTopNPct
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -73,7 +74,7 @@ AS
     IF NOT EXISTS (SELECT * FROM T_Sample_Labelling_Reporter_Ions WHERE Label = @reporterIon)
     BEGIN
         Set @message = 'Unrecognized reporter ion name: ' + @reporterIon + '; for standard reporter ion names, see https://dms2.pnl.gov/sample_label_reporter_ions/report'
-        exec PostLogEntry 'Error', @message, 'StoreReporterIonObsStats', 1
+        exec post_log_entry 'Error', @message, 'store_reporter_ion_obs_stats', 1
         return 50002
     END
 
@@ -97,11 +98,11 @@ AS
 
     INSERT INTO #TmpRepIonObsStatsTopNPct (Channel, Observation_Rate)
     SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered(@observationStatsTopNPct, ',', 0)
+    FROM dbo.parse_delimited_list_ordered(@observationStatsTopNPct, ',', 0)
 
     INSERT INTO #TmpRepIonIntensities (Channel, Median_Intensity)
     SELECT EntryID, Value
-    FROM dbo.udfParseDelimitedListOrdered(@medianIntensitiesTopNPct, ',', 0)
+    FROM dbo.parse_delimited_list_ordered(@medianIntensitiesTopNPct, ',', 0)
 
     -----------------------------------------------
     -- Construct the SQL insert statements
@@ -258,12 +259,12 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in StoreReporterIonObsStats'
+            Set @message = 'Error in store_reporter_ion_obs_stats'
 
         Set @message = @message + '; error code = ' +  CAST(@myError AS varchar(19))
 
         If @infoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'StoreReporterIonObsStats'
+            Exec post_log_entry 'Error', @message, 'store_reporter_ion_obs_stats'
     End
 
     If Len(@message) > 0 AND @infoOnly <> 0
@@ -272,9 +273,9 @@ Done:
     Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[StoreReporterIonObsStats] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_reporter_ion_obs_stats] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreReporterIonObsStats] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_reporter_ion_obs_stats] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreReporterIonObsStats] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_reporter_ion_obs_stats] TO [svc-dms] AS [dbo]
 GO

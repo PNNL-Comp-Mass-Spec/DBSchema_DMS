@@ -1,20 +1,21 @@
-/****** Object:  StoredProcedure [dbo].[CopyAuxInfoMultiID] ******/
+/****** Object:  StoredProcedure [dbo].[copy_aux_info_multi_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CopyAuxInfoMultiID]
+CREATE PROCEDURE [dbo].[copy_aux_info_multi_id]
 /****************************************************
 **
 **  Desc:   Copies aux info from a source item to multiple targets
 **
 **  Auth:   grk
 **  Date:   01/27/2003
-**          09/27/2007 mem - Extended CopyAuxInfo to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
+**          09/27/2007 mem - Extended copy_aux_info to accept a comma separated list of entity IDs to process, rather than a single entity name (Ticket #538)
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_Aux_Info_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column names
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -126,7 +127,7 @@ AS
                                      Valid )
     SELECT DISTINCT Convert(int, Item),
                     0 AS Valid
-    FROM dbo.MakeTableFromList ( @targetEntityIDList )
+    FROM dbo.make_table_from_list ( @targetEntityIDList )
     WHERE (Len(IsNull(Item, '')) > 0)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -225,7 +226,7 @@ AS
     begin
         -- Start transaction
         --
-        set @transName = 'CopyAuxInfo-copyCategory'
+        set @transName = 'copy_aux_info-copyCategory'
         begin transaction @transName
 
         -- delete any existing values
@@ -288,7 +289,7 @@ AS
     begin
         -- Start transaction
         --
-        set @transName = 'CopyAuxInfo-copySubcategory'
+        set @transName = 'copy_aux_info-copySubcategory'
         begin transaction @transName
 
         -- delete any existing values
@@ -352,7 +353,7 @@ AS
     begin
         -- Start transaction
         --
-        set @transName = 'CopyAuxInfo-copyAll'
+        set @transName = 'copy_aux_info-copyAll'
         begin transaction @transName
 
         -- delete any existing values
@@ -408,9 +409,9 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfoMultiID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_aux_info_multi_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CopyAuxInfoMultiID] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[copy_aux_info_multi_id] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfoMultiID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_aux_info_multi_id] TO [Limited_Table_Write] AS [dbo]
 GO

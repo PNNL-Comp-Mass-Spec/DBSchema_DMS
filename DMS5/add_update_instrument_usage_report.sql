@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateInstrumentUsageReport] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_instrument_usage_report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
+CREATE PROCEDURE [dbo].[add_update_instrument_usage_report]
 /****************************************************
 **
 **  Desc:
@@ -20,30 +20,31 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentUsageReport]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/11/2017 mem - Replace column Usage with Usage_Type
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/05/2018 mem - Assure that @comment does not contain LF or CR
 **          04/17/2020 mem - Use Dataset_ID instead of ID
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @Seq int,
-    @EMSLInstID int,                    -- @EMSLInstID
-    @Instrument varchar(64),            -- Unused (not updatable)
-    @Type varchar(128),                 -- Unused (not updatable)
-    @Start varchar(32),                 -- Unused (not updatable)
-    @Minutes int,                       -- Unused (not updatable)
-    @Year int,                          -- Unused (not updatable)
-    @Month int,                         -- Unused (not updatable)
-    @ID int,                            -- Unused (not updatable)     -- Dataset_ID
-    @Proposal varchar(32),              -- Proposal for update
-    @Usage varchar(32),                 -- Usage name for update (ONSITE, REMOTE, MAINTENANCE, BROKEN, etc.); corresponds to T_EMSL_Instrument_Usage_Type
-    @Users varchar(1024),               -- Users for update
-    @Operator varchar(64),              -- Operator for update (should be an integer representing EUS Person ID; if an empty string, will store NULL for the operator ID)
-    @Comment varchar(4096),             -- Comment for update
+    @seq int,
+    @emslInstID int,                    -- @EMSLInstID
+    @instrument varchar(64),            -- Unused (not updatable)
+    @type varchar(128),                 -- Unused (not updatable)
+    @start varchar(32),                 -- Unused (not updatable)
+    @minutes int,                       -- Unused (not updatable)
+    @year int,                          -- Unused (not updatable)
+    @month int,                         -- Unused (not updatable)
+    @id int,                            -- Unused (not updatable)     -- Dataset_ID
+    @proposal varchar(32),              -- Proposal for update
+    @usage varchar(32),                 -- Usage name for update (ONSITE, REMOTE, MAINTENANCE, BROKEN, etc.); corresponds to T_EMSL_Instrument_Usage_Type
+    @users varchar(1024),               -- Users for update
+    @operator varchar(64),              -- Operator for update (should be an integer representing EUS Person ID; if an empty string, will store NULL for the operator ID)
+    @comment varchar(4096),             -- Comment for update
     @mode varchar(12) = 'update',       -- The only supported mode is update
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -61,7 +62,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentUsageReport', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_instrument_usage_report', @raiseError = 1
     If @authorized = 0
     BEGIN;
         THROW 51000, 'Access denied', 1;
@@ -153,18 +154,18 @@ AS
     ---------------------------------------------------
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateInstrumentUsageReport'
+        Exec post_log_entry 'Error', @message, 'add_update_instrument_usage_report'
     END CATCH
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_instrument_usage_report] TO [DMS2_SP_User] AS [dbo]
 GO

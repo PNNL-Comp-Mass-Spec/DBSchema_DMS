@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateRNAPrepRequest] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_rna_prep_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
+CREATE PROCEDURE [dbo].[add_update_rna_prep_request]
 /****************************************************
 **
 **  Desc:   Adds new or edits existing RNA Prep Request
@@ -16,37 +16,38 @@ CREATE PROCEDURE [dbo].[AddUpdateRNAPrepRequest]
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
 **          08/29/2018 mem - Remove parameters @BiomaterialList,  @ProjectNumber, and @NumberOfBiomaterialRepsReceived
 **                         - Remove call to DoSamplePrepMaterialOperation
 **          02/08/2023 bcg - Update view column name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @RequestName varchar(128),
-    @RequesterPRN varchar(32),
-    @Reason varchar(512),
-    @Organism varchar(128),
-    @BiohazardLevel varchar(12),
-    @Campaign varchar(128),
-    @NumberofSamples int,
-    @SampleNameList varchar(1500),
-    @SampleType varchar(128),
-    @PrepMethod varchar(512),
-    @SampleNamingConvention varchar(128),
-    @EstimatedCompletion varchar(32),
-    @WorkPackageNumber varchar(64),
+    @requestName varchar(128),
+    @requesterUsername varchar(32),
+    @reason varchar(512),
+    @organism varchar(128),
+    @biohazardLevel varchar(12),
+    @campaign varchar(128),
+    @numberofSamples int,
+    @sampleNameList varchar(1500),
+    @sampleType varchar(128),
+    @prepMethod varchar(512),
+    @sampleNamingConvention varchar(128),
+    @estimatedCompletion varchar(32),
+    @workPackageNumber varchar(64),
     @eusProposalID varchar(10),
     @eusUsageType varchar(50),
     @eusUserID int,                             -- Use Null or 0 if no EUS User ID
-    @InstrumentName varchar(128),
-    @DatasetType varchar(50),
-    @InstrumentAnalysisSpecifications varchar(512),
-    @State varchar(32),                         -- New, Open, Prep in Progress, Prep Complete, or Closed
-    @ID int output,
+    @instrumentName varchar(128),
+    @datasetType varchar(50),
+    @instrumentAnalysisSpecifications varchar(512),
+    @state varchar(32),                         -- New, Open, Prep in Progress, Prep Complete, or Closed
+    @id int output,
     @mode varchar(12) = 'add',                  -- 'add' or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -74,7 +75,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateRNAPrepRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_rna_prep_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -127,13 +128,13 @@ AS
 
         Declare @datasetTypeID int
         --
-        exec @myError = ValidateInstrumentGroupAndDatasetType
+        exec @myError = validate_instrument_group_and_dataset_type
                                 @DatasetType,
                                 @instrumentGroup,
                                 @datasetTypeID output,
                                 @msg output
         If @myError <> 0
-            RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
+            RAISERROR ('validate_instrument_group_and_dataset_type: %s', 11, 1, @msg)
     End
 
     ---------------------------------------------------
@@ -142,17 +143,17 @@ AS
 
     Declare @campaignID int = 0
     --
-    execute @campaignID = GetCampaignID @Campaign
+    execute @campaignID = get_campaign_id @Campaign
     --
     If @campaignID = 0
-        RAISERROR('Could not find entry in database for campaignNum "%s"', 11, 14, @Campaign)
+        RAISERROR('Could not find entry in database for campaignName "%s"', 11, 14, @Campaign)
 
     ---------------------------------------------------
     -- Resolve organism ID
     ---------------------------------------------------
 
     Declare @organismID int
-    execute @organismID = GetOrganismID @Organism
+    execute @organismID = get_organism_id @Organism
     If @organismID = 0
         RAISERROR ('Could not find entry in database for organismName "%s"', 11, 38, @Organism)
 
@@ -210,14 +211,14 @@ AS
         Set @eusUserID = Null
     End
 
-    exec @myError = ValidateEUSUsage
+    exec @myError = validate_eus_usage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
                         @eusUsageTypeID output,
                         @msg output
     If @myError <> 0
-        RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+        RAISERROR ('validate_eus_usage: %s', 11, 1, @msg)
 
     If Len(IsNull(@eusUsersList, '')) > 0
     Begin
@@ -233,20 +234,20 @@ AS
 
     Declare @allowNoneWP tinyint = 0
 
-    exec @myError = ValidateWP
+    exec @myError = validate_wp
                         @workPackageNumber,
                         @allowNoneWP,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+        RAISERROR ('validate_wp: %s', 11, 1, @msg)
 
     If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')
-        Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 512)
+        Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 512)
     Else
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 512)
+            Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 512)
     End
 
     -- Make sure the Work Package is capitalized properly
@@ -349,7 +350,7 @@ AS
             Request_Type
         ) VALUES (
             @RequestName,
-            @RequesterPRN,
+            @requesterUsername,
             @Reason,
             @Organism,
             @BiohazardLevel,
@@ -383,7 +384,7 @@ AS
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser,
+            Exec alter_entered_by_user 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser,
                                     @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
     End -- Add mode
@@ -399,7 +400,7 @@ AS
         UPDATE T_Sample_Prep_Request
         SET
             Request_Name = @RequestName,
-            Requester_PRN = @RequesterPRN,
+            Requester_PRN = @requesterUsername,
             Reason = @Reason,
             Organism = @Organism,
             Biohazard_Level = @BiohazardLevel,
@@ -428,27 +429,27 @@ AS
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser,
+            Exec alter_entered_by_user 'T_Sample_Prep_Request_Updates', 'Request_ID', @ID, @CallingUser,
                                     @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
     End -- update mode
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateRNAPrepRequest'
+        Exec post_log_entry 'Error', @message, 'add_update_rna_prep_request'
     End Catch
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRNAPrepRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_rna_prep_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRNAPrepRequest] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_rna_prep_request] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRNAPrepRequest] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_rna_prep_request] TO [DMS2_SP_User] AS [dbo]
 GO

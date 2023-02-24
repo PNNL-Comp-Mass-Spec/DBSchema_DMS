@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddArchiveDataset] ******/
+/****** Object:  StoredProcedure [dbo].[add_archive_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddArchiveDataset]
+CREATE PROCEDURE [dbo].[add_archive_dataset]
 /****************************************************
 **
 **  Desc:   Make new entry into the archive table
@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[AddArchiveDataset]
 **          04/04/2006 grk - Added setting holdoff interval
 **          01/14/2010 grk - Assign storage path on creation of archive entry
 **          01/22/2010 grk - Existing entry in archive table prevents duplicate, but doesn't raise error
-**          05/11/2011 mem - Now calling GetInstrumentArchivePathForNewDatasets to determine @archivePathID
-**          05/12/2011 mem - Now passing @DatasetID and @AutoSwitchActiveArchive to GetInstrumentArchivePathForNewDatasets
+**          05/11/2011 mem - Now calling get_instrument_archive_path_for_new_datasets to determine @archivePathID
+**          05/12/2011 mem - Now passing @DatasetID and @AutoSwitchActiveArchive to get_instrument_archive_path_for_new_datasets
 **          06/01/2012 mem - Bumped up @holdOffHours to 2 weeks
 **          06/12/2012 mem - Now looking up the Purge_Policy in T_Instrument_Name
 **          08/10/2018 mem - Do not create an archive task for datasets with state 14
 **          12/20/2021 bcg - Look up Purge_Priority and AS_purge_holdoff_date offset in T_Instrument_Name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -76,7 +77,7 @@ AS
     Begin
         Set @message = 'Cannot create a dataset archive task for Dataset ID ' + Cast(@datasetID As varchar(12)) + '; ' +
                        'dataset state is 14 (Capture Failed, Duplicate Dataset Files)'
-        Exec PostLogEntry 'Error', @message, 'AddArchiveDataset', 12
+        Exec post_log_entry 'Error', @message, 'add_archive_dataset', 12
         RAISERROR (@message, 10, 1)
         Return 51110
     End
@@ -87,11 +88,11 @@ AS
     --
     Declare @archivePathID int = 0
     --
-    exec @archivePathID = GetInstrumentArchivePathForNewDatasets @instrumentID, @DatasetID, @AutoSwitchActiveArchive=1, @infoOnly=0
+    exec @archivePathID = get_instrument_archive_path_for_new_datasets @instrumentID, @DatasetID, @AutoSwitchActiveArchive=1, @infoOnly=0
     --
     If @archivePathID = 0
     Begin
-        set @message = 'GetInstrumentArchivePathForNewDatasets returned zero for an archive path ID for dataset ' + Convert(varchar(12), @DatasetID)
+        set @message = 'get_instrument_archive_path_for_new_datasets returned zero for an archive path ID for dataset ' + Convert(varchar(12), @DatasetID)
         RAISERROR (@message, 10, 1)
         Return 51105
     End
@@ -150,11 +151,11 @@ AS
     Return
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddArchiveDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_archive_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddArchiveDataset] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_archive_dataset] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddArchiveDataset] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_archive_dataset] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddArchiveDataset] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_archive_dataset] TO [Limited_Table_Write] AS [dbo]
 GO

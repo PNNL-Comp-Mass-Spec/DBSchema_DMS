@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateParamFileEntry] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_param_file_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateParamFileEntry]
+CREATE PROCEDURE [dbo].[add_update_param_file_entry]
 /****************************************************
 **
 **  Desc: Adds new or updates existing parameter file entry in database
@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFileEntry]
 **          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **          01/20/2010 mem - Added support for dynamic peptide terminus mods (TermDynamicModification)
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -128,7 +129,7 @@ AS
 
         if (@entryType = 'DynamicModification')
         begin
-            execute @localSymbolID = GetNextLocalSymbolID @ParamFileID
+            execute @localSymbolID = get_next_local_symbol_id @ParamFileID
             set @typeSymbol = 'D'
         end
 
@@ -159,7 +160,7 @@ AS
         declare @counter int
         set @counter = 0
 
-        execute @massCorrectionID = GetMassCorrectionID @entryValue
+        execute @massCorrectionID = get_mass_correction_id @entryValue
 
         If @infoOnly <> 0
             Print 'Mod "' + @entryValue + '" corresponds to @massCorrectionID ' + Convert(varchar(12), @massCorrectionID)
@@ -198,7 +199,7 @@ AS
                         set @typeSymbol = 'T'
                     end
                 end -- </c>
-                execute @affectedResidueID = GetResidueID @affectedResidue
+                execute @affectedResidueID = get_residue_id @affectedResidue
 
             end -- </b>
             else
@@ -212,7 +213,7 @@ AS
             if @entryType = 'DynamicModification' or @entryType = 'TermDynamicModification'
             begin
                 set @affectedResidue = substring(@entrySpecifier, @counter, 1)
-                execute @affectedResidueID = GetResidueID @affectedResidue
+                execute @affectedResidueID = get_residue_id @affectedResidue
             end
 
             if @infoOnly <> 0
@@ -269,7 +270,7 @@ AS
 
     declare @ParamEntryID int = 0
     --
-    execute @ParamEntryID = GetParamEntryID @ParamFileID, @EntryType, @EntrySpecifier, @EntrySeqOrder
+    execute @ParamEntryID = get_param_entry_id @ParamFileID, @EntryType, @EntrySpecifier, @EntrySeqOrder
 
 
     if @ParamEntryID <> 0
@@ -342,7 +343,7 @@ AS
 
             -- If @callingUser is defined, update Entered_By in T_Analysis_Job_Processor_Group
             If Len(@callingUser) > 0
-                Exec AlterEnteredByUser 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
+                Exec alter_entered_by_user 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
         End
     end -- add mode
 
@@ -382,7 +383,7 @@ AS
 
             -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group
             If Len(@callingUser) > 0
-                Exec AlterEnteredByUser 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
+                Exec alter_entered_by_user 'T_Param_Entries', 'Param_Entry_ID', @ParamEntryID, @CallingUser
         End
     end -- update mode
 
@@ -391,9 +392,9 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFileEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_param_file_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFileEntry] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_file_entry] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFileEntry] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_param_file_entry] TO [Limited_Table_Write] AS [dbo]
 GO

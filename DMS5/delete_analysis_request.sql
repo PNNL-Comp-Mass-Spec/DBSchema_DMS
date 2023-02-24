@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteAnalysisRequest] ******/
+/****** Object:  StoredProcedure [dbo].[delete_analysis_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteAnalysisRequest]
+CREATE PROCEDURE [dbo].[delete_analysis_request]
 /****************************************************
 **
 **  Desc: Delete the analysis job request if it is not associated with any jobs
@@ -13,9 +13,10 @@ CREATE PROCEDURE [dbo].[DeleteAnalysisRequest]
 **  Auth:   grk
 **  Date:   10/13/2004
 **          04/07/2006 grk - Eliminated job to request map table
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/30/2019 mem - Delete datasets from T_Analysis_Job_Request_Datasets
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -35,7 +36,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteAnalysisRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_analysis_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -118,11 +119,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_analysis_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteAnalysisRequest] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_analysis_request] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteAnalysisRequest] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_analysis_request] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_analysis_request] TO [Limited_Table_Write] AS [dbo]
 GO

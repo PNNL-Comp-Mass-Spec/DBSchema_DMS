@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteAuxInfo] ******/
+/****** Object:  StoredProcedure [dbo].[delete_aux_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteAuxInfo]
+CREATE PROCEDURE [dbo].[delete_aux_info]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[DeleteAuxInfo]
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -130,7 +131,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAuxInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_aux_info] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAuxInfo] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_aux_info] TO [Limited_Table_Write] AS [dbo]
 GO

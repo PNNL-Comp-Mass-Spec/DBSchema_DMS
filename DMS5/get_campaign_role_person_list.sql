@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetCampaignRolePersonList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_campaign_role_person_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetCampaignRolePersonList]
+CREATE FUNCTION [dbo].[get_campaign_role_person_list]
 /****************************************************
 **
 **  Desc:
@@ -16,13 +16,14 @@ CREATE FUNCTION [dbo].[GetCampaignRolePersonList]
 **
 **  Auth:   grk
 **  Date:   02/04/2010
-**          12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and PRN
+**          12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and username
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @campaignID INT,
     @role VARCHAR(64),
-    @mode VARCHAR(24) = 'PRN'
+    @mode VARCHAR(24) = 'username'
 )
 RETURNS varchar(6000)
 AS
@@ -35,7 +36,7 @@ AS
             SELECT @list = @list + CASE WHEN @list = '' THEN ''
                                         ELSE ', '
                                    END +
-                                   CASE WHEN @mode = 'PRN' THEN T_Users.U_PRN
+                                   CASE WHEN @mode IN ('PRN', 'username') THEN T_Users.U_PRN
                                         ELSE T_Users.Name_with_PRN
                                    END
             FROM T_Research_Team_Roles
@@ -51,6 +52,7 @@ AS
 
         RETURN @list
     END
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetCampaignRolePersonList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_campaign_role_person_list] TO [DDL_Viewer] AS [dbo]
 GO

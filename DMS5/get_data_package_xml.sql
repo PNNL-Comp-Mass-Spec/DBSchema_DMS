@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDataPackageXML] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_data_package_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDataPackageXML]
+CREATE FUNCTION [dbo].[get_data_package_xml]
 /****************************************************
 **
 **  Desc:
@@ -15,10 +15,11 @@ CREATE FUNCTION [dbo].[GetDataPackageXML]
 **          06/08/2022 mem - Rename package type field to Package_Type
 **                         - Rename package comment field to Package_Comment
 **          06/18/2022 mem - Add support for returning XML for all of the sections by setting @options to 'All'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DataPackageID INT,
+    @dataPackageID INT,
     @options VARCHAR(256) -- 'Parameters', 'Experiments', 'Datasets', 'Jobs', 'Paths', or 'All'
 )
 RETURNS VARCHAR(MAX)
@@ -249,7 +250,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDataPackageXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_data_package_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetDataPackageXML] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_data_package_xml] TO [DMS2_SP_User] AS [dbo]
 GO

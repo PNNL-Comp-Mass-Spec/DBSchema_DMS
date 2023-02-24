@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetRequestedRunsForGrid] ******/
+/****** Object:  StoredProcedure [dbo].[get_requested_runs_for_grid] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetRequestedRunsForGrid]
+CREATE PROCEDURE [dbo].[get_requested_runs_for_grid]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[GetRequestedRunsForGrid]
 **          01/13/2013 grk - initial release
 **          03/14/2013 grk - removed "Active" status filter
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ AS
     --
     INSERT INTO #ITEMS (Item)
     SELECT Item
-    FROM dbo.MakeTableFromList(@itemList)
+    FROM dbo.make_table_from_list(@itemList)
 
     -----------------------------------------
     --
@@ -90,9 +91,9 @@ Run_Order varchar(8)
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsForGrid] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_runs_for_grid] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunsForGrid] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_runs_for_grid] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunsForGrid] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_runs_for_grid] TO [DMS2_SP_User] AS [dbo]
 GO

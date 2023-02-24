@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MarkPurgedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[mark_purged_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MarkPurgedJobs]
+CREATE PROCEDURE [dbo].[mark_purged_jobs]
 /****************************************************
 **
 **  Desc:   Updates AJ_Purged to be 1 for the jobs in @JobList
@@ -13,11 +13,12 @@ CREATE PROCEDURE [dbo].[MarkPurgedJobs]
 **
 **  Auth:   mem
 **  Date:   06/13/2012
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobList varchar(4000),
-    @InfoOnly tinyint = 1
+    @jobList varchar(4000),
+    @infoOnly tinyint = 1
 )
 AS
     Set nocount on
@@ -45,7 +46,7 @@ AS
 
     INSERT INTO #Tmp_JobList (Job)
     SELECT Value
-    FROM dbo.udfParseDelimitedIntegerList(@JobList, ',')
+    FROM dbo.parse_delimited_integer_list(@JobList, ',')
 
     If @InfoOnly <> 0
     Begin
@@ -72,15 +73,15 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[mark_purged_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[mark_purged_jobs] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[mark_purged_jobs] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[mark_purged_jobs] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MarkPurgedJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[mark_purged_jobs] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MarkPurgedJobs] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[mark_purged_jobs] TO [svc-dms] AS [dbo]
 GO

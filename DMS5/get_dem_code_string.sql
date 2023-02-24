@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDEMCodeString] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dem_code_string] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDEMCodeString]
+CREATE FUNCTION [dbo].[get_dem_code_string]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetDEMCodeString]
 **
 **  Auth:   grk
 **  Date:   07/27/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,7 +39,7 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDEMCodeString] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dem_code_string] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetDEMCodeString] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_dem_code_string] TO [public] AS [dbo]
 GO

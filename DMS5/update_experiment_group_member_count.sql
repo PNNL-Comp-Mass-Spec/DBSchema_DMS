@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateExperimentGroupMemberCount] ******/
+/****** Object:  StoredProcedure [dbo].[update_experiment_group_member_count] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateExperimentGroupMemberCount]
+CREATE PROCEDURE [dbo].[update_experiment_group_member_count]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateExperimentGroupMemberCount]
 **
 **  Auth:   mem
 **  Date:   12/06/2018 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

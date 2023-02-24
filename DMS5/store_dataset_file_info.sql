@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreDatasetFileInfo] ******/
+/****** Object:  StoredProcedure [dbo].[store_dataset_file_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreDatasetFileInfo]
+CREATE PROCEDURE [dbo].[store_dataset_file_info]
 /****************************************************
 **
 **  Desc:   Stores SHA-1 hash info or file size info for dataset files
@@ -54,6 +54,7 @@ CREATE PROCEDURE [dbo].[StoreDatasetFileInfo]
 **
 **  Auth:   mem
 **  Date:   04/02/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -80,7 +81,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'StoreDatasetFileHashInfo', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'StoreDatasetFileHashInfo', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -160,7 +161,7 @@ AS
 
     INSERT INTO #Tmp_FileData (Value)
     Select Value
-    FROM dbo.udfParseDelimitedList(@datasetFileInfo, @delimiter, 'StoreDatasetFileInfo')
+    FROM dbo.parse_delimited_list(@datasetFileInfo, @delimiter, 'store_dataset_file_info')
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -244,7 +245,7 @@ AS
 
             INSERT INTO #Tmp_DataColumns (EntryID, Value)
             SELECT EntryID, Value
-            FROM dbo.udfParseDelimitedListOrdered(@Row, @delimiter, 0)
+            FROM dbo.parse_delimited_list_ordered(@Row, @delimiter, 0)
             --
             SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -497,7 +498,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating file hashes in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP StoreDatasetFileInfo'
+        set @message = 'Error updating file hashes in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP store_dataset_file_info'
         Goto Done
     End
 
@@ -527,7 +528,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating file sizes in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP StoreDatasetFileInfo'
+        set @message = 'Error updating file sizes in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP store_dataset_file_info'
         Goto Done
     End
 
@@ -598,7 +599,7 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in StoreDatasetFileInfo'
+            Set @message = 'Error in store_dataset_file_info'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
     End
@@ -614,7 +615,7 @@ Done:
         Set @usageMessage = 'Dataset: ' + @datasetName
 
     If @InfoOnly = 0
-        Exec PostUsageLogEntry 'StoreDatasetFileInfo', @usageMessage
+        Exec post_usage_log_entry 'store_dataset_file_info', @usageMessage
 
     If Len(@message) > 0
         SELECT @message As Message

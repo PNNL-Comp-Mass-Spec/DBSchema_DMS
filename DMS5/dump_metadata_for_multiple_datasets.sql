@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DumpMetadataForMultipleDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[dump_metadata_for_multiple_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DumpMetadataForMultipleDatasets]
+CREATE PROCEDURE [dbo].[dump_metadata_for_multiple_datasets]
 /****************************************************
 **
 **  Desc: Dump metadata for datasets in given list
@@ -16,11 +16,12 @@ CREATE PROCEDURE [dbo].[DumpMetadataForMultipleDatasets]
 **
 **  Auth:   grk
 **  Date:   11/01/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @dataset_List varchar(7000),
-    @Options varchar(256), -- ignore for now
+    @options varchar(256), -- ignore for now
     @message varchar(512) output
 )
 AS
@@ -57,7 +58,7 @@ AS
     ---------------------------------------------------
 
     INSERT INTO #dst (mDst)
-    SELECT Item FROM dbo.MakeTableFromList(@dataset_List)
+    SELECT Item FROM dbo.make_table_from_list(@dataset_List)
 
     ---------------------------------------------------
     -- temporary table to hold metadata
@@ -86,7 +87,7 @@ AS
     -- in given list
     ---------------------------------------------------
 
-    exec @myError = LoadMetadataForMultipleDatasets @Options, @message output
+    exec @myError = load_metadata_for_multiple_datasets @Options, @message output
     --
     if @myError <> 0
     begin
@@ -122,11 +123,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DumpMetadataForMultipleDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleDatasets] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_datasets] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleDatasets] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DumpMetadataForMultipleDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_datasets] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AssureMaterialContainersExist] ******/
+/****** Object:  StoredProcedure [dbo].[assure_material_containers_exist] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AssureMaterialContainersExist]
+CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 /****************************************************
 **
 **  Desc:
@@ -17,18 +17,19 @@ CREATE PROCEDURE [dbo].[AssureMaterialContainersExist]
 **
 **  Auth:   grk
 **          04/27/2010 grk - initial release
-**          09/23/2011 grk - accomodate researcher field in AddUpdateMaterialContainer
+**          09/23/2011 grk - accomodate researcher field in add_update_material_container
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
 (
-    @ContainerList varchar(1024) OUTPUT,
-    @Comment varchar(1024),
-    @Type varchar(32) = 'Box',
-    @Researcher VARCHAR(128),
+    @containerList varchar(1024) OUTPUT,
+    @comment varchar(1024),
+    @type varchar(32) = 'Box',
+    @researcher VARCHAR(128),
     @mode varchar(12) = 'verify_only', -- or 'create'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -60,7 +61,7 @@ AS
     )
     --
     INSERT INTO #TL (Item, IsContainer, IsLocation)
-    SELECT Item, 0, 0 FROM dbo.MakeTableFromList(@ContainerList)
+    SELECT Item, 0, 0 FROM dbo.make_table_from_list(@ContainerList)
 
     ---------------------------------------------------
     -- mark list items as either container or location
@@ -116,7 +117,7 @@ AS
         BEGIN
             /**/
             SET @Container = '(generate name)'
-            EXEC @myError = AddUpdateMaterialContainer
+            EXEC @myError = add_update_material_container
                                 @Container = @container output,
                                 @Type = @Type,
                                 @Location = @item,
@@ -128,7 +129,7 @@ AS
                                 @callingUser = @callingUser
             --
             IF @myError <> 0
-                RAISERROR('AddUpdateMaterialContainer: %s', 11, 21, @msg)
+                RAISERROR('add_update_material_container: %s', 11, 21, @msg)
 
 
             UPDATE #TL
@@ -147,20 +148,20 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
 --      IF (XACT_STATE()) <> 0
 --          ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AssureMaterialContainersExist'
+        Exec post_log_entry 'Error', @message, 'assure_material_containers_exist'
     END CATCH
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[assure_material_containers_exist] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AssureMaterialContainersExist] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[assure_material_containers_exist] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AssureMaterialContainersExist] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[assure_material_containers_exist] TO [Limited_Table_Write] AS [dbo]
 GO

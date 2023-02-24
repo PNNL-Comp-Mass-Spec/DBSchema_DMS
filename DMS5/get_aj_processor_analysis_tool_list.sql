@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetAJProcessorAnalysisToolList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_aj_processor_analysis_tool_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetAJProcessorAnalysisToolList]
+CREATE FUNCTION [dbo].[get_aj_processor_analysis_tool_list]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +18,7 @@ CREATE FUNCTION [dbo].[GetAJProcessorAnalysisToolList]
 **  Date:   02/23/2007 (Ticket 389)
 **          03/15/2007 mem - Increased size of @list to varchar(4000); now ordering by tool name
 **          03/30/2009 mem - Now using Coalesce to generate the comma separated list
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
     END
 
 GO
-GRANT EXECUTE ON [dbo].[GetAJProcessorAnalysisToolList] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_aj_processor_analysis_tool_list] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorAnalysisToolList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_aj_processor_analysis_tool_list] TO [DDL_Viewer] AS [dbo]
 GO

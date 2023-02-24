@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteDataset] ******/
+/****** Object:  StoredProcedure [dbo].[delete_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteDataset]
+CREATE PROCEDURE [dbo].[delete_dataset]
 /****************************************************
 **
 **  Desc: Deletes given dataset from the dataset table
@@ -16,18 +16,18 @@ CREATE PROCEDURE [dbo].[DeleteDataset]
 **          03/01/2004 grk - added unconsume scheduled run
 **          04/07/2006 grk - got rid of dataset list stuff
 **          04/07/2006 grk - Got rid of CDBurn stuff
-**          05/01/2007 grk - Modified to call modified UnconsumeScheduledRun (Ticket #446)
-**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          05/01/2007 grk - Modified to call modified unconsume_scheduled_run (Ticket #446)
+**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          05/08/2009 mem - Now checking T_Dataset_Info
-**          12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
+**          12/13/2011 mem - Now passing @callingUser to unconsume_scheduled_run
 **                         - Now checking T_Dataset_QC and T_Dataset_ScanTypes
 **          02/19/2013 mem - No longer allowing deletion if analysis jobs exist
-**          02/21/2013 mem - Updated call to UnconsumeScheduledRun to refer to @retainHistory by name
-**          05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
+**          02/21/2013 mem - Updated call to unconsume_scheduled_run to refer to @retainHistory by name
+**          05/08/2013 mem - No longer passing @wellplateName and @wellNumber to unconsume_scheduled_run
 **          08/31/2016 mem - Delete failed capture jobs for the dataset
 **          10/27/2016 mem - Update T_Log_Entries in DMS_Capture
 **          01/23/2017 mem - Delete jobs from DMS_Capture.dbo.T_Jobs
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/08/2018 mem - Update T_Dataset_Files
 **          09/27/2018 mem - Added parameter @infoOnly
@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[DeleteDataset]
 **                           Rename the first parameter
 **          04/17/2019 mem - Delete rows in T_Cached_Dataset_Instruments
 **          11/02/2021 mem - Show the full path to the dataset directory at the console
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -64,7 +65,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteDataset', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_dataset', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -196,7 +197,7 @@ AS
     ---------------------------------------------------
 
     Declare @transName varchar(32)
-    Set @transName = 'DeleteDataset'
+    Set @transName = 'delete_dataset'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -219,7 +220,7 @@ AS
     -- Delete any auxiliary info associated with dataset
     ---------------------------------------------------
     --
-    exec @result = DeleteAuxInfo 'Dataset', @datasetName, @message output
+    exec @result = delete_aux_info 'Dataset', @datasetName, @message output
 
     if @result <> 0
     begin
@@ -239,7 +240,7 @@ AS
     FROM T_Requested_Run
     WHERE DatasetID = @datasetID
 
-    exec @result = UnconsumeScheduledRun @datasetName, @retainHistory=0, @message=@message output, @callingUser=@callingUser
+    exec @result = unconsume_scheduled_run @datasetName, @retainHistory=0, @message=@message output, @callingUser=@callingUser
     if @result <> 0
     begin
         rollback transaction @transName
@@ -385,12 +386,12 @@ AS
         return 51137
     end
 
-    -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+    -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
     If Len(@callingUser) > 0
     Begin
         Declare @stateID int = 0
 
-        Exec AlterEventLogEntryUser 4, @datasetID, @stateID, @callingUser
+        Exec alter_event_log_entry_user 4, @datasetID, @stateID, @callingUser
     End
 
     commit transaction @transName
@@ -405,13 +406,13 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_DS_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_dataset] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_dataset] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteDataset] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_dataset] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteDataset] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_dataset] TO [Limited_Table_Write] AS [dbo]
 GO

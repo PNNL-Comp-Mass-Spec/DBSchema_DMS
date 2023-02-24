@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoUpdateSeparationType] ******/
+/****** Object:  StoredProcedure [dbo].[auto_update_separation_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoUpdateSeparationType]
+CREATE PROCEDURE [dbo].[auto_update_separation_type]
 /****************************************************
 **
 **  Desc:   Update the separation type based on the name and acquisition length
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[AutoUpdateSeparationType]
 **  Auth:   mem
 **  Date:   10/09/2020 mem - Initial version
 **          10/10/2020 mem - Adjust threshold for LC-Dionex-Formic_30min
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ AS
         Begin
             Set @message= 'Invalid separation type; ' + @optimalSeparationType + ' not found in T_Secondary_Sep'
 
-            EXEC PostLogEntry 'Error', @message, 'AutoUpdateSeparationType', 1
+            EXEC post_log_entry 'Error', @message, 'auto_update_separation_type', 1
 
             Set @optimalSeparationType = ''
         End

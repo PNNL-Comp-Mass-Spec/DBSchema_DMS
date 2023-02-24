@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateChargeCodesFromWarehouse] ******/
+/****** Object:  StoredProcedure [dbo].[update_charge_codes_from_warehouse] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateChargeCodesFromWarehouse]
+CREATE PROCEDURE [dbo].[update_charge_codes_from_warehouse]
 /****************************************************
 **
 **  Desc:
@@ -17,23 +17,24 @@ CREATE PROCEDURE [dbo].[UpdateChargeCodesFromWarehouse]
 **
 **  Auth:     mem
 **  Date:     06/04/2013 mem - Initial version
-**            06/05/2013 mem - Now calling AutoAddChargeCodeUsers
+**            06/05/2013 mem - Now calling auto_add_charge_code_users
 **            06/06/2013 mem - Now caching column DEACT_SW, which is "Y" when the charge code is Deactivated (can also be "R"; don't know what that means)
 **            12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
 **                           - Now populating Activation_State when inserting new rows via the merge
 **            08/13/2015 mem - Added field @ExplicitChargeCodeList
 **            02/23/2016 mem - Add set XACT_ABORT on
-**            03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**            03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **            07/11/2017 mem - Use computed column HID_Number in T_Users
 **            02/08/2022 mem - Change tabs to spaces and update comments
 **            07/21/2022 mem - Also examine SubAccount_Inactive_Date when considering changing Charge_Code_State from 0 to 1 for work packages that are no longer Deactivated
 **                           - When @infoOnly is >= 2, only show new or updated work packages
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,                         -- Set to 1 to preview work package metadata after updates are applied; set to 2 to only show updated rows
     @updateAll tinyint = 0,                        -- Set to 1 to force an update of all rows in T_Charge_Code; by default, filters on charge codes based on Setup_Date and Auth_Amt
-    @ExplicitChargeCodeList varchar(2000) = '',    -- Comma separated list of Charge codes (work packages) to add to T_Charge_Code regardless of filters.  When used, other charge codes are ignored
+    @explicitChargeCodeList varchar(2000) = '',    -- Comma separated list of Charge codes (work packages) to add to T_Charge_Code regardless of filters.  When used, other charge codes are ignored
     @message varchar(512)='' output
 )
 AS
@@ -92,7 +93,7 @@ AS
             -- Populate #IX_Tmp_WPsExplicit
             INSERT INTO #Tmp_WPsExplicit (Charge_Code)
             SELECT Value
-            FROM dbo.udfParseDelimitedList(@ExplicitChargeCodeList, ',', 'UpdateChargeCodesFromWarehouse')
+            FROM dbo.parse_delimited_list(@ExplicitChargeCodeList, ',', 'update_charge_codes_from_warehouse')
         End
 
 
@@ -103,7 +104,7 @@ AS
         --
         CREATE TABLE #Tmp_ChargeCode(
             Charge_Code varchar(6) NOT NULL,
-            Resp_PRN varchar(5) NULL,
+            Resp_Username varchar(5) NULL,
             Resp_HID varchar(7) NULL,
             WBS_Title varchar(60) NULL,
             Charge_Code_Title varchar(30) NULL,
@@ -115,7 +116,7 @@ AS
             SubAccount_Inactive_Date datetime NULL,
             Deactivated varchar(1) NOT NULL,
             Auth_Amt numeric(12, 0) NOT NULL,
-            Auth_PRN varchar(5) NULL,
+            Auth_Username varchar(5) NULL,
             Auth_HID varchar(7) NULL,
             Update_Status varchar(64) NULL
         )
@@ -131,7 +132,7 @@ AS
         If Exists (Select * from #Tmp_WPsExplicit)
         Begin
             INSERT INTO #Tmp_ChargeCode( Charge_Code,
-                                         Resp_PRN,
+                                         Resp_Username,
                                          Resp_HID,
                                          WBS_Title,
                                          Charge_Code_Title,
@@ -143,7 +144,7 @@ AS
                                          SubAccount_Inactive_Date,
                                          Deactivated,
                                          Auth_Amt,
-                                         Auth_PRN,
+                                         Auth_Username,
                                          Auth_HID,
                                          Update_Status)
             SELECT CC.CHARGE_CD,
@@ -173,7 +174,7 @@ AS
         Begin
 
             INSERT INTO #Tmp_ChargeCode( Charge_Code,
-                                         Resp_PRN,
+                                         Resp_Username,
                                          Resp_HID,
                                          WBS_Title,
                                          Charge_Code_Title,
@@ -185,7 +186,7 @@ AS
                                          SubAccount_Inactive_Date,
                                          Deactivated,
                                          Auth_Amt,
-                                         Auth_PRN,
+                                         Auth_Username,
                                          Auth_HID,
                                          Update_Status)
             SELECT CC.CHARGE_CD,
@@ -240,7 +241,7 @@ AS
             -- whenever values in any of these fields change:
             --    Deactivated, Charge_Code_State, Usage_SamplePrep, Usage_RequestedRun, Activation_State
             --
-            -- Activation_State values are determined by scalar-valued function ChargeCodeActivationState
+            -- Activation_State values are determined by scalar-valued function charge_code_activation_state
             -- That function uses the Deactivated, Charge_Code_State, Usage_SamplePrep, and Usage_RequestedRun to determine the activation state
             --
             -- Logic below updates Charge_Code_State based on Deactivated, Setup_Date, Usage_SamplePrep, and Usage_RequestedRun
@@ -250,16 +251,16 @@ AS
 
             MERGE T_Charge_Code AS Target
             USING
-                ( SELECT Charge_Code, Resp_PRN, Resp_HID, WBS_Title, Charge_Code_Title,
+                ( SELECT Charge_Code, Resp_Username, Resp_HID, WBS_Title, Charge_Code_Title,
                          SubAccount, SubAccount_Title, Setup_Date, SubAccount_Effective_Date,
-                         Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_PRN, Auth_HID
+                         Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_Username, Auth_HID
                   FROM #Tmp_ChargeCode
-                ) AS Source ( Charge_Code, Resp_PRN, Resp_HID, WBS_Title, Charge_Code_Title,
+                ) AS Source ( Charge_Code, Resp_Username, Resp_HID, WBS_Title, Charge_Code_Title,
                               SubAccount, SubAccount_Title, Setup_Date, SubAccount_Effective_Date,
-                              Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_PRN, Auth_HID )
+                              Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_Username, Auth_HID )
             ON ( target.Charge_Code = source.Charge_Code )
             WHEN Matched  AND
-                    (   IsNull(target.Resp_PRN, '') <> IsNull(source.Resp_PRN, '') OR
+                    (   IsNull(target.Resp_PRN, '') <> IsNull(source.Resp_Username, '') OR
                         IsNull(target.Resp_HID, '') <> IsNull(source.Resp_HID, '') OR
                         IsNull(target.WBS_Title, '') <> IsNull(source.WBS_Title, '') OR
                         IsNull(target.Charge_Code_Title, '') <> IsNull(source.Charge_Code_Title, '') OR
@@ -271,11 +272,11 @@ AS
                         IsNull(target.SubAccount_Inactive_Date, '') <> IsNull(source.SubAccount_Inactive_Date, '') OR
                         target.Deactivated <> source.Deactivated OR
                         target.Auth_Amt <> source.Auth_Amt OR
-                        IsNull(target.Auth_PRN, '') <> IsNull(source.Auth_PRN, '') OR
+                        IsNull(target.Auth_PRN, '') <> IsNull(source.Auth_Username, '') OR
                         IsNull(target.Auth_HID, '') <> IsNull(source.Auth_HID, '')
                         )
                 THEN UPDATE SET
-                    Resp_PRN = source.Resp_PRN,
+                    Resp_PRN = source.Resp_Username,
                     Resp_HID = source.Resp_HID,
                     WBS_Title = source.WBS_Title,
                     Charge_Code_Title = source.Charge_Code_Title,
@@ -287,7 +288,7 @@ AS
                     SubAccount_Inactive_Date = source.SubAccount_Inactive_Date,
                     Deactivated = source.Deactivated,
                     Auth_Amt = source.Auth_Amt,
-                    Auth_PRN = source.Auth_PRN,
+                    Auth_PRN = source.Auth_Username,
                     Auth_HID = source.Auth_HID,
                     Last_Affected = GetDate()
             WHEN NOT Matched BY Target
@@ -297,12 +298,12 @@ AS
                          Inactive_Date, SubAccount_Inactive_Date, Deactivated, Auth_Amt, Auth_PRN, Auth_HID,
                          Auto_Defined, Charge_Code_State, Activation_State, Last_Affected
                     ) VALUES
-                    ( source.Charge_Code, source.Resp_PRN, source.Resp_HID, source.WBS_Title, source.Charge_Code_Title,
+                    ( source.Charge_Code, source.Resp_Username, source.Resp_HID, source.WBS_Title, source.Charge_Code_Title,
                       source.SubAccount, source.SubAccount_Title, source.Setup_Date, source.SubAccount_Effective_Date,
-                      source.Inactive_Date, source.SubAccount_Inactive_Date, source.Deactivated, source.Auth_Amt, source.Auth_PRN, source.Auth_HID,
+                      source.Inactive_Date, source.SubAccount_Inactive_Date, source.Deactivated, source.Auth_Amt, source.Auth_Username, source.Auth_HID,
                       1,        -- Auto_Defined=1
                       1,        -- Charge_Code_State = 1 (Interest Unknown)
-                      dbo.ChargeCodeActivationState(source.Deactivated, 1, 0, 0),
+                      dbo.charge_code_activation_state(source.Deactivated, 1, 0, 0),
                       GetDate()
                     )
             OUTPUT $ACTION INTO #Tmp_UpdateSummary ;
@@ -322,7 +323,7 @@ AS
             Begin
                 Set @message = 'Updated T_Charge_Code: ' + Convert(varchar(12), @MergeInsertCount) + ' added; ' + Convert(varchar(12), @MergeUpdateCount) + ' updated'
 
-                Exec PostLogEntry 'Normal', @message, 'UpdateChargeCodesFromWarehouse'
+                Exec post_log_entry 'Normal', @message, 'update_charge_codes_from_warehouse'
                 Set @message = ''
             End
 
@@ -332,7 +333,7 @@ AS
             --
             Set @CurrentLocation = 'Update usage columns'
 
-            exec UpdateChargeCodeUsage @infoonly=0
+            exec update_charge_code_usage @infoonly=0
 
             ----------------------------------------------------------
             -- Update Inactive_Date_Most_Recent
@@ -500,7 +501,7 @@ AS
             -- We only add users associated with charge codes that have been used in DMS
             ----------------------------------------------------------
             --
-            exec @myError = AutoAddChargeCodeUsers @infoOnly = 0
+            exec @myError = auto_add_charge_code_users @infoOnly = 0
 
         End
         Else
@@ -535,7 +536,7 @@ AS
 
             SELECT Update_Status,
                    New.Charge_Code,
-                   Old.Resp_PRN, New.Resp_PRN,
+                   Old.Resp_PRN, New.Resp_Username,
                    Old.Resp_HID, New.Resp_HID,
                    Old.WBS_Title, New.WBS_Title,
                    Old.Charge_Code_Title, New.Charge_Code_Title,
@@ -547,7 +548,7 @@ AS
                    Old.SubAccount_Inactive_Date, New.SubAccount_Inactive_Date,
                    Old.Deactivated, New.Deactivated,
                    Old.Auth_Amt, New.Auth_Amt,
-                   Old.Auth_PRN, New.Auth_PRN,
+                   Old.Auth_PRN, New.Auth_Username,
                    Old.Auth_HID, New.Auth_HID
             FROM #Tmp_ChargeCode New Left Outer Join
                  T_Charge_Code Old
@@ -562,8 +563,8 @@ AS
 
     END TRY
     BEGIN CATCH
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateChargeCodesFromWarehouse')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_charge_codes_from_warehouse')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
         -- rollback any open transactions
@@ -574,7 +575,7 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateChargeCodesFromWarehouse] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_charge_codes_from_warehouse] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateChargeCodesFromWarehouse] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_charge_codes_from_warehouse] TO [PNL\D3M578] AS [dbo]
 GO

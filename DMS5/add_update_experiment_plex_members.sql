@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateExperimentPlexMembers] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_experiment_plex_members] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateExperimentPlexMembers]
+CREATE PROCEDURE [dbo].[add_update_experiment_plex_members]
 /****************************************************
 **
 **  Desc:   Adds new or updates existing rows in T_Experiment_Plex_Members
@@ -62,7 +62,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentPlexMembers]
 **          11/28/2018 mem - Allow the second column in the plex table to have experiment names instead of IDs
 **                         - Make @expIdChannel and @channelType parameters optional
 **                         - Add @comment parameters
-**          11/29/2018 mem - Call AlterEnteredByUser
+**          11/29/2018 mem - Call alter_entered_by_user
 **          11/30/2018 mem - Make @plexExperimentId an output parameter
 **          09/04/2019 mem - If the plex experiment is a parent experiment of an experiment group, copy plex info to the members (fractions) of the experiment group
 **          09/06/2019 mem - When updating a plex experiment that is a parent experiment of an experiment group, also update the members (fractions) of the experiment group
@@ -71,12 +71,13 @@ CREATE PROCEDURE [dbo].[AddUpdateExperimentPlexMembers]
 **          11/09/2021 mem - Update @mode to support 'preview'
 **          04/18/2022 mem - Update to support TMT 18 by adding channels 17 and 18
 **          04/20/2022 mem - Fix typo in variable names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @plexExperimentIdOrName varchar(130) output, -- Input/output parameter; used by the experiment_plex_members page family when copying an entry and changing the plex Exp_ID.  Accepts name or ID as input, but the output is always ID
     @plexMembers varchar(4000),                  -- Table of Channel to Exp_ID mapping (see above for examples)
-    @expIdChannel1 varchar(130)='',              -- Experiment ID or Experiment Name or ExpID:ExperimentName
+    @expIdChannel1 varchar(130)='',              -- Experiment ID or Experiment Name or ExperimentID:ExperimentName
     @expIdChannel2 varchar(130)='',
     @expIdChannel3 varchar(130)='',
     @expIdChannel4 varchar(130)='',
@@ -167,14 +168,14 @@ AS
 
     Declare @updatedRows int
     Declare @actionMessage varchar(128)
-    Declare @expIdList Varchar(512) = ''
+    Declare @experimentIdList Varchar(512) = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateExperimentPlexMembers', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_experiment_plex_members', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -305,7 +306,7 @@ AS
 
         INSERT INTO #TmpRowData( Entry_ID, [Value])
         SELECT EntryID, [Value]
-        FROM dbo.udfParseDelimitedListOrdered(@plexMembers, char(10), 0)
+        FROM dbo.parse_delimited_list_ordered(@plexMembers, char(10), 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -331,11 +332,11 @@ AS
 
                 DELETE FROM #TmpColData
 
-                -- Note that udfParseDelimitedListOrdered will replace tabs with commas
+                -- Note that parse_delimited_list_ordered will replace tabs with commas
 
                 INSERT INTO #TmpColData( Entry_ID, [Value])
                 SELECT EntryID, [Value]
-                FROM dbo.udfParseDelimitedListOrdered (@value, ',', 4)
+                FROM dbo.parse_delimited_list_ordered (@value, ',', 4)
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -840,13 +841,13 @@ AS
             End
             Else
             Begin
-                If @expIdList = ''
+                If @experimentIdList = ''
                 Begin
-                    Set @expIdList = Cast(@currentPlexExperimentId As varchar(12))
+                    Set @experimentIdList = Cast(@currentPlexExperimentId As varchar(12))
                 End
                 Else
                 Begin
-                    Set @expIdList = @expIdList + ', ' + Cast(@currentPlexExperimentId As varchar(12))
+                    Set @experimentIdList = @experimentIdList + ', ' + Cast(@currentPlexExperimentId As varchar(12))
                 End
 
                 If @mode = 'preview'
@@ -906,9 +907,9 @@ AS
 
                     If Len(@callingUser) > 0
                     Begin
-                        -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
+                        -- Call alter_entered_by_user to alter the Entered_By field in T_Experiment_Plex_Members_History
                         --
-                        Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @currentPlexExperimentId, @CallingUser
+                        Exec alter_entered_by_user 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @currentPlexExperimentId, @CallingUser
                     End
                 End  -- </AddUpdatePlexInfo>
             End
@@ -917,9 +918,9 @@ AS
 
         If @mode = 'add'
         Begin
-            If @expIdList Like '%,%'
+            If @experimentIdList Like '%,%'
             Begin
-                Set @message = 'Defined experiment plex members for Exp_IDs: ' + @expIdList
+                Set @message = 'Defined experiment plex members for Exp_IDs: ' + @experimentIdList
             End
             Else
             Begin
@@ -949,12 +950,12 @@ AS
                 If @targetAddCount = @targetPlexExperimentCount
                 Begin
                     -- Adding plex members for all of the target experiments
-                    Set @message = 'Would add ' + Cast(@actualChannelCount As varchar(12)) + ' channels for Exp_IDs: ' + @expIdList
+                    Set @message = 'Would add ' + Cast(@actualChannelCount As varchar(12)) + ' channels for Exp_IDs: ' + @experimentIdList
                 End
                 Else If @targetUpdateCount = @targetPlexExperimentCount
                 Begin
                     -- Updating plex members for all of the target experiments
-                    Set @message = 'Would update ' + Cast(@updatedRows As varchar(12)) + ' channels for Exp_IDs: ' + @expIdList
+                    Set @message = 'Would update ' + Cast(@updatedRows As varchar(12)) + ' channels for Exp_IDs: ' + @experimentIdList
                 End
                 Else
                 Begin
@@ -990,7 +991,7 @@ AS
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -999,7 +1000,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Plex Exp ID ' + @plexExperimentIdOrName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperimentPlexMembers'
+            exec post_log_entry 'Error', @logMessage, 'add_update_experiment_plex_members'
         End
 
     End CATCH
@@ -1007,11 +1008,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentPlexMembers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_plex_members] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperimentPlexMembers] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_experiment_plex_members] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperimentPlexMembers] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_experiment_plex_members] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperimentPlexMembers] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_plex_members] TO [Limited_Table_Write] AS [dbo]
 GO

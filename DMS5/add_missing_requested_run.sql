@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddMissingRequestedRun] ******/
+/****** Object:  StoredProcedure [dbo].[add_missing_requested_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
+CREATE PROCEDURE [dbo].[add_missing_requested_run]
 /****************************************************
 **
 **  Desc:   Creates a requested run for the given dataset,
@@ -12,7 +12,7 @@ CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
 **          The requested run will be named 'AutoReq_DatasetName'
 **
 **
-**          Note that this procedure is similar to AddRequestedRunToExistingDataset,
+**          Note that this procedure is similar to add_requested_run_to_existing_dataset,
 **          though that procedure has parameter @templateRequestID which defines
 **          an existing requested run ID from which to lookup EUS information
 **
@@ -24,20 +24,21 @@ CREATE PROCEDURE [dbo].[AddMissingRequestedRun]
 **
 **  Auth:   mem
 **  Date:   10/20/1010 mem - Initial version
-**          05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
-**          01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
-**          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
-**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
-**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          05/08/2013 mem - Now setting @wellplateName and @wellNumber to Null when calling add_update_requested_run
+**          01/29/2016 mem - Now calling get_wp_for_eus_proposal to get the best work package for the given EUS Proposal
+**          06/13/2017 mem - Rename @operatorUsername to @requestorUsername when calling add_update_requested_run
+**          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
+**          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          01/05/2023 mem - Use new column name in V_Dataset_Detail_Report_Ex
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Dataset varchar(256),
+    @dataset varchar(256),
     @eusProposalID varchar(64) = '',
     @eusUsageType varchar(64) = 'Cap_Dev',
     @eusUsersList varchar(64) = '',
-    @InfoOnly tinyint = 1,
+    @infoOnly tinyint = 1,
     @message varchar(512) = '' output
 )
 AS
@@ -46,8 +47,8 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @experimentNum varchar(256),
-            @operPRN varchar(64),
+    Declare @experimentName varchar(256),
+            @operatorUsername varchar(64),
             @instrumentName varchar(128),
             @secSep varchar(128),
             @msType varchar(64),
@@ -66,8 +67,8 @@ AS
     -- Lookup the dataset details
     ---------------------------------------------------
 
-    SELECT @experimentNum = V.Experiment,
-           @operPRN = D.DS_Oper_PRN,
+    SELECT @experimentName = V.Experiment,
+           @operatorUsername = D.DS_Oper_PRN,
            @instrumentName = v.Instrument,
            @msType = v.Type,
            @secSep = v.Separation_Type,
@@ -111,8 +112,8 @@ AS
     Begin
         SELECT @DatasetID AS DatasetID,
                @Dataset AS Dataset,
-               @experimentNum AS Experiment,
-               @operPRN AS Operator,
+               @experimentName AS Experiment,
+               @operatorUsername AS Operator,
                @instrumentName AS Instrument,
                @msType AS DS_Type,
                @message AS Message
@@ -125,20 +126,20 @@ AS
         Set @reqName = 'AutoReq_' + @Dataset
 
         Declare @workPackage varchar(50) = 'none'
-        EXEC GetWPforEUSProposal @eusProposalID, @workPackage OUTPUT
+        EXEC get_wp_for_eus_proposal @eusProposalID, @workPackage OUTPUT
 
         DECLARE @result int
 
-        EXEC @result = dbo.AddUpdateRequestedRun
+        EXEC @result = dbo.add_update_requested_run
                                 @reqName = @reqName,
-                                @experimentNum = @experimentNum,
-                                @requesterPRN = @operPRN,
+                                @experimentName = @experimentName,
+                                @requesterUsername = @operatorUsername,
                                 @instrumentName = @instrumentName,
                                 @workPackage = @workPackage,
                                 @msType = @msType,
                                 @instrumentSettings = 'na',
-                                @wellplate = NULL,
-                                @wellNum = NULL,
+                                @wellplateName = NULL,
+                                @wellNumber = NULL,
                                 @internalStandard = 'na',
                                 @comment = 'Automatically created by Dataset entry',
                                 @eusProposalID = @eusProposalID,
@@ -191,7 +192,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMissingRequestedRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_missing_requested_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMissingRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_missing_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO

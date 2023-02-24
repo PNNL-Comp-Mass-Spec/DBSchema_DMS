@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CacheInstrumentsWithQCMetrics] ******/
+/****** Object:  StoredProcedure [dbo].[cache_instruments_with_qc_metrics] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CacheInstrumentsWithQCMetrics]
+CREATE PROCEDURE [dbo].[cache_instruments_with_qc_metrics]
 /****************************************************
 **
 **  Desc:   Caches the names of Instruments that
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[CacheInstrumentsWithQCMetrics]
 **
 **  Auth:   mem
 **  Date:   11/04/2015 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -85,5 +86,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CacheInstrumentsWithQCMetrics] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[cache_instruments_with_qc_metrics] TO [DDL_Viewer] AS [dbo]
 GO

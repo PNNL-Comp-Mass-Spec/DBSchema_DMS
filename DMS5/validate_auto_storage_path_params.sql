@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateAutoStoragePathParams] ******/
+/****** Object:  StoredProcedure [dbo].[validate_auto_storage_path_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateAutoStoragePathParams]
+CREATE PROCEDURE [dbo].[validate_auto_storage_path_params]
 /****************************************************
 **
 **  Desc:   Validates that the Auto storage path parameters are correct
@@ -15,17 +15,17 @@ CREATE PROCEDURE [dbo].[ValidateAutoStoragePathParams]
 **          07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov\archive\dmsarch\
 **          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov\dmsarch\
 **          09/08/2020 mem - When @AutoDefineStoragePath is positive, raise an error if any of the paths are \ or /
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @AutoDefineStoragePath tinyint,
-    @AutoSPVolNameClient varchar(128),
-    @AutoSPVolNameServer varchar(128),
-    @AutoSPPathRoot varchar(128),
-    @AutoSPArchiveServerName varchar(64),
-    @AutoSPArchivePathRoot varchar(128),
-    @AutoSPArchiveSharePathRoot varchar(128)
-
+    @autoDefineStoragePath tinyint,
+    @autoSPVolNameClient varchar(128),
+    @autoSPVolNameServer varchar(128),
+    @autoSPPathRoot varchar(128),
+    @autoSPArchiveServerName varchar(64),
+    @autoSPArchivePathRoot varchar(128),
+    @autoSPArchiveSharePathRoot varchar(128)
 )
 AS
     Set NoCount On
@@ -87,5 +87,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateAutoStoragePathParams] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_auto_storage_path_params] TO [DDL_Viewer] AS [dbo]
 GO

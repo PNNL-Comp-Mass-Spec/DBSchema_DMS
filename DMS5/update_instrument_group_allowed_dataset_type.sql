@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateInstrumentGroupAllowedDatasetType] ******/
+/****** Object:  StoredProcedure [dbo].[update_instrument_group_allowed_dataset_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateInstrumentGroupAllowedDatasetType]
+CREATE PROCEDURE [dbo].[update_instrument_group_allowed_dataset_type]
 /****************************************************
 **
 **  Desc:
@@ -17,17 +17,18 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentGroupAllowedDatasetType]
 **  Date:   09/19/2009 grk - Initial release (Ticket #749, http://prismtrac.pnl.gov/trac/ticket/749)
 **          02/12/2010 mem - Now making sure @DatasetType is properly capitalized
 **          08/28/2010 mem - Updated to work with instrument groups
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InstrumentGroup varchar(64),
-    @DatasetType varchar(50),
-    @Comment varchar(1024),
+    @instrumentGroup varchar(64),
+    @datasetType varchar(50),
+    @comment varchar(1024),
     @mode varchar(12) = 'add', -- or 'update' or 'delete'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateInstrumentGroupAllowedDatasetType', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_instrument_group_allowed_dataset_type', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -156,13 +157,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateInstrumentGroupAllowedDatasetType'
+        Exec post_log_entry 'Error', @message, 'update_instrument_group_allowed_dataset_type'
     END CATCH
 
     ---------------------------------------------------
@@ -171,16 +172,16 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = 'Instrument group: ' + @InstrumentGroup
-    Exec PostUsageLogEntry 'UpdateInstrumentGroupAllowedDatasetType', @UsageMessage
+    Exec post_usage_log_entry 'update_instrument_group_allowed_dataset_type', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_instrument_group_allowed_dataset_type] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_instrument_group_allowed_dataset_type] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_instrument_group_allowed_dataset_type] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentGroupAllowedDatasetType] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_instrument_group_allowed_dataset_type] TO [Limited_Table_Write] AS [dbo]
 GO

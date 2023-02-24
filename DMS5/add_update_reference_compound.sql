@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateReferenceCompound] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_reference_compound] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
+CREATE PROCEDURE [dbo].[add_update_reference_compound]
 /****************************************************
 **
 **  Desc:
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[AddUpdateReferenceCompound]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/13/2023 mem - Rename contact parameter to @contactUsername
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -65,7 +66,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateReferenceCompound', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_reference_compound', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -206,7 +207,7 @@ AS
 
     Declare @organismID int = 0
 
-    exec @organismID = GetOrganismID @organismName
+    exec @organismID = get_organism_id @organismName
 
     If @organismID = 0
     Begin
@@ -243,7 +244,7 @@ AS
 
     Declare @campaignID int = 0
     --
-    execute @campaignID = GetCampaignID @campaignName
+    execute @campaignID = get_campaign_id @campaignName
     --
     If @campaignID = 0
     Begin
@@ -291,21 +292,21 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve PRNs to user number
+    -- Resolve usernames to user number
     ---------------------------------------------------
 
-    -- Verify that Contact PRN is valid and resolve its ID
+    -- Verify that Contact username is valid and resolve its ID
     --
     Declare @userID int
 
     Declare @MatchCount int
-    Declare @NewPRN varchar(64)
+    Declare @newUsername varchar(64)
 
-    execute @userID = GetUserID @contactUsername
+    execute @userID = get_user_id @contactUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @contactUsername contains simply the username
         --
         SELECT @contactUsername = U_PRN
@@ -314,15 +315,15 @@ AS
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @contactUsername
+        -- Could not find entry in database for username @contactUsername
         -- Try to auto-resolve the name
 
-        exec AutoResolveNameToPRN @contactUsername, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @contactUsername, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
             -- Single match found; update @contactUsername
-            Set @contactUsername = @NewPRN
+            Set @contactUsername = @newUsername
         End
 
     End
@@ -391,15 +392,15 @@ AS
 
         Declare @StateID int = 1
 
-        -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 13, @compoundID, @StateID, @callingUser
+            Exec alter_event_log_entry_user 13, @compoundID, @StateID, @callingUser
 
         -- Material movement logging
         --
         If @curContainerID != @containerID
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                 'Reference Compound Move',  -- Type
                 @compoundIdAndName,         -- Item
                 'na',                       -- Initial State (aka Old container)
@@ -454,7 +455,7 @@ AS
         --
         If @curContainerID != @containerID
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                 'Reference Compound Move',  -- Type
                 @compoundIdAndName,         -- Item
                 @curContainerName,          -- Initial State (aka Old container)
@@ -467,7 +468,7 @@ AS
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -476,7 +477,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; ID ' + @compoundIdAndName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateReferenceCompound'
+            exec post_log_entry 'Error', @logMessage, 'add_update_reference_compound'
         End
 
     End CATCH
@@ -484,11 +485,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateReferenceCompound] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_reference_compound] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateReferenceCompound] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_reference_compound] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateReferenceCompound] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_reference_compound] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateReferenceCompound] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_reference_compound] TO [Limited_Table_Write] AS [dbo]
 GO

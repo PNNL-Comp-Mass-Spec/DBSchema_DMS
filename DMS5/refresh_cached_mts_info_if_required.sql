@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RefreshCachedMTSInfoIfRequired] ******/
+/****** Object:  StoredProcedure [dbo].[refresh_cached_mts_info_if_required] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RefreshCachedMTSInfoIfRequired]
+CREATE PROCEDURE [dbo].[refresh_cached_mts_info_if_required]
 /****************************************************
 **
 **  Desc:
@@ -15,16 +15,17 @@ CREATE PROCEDURE [dbo].[RefreshCachedMTSInfoIfRequired]
 **
 **  Auth:   mem
 **  Date:   02/02/2010 mem - Initial Version
-**          04/21/2010 mem - Now calling RefreshCachedMTSJobMappingPeptideDB' and RefreshCachedMTSJobMappingMTDBs
+**          04/21/2010 mem - Now calling RefreshCachedMTSJobMappingPeptideDB' and refresh_cached_mts_job_mapping_mtdbs
 **          11/21/2012 mem - Now updating job stats in T_MTS_PT_DBs_Cached and T_MTS_MT_DBs_Cached
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @UpdateInterval real = 1,                       -- Minimum interval in hours to limit update frequency; Set to 0 to force update now
-    @DynamicMinimumCountThreshold int = 5000,       -- When updating every @UpdateInterval hours, uses the maximum cached ID value in the given T_MTS_%_Cached table to determine the minimum ID number to update; for example, for T_MTS_Analysis_Job_Info_Cached, MinimumJob = MaxJobInTable - @DynamicMinimumCountThreshold; set to 0 to update all items, regardless of ID
-    @UpdateIntervalAllItems real = 24,              -- Interval (in hours) to update all items, regardless of ID
-    @InfoOnly tinyint = 0,
+    @updateInterval real = 1,                       -- Minimum interval in hours to limit update frequency; Set to 0 to force update now
+    @dynamicMinimumCountThreshold int = 5000,       -- When updating every @UpdateInterval hours, uses the maximum cached ID value in the given T_MTS_%_Cached table to determine the minimum ID number to update; for example, for T_MTS_Analysis_Job_Info_Cached, MinimumJob = MaxJobInTable - @DynamicMinimumCountThreshold; set to 0 to update all items, regardless of ID
+    @updateIntervalAllItems real = 24,              -- Interval (in hours) to update all items, regardless of ID
+    @infoOnly tinyint = 0,
     @message varchar(255) = '' output
 )
 AS
@@ -90,28 +91,28 @@ AS
             Begin
                 Set @CacheTable = 'T_MTS_Peak_Matching_Tasks_Cached'
                 Set @IDColumnName = 'MTS_Job_ID'
-                Set @SP = 'RefreshCachedMTSPeakMatchingTasks'
+                Set @SP = 'refresh_cached_mts_peak_matching_tasks'
             End
 
             If @Iteration = 2
             Begin
                 Set @CacheTable = 'T_MTS_MT_DBs_Cached'
                 Set @IDColumnName = ''
-                Set @SP = 'RefreshCachedMTDBs'
+                Set @SP = 'refresh_cached_mtdbs'
             End
 
             If @Iteration = 3
             Begin
                 Set @CacheTable = 'T_MTS_PT_DBs_Cached'
                 Set @IDColumnName = ''
-                Set @SP = 'RefreshCachedPTDBs'
+                Set @SP = 'refresh_cached_ptdbs'
             End
 
             If @Iteration = 4
             Begin
                 Set @CacheTable = 'T_MTS_PT_DB_Jobs_Cached'
                 Set @IDColumnName = 'Job'
-                Set @SP = 'RefreshCachedMTSJobMappingPeptideDBs'
+                Set @SP = 'refresh_cached_mts_job_mapping_peptide_dbs'
                 Set @LimitToMaxKnownDMSJobs = 1
             End
 
@@ -119,7 +120,7 @@ AS
             Begin
                 Set @CacheTable = 'T_MTS_MT_DB_Jobs_Cached'
                 Set @IDColumnName = 'Job'
-                Set @SP = 'RefreshCachedMTSJobMappingMTDBs'
+                Set @SP = 'refresh_cached_mts_job_mapping_mtdbs'
                 Set @LimitToMaxKnownDMSJobs = 1
             End
 
@@ -267,8 +268,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTSInfoIfRequired')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'refresh_cached_mts_info_if_required')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -277,7 +278,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSInfoIfRequired] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mts_info_if_required] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSInfoIfRequired] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mts_info_if_required] TO [Limited_Table_Write] AS [dbo]
 GO

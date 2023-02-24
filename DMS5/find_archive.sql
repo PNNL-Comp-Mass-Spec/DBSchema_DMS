@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindArchive] ******/
+/****** Object:  StoredProcedure [dbo].[find_archive] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindArchive]
+CREATE PROCEDURE [dbo].[find_archive]
 /****************************************************
 **
 **  Desc:
@@ -16,26 +16,27 @@ CREATE PROCEDURE [dbo].[FindArchive]
 **
 **  Auth:   grk
 **  Date:   08/21/2007
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Dataset varchar(128) = '',
-    @ID varchar(20) = '',
-    @Instrument varchar(24) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
-    @State varchar(50) = '',
-    @Update varchar(32) = '',
-    @Entered_After varchar(20) = '',
-    @Entered_Before varchar(20) = '',
-    @LastUpdate_After varchar(20) = '',
-    @LastUpdate_Before varchar(20) = '',
-    @LastVerify_After varchar(20) = '',
-    @LastVerify_Before varchar(20) = '',
-    @ArchivePath varchar(50) = '',
-    @ArchiveServer varchar(32) = '',
+    @dataset varchar(128) = '',
+    @id varchar(20) = '',
+    @instrument varchar(24) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
+    @state varchar(50) = '',
+    @update varchar(32) = '',
+    @entered_After varchar(20) = '',
+    @entered_Before varchar(20) = '',
+    @lastUpdate_After varchar(20) = '',
+    @lastUpdate_Before varchar(20) = '',
+    @lastVerify_After varchar(20) = '',
+    @lastVerify_Before varchar(20) = '',
+    @archivePath varchar(50) = '',
+    @archiveServer varchar(32) = '',
     @message varchar(512) output
 )
 AS
@@ -165,7 +166,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindArchive] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_archive] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindArchive] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_archive] TO [Limited_Table_Write] AS [dbo]
 GO

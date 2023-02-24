@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ProcessWaitingSpecialProcJobs] ******/
+/****** Object:  StoredProcedure [dbo].[process_waiting_special_proc_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ProcessWaitingSpecialProcJobs]
+CREATE PROCEDURE [dbo].[process_waiting_special_proc_jobs]
 /****************************************************
 **
 **  Desc:   Examines jobs in T_Analysis_Job that are in state 19="Special Proc. Waiting"
@@ -20,16 +20,17 @@ CREATE PROCEDURE [dbo].[ProcessWaitingSpecialProcJobs]
 **          07/10/2015 mem - Log message now mentions "Not released dataset" when applicable
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @WaitThresholdHours int = 96,               -- Hours between when a job is created and when we'll start posting messages to the error log that the job is waiting too long
-    @ErrorMessagePostingIntervalHours int = 24, -- Hours between posting a message to the error log that a job has been waiting more than @WaitThresholdHours; used to prevent duplicate messages from being posted every few minutes
-    @InfoOnly tinyint = 0,                      -- 1 to preview the jobs that would be set to state "New"; will also display any jobs waiting more than @WaitThresholdHours
-    @PreviewSql tinyint = 0,
-    @JobsToProcess int = 0,
+    @waitThresholdHours int = 96,               -- Hours between when a job is created and when we'll start posting messages to the error log that the job is waiting too long
+    @errorMessagePostingIntervalHours int = 24, -- Hours between posting a message to the error log that a job has been waiting more than @WaitThresholdHours; used to prevent duplicate messages from being posted every few minutes
+    @infoOnly tinyint = 0,                      -- 1 to preview the jobs that would be set to state "New"; will also display any jobs waiting more than @WaitThresholdHours
+    @previewSql tinyint = 0,
+    @jobsToProcess int = 0,
     @message varchar(512) = '' output,          -- Status message
-    @JobsUpdated int = 0 output                 -- Number of jobs whose state was set to 1
+    @jobsUpdated int = 0 output                 -- Number of jobs whose state was set to 1
 )
 AS
     Set XACT_ABORT, nocount on
@@ -262,16 +263,16 @@ AS
 
                             If @DatasetIsBad = 1
                             Begin
-                                Exec DeleteAnalysisJob @Job
+                                Exec delete_analysis_job @Job
                                 Set @message = @message + '; job deleted since dataset is bad'
-                                exec PostLogEntry 'Warning', @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = 0
+                                exec post_log_entry 'Warning', @message, 'process_waiting_special_proc_jobs', @duplicateEntryHoldoffHours = 0
                             End
                             Else
                             Begin
                                 if @DatasetRating = -5
                                     Set @message = 'Not released dataset: ' + @message
 
-                                exec PostLogEntry 'Error',   @message, 'ProcessWaitingSpecialProcJobs', @duplicateEntryHoldoffHours = @ErrorMessagePostingIntervalHours
+                                exec post_log_entry 'Error',   @message, 'process_waiting_special_proc_jobs', @duplicateEntryHoldoffHours = @ErrorMessagePostingIntervalHours
                             End
                         End
 
@@ -319,13 +320,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
-        Exec PostLogEntry 'Error', @message, 'ProcessWaitingSpecialProcJobs'
+        Exec post_log_entry 'Error', @message, 'process_waiting_special_proc_jobs'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ProcessWaitingSpecialProcJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[process_waiting_special_proc_jobs] TO [DDL_Viewer] AS [dbo]
 GO

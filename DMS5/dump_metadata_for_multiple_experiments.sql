@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DumpMetadataForMultipleExperiments] ******/
+/****** Object:  StoredProcedure [dbo].[dump_metadata_for_multiple_experiments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DumpMetadataForMultipleExperiments]
+CREATE PROCEDURE [dbo].[dump_metadata_for_multiple_experiments]
 /****************************************************
 **
 **  Desc: Dump metadata for experiments in given list
@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[DumpMetadataForMultipleExperiments]
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   11/1/2006
+**  Date:   11/01/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Experiment_List varchar(7000),
-    @Options varchar(256), -- ignore for now
+    @experiment_List varchar(7000),
+    @options varchar(256), -- ignore for now
     @message varchar(512) output
 )
 AS
@@ -57,7 +58,7 @@ AS
     ---------------------------------------------------
 
     INSERT INTO #exp (mExp)
-    SELECT Item FROM dbo.MakeTableFromList(@Experiment_List)
+    SELECT Item FROM dbo.make_table_from_list(@Experiment_List)
 
     ---------------------------------------------------
     -- temporary table to hold metadata
@@ -86,7 +87,7 @@ AS
     -- in given list
     ---------------------------------------------------
 
-    exec @myError = LoadMetadataForMultipleExperiments @Options, @message output
+    exec @myError = load_metadata_for_multiple_experiments @Options, @message output
     --
     if @myError <> 0
     begin
@@ -119,11 +120,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DumpMetadataForMultipleExperiments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_experiments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleExperiments] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_experiments] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DumpMetadataForMultipleExperiments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_experiments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DumpMetadataForMultipleExperiments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_experiments] TO [Limited_Table_Write] AS [dbo]
 GO

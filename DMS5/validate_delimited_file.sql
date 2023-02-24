@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateDelimitedFile] ******/
+/****** Object:  StoredProcedure [dbo].[validate_delimited_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateDelimitedFile]
+CREATE PROCEDURE [dbo].[validate_delimited_file]
 /****************************************************
 **
 **  Desc:
@@ -16,14 +16,17 @@ CREATE PROCEDURE [dbo].[ValidateDelimitedFile]
 **  Auth:   mem
 **  Date:   10/15/2004
 **          09/15/2005 mem - Now returning the first row from the input file
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
+(
     @filePath varchar(255),
     @lineCountToSkip int=0,                 -- Set this to a positive value to skip the first @lineCountToSkip lines when determining column count
     @fileExists tinyint=0 OUTPUT,
     @columnCount int=0 OUTPUT,
-    @FirstRowPreview varchar(2048)='' OUTPUT,
+    @firstRowPreview varchar(2048)='' OUTPUT,
     @message varchar(255)='' OUTPUT
+)
 AS
     set nocount on
     declare @myError int,
@@ -49,7 +52,7 @@ AS
     EXEC @hr = sp_OACreate 'Scripting.FileSystemObject', @FSOObject OUT
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error creating FileSystemObject'
         set @myError = 60
@@ -63,7 +66,7 @@ AS
     EXEC @hr = sp_OAMethod  @FSOObject, 'FileExists', @result OUT, @filePath
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error calling FileExists for: ' + @filePath
         set @myError = 61
@@ -88,7 +91,7 @@ AS
     EXEC @hr = sp_OAMethod  @FSOObject, 'OpenTextFile', @TextStreamObject OUT, @filePath
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error calling OpenTextFile for ' + @filePath
         set @myError = 63
@@ -104,7 +107,7 @@ AS
     EXEC @hr = sp_OAMethod @TextStreamObject, 'AtEndOfStream', @AtEOF OUT
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error checking EndOfStream for ' + @filePath
 
@@ -126,7 +129,7 @@ AS
             EXEC @hr = sp_OAMethod  @TextStreamObject, 'Readline', @FirstRowPreview OUT
             IF @hr <> 0
             BEGIN
-                EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+                EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
                 If Len(IsNull(@message, '')) = 0
                     Set @message = 'Error reading first line from ' + @filePath
 
@@ -160,7 +163,7 @@ DestroyFSO:
     EXEC @hr = sp_OADestroy @FSOObject
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error destroying FileSystemObject'
 
@@ -173,7 +176,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_delimited_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDelimitedFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_delimited_file] TO [Limited_Table_Write] AS [dbo]
 GO

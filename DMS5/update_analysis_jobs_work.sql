@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobsWork] ******/
+/****** Object:  StoredProcedure [dbo].[update_analysis_jobs_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobsWork]
+CREATE PROCEDURE [dbo].[update_analysis_jobs_work]
 /****************************************************
 **
 **  Desc:
@@ -26,9 +26,9 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobsWork]
 **          03/02/2007 grk - add @associatedProcessorGroup (ticket #393)
 **          03/18/2007 grk - make @associatedProcessorGroup viable for reset mode (ticket #418)
 **          05/07/2007 grk - corrected spelling of sproc name
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user_multi_id (Ticket #644)
 **          03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
-**          04/09/2008 mem - Now calling AlterEnteredByUserMultiID if the jobs are associated with a processor group
+**          04/09/2008 mem - Now calling alter_entered_by_user_multi_id if the jobs are associated with a processor group
 **          07/11/2008 jds - Added 5 new fields (@paramFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
 **                           and code to validate param file settings file against tool type
 **          10/06/2008 mem - Now updating parameter file name, settings file name, protein collection list, protein options list, and organism when a job is reset (for any of these that are not '[no change]')
@@ -38,15 +38,16 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobsWork]
 **                           Expanded @comment to varchar(512)
 **          03/12/2009 grk - Removed [no change] from @associatedProcessorGroup to allow dissasociation of jobs with groups
 **          07/16/2009 mem - Added missing rollback transaction statements when verifying @associatedProcessorGroup
-**          09/16/2009 mem - Extracted code from UpdateAnalysisJobs
+**          09/16/2009 mem - Extracted code from update_analysis_jobs
 **                         - Added parameter @disableRaiseError
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **          03/30/2015 mem - Tweak warning message grammar
 **          05/28/2015 mem - No longer updating processor group entries (thus @associatedProcessorGroup is ignored)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -117,7 +118,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateAnalysisJobsWork', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_analysis_jobs_work', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -932,18 +933,18 @@ AS
 
         If @alterEventLogRequired <> 0
         Begin
-            -- Call AlterEventLogEntryUserMultiID
+            -- Call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
 
-            Exec AlterEventLogEntryUserMultiID 5, @stateID, @callingUser
+            Exec alter_event_log_entry_user_multi_id 5, @stateID, @callingUser
         End
 
         If @alterEnteredByRequired <> 0
         Begin
-            -- Call AlterEnteredByUserMultiID
+            -- Call alter_entered_by_user_multi_id
             -- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
 
-            Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @callingUser
+            Exec alter_entered_by_user_multi_id 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @callingUser
         End
     End
 
@@ -975,7 +976,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobsWork] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_jobs_work] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobsWork] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_jobs_work] TO [Limited_Table_Write] AS [dbo]
 GO

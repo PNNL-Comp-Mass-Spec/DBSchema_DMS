@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDatasetMyEMSLTransactionIDs] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dataset_myemsl_transaction_ids] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDatasetMyEMSLTransactionIDs]
+CREATE FUNCTION [dbo].[get_dataset_myemsl_transaction_ids]
 /****************************************************
 **
 **  Desc: Returns a comma separated list of the MyEMSL ingest transaction IDs for this dataset ID
@@ -11,6 +11,7 @@ CREATE FUNCTION [dbo].[GetDatasetMyEMSLTransactionIDs]
 **  Auth:   mem
 **  Date:   02/28/2018 mem - Initial version
 **          02/03/2023 bcg - Update column names for S_V_MyEMSL_DatasetID_TransactionID
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

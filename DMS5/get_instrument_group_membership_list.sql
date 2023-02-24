@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetInstrumentGroupMembershipList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_instrument_group_membership_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetInstrumentGroupMembershipList]
+CREATE FUNCTION [dbo].[get_instrument_group_membership_list]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetInstrumentGroupMembershipList]
 **  Date:   08/30/2010 grk - Initial version
 **          11/18/2019 mem - Add parameters @activeOnly and @maximumLength
 **          02/18/2021 mem - Add @activeOnly=2 which formats the instruments as a vertical bar separated list of instrument name and instrument ID
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -79,7 +80,7 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentGroupMembershipList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_group_membership_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetInstrumentGroupMembershipList] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_instrument_group_membership_list] TO [DMS2_SP_User] AS [dbo]
 GO

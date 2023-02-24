@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMaterialContainerCampaignList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_material_container_campaign_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMaterialContainerCampaignList]
+CREATE FUNCTION [dbo].[get_material_container_campaign_list]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[GetMaterialContainerCampaignList]
 **  Auth:   grk
 **  Date:   08/24/2010 grk
 **          12/04/2017 mem - Use Coalesce instead of a Case statement
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -57,5 +58,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMaterialContainerCampaignList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_material_container_campaign_list] TO [DDL_Viewer] AS [dbo]
 GO

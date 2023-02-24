@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetBatchGroupInstrumentGroupList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_batch_group_instrument_group_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetBatchGroupInstrumentGroupList]
+CREATE FUNCTION [dbo].[get_batch_group_instrument_group_list]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[GetBatchGroupInstrumentGroupList]
 **
 **  Auth:   mem
 **  Date:   02/09/2023 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -35,4 +36,5 @@ BEGIN
 
     RETURN @list
 END
+
 GO

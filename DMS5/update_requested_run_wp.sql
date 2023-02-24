@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunWP] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_wp] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunWP]
+CREATE PROCEDURE [dbo].[update_requested_run_wp]
 /****************************************************
 **
 **  Desc:
@@ -22,20 +22,21 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunWP]
 **  Auth:   mem
 **  Date:   07/01/2014 mem - Initial version
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/17/2020 mem - Fix typo in error message
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @OldWorkPackage varchar(50),
-    @NewWorkPackage varchar(50),
-    @RequestedIdList varchar(max) = '',     -- Optional: if blank, finds active requested runs; if defined, updates all of the specified request IDs if they use @OldWorkPackage
+    @oldWorkPackage varchar(50),
+    @newWorkPackage varchar(50),
+    @requestedIdList varchar(max) = '',     -- Optional: if blank, finds active requested runs; if defined, updates all of the specified request IDs if they use @OldWorkPackage
     @message varchar(512) output,
     @callingUser varchar(128) = '',
-    @InfoOnly tinyint = 0
+    @infoOnly tinyint = 0
 )
 AS
     Set XACT_ABORT, nocount on
@@ -50,7 +51,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunWP', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_requested_run_wp', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -62,8 +63,8 @@ AS
         -- Validate the inputs
         ----------------------------------------------------------
 
-        Set @OldWorkPackage = dbo.ScrubWhitespace(@OldWorkPackage)
-        Set @NewWorkPackage = dbo.ScrubWhitespace(@NewWorkPackage)
+        Set @OldWorkPackage = dbo.scrub_whitespace(@OldWorkPackage)
+        Set @NewWorkPackage = dbo.scrub_whitespace(@NewWorkPackage)
         Set @RequestedIdList = IsNull(@RequestedIdList, '')
         Set @message = ''
         Set @callingUser = IsNull(@callingUser, '')
@@ -108,7 +109,7 @@ AS
             --
             INSERT INTO #Tmp_RequestedRunList( ID )
             SELECT Value
-            FROM dbo.udfParseDelimitedList (@RequestedIdList, ',', 'UpdateRequestedRunWP')
+            FROM dbo.parse_delimited_list (@RequestedIdList, ',', 'update_requested_run_wp')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -195,7 +196,7 @@ AS
         FROM #Tmp_ReqRunsToUpdate
         ORDER BY ID
 
-        Exec CondenseIntegerListToRanges @debugMode=0
+        Exec condense_integer_list_to_ranges @debugMode=0
 
         Declare @LogMessage varchar(2048)
         If @InfoOnly = 0
@@ -203,7 +204,7 @@ AS
         Else
             Set @LogMessage = 'Will update '
 
-        Set @LogMessage = @LogMessage + 'work package for ' + Convert(varchar(12), @myRowCount) + ' requested ' + dbo.CheckPlural(@myRowCount, 'run', 'runs')
+        Set @LogMessage = @LogMessage + 'work package for ' + Convert(varchar(12), @myRowCount) + ' requested ' + dbo.check_plural(@myRowCount, 'run', 'runs')
         Set @LogMessage = @LogMessage + ' from ' + @OldWorkPackage + ' to ' + @NewWorkPackage
 
         Declare @ValueList varchar(max)
@@ -229,7 +230,7 @@ AS
             FROM #Tmp_ReqRunsToUpdate
             ORDER BY ID
 
-            Set @message = 'Will update work package for ' + Convert(varchar(12), @myRowCount) + ' requested ' + dbo.CheckPlural(@myRowCount, 'run', 'runs') + ' from ' + @OldWorkPackage + ' to ' + @NewWorkPackage
+            Set @message = 'Will update work package for ' + Convert(varchar(12), @myRowCount) + ' requested ' + dbo.check_plural(@myRowCount, 'run', 'runs') + ' from ' + @OldWorkPackage + ' to ' + @NewWorkPackage
 
         End
         Else
@@ -247,21 +248,21 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            Set @message = 'Updated work package for ' + Convert(varchar(12), @myRowCount) + ' requested ' + dbo.CheckPlural(@myRowCount, 'run', 'runs') + ' from ' + @OldWorkPackage + ' to ' + @NewWorkPackage
+            Set @message = 'Updated work package for ' + Convert(varchar(12), @myRowCount) + ' requested ' + dbo.check_plural(@myRowCount, 'run', 'runs') + ' from ' + @OldWorkPackage + ' to ' + @NewWorkPackage
 
-            Exec PostLogEntry 'Normal', @LogMessage, 'UpdateRequestedRunWP'
+            Exec post_log_entry 'Normal', @LogMessage, 'update_requested_run_wp'
 
         End
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunWP'
+        Exec post_log_entry 'Error', @message, 'update_requested_run_wp'
     End CATCH
 
 Done:
@@ -269,9 +270,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunWP] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_wp] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunWP] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_wp] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunWP] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_wp] TO [DMS2_SP_User] AS [dbo]
 GO

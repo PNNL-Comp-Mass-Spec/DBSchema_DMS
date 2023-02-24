@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoFileAttachmentOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_file_attachment_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoFileAttachmentOperation]
+CREATE PROCEDURE [dbo].[do_file_attachment_operation]
 /****************************************************
 **
 **  Desc:
@@ -18,14 +18,15 @@ CREATE PROCEDURE [dbo].[DoFileAttachmentOperation]
 **  Date:   09/05/2012
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
+    @id int,
     @mode varchar(12),                  -- Delete
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -41,7 +42,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoFileAttachmentOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_file_attachment_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -74,21 +75,21 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'DoFileAttachmentOperation'
+        Exec post_log_entry 'Error', @message, 'do_file_attachment_operation'
     END CATCH
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoFileAttachmentOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_file_attachment_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoFileAttachmentOperation] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_file_attachment_operation] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoFileAttachmentOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_file_attachment_operation] TO [DMS2_SP_User] AS [dbo]
 GO

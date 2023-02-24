@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RenameUser] ******/
+/****** Object:  StoredProcedure [dbo].[rename_user] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RenameUser]
+CREATE PROCEDURE [dbo].[rename_user]
 /****************************************************
 **
 **  Desc:   Renames a user in T_Users and other tracking tables
@@ -11,14 +11,15 @@ CREATE PROCEDURE [dbo].[RenameUser]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   10/31/2014 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @OldUserName varchar(50) = '',
-    @NewUserName varchar(32) = '',
+    @oldUserName varchar(50) = '',
+    @newUserName varchar(32) = '',
     @message varchar(512) = '' output,
     @infoOnly tinyint = 1
 )
@@ -33,7 +34,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'RenameUser', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'rename_user', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -174,5 +175,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RenameUser] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[rename_user] TO [DDL_Viewer] AS [dbo]
 GO

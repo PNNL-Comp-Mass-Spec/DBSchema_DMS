@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateJobProgress] ******/
+/****** Object:  StoredProcedure [dbo].[update_job_progress] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateJobProgress]
+CREATE PROCEDURE [dbo].[update_job_progress]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[UpdateJobProgress]
 **  Date:   09/01/2016 mem - Initial version
 **          10/30/2017 mem - Consider long-running job steps when computing Runtime_Predicted_Minutes
 **                         - Set progress to 0 for inactive jobs (state 13)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -310,5 +311,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateJobProgress] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_job_progress] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetMonthlyInstrumentUsageReport] ******/
+/****** Object:  StoredProcedure [dbo].[get_monthly_instrument_usage_report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
+CREATE PROCEDURE [dbo].[get_monthly_instrument_usage_report]
 /****************************************************
 **
 **  Desc:
@@ -27,7 +27,7 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **          09/18/2012 grk - Handle "Operator" and "PropUser" prorata comment fields
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          05/03/2019 mem - Add parameter @eusInstrumentId, which is sent to GetRunTrackingMonthlyInfoByID if non-zero
+**          05/03/2019 mem - Add parameter @eusInstrumentId, which is sent to get_run_tracking_monthly_info_by_id if non-zero
 **          04/17/2020 mem - Add defaults for parameters @eusInstrumentId and @message
 **                           Use Dataset_ID instead of ID
 **          04/27/2020 mem - Update data validation checks
@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[GetMonthlyInstrumentUsageReport]
 **          03/17/2022 mem - Update comments and whitespace
 **          05/27/2022 mem - Do not log year or month conversion errors to the database
 **                         - Validate @year, @month, and @outputFormat
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -190,7 +191,7 @@ AS
                    TRR.RDS_EUS_UsageType AS UsageID,
                    TEUT.Name AS [Usage],
                    1
-            FROM dbo.GetRunTrackingMonthlyInfoByID ( @eusInstrumentId, @year, @month, '' ) AS GRTMI
+            FROM dbo.get_run_tracking_monthly_info_by_id ( @eusInstrumentId, @year, @month, '' ) AS GRTMI
                  LEFT OUTER JOIN T_Requested_Run AS TRR
                    ON GRTMI.ID = TRR.DatasetID
                  INNER JOIN T_EUS_UsageType TEUT
@@ -220,7 +221,7 @@ AS
                    TRR.RDS_EUS_UsageType AS UsageID,
                    TEUT.Name AS [Usage],
                    1
-            FROM dbo.GetRunTrackingMonthlyInfo ( @instrument, @year, @month, '' ) AS GRTMI
+            FROM dbo.get_run_tracking_monthly_info ( @instrument, @year, @month, '' ) AS GRTMI
                  LEFT OUTER JOIN T_Requested_Run AS TRR
                    ON GRTMI.ID = TRR.DatasetID
                  INNER JOIN T_EUS_UsageType TEUT
@@ -560,7 +561,7 @@ AS
 
             -- Get operator user ID for datasets
             UPDATE #TR
-            SET Users = dbo.GetRequestedRunEUSUsersList(TRR.ID, 'I')
+            SET Users = dbo.get_requested_run_eus_users_list(TRR.ID, 'I')
             FROM #TR
                  INNER JOIN dbo.T_Requested_Run TRR
                    ON #TR.Dataset_ID = TRR.DatasetID
@@ -659,7 +660,7 @@ AS
     ---------------------------------------------------
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -667,14 +668,14 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'GetMonthlyInstrumentUsageReport'
+            Exec post_log_entry 'Error', @message, 'get_monthly_instrument_usage_report'
         End
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMonthlyInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_monthly_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetMonthlyInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_monthly_instrument_usage_report] TO [DMS2_SP_User] AS [dbo]
 GO

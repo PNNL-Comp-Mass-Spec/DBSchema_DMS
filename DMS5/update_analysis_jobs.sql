@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobs] ******/
+/****** Object:  StoredProcedure [dbo].[update_analysis_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
+CREATE PROCEDURE [dbo].[update_analysis_jobs]
 /****************************************************
 **
 **  Desc:
@@ -24,9 +24,9 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
 **          03/02/2007 grk - add @associatedProcessorGroup (ticket #393)
 **          03/18/2007 grk - make @associatedProcessorGroup viable for reset mode (ticket #418)
 **          05/07/2007 grk - corrected spelling of sproc name
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user_multi_id (Ticket #644)
 **          03/14/2008 grk - Fixed problem with null arguments (Ticket #655)
-**          04/09/2008 mem - Now calling AlterEnteredByUserMultiID if the jobs are associated with a processor group
+**          04/09/2008 mem - Now calling alter_entered_by_user_multi_id if the jobs are associated with a processor group
 **          07/11/2008 jds - Added 5 new fields (@paramFileName, @settingsFileName, @organismID, @protCollNameList, @protCollOptionsList)
 **                           and code to validate param file settings file against tool type
 **          10/06/2008 mem - Now updating parameter file name, settings file name, protein collection list, protein options list, and organism when a job is reset (for any of these that are not '[no change]')
@@ -37,19 +37,20 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobs]
 **          03/12/2009 grk - Removed [no change] from @associatedProcessorGroup to allow dissasociation of jobs with groups
 **          07/16/2009 mem - Added missing rollback transaction statements when verifying @associatedProcessorGroup
 **          09/16/2009 mem - Expanded @JobList to varchar(max)
-**                         - Now calls UpdateAnalysisJobsWork to do the work
+**                         - Now calls update_analysis_jobs_work to do the work
 **          08/19/2010 grk - try-catch for error handling
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobList varchar(max),
+    @jobList varchar(max),
     @state varchar(32) = '[no change]',
     @priority varchar(12) = '[no change]',
     @comment varchar(512) = '[no change]',          -- Text to append to the comment
@@ -85,7 +86,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateAnalysisJobs', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_analysis_jobs', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -126,7 +127,7 @@ AS
     INSERT INTO #TAJ
     (Job)
     SELECT DISTINCT Convert(int, Item)
-    FROM MakeTableFromList(@JobList)
+    FROM make_table_from_list(@JobList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -139,11 +140,11 @@ AS
     Set @JobCount = @myRowCount
 
     ---------------------------------------------------
-    -- Call UpdateAnalysisJobs to do the work
+    -- Call update_analysis_jobs to do the work
     -- It uses #TAJ to determine which jobs to update
     ---------------------------------------------------
 
-    exec @myError = UpdateAnalysisJobsWork
+    exec @myError = update_analysis_jobs_work
                         @state,
                         @priority,
                         @comment,
@@ -167,13 +168,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateAnalysisJobs'
+        Exec post_log_entry 'Error', @message, 'update_analysis_jobs'
     END CATCH
 
     ---------------------------------------------------
@@ -182,16 +183,16 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = Convert(varchar(12), @JobCount) + ' jobs updated'
-    Exec PostUsageLogEntry 'UpdateAnalysisJobs', @UsageMessage
+    Exec post_usage_log_entry 'update_analysis_jobs', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_analysis_jobs] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_jobs] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobs] TO [RBAC-Web_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_analysis_jobs] TO [RBAC-Web_Analysis] AS [dbo]
 GO

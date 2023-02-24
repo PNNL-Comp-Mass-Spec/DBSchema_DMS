@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedJobRequestExistingJobs] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_job_request_existing_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedJobRequestExistingJobs]
+CREATE PROCEDURE [dbo].[update_cached_job_request_existing_jobs]
 /****************************************************
 **
 **  Desc:   Updates T_Analysis_Job_Request_Existing_Jobs
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedJobRequestExistingJobs]
 **  Date:   07/30/2019 mem - Initial version
 **          07/31/2019 mem - Add option to find existing job requests that match jobs created within the last @jobSearchHours
 **          06/25/2021 mem - Fix bug comparing legacy organism DB name in T_Analysis_Job to T_Analysis_Job_Request_Datasets
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -70,7 +71,7 @@ AS
         Begin
             MERGE T_Analysis_Job_Request_Existing_Jobs AS t
             USING (SELECT DISTINCT @requestId As Request_ID, Job
-                   FROM GetExistingJobsMatchingJobRequest(@requestId)) as s
+                   FROM get_existing_jobs_matching_job_request(@requestId)) as s
             ON (t.Request_ID = s.Request_ID AND t.Job = s.Job)
             -- Note: all of the columns in table T_Analysis_Job_Request_Existing_Jobs are primary keys or identity columns; there are no updatable columns
             WHEN NOT MATCHED BY TARGET THEN
@@ -190,7 +191,7 @@ AS
                 Begin -- <d>
                     MERGE T_Analysis_Job_Request_Existing_Jobs AS t
                     USING (SELECT DISTINCT @currentRequestId As Request_ID, Job
-                           FROM GetExistingJobsMatchingJobRequest(@currentRequestId)) as s
+                           FROM get_existing_jobs_matching_job_request(@currentRequestId)) as s
                     ON (t.Request_ID = s.Request_ID AND t.Job = s.Job)
                     WHEN NOT MATCHED BY TARGET THEN
                         INSERT(Request_ID, Job)
@@ -209,13 +210,13 @@ AS
             If @jobRequestsAdded > 0
             Begin
                 Set @message = Convert(varchar(12), @jobRequestsAdded) +
-                               dbo.CheckPlural(@jobRequestsAdded, ' job request was added', ' job requests were added')
+                               dbo.check_plural(@jobRequestsAdded, ' job request was added', ' job requests were added')
             End
 
             If @jobRequestsUpdated > 0
             Begin
-                Set @message = dbo.AppendToText(@message, Convert(varchar(12), @jobRequestsUpdated) +
-                                                dbo.CheckPlural(@jobRequestsUpdated, ' job request was updated', ' job requests were updated') + ' via a merge',
+                Set @message = dbo.append_to_text(@message, Convert(varchar(12), @jobRequestsUpdated) +
+                                                dbo.check_plural(@jobRequestsUpdated, ' job request was updated', ' job requests were updated') + ' via a merge',
                                                 0, '; ', 512)
             End
         End -- </b>
@@ -262,7 +263,7 @@ AS
             --
             INSERT INTO T_Analysis_Job_Request_Existing_Jobs( Request_ID, Job )
             SELECT DISTINCT LookupQ.Request_ID,
-                            GetExistingJobsMatchingJobRequest.Job
+                            get_existing_jobs_matching_job_request.Job
             FROM ( SELECT AJR.AJR_requestID AS Request_ID
                    FROM T_Analysis_Job_Request AJR
                         LEFT OUTER JOIN T_Analysis_Job_Request_Existing_Jobs CachedJobs
@@ -271,14 +272,14 @@ AS
                          AJR.AJR_created > DateAdd(Day, -30, GetDate()) AND
                          CachedJobs.Request_ID IS NULL
                  ) LookupQ
-                 CROSS APPLY GetExistingJobsMatchingJobRequest ( LookupQ.Request_ID )
+                 CROSS APPLY get_existing_jobs_matching_job_request ( LookupQ.Request_ID )
             ORDER BY LookupQ.Request_ID, Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount > 0
             Begin
-                Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new analysis job ' + dbo.CheckPlural(@myRowCount, 'request', 'requests')
+                Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new analysis job ' + dbo.check_plural(@myRowCount, 'request', 'requests')
             End
         End
 
@@ -321,7 +322,7 @@ AS
             --
             MERGE T_Analysis_Job_Request_Existing_Jobs AS t
             USING (SELECT DISTINCT AJR.AJR_requestID As Request_ID, MatchingJobs.Job
-                    FROM T_Analysis_Job_Request AJR CROSS APPLY GetExistingJobsMatchingJobRequest(AJR.AJR_requestID) MatchingJobs
+                    FROM T_Analysis_Job_Request AJR CROSS APPLY get_existing_jobs_matching_job_request(AJR.AJR_requestID) MatchingJobs
                     WHERE AJR.AJR_requestID > 1) as s
             ON (t.Request_ID = s.Request_ID AND t.Job = s.Job)
             WHEN NOT MATCHED BY TARGET THEN
@@ -334,22 +335,22 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = Convert(varchar(12), @myRowCount) +
-                               dbo.CheckPlural(@myRowCount, ' job request was updated', ' job requests were updated') + ' via a merge'
+                               dbo.check_plural(@myRowCount, ' job request was updated', ' job requests were updated') + ' via a merge'
             End
         End
 
     End -- </a4>
 
 Done:
-    -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedJobRequestExistingJobs'
+    -- Exec post_log_entry 'Debug', @message, 'update_cached_job_request_existing_jobs'
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedJobRequestExistingJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_job_request_existing_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedJobRequestExistingJobs] TO [DMS_DS_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_job_request_existing_jobs] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedJobRequestExistingJobs] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_job_request_existing_jobs] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedJobRequestExistingJobs] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_job_request_existing_jobs] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[RebuildDMSDBIndices] ******/
+/****** Object:  StoredProcedure [dbo].[rebuild_dms_db_indices] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RebuildDMSDBIndices]
+CREATE PROCEDURE [dbo].[rebuild_dms_db_indices]
 /****************************************************
 **
-**  Desc:   Calls RebuildFragmentedIndices or dba_indexDefrag_sp in a series of DMS databases
+**  Desc:   Calls rebuild_fragmented_indices or dba_indexDefrag_sp in a series of DMS databases
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -14,20 +14,21 @@ CREATE PROCEDURE [dbo].[RebuildDMSDBIndices]
 **
 **  Auth:   mem
 **  Date:   10/15/2012
-**          07/17/2014 mem - Updated call to RebuildFragmentedIndices
+**          07/17/2014 mem - Updated call to rebuild_fragmented_indices
 **          03/17/2016 mem - Added new parameters:
 **                              @PercentFreeSpace; ignored if 0 or 100 (note that FillFactor is 100 - @PercentFreeSpace so when @PercentFreeSpace is 10, FillFactor is 90)
 **                              @MinFragmentation; will reorganize indices with fragmentation over this threshold but below @MaxFragmentation
-**                         - Now preferentially uses stored procedure dba_indexDefrag_sp in the dba database instead of RebuildFragmentedIndices
+**                         - Now preferentially uses stored procedure dba_indexDefrag_sp in the dba database instead of rebuild_fragmented_indices
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DBNameMatchList varchar(2048) = 'DMS5,DMS_Capture,DMS_Data_Package,DMS_Pipeline',      -- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Use % to process every database on the server (skips DBs that don't have RebuildFragmentedIndices).  Leave blank to ignore this parameter
-    @MinFragmentation int = 5,          -- Indices with a fragmentation value between @MinFragmentation and @MaxFragmentation are reorganized
-    @MaxFragmentation int = 25,         -- Indices with fragmentation values over this threshold are rebuilt
-    @TrivialPageCount int = 8,          -- Microsoft recommends ignoring indices less than 8 pages in length (8 pages is one extent); thus this should be 8 or larger
-    @PercentFreeSpace int = 10,         -- Used to define FillFactor; @PercentFreeSpace=10 means FillFactor = 90; ignored if 0 or 100
-    @InfoOnly tinyint = 1,              -- Set to 1 to display the SQL that would be run
+    @dbNameMatchList varchar(2048) = 'DMS5,DMS_Capture,DMS_Data_Package,DMS_Pipeline',      -- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Use % to process every database on the server (skips DBs that don't have rebuild_fragmented_indices).  Leave blank to ignore this parameter
+    @minFragmentation int = 5,          -- Indices with a fragmentation value between @MinFragmentation and @MaxFragmentation are reorganized
+    @maxFragmentation int = 25,         -- Indices with fragmentation values over this threshold are rebuilt
+    @trivialPageCount int = 8,          -- Microsoft recommends ignoring indices less than 8 pages in length (8 pages is one extent); thus this should be 8 or larger
+    @percentFreeSpace int = 10,         -- Used to define FillFactor; @PercentFreeSpace=10 means FillFactor = 90; ignored if 0 or 100
+    @infoOnly tinyint = 1,              -- Set to 1 to display the SQL that would be run
     @message varchar(255) = '' OUTPUT
 )
 AS
@@ -176,7 +177,7 @@ AS
     ---------------------------------------
 
     Declare @UseDbaIndexDefrag tinyint = 0
-    Declare @defragProcedureName varchar(32) = 'RebuildFragmentedIndices'
+    Declare @defragProcedureName varchar(32) = 'rebuild_fragmented_indices'
 
     If Exists (Select * from sys.databases where [name] = 'dba')
     Begin
@@ -194,7 +195,7 @@ AS
             If @InfoOnly <> 0
                 Print 'Warning: Stored procedure dba_indexDefrag_sp not found in the dba database'
             Else
-                Exec PostLogEntry 'Error', 'Stored procedure dba_indexDefrag_sp not found in the dba database', 'RebuildDMSDBIndices'
+                Exec post_log_entry 'Error', 'Stored procedure dba_indexDefrag_sp not found in the dba database', 'rebuild_dms_db_indices'
         End
         Else
         Begin
@@ -207,7 +208,7 @@ AS
         If @InfoOnly <> 0
             Print 'dba database not found; cannot use dba_indexDefrag_sp'
         Else
-            Exec PostLogEntry 'Error', 'dba database not found; cannot use dba_indexDefrag_sp', 'RebuildDMSDBIndices'
+            Exec post_log_entry 'Error', 'dba database not found; cannot use dba_indexDefrag_sp', 'rebuild_dms_db_indices'
     End
 
     ---------------------------------------
@@ -221,12 +222,12 @@ AS
     If @myRowCount >= 4 And @InfoOnly = 0
     Begin
         Set @LogMsg = 'Calling ' + @defragProcedureName + ' for ' + Convert(varchar(12), @myRowCount) + ' databases'
-        Exec PostLogEntry 'Progress', @LogMsg, 'RebuildDMSDBIndices'
+        Exec post_log_entry 'Progress', @LogMsg, 'rebuild_dms_db_indices'
     End
 
     ---------------------------------------
     -- Loop through the databases in #Tmp_DB_List
-    -- and call dba_indexDefrag_sp or RebuildFragmentedIndices for each
+    -- and call dba_indexDefrag_sp or rebuild_fragmented_indices for each
     ---------------------------------------
     --
     Set @continue = 1
@@ -252,8 +253,8 @@ AS
 
             If @UseDbaIndexDefrag = 0
             Begin
-                -- Make sure the database contains stored procedure RebuildFragmentedIndices
-                Set @Sql = 'SELECT @MatchCount = COUNT(*) FROM [' + @DBName + '].Sys.Procedures WHERE Name = ''RebuildFragmentedIndices'''
+                -- Make sure the database contains stored procedure rebuild_fragmented_indices
+                Set @Sql = 'SELECT @MatchCount = COUNT(*) FROM [' + @DBName + '].Sys.Procedures WHERE Name = ''rebuild_fragmented_indices'''
                 Set @SqlParams = '@MatchCount int output'
                 Set @MatchCount = 0
 
@@ -262,7 +263,7 @@ AS
                 If @MatchCount = 0
                 Begin
                     If @InfoOnly <> 0
-                        Print 'Warning: Skipping ' + @DBName + ' since procedure RebuildFragmentedIndices not found'
+                        Print 'Warning: Skipping ' + @DBName + ' since procedure rebuild_fragmented_indices not found'
 
                     Set @DBSkipCount = @DBSkipCount + 1
                     Set @skipThisDB = 1
@@ -272,7 +273,7 @@ AS
             If @skipThisDB = 0
             Begin
                 If @UseDbaIndexDefrag = 0
-                    Set @LogMsg = 'Calling [' + @DBName + '].dbo.RebuildFragmentedIndices'
+                    Set @LogMsg = 'Calling [' + @DBName + '].dbo.rebuild_fragmented_indices'
                 Else
                     Set @LogMsg = 'Calling dba..dba_indexDefrag_sp for database ' +  @DBName
 
@@ -282,12 +283,12 @@ AS
                 If DateDiff(minute, @LastLogTime, GetUTCDate()) >= 5
                 Begin
                     Set @LastLogTime = GetUTCDate()
-                    Exec PostLogEntry 'Progress', @LogMsg, 'RebuildMTSDBIndices'
+                    Exec post_log_entry 'Progress', @LogMsg, 'RebuildMTSDBIndices'
                 End
 
                 If @UseDbaIndexDefrag = 0
                 Begin
-                    Set @Sql = 'exec [' + @DBName + '].dbo.RebuildFragmentedIndices @MaxFragmentation, @TrivialPageCount, @PercentFreeSpace, @VerifyUpdateEnabled, @infoOnly, @message output'
+                    Set @Sql = 'exec [' + @DBName + '].dbo.rebuild_fragmented_indices @MaxFragmentation, @TrivialPageCount, @PercentFreeSpace, @VerifyUpdateEnabled, @infoOnly, @message output'
                     Set @SqlParams = '@MaxFragmentation int, @TrivialPageCount int, @PercentFreeSpace int, @VerifyUpdateEnabled tinyint, @infoOnly tinyint, @message varchar(1024) output'
                     Set @message = ''
 
@@ -343,14 +344,14 @@ AS
                 Begin
                     If @UseDbaIndexDefrag = 0
                     Begin
-                        Set @LogMsg = 'Error calling RebuildFragmentedIndices in ' + @DBName
+                        Set @LogMsg = 'Error calling rebuild_fragmented_indices in ' + @DBName
                         If IsNull(@message, '') <> ''
                             Set @LogMsg = @LogMsg + ': ' + @message
                     End
                     Else
                         Set @LogMsg = 'Error calling dba..dba_indexDefrag_sp for ' + @DBName
 
-                    Exec PostLogEntry 'Error', @LogMsg, 'RebuildDMSDBIndices'
+                    Exec post_log_entry 'Error', @LogMsg, 'rebuild_dms_db_indices'
 
                 End
 
@@ -390,7 +391,7 @@ AS
     If @InfoOnly = 0
     Begin
         If @DBProcessCount > 0
-            Exec PostLogEntry 'Normal', @message, 'RebuildDMSDBIndices'
+            Exec post_log_entry 'Normal', @message, 'rebuild_dms_db_indices'
     End
     Else
         SELECT @Message As TheMessage
@@ -402,5 +403,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RebuildDMSDBIndices] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[rebuild_dms_db_indices] TO [DDL_Viewer] AS [dbo]
 GO

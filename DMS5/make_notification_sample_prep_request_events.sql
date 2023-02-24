@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNotificationSamplePrepRequestEvents] ******/
+/****** Object:  StoredProcedure [dbo].[make_notification_sample_prep_request_events] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeNotificationSamplePrepRequestEvents]
+CREATE PROCEDURE [dbo].[make_notification_sample_prep_request_events]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[MakeNotificationSamplePrepRequestEvents]
 **
 **  Auth:   grk
 **  Date:   03/30/2010
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -121,7 +122,7 @@ AS
         AND Entered < @window
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_notification_sample_prep_request_events] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationSamplePrepRequestEvents] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_notification_sample_prep_request_events] TO [Limited_Table_Write] AS [dbo]
 GO

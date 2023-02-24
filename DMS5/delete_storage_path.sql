@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteStoragePath] ******/
+/****** Object:  StoredProcedure [dbo].[delete_storage_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteStoragePath]
+CREATE PROCEDURE [dbo].[delete_storage_path]
 /****************************************************
 **
 **  Desc:
@@ -14,8 +14,9 @@ CREATE PROCEDURE [dbo].[DeleteStoragePath]
 **
 **  Auth:   grk
 **  Date:   03/14/2006
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -37,7 +38,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteStoragePath', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_storage_path', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -85,7 +86,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteStoragePath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_storage_path] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteStoragePath] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_storage_path] TO [Limited_Table_Write] AS [dbo]
 GO

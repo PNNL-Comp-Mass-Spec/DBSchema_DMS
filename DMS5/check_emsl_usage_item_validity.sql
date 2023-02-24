@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[CheckEMSLUsageItemValidity] ******/
+/****** Object:  UserDefinedFunction [dbo].[check_emsl_usage_item_validity] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
+CREATE FUNCTION [dbo].[check_emsl_usage_item_validity]
 /****************************************************
 **
 **  Desc:
@@ -23,10 +23,11 @@ CREATE FUNCTION [dbo].[CheckEMSLUsageItemValidity]
 **          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Seq int
+    @seq int
 )
 RETURNS varchar(4096)
 AS
@@ -136,5 +137,5 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckEMSLUsageItemValidity] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_emsl_usage_item_validity] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostUsageLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[post_usage_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PostUsageLogEntry]
+CREATE PROCEDURE [dbo].[post_usage_log_entry]
 /****************************************************
 **
 **  Desc: Put new entry into T_Usage_Log and update T_Usage_Stats
@@ -14,12 +14,13 @@ CREATE PROCEDURE [dbo].[PostUsageLogEntry]
 **
 **  Auth:   mem
 **  Date:   09/02/2011 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @postedBy varchar(255),                 -- Stored procedure name
     @message varchar(500) = '',
-    @MinimumUpdateInterval int = 24         -- Set to a value greater than 0 to limit the entries to occur at most every @MinimumUpdateInterval hours
+    @minimumUpdateInterval int = 24         -- Set to a value greater than 0 to limit the entries to occur at most every @MinimumUpdateInterval hours
 )
 AS
     set nocount on
@@ -80,24 +81,24 @@ AS
         if @myRowCount <> 1 Or @myError <> 0
         begin
             Set @message = 'Update was unsuccessful for T_Usage_Log table: @myRowCount = ' + Convert(varchar(19), @myRowCount) + '; @myError = ' + Convert(varchar(19), @myError)
-            execute PostLogEntry 'Error', @message, 'PostUsageLogEntry'
+            execute post_log_entry 'Error', @message, 'post_usage_log_entry'
         end
     End
 
     RETURN 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PostUsageLogEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[post_usage_log_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_usage_log_entry] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Archive_Restore] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_usage_log_entry] TO [DMS_Archive_Restore] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_usage_log_entry] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_usage_log_entry] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_usage_log_entry] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostUsageLogEntry] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_usage_log_entry] TO [svc-dms] AS [dbo]
 GO

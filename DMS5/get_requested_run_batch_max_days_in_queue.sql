@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetRequestedRunBatchMaxDaysInQueue] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_requested_run_batch_max_days_in_queue] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetRequestedRunBatchMaxDaysInQueue]
+CREATE FUNCTION [dbo].[get_requested_run_batch_max_days_in_queue]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[GetRequestedRunBatchMaxDaysInQueue]
 **
 **  Auth:   mem
 **  Date:   02/10/2023 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -35,5 +36,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunBatchMaxDaysInQueue] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_batch_max_days_in_queue] TO [DDL_Viewer] AS [dbo]
 GO

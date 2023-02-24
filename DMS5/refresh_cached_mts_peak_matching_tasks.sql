@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RefreshCachedMTSPeakMatchingTasks] ******/
+/****** Object:  StoredProcedure [dbo].[refresh_cached_mts_peak_matching_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RefreshCachedMTSPeakMatchingTasks]
+CREATE PROCEDURE [dbo].[refresh_cached_mts_peak_matching_tasks]
 /****************************************************
 **
 **  Desc:  Updates the data in T_MTS_Peak_Matching_Tasks_Cached using MTS
@@ -20,11 +20,12 @@ CREATE PROCEDURE [dbo].[RefreshCachedMTSPeakMatchingTasks]
 **          08/09/2013 mem - Now populating MassErrorPPM_VIPER and AMTs_10pct_FDR in T_Dataset_QC using Refine_Mass_Cal_PPMShift
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          01/12/2007 mem - Populate AMTs_25pct_FDR to T_Dataset_QC
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobMinimum int = 0,        -- Set to a positive value to limit the jobs examined; when non-zero, then jobs outside this range are ignored
-    @JobMaximum int = 0,
+    @jobMinimum int = 0,        -- Set to a positive value to limit the jobs examined; when non-zero, then jobs outside this range are ignored
+    @jobMaximum int = 0,
     @message varchar(255) = '' output
 )
 AS
@@ -90,7 +91,7 @@ AS
 
         Set @CurrentLocation = 'Update T_MTS_Cached_Data_Status'
         --
-        Exec UpdateMTSCachedDataStatus 'T_MTS_Peak_Matching_Tasks_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = @JobMinimum
+        Exec update_mts_cached_data_status 'T_MTS_Peak_Matching_Tasks_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = @JobMinimum
 
 
 
@@ -226,7 +227,7 @@ AS
         if @myError <> 0
         begin
             set @message = 'Error merging S_MTS_Peak_Matching_Tasks with T_MTS_Peak_Matching_Tasks_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'RefreshCachedMTSPeakMatchingTasks'
+            execute post_log_entry 'Error', @message, 'refresh_cached_mts_peak_matching_tasks'
             goto Done
         end
 
@@ -282,7 +283,7 @@ AS
         Set @CurrentLocation = 'Update stats in T_MTS_Cached_Data_Status'
         --
         --
-        Exec UpdateMTSCachedDataStatus 'T_MTS_Peak_Matching_Tasks_Cached',
+        Exec update_mts_cached_data_status 'T_MTS_Peak_Matching_Tasks_Cached',
                                             @IncrementRefreshCount = 1,
                                             @InsertCountNew = @MergeInsertCount,
                                             @UpdateCountNew = @MergeUpdateCount,
@@ -294,7 +295,7 @@ AS
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTSAnalysisJobInfo')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -303,9 +304,9 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSPeakMatchingTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mts_peak_matching_tasks] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSPeakMatchingTasks] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mts_peak_matching_tasks] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RefreshCachedMTSPeakMatchingTasks] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[refresh_cached_mts_peak_matching_tasks] TO [PNL\D3M578] AS [dbo]
 GO

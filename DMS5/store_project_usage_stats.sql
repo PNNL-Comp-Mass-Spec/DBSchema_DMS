@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreProjectUsageStats] ******/
+/****** Object:  StoredProcedure [dbo].[store_project_usage_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreProjectUsageStats]
+CREATE PROCEDURE [dbo].[store_project_usage_stats]
 /****************************************************
 **
 **  Desc:
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[StoreProjectUsageStats]
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
 **          05/18/2022 mem - Add Capacity, Partner, and Staff Time proposal types
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -397,5 +398,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreProjectUsageStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[store_project_usage_stats] TO [DDL_Viewer] AS [dbo]
 GO

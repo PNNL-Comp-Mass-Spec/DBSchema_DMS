@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoDatasetOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_dataset_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoDatasetOperation]
+CREATE PROCEDURE [dbo].[do_dataset_operation]
 /****************************************************
 **
 **  Desc:   Perform dataset operation defined by 'mode'
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[DoDatasetOperation]
 **          05/05/2005 grk - removed default value from mode
 **          03/24/2006 grk - added "restore" mode
 **          09/15/2006 grk - repair "restore" mode
-**          03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          07/15/2008 jds - Added "delete_all" mode (Ticket #644) - deletes a dataset without any restrictions
 **          08/19/2010 grk - try-catch for error handling
 **          05/25/2011 mem - Fixed bug that reported "mode was unrecognized" for valid modes
@@ -28,15 +28,16 @@ CREATE PROCEDURE [dbo].[DoDatasetOperation]
 **                           (duplicate jobs are not created)
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/04/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/03/2017 mem - Allow resetting a dataset if DatasetIntegrity failed
-**          08/08/2017 mem - Use function RemoveCaptureErrorsFromString to remove common dataset capture errors when resetting a dataset
-**          09/07/2018 mem - Remove mode 'delete_all'; if you need to delete a dataset, manually call stored procedure DeleteDataset
+**          08/08/2017 mem - Use function remove_capture_errors_from_string to remove common dataset capture errors when resetting a dataset
+**          09/07/2018 mem - Remove mode 'delete_all'; if you need to delete a dataset, manually call stored procedure delete_dataset
 **                         - Rename @datasetNum to @datasetNameOrID
-**          09/27/2018 mem - Use named parameter names when calling DeleteDataset
-**          11/16/2018 mem - Pass @infoOnly to DeleteDataset
+**          09/27/2018 mem - Use named parameter names when calling delete_dataset
+**          11/16/2018 mem - Pass @infoOnly to delete_dataset
 **          02/01/2023 mem - Use new synonym names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoDatasetOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_dataset_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -208,7 +209,7 @@ AS
         -- Delete the dataset
         ---------------------------------------------------
 
-        execute @result = DeleteDataset @datasetName, @infoOnly=0, @message = @message output, @callingUser = @callingUser
+        execute @result = delete_dataset @datasetName, @infoOnly=0, @message = @message output, @callingUser = @callingUser
         --
         If @result <> 0
         Begin
@@ -255,7 +256,7 @@ AS
                     Else
                         Set @logMsg = @msg + '; user ' + @callingUser
 
-                    Exec PostLogEntry 'Error', @logMsg, 'DoDatasetOperation'
+                    Exec post_log_entry 'Error', @logMsg, 'do_dataset_operation'
 
                     Set @msg = @msg + '; please contact a system administrator for further assistance'
                 End
@@ -267,7 +268,7 @@ AS
                     Else
                         Set @msg = @msg + '; user ' + @callingUser
 
-                    Exec PostLogEntry 'Warning', @msg, 'DoDatasetOperation'
+                    Exec post_log_entry 'Warning', @msg, 'do_dataset_operation'
                 End
 
             End
@@ -289,7 +290,7 @@ AS
 
         UPDATE T_Dataset
         SET DS_state_ID = @NewState,
-            DS_Comment = dbo.RemoveCaptureErrorsFromString(DS_Comment)
+            DS_Comment = dbo.remove_capture_errors_from_string(DS_Comment)
         WHERE Dataset_ID = @datasetID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -300,9 +301,9 @@ AS
             RAISERROR (@msg, 11, 6)
         End
 
-        -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 4, @datasetID, @NewState, @callingUser
+            Exec alter_event_log_entry_user 4, @datasetID, @NewState, @callingUser
 
         set @ValidMode = 1
 
@@ -321,7 +322,7 @@ AS
 
     END TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -330,18 +331,18 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Dataset ' + @datasetNameOrID
-            Exec PostLogEntry 'Error', @logMessage, 'DoDatasetOperation'
+            Exec post_log_entry 'Error', @logMessage, 'do_dataset_operation'
         End
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoDatasetOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_dataset_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoDatasetOperation] TO [DMS_DS_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_dataset_operation] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoDatasetOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_dataset_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoDatasetOperation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_dataset_operation] TO [Limited_Table_Write] AS [dbo]
 GO

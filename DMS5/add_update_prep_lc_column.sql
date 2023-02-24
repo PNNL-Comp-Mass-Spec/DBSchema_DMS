@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdatePrepLCColumn] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_prep_lc_column] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdatePrepLCColumn]
+CREATE PROCEDURE [dbo].[add_update_prep_lc_column]
 /****************************************************
 **
 **  Desc:
@@ -11,28 +11,29 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCColumn]
 **
 **  Auth:   grk
 **  Date:   07/29/2009 grk - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          04/11/2022 mem - Check for whitespace in @ColumnName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @ColumnName varchar(128),
-    @MfgName varchar(128),
-    @MfgModel varchar(128),
-    @MfgSerialNumber varchar(64),
-    @PackingMfg varchar(64),
-    @PackingType varchar(64),
-    @Particlesize varchar(64),
-    @Particletype varchar(64),
-    @ColumnInnerDia varchar(64),
-    @ColumnOuterDia varchar(64),
-    @Length varchar(64),
-    @State varchar(32),
-    @OperatorPRN varchar(50),
-    @Comment varchar(244),
+    @columnName varchar(128),
+    @mfgName varchar(128),
+    @mfgModel varchar(128),
+    @mfgSerialNumber varchar(64),
+    @packingMfg varchar(64),
+    @packingType varchar(64),
+    @particlesize varchar(64),
+    @particletype varchar(64),
+    @columnInnerDia varchar(64),
+    @columnOuterDia varchar(64),
+    @length varchar(64),
+    @state varchar(32),
+    @operatorUsername varchar(50),
+    @comment varchar(244),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -50,7 +51,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdatePrepLCColumn', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_prep_lc_column', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -63,7 +64,7 @@ AS
         RAISERROR ('Column name was blank', 11, 1)
     End
 
-    If dbo.udfWhitespaceChars(@ColumnName, 0) > 0
+    If dbo.whitespace_chars(@ColumnName, 0) > 0
     Begin
         If CharIndex(Char(9), @ColumnName) > 0
             RAISERROR ('Column name cannot contain tabs', 11, 116)
@@ -138,7 +139,7 @@ AS
             @ColumnOuterDia,
             @Length,
             @State,
-            @OperatorPRN,
+            @operatorUsername,
             @Comment
         )
         --
@@ -174,7 +175,7 @@ AS
             Column_Outer_Dia = @ColumnOuterDia,
             Length = @Length,
             State = @State,
-            Operator_PRN = @OperatorPRN,
+            Operator_PRN = @operatorUsername,
             Comment = @Comment
         WHERE
             Column_Name = @ColumnName
@@ -192,11 +193,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCColumn] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_prep_lc_column] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePrepLCColumn] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_prep_lc_column] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePrepLCColumn] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_prep_lc_column] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCColumn] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_prep_lc_column] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetInterval] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_interval] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
+CREATE PROCEDURE [dbo].[update_dataset_interval]
 /****************************************************
 **
 **  Desc:
@@ -26,9 +26,10 @@ CREATE PROCEDURE [dbo].[UpdateDatasetInterval]
 **          11/19/2013 mem - Now updating Interval_to_Next_DS in T_Dataset only if the newly computed interval differs from the stored interval
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/03/2019 mem - Use EUS_Instrument_ID for DMS instruments that share a single eusInstrumentId
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -47,14 +48,14 @@ AS
     set @message = ''
     Set @infoOnly = IsNull(@infoOnly, 0)
 
-    Declare @maxNormalInterval int = dbo.GetLongIntervalThreshold()
+    Declare @maxNormalInterval int = dbo.get_long_interval_threshold()
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetInterval', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_interval', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -248,7 +249,7 @@ AS
             -- Start a transaction
             ---------------------------------------------------
 
-            Declare @transName varchar(32) = 'UpdateDatasetInterval'
+            Declare @transName varchar(32) = 'update_dataset_interval'
 
             BEGIN TRANSACTION @transName
 
@@ -308,13 +309,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateDatasetInterval'
+        Exec post_log_entry 'Error', @message, 'update_dataset_interval'
     END CATCH
 
     If @infoOnly <> 0 and @myError <> 0
@@ -323,5 +324,5 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetInterval] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_interval] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoAddChargeCodeUsers] ******/
+/****** Object:  StoredProcedure [dbo].[auto_add_charge_code_users] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoAddChargeCodeUsers]
+CREATE PROCEDURE [dbo].[auto_add_charge_code_users]
 /****************************************************
 **
 **  Desc:   Examines the responsible user for active Charge_Codes with one or more sample prep requests or requested runs
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[AutoAddChargeCodeUsers]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/17/2022 mem - Tabs to spaces
 **          02/08/2023 bcg - Update view column name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -104,14 +105,14 @@ AS
                 begin
                     set @message = 'Error auto-adding new users'
 
-                    Exec PostLogEntry 'Error', @message, 'AutoAddChargeCodeUsers'
+                    Exec post_log_entry 'Error', @message, 'auto_add_charge_code_users'
                     return 51100
                 end
 
                 If @myRowCount > 0
                 Begin
-                    Set @message = 'Auto added ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' user', ' users') + ' to T_Users since they are associated with charge codes used by DMS'
-                    Exec PostLogEntry 'Normal', @message, 'AutoAddChargeCodeUsers'
+                    Set @message = 'Auto added ' + Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' user', ' users') + ' to T_Users since they are associated with charge codes used by DMS'
+                    Exec post_log_entry 'Normal', @message, 'auto_add_charge_code_users'
                 End
 
 
@@ -136,7 +137,7 @@ AS
                 If IsNull(@OperationID, 0) = 0
                 Begin
                     Set @message = 'User operation DMS_Guest not found in T_User_Operations'
-                    Exec PostLogEntry 'Error', @message, 'AutoAddChargeCodeUsers'
+                    Exec post_log_entry 'Error', @message, 'auto_add_charge_code_users'
                 End
                 Begin
                     INSERT INTO T_User_Operations_Permissions (U_ID, Op_ID)
@@ -158,17 +159,17 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AutoAddChargeCodeUsers'
+        Exec post_log_entry 'Error', @message, 'auto_add_charge_code_users'
     END CATCH
 
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoAddChargeCodeUsers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_add_charge_code_users] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetExperimentPlexMembersForEntry] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_experiment_plex_members_for_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetExperimentPlexMembersForEntry]
+CREATE FUNCTION [dbo].[get_experiment_plex_members_for_entry]
 /****************************************************
 **
 **  Desc:   Builds delimited list of experiment plex members for a given experiment plex
@@ -11,6 +11,7 @@ CREATE FUNCTION [dbo].[GetExperimentPlexMembersForEntry]
 **  Auth:   mem
 **  Date:   11/09/2018 mem
 **          11/19/2018 mem - Update column name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

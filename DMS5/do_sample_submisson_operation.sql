@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoSampleSubmissonOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_sample_submisson_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoSampleSubmissonOperation]
+CREATE PROCEDURE [dbo].[do_sample_submisson_operation]
 /****************************************************
 **
 **  Desc:
@@ -17,16 +17,17 @@ CREATE PROCEDURE [dbo].[DoSampleSubmissonOperation]
 **  Date:   05/07/2010 grk - initial release
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
-**                         - Add call to PostUsageLogEntry
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
+**                         - Add call to post_usage_log_entry
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/12/2023 mem - Remove call to CallSendMessage since it was deprecated in 2016
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
+    @id int,
     @mode varchar(12),                    -- 'make_folder'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -44,7 +45,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoSampleSubmissonOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_sample_submisson_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -95,9 +96,9 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
-        Exec PostLogEntry 'Error', @message, 'DoSampleSubmissonOperation'
+        Exec post_log_entry 'Error', @message, 'do_sample_submisson_operation'
     END CATCH
 
     ---------------------------------------------------
@@ -111,15 +112,15 @@ AS
 
         Set @UsageMessage = @UsageMessage + '; user ' + IsNull(@callingUser, '??')
 
-        Exec PostUsageLogEntry 'DoSampleSubmissonOperation', @UsageMessage, @MinimumUpdateInterval=2
+        Exec post_usage_log_entry 'do_sample_submisson_operation', @UsageMessage, @MinimumUpdateInterval=2
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoSampleSubmissonOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_sample_submisson_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoSampleSubmissonOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_sample_submisson_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoSampleSubmissonOperation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_sample_submisson_operation] TO [Limited_Table_Write] AS [dbo]
 GO

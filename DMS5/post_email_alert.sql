@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostEmailAlert] ******/
+/****** Object:  StoredProcedure [dbo].[post_email_alert] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PostEmailAlert]
+CREATE PROCEDURE [dbo].[post_email_alert]
 /****************************************************
 **
 **  Desc: Add a new elert to T_Email_Alerts
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[PostEmailAlert]
 **  Auth:   mem
 **  Date:   06/14/2018 mem - Initial version
 **          08/26/2022 mem - Fix bug subtracting @duplicateEntryHoldoffHours from the current date/time
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -89,23 +90,23 @@ AS
     --
     If @myError <> 0
     Begin
-        Exec PostLogEntry 'Error', 'Update was unsuccessful for T_Email_Alerts table', 'PostEmailAlert'
+        Exec post_log_entry 'Error', 'Update was unsuccessful for T_Email_Alerts table', 'post_email_alert'
         RAISERROR ('Insert was unsuccessful for T_Email_Alerts table', 10, 1)
         return 51191
     end
 
     If @postMessageToLogEntries > 0
     Begin
-        Exec PostLogEntry @type, @message, @postedBy, @duplicateEntryHoldoffHours
+        Exec post_log_entry @type, @message, @postedBy, @duplicateEntryHoldoffHours
     End
 
 Done:
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[PostEmailAlert] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_email_alert] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PostEmailAlert] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[post_email_alert] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[PostEmailAlert] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[post_email_alert] TO [Limited_Table_Write] AS [dbo]
 GO

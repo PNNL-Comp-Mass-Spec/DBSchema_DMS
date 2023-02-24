@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PopulateCampaignFilterTable] ******/
+/****** Object:  StoredProcedure [dbo].[populate_campaign_filter_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PopulateCampaignFilterTable]
+CREATE PROCEDURE [dbo].[populate_campaign_filter_table]
 /****************************************************
 **
 **  Desc:   Populates temp table #Tmp_CampaignFilter
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[PopulateCampaignFilterTable]
 **  Return values: 0: success, otherwise, error code
 **
 **  Date:   07/22/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ AS
     Begin
         INSERT INTO #Tmp_CampaignFilter (Campaign_ID)
         SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedIntegerList(@campaignIDFilterList, ',')
+        FROM dbo.parse_delimited_integer_list(@campaignIDFilterList, ',')
         ORDER BY Value
 
         -- Look for invalid Campaign ID values

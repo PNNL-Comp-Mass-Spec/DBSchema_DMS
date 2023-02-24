@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunAdmin] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_admin] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunAdmin]
+CREATE PROCEDURE [dbo].[update_requested_run_admin]
 /****************************************************
 **
 **  Desc:
@@ -23,16 +23,17 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAdmin]
 **
 **  Auth:   grk
 **  Date:   03/09/2010
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          12/12/2011 mem - Now calling AlterEventLogEntryUserMultiID
-**          11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          12/12/2011 mem - Now calling alter_event_log_entry_user_multi_id
+**          11/16/2016 mem - Call update_cached_requested_run_eus_users for updated Requested runs
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/01/2019 mem - Add additional debug logging
 **          10/20/2020 mem - Add mode 'UnassignInstrument'
 **          10/21/2020 mem - Set Queue_Instrument_ID to null when unassigning
 **          10/23/2020 mem - Allow updating 'fraction' based requests
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAdmin', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_requested_run_admin', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -75,11 +76,11 @@ AS
     If @debugEnabled > 0
     Begin
         Set @logMessage = Cast(@requestList as varchar(4000))
-        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunAdmin'
+        exec post_log_entry 'Debug', @logMessage, 'update_requested_run_admin'
 
         Declare @argLength Int = DataLength(@requestList)
         Set @logMessage = Cast(@argLength As Varchar(12)) + ' characters in @requestList'
-        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunAdmin'
+        exec post_log_entry 'Debug', @logMessage, 'update_requested_run_admin'
     End
 
     -----------------------------------------------------------
@@ -111,7 +112,7 @@ AS
     If @debugEnabled > 0
     Begin
         Set @logMessage = Cast(@myRowCount As Varchar(12)) + ' rows inserted into #TMP'
-        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunAdmin'
+        exec post_log_entry 'Debug', @logMessage, 'update_requested_run_admin'
     End
 
     -----------------------------------------------------------
@@ -196,11 +197,11 @@ AS
             GOTO done
         End
 
-        Set @UsageMessage = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests')
+        Set @UsageMessage = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests')
 
         If Len(@callingUser) > 0
         Begin
-            -- @callingUser is defined; call AlterEventLogEntryUserMultiID
+            -- @callingUser is defined; call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
             -- This procedure uses #TmpIDUpdateList
             --
@@ -208,10 +209,10 @@ AS
             FROM T_Requested_Run_State_Name
             WHERE (State_Name = @mode)
 
-            Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
+            Exec alter_event_log_entry_user_multi_id 11, @stateID, @callingUser
         End
 
-        -- Call UpdateCachedRequestedRunEUSUsers for each entry in #TMP
+        -- Call update_cached_requested_run_eus_users for each entry in #TMP
         --
         Declare @continue tinyint = 1
         Declare @requestId int = -100000
@@ -231,7 +232,7 @@ AS
             End
             Else
             Begin
-                Exec UpdateCachedRequestedRunEUSUsers @requestId
+                Exec update_cached_requested_run_eus_users @requestId
             End
 
         End
@@ -257,17 +258,17 @@ AS
             GOTO done
         End
 
-        Set @UsageMessage = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests')
+        Set @UsageMessage = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests')
 
         If Len(@callingUser) > 0
         Begin
-            -- @callingUser is defined; call AlterEventLogEntryUserMultiID
+            -- @callingUser is defined; call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
             -- This procedure uses #TmpIDUpdateList
             --
             Set @stateID = 0
 
-            Exec AlterEventLogEntryUserMultiID 11, @stateID, @callingUser
+            Exec alter_event_log_entry_user_multi_id 11, @stateID, @callingUser
         End
 
         -- Remove any cached EUS user lists
@@ -302,7 +303,7 @@ AS
             GOTO done
         End
 
-        Set @UsageMessage = 'Unassigned ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests') + ' from the queued instrument'
+        Set @UsageMessage = 'Unassigned ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests') + ' from the queued instrument'
 
         GOTO Done
     END
@@ -312,15 +313,15 @@ Done:
     -- Log SP usage
     ---------------------------------------------------
 
-    Exec PostUsageLogEntry 'UpdateRequestedRunAdmin', @UsageMessage
+    Exec post_usage_log_entry 'update_requested_run_admin', @UsageMessage
 
 DoneNoLog:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_admin] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAdmin] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_admin] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAdmin] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_admin] TO [Limited_Table_Write] AS [dbo]
 GO

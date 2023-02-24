@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateBionetHostStatus] ******/
+/****** Object:  StoredProcedure [dbo].[update_bionet_host_status] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateBionetHostStatus]
+CREATE PROCEDURE [dbo].[update_bionet_host_status]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[UpdateBionetHostStatus]
 **  Auth:   mem
 **  Date:   12/02/2015 mem - Initial version
 **          09/11/2019 mem - Exclude tracking datasets when finding the most recent dataset for each instrument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -113,5 +114,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateBionetHostStatus] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_bionet_host_status] TO [DDL_Viewer] AS [dbo]
 GO

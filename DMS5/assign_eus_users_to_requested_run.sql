@@ -1,16 +1,16 @@
-/****** Object:  StoredProcedure [dbo].[AssignEUSUsersToRequestedRun] ******/
+/****** Object:  StoredProcedure [dbo].[assign_eus_users_to_requested_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AssignEUSUsersToRequestedRun]
+CREATE PROCEDURE [dbo].[assign_eus_users_to_requested_run]
 /****************************************************
 **
 **  Desc:
 **    Associates the given list of EUS users with given requested run
 **
 **    No validation is performed.  Caller should call
-**    ValidateEUSUsage before calling this procedure
+**    validate_eus_usage before calling this procedure
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,8 +18,9 @@ CREATE PROCEDURE [dbo].[AssignEUSUsersToRequestedRun]
 **  Date:   02/21/2006
 **          11/09/2006 grk - Added numeric test for eus user ID (Ticket #318)
 **          07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
-**          11/16/2016 mem - Use udfParseDelimitedIntegerList to parse @eusUsersList
+**          11/16/2016 mem - Use parse_delimited_integer_list to parse @eusUsersList
 **          03/24/2017 mem - Validate user IDs in @eusUsersList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -67,7 +68,7 @@ AS
 
     INSERT INTO @tmpUserIDs (ID)
     SELECT Value
-    FROM dbo.udfParseDelimitedIntegerList(@eusUsersList, ',')
+    FROM dbo.parse_delimited_integer_list(@eusUsersList, ',')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -91,7 +92,7 @@ AS
         Set @UnknownUsers = Left(@UnknownUsers, Len(@UnknownUsers)-1)
 
         Declare @msg varchar(255)
-        Declare @userText varchar(10) = dbo.CheckPlural(@myRowCount, 'user', 'users')
+        Declare @userText varchar(10) = dbo.check_plural(@myRowCount, 'user', 'users')
         Declare @logType varchar(24) = 'Error'
 
         Set @msg = 'Trying to associate ' + Cast(@myRowCount as varchar(9)) + ' unknown EUS ' + @userText +
@@ -114,7 +115,7 @@ AS
             Set @logType = 'Warning'
         End
 
-        exec PostLogEntry @logType, @msg, AssignEUSUsersToRequestedRun
+        exec post_log_entry @logType, @msg, assign_eus_users_to_requested_run
 
     End
 
@@ -163,7 +164,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AssignEUSUsersToRequestedRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[assign_eus_users_to_requested_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AssignEUSUsersToRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[assign_eus_users_to_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetArchiveUpdateRequired] ******/
+/****** Object:  StoredProcedure [dbo].[set_archive_update_required] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SetArchiveUpdateRequired]
+CREATE PROCEDURE [dbo].[set_archive_update_required]
 /****************************************************
 **
 **  Desc:
@@ -15,13 +15,14 @@ CREATE PROCEDURE [dbo].[SetArchiveUpdateRequired]
 **  Date:   12/3/2002
 **          03/06/2007 grk - add changes for deep purge (ticket #403)
 **          03/07/2007 dac - fixed incorrect check for "in progress" update states (ticket #408)
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          07/09/2022 mem - Tabs to spaces
 **          01/10/2023 mem - Rename view to V_Dataset_Archive_Ex and use new column name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @message varchar(512) output
 )
 AS
@@ -47,14 +48,14 @@ AS
            @updateState = Update_State,
            @archiveState = Archive_State
     FROM V_Dataset_Archive_Ex
-    WHERE Dataset = @datasetNum
+    WHERE Dataset = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0 or @myRowCount <> 1
     begin
         set @myError = 51220
-        set @message = 'Error trying to get dataset ID for dataset "' + @datasetNum + '"'
+        set @message = 'Error trying to get dataset ID for dataset "' + @datasetName + '"'
         goto done
     end
 
@@ -64,7 +65,7 @@ AS
     if not @updateState in (1, 2, 4, 5)
     begin
         set @myError = 51250
-        set @message = 'Archive update state for dataset "' + @datasetNum + '" is not correct'
+        set @message = 'Archive update state for dataset "' + @datasetName + '" is not correct'
         goto done
     end
 
@@ -105,15 +106,15 @@ Done:
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'Dataset: ' + @datasetNum
-    Exec PostUsageLogEntry 'SetArchiveUpdateRequired', @UsageMessage
+    Set @UsageMessage = 'Dataset: ' + @datasetName
+    Exec post_usage_log_entry 'set_archive_update_required', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_archive_update_required] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetArchiveUpdateRequired] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_archive_update_required] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateRequired] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_archive_update_required] TO [Limited_Table_Write] AS [dbo]
 GO

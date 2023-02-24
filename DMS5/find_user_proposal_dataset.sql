@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindUserProposalDataset] ******/
+/****** Object:  StoredProcedure [dbo].[find_user_proposal_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE [dbo].[FindUserProposalDataset]
+CREATE PROCEDURE [dbo].[find_user_proposal_dataset]
 /****************************************************
 **
 **  Desc:
@@ -17,18 +17,19 @@ CREATE PROCEDURE [dbo].[FindUserProposalDataset]
 **  Auth:   grk
 **  Date:   08/09/2006
 **          12/20/2006 mem - Now querying V_Find_User_Proposal_Dataset using dynamic SQL (Ticket #349)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @UserProposalIDList varchar(512) = '',
-    @DatasetName varchar(128) = '',
-    @InstrumentName varchar(24) = '',
-    @AcquisitionStart_After varchar(20) = '',
-    @AcquisitionStart_Before varchar(20) = '',
-    @AcquisitionEnd_After varchar(20) = '',
-    @AcquisitionEnd_Before varchar(20) = '',
+    @userProposalIDList varchar(512) = '',
+    @datasetName varchar(128) = '',
+    @instrumentName varchar(24) = '',
+    @acquisitionStart_After varchar(20) = '',
+    @acquisitionStart_Before varchar(20) = '',
+    @acquisitionEnd_After varchar(20) = '',
+    @acquisitionEnd_Before varchar(20) = '',
     @message varchar(512) output
 )
 AS
@@ -80,7 +81,7 @@ AS
 
     Set @W = ''
     If Len(@UserProposalIDList) > 0
-        Set @W = @W + ' AND ( [User_Proposal_ID] IN (select Item from MakeTableFromList(''' + @UserProposalIDList + ''')) )'
+        Set @W = @W + ' AND ( [User_Proposal_ID] IN (select Item from make_table_from_list(''' + @UserProposalIDList + ''')) )'
     If Len(@DatasetName) > 0
         Set @W = @W + ' AND ([Dataset_Name] LIKE ''' + @iDataset_Name + ''' )'
     If Len(@InstrumentName) > 0
@@ -120,11 +121,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindUserProposalDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_user_proposal_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindUserProposalDataset] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_user_proposal_dataset] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindUserProposalDataset] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_user_proposal_dataset] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindUserProposalDataset] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_user_proposal_dataset] TO [Limited_Table_Write] AS [dbo]
 GO

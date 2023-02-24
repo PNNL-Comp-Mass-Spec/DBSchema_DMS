@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddBOMTrackingDataset] ******/
+/****** Object:  StoredProcedure [dbo].[add_bom_tracking_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
+CREATE PROCEDURE [dbo].[add_bom_tracking_dataset]
 /****************************************************
 **
 **  Desc:
@@ -21,8 +21,9 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDataset]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/14/2022 mem - Update error messages to show the correct dataset name
 **                         - When @mode is 'debug', update @message to include the run start date and dataset name
-**          02/15/2022 mem - Mention UpdateDatasetInterval and T_Run_Interval in the debug message
+**          02/15/2022 mem - Mention update_dataset_interval and T_Run_Interval in the debug message
 **          02/22/2022 mem - When @mode is 'debug', do not log an error if the dataset already exists
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -52,10 +53,10 @@ AS
     -- Declare parameters for making BOM tracking dataset
     ---------------------------------------------------
 
-    Declare @datasetNum varchar(128)
+    Declare @datasetName varchar(128)
     Declare @runStart varchar(32)
-    Declare @experimentNum varchar(64) = 'Tracking'
-    Declare @operPRN varchar(64) = @callingUser
+    Declare @experimentName varchar(64) = 'Tracking'
+    Declare @operatorUsername varchar(64) = @callingUser
     Declare @runDuration varchar(16) = '10'
     Declare @comment varchar(512) = ''
     Declare @eusProposalID varchar(10) = ''
@@ -94,7 +95,7 @@ AS
 
         Declare @dateLabel varchar(24) = REPLACE(CONVERT(varchar(15), @bom, 6), ' ', '')
 
-        Set @datasetNum = @instrumentName + '_' + @dateLabel
+        Set @datasetName = @instrumentName + '_' + @dateLabel
 
         ---------------------------------------------------
         -- is it OK to make the dataset?
@@ -111,17 +112,17 @@ AS
             RAISERROR ('Instrument "%s" cannot be found', 11, 20, @instrumentName)
         End
 
-        If EXISTS (SELECT * FROM dbo.T_Dataset WHERE Dataset_Num = @datasetNum)
+        If EXISTS (SELECT * FROM dbo.T_Dataset WHERE Dataset_Num = @datasetName)
         Begin
             If @mode = 'debug'
             Begin
-                Set @message = 'Dataset already exists: ' + @datasetNum
+                Set @message = 'Dataset already exists: ' + @datasetName
                 Print @message
                 Goto Done
             End
             Else
             Begin
-                RAISERROR ('Dataset "%s" already exists', 11, 21, @datasetNum)
+                RAISERROR ('Dataset "%s" already exists', 11, 21, @datasetName)
             End
         End
 
@@ -157,19 +158,19 @@ AS
             -- Show debug info
             ---------------------------------------------------
 
-            PRINT 'Dataset:        ' + @datasetNum
-            PRINT 'Run Start:      ' + @runStart
-            PRINT 'Experiment:     ' + @experimentNum
-            PRINT 'Operator PRN:   ' + @operPRN
-            PRINT 'Run Duration:   ' + @runDuration
-            PRINT 'Comment:        ' + @comment
-            PRINT 'EUS Proposal:   ' + @eusProposalID
-            PRINT 'EUS Usage Type: ' + @eusUsageType
-            PRINT 'EUS Users:      ' + @eusUsersList
-            PRINT 'mode:           ' + @mode
+            PRINT 'Dataset:           ' + @datasetName
+            PRINT 'Run Start:         ' + @runStart
+            PRINT 'Experiment:        ' + @experimentName
+            PRINT 'Operator Username: ' + @operatorUsername
+            PRINT 'Run Duration:      ' + @runDuration
+            PRINT 'Comment:           ' + @comment
+            PRINT 'EUS Proposal:      ' + @eusProposalID
+            PRINT 'EUS Usage Type:    ' + @eusUsageType
+            PRINT 'EUS Users:         ' + @eusUsersList
+            PRINT 'mode:              ' + @mode
 
-            -- Note that AddUpdateTrackingDataset calls UpdateDatasetInterval after creating the dataset
-            Set @message = 'Would create dataset with run start ' + Cast(@runStart As Varchar(24)) + ' and name ''' + @datasetNum + ''', then call UpdateDatasetInterval to update T_Run_Interval'
+            -- Note that add_update_tracking_dataset calls update_dataset_interval after creating the dataset
+            Set @message = 'Would create dataset with run start ' + Cast(@runStart As Varchar(24)) + ' and name ''' + @datasetName + ''', then call update_dataset_interval to update T_Run_Interval'
         End
 
         If @mode = 'add'
@@ -178,10 +179,10 @@ AS
             -- Add the tracking dataset
             ---------------------------------------------------
 
-            EXEC @myError = AddUpdateTrackingDataset
-                                @datasetNum,
-                                @experimentNum,
-                                @operPRN,
+            EXEC @myError = add_update_tracking_dataset
+                                @datasetName,
+                                @experimentName,
+                                @operatorUsername,
                                 @instrumentName,
                                 @runStart,
                                 @runDuration,
@@ -197,22 +198,22 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
+        EXEC format_error_message @message OUTPUT, @myError OUTPUT
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDataset'
+        Exec post_log_entry 'Error', @message, 'add_bom_tracking_dataset'
     END CATCH
 
 Done:
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddBOMTrackingDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_bom_tracking_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddBOMTrackingDataset] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_bom_tracking_dataset] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddBOMTrackingDataset] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_bom_tracking_dataset] TO [PNL\D3M578] AS [dbo]
 GO

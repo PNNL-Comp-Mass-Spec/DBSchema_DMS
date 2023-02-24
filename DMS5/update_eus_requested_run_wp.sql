@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEUSRequestedRunWP] ******/
+/****** Object:  StoredProcedure [dbo].[update_eus_requested_run_wp] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEUSRequestedRunWP]
+CREATE PROCEDURE [dbo].[update_eus_requested_run_wp]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSRequestedRunWP]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/18/2022 mem - Add renamed proposal type 'Resource Owner'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -196,7 +197,7 @@ AS
                 If @myRowCount <> 1
                 Begin
                     Set @LogMessage = 'Logic error; did not find a single match for proposal ' + @ProposalID + ' in #Tmp_WPInfo'
-                    exec PostLogEntry 'Error', @LogMessage , 'UpdateEUSRequestedRunWP'
+                    exec post_log_entry 'Error', @LogMessage , 'update_eus_requested_run_wp'
                     Goto Done
                 End
 
@@ -222,7 +223,7 @@ AS
                 End
                 Else
                 Begin
-                    Exec CondenseIntegerListToRanges @debugMode=0
+                    Exec condense_integer_list_to_ranges @debugMode=0
 
                     Set @ValueList = ''
 
@@ -247,7 +248,7 @@ AS
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                    Exec PostLogEntry 'Normal', @LogMessage, 'UpdateEUSRequestedRunWP'
+                    Exec post_log_entry 'Normal', @LogMessage, 'update_eus_requested_run_wp'
                 End -- </c>
 
             End -- </b>
@@ -271,7 +272,7 @@ AS
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Print @message
 
@@ -279,7 +280,7 @@ AS
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateEUSRequestedRunWP'
+        Exec post_log_entry 'Error', @message, 'update_eus_requested_run_wp'
     End CATCH
 
 Done:
@@ -287,5 +288,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSRequestedRunWP] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_requested_run_wp] TO [DDL_Viewer] AS [dbo]
 GO

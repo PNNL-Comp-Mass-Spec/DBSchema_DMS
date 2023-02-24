@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateFileAttachment] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_file_attachment] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
+CREATE PROCEDURE [dbo].[add_update_file_attachment]
 /****************************************************
 **
 **  Desc:   Adds new or edits existing item in T_File_Attachment
@@ -23,10 +23,11 @@ CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Use SCOPE_IDENTITY
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/11/2021 mem - Store integers in Entity_ID_Value
 **          03/27/2022 mem - Assure that Active is 1 when updating an existing file attachment
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateFileAttachment]
     @entityType varchar(64),            -- Page family name: campaign, experiment, sample_prep_request, lc_cart_configuration, etc.
     @entityID varchar(256),             -- Must be data type varchar since Experiment, Campaign, Cell Culture, and Material Container file attachments are tracked via Experiment Name, Campaign Name, etc.
     @fileSizeBytes varchar(12),         -- This file size is actually in KB
-    @archiveFolderPath varchar(256),    -- This path is constructed when File_attachment.php or Experiment_File_attachment.php calls function GetFileAttachmentPath in this database
+    @archiveFolderPath varchar(256),    -- This path is constructed when File_attachment.php or Experiment_File_attachment.php calls function get_file_attachment_path in this database
     @fileMimeType varchar(256),
     @mode varchar(12) = 'add',          -- 'add' or 'update'
     @message varchar(512) output,
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateFileAttachment', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_file_attachment', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -182,19 +183,19 @@ AS
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateFileAttachment'
+        Exec post_log_entry 'Error', @message, 'add_update_file_attachment'
     End CATCH
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateFileAttachment] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_file_attachment] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateFileAttachment] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_file_attachment] TO [DMS2_SP_User] AS [dbo]
 GO

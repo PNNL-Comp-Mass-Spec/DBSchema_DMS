@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedRequestedRunBatchStats] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_requested_run_batch_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedRequestedRunBatchStats]
+CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedRequestedRunBatchStats]
 **
 **  Auth:   mem
 **  Date:   02/10/2023 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -77,7 +78,7 @@ AS
                    ActiveStatsQ.last_active_request,
                    ActiveStatsQ.oldest_active_request_created,
                    CASE WHEN ActiveStatsQ.active_requests = 0
-                        THEN dbo.GetRequestedRunBatchMaxDaysInQueue(StatsQ.batch_id)   -- No active requested runs for this batch
+                        THEN dbo.get_requested_run_batch_max_days_in_queue(StatsQ.batch_id)   -- No active requested runs for this batch
                         ELSE DATEDIFF(DAY, ISNULL(ActiveStatsQ.oldest_active_request_created, StatsQ.oldest_request_created), GETDATE())
                    END AS days_in_queue
             FROM ( SELECT ID As batch_id

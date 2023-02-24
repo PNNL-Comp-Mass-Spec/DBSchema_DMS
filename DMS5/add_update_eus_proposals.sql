@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateEUSProposals] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_eus_proposals] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateEUSProposals]
+CREATE PROCEDURE [dbo].[add_update_eus_proposals]
 /****************************************************
 **
 **  Desc: Adds new or updates existing EUS Proposals in database
@@ -12,24 +12,25 @@ CREATE PROCEDURE [dbo].[AddUpdateEUSProposals]
 **
 **  Auth:   jds
 **  Date:   08/15/2006
-**          11/16/2006 grk - fix problem with GetEUSPropID not able to return varchar (ticket #332)
+**          11/16/2006 grk - fix problem with get_eus_prop_id not able to return varchar (ticket #332)
 **          04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
 **          10/13/2015 mem - Added @EUSProposalType
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/06/2019 mem - Add @autoSupersedeProposalID
 **                         - Rename @EUSPropState to @EUSPropStateID and make it an int instead of varchar
 **                         - Add Try/Catch error handling
 **                         - Fix merge query bug
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @EUSPropID varchar(10),
-    @EUSPropStateID int,                      -- 1=New, 2=Active, 3=Inactive, 4=No Interest
-    @EUSPropTitle varchar(2048),
-    @EUSPropImpDate varchar(50),
-    @EUSUsersList varchar(4096),
-    @EUSProposalType varchar(100),
+    @eusPropID varchar(10),
+    @eusPropStateID int,                      -- 1=New, 2=Active, 3=Inactive, 4=No Interest
+    @eusPropTitle varchar(2048),
+    @eusPropImpDate varchar(50),
+    @eusUsersList varchar(4096),
+    @eusProposalType varchar(100),
     @autoSupersedeProposalID varchar(10),
     @mode varchar(12) = 'add',                -- Add or Update
     @message varchar(512) output
@@ -50,7 +51,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateEUSProposals', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_eus_proposals', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -237,7 +238,7 @@ AS
     INSERT INTO #tempEUSUsers (Person_ID)
     SELECT EUS_Person_ID
     FROM ( SELECT CAST(Item AS int) AS EUS_Person_ID
-           FROM MakeTableFromList ( @eusUsersList )
+           FROM make_table_from_list ( @eusUsersList )
          ) SourceQ
          INNER JOIN T_EUS_Users
            ON SourceQ.EUS_Person_ID = T_EUS_Users.Person_ID
@@ -294,7 +295,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -302,18 +303,18 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'
+            Exec post_log_entry 'Error', @message, 'add_update_eus_proposals'
         End
     END Catch
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateEUSProposals] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_eus_proposals] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS_EUS_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_eus_proposals] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateEUSProposals] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_eus_proposals] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateEUSProposals] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_eus_proposals] TO [Limited_Table_Write] AS [dbo]
 GO

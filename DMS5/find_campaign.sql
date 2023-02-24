@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindCampaign] ******/
+/****** Object:  StoredProcedure [dbo].[find_campaign] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE [dbo].[FindCampaign]
+CREATE PROCEDURE [dbo].[find_campaign]
 /****************************************************
 **
 **  Desc:
@@ -17,18 +17,19 @@ CREATE PROCEDURE [dbo].[FindCampaign]
 **  Auth:   grk
 **  Date:   07/31/2006
 **          12/20/2006 mem - Now querying V_Campaign_Detail_Report_Ex using dynamic SQL (Ticket #349)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Campaign varchar(50) = '',
-    @Project varchar(50) = '',
-    @ProjectMgr varchar(103) = '',
-    @PI varchar(103) = '',
-    @Comment varchar(500) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
+    @campaign varchar(50) = '',
+    @project varchar(50) = '',
+    @projectMgr varchar(103) = '',
+    @pi varchar(103) = '',
+    @comment varchar(500) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
     @message varchar(512) output
 )
 AS
@@ -125,11 +126,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindCampaign] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_campaign] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindCampaign] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_campaign] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindCampaign] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_campaign] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindCampaign] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_campaign] TO [Limited_Table_Write] AS [dbo]
 GO

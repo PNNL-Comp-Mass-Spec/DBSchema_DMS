@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ExperimentsFromRequest] ******/
+/****** Object:  UserDefinedFunction [dbo].[experiments_from_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ExperimentsFromRequest]
+CREATE FUNCTION [dbo].[experiments_from_request]
 /****************************************************
 **
 **  Desc:
@@ -13,11 +13,12 @@ CREATE FUNCTION [dbo].[ExperimentsFromRequest]
 **
 **  Auth:   grk
 **  Date:   6/10/2005
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
-    (
+(
     @requestID int
-    )
+)
 RETURNS int
 AS
     BEGIN
@@ -30,5 +31,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExperimentsFromRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[experiments_from_request] TO [DDL_Viewer] AS [dbo]
 GO

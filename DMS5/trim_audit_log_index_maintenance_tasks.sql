@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[TrimAuditLogIndexMaintenanceTasks] ******/
+/****** Object:  StoredProcedure [dbo].[trim_audit_log_index_maintenance_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[TrimAuditLogIndexMaintenanceTasks]
+CREATE PROCEDURE [dbo].[trim_audit_log_index_maintenance_tasks]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[TrimAuditLogIndexMaintenanceTasks]
 **  Date:   10/27/2016
 **          10/28/2016 mem - Auto-determine the LoginName to filter on
 **          08/30/2017 mem - Remove old Alter Procedure, Alter Table, Alter View, etc. entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -511,5 +512,5 @@ End
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[TrimAuditLogIndexMaintenanceTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[trim_audit_log_index_maintenance_tasks] TO [DDL_Viewer] AS [dbo]
 GO

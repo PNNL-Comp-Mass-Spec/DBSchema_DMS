@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDatasetInstrumentRuntime] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dataset_instrument_runtime] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDatasetInstrumentRuntime]
+CREATE FUNCTION [dbo].[get_dataset_instrument_runtime]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE FUNCTION [dbo].[GetDatasetInstrumentRuntime]
 **          04/05/2017 mem - Compute Fraction_EMSL_Funded using EUS usage type (previously computed using CM_Fraction_EMSL_Funded, which is estimated by the user for each campaign)
 **          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
 **          05/18/2022 mem - Treat additional proposal types as not EMSL funded
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ RETURNS @TX TABLE (
 )
 AS
     BEGIN
-        DECLARE @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
+        DECLARE @maxNormalInterval INT = dbo.get_long_interval_threshold()
 
         ---------------------------------------------------
         -- Set up flags that control content
@@ -352,5 +353,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetInstrumentRuntime] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_instrument_runtime] TO [DDL_Viewer] AS [dbo]
 GO

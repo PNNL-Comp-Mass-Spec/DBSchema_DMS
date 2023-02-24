@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetPermissions] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetPermissions]
+CREATE FUNCTION [dbo].[get_permissions]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetPermissions]
 **
 **  Auth:   grk
 **  Date:   02/15/2005
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -43,7 +44,7 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetPermissions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_permissions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetPermissions] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_permissions] TO [public] AS [dbo]
 GO

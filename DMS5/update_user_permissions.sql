@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateUserPermissions]
+CREATE PROCEDURE [dbo].[update_user_permissions]
 /****************************************************
 **
 **  Desc: Updates user permissions in the current DB
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissions]
 **          08/13/2012 mem - Added update permission for role DMS2_SP_User for several tables
 **          03/16/2016 mem - Add users gigasax\msdadmin and gigasax\ftms
 **                         - Grante update on T_File_Attachment to DMSWebUser
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
@@ -96,11 +97,11 @@ AS
     GRANT UPDATE ON [dbo].[T_Param_Entries] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
     GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS2_SP_User] AS [dbo]
 
-    -- Call UpdateUserPermissionsViewDefinitions to grant view definition for each Stored Procedure and grant showplan
-    exec UpdateUserPermissionsViewDefinitions @UserList='PNL\D3M578, PNL\D3M580'
+    -- Call update_user_permissions_view_definitions to grant view definition for each Stored Procedure and grant showplan
+    exec update_user_permissions_view_definitions @UserList='PNL\D3M578, PNL\D3M580'
 
     Return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_user_permissions] TO [DDL_Viewer] AS [dbo]
 GO

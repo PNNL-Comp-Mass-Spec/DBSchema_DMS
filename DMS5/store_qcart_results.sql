@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreQCARTResults] ******/
+/****** Object:  StoredProcedure [dbo].[store_qcart_results] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreQCARTResults]
+CREATE PROCEDURE [dbo].[store_qcart_results]
 /****************************************************
 **
 **  Desc:
@@ -25,14 +25,15 @@ CREATE PROCEDURE [dbo].[StoreQCARTResults]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:   11/05/2015 mem - Initial version (modelled after StoreSMAQCResults)
+**  Date:   11/05/2015 mem - Initial version (modelled after store_smaqc_results)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetID int = 0,                -- If this value is 0, then will determine the dataset name using the contents of @ResultsXML
-    @ResultsXML xml,                -- XML holding the QCART results for a single dataset
+    @datasetID int = 0,                -- If this value is 0, then will determine the dataset name using the contents of @ResultsXML
+    @resultsXML xml,                -- XML holding the QCART results for a single dataset
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
@@ -295,12 +296,12 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in StoreQCARTResults'
+            Set @message = 'Error in store_qcart_results'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @InfoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'StoreQCARTResults'
+            Exec post_log_entry 'Error', @message, 'store_qcart_results'
     End
 
     If Len(@message) > 0 AND @InfoOnly <> 0
@@ -317,16 +318,16 @@ Done:
         Set @UsageMessage = 'Dataset: ' + @DatasetName
 
     If @InfoOnly = 0
-        Exec PostUsageLogEntry 'StoreQCARTResults', @UsageMessage
+        Exec post_usage_log_entry 'store_qcart_results', @UsageMessage
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreQCARTResults] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[store_qcart_results] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreQCARTResults] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_qcart_results] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreQCARTResults] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_qcart_results] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreQCARTResults] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_qcart_results] TO [svc-dms] AS [dbo]
 GO

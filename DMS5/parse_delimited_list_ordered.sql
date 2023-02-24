@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udfParseDelimitedListOrdered] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_list_ordered] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udfParseDelimitedListOrdered]
+CREATE FUNCTION [dbo].[parse_delimited_list_ordered]
 /****************************************************
 **
 **  Parses the text in @delimitedList and returns a table
@@ -24,6 +24,7 @@ CREATE FUNCTION [dbo].[udfParseDelimitedListOrdered]
 **          03/27/2013 mem - Now replacing Tab characters, carriage returns and line feeds with @delimiter
 **          11/19/2018 mem - Add special handling if @delimeter is CR, LF, or CRLF
 **                         - Add parameter @maxRows
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
@@ -164,5 +165,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedListOrdered] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_delimited_list_ordered] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_Pipeline_AddUpdateLocalJob] ******/
-CREATE SYNONYM [dbo].[S_Pipeline_AddUpdateLocalJob] FOR [DMS_Pipeline].[dbo].[add_update_local_job_in_broker]
+/****** Object:  Synonym [dbo].[s_pipeline_add_update_local_job] ******/
+CREATE SYNONYM [dbo].[s_pipeline_add_update_local_job] FOR [DMS_Pipeline].[dbo].[add_update_local_job_in_broker]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_Pipeline_AddUpdateLocalJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_pipeline_add_update_local_job] TO [DDL_Viewer] AS [dbo]
 GO

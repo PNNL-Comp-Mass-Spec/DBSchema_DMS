@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetWellNum] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_well_number] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetWellNum]
+CREATE FUNCTION [dbo].[get_well_number]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetWellNum]
 **
 **  Auth:   grk
 **  Date:   07/15/2000
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -24,8 +25,8 @@ CREATE FUNCTION [dbo].[GetWellNum]
 RETURNS varchar(8)
 AS
     BEGIN
-        declare @wellNum varchar(8)
-        set @wellNum = ''
+        declare @wellNumber varchar(8)
+        set @wellNumber = ''
 
         if @index > 0 and @index < 97
         begin
@@ -58,11 +59,12 @@ AS
             if @col < 10
                 set @col = '0' + @col
 
-            set @wellNum = @row + @col
+            set @wellNumber = @row + @col
         end
 
-        RETURN @wellNum
+        RETURN @wellNumber
     END
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetWellNum] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_well_number] TO [DDL_Viewer] AS [dbo]
 GO

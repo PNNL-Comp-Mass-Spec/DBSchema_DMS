@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetEMSLInstrumentUsageDaily] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_emsl_instrument_usage_daily] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
+CREATE FUNCTION [dbo].[get_emsl_instrument_usage_daily]
 /****************************************************
 **  Desc:
 **      Outputs contents of EMSL instrument usage report table as a daily rollup
@@ -23,11 +23,12 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDaily]
 **          04/17/2020 mem - Use Dataset_ID instead of ID
 **          03/17/2022 mem - Only return rows where Dataset_ID_Acq_Overlap is Null
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Year int,
-    @Month int
+    @year int,
+    @month int
 )
 RETURNS @T_Report_Output TABLE
     (
@@ -402,5 +403,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageDaily] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_emsl_instrument_usage_daily] TO [DDL_Viewer] AS [dbo]
 GO

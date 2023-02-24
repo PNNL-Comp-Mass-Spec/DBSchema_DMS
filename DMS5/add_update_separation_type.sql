@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateSeparationType] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_separation_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSeparationType]
+CREATE PROCEDURE [dbo].[add_update_separation_type]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Secondary_Sep entry
@@ -13,12 +13,13 @@ CREATE PROCEDURE [dbo].[AddUpdateSeparationType]
 **  Auth:   bcg
 **  Date:   12/19/2019 bcg - Initial release
 **          08/11/2021 mem - Determine the next ID to use when adding a new separation type
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
+    @id int,
     @sepTypeName varchar(50),
     @sepGroupName varchar(64),
     @comment varchar(256),
@@ -75,7 +76,7 @@ AS
     -- First assure that it does not have invalid characters and is long enough
     ---------------------------------------------------
 
-    Declare @badCh varchar(128) = dbo.ValidateChars(@sepTypeName, '')
+    Declare @badCh varchar(128) = dbo.validate_chars(@sepTypeName, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -294,11 +295,11 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSeparationType] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_separation_type] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSeparationType] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_separation_type] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSeparationType] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_separation_type] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSeparationType] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_separation_type] TO [Limited_Table_Write] AS [dbo]
 GO

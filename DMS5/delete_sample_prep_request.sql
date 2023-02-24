@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteSamplePrepRequest] ******/
+/****** Object:  StoredProcedure [dbo].[delete_sample_prep_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteSamplePrepRequest]
+CREATE PROCEDURE [dbo].[delete_sample_prep_request]
 /****************************************************
 **
 **  Desc:
@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[DeleteSamplePrepRequest]
 **  Date:   11/10/2005
 **          01/04/2006 grk - added delete for aux info
 **          05/16/2008 mem - Added optional parameter @callingUser; if provided, then will populate field System_Account in T_Sample_Prep_Request_Updates with this name (Ticket #674)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,7 +41,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteSamplePrepRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_sample_prep_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -51,7 +52,7 @@ AS
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'DeleteSamplePrepRequest'
+    set @transName = 'delete_sample_prep_request'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -123,7 +124,7 @@ AS
 
     -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
     If Len(@callingUser) > 0
-        Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @requestID, @CallingUser,
+        Exec alter_entered_by_user 'T_Sample_Prep_Request_Updates', 'Request_ID', @requestID, @CallingUser,
                                 @EntryDateColumnName='Date_of_Change', @EnteredByColumnName='System_Account'
 
     ---------------------------------------------------
@@ -133,9 +134,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteSamplePrepRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_sample_prep_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteSamplePrepRequest] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_sample_prep_request] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteSamplePrepRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_sample_prep_request] TO [Limited_Table_Write] AS [dbo]
 GO

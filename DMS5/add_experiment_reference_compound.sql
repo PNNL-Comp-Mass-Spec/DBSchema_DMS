@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddExperimentReferenceCompound] ******/
+/****** Object:  StoredProcedure [dbo].[add_experiment_reference_compound] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddExperimentReferenceCompound]
+CREATE PROCEDURE [dbo].[add_experiment_reference_compound]
 /****************************************************
 **
 **  Desc: Adds reference compound entries to DB for given experiment
@@ -21,10 +21,11 @@ CREATE PROCEDURE [dbo].[AddExperimentReferenceCompound]
 **  Auth:   mem
 **  Date:   11/29/2017 mem - Initial version
 **          01/04/2018 mem - Update fields in #Tmp_ExpToRefCompoundMap, switching from Compound_Name to Compound_IDName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @expID int,
+    @experimentID int,
     @updateCachedInfo tinyint = 1,
     @message varchar(255) = '' output
 )
@@ -39,7 +40,7 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
 
-    If @expID Is Null
+    If @experimentID Is Null
     Begin
         set @message = 'Experiment ID cannot be null'
         return 51061
@@ -125,19 +126,19 @@ AS
     ---------------------------------------------------
     --
     DELETE T_Experiment_Reference_Compounds
-    WHERE Exp_ID = @expID
+    WHERE Exp_ID = @experimentID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     INSERT INTO T_Experiment_Reference_Compounds (Exp_ID, Compound_ID)
-    SELECT DISTINCT @expID as Exp_ID, Compound_ID
+    SELECT DISTINCT @experimentID as Exp_ID, Compound_ID
     FROM #Tmp_ExpToRefCompoundMap
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
-        set @message = 'Error updating reference compound mapping for experiment ' + Cast(@expID as varchar(9))
+        set @message = 'Error updating reference compound mapping for experiment ' + Cast(@experimentID as varchar(9))
         return 51062
     end
 
@@ -147,7 +148,7 @@ AS
     --
     If @updateCachedInfo > 0
     Begin
-        Exec UpdateCachedExperimentComponentNames @expID
+        Exec update_cached_experiment_component_names @experimentID
     End
 
     return 0

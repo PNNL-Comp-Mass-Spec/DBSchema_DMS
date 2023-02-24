@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EditEMSLInstrumentUsageReport] ******/
+/****** Object:  StoredProcedure [dbo].[edit_emsl_instrument_usage_report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
+CREATE PROCEDURE [dbo].[edit_emsl_instrument_usage_report]
 /****************************************************
 **
 **  Desc:
@@ -18,21 +18,22 @@ CREATE PROCEDURE [dbo].[EditEMSLInstrumentUsageReport]
 **          09/11/2012 grk - fixed update SQL
 **          04/11/2017 mem - Replace column Usage with Usage_Type
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Year int = 2012 ,
-    @Month int = 8 ,
-    @Instrument varchar(64) = '',
-    @Type varchar(32) = '',
-    @Usage varchar(32) = '',
-    @Proposal varchar(32) = '',
-    @Users varchar(512) = '',
-    @Operator varchar(32) = '',     -- Operator for update (should be an integer representing EUS Person ID; if an empty string, will store NULL for the operator ID)
-    @Comment varchar(512) = '',
-    @FieldName varchar(32) = '' ,   -- Proposal, Usage,  Users,  Operator,  Comment,
-    @NewValue varchar(512) = '',
-    @DoUpdate TINYINT = 0
+    @year int = 2012 ,
+    @month int = 8 ,
+    @instrument varchar(64) = '',
+    @type varchar(32) = '',
+    @usage varchar(32) = '',
+    @proposal varchar(32) = '',
+    @users varchar(512) = '',
+    @operator varchar(32) = '',     -- Operator for update (should be an integer representing EUS Person ID; if an empty string, will store NULL for the operator ID)
+    @comment varchar(512) = '',
+    @fieldName varchar(32) = '' ,   -- Proposal, Usage,  Users,  Operator,  Comment,
+    @newValue varchar(512) = '',
+    @doUpdate TINYINT = 0
 )
 AS
     SET NOCOUNT ON
@@ -190,5 +191,5 @@ AS
     RETURN
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EditEMSLInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[edit_emsl_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
 GO

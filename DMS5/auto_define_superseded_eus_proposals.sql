@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoDefineSupersededEUSProposals] ******/
+/****** Object:  StoredProcedure [dbo].[auto_define_superseded_eus_proposals] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoDefineSupersededEUSProposals]
+CREATE PROCEDURE [dbo].[auto_define_superseded_eus_proposals]
 /****************************************************
 **
 **  Desc:   Looks for proposals in T_EUS_Proposals with the same name
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[AutoDefineSupersededEUSProposals]
 **
 **  Auth:   mem
 **  Date:   08/12/2020 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -129,7 +130,7 @@ AS
 
             Set @message = 'Auto-set Proposal_ID_AutoSupersede for ' + CAST(@myRowCount AS VARCHAR(12)) + ' proposal(s) in T_EUS_Proposals: ' + @proposalList
 
-            EXEC PostLogEntry 'Normal', @message, 'AutoDefineSupersededEUSProposals'
+            EXEC post_log_entry 'Normal', @message, 'auto_define_superseded_eus_proposals'
         End
 
         Print @message

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RenameDataset] ******/
+/****** Object:  StoredProcedure [dbo].[rename_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RenameDataset]
+CREATE PROCEDURE [dbo].[rename_dataset]
 /****************************************************
 **
 **  Desc:
@@ -17,7 +17,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          07/08/2016 mem - Now show old/new names and jobs even when @infoOnly is 0
 **          12/06/2016 mem - Include file rename statements
 **          03/06/2017 mem - Validate that @datasetNameNew is no more than 80 characters long
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/03/2018 mem - Rename files in T_Dataset_Files
 **                         - Update commands for renaming the dataset directory and dataset file
@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[RenameDataset]
 **          11/05/2021 mem - Add more MASIC file names and rename files in any MzRefinery directories
 **          07/21/2022 mem - Move misplaced 'cd ..' and add missing 'rem'
 **          10/10/2022 mem - Add @newRequestedRunID; if defined (and active), associate the dataset with this Request ID and use it to update the dataset's experiment
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -84,7 +85,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'RenameDataset', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'rename_dataset', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -117,7 +118,7 @@ AS
     End
 
     Declare @badCh varchar(128)
-    Set @badCh =  dbo.ValidateChars(@datasetNameNew, '')
+    Set @badCh =  dbo.validate_chars(@datasetNameNew, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -289,7 +290,7 @@ AS
             Set @message = 'rem Renamed dataset "' + @datasetNameOld + '" to "' + @datasetNameNew + '"'
             print @message
 
-            Exec PostLogEntry 'Normal', @message, 'RenameDataset'
+            Exec post_log_entry 'Normal', @message, 'rename_dataset'
         End
 
         -- Rename any files in T_Dataset_Files
@@ -518,7 +519,8 @@ AS
         Else
         Begin
 
-            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0
+            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0 -- TODO: Remove later
+            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetName',        @datasetNameNew, @infoOnly=0
             exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoOnly=0
 
             UPDATE DMS_Pipeline.dbo.T_Jobs
@@ -760,5 +762,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RenameDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[rename_dataset] TO [DDL_Viewer] AS [dbo]
 GO

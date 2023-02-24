@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateFilterSetGroup] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_filter_set_group] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DuplicateFilterSetGroup]
+CREATE PROCEDURE [dbo].[duplicate_filter_set_group]
 /****************************************************
 **
 **  Desc:
@@ -13,12 +13,13 @@ CREATE PROCEDURE [dbo].[DuplicateFilterSetGroup]
 **
 **  Auth:   mem
 **  Date:   02/17/2009
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @FilterSetID int,
-    @FilterCriteriaGroupID int,
-    @InfoOnly tinyint = 0,
+    @filterSetID int,
+    @filterCriteriaGroupID int,
+    @infoOnly tinyint = 0,
     @message varchar(512)='' OUTPUT
 )
 AS
@@ -135,9 +136,9 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateFilterSetGroup] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_filter_set_group] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateFilterSetGroup] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_filter_set_group] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DuplicateFilterSetGroup] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[duplicate_filter_set_group] TO [PNL\D3M578] AS [dbo]
 GO

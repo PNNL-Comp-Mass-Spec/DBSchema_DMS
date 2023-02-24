@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteNewAnalysisJob] ******/
+/****** Object:  StoredProcedure [dbo].[delete_new_analysis_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteNewAnalysisJob]
+CREATE PROCEDURE [dbo].[delete_new_analysis_job]
 /****************************************************
 **
 **  Desc: Delete analysis job if it is in "new" or "failed" state
@@ -14,18 +14,19 @@ CREATE PROCEDURE [dbo].[DeleteNewAnalysisJob]
 **
 **  Auth:   grk
 **  Date:   03/29/2001
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          02/18/2008 grk - Modified to accept jobs in failed state (Ticket #723)
 **          02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **          09/28/2012 mem - Now allowing a job to be deleted if state 19 = "Special Proc. Waiting"
 **          04/21/2017 mem - Added parameter @previewMode
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/27/2018 mem - Rename @previewMode to @infoonly
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @jobNum varchar(32),
+    @job varchar(32),
     @message varchar(512) output,
     @callingUser varchar(128) = '',
     @infoonly tinyint = 0
@@ -35,7 +36,7 @@ AS
 
     Declare @jobID int
 
-    Set @jobNum = IsNull(@jobNum, '')
+    Set @job = IsNull(@job, '')
     Set @message = ''
     Set @infoonly = IsNull(@infoonly, 0)
 
@@ -44,18 +45,18 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteNewAnalysisJob', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_new_analysis_job', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
     End;
 
 
-    Set @jobID = Try_Cast(@jobNum as int)
+    Set @jobID = Try_Cast(@job as int)
 
     If @jobID is null
     Begin
-        Declare @msg varchar(128) = 'Job number is not numeric: ' + @jobNum
+        Declare @msg varchar(128) = 'Job number is not numeric: ' + @job
         RAISERROR (@msg, 10, 1)
         return 55321
     End
@@ -72,7 +73,7 @@ AS
     --
     If @state = 0
     Begin
-        Set @message = 'Job "' + @jobNum + '" not in database'
+        Set @message = 'Job "' + @job + '" not in database'
         If @infoonly > 0
             SELECT @message
         Else
@@ -82,25 +83,25 @@ AS
     -- Verify that analysis job has state 'new', 'failed', or 'Special Proc. Waiting'
     If Not @state IN (0, 1, 5, 19)
     Begin
-        Set @message = 'Job "' + @jobNum + '" must be in "new" or "failed" state to be deleted by user'
+        Set @message = 'Job "' + @job + '" must be in "new" or "failed" state to be deleted by user'
         return 55323
     End
 
     -- Delete the analysis job
     --
     Declare @result int
-    execute @result = DeleteAnalysisJob @jobID, @callingUser, @infoonly
+    execute @result = delete_analysis_job @jobID, @callingUser, @infoonly
 
     If @result <> 0
     Begin
-        Set @message = 'Job "' + @jobNum + '" could not be deleted'
+        Set @message = 'Job "' + @job + '" could not be deleted'
         return 55320
     End
 
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteNewAnalysisJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_new_analysis_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteNewAnalysisJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_new_analysis_job] TO [Limited_Table_Write] AS [dbo]
 GO

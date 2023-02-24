@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedProteinCollections] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_protein_collections] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedProteinCollections]
+CREATE PROCEDURE [dbo].[update_cached_protein_collections]
 /****************************************************
 **
 **  Desc:   Updates the data in T_Cached_Protein_Collections
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedProteinCollections]
 **          08/30/2021 mem - Populate field State_Name
 **          07/27/2022 mem - Use new field names when querying S_V_Protein_Collections_by_Organism (Collection_Name instead of FileName and File_Size instead of Filesize)
 **          01/06/2023 mem - Use new colunmn name in view
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -77,15 +78,15 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error updating T_Cached_Protein_Collections via merge (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'UpdateCachedProteinCollections'
+            execute post_log_entry 'Error', @message, 'update_cached_protein_collections'
             goto Done
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateCachedProteinCollections')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_cached_protein_collections')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -94,5 +95,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedProteinCollections] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_protein_collections] TO [DDL_Viewer] AS [dbo]
 GO

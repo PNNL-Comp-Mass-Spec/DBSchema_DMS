@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateInstrument] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_instrument] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateInstrument]
+CREATE PROCEDURE [dbo].[add_update_instrument]
 /****************************************************
 **
 **  Desc:
@@ -17,19 +17,20 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
 **          08/27/2010 mem - Add parameter @instrumentGroup
 **                         - try-catch for error handling
 **          05/12/2011 mem - Add @autoDefineStoragePath and related @autoSP parameters
-**          05/13/2011 mem - Now calling ValidateAutoStoragePathParams
+**          05/13/2011 mem - Now calling validate_auto_storage_path_params
 **          11/30/2011 mem - Add parameter @percentEMSLOwned
 **          04/01/2013 mem - Expanded @description to varchar(255)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          04/10/2018 mem - Add parameter @scanSourceDir
 **          12/06/2018 mem - Change variable names to camelCase
 **                         - Use Try_Cast instead of Try_Convert
 **          05/28/2019 mem - Add parameter @trackUsageWhenInactive
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrument]
     @autoSPArchiveServerName varchar(64),
     @autoSPArchivePathRoot varchar(128),
     @autoSPArchiveSharePathRoot varchar(128),
-    @mode varchar(12) = 'update',               -- Note that 'add' is not allowed in this procedure; instead use https://dms2.pnl.gov/new_instrument/create (which in turn calls AddNewInstrument)
+    @mode varchar(12) = 'update',               -- Note that 'add' is not allowed in this procedure; instead use https://dms2.pnl.gov/new_instrument/create (which in turn calls add_new_instrument)
     @message varchar(512) = '' output
 )
 AS
@@ -72,7 +73,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateInstrument', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'add_update_instrument', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -123,15 +124,15 @@ AS
     -- Resolve Yes/No parameters to 0 or 1
     ---------------------------------------------------
     --
-    Declare @valTrackUsageWhenInactive tinyint = dbo.BooleanTextToTinyint(@trackUsageWhenInactive)
-    Declare @valScanSourceDir tinyint = dbo.BooleanTextToTinyint(@scanSourceDir)
-    Declare @valAutoDefineStoragePath tinyint = dbo.BooleanTextToTinyint(@autoDefineStoragePath)
+    Declare @valTrackUsageWhenInactive tinyint = dbo.boolean_text_to_tinyint(@trackUsageWhenInactive)
+    Declare @valScanSourceDir tinyint = dbo.boolean_text_to_tinyint(@scanSourceDir)
+    Declare @valAutoDefineStoragePath tinyint = dbo.boolean_text_to_tinyint(@autoDefineStoragePath)
 
     ---------------------------------------------------
     -- Validate the @autoSP parameteres
     ---------------------------------------------------
 
-    exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
+    exec @myError = validate_auto_storage_path_params  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
                                                    @autoSPPathRoot, @autoSPArchiveServerName,
                                                    @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
 
@@ -188,7 +189,7 @@ AS
 
     END Try
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError Output
+        EXEC format_error_message @message output, @myError Output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -197,7 +198,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Instrument ' + @instrumentName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrument'
+            exec post_log_entry 'Error', @logMessage, 'add_update_instrument'
         End
 
     END Catch
@@ -205,11 +206,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS_Instrument_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_instrument] TO [DMS_Instrument_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrument] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_instrument] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrument] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindExistingJobsForJobParams] ******/
+/****** Object:  StoredProcedure [dbo].[find_existing_jobs_for_job_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindExistingJobsForJobParams]
+CREATE PROCEDURE [dbo].[find_existing_jobs_for_job_params]
 /****************************************************
 **
 **  Desc:
@@ -21,12 +21,13 @@ CREATE PROCEDURE [dbo].[FindExistingJobsForJobParams]
 **          02/27/2009 mem - Expanded @comment to varchar(512)
 **          03/27/2009 mem - Updated Where clause logic for Peptide_Hit jobs to ignore organism name when using a Protein Collection List
 **                         - Expanded @datasetList to varchar(6000)
-**          09/18/2009 mem - Switched to using dbo.MakeTableFromList to populate #XT
+**          09/18/2009 mem - Switched to using dbo.make_table_from_list to populate #XT
 **                         - Now checking for invalid dataset names
 **          09/18/2009 grk - Cleaned up unused parameters
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ AS
 
     INSERT INTO #XT (dataset)
     SELECT DISTINCT Item
-    FROM dbo.MakeTableFromList(@datasetList)
+    FROM dbo.make_table_from_list(@datasetList)
     ORDER BY Item
 
 
@@ -139,14 +140,14 @@ AS
     ---------------------------------------------------
 
     Declare @organismID int
-    execute @organismID = GetOrganismID @organismName
+    execute @organismID = get_organism_id @organismName
 
     ---------------------------------------------------
     -- convert tool name to ID
     ---------------------------------------------------
 
     Declare @analysisToolID int
-    execute @analysisToolID = GetAnalysisToolID @toolName
+    execute @analysisToolID = get_analysis_tool_id @toolName
 
     ---------------------------------------------------
     -- look for existing jobs
@@ -212,13 +213,13 @@ Done:
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForJobParams] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_job_params] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForJobParams] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_job_params] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForJobParams] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_job_params] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForJobParams] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_job_params] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForJobParams] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_job_params] TO [Limited_Table_Write] AS [dbo]
 GO

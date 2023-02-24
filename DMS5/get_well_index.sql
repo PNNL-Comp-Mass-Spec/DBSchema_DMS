@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetWellIndex] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_well_index] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetWellIndex]
+CREATE FUNCTION [dbo].[get_well_index]
 /****************************************************
 **
 **  Desc:
@@ -16,10 +16,11 @@ CREATE FUNCTION [dbo].[GetWellIndex]
 **
 **  Auth:   grk
 **  Date:   07/15/2000
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @wellNum varchar(8)
+    @wellNumber varchar(8)
 )
 RETURNS int
 AS
@@ -36,8 +37,8 @@ AS
         set @numCols = 12
 
         -- get row and col for current well
-        set @wpRow = ASCII(@wellNum) - @wpRowCharBase
-        set @wpCol = convert(smallint, substring(@wellNum, 2, 20))
+        set @wpRow = ASCII(@wellNumber) - @wpRowCharBase
+        set @wpCol = convert(smallint, substring(@wellNumber, 2, 20))
 
         if @wpRow <= 8 and @wpRow >= 0 and @wpCol <= 12 and @wpCol >= 0
         begin
@@ -48,5 +49,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetWellIndex] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_well_index] TO [DDL_Viewer] AS [dbo]
 GO

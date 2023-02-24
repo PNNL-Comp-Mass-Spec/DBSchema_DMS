@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreatePSMJobRequest] ******/
+/****** Object:  StoredProcedure [dbo].[create_psm_job_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CreatePSMJobRequest]
+CREATE PROCEDURE [dbo].[create_psm_job_request]
 /****************************************************
 **
 **  Desc: Creates a new analysis job request using the appropriate
@@ -15,25 +15,26 @@ CREATE PROCEDURE [dbo].[CreatePSMJobRequest]
 **
 **  Auth:   mem
 **  Date:   11/14/2012 mem - Initial version
-**          11/21/2012 mem - No longer passing work package to AddUpdateAnalysisJobRequest
-**                         - Now calling PostUsageLogEntry
-**          12/13/2012 mem - Added parameter @previewMode, which indicates what should be passed to AddUpdateAnalysisJobRequest for @mode
+**          11/21/2012 mem - No longer passing work package to add_update_analysis_job_request
+**                         - Now calling post_usage_log_entry
+**          12/13/2012 mem - Added parameter @previewMode, which indicates what should be passed to add_update_analysis_job_request for @mode
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
-**          03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
+**          03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to validate_analysis_job_request_datasets
 **          04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
-**          03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
+**          03/30/2015 mem - Now passing @toolName to auto_update_settings_file_to_centroid
 **                         - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
-**          04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
+**          04/23/2015 mem - Now passing @toolName to validate_analysis_job_request_datasets
 **          03/21/2016 mem - Add support for column Enabled
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Update grammar
 **                         - Exclude logging some try/catch errors
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
-**          03/19/2021 mem - Remove obsolete parameter from call to AddUpdateAnalysisJobRequest
-**          06/06/2022 mem - Use new argument name when calling AddUpdateAnalysisJobRequest
+**          12/06/2017 mem - Set @allowNewDatasets to 1 when calling validate_analysis_job_request_datasets
+**          03/19/2021 mem - Remove obsolete parameter from call to add_update_analysis_job_request
+**          06/06/2022 mem - Use new argument name when calling add_update_analysis_job_request
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,11 +45,11 @@ CREATE PROCEDURE [dbo].[CreatePSMJobRequest]
     @jobTypeName varchar(64),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
-    @DynMetOxEnabled tinyint,
-    @StatCysAlkEnabled tinyint,
-    @DynSTYPhosEnabled tinyint,
+    @dynMetOxEnabled tinyint,
+    @statCysAlkEnabled tinyint,
+    @dynSTYPhosEnabled tinyint,
     @comment varchar(512),
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @previewMode tinyint = 0,
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -74,7 +75,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'CreatePSMJobRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'create_psm_job_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -100,7 +101,7 @@ AS
         Set @DynSTYPhosEnabled = IsNull(@DynSTYPhosEnabled, 0)
 
         Set @comment = IsNull(@comment, '')
-        Set @ownerPRN = IsNull(@ownerPRN, SUSER_SNAME())
+        Set @ownerUsername = IsNull(@ownerUsername, SUSER_SNAME())
         set @previewMode = IsNull(@previewMode, 0)
         Set @message = ''
         Set @callingUser = IsNull(@callingUser, '')
@@ -167,7 +168,7 @@ AS
         --
         INSERT INTO #TD ( Dataset_Num )
         SELECT DISTINCT Item
-        FROM MakeTableFromList ( @datasets )
+        FROM make_table_from_list ( @datasets )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -182,7 +183,7 @@ AS
         -- Validate the datasets in #TD
         ---------------------------------------------------
 
-        exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName, @allowNewDatasets=1
+        exec @result = validate_analysis_job_request_datasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName, @allowNewDatasets=1
 
         If @result <> 0
         Begin
@@ -221,8 +222,8 @@ AS
         If IsNull(@SettingsFile, '') = ''
         Begin
             Set @msg = 'Tool ' + @toolName + ' with job type ' + @jobTypeName + ' does not have a default settings file defined for ' +
-                       'Stat Cys Alk ' + dbo.TinyintToEnabledDisabled(@StatCysAlkEnabled) + ' and ' +
-                       'Dyn STY Phos ' + dbo.TinyintToEnabledDisabled(@DynSTYPhosEnabled)
+                       'Stat Cys Alk ' + dbo.tinyint_to_enabled_disabled(@StatCysAlkEnabled) + ' and ' +
+                       'Dyn STY Phos ' + dbo.tinyint_to_enabled_disabled(@DynSTYPhosEnabled)
 
             RAISERROR (@msg, 11, 10)
         End
@@ -250,7 +251,7 @@ AS
         If @QExactiveDSCount > 0 Or @ProfileModeMSnDatasets > 0
         Begin
             -- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
-            Set @SettingsFile = dbo.AutoUpdateSettingsFileToCentroid(@SettingsFile, @toolName)
+            Set @SettingsFile = dbo.auto_update_settings_file_to_centroid(@SettingsFile, @toolName)
         End
 
 
@@ -299,9 +300,9 @@ AS
         If IsNull(@ParamFile, '') = ''
         Begin
             Set @msg = 'Tool ' + @toolName + ' with job type ' + @jobTypeName + ' does not have a default parameter file defined for ' +
-                        'Dyn Met Ox ' +   dbo.TinyintToEnabledDisabled(@DynMetOxEnabled) + ', ' +
-                        'Stat Cys Alk ' + dbo.TinyintToEnabledDisabled(@StatCysAlkEnabled) + ', and ' +
-                        'Dyn STY Phos ' + dbo.TinyintToEnabledDisabled(@DynSTYPhosEnabled)
+                        'Dyn Met Ox ' +   dbo.tinyint_to_enabled_disabled(@DynMetOxEnabled) + ', ' +
+                        'Stat Cys Alk ' + dbo.tinyint_to_enabled_disabled(@StatCysAlkEnabled) + ', and ' +
+                        'Dyn STY Phos ' + dbo.tinyint_to_enabled_disabled(@DynSTYPhosEnabled)
 
             RAISERROR (@msg, 11, 10)
         End
@@ -325,8 +326,8 @@ AS
 
         ---------------------------------------------------
         -- Automatically switch from decoy to forward if using MSGFPlus
-        -- AddUpdateAnalysisJobRequest also does this, but it displays a warning message to the user
-        -- We don't want the warning message to appear when the user is using CreatePSMJobRequest; instead we silently update things
+        -- add_update_analysis_job_request also does this, but it displays a warning message to the user
+        -- We don't want the warning message to appear when the user is using create_psm_job_request; instead we silently update things
         ---------------------------------------------------
         --
         If @toolName LIKE 'MSGFPlus%' And @protCollOptionsList Like '%decoy%' And @ParamFile Not Like '%[_]NoDecoy%'
@@ -342,7 +343,7 @@ AS
         -- Now create the analysis job request
         ---------------------------------------------------
         --
-        exec @myError = AddUpdateAnalysisJobRequest @datasets = @datasets,
+        exec @myError = add_update_analysis_job_request @datasets = @datasets,
                 @requestName = @requestName,
                 @toolName = @toolName,
                 @paramFileName = @ParamFile,
@@ -351,7 +352,7 @@ AS
                 @protCollOptionsList = @protCollOptionsList,
                 @organismName = @organismName,
                 @organismDBName = 'na',                 -- Legacy fasta file
-                @requesterPRN = @ownerPRN,
+                @requesterUsername = @ownerUsername,
                 @comment = @comment,
                 @specialProcessing = null,
                 @state = 'New',
@@ -362,14 +363,14 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'CreatePSMJobRequest'
+            Exec post_log_entry 'Error', @message, 'create_psm_job_request'
     END CATCH
 
     ---------------------------------------------------
@@ -385,11 +386,11 @@ AS
 
         Set @UsageMessage = @UsageMessage + '; user ' + @callingUser
 
-        Exec PostUsageLogEntry 'CreatePSMJobRequest', @UsageMessage, @MinimumUpdateInterval=2
+        Exec post_usage_log_entry 'create_psm_job_request', @UsageMessage, @MinimumUpdateInterval=2
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreatePSMJobRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_psm_job_request] TO [DDL_Viewer] AS [dbo]
 GO

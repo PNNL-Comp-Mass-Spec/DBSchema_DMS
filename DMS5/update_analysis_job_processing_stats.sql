@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobProcessingStats] ******/
+/****** Object:  StoredProcedure [dbo].[update_analysis_job_processing_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobProcessingStats]
+CREATE PROCEDURE [dbo].[update_analysis_job_processing_stats]
 /****************************************************
 **
 **  Desc:   Updates job state, start, and finish in T_Analysis_Job
@@ -15,25 +15,26 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobProcessingStats]
 **  Auth:   mem
 **  Date:   06/02/2009 mem - Initial version
 **          09/02/2011 mem - Now setting AJ_Purged to 0 when job is complete, no-export, or failed
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/18/2012 mem - Now preventing addition of @JobCommentAddnl to the comment field if it already contains @JobCommentAddnl
-**          06/15/2015 mem - Use function AppendToText to concatenate @JobCommentAddnl to AJ_Comment
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/15/2015 mem - Use function append_to_text to concatenate @JobCommentAddnl to AJ_Comment
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          08/03/2020 mem - Update T_Cached_Dataset_Links.MASIC_Directory_Name when a MASIC job finishes successfully
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @NewDMSJobState int,
-    @NewBrokerJobState int,
-    @JobStart datetime,
-    @JobFinish datetime,
-    @ResultsFolderName varchar(128),
-    @AssignedProcessor varchar(64),
-    @JobCommentAddnl varchar(512),        -- Additional text to append to the comment (direct append; no separator character is used when appending @JobCommentAddnl)
-    @OrganismDBName varchar(128),
-    @ProcessingTimeMinutes real,
-    @UpdateCode int,                    -- Safety feature to prevent unauthorized job updates
+    @job int,
+    @newDMSJobState int,
+    @newBrokerJobState int,
+    @jobStart datetime,
+    @jobFinish datetime,
+    @resultsFolderName varchar(128),
+    @assignedProcessor varchar(64),
+    @jobCommentAddnl varchar(512),        -- Additional text to append to the comment (direct append; no separator character is used when appending @JobCommentAddnl)
+    @organismDBName varchar(128),
+    @processingTimeMinutes real,
+    @updateCode int,                    -- Safety feature to prevent unauthorized job updates
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
@@ -90,7 +91,7 @@ AS
     --          ', NewBrokerJobState = ' + convert(varchar(12), @NewBrokerJobState) +
     --          ', JobCommentAddnl = ' + IsNull(@JobCommentAddnl, '')
     --
-    -- exec PostLogEntry 'Debug', @DebugMsg, UpdateAnalysisJobProcessingStats
+    -- exec post_log_entry 'Debug', @DebugMsg, update_analysis_job_processing_stats
 
     ---------------------------------------------------
     -- Perform (or preview) the update
@@ -119,7 +120,7 @@ AS
                CASE
                    WHEN @NewBrokerJobState = 2
                    THEN AJ_Comment
-                   ELSE dbo.AppendtoText(AJ_comment, @JobCommentAddnl, 0, '; ', 512)
+                   ELSE dbo.append_to_text(AJ_comment, @JobCommentAddnl, 0, '; ', 512)
                END AS Comment_New,
                AJ_organismDBName,
                IsNull(@OrganismDBName, AJ_organismDBName) AS AJ_organismDBName_New,
@@ -150,7 +151,7 @@ AS
             AJ_AssignedProcessorName = 'Job_Broker',
             AJ_comment = CASE WHEN @NewBrokerJobState = 2
                               THEN AJ_Comment
-                              ELSE dbo.AppendtoText(AJ_comment, @JobCommentAddnl, 0, '; ', 512)
+                              ELSE dbo.append_to_text(AJ_comment, @JobCommentAddnl, 0, '; ', 512)
                          END,
             AJ_organismDBName = IsNull(@OrganismDBName, AJ_organismDBName),
             AJ_ProcessingTimeMinutes = CASE WHEN @NewBrokerJobState <> 2
@@ -190,7 +191,7 @@ AS
         If @myRowCount > 0
         Begin
             -- Schedule an archive update
-            Exec SetArchiveUpdateRequired @DatasetName, @Message output
+            Exec set_archive_update_required @DatasetName, @Message output
 
             If @toolName LIKE 'Masic%'
             Begin
@@ -213,13 +214,13 @@ Done:
     return @myError
 
 GO
-GRANT ALTER ON [dbo].[UpdateAnalysisJobProcessingStats] TO [D3L243] AS [dbo]
+GRANT ALTER ON [dbo].[update_analysis_job_processing_stats] TO [D3L243] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessingStats] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_analysis_job_processing_stats] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [D3L243] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_processing_stats] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_processing_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessingStats] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_processing_stats] TO [Limited_Table_Write] AS [dbo]
 GO

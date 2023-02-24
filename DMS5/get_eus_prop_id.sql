@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetEUSPropID] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_eus_prop_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetEUSPropID]
+CREATE FUNCTION [dbo].[get_eus_prop_id]
 /****************************************************
 **
 **  Desc: Gets EUS Proposal ID for given EUS Proposal ID
@@ -13,14 +13,15 @@ CREATE PROCEDURE [dbo].[GetEUSPropID]
 **  Auth:   jds
 **  Date:   09/01/2006
 **          08/03/2017 mem - Add Set NoCount On
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @EUSPropID varchar(10) = " "
+    @eusPropID varchar(10) = " "
 )
+RETURNS int
 AS
-    Set NoCount On
-
+BEGIN
     Declare @tempEUSPropID varchar(10) = '0'
 
     SELECT @tempEUSPropID = PROPOSAL_ID
@@ -28,9 +29,10 @@ AS
     WHERE PROPOSAL_ID = @EUSPropID
 
     return @tempEUSPropID
+END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEUSPropID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_eus_prop_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEUSPropID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_eus_prop_id] TO [Limited_Table_Write] AS [dbo]
 GO

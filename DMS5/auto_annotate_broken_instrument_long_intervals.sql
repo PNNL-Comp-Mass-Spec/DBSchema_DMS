@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoAnnotateBrokenInstrumentLongIntervals] ******/
+/****** Object:  StoredProcedure [dbo].[auto_annotate_broken_instrument_long_intervals] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoAnnotateBrokenInstrumentLongIntervals]
+CREATE PROCEDURE [dbo].[auto_annotate_broken_instrument_long_intervals]
 /****************************************************
 **
 **  Desc:  Updates the comments for long intervals in table T_Run_Interval
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[AutoAnnotateBrokenInstrumentLongIntervals]
 **
 **  Auth:   mem
 **  Date:   05/12/2022 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -45,7 +46,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AutoAnnotateBrokenInstrumentLongIntervals', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'auto_annotate_broken_instrument_long_intervals', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -149,21 +150,21 @@ AS
 
                         If @infoOnly > 0
                         Begin
-                            Print 'Preview: Call AddUpdateRunInterval to annotate ' + @intervalDescription
+                            Print 'Preview: Call add_update_run_interval to annotate ' + @intervalDescription
                         End
                         Else
                         Begin
-                            Exec @myError = AddUpdateRunInterval @runIntervalID, 'Broken[100%]', 'update', @message = @message output, @callingUser = 'PNL\msdadmin (AutoAnnotateBrokenInstrumentLongIntervals)'
+                            Exec @myError = add_update_run_interval @runIntervalID, 'Broken[100%]', 'update', @message = @message output, @callingUser = 'PNL\msdadmin (auto_annotate_broken_instrument_long_intervals)'
 
                             If @myError = 0
                             Begin
                                 Set @message = 'Annotated ' + @intervalDescription
-                                Exec PostLogEntry 'Normal', @message, 'AutoAnnotateBrokenInstrumentLongIntervals'
+                                Exec post_log_entry 'Normal', @message, 'auto_annotate_broken_instrument_long_intervals'
                             End
                             Else
                             Begin
                                 Set @message = 'Error annotating ' + @intervalDescription
-                                Exec PostLogEntry 'Error', @message, 'AutoAnnotateBrokenInstrumentLongIntervals'
+                                Exec post_log_entry 'Error', @message, 'auto_annotate_broken_instrument_long_intervals'
                             End
 
                         End
@@ -174,7 +175,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetEMSLInstrumentUsageDailyDetails] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_emsl_instrument_usage_daily_details] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
+CREATE FUNCTION [dbo].[get_emsl_instrument_usage_daily_details]
 /****************************************************
 **  Desc:
 **      Outputs contents of EMSL instrument usage report table as a daily rollup, including rows with Dataset_ID_Acq_Overlap
@@ -15,21 +15,22 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageDailyDetails]
 **      See also /file1/www/html/prismsupport/dms2ws/application/controllers/instrument_usage_report.php
 **
 **  Auth:   grk
-**  Date:   09/15/2015 grk - initial release, modeled after GetEMSLInstrumentUsageDaily
+**  Date:   09/15/2015 grk - initial release, modeled after get_emsl_instrument_usage_daily
 **          10/20/2015 grk - added users to output
 **          02/10/2016 grk - added rollup of comments and operators
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/09/2020 mem - Truncate the concatenated comment if over 4090 characters long
 **          04/18/2020 mem - Update to show dataset details for all datasets that are not Maintenance runs
-**                         - Saved as new UDF named GetEMSLInstrumentUsageDailyDetails
+**                         - Saved as new UDF named get_emsl_instrument_usage_daily_details
 **          04/27/2020 mem - Populate the Seq column using Seq values in T_EMSL_Instrument_Usage_Report
 **          03/17/2022 mem - Add ID_Acq_Overlap (from Dataset_ID_Acq_Overlap) to the output
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Year int,
-    @Month int
+    @year int,
+    @month int
 )
 RETURNS @T_Report_Output TABLE
     (
@@ -515,5 +516,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageDailyDetails] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_emsl_instrument_usage_daily_details] TO [DDL_Viewer] AS [dbo]
 GO

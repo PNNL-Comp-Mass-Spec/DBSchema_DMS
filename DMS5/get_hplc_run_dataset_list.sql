@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetHPLCRunDatasetList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_hplc_run_dataset_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetHPLCRunDatasetList]
+CREATE FUNCTION [dbo].[get_hplc_run_dataset_list]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetHPLCRunDatasetList]
 **
 **  Auth:   grk
 **  Date:   09/29/2012
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -53,5 +54,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetHPLCRunDatasetList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_hplc_run_dataset_list] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,22 +1,23 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateUserOperations] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_user_operations] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateUserOperations]
+CREATE PROCEDURE [dbo].[add_update_user_operations]
 /****************************************************
 **
 **  Desc:   Updates the user operations defined for the given user
 **
 **  Auth:   mem
 **  Date:   06/05/2013 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @UserID int,
-    @OperationsList varchar(1024),          -- Comma separated separated list of operation names (see table T_User_Operations)
+    @userID int,
+    @operationsList varchar(1024),          -- Comma separated separated list of operation names (see table T_User_Operations)
     @message varchar(512) = '' output
 )
 AS
@@ -30,7 +31,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateUserOperations', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_user_operations', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -59,7 +60,7 @@ AS
 
     INSERT INTO #Tmp_UserOperations( User_Operation )
     SELECT CAST(Item AS varchar(64)) AS DMS_User_Operation
-    FROM dbo.MakeTableFromList ( @OperationsList )
+    FROM dbo.make_table_from_list ( @OperationsList )
     WHERE CAST(Item AS varchar(64)) IN ( SELECT Operation
                                          FROM T_User_Operations )
 
@@ -122,5 +123,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateUserOperations] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_user_operations] TO [DDL_Viewer] AS [dbo]
 GO

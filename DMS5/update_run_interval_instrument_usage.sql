@@ -1,17 +1,18 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRunIntervalInstrumentUsage] ******/
+/****** Object:  StoredProcedure [dbo].[update_run_interval_instrument_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRunIntervalInstrumentUsage]
+CREATE PROCEDURE [dbo].[update_run_interval_instrument_usage]
 /****************************************************
 **
 **  Desc:   Determines the instrument associated with the given run interval ID
-**          then calls UpdateDatasetIntervalForMultipleInstruments
-**          (which calls UpdateDatasetInterval and UpdateEMSLInstrumentUsageReport)
+**          then calls update_dataset_interval_for_multiple_instruments
+**          (which calls update_dataset_interval and update_emsl_instrument_usage_report)
 **
 **  Auth:   mem
 **  Date:   02/15/2022 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRunIntervalInstrumentUsage', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_run_interval_instrument_usage', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -80,11 +81,11 @@ AS
 
     If @infoOnly = 0
     Begin
-        Set @message = 'Calling UpdateDatasetIntervalForMultipleInstruments for instrument ' + @instrumentName + ', calling user ' + @callingUser
-        Exec PostLogEntry 'Info', @message, 'UpdateRunIntervalInstrumentUsage'
+        Set @message = 'Calling update_dataset_interval_for_multiple_instruments for instrument ' + @instrumentName + ', calling user ' + @callingUser
+        Exec post_log_entry 'Info', @message, 'update_run_interval_instrument_usage'
     End
 
-    Exec UpdateDatasetIntervalForMultipleInstruments @daysToProcess = @daysToProcess,
+    Exec update_dataset_interval_for_multiple_instruments @daysToProcess = @daysToProcess,
                                                      @updateEMSLInstrumentUsage = 1,
                                                      @infoOnly = @infoOnly,
                                                      @instrumentsToProcess = @instrumentName,
@@ -92,23 +93,23 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'UpdateRunIntervalInstrumentUsage'
+            Exec post_log_entry 'Error', @message, 'update_run_interval_instrument_usage'
     END CATCH
 
 Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRunIntervalInstrumentUsage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_run_interval_instrument_usage] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRunIntervalInstrumentUsage] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_run_interval_instrument_usage] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRunIntervalInstrumentUsage] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_run_interval_instrument_usage] TO [DMS2_SP_User] AS [dbo]
 GO

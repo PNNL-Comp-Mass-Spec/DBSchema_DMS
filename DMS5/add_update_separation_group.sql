@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateSeparationGroup] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_separation_group] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSeparationGroup]
+CREATE PROCEDURE [dbo].[add_update_separation_group]
 /****************************************************
 **
 **  Desc:   Adds new or edits existing item in T_Separation_Group
@@ -12,9 +12,10 @@ CREATE PROCEDURE [dbo].[AddUpdateSeparationGroup]
 **
 **  Auth:   mem
 **  Date:   06/12/2017 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/15/2021 mem - Add @fractionCount
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -42,7 +43,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateSeparationGroup', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_separation_group', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -126,21 +127,21 @@ AS
 
     END TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateSeparationGroup'
+        Exec post_log_entry 'Error', @message, 'add_update_separation_group'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSeparationGroup] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_separation_group] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSeparationGroup] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_separation_group] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSeparationGroup] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_separation_group] TO [Limited_Table_Write] AS [dbo]
 GO

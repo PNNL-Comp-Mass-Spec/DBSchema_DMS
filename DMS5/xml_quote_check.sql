@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[XMLQuoteCheck] ******/
+/****** Object:  UserDefinedFunction [dbo].[xml_quote_check] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[XMLQuoteCheck]
+CREATE FUNCTION [dbo].[xml_quote_check]
 /****************************************************
 **
 **  Desc:   Replaces double quote characters with &quot;
@@ -15,10 +15,11 @@ CREATE FUNCTION [dbo].[XMLQuoteCheck]
 **  Date:   02/03/2011 mem - Initial version
 **          02/25/2011 mem - Now replacing < and > with &lt; and &gt;
 **          05/08/2013 mem - Now changing Null strings to ''
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Text varchar(max)
+    @text varchar(max)
 )
     RETURNS varchar(max)
 AS
@@ -32,5 +33,5 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[XMLQuoteCheck] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[xml_quote_check] TO [DDL_Viewer] AS [dbo]
 GO

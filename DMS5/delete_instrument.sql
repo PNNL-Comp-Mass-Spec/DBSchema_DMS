@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteInstrument] ******/
+/****** Object:  StoredProcedure [dbo].[delete_instrument] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteInstrument]
+CREATE PROCEDURE [dbo].[delete_instrument]
 /****************************************************
 **
 **  Desc:   Delete the specified instrument and associated storage path entries
@@ -16,12 +16,13 @@ CREATE PROCEDURE [dbo].[DeleteInstrument]
 **  Auth:   mem
 **  Date:   02/12/2010
 **          08/28/2010 mem - No longer deleting entries in the Instrument_Allowed_Dataset_Type table
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InstrumentName varchar(32),
+    @instrumentName varchar(32),
     @message varchar(512)='' output
 )
 AS
@@ -38,7 +39,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteInstrument', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_instrument', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -86,7 +87,7 @@ AS
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'DeleteInstrument'
+    set @transName = 'delete_instrument'
     begin transaction @transName
 
     -- Delete archive path entry
@@ -114,7 +115,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteInstrument] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_instrument] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteInstrument] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_instrument] TO [Limited_Table_Write] AS [dbo]
 GO

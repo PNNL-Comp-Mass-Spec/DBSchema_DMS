@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreJobPSMStats] ******/
+/****** Object:  StoredProcedure [dbo].[store_job_psm_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreJobPSMStats]
+CREATE PROCEDURE [dbo].[store_job_psm_stats]
 /****************************************************
 **
 **  Desc: Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[StoreJobPSMStats]
 **          09/28/2016 mem - Added three @uniquePhosphopeptide parameters, two @missedCleavageRatio parameters, and @trypticPeptides, @keratinPeptides, and @trypsinPeptides
 **          07/15/2020 mem - Added @dynamicReporterIon, @percentPSMsMissingNTermReporterIon, and @percentPSMsMissingReporterIon
 **          07/15/2020 mem - Added @uniqueAcetylPeptidesFDR
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -320,12 +321,12 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in StoreJobPSMStats'
+            Set @message = 'Error in store_job_psm_stats'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @infoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'StoreJobPSMStats'
+            Exec post_log_entry 'Error', @message, 'store_job_psm_stats'
     End
 
     If Len(@message) > 0 AND @infoOnly <> 0
@@ -335,11 +336,11 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreJobPSMStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[store_job_psm_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreJobPSMStats] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_job_psm_stats] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreJobPSMStats] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_job_psm_stats] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[StoreJobPSMStats] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[store_job_psm_stats] TO [svc-dms] AS [dbo]
 GO

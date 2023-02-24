@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateInstrumentConfigHistory] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_instrument_config_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateInstrumentConfigHistory]
+CREATE PROCEDURE [dbo].[add_update_instrument_config_history]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Instrument_Config_History
@@ -14,10 +14,11 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentConfigHistory]
 **  Date:   09/30/2008
 **          03/19/2012 grk - added "PostedBy"
 **          06/13/2017 mem - Use SCOPE_IDENTITY
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/30/2018 mem - Make @id an output parameter
 **                           Validate @dateOfChange
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentConfigHistory', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_instrument_config_history', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -159,9 +160,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentConfigHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument_config_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrumentConfigHistory] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_instrument_config_history] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentConfigHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument_config_history] TO [Limited_Table_Write] AS [dbo]
 GO

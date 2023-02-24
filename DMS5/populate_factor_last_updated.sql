@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PopulateFactorLastUpdated] ******/
+/****** Object:  StoredProcedure [dbo].[populate_factor_last_updated] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PopulateFactorLastUpdated]
+CREATE PROCEDURE [dbo].[populate_factor_last_updated]
 /****************************************************
 **
 **  Desc:   Populates the Last_Updated column in table T_Factors using T_Factor_Log
@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[PopulateFactorLastUpdated]
 **
 **  Auth:   mem
 **  Date:   10/06/2016 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -228,5 +229,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PopulateFactorLastUpdated] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[populate_factor_last_updated] TO [DDL_Viewer] AS [dbo]
 GO

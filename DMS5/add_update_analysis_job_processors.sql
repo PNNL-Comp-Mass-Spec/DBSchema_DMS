@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateAnalysisJobProcessors] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_analysis_job_processors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobProcessors]
+CREATE PROCEDURE [dbo].[add_update_analysis_job_processors]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Analysis_Job_Processors
@@ -19,19 +19,20 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobProcessors]
 **          02/13/2008 mem - Now assuring that @AnalysisToolsList results in a non-redundant list of analysis tool names (Ticket #643)
 **          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int output,
-    @State char(1),
-    @ProcessorName varchar(64),
-    @Machine varchar(64),
-    @Notes varchar(512),
-    @AnalysisToolsList varchar(1024),
+    @id int output,
+    @state char(1),
+    @processorName varchar(64),
+    @machine varchar(64),
+    @notes varchar(512),
+    @analysisToolsList varchar(1024),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -49,7 +50,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobProcessors', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_analysis_job_processors', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -82,7 +83,7 @@ AS
     SELECT
         DISTINCT Item
     FROM
-        MakeTableFromList(@AnalysisToolsList)
+        make_table_from_list(@AnalysisToolsList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -169,7 +170,7 @@ AS
     -- set up transaction name
     ---------------------------------------------------
     declare @transName varchar(32)
-    set @transName = 'AddUpdateAnalysisJobProcessors'
+    set @transName = 'add_update_analysis_job_processors'
 
     ---------------------------------------------------
     -- action for add mode
@@ -210,7 +211,7 @@ AS
 
         -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
+            Exec alter_entered_by_user 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
 
     end -- add mode
 
@@ -247,7 +248,7 @@ AS
 
         -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processors
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
+            Exec alter_entered_by_user 'T_Analysis_Job_Processors', 'ID', @ID, @CallingUser, @EntryDateColumnName='Last_Affected'
 
     end -- update mode
 
@@ -299,7 +300,7 @@ AS
 
         -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Tools
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Tools', 'Processor_ID', @ID, @CallingUser
+            Exec alter_entered_by_user 'T_Analysis_Job_Processor_Tools', 'Processor_ID', @ID, @CallingUser
 
         commit transaction @transName
     end -- add or update mode
@@ -307,11 +308,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job_processors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job_processors] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobProcessors] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job_processors] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobProcessors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job_processors] TO [Limited_Table_Write] AS [dbo]
 GO

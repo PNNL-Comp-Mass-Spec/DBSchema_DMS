@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetParamFileMassModsTableCode] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_param_file_mass_mods_table_code] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetParamFileMassModsTableCode]
+CREATE FUNCTION [dbo].[get_param_file_mass_mods_table_code]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetParamFileMassModsTableCode]
 **
 **  Auth:   mem
 **  Date:   12/05/2016 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,5 +49,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamFileMassModsTableCode] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_file_mass_mods_table_code] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobRequestInstrList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_job_request_instr_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetJobRequestInstrList]
+CREATE FUNCTION [dbo].[get_job_request_instr_list]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[GetJobRequestInstrList]
 **  Auth:   grk
 **  Date:   11/01/2005 grk - Initial version
 **          07/30/2019 mem - Get Dataset IDs from T_Analysis_Job_Request_Datasets
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -46,5 +47,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobRequestInstrList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_request_instr_list] TO [DDL_Viewer] AS [dbo]
 GO

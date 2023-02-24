@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateFilterSetCriteria] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_filter_set_criteria] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DuplicateFilterSetCriteria]
+CREATE PROCEDURE [dbo].[duplicate_filter_set_criteria]
 /****************************************************
 **
 **  Desc:
@@ -33,13 +33,14 @@ CREATE PROCEDURE [dbo].[DuplicateFilterSetCriteria]
 **
 **  Auth:   mem
 **  Date:   10/02/2009
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceFilterSetID int,
-    @DestFilterSetID int,
-    @AddMissingFilterCriteria tinyint = 1,
-    @InfoOnly tinyint = 0,
+    @sourceFilterSetID int,
+    @destFilterSetID int,
+    @addMissingFilterCriteria tinyint = 1,
+    @infoOnly tinyint = 0,
     @message varchar(512)='' OUTPUT
 )
 AS
@@ -207,10 +208,10 @@ AS
     If @AddMissingFilterCriteria <> 0
     Begin
         -----------------------------------------
-        -- Call AddMissingFilterCriteria to add any missing criteria
+        -- Call add_missing_filter_criteria to add any missing criteria
         -----------------------------------------
         --
-        Exec AddMissingFilterCriteria @DestFilterSetID
+        Exec add_missing_filter_criteria @DestFilterSetID
     End
 
     Set @message = 'Duplicated criteria from Filter Set ID ' + Convert(varchar(11), @SourceFilterSetID) + ' to Filter Set ID ' + Convert(varchar(11), @DestFilterSetID)
@@ -223,9 +224,9 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateFilterSetCriteria] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_filter_set_criteria] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateFilterSetCriteria] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_filter_set_criteria] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DuplicateFilterSetCriteria] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[duplicate_filter_set_criteria] TO [PNL\D3M578] AS [dbo]
 GO

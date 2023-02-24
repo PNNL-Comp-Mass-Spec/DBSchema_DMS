@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetNextInstrumentDatasetStart] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_next_instrument_dataset_start] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetNextInstrumentDatasetStart]
+CREATE FUNCTION [dbo].[get_next_instrument_dataset_start]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetNextInstrumentDatasetStart]
 **
 **  Auth:   grk
 **  Date:   05/16/2011
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,10 +37,11 @@ AS
 
         RETURN @result
     END
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNextInstrumentDatasetStart] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_next_instrument_dataset_start] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetNextInstrumentDatasetStart] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_next_instrument_dataset_start] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetNextInstrumentDatasetStart] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_next_instrument_dataset_start] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDatasetPriority] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dataset_priority] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDatasetPriority]
+CREATE FUNCTION [dbo].[get_dataset_priority]
 /****************************************************
 **
 **  Desc:
@@ -25,24 +25,25 @@ CREATE FUNCTION [dbo].[GetDatasetPriority]
 **          12/18/2014 mem - Replace [_] with [_-]
 **          05/07/2015 mem - Added QC_Shew_TEDDY
 **          08/08/2018 mem - Added QC_Mam and QC_PP_MCF-7
-**          06/27/2019 mem - Renamed from DatasetPreference to GetDatasetPriority
+**          06/27/2019 mem - Renamed from DatasetPreference to get_dataset_priority
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128)
+    @datasetName varchar(128)
 )
 RETURNS tinyint
 AS
 BEGIN
     Declare @result tinyint
 
-    If (@datasetNum LIKE 'QC[_][0-9][0-9]%' OR
-        @datasetNum LIKE 'QC[_-]Shew[_-][0-9][0-9]%' OR
-        @datasetNum LIKE 'QC[_-]ShewIntact%' OR
-        @datasetNum LIKE 'QC[_]Shew[_]TEDDY%' OR
-        @datasetNum LIKE 'QC[_]Mam%' OR
-        @datasetNum Like 'QC[_]PP[_]MCF-7%'
-       ) AND NOT @datasetNum LIKE '%-bad'
+    If (@datasetName LIKE 'QC[_][0-9][0-9]%' OR
+        @datasetName LIKE 'QC[_-]Shew[_-][0-9][0-9]%' OR
+        @datasetName LIKE 'QC[_-]ShewIntact%' OR
+        @datasetName LIKE 'QC[_]Shew[_]TEDDY%' OR
+        @datasetName LIKE 'QC[_]Mam%' OR
+        @datasetName Like 'QC[_]PP[_]MCF-7%'
+       ) AND NOT @datasetName LIKE '%-bad'
     Begin
         Set @result = 1
     End
@@ -55,7 +56,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetPriority] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_priority] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetDatasetPriority] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_dataset_priority] TO [public] AS [dbo]
 GO

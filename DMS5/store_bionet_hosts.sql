@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreBionetHosts] ******/
+/****** Object:  StoredProcedure [dbo].[store_bionet_hosts] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreBionetHosts]
+CREATE PROCEDURE [dbo].[store_bionet_hosts]
 /****************************************************
 **
 **  Updates the entries in T_Bionet_Hosts
@@ -27,7 +27,8 @@ CREATE PROCEDURE [dbo].[StoreBionetHosts]
 **
 **  Auth:   mem
 **  Date:   12/02/2015 mem - Initial version
-**          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
+**          11/19/2018 mem - Pass 0 to the @maxRows parameter to parse_delimited_list_ordered
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -98,7 +99,7 @@ AS
 
     INSERT INTO #Tmp_HostData (Value)
     SELECT Item
-    FROM dbo.MakeTableFromListDelim ( @hostList, @Delimiter )
+    FROM dbo.make_table_from_list_delim ( @hostList, @Delimiter )
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -158,7 +159,7 @@ AS
 
             INSERT INTO #Tmp_DataColumns (EntryID, Value)
             SELECT EntryID, Value
-            FROM dbo.udfParseDelimitedListOrdered(@Row, @Delimiter, 0)
+            FROM dbo.parse_delimited_list_ordered(@Row, @Delimiter, 0)
             --
             SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -289,5 +290,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreBionetHosts] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[store_bionet_hosts] TO [DDL_Viewer] AS [dbo]
 GO

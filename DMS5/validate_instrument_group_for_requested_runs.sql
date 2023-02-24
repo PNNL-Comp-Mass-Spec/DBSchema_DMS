@@ -1,26 +1,27 @@
-/****** Object:  StoredProcedure [dbo].[ValidateInstrumentGroupForRequestedRuns] ******/
+/****** Object:  StoredProcedure [dbo].[validate_instrument_group_for_requested_runs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateInstrumentGroupForRequestedRuns]
+CREATE PROCEDURE [dbo].[validate_instrument_group_for_requested_runs]
 /****************************************************
 **
 **  Desc:
-**      Validates that the specified instrument group is valid for the dataset types defined for the requested runs in @reqRunIDList
+**      Validates that the specified instrument group is valid for the dataset types defined for the requested runs in @requestedRunIDList
 **
 **  Arguments:
-**    @reqRunIDList         Comma separated list of requested run IDs
+**    @requestedRunIDList   Comma separated list of requested run IDs
 **    @instrumentGroup      Instrument group name
 **    @message              Output: Status message if the group is valid; warning message if the instrument group is not valid
 **    @returnCode           Output: Empty string if the instrument group is valid, 'U5205' if the instrument group is not valid for the dataset types
 **
 **  Auth:   mem
-**  Date:   01/13/2023 mem - Initial version (code refactored code from UpdateRequestedRunAssignments)
+**  Date:   01/13/2023 mem - Initial version (code refactored code from update_requested_run_assignments)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @reqRunIDList varchar(max),
+    @requestedRunIDList varchar(max),
     @instrumentGroup varchar(64),
     @message varchar(1024) = '' output,
     @returnCode varchar(64) = '' output
@@ -51,7 +52,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'ValidateInstrumentGroupForRequestedRuns', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'validate_instrument_group_for_requested_runs', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -62,12 +63,12 @@ AS
         -- Validate the inputs
         ---------------------------------------------------
 
-        Set @reqRunIDList = Ltrim(Rtrim(IsNull(@reqRunIDList, '')))
+        Set @requestedRunIDList = Ltrim(Rtrim(IsNull(@requestedRunIDList, '')))
         Set @instrumentGroup = Ltrim(Rtrim(IsNull(@instrumentGroup, '')))
 
-        If @reqRunIDList = ''
+        If @requestedRunIDList = ''
         Begin
-            Set @message = 'Argument @reqRunIDList is an empty string'
+            Set @message = 'Argument @requestedRunIDList is an empty string'
             Set @returnCode = 'U5201'
 
             Return 5201
@@ -82,7 +83,7 @@ AS
         End
 
         ---------------------------------------------------
-        -- Populate a temporary table with the dataset type associated with the requested run IDs in @reqRunIDList
+        -- Populate a temporary table with the dataset type associated with the requested run IDs in @requestedRunIDList
         ---------------------------------------------------
 
         CREATE TABLE #Tmp_DatasetTypeList (
@@ -106,7 +107,7 @@ AS
                MIN(RequestQ.RequestID) AS RequestIDFirst,
                MAX(RequestQ.RequestID) AS RequestIDFirst
         FROM ( SELECT Distinct Convert(int, Item) AS RequestID
-               FROM MakeTableFromList ( @reqRunIDList )
+               FROM make_table_from_list ( @requestedRunIDList )
              ) AS RequestQ
              INNER JOIN T_Requested_Run RR
                ON RequestQ.RequestID = RR.ID
@@ -118,7 +119,7 @@ AS
 
         If @myRowCount = 0
         Begin
-            Set @message = 'Requested run IDs not found in T_Requested_Run: ' + @reqRunIDList
+            Set @message = 'Requested run IDs not found in T_Requested_Run: ' + @requestedRunIDList
             Set @returnCode = 'U5203'
 
             Return 5203
@@ -157,7 +158,7 @@ AS
 
                 If Not Exists (SELECT * FROM T_Instrument_Group_Allowed_DS_Type WHERE IN_Group = @instrumentGroup AND Dataset_Type = @datasetTypeName)
                 Begin
-                    SELECT @allowedDatasetTypes = dbo.GetInstrumentGroupDatasetTypeList(@instrumentGroup, ', ')
+                    SELECT @allowedDatasetTypes = dbo.get_instrument_group_dataset_type_list(@instrumentGroup, ', ')
 
                     Set @message = 'Dataset Type "' + @datasetTypeName + '" is invalid for instrument group "' + @instrumentGroup + '"; valid types are "' + @allowedDatasetTypes + '"'
 
@@ -201,7 +202,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -209,12 +210,12 @@ AS
 
         Set @msg = @message + '; Requests '
 
-        If Len(@reqRunIDList) < 128
-            Set @msg = @msg + @reqRunIDList
+        If Len(@requestedRunIDList) < 128
+            Set @msg = @msg + @requestedRunIDList
         Else
-            Set @msg = @msg + Substring(@reqRunIDList, 1, 128) + ' ...'
+            Set @msg = @msg + Substring(@requestedRunIDList, 1, 128) + ' ...'
 
-        exec PostLogEntry 'Error', @msg, 'ValidateInstrumentGroupForRequestedRuns'
+        exec post_log_entry 'Error', @msg, 'validate_instrument_group_for_requested_runs'
 
         Set @returnCode = 'U5210'
         Set @myError = 5210

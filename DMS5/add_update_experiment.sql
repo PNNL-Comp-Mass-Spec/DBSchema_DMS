@@ -1,16 +1,16 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateExperiment] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_experiment] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateExperiment]
+CREATE PROCEDURE [dbo].[add_update_experiment]
 /****************************************************
 **
 **  Desc:
 **      Adds a new experiment to DB
 **
 **      Note that the Experiment Detail Report web page
-**      uses DoMaterialItemOperation to retire an experiment
+**      uses do_material_item_operation to retire an experiment
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -26,11 +26,11 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          04/30/2007 grk - added better name validation (Ticket #450)
 **          02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **          03/13/2008 grk - added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
-**          03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
+**          03/25/2008 mem - Now calling alter_event_log_entry_user if @callingUser is not blank (Ticket #644)
 **          07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **          12/01/2009 grk - modified to skip checking of existing well occupancy if updating existing experiment
 **          04/22/2010 grk - try-catch for error handling
-**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @researcherPRN contains a person's real name rather than their username
+**          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @researcherUsername contains a person's real name rather than their username
 **          05/18/2010 mem - Now validating that @internalStandard and @postdigestIntStd are active internal standards when creating a new experiment (@mode is 'add' or 'check_add')
 **          11/15/2011 grk - added alkylation field
 **          12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
@@ -45,21 +45,21 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          07/20/2016 mem - Update error messages to use user-friendly entity names (e.g. campaign name instead of campaignNum)
 **          09/14/2016 mem - Validate inputs
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
-**          11/23/2016 mem - Include the experiment name when calling PostLogEntry from within the catch block
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
+**          11/23/2016 mem - Include the experiment name when calling post_log_entry from within the catch block
 **                         - Trim trailing and leading spaces from input parameters
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          01/24/2017 mem - Fix validation of @labelling to raise an error when the label name is unknown
 **          01/27/2017 mem - Change @internalStandard and @postdigestIntStd to 'none' if empty
-**          03/17/2017 mem - Only call MakeTableFromListDelim if @biomaterialList contains a semicolon
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/17/2017 mem - Only call make_table_from_list_delim if @biomaterialList contains a semicolon
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/18/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **          09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
-**          11/29/2017 mem - Call udfParseDelimitedList instead of MakeTableFromListDelim
+**          11/29/2017 mem - Call parse_delimited_list instead of make_table_from_list_delim
 **                           Rename #CC to #Tmp_ExpToCCMap
-**                           No longer pass @biomaterialList to AddExperimentCellCulture since it uses #Tmp_ExpToCCMap
-**                           Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
+**                           No longer pass @biomaterialList to add_experiment_biomaterial since it uses #Tmp_ExpToCCMap
+**                           Remove references to the Cell_Culture_List field in T_Experiments (procedure add_experiment_biomaterial calls update_cached_experiment_component_names)
 **                           Add argument @referenceCompoundList
 **          01/04/2018 mem - Entries in @referenceCompoundList are now assumed to be in the form Compound_ID:Compound_Name, though we also support only Compound_ID or only Compound_Name
 **          07/30/2018 mem - Expand @reason and @comment to varchar(500)
@@ -68,20 +68,21 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
 **          11/30/2018 mem - Add output parameter @experimentID
 **          03/27/2019 mem - Update @experimentId using @existingExperimentID
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
-**                         - Use RemoveCrLf to replace linefeeds with semicolons
+**          02/25/2021 mem - Use replace_character_codes to replace character codes with punctuation marks
+**                         - Use remove_cr_lf to replace linefeeds with semicolons
 **          07/06/2021 mem - Expand @organismName and @labNotebookRef to varchar(128)
 **          09/30/2021 mem - Allow renaming an experiment if it does not have an associated requested run or dataset
 **                         - Move argument @experimentID, making it the first argument
 **                         - Rename the Experiment, Campaign, and Wellplate name arguments
 **          11/26/2022 mem - Rename parameter to @biomaterialList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @experimentId int output,            -- Input/output; When copying an experiment, this will have the new experiment's ID; this is required if renaming an existing experiment
     @experimentName varchar(50),         -- Experiment name
     @campaignName varchar(64),
-    @researcherPRN varchar(50),
+    @researcherUsername varchar(50),
     @organismName varchar(128),
     @reason varchar(500) = 'na',
     @comment varchar(500) = '',
@@ -95,7 +96,7 @@ CREATE PROCEDURE [dbo].[AddUpdateExperiment]
     @internalStandard varchar(50),
     @postdigestIntStd varchar(50),
     @wellplateName varchar(64),
-    @wellNum varchar(8),
+    @wellNumber varchar(8),
     @alkylation varchar(1),
     @mode varchar(12) = 'add',                  -- 'add, 'update', 'check_add', 'check_update'
     @message varchar(512) output,
@@ -133,7 +134,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateExperiment', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_experiment', @raiseError = 1
     If @authorized = 0
     Begin
         RAISERROR ('Access denied', 11, 3)
@@ -146,7 +147,7 @@ AS
     Set @experimentID = IsNull(@experimentID, 0)
     Set @experimentName = LTrim(RTrim(IsNull(@experimentName, '')))
     Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
-    Set @researcherPRN = LTrim(RTrim(IsNull(@researcherPRN, '')))
+    Set @researcherUsername = LTrim(RTrim(IsNull(@researcherUsername, '')))
     Set @organismName = LTrim(RTrim(IsNull(@organismName, '')))
     Set @reason = LTrim(RTrim(IsNull(@reason, '')))
     Set @comment = LTrim(RTrim(IsNull(@comment, '')))
@@ -165,8 +166,8 @@ AS
     If LEN(@campaignName) < 1
         RAISERROR ('Campaign name must be defined', 11, 31)
     --
-    If LEN(@researcherPRN) < 1
-        RAISERROR ('Researcher PRN must be defined', 11, 32)
+    If LEN(@researcherUsername) < 1
+        RAISERROR ('Researcher username must be defined', 11, 32)
     --
     If LEN(@organismName) < 1
         RAISERROR ('Organism name must be defined', 11, 33)
@@ -181,10 +182,10 @@ AS
         RAISERROR ('Alkylation must be Y or N', 11, 35)
 
     -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
-    Set @comment = dbo.ReplaceCharacterCodes(@comment)
+    Set @comment = dbo.replace_character_codes(@comment)
 
     -- Replace instances of CRLF (or LF) with semicolons
-    Set @comment = dbo.RemoveCrLf(@comment)
+    Set @comment = dbo.remove_cr_lf(@comment)
 
     -- Auto change empty internal standards to "none" since now rarely used
     If @internalStandard = ''
@@ -197,7 +198,7 @@ AS
     -- Validate experiment name
     ---------------------------------------------------
 
-    Declare @badCh varchar(128) = dbo.ValidateChars(@experimentName, '')
+    Declare @badCh varchar(128) = dbo.validate_chars(@experimentName, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -220,7 +221,7 @@ AS
     Declare @tissueName varchar(128)
     Declare @errorCode int
 
-    EXEC @errorCode = GetTissueID
+    EXEC @errorCode = get_tissue_id
             @tissueNameOrID=@tissue,
             @tissueIdentifier=@tissueIdentifier output,
             @tissueName=@tissueName output
@@ -323,44 +324,44 @@ AS
     ---------------------------------------------------
 
     Declare @campaignID int
-    execute @campaignID = GetCampaignID @campaignName
+    execute @campaignID = get_campaign_id @campaignName
     If @campaignID = 0
         RAISERROR ('Could not find entry in database for campaign "%s"', 11, 41, @campaignName)
 
     ---------------------------------------------------
-    -- Resolve researcher PRN
+    -- Resolve researcher username
     ---------------------------------------------------
 
     Declare @userID int
-    execute @userID = GetUserID @researcherPRN
+    execute @userID = get_user_id @researcherUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @researcherPRN contains simply the username
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @researcherUsername contains simply the username
         --
-        SELECT @researcherPRN = U_PRN
+        SELECT @researcherUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @researcherPRN
+        -- Could not find entry in database for username @researcherUsername
         -- Try to auto-resolve the name
 
         Declare @matchCount int
-        Declare @newPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @researcherPRN, @matchCount output, @newPRN output, @userID output
+        exec auto_resolve_name_to_username @researcherUsername, @matchCount output, @newUsername output, @userID output
 
         If @matchCount = 1
         Begin
-            -- Single match found; update @researcherPRN
-            Set @researcherPRN = @newPRN
+            -- Single match found; update @researcherUsername
+            Set @researcherUsername = @newUsername
         End
         Else
         Begin
-            RAISERROR ('Could not find entry in database for researcher PRN "%s"', 11, 42, @researcherPRN)
+            RAISERROR ('Could not find entry in database for researcher username "%s"', 11, 42, @researcherUsername)
             return 51037
         End
 
@@ -371,7 +372,7 @@ AS
     ---------------------------------------------------
 
     Declare @organismID int = 0
-    exec @organismID = GetOrganismID @organismName
+    exec @organismID = get_organism_id @organismName
     If @organismID = 0
         RAISERROR ('Could not find entry in database for organism name "%s"', 11, 43, @organismName)
 
@@ -383,21 +384,21 @@ AS
     --
     SELECT @totalCount = CASE WHEN @mode In ('add', 'check_add') THEN 1 ELSE 0 END
     --
-    exec @myError = ValidateWellplateLoading
+    exec @myError = validate_wellplate_loading
                         @wellplateName  output,
-                        @wellNum  output,
+                        @wellNumber  output,
                         @totalCount,
                         @wellIndex output,
                         @msg  output
     If @myError <> 0
-        RAISERROR ('ValidateWellplateLoading: %s', 11, 44, @msg)
+        RAISERROR ('validate_wellplate_loading: %s', 11, 44, @msg)
 
     -- make sure we do not put two experiments in the same place
     --
-    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateName AND EX_well_num = @wellNum) AND @mode In ('add', 'check_add')
+    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateName AND EX_well_num = @wellNumber) AND @mode In ('add', 'check_add')
         RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 45)
     --
-    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateName AND EX_well_num = @wellNum AND Experiment_Num <> @experimentName) AND @mode In ('update', 'check_update')
+    If exists (SELECT * FROM T_Experiments WHERE EX_wellplate_num = @wellplateName AND EX_well_num = @wellNumber AND Experiment_Num <> @experimentName) AND @mode In ('update', 'check_update')
         RAISERROR ('There is another experiment assigned to the same wellplate and well', 11, 46)
 
     ---------------------------------------------------
@@ -405,7 +406,7 @@ AS
     ---------------------------------------------------
 
     Declare @enzymeID int = 0
-    exec @enzymeID = GetEnzymeID @enzymeName
+    exec @enzymeID = get_enzyme_id @enzymeName
     If @enzymeID = 0
     Begin
         If @enzymeName = 'na'
@@ -536,7 +537,7 @@ AS
     Begin
         INSERT INTO #Tmp_ExpToCCMap (CC_Name)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@biomaterialList, ';', 'AddUpdateExperiment')
+        FROM dbo.parse_delimited_list(@biomaterialList, ';', 'add_update_experiment')
     End
     Else If @biomaterialList <> ''
     Begin
@@ -592,7 +593,7 @@ AS
     Begin
         INSERT INTO #Tmp_ExpToRefCompoundMap (Compound_IDName, Colon_Pos)
         SELECT Value, CharIndex(':', Value)
-        FROM dbo.udfParseDelimitedList(@referenceCompoundList, ';', 'AddUpdateExperiment')
+        FROM dbo.parse_delimited_list(@referenceCompoundList, ';', 'add_update_experiment')
     End
     Else If @referenceCompoundList <> ''
     Begin
@@ -695,7 +696,7 @@ AS
 
         -- Start transaction
         --
-        Set @transName = 'AddNewExperiment'
+        Set @transName = 'Add_New_Experiment'
         Begin transaction @transName
 
         INSERT INTO T_Experiments (
@@ -722,7 +723,7 @@ AS
                 Last_Used
             ) VALUES (
                 @experimentName,
-                @researcherPRN,
+                @researcherUsername,
                 @organismID,
                 @reason,
                 @comment,
@@ -737,7 +738,7 @@ AS
                 @postdigestIntStdID,
                 @contID,
                 @wellplateName,
-                @wellNum,
+                @wellNumber,
                 @alkylation,
                 @barcode,
                 @tissueIdentifier,
@@ -753,45 +754,45 @@ AS
         Set @experimentID = SCOPE_IDENTITY()
 
         -- As a precaution, query T_Experiments using Experiment name to make sure we have the correct Exp_ID
-        Declare @expIDConfirm int = 0
+        Declare @experimentIDConfirm int = 0
 
-        SELECT @expIDConfirm = Exp_ID
+        SELECT @experimentIDConfirm = Exp_ID
         FROM T_Experiments
         WHERE Experiment_Num = @experimentName
 
-        If @experimentID <> IsNull(@expIDConfirm, @experimentID)
+        If @experimentID <> IsNull(@experimentIDConfirm, @experimentID)
         Begin
             Declare @debugMsg varchar(512)
             Set @debugMsg = 'Warning: Inconsistent identity values when adding experiment ' + @experimentName + ': Found ID ' +
-                            Cast(@expIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
+                            Cast(@experimentIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@experimentID as varchar(12))
 
-            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateExperiment'
+            exec post_log_entry 'Error', @debugMsg, 'add_update_experiment'
 
-            Set @experimentID = @expIDConfirm
+            Set @experimentID = @experimentIDConfirm
         End
 
         Declare @StateID int = 1
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 3, @experimentID, @StateID, @callingUser
+            Exec alter_event_log_entry_user 3, @experimentID, @StateID, @callingUser
 
         -- Add the experiment to cell culture mapping
         -- The stored procedure uses table #Tmp_ExpToCCMap
         --
-        execute @result = AddExperimentCellCulture
+        execute @result = add_experiment_biomaterial
                                 @experimentID,
                                 @updateCachedInfo=0,
                                 @message=@msg output
         --
         If @result <> 0
-            RAISERROR ('Could not add experiment cell cultures to database for experiment "%s" :%s', 11, 1, @experimentName, @msg)
+            RAISERROR ('Could not add experiment biomaterials to database for experiment "%s" :%s', 11, 1, @experimentName, @msg)
 
         -- Add the experiment to reference compound mapping
         -- The stored procedure uses table #Tmp_ExpToRefCompoundMap
         --
-        execute @result = AddExperimentReferenceCompound
+        execute @result = add_experiment_reference_compound
                                 @experimentID,
                                 @updateCachedInfo=1,
                                 @message=@msg output
@@ -803,7 +804,7 @@ AS
         --
         If @curContainerID != @contID
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                 'Experiment Move',
                 @experimentName,
                 'na',
@@ -826,12 +827,12 @@ AS
 
         -- Start transaction
         --
-        Set @transName = 'UpdateExperiment'
+        Set @transName = 'Update_Experiment'
         Begin transaction @transName
 
         UPDATE T_Experiments Set
             Experiment_Num = @experimentName,
-            EX_researcher_PRN = @researcherPRN,
+            EX_researcher_PRN = @researcherUsername,
             EX_organism_ID = @organismID,
             EX_reason = @reason,
             EX_comment = @comment,
@@ -845,7 +846,7 @@ AS
             EX_postdigest_internal_std_ID = @postdigestIntStdID,
             EX_Container_ID = @contID,
             EX_wellplate_num = @wellplateName,
-            EX_well_num = @wellNum,
+            EX_well_num = @wellNumber,
             EX_Alkylation = @alkylation,
             EX_Barcode = @barcode,
             EX_Tissue_ID = @tissueIdentifier,
@@ -870,18 +871,18 @@ AS
         -- Update the experiment to cell culture mapping
         -- The stored procedure uses table #Tmp_ExpToCCMap
         --
-        execute @result = AddExperimentCellCulture
+        execute @result = add_experiment_biomaterial
                                 @experimentID,
                                 @updateCachedInfo=0,
                                 @message=@msg output
         --
         If @result <> 0
-            RAISERROR ('Could not update experiment cell culture mapping for experiment "%s" :%s', 11, 1, @experimentName, @msg)
+            RAISERROR ('Could not update experiment biomaterial mapping for experiment "%s" :%s', 11, 1, @experimentName, @msg)
 
         -- Update the experiment to reference compound mapping
         -- The stored procedure uses table #Tmp_ExpToRefCompoundMap
         --
-        execute @result = AddExperimentReferenceCompound
+        execute @result = add_experiment_reference_compound
                                 @experimentID,
                                 @updateCachedInfo=1,
                                 @message=@msg output
@@ -893,7 +894,7 @@ AS
         --
         If @curContainerID != @contID
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                 'Experiment Move',
                 @experimentName,
                 @curContainerName,
@@ -915,7 +916,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -924,7 +925,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Experiment ' + @experimentName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateExperiment'
+            exec post_log_entry 'Error', @logMessage, 'add_update_experiment'
         End
 
     END CATCH
@@ -932,11 +933,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_experiment] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_experiment] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateExperiment] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_experiment] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateExperiment] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_experiment] TO [Limited_Table_Write] AS [dbo]
 GO

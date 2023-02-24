@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMaxQuantMassModsList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_maxquant_mass_mods_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMaxQuantMassModsList]
+CREATE FUNCTION [dbo].[get_maxquant_mass_mods_list]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[GetMaxQuantMassModsList]
 **
 **  Auth:   mem
 **  Date:   03/05/2021 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

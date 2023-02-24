@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetRequestedRunParametersAndFactors] ******/
+/****** Object:  StoredProcedure [dbo].[get_requested_run_parameters_and_factors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetRequestedRunParametersAndFactors]
+CREATE PROCEDURE [dbo].[get_requested_run_parameters_and_factors]
 /****************************************************
 **
 **  Desc:
@@ -12,9 +12,10 @@ CREATE PROCEDURE [dbo].[GetRequestedRunParametersAndFactors]
 **      This is used by https://dms2.pnl.gov/requested_run_batch_blocking/grid
 **
 **  Auth:   grk
-**  Date:   03/28/2013 grk - Cloned from GetFactorCrosstabByBatch
+**  Date:   03/28/2013 grk - Cloned from get_factor_crosstab_by_batch
 **          01/05/2023 mem - Add view name to comment
 **          01/24/2023 bcg - Use lowercase column names in @colList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ AS
     --
     INSERT INTO #REQS (Request)
     SELECT Item
-    FROM dbo.MakeTableFromList(@itemList)
+    FROM dbo.make_table_from_list(@itemList)
 
 /*
     If IsNull(@NameContains, '') <> ''
@@ -84,7 +85,7 @@ AS
     -- These columns correspond to view V_Requested_Run_Unified_List_Ex
     -----------------------------------------
     --
-    EXEC @myError = MakeFactorCrosstabSQL_Ex
+    EXEC @myError = make_factor_crosstab_sql_ex
                     @colList = N'request, name, status, batch, experiment, dataset, instrument, cart, lc_col, block, run_order',
                     @Sql = @Sql OUTPUT,
                     @message = @message OUTPUT
@@ -105,9 +106,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunParametersAndFactors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_parameters_and_factors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunParametersAndFactors] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_run_parameters_and_factors] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunParametersAndFactors] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_run_parameters_and_factors] TO [DMS2_SP_User] AS [dbo]
 GO

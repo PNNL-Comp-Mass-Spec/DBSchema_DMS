@@ -1,16 +1,16 @@
-/****** Object:  StoredProcedure [dbo].[LookupOtherFromExperimentSamplePrep] ******/
+/****** Object:  StoredProcedure [dbo].[lookup_other_from_experiment_sample_prep] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LookupOtherFromExperimentSamplePrep]
+CREATE PROCEDURE [dbo].[lookup_other_from_experiment_sample_prep]
 /****************************************************
 **
 **  Desc:
 **      Get values for misc fields from the sample prep
 **      request associated with the given experiment (if there is one)
 **
-**      This procedure is used by AddUpdateRequestedRun and
+**      This procedure is used by add_update_requested_run and
 **      the error messages assume that this is the case
 **
 **  Return values: 0: success, otherwise, error code
@@ -21,10 +21,11 @@ CREATE PROCEDURE [dbo].[LookupOtherFromExperimentSamplePrep]
 **  Date:   06/03/2009 grk - Initial release (Ticket #499)
 **          01/23/2017 mem - Provide clearer error messages
 **          06/13/2017 mem - Fix failure to update @workPackage using sample prep request's work package
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @experimentNum varchar(64),
+    @experimentName varchar(64),
     @workPackage varchar(50) output,
     @message varchar(512) output
 )
@@ -51,7 +52,7 @@ AS
     --
     SELECT @samPrepID = EX_sample_prep_request_ID
     FROM T_Experiments
-    WHERE Experiment_Num = @experimentNum
+    WHERE Experiment_Num = @experimentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -69,11 +70,11 @@ AS
     Begin
         If @workPackage = '' Or @workPackage = @ovr
         Begin
-            If Exists (SELECT * FROM T_Experiments WHERE Experiment_Num = @experimentNum)
+            If Exists (SELECT * FROM T_Experiments WHERE Experiment_Num = @experimentName)
                 Set @message = 'Work package cannot be "' + @ovr + '" when the experiment does not have a sample prep request. Please provide a valid work package.'
             Else
                 Set @message = 'Unable to change the work package from "' + @ovr + '" ' +
-                               'to the one associated with the experiment because the experiment was not found: ' + @experimentNum
+                               'to the one associated with the experiment because the experiment was not found: ' + @experimentName
 
             Return 50966
         End
@@ -109,7 +110,7 @@ AS
     Return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupOtherFromExperimentSamplePrep] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_other_from_experiment_sample_prep] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupOtherFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_other_from_experiment_sample_prep] TO [Limited_Table_Write] AS [dbo]
 GO

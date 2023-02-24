@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddRequestedRunToExistingDataset] ******/
+/****** Object:  StoredProcedure [dbo].[add_requested_run_to_existing_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddRequestedRunToExistingDataset]
+CREATE PROCEDURE [dbo].[add_requested_run_to_existing_dataset]
 /****************************************************
 **
 **  Desc:   Creates a requested run and associates it with
@@ -15,7 +15,7 @@ CREATE PROCEDURE [dbo].[AddRequestedRunToExistingDataset]
 **          'AutoReq3_DatasetName'
 **
 **
-**          Note that this procedure is similar to AddMissingRequestedRun,
+**          Note that this procedure is similar to add_missing_requested_run,
 **          though that procedure is intended to be run via automation
 **          to add requested runs to existing datasets that don't yet have one
 **
@@ -27,25 +27,26 @@ CREATE PROCEDURE [dbo].[AddRequestedRunToExistingDataset]
 **
 **  Auth:   grk
 **  Date:   05/23/2011 grk - initial release
-**          11/29/2011 mem - Now auto-determining OperPRN if @callingUser is empty
-**          12/14/2011 mem - Now passing @callingUser to AddUpdateRequestedRun and ConsumeScheduledRun
-**          05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null when calling AddUpdateRequestedRun
-**          01/29/2016 mem - Now calling GetWPforEUSProposal to get the best work package for the given EUS Proposal
+**          11/29/2011 mem - Now auto-determining @operatorUsername if @callingUser is empty
+**          12/14/2011 mem - Now passing @callingUser to add_update_requested_run and consume_scheduled_run
+**          05/08/2013 mem - Now setting @wellplateName and @wellNumber to Null when calling add_update_requested_run
+**          01/29/2016 mem - Now calling get_wp_for_eus_proposal to get the best work package for the given EUS Proposal
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/22/2017 mem - If necessary, change the prefix from AutoReq_ to AutoReq2_ or AutoReq3 to avoid conflicts
-**          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**          06/13/2017 mem - Rename @operatorUsername to @requestorUsername when calling add_update_requested_run
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          01/24/2020 mem - Add mode 'preview'
-**          01/31/2020 mem - Display all of the values sent to AddUpdateRequestedRun when mode is 'preview'
+**          01/31/2020 mem - Display all of the values sent to add_update_requested_run when mode is 'preview'
 **          02/04/2020 mem - Add mode 'add-debug', which will associate the requested run with the dataset, but will also print out debug statements
-**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
-**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
+**          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasetID INT = 0,                 -- Can supply ID for dataset or name for dataset (but not both)
-    @datasetNum varchar(128),           --
+    @datasetName varchar(128),           --
     @templateRequestID INT,             -- existing request to use for looking up some parameters for new one
     @mode varchar(12) = 'add',          -- compatibility with web entry page and possible future use; supports 'add', 'add-debug', and 'preview'
     @message varchar(512) = '' output,
@@ -77,11 +78,11 @@ AS
     Declare @dName varchar(128) = ''
 
     SET @datasetID = ISNULL(@datasetID, 0)
-    SET @datasetNum = ISNULL(@datasetNum, '')
+    SET @datasetName = ISNULL(@datasetName, '')
     Set @mode = Ltrim(Rtrim(@mode))
 
-    If @datasetID <> 0 AND @datasetNum <> ''
-        RAISERROR ('Cannot specify both datasetID "%d" and datasetNum "%s"', 11, 3, @datasetID, @datasetNum)
+    If @datasetID <> 0 AND @datasetName <> ''
+        RAISERROR ('Cannot specify both datasetID "%d" and datasetName "%s"', 11, 3, @datasetID, @datasetName)
 
     ---------------------------------------------------
     -- Does dataset exist?
@@ -94,18 +95,18 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @myRowCount = 0 And @datasetNum <> ''
+    If @myRowCount = 0 And @datasetName <> ''
     Begin
         SELECT @dID = Dataset_ID,
                @dName = Dataset_Num
         FROM dbo.T_Dataset
-        WHERE Dataset_Num = @datasetNum
+        WHERE Dataset_Num = @datasetName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     End
 
     If @dID = 0
-        RAISERROR ('Could not find datasetID "%d" or dataset "%s"', 11, 4, @datasetID, @datasetNum)
+        RAISERROR ('Could not find datasetID "%d" or dataset "%s"', 11, 4, @datasetID, @datasetName)
 
     ---------------------------------------------------
     -- Does the dataset have an associated request?
@@ -145,12 +146,12 @@ AS
         End
     End
 
-    Declare @experimentNum varchar(64)
+    Declare @experimentName varchar(64)
     Declare @instrumentName varchar(64)
     Declare @msType varchar(20)
     Declare @comment varchar(1024) = 'Automatically created by Dataset entry'
     Declare @workPackage varchar(50)  = 'none'
-    Declare @requesterPRN varchar(128) = ''
+    Declare @requesterUsername varchar(128) = ''
     Declare @eusProposalID varchar(10) = 'na'
     Declare @eusUsageType varchar(50)
     Declare @eusUsersList varchar(1024) = ''
@@ -165,7 +166,7 @@ AS
     If @showDebugStatements > 0
         Print 'Querying T_Dataset, T_Instrument_Name, etc. for Dataset_ID ' + Cast(@dID As Varchar(12))
 
-    SELECT @experimentNum = E.Experiment_Num,
+    SELECT @experimentName = E.Experiment_Num,
            @instrumentName = InstName.IN_name,
            @msType = DTN.DST_name,
            @secSep = SS.SS_name
@@ -194,10 +195,10 @@ AS
             Print 'Querying T_Requested_Run AND T_EUS_UsageType for request ID  ' + Cast(@templateRequestID As Varchar(12))
 
         SELECT @workPackage = RDS_WorkPackage,
-               @requesterPRN = RDS_Requestor_PRN,
+               @requesterUsername = RDS_Requestor_PRN,
                @eusProposalID = RDS_EUS_Proposal_ID,
                @eusUsageType = EUT.Name,
-               @eusUsersList = dbo.GetRequestedRunEUSUsersList(RR.ID, 'I')
+               @eusUsersList = dbo.get_requested_run_eus_users_list(RR.ID, 'I')
         FROM T_Requested_Run AS RR
              INNER JOIN dbo.T_EUS_UsageType AS EUT
                ON RR.RDS_EUS_UsageType = EUT.ID
@@ -222,12 +223,12 @@ AS
         If IsNull(@workPackage, 'none') = 'none'
         Begin
             If @showDebugStatements > 0
-                Print 'Calling GetWPforEUSProposal with proposal ' + @eusProposalID
+                Print 'Calling get_wp_for_eus_proposal with proposal ' + @eusProposalID
 
-            EXEC GetWPforEUSProposal @eusProposalID, @workPackage Output
+            EXEC get_wp_for_eus_proposal @eusProposalID, @workPackage Output
 
             If @showDebugStatements > 0
-                Print 'GetWPforEUSProposal returned work package' + @workPackage
+                Print 'get_wp_for_eus_proposal returned work package' + @workPackage
         End
 
     End
@@ -240,7 +241,7 @@ AS
         RAISERROR ('For now, a template request is mandatory', 11, 10)
 
     if IsNull(@callingUser, '') <> ''
-        Set @requesterPRN = @callingUser
+        Set @requesterUsername = @callingUser
 
     ---------------------------------------------------
     -- Create requested run and attach it to dataset
@@ -253,14 +254,14 @@ AS
         Set @addUpdateMode = 'check-add'
 
         Print 'Request_Name: ' + @reqName
-        Print 'Experiment: ' + @experimentNum
-        Print 'RequesterPRN: ' + @requesterPRN
+        Print 'Experiment: ' + @experimentName
+        Print 'RequesterUsername: ' + @requesterUsername
         Print 'InstrumentName: ' + @instrumentName
         Print 'WorkPackage: ' + @workPackage
         Print 'MsType: ' + @msType
         Print 'InstrumentSettings: ' + 'na'
-        Print 'WellplateNum: Null'
-        Print 'WellNum: Null'
+        Print 'WellplateName: Null'
+        Print 'WellNumber: Null'
         Print 'InternalStandard: ' + 'na'
         Print 'Comment: ' + @comment
         Print 'EusProposalID: ' + @eusProposalID
@@ -280,18 +281,18 @@ AS
     End
 
     If @showDebugStatements > 0
-        Print 'Calling AddUpdateRequestedRun with mode ' + @addUpdateMode
+        Print 'Calling add_update_requested_run with mode ' + @addUpdateMode
 
-    EXEC @myError = dbo.AddUpdateRequestedRun
+    EXEC @myError = dbo.add_update_requested_run
                             @reqName = @reqName,
-                            @experimentNum = @experimentNum,
-                            @requesterPRN = @requesterPRN,
+                            @experimentName = @experimentName,
+                            @requesterUsername = @requesterUsername,
                             @instrumentName = @instrumentName,
                             @workPackage = @workPackage,
                             @msType = @msType,
                             @instrumentSettings = 'na',
-                            @wellplate = NULL,
-                            @wellNum = NULL,
+                            @wellplateName = NULL,
+                            @wellNumber = NULL,
                             @internalStandard = 'na',
                             @comment = @comment,
                             @eusProposalID = @eusProposalID,
@@ -314,7 +315,7 @@ AS
         RAISERROR('Created request with ID = 0', 11, 7)
 
     If @showDebugStatements > 0
-        Print 'AddUpdateRequestedRun reported that it created Request ID ' + Cast(@request As Varchar(12))
+        Print 'add_update_requested_run reported that it created Request ID ' + Cast(@request As Varchar(12))
 
     If @addUpdateMode = 'add-auto'
     Begin
@@ -323,14 +324,14 @@ AS
         ---------------------------------------------------
 
         If @showDebugStatements > 0
-            Print 'Calling ConsumeScheduledRun with DatasetID ' + Cast(@dID As Varchar(12)) + ' and RequestID ' + Cast(@request As Varchar(12))
+            Print 'Calling consume_scheduled_run with DatasetID ' + Cast(@dID As Varchar(12)) + ' and RequestID ' + Cast(@request As Varchar(12))
 
-        exec @myError = ConsumeScheduledRun @dID, @request, @msg output, @callingUser
+        exec @myError = consume_scheduled_run @dID, @request, @msg output, @callingUser
         if @myError <> 0
             RAISERROR (@msg, 11, 8)
 
         If @showDebugStatements > 0
-            Print 'ConsumeScheduledRun returned message "' + @msg + '"'
+            Print 'consume_scheduled_run returned message "' + @msg + '"'
 
     End
 
@@ -340,7 +341,7 @@ AS
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -350,14 +351,14 @@ AS
 
         If @mode <> 'preview'
         Begin
-            Exec PostLogEntry 'Error', @message, 'AddRequestedRunToExistingDataset'
+            Exec post_log_entry 'Error', @message, 'add_requested_run_to_existing_dataset'
         End
     End CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunToExistingDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_requested_run_to_existing_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRunToExistingDataset] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_requested_run_to_existing_dataset] TO [DMS2_SP_User] AS [dbo]
 GO

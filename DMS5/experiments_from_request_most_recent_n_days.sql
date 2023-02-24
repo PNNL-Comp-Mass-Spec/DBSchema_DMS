@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ExperimentsFromRequestMostRecentNDays] ******/
+/****** Object:  UserDefinedFunction [dbo].[experiments_from_request_most_recent_n_days] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ExperimentsFromRequestMostRecentNDays]
+CREATE FUNCTION [dbo].[experiments_from_request_most_recent_n_days]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[ExperimentsFromRequestMostRecentNDays]
 **  Auth:   mem
 **  Date:   03/26/2013 mem - Initial version
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,5 +37,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExperimentsFromRequestMostRecentNDays] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[experiments_from_request_most_recent_n_days] TO [DDL_Viewer] AS [dbo]
 GO

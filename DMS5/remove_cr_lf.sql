@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[RemoveCrLf] ******/
+/****** Object:  UserDefinedFunction [dbo].[remove_cr_lf] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[RemoveCrLf]
+CREATE FUNCTION [dbo].[remove_cr_lf]
 /****************************************************
 **
 **  Desc:   Removes carriage returns and line feeds from the text
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[RemoveCrLf]
 **
 **  Auth:   mem
 **  Date:   02/25/2021 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -43,11 +44,11 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveCrLf] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_cr_lf] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RemoveCrLf] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[remove_cr_lf] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RemoveCrLf] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[remove_cr_lf] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveCrLf] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_cr_lf] TO [Limited_Table_Write] AS [dbo]
 GO

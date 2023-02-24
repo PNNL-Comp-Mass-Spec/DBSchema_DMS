@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUserPermissionsViewDefinitions] ******/
+/****** Object:  StoredProcedure [dbo].[update_user_permissions_view_definitions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateUserPermissionsViewDefinitions]
+CREATE PROCEDURE [dbo].[update_user_permissions_view_definitions]
 /****************************************************
 **
 **  Desc: Grants view definition permission to all stored procedures and views for the specified roles or users
@@ -17,7 +17,8 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissionsViewDefinitions]
 **          12/28/2009 mem - Updated to also update views (and to include parameters @updateSPs and @updateViews)
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          12/06/2016 mem - Rename @userList to @roleOrUserList and add @revokeList, @updateTables, and @updateOther
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE [dbo].[UpdateUserPermissionsViewDefinitions]
     @updateSPs tinyint = 1,
     @updateViews tinyint = 1,
     @updateOther tinyint = 1,
-    @PreviewSql tinyint = 0,
+    @previewSql tinyint = 0,
     @message varchar(512)='' output
 )
 AS
@@ -88,7 +89,7 @@ AS
 
         INSERT INTO #TmpLoginsToProcess (LoginName, Action)
         SELECT Value, 'Grant'
-        FROM dbo.udfParseDelimitedList(@roleOrUserList, ',', 'UpdateUserPermissionsViewDefinitions')
+        FROM dbo.parse_delimited_list(@roleOrUserList, ',', 'update_user_permissions_view_definitions')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -98,7 +99,7 @@ AS
 
         INSERT INTO #TmpLoginsToProcess (LoginName, Action)
         SELECT Value, 'Revoke'
-        FROM dbo.udfParseDelimitedList(@revokeList, ',', 'UpdateUserPermissionsViewDefinitions')
+        FROM dbo.parse_delimited_list(@revokeList, ',', 'update_user_permissions_view_definitions')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -283,8 +284,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateUserPermissionsViewDefinitions')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1, @LogWarningErrorList = '',
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_user_permissions_view_definitions')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1, @LogWarningErrorList = '',
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -295,7 +296,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissionsViewDefinitions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_user_permissions_view_definitions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUserPermissionsViewDefinitions] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_user_permissions_view_definitions] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetExternalDatasetPurgePriority] ******/
+/****** Object:  StoredProcedure [dbo].[set_external_dataset_purge_priority] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SetExternalDatasetPurgePriority]
+CREATE PROCEDURE [dbo].[set_external_dataset_purge_priority]
 /****************************************************
 **
 **  Desc: Sets the purge priority to 2 for datasets acquired on external instruments
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[SetExternalDatasetPurgePriority]
 **
 **  Auth:   mem
 **  Date:   04/09/2014
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -93,5 +94,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetExternalDatasetPurgePriority] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_external_dataset_purge_priority] TO [DDL_Viewer] AS [dbo]
 GO

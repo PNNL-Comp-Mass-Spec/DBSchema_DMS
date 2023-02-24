@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResolveStartAndEndDates] ******/
+/****** Object:  StoredProcedure [dbo].[resolve_start_and_end_dates] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ResolveStartAndEndDates]
+CREATE PROCEDURE [dbo].[resolve_start_and_end_dates]
 /****************************************************
 **
 **  Desc:   Examines @startDate and @endDate to populate variables with actual Datetime values
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[ResolveStartAndEndDates]
 **  Return values: 0: success, otherwise, error code
 **
 **  Date:   07/22/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

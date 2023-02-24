@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddExperimentFractions] ******/
+/****** Object:  StoredProcedure [dbo].[add_experiment_fractions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddExperimentFractions]
+CREATE PROCEDURE [dbo].[add_experiment_fractions]
 /****************************************************
 **
 **  Desc:   Creates a group of new experiments in DMS,
@@ -16,14 +16,14 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          05/29/2005 grk - Added mods to better work with entry page
 **          05/31/2005 grk - Added mods for separate group members table
 **          06/10/2005 grk - Added handling for sample prep request
-**          10/04/2005 grk - Added call to AddExperimentCellCulture
+**          10/04/2005 grk - Added call to add_experiment_biomaterial
 **          10/04/2005 grk - Added override for request ID
 **          10/28/2005 grk - Added handling for internal standard
 **          11/11/2005 grk - Added handling for postdigest internal standard
 **          12/20/2005 grk - Added handling for separate user
 **          02/06/2006 grk - Increased maximum count
 **          01/13/2007 grk - Switched to organism ID instead of organism name (Ticket #360)
-**          09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use CopyAuxInfoMultiID (Ticket #538)
+**          09/27/2007 mem - Moved the copying of AuxInfo to occur after the new experiments have been created and to use copy_aux_info_multi_id (Ticket #538)
 **          10/22/2008 grk - Added container field (Ticket http://prismtrac.pnl.gov/trac/ticket/697)
 **          07/16/2009 grk - Added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
 **          07/31/2009 grk - Added prep LC run field (http://prismtrac.pnl.gov/trac/ticket/743)
@@ -36,14 +36,14 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          08/22/2017 mem - Copy TissueID
 **          08/25/2017 mem - Use TissueID from the Sample Prep Request if @requestOverride is not "parent" and if the prep request has a tissue defined
 **          09/06/2017 mem - Fix data type for @tissueID
-**          11/29/2017 mem - No longer pass @cellCultureList to AddExperimentCellCulture since it now uses temp table #Tmp_ExpToCCMap
-**                         - Remove references to the Cell_Culture_List field in T_Experiments (procedure AddExperimentCellCulture calls UpdateCachedExperimentInfo)
-**                         - Call AddExperimentReferenceCompound
+**          11/29/2017 mem - No longer pass @cellCultureList to add_experiment_biomaterial since it now uses temp table #Tmp_ExpToCCMap
+**                         - Remove references to the Cell_Culture_List field in T_Experiments (procedure add_experiment_biomaterial calls update_cached_experiment_component_names)
+**                         - Call add_experiment_reference_compound
 **          01/04/2018 mem - Update fields in #Tmp_ExpToRefCompoundMap, switching from Compound_Name to Compound_IDName
 **          12/03/2018 mem - Add parameter @suffix
 **                         - Add support for @mode = 'Preview'
 **          12/04/2018 mem - Insert plex member info into T_Experiment_Plex_Members if defined for the parent experiment
-**          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
+**          12/06/2018 mem - Call update_experiment_group_member_count to update T_Experiment_Groups
 **          01/24/2019 mem - Add parameters @nameSearch, @nameReplace, and @addUnderscore
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          02/15/2021 mem - If the parent experiment has a TissueID defined, use it, even if the Sample Prep Request is not "parent" (for @requestOverride)
@@ -51,7 +51,8 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
 **          06/01/2021 mem - Raise an error if @mode is invalid
 **          04/12/2022 mem - Do not log data validation errors to T_Log_Entries
 **          11/18/2022 mem - Rename parameter to @groupName
-**          11/25/2022 mem - Rename parameter to @wellplate
+**          11/25/2022 mem - Rename parameter to @wellplateName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -69,8 +70,8 @@ CREATE PROCEDURE [dbo].[AddExperimentFractions]
     @internalStandard varchar(50) = 'parent',
     @postdigestIntStd varchar(50) = 'parent',
     @researcher varchar(50) = 'parent',
-    @wellplate varchar(64) output,
-    @wellNum varchar(8) output,
+    @wellplateName varchar(64) output,
+    @wellNumber varchar(8) output,
     @container varchar(128) = 'na',             -- na, "parent", "-20", or actual container ID
     @prepLCRunID int,
     @mode varchar(12),                          -- 'add' or 'preview'; when previewing, will show the names of the new fractions
@@ -89,7 +90,7 @@ AS
     Declare @fractionNumberText varchar(2)
 
     Declare @fullFractionCount int
-    Declare @newExpID int
+    Declare @newExperimentID int
 
     Declare @msg varchar(512)
 
@@ -101,7 +102,7 @@ AS
     --
     Declare @parentExperimentID int = 0
     Declare @baseFractionName varchar(128)
-    Declare @researcherPRN varchar(50)
+    Declare @researcherUsername varchar(50)
     Declare @organismID int
     Declare @reason varchar(500)
     Declare @comment varchar(500)
@@ -206,7 +207,7 @@ AS
 
     SELECT @parentExperimentID = Exp_ID,
            @baseFractionName = Experiment_Num,
-           @researcherPRN = EX_researcher_PRN,
+           @researcherUsername = EX_researcher_PRN,
            @organismID = EX_organism_ID,
            @reason = EX_reason,
            @comment = EX_comment,
@@ -287,9 +288,9 @@ AS
     ---------------------------------------------------
     --
     Declare @wellIndex int
-    exec @myError = ValidateWellplateLoading
-                        @wellplate output,
-                        @wellNum output,
+    exec @myError = validate_wellplate_loading
+                        @wellplateName output,
+                        @wellNumber output,
                         @totalCount,
                         @wellIndex output,
                         @message output
@@ -304,11 +305,11 @@ AS
     -- Assure that wellplate is in wellplate table (if set)
     ---------------------------------------------------
     --
-    If Not @wellplate Is Null
+    If Not @wellplateName Is Null
     Begin
-        If @wellplate = 'new'
+        If @wellplateName = 'new'
         Begin
-            Set @wellplate = '(generate name)'
+            Set @wellplateName = '(generate name)'
             Set @wellPlateMode = 'add'
         End
         Else
@@ -317,8 +318,8 @@ AS
         End
         --
         Declare @note varchar(128) = 'Created by experiment fraction entry (' + @parentExperiment + ')'
-        exec @myError = AddUpdateWellplate
-                            @wellplate output,
+        exec @myError = add_update_wellplate
+                            @wellplateName output,
                             @note,
                             @wellPlateMode,
                             @message output,
@@ -417,11 +418,11 @@ AS
     If @researcher <> 'parent'
     Begin
         Declare @userID int
-        execute @userID = GetUserID @researcher
+        execute @userID = get_user_id @researcher
 
         If @userID > 0
         Begin
-            -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+            -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
             -- Assure that @researcher contains simply the username
             --
             SELECT @researcher = U_PRN
@@ -430,34 +431,34 @@ AS
         End
         Else
         Begin
-            -- Could not find entry in database for PRN @researcher
+            -- Could not find entry in database for username @researcher
             -- Try to auto-resolve the name
 
-            Declare @newPRN varchar(64)
+            Declare @newUsername varchar(64)
             Declare @matchCount int
 
-            exec AutoResolveNameToPRN @researcher, @matchCount output, @newPRN output, @userID output
+            exec auto_resolve_name_to_username @researcher, @matchCount output, @newUsername output, @userID output
 
             If @matchCount = 1
             Begin
                 -- Single match found; update @researcher
-                Set @researcher = @newPRN
+                Set @researcher = @newUsername
             End
             Else
             Begin
                 Set @logErrors = 0
-                Set @message = 'Could not find entry in database for researcher PRN "' + @researcher + '"'
+                Set @message = 'Could not find entry in database for researcher username "' + @researcher + '"'
                 RAISERROR (@message, 11, 13)
             End
         End
-        Set @researcherPRN = @researcher
+        Set @researcherUsername = @researcher
     End
 
     ---------------------------------------------------
     -- Set up transaction around multiple table modifications
     ---------------------------------------------------
 
-    Declare @transName varchar(32) = 'AddBatchExperimentEntry'
+    Declare @transName varchar(32) = 'Add_Batch_Experiment_Entry'
     Set @logErrors = 1
 
     Begin transaction @transName
@@ -485,7 +486,7 @@ AS
             @description ,
             @prepLCRunID ,
             GETDATE() ,
-            @researcherPRN,
+            @researcherUsername,
             @groupName
         )
         --
@@ -527,7 +528,7 @@ AS
     Declare @newExpName varchar(129)
     Declare @xID int
     Declare @result int
-    Declare @wn varchar(8) = @wellNum
+    Declare @wn varchar(8) = @wellNumber
     Declare @nameFractionLinker varchar(1)
 
     If @addUnderscore In ('No', 'N', '0')
@@ -554,7 +555,7 @@ AS
         -- Verify that experiment name is not duplicated in table
         --
         Set @xID = 0
-        execute @xID = GetexperimentID @newExpName
+        execute @xID = get_experiment_id @newExpName
         --
         If @xID <> 0
         Begin
@@ -605,7 +606,7 @@ AS
                 EX_Tissue_ID
             ) VALUES (
                 @newExpName,
-                @researcherPRN,
+                @researcherUsername,
                 @organismID,
                 @reason,
                 @newComment,
@@ -618,7 +619,7 @@ AS
                 @samplePrepRequest,
                 @internalStandardID,
                 @postdigestIntStdID,
-                @wellplate,
+                @wellplateName,
                 @wn,
                 @alkylation,
                 @tissueID
@@ -633,13 +634,13 @@ AS
                 RAISERROR (@message, 11, 17)
             End
 
-            Set @newExpID = SCOPE_IDENTITY()
+            Set @newExperimentID = SCOPE_IDENTITY()
 
-            -- Add the experiment to cell culture mapping
+            -- Add the experiment to biomaterial mapping
             -- The stored procedure uses table #Tmp_ExpToCCMap
             --
-            execute @result = AddExperimentCellCulture
-                                    @newExpID,
+            execute @result = add_experiment_biomaterial
+                                    @newExperimentID,
                                     @updateCachedInfo=0,
                                     @message=@message output
             --
@@ -653,8 +654,8 @@ AS
             -- Add the experiment to reference compound mapping
             -- The stored procedure uses table #Tmp_ExpToRefCompoundMap
             --
-            execute @result = AddExperimentReferenceCompound
-                                    @newExpID,
+            execute @result = add_experiment_reference_compound
+                                    @newExperimentID,
                                     @updateCachedInfo=1,
                                     @message=@message output
             --
@@ -674,7 +675,7 @@ AS
                 Exp_ID
             ) VALUES (
                 @groupID,
-                @newExpID
+                @newExperimentID
             )
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -693,12 +694,12 @@ AS
             If Len(@experimentIDList) > 0
                 Set @experimentIDList = @experimentIDList + ','
 
-            Set @experimentIDList = @experimentIDList + Convert(varchar(12), @newExpID)
+            Set @experimentIDList = @experimentIDList + Convert(varchar(12), @newExperimentID)
 
             If Len(@materialIDList) > 0
                 Set @materialIDList = @materialIDList + ','
 
-            Set @materialIDList = @materialIDList + 'E:' + Convert(varchar(12), @newExpID)
+            Set @materialIDList = @materialIDList + 'E:' + Convert(varchar(12), @newExperimentID)
 
             ---------------------------------------------------
             -- Copy experiment plex info, if defined
@@ -711,7 +712,7 @@ AS
                                                        Exp_ID,
                                                        Channel_Type_ID,
                                                        [Comment] )
-                SELECT @newExpID AS Plex_Exp_ID,
+                SELECT @newExperimentID AS Plex_Exp_ID,
                        Channel,
                        Exp_ID,
                        Channel_Type_ID,
@@ -723,9 +724,9 @@ AS
 
                 If Len(@callingUser) > 0
                 Begin
-                    -- Call AlterEnteredByUser to alter the Entered_By field in T_Experiment_Plex_Members_History
+                    -- Call alter_entered_by_user to alter the Entered_By field in T_Experiment_Plex_Members_History
                     --
-                    Exec AlterEnteredByUser 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @newExpID, @CallingUser
+                    Exec alter_entered_by_user 'T_Experiment_Plex_Members_History', 'Plex_Exp_ID', @newExperimentID, @CallingUser
                 End
 
             End -- </CopyPlexInfo>
@@ -738,7 +739,7 @@ AS
             -- Note that the count includes the parent experiment
             ---------------------------------------------------
             --
-            Exec UpdateExperimentGroupMemberCount @groupID = @groupID
+            Exec update_experiment_group_member_count @groupID = @groupID
         End
 
         ---------------------------------------------------
@@ -748,7 +749,7 @@ AS
         If Not @wn Is Null
         Begin
             Set @wellIndex = @wellIndex + 1
-            Set @wn = dbo.GetWellNum(@wellIndex)
+            Set @wn = dbo.get_well_number(@wellIndex)
         End
 
     End -- </AddFractions>
@@ -784,7 +785,7 @@ AS
         -- Move new fraction experiments to container
         ---------------------------------------------------
         --
-        exec @result = UpdateMaterialItems
+        exec @result = update_material_items
                         'move_material',
                         @materialIDList,
                         'mixed_material',
@@ -804,7 +805,7 @@ AS
         -- into the fractionated experiments
         ---------------------------------------------------
 
-        exec @result = CopyAuxInfoMultiID
+        exec @result = copy_aux_info_multi_id
                         @targetName = 'Experiment',
                         @targetEntityIDList = @experimentIDList,
                         @categoryName = '',
@@ -839,7 +840,7 @@ AS
     ---------------------------------------------------
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -847,18 +848,18 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'AddExperimentFractions'
+            Exec post_log_entry 'Error', @message, 'add_experiment_fractions'
         End
     End CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddExperimentFractions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_experiment_fractions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddExperimentFractions] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_experiment_fractions] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddExperimentFractions] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_experiment_fractions] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddExperimentFractions] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_experiment_fractions] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ConsolidateLogMessages] ******/
+/****** Object:  StoredProcedure [dbo].[consolidate_log_messages] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ConsolidateLogMessages]
+CREATE PROCEDURE [dbo].[consolidate_log_messages]
 /****************************************************
 **
 **  Desc:   Deletes duplicate messages in T_Log_Entries,
@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[ConsolidateLogMessages]
 **
 **  Auth:   mem
 **  Date:   01/14/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -182,14 +183,14 @@ AS
             SELECT @duplicateMessageCount = Count(*)
             FROM #Tmp_DuplicateMessages
 
-            Set @message = 'Found ' + Cast(@duplicateMessageCount As varchar(12)) + ' duplicate ' + dbo.CheckPlural(@duplicateMessageCount, 'message', 'messages') + ' in T_Log_Entries; ' +
-                           'deleted ' +  Cast(@deletedMessageCount As varchar(12)) + dbo.CheckPlural(@myRowCount, ' log entry', ' log entries')
+            Set @message = 'Found ' + Cast(@duplicateMessageCount As varchar(12)) + ' duplicate ' + dbo.check_plural(@duplicateMessageCount, 'message', 'messages') + ' in T_Log_Entries; ' +
+                           'deleted ' +  Cast(@deletedMessageCount As varchar(12)) + dbo.check_plural(@myRowCount, ' log entry', ' log entries')
 
             Print @message
 
             If @duplicateMessageCount > 0 Or @deletedMessageCount > 0
             Begin
-                Exec PostLogEntry 'Normal', @message, 'ConsolidateLogMessages'
+                Exec post_log_entry 'Normal', @message, 'consolidate_log_messages'
             End
 
             If @deletedMessageCount > 0 And @changeErrorsToErrorIgnore > 0
@@ -208,8 +209,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'ConsolidateLogMessages')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'consolidate_log_messages')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
 

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CleanupOperatingLogs] ******/
+/****** Object:  StoredProcedure [dbo].[cleanup_operating_logs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CleanupOperatingLogs]
+CREATE PROCEDURE [dbo].[cleanup_operating_logs]
 /****************************************************
 **
 **  Desc:   Deletes Info entries from T_Log_Entries if they are
@@ -21,11 +21,12 @@ CREATE PROCEDURE [dbo].[CleanupOperatingLogs]
 **          11/21/2012 mem - Removed call to MoveAnalysisLogEntries
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          06/09/2022 mem - Update default log retention interval
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @LogRetentionIntervalHours int = 336,
-    @EventLogRetentionIntervalDays int = 365
+    @logRetentionIntervalHours int = 336,
+    @eventLogRetentionIntervalDays int = 365
 )
 AS
     Set XACT_ABORT, nocount on
@@ -54,23 +55,23 @@ AS
         -- Move old log entries from T_Log_Entries to DMSHistoricLog
         ----------------------------------------------------
         --
-        Set @CurrentLocation = 'Call MoveHistoricLogEntries'
+        Set @CurrentLocation = 'Call move_historic_log_entries'
 
-        exec @myError = MoveHistoricLogEntries @LogRetentionIntervalHours
+        exec @myError = move_historic_log_entries @LogRetentionIntervalHours
 
         ----------------------------------------------------
         -- Move old events from T_Event_Log to DMSHistoricLog
         ----------------------------------------------------
         --
-        Set @CurrentLocation = 'Call MoveEventLogEntries'
+        Set @CurrentLocation = 'Call move_event_log_entries'
 
-        exec @myError = MoveEventLogEntries @EventLogRetentionIntervalDays
+        exec @myError = move_event_log_entries @EventLogRetentionIntervalDays
 
     End Try
     Begin Catch
         -- Error caught; log the error
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'CleanupOperatingLogs')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'cleanup_operating_logs')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
 
@@ -79,5 +80,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CleanupOperatingLogs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[cleanup_operating_logs] TO [DDL_Viewer] AS [dbo]
 GO

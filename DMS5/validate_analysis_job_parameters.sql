@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateAnalysisJobParameters] ******/
+/****** Object:  StoredProcedure [dbo].[validate_analysis_job_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
+CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 /****************************************************
 **
 **  Desc:   Validates analysis job parameters and returns internal
@@ -12,7 +12,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **  Note: This procedure depends upon the caller having created
 **        temporary table #TD and populating it with the dataset names
 **
-**  This stored procedure will call ValidateAnalysisJobRequestDatasets to populate the remaining columns
+**  This stored procedure will call validate_analysis_job_request_datasets to populate the remaining columns
 **
 **  CREATE TABLE #TD (
 **      Dataset_Num varchar(128),
@@ -22,8 +22,8 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **      AS_state_ID int NULL,
 **      Dataset_Type varchar(64) NULL,
 **      DS_rating smallint NULL,
-**      Job int NULL,                       -- Only in the temp table created by AddAnalysisJobGroup; unused here
-**      Dataset_Unreviewed tinyint NULL     -- Only in the temp table created by AddAnalysisJobGroup; unused here
+**      Job int NULL,                       -- Only in the temp table created by add_analysis_job_group; unused here
+**      Dataset_Unreviewed tinyint NULL     -- Only in the temp table created by add_analysis_job_group; unused here
 **  )
 **
 **  Return values: 0: success, otherwise, error code
@@ -40,20 +40,20 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          12/20/2006 mem - Now assuring dataset rating is not -2=Data Files Missing (Ticket #339)
 **          09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs
 **          10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
-**          09/12/2008 mem - Now calling ValidateNAParameter for the various parameters that can be 'na' (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          09/12/2008 mem - Now calling validate_na_parameter for the various parameters that can be 'na' (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **                         - Changed @paramFileName and @settingsFileName to be input/output parameters instead of input only
 **          01/14/2009 mem - Now raising an error if @protCollNameList is over 2000 characters long (Ticket #714, http://prismtrac.pnl.gov/trac/ticket/714)
 **          01/28/2009 mem - Now checking for settings files in T_Settings_Files instead of on disk (Ticket #718, http://prismtrac.pnl.gov/trac/ticket/718)
 **          12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
 **          12/21/2009 mem - Now validating that the parameter file tool and the settings file tool match the tool defined by @toolName
 **          02/11/2010 mem - Now assuring dataset rating is not -1 (or -2)
-**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN contains a person's real name rather than their username
+**          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @ownerUsername contains a person's real name rather than their username
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
-**          08/26/2010 mem - Now calling ValidateProteinCollectionParams to validate the protein collection info
+**          08/26/2010 mem - Now calling validate_protein_collection_params to validate the protein collection info
 **          11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to determine valid instrument classes for a given analysis tool
 **          01/12/2012 mem - Now validating that the analysis tool is active (T_Analysis_Tool.AJT_active > 0)
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
-**          11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
+**          11/12/2012 mem - Moved dataset validation logic to validate_analysis_job_request_datasets
 **          11/28/2012 mem - Added candidate code to validate that high res MSn datasets are centroided if using MSGFDB
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
 **          03/05/2013 mem - Added parameter @autoRemoveNotReleasedDatasets
@@ -65,7 +65,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          03/02/2015 mem - Now validating that files over 500 MB in size are using MSGFPlus_SplitFasta
 **          04/08/2015 mem - Now validating that profile mode high res MSn datasets are centroided if using MSGFPlus
 **                         - Added optional parameters @autoUpdateSettingsFileToCentroided and @Warning
-**          04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
+**          04/23/2015 mem - Now passing @toolName to validate_analysis_job_request_datasets
 **          05/01/2015 mem - Now preventing the use of parameter files with more than one dynamic mod when the fasta file is over 2 GB in size
 **          06/24/2015 mem - Added parameter @showDebugMessages
 **          12/16/2015 mem - No longer auto-switching the settings file to a centroided one if high res MSn spectra; only switching if profile mode MSn spectra
@@ -80,11 +80,12 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          03/10/2021 mem - Add logic for MaxQuant
 **          03/15/2021 mem - Validate that the settings file and/or parameter file are defined for tools that require them
-**          05/26/2021 mem - Use @allowNonReleasedDatasets when calling ValidateAnalysisJobRequestDatasets
+**          05/26/2021 mem - Use @allowNonReleasedDatasets when calling validate_analysis_job_request_datasets
 **          08/26/2021 mem - Add logic for MSFragger
 **          10/05/2021 mem - Show custom message if @toolName contains an inactive _dta.txt based MS-GF+ tool
 **          11/08/2021 mem - Allow instrument class 'Data_Folders' and dataset type 'DataFiles' (both used by instrument 'DMS_Pipeline_Data') to apply to all analysis tools
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -95,17 +96,17 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobParameters]
     @organismName varchar(128),
     @protCollNameList varchar(4000) output,        -- Will raise an error if over 2000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 2000 character limit on analysis job parameter values
     @protCollOptionsList varchar(256) output,
-    @ownerPRN varchar(64) output,
+    @ownerUsername varchar(64) output,
     @mode varchar(12),                            -- Used to tweak the warning if @analysisToolID is not found in T_Analysis_Tool
     @userID int output,
     @analysisToolID int output,
     @organismID int output,
     @message varchar(512) output,
     @autoRemoveNotReleasedDatasets tinyint = 0,
-    @Job int = 0,
+    @job int = 0,
     @autoUpdateSettingsFileToCentroided tinyint = 1,
     @allowNewDatasets tinyint = 0,                -- When 0, all datasets must have state 3 (Complete); when 1, will also allow datasets with state 1 or 2 (New or Capture In Progress)
-    @Warning varchar(255) = '' output,
+    @warning varchar(255) = '' output,
     @priority int = 2 output,
     @showDebugMessages tinyint = 0
 )
@@ -139,7 +140,7 @@ AS
         Set @allowNonReleasedDatasets = 1
     End
 
-    exec @result = ValidateAnalysisJobRequestDatasets
+    exec @result = validate_analysis_job_request_datasets
                         @message output,
                         @autoRemoveNotReleasedDatasets=@autoRemoveNotReleasedDatasets,
                         @toolName=@toolName,
@@ -151,7 +152,7 @@ AS
     Begin
         If IsNull(@message, '') = ''
         Begin
-            Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobRequestDatasets in ValidateAnalysisJobParameters'
+            Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by validate_analysis_job_request_datasets in validate_analysis_job_parameters'
             If @showDebugMessages <> 0
                 print @message
         End
@@ -159,40 +160,40 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve user ID for operator PRN
+    -- Resolve user ID for operator username
     ---------------------------------------------------
 
-    execute @userID = GetUserID @ownerPRN
+    execute @userID = get_user_id @ownerUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @ownerPRN contains simply the username
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @ownerUsername contains simply the username
         --
-        SELECT @ownerPRN = U_PRN
+        SELECT @ownerUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
         ---------------------------------------------------
-        -- @ownerPRN did not resolve to a User_ID
-        -- In case a name was entered (instead of a PRN),
+        -- @ownerUsername did not resolve to a User_ID
+        -- In case a name was entered (instead of a username),
         --  try to auto-resolve using the U_Name column in T_Users
         ---------------------------------------------------
         Declare @MatchCount int
-        Declare @NewPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @ownerPRN, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @ownerUsername, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
-            -- Single match was found; update @ownerPRN
-            Set @ownerPRN = @NewPRN
+            -- Single match was found; update @ownerUsername
+            Set @ownerUsername = @newUsername
         End
         Else
         Begin
-            Set @message = 'Could not find entry in database for owner PRN "' + @ownerPRN + '"'
+            Set @message = 'Could not find entry in database for owner username "' + @ownerUsername + '"'
             If @showDebugMessages <> 0
                 print @message
 
@@ -204,7 +205,7 @@ AS
     -- Get analysis tool ID from tool name
     ---------------------------------------------------
     --
-    execute @analysisToolID = GetAnalysisToolID @toolName
+    execute @analysisToolID = get_analysis_tool_id @toolName
 
     If @analysisToolID = 0
     Begin
@@ -262,7 +263,7 @@ AS
     -- Get organism ID using organism name
     ---------------------------------------------------
     --
-    execute @organismID = GetOrganismID @organismName
+    execute @organismID = get_organism_id @organismName
     If @organismID = 0
     Begin
         Set @message = 'Could not find entry in database for organism "' + @organismName + '"'
@@ -358,8 +359,8 @@ AS
     -- Make sure settings for which 'na' is acceptable truly have lowercase 'na' and not 'NA' or 'n/a'
     ---------------------------------------------------
     --
-    Set @settingsFileName =    dbo.ValidateNAParameter(@settingsFileName, 1)
-    Set @paramFileName =        dbo.ValidateNAParameter(@paramFileName, 1)
+    Set @settingsFileName =    dbo.validate_na_parameter(@settingsFileName, 1)
+    Set @paramFileName =        dbo.validate_na_parameter(@paramFileName, 1)
 
     ---------------------------------------------------
     -- Check for settings file or parameter file being 'na' when not allowed
@@ -607,13 +608,13 @@ AS
     -- Check protein parameters
     ---------------------------------------------------
 
-    exec @result = ValidateProteinCollectionParams
+    exec @result = validate_protein_collection_params
                     @toolName,
                     @organismDBName output,
                     @organismName,
                     @protCollNameList output,
                     @protCollOptionsList output,
-                    @ownerPRN,
+                    @ownerUsername,
                     @message output,
                     @debugMode=@showDebugMessages
 
@@ -621,7 +622,7 @@ AS
     Begin
         If IsNull(@message, '') = ''
         Begin
-            Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateProteinCollectionParams in ValidateAnalysisJobParameters'
+            Set @message = 'Error code ' + Convert(varchar(12), @result) + ' returned by validate_protein_collection_params in validate_analysis_job_parameters'
         End
 
         If @showDebugMessages <> 0
@@ -807,7 +808,7 @@ AS
     return @result
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_analysis_job_parameters] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_analysis_job_parameters] TO [Limited_Table_Write] AS [dbo]
 GO

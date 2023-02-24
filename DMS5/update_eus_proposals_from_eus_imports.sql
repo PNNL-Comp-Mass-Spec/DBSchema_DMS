@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEUSProposalsFromEUSImports] ******/
+/****** Object:  StoredProcedure [dbo].[update_eus_proposals_from_eus_imports] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
+CREATE PROCEDURE [dbo].[update_eus_proposals_from_eus_imports]
 /****************************************************
 **
 **  Desc:   Updates EUS proposals in T_EUS_Proposals
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 **  Date:   03/24/2011 mem - Initial version
 **          03/25/2011 mem - Now automatically setting proposal state_id to 3=Inactive
 **          05/02/2011 mem - Now changing proposal state_ID to 2=Active if the proposal is present in V_EUS_Import_Proposals but the proposal's state in T_EUS_Proposals is not 2=Active or 4=No Interest
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          01/27/2012 mem - Added support for state 5=Permanently Active
 **          03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **          02/23/2016 mem - Add set XACT_ABORT on
@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[UpdateEUSProposalsFromEUSImports]
 **          05/14/2021 mem - Handle null values for actual_start_date
 **          05/24/2021 mem - Add new proposal types to T_EUS_Proposal_Type
 **          05/24/2022 mem - Avoid inserting duplicate proposals into T_EUS_Proposals by filtering on IdRank
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -112,7 +113,7 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error merging V_EUS_Import_Proposals with T_EUS_Proposals (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'UpdateEUSProposalsFromEUSImports'
+            execute post_log_entry 'Error', @message, 'update_eus_proposals_from_eus_imports'
             goto Done
         End
 
@@ -139,7 +140,7 @@ AS
             If @mergeDeleteCount > 0
                 Set @message = @message + '; ' + Convert(varchar(12), @mergeDeleteCount) + ' deleted'
 
-            Exec PostLogEntry 'Normal', @message, 'UpdateEUSProposalsFromEUSImports'
+            Exec post_log_entry 'Normal', @message, 'update_eus_proposals_from_eus_imports'
             Set @message = ''
         End
 
@@ -163,17 +164,17 @@ AS
 
         If @myRowCount > 0
         Begin
-            Set @message = 'Added ' + Cast(@myRowCount As Varchar(12)) + ' new proposal ' + dbo.CheckPlural(@myRowCount, 'type', 'types') + ' to T_EUS_Proposal_Type'
+            Set @message = 'Added ' + Cast(@myRowCount As Varchar(12)) + ' new proposal ' + dbo.check_plural(@myRowCount, 'type', 'types') + ' to T_EUS_Proposal_Type'
 
-            Exec PostLogEntry 'Normal', @message, 'UpdateEUSProposalsFromEUSImports'
+            Exec post_log_entry 'Normal', @message, 'update_eus_proposals_from_eus_imports'
             Set @message = ''
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateEUSProposalsFromEUSImports')
-        exec LocalErrorHandler  @callingProcName, @currentLocation, @LogError = 1,
+        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'update_eus_proposals_from_eus_imports')
+        exec local_error_handler  @callingProcName, @currentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -188,10 +189,10 @@ Done:
     ---------------------------------------------------
 
     Declare @usageMessage varchar(512) = ''
-    Exec PostUsageLogEntry 'UpdateEUSProposalsFromEUSImports', @usageMessage
+    Exec post_usage_log_entry 'update_eus_proposals_from_eus_imports', @usageMessage
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSProposalsFromEUSImports] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_proposals_from_eus_imports] TO [DDL_Viewer] AS [dbo]
 GO

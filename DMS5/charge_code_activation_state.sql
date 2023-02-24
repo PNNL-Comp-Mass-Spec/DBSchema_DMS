@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ChargeCodeActivationState] ******/
+/****** Object:  UserDefinedFunction [dbo].[charge_code_activation_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ChargeCodeActivationState]
+CREATE FUNCTION [dbo].[charge_code_activation_state]
 /****************************************************
 **
 **  Desc:   Computes the Activation_State for a charge code, given the specified properties
@@ -13,13 +13,14 @@ CREATE FUNCTION [dbo].[ChargeCodeActivationState]
 **  Auth:   mem
 **  Date:   06/07/2013 mem - Initial release
 **          11/19/2013 mem - Bug fix assigning ActivationState for Inactive, old work packages
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Deactivated varchar(1),    -- N or Y; assumed to never be null since not null in T_Charge_State
-    @ChargeCodeState smallint,
-    @UsageSamplePrep int,
-    @UsageRequestedRun int
+    @deactivated varchar(1),    -- N or Y; assumed to never be null since not null in T_Charge_State
+    @chargeCodeState smallint,
+    @usageSamplePrep int,
+    @usageRequestedRun int
 )
 RETURNS tinyint
 AS
@@ -47,5 +48,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ChargeCodeActivationState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[charge_code_activation_state] TO [DDL_Viewer] AS [dbo]
 GO

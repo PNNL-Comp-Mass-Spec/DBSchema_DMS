@@ -1,24 +1,25 @@
-/****** Object:  UserDefinedFunction [dbo].[JobBacklogOnDateByResultType] ******/
+/****** Object:  UserDefinedFunction [dbo].[job_backlog_on_date_by_result_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[JobBacklogOnDateByResultType]
+CREATE FUNCTION [dbo].[job_backlog_on_date_by_result_type]
 /****************************************************
 **
 **  Desc:
 **      returns count of number of jobs in backlog on given date
 **
 **  Auth:   grk
-**  Date:   1/21/2005
-**          1/22/2005 mem - Added two additional parameters
-**          1/25/2005 grk - modified to use result type
+**  Date:   01/21/2005
+**          01/22/2005 mem - Added two additional parameters
+**          01/25/2005 grk - modified to use result type
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @targDate datetime,
     @resultType varchar(64) = 'Peptide_Hit', --'HMMA_Peak', 'Peptide_Hit', 'SIC', 'TIC'
-    @ProcessorNameFilter varchar(64) = '%'
+    @processorNameFilter varchar(64) = '%'
 )
 RETURNS integer
 AS
@@ -42,5 +43,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[JobBacklogOnDateByResultType] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[job_backlog_on_date_by_result_type] TO [DDL_Viewer] AS [dbo]
 GO

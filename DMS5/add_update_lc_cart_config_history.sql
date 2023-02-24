@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLCCartConfigHistory] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_lc_cart_config_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateLCCartConfigHistory]
+CREATE PROCEDURE [dbo].[add_update_lc_cart_config_history]
 /****************************************************
 **
 **  Desc:
@@ -20,17 +20,18 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCartConfigHistory]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
-    @Cart varchar(128),
-    @DateOfChange VARCHAR(32),
-    @PostedBy VARCHAR(64),
-    @Description varchar(128),
-    @Note text,
+    @id int,
+    @cart varchar(128),
+    @dateOfChange VARCHAR(32),
+    @postedBy VARCHAR(64),
+    @description varchar(128),
+    @note text,
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -137,19 +138,19 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateLCCartConfigHistory'
+        Exec post_log_entry 'Error', @message, 'add_update_lc_cart_config_history'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfigHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart_config_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCartConfigHistory] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart_config_history] TO [DMS2_SP_User] AS [dbo]
 GO

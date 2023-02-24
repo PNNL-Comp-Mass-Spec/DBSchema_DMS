@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetFactorList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_factor_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetFactorList]
+CREATE FUNCTION [dbo].[get_factor_list]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[GetFactorList]
 **
 **  Auth:   grk
 **  Date:   05/17/2011
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -39,10 +40,11 @@ AS
 
         RETURN @list
     END
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFactorList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_factor_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFactorList] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_factor_list] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFactorList] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_factor_list] TO [DMS2_SP_User] AS [dbo]
 GO

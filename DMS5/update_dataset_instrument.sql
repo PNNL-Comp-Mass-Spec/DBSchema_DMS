@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetInstrument] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_instrument] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetInstrument]
+CREATE PROCEDURE [dbo].[update_dataset_instrument]
 /****************************************************
 **
 **  Desc:   Changes the instrument name of a dataset
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetInstrument]
 **  Auth:   mem
 **  Date:   04/30/2019 mem - Initial Version
 **          01/05/2023 mem - Use new column names in V_Storage_List_Report
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -140,20 +141,20 @@ AS
         Goto Done
     End
 
-    Exec @storagePathIdNew = GetInstrumentStoragePathForNewDatasets @instrumentIdNew, @datasetCreated, @AutoSwitchActiveStorage=0, @infoOnly=0
+    Exec @storagePathIdNew = get_instrument_storage_path_for_new_datasets @instrumentIdNew, @datasetCreated, @AutoSwitchActiveStorage=0, @infoOnly=0
 
 
-    SELECT @storagePathNew = dbo.udfCombinePaths(vol_client, storage_path)
+    SELECT @storagePathNew = dbo.combine_paths(vol_client, storage_path)
     FROM V_Storage_List_Report
     WHERE ID = @storagePathIdNew
 
     If @infoOnly > 0
     Begin
-        SELECT @storagePathOld = dbo.udfCombinePaths(vol_client, storage_path)
+        SELECT @storagePathOld = dbo.combine_paths(vol_client, storage_path)
         FROM V_Storage_List_Report
         WHERE ID = @storagePathIdOld
 
-        SELECT @storagePathNew = dbo.udfCombinePaths(vol_client, storage_path)
+        SELECT @storagePathNew = dbo.combine_paths(vol_client, storage_path)
         FROM V_Storage_List_Report
         WHERE ID = @storagePathIdNew
 
@@ -263,7 +264,7 @@ AS
                    'Storage path ID changed from ' +
                    Cast(@storagePathIdOld As Varchar(12)) + ' to ' + Cast(@storagePathIdNew As Varchar(12))
 
-    Exec PostLogEntry 'Normal', @message, 'UpdateDatasetInstrument'
+    Exec post_log_entry 'Normal', @message, 'update_dataset_instrument'
 
     Commit Tran @instrumentUpdateTran
 

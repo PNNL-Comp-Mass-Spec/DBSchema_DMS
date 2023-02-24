@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedSecondarySepUsage] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_secondary_sep_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedSecondarySepUsage]
+CREATE PROCEDURE [dbo].[update_cached_secondary_sep_usage]
 /****************************************************
 **
 **  Desc:   Updates the data in T_Secondary_Sep_Usage
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedSecondarySepUsage]
 **  Auth:   mem
 **  Date:   11/18/2015 mem - Initial Version
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -78,15 +79,15 @@ AS
         If @myError <> 0
         begin
             set @message = 'Error updating T_Secondary_Sep_Usage via merge (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'UpdateCachedSecondarySepUsage'
+            execute post_log_entry 'Error', @message, 'update_cached_secondary_sep_usage'
             goto Done
         end
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateCachedSecondarySepUsage')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_cached_secondary_sep_usage')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -95,5 +96,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedSecondarySepUsage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_secondary_sep_usage] TO [DDL_Viewer] AS [dbo]
 GO

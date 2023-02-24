@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateRequestedRunBatch] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_requested_run_batch] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
+CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
 /****************************************************
 **
 **  Desc: Adds new or edits existing requested run batch
@@ -15,7 +15,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          09/15/2006 jds - Added @requestedBatchPriority, @actualBathPriority, @requestedCompletionDate, @justificationHighPriority, and @comment
 **          11/04/2006 grk - added @requestedInstrument
 **          12/03/2009 grk - checking for presence of @justificationHighPriority If priority is high
-**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check If @operPRN contains a person's real name rather than their username
+**          05/05/2010 mem - Now calling auto_resolve_name_to_username to check If @operatorUsername contains a person's real name rather than their username
 **          08/04/2010 grk - try-catch for error handling
 **          08/27/2010 mem - Now auto-switching @requestedInstrument to be instrument group instead of instrument name
 **                         - Expanded @requestedCompletionDate to varchar(24) to support long dates of the form 'Jan 01 2010 12:00:00AM'
@@ -24,7 +24,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          04/28/2017 mem - Disable logging certain messages to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          06/23/2017 mem - Check for @requestedRunList containing request names instead of IDs
 **          08/01/2017 mem - Use THROW If not authorized
 **          08/18/2017 mem - Log additional errors to T_Log_Entries
@@ -35,10 +35,11 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
 **          06/02/2021 mem - Expand @requestedRunList to varchar(max)
 **          07/24/2022 mem - Remove trailing tabs from batch name
 **          08/01/2022 mem - If @mode is 'update' and @id is 0, do not set Batch ID to 0 for other requested runs
-**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
-**          02/14/2023 mem - Rename variable and use new parameter names for ValidateRequestedRunBatchParams
+**          02/10/2023 mem - Call update_cached_requested_run_batch_stats
+**          02/14/2023 mem - Rename variable and use new parameter names for validate_requested_run_batch_params
 **          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
 **                         - Rename @requestedInstrument to @requestedInstrumentGroup
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -46,7 +47,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRunBatch]
     @name varchar(50),
     @description varchar(256),
     @requestedRunList varchar(max),                 -- Requested run IDs
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
@@ -75,7 +76,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRunBatch', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_requested_run_batch', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -91,11 +92,11 @@ AS
     Declare @userID int = 0
     Set @id = IsNull(@id, 0)
 
-    Exec @myError = ValidateRequestedRunBatchParams
+    Exec @myError = validate_requested_run_batch_params
             @batchID = @id,
             @name = @name,
             @description = @description,
-            @ownerUsername = @ownerPRN,
+            @ownerUsername = @ownerUsername,
             @requestedBatchPriority = @requestedCompletionDate,
             @requestedCompletionDate = @requestedCompletionDate,
             @justificationHighPriority = @justificationHighPriority,
@@ -153,7 +154,7 @@ AS
     --
     INSERT INTO #Tmp_RequestedRuns (RequestIDText)
     SELECT DISTINCT Value
-    FROM dbo.udfParseDelimitedList(@requestedRunList, ',', 'AddUpdateRequestedRunBatch')
+    FROM dbo.parse_delimited_list(@requestedRunList, ',', 'add_update_requested_run_batch')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -323,7 +324,7 @@ AS
                             Cast(@batchIDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@id as varchar(12))
 
-            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateRequestedRunBatch'
+            exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run_batch'
 
             Set @id = @batchIDConfirm
         End
@@ -462,7 +463,7 @@ AS
                 Set @duplicateMessage = 'Warning, both this batch and batch ' + Cast(@duplicateBatchID AS varchar(12)) +
                                         ' have batch group order = ' + Cast(@batchGroupOrder AS varchar(12))
 
-                Set @message = dbo.AppendToText(@message, @duplicateMessage, 0, '; ', 512)
+                Set @message = dbo.append_to_text(@message, @duplicateMessage, 0, '; ', 512)
             End
         End
 
@@ -474,29 +475,29 @@ AS
 
     If @id > 0
     Begin
-        Exec UpdateCachedRequestedRunBatchStats @id
+        Exec update_cached_requested_run_batch_stats @id
     End
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'AddUpdateRequestedRunBatch'
+            Exec post_log_entry 'Error', @message, 'add_update_requested_run_batch'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run_batch] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_requested_run_batch] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRunBatch] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_requested_run_batch] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRunBatch] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run_batch] TO [Limited_Table_Write] AS [dbo]
 GO

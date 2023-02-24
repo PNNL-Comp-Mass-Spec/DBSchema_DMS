@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDatasetScanTypeList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dataset_scan_type_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDatasetScanTypeList]
+CREATE FUNCTION [dbo].[get_dataset_scan_type_list]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[GetDatasetScanTypeList]
 **  Auth:   mem
 **  Date:   05/13/2010
 **          06/13/2022 mem - Convert from a table-valued function to a scalar-valued function
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,5 +39,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetScanTypeList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_scan_type_list] TO [DDL_Viewer] AS [dbo]
 GO

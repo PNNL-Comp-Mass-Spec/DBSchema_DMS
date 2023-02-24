@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEUSInfoFromEUSImports] ******/
+/****** Object:  StoredProcedure [dbo].[update_eus_info_from_eus_imports] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEUSInfoFromEUSImports]
+CREATE PROCEDURE [dbo].[update_eus_info_from_eus_imports]
 /****************************************************
 **
 **  Desc:
-**      Wrapper procedure to call UpdateEUSProposalsFromEUSImports,
-**      UpdateEUSUsersFromEUSImports, and UpdateEUSInstrumentsFromEUSImports
+**      Wrapper procedure to call update_eus_proposals_from_eus_imports,
+**      update_eus_users_from_eus_imports, and update_eus_instruments_from_eus_imports
 **
 **      Intended to be manually run on an on-demand basis
 **
@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[UpdateEUSInfoFromEUSImports]
 **
 **  Auth:   mem
 **  Date:   03/25/2011 mem - Initial version
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          01/08/2013 mem - Now calling UpdateEUSInstrumentsFromEUSImports
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          01/08/2013 mem - Now calling update_eus_instruments_from_eus_imports
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/12/2021 mem - Add option to update EUS Users for Inactive proposals
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -45,12 +46,12 @@ AS
     If @myError = 0
     Begin
         -- Update EUS proposals
-        exec @myError = UpdateEUSProposalsFromEUSImports @message = @message
+        exec @myError = update_eus_proposals_from_eus_imports @message = @message
 
         If @myError <> 0 And @statusMessage = ''
         Begin
             If @message = ''
-                Set @statusMessage = 'Error calling UpdateEUSProposalsFromEUSImports'
+                Set @statusMessage = 'Error calling update_eus_proposals_from_eus_imports'
             Else
                 Set @statusMessage = @message
         End
@@ -59,12 +60,12 @@ AS
     If @myError = 0
     Begin
         -- Update EUS users
-        exec @myError = UpdateEUSUsersFromEUSImports @updateUsersOnInactiveProposals, @message = @message
+        exec @myError = update_eus_users_from_eus_imports @updateUsersOnInactiveProposals, @message = @message
 
         If @myError <> 0 And @statusMessage = ''
         Begin
             If @message = ''
-                Set @statusMessage = 'Error calling UpdateEUSUsersFromEUSImports'
+                Set @statusMessage = 'Error calling update_eus_users_from_eus_imports'
             Else
                 Set @statusMessage = @message
         End
@@ -73,12 +74,12 @@ AS
     If @myError = 0
     Begin
         -- Update EUS instruments
-        exec @myError = UpdateEUSInstrumentsFromEUSImports @message = @message
+        exec @myError = update_eus_instruments_from_eus_imports @message = @message
 
         If @myError <> 0 And @statusMessage = ''
         Begin
             If @message = ''
-                Set @statusMessage = 'Error calling UpdateEUSInstrumentsFromEUSImports'
+                Set @statusMessage = 'Error calling update_eus_instruments_from_eus_imports'
             Else
                 Set @statusMessage = @message
         End
@@ -110,18 +111,18 @@ AS
     ---------------------------------------------------
 
     Declare @usageMessage varchar(512) = ''
-    Exec PostUsageLogEntry 'UpdateEUSInfoFromEUSImports', @usageMessage
+    Exec post_usage_log_entry 'update_eus_info_from_eus_imports', @usageMessage
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_info_from_eus_imports] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_eus_info_from_eus_imports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [DMS_EUS_Admin] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_info_from_eus_imports] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInfoFromEUSImports] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_info_from_eus_imports] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEUSInfoFromEUSImports] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_eus_info_from_eus_imports] TO [PNL\D3M578] AS [dbo]
 GO

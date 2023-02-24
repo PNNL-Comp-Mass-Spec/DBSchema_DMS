@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteOldDataExperimentsJobsAndLogs] ******/
+/****** Object:  StoredProcedure [dbo].[delete_old_data_experiments_jobs_and_logs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteOldDataExperimentsJobsAndLogs]
+CREATE PROCEDURE [dbo].[delete_old_data_experiments_jobs_and_logs]
 /****************************************************
 **
 **  Desc:
@@ -37,27 +37,28 @@ CREATE PROCEDURE [dbo].[DeleteOldDataExperimentsJobsAndLogs]
 **          05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations, since deprecated
 **          10/28/2015 mem - Added T_Prep_LC_Run_Dataset and removed T_Analysis_Job_Annotations and T_Dataset_Annotations
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/04/2017 mem - Add T_Experiment_Reference_Compounds
-**          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
+**          12/06/2018 mem - Call update_experiment_group_member_count to update T_Experiment_Groups
 **          08/15/2022 mem - Use new column names
 **          08/26/2022 mem - Use new column name in T_Log_Entries
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 1,                        -- Change to 0 to actually perform the deletion
-    @YearsToRetain int = 4,                        -- Number of years of data to retain; setting to 4 will delete data more than 4 years old; minimum value is 1
-    @RecentJobOverrideYears float = 2,            -- Keeps datasets and experiments that have had an analysis job run within this mean years
-    @LogEntryMonthsToRetain int = 3,            -- Number of months of logs to retain
-    @DatasetSkipList varchar(max) = '',            -- List of datasets to skip
-    @ExperimentSkipList varchar(max) = '',        -- List of experiments to skip
-    @DeleteJobs tinyint = 1,
-    @DeleteDatasets tinyint = 1,
-    @DeleteExperiments tinyint = 1,
-    @MaxItemsToProcess int = 75000,
+    @yearsToRetain int = 4,                        -- Number of years of data to retain; setting to 4 will delete data more than 4 years old; minimum value is 1
+    @recentJobOverrideYears float = 2,            -- Keeps datasets and experiments that have had an analysis job run within this mean years
+    @logEntryMonthsToRetain int = 3,            -- Number of months of logs to retain
+    @datasetSkipList varchar(max) = '',            -- List of datasets to skip
+    @experimentSkipList varchar(max) = '',        -- List of experiments to skip
+    @deleteJobs tinyint = 1,
+    @deleteDatasets tinyint = 1,
+    @deleteExperiments tinyint = 1,
+    @maxItemsToProcess int = 75000,
     @message varchar(255) = '' OUTPUT
 )
 AS
@@ -77,7 +78,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteOldDataExperimentsJobsAndLogs', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_old_data_experiments_jobs_and_logs', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -179,7 +180,7 @@ AS
         WHERE (DS_created < @DeleteThreshold) AND
             NOT Dataset_Num Like 'DataPackage_[0-9]%' AND
             NOT Dataset_Num IN ( SELECT Value
-                                FROM dbo.udfParseDelimitedList ( @DatasetSkipList, ',', 'DeleteOldDataExperimentsJobsAndLogs')
+                                FROM dbo.parse_delimited_list ( @DatasetSkipList, ',', 'delete_old_data_experiments_jobs_and_logs')
                                 ) AND
             NOT Dataset_Num IN ( SELECT DISTINCT DS.Dataset_Num
                                 FROM T_Dataset DS INNER JOIN
@@ -205,7 +206,7 @@ AS
         WHERE E.Experiment_Num NOT IN ('Placeholder', 'DMS_Pipeline_Data') AND
             E.EX_created < @DeleteThreshold AND
             NOT Experiment_Num IN ( SELECT Value
-                                    FROM dbo.udfParseDelimitedList ( @ExperimentSkipList, ',', 'DeleteOldDataExperimentsJobsAndLogs')
+                                    FROM dbo.parse_delimited_list ( @ExperimentSkipList, ',', 'delete_old_data_experiments_jobs_and_logs')
                                     ) AND
             NOT Experiment_Num IN ( SELECT E.Experiment_Num
                                     FROM T_Dataset DS
@@ -385,7 +386,7 @@ AS
             --
             Set @message = @message + ' and T_Analysis_Job'
 
-            Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+            Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
 
             ALTER TABLE T_Analysis_Job Enable TRIGGER trig_ud_T_Analysis_Job
 
@@ -414,7 +415,7 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Analysis_Job_Batches since orphaned and older than ' + Convert(varchar(24), @DeleteThreshold)
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
             Set @CurrentLocation = 'DROP Index IX_Tmp_T_Analysis_Job_Batch_ID_Include_Job'
@@ -436,7 +437,7 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Analysis_Job_Request since orphaned and older than ' + Convert(varchar(24), @DeleteThreshold)
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
             -- Delete orphaned entries in T_Analysis_Job_ID that are older than @LogDeleteThreshold
@@ -455,15 +456,15 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Analysis_Job_ID since orphaned and older than ' + Convert(varchar(24), @LogDeleteThreshold)
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
 
         END TRY
         BEGIN CATCH
             -- Error caught
-            Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'DeleteOldDataExperimentsJobsAndLogs')
-                    exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 0,
+            Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'delete_old_data_experiments_jobs_and_logs')
+                    exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 0,
                                             @ErrorNum = @myError output, @message = @message output
 
             Set @message = 'Exception deleting jobs: ' + @message
@@ -576,7 +577,7 @@ AS
             --
             Set @message = @message + ' and T_Dataset'
 
-            Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+            Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
 
             ALTER TABLE T_Dataset ENABLE TRIGGER trig_ud_T_Dataset
 
@@ -592,7 +593,7 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Requested_Run since orphaned and older than ' + Convert(varchar(24), @DeleteThreshold)
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
 
@@ -610,7 +611,7 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Requested_Run_Batches since orphaned and older than ' + Convert(varchar(24), @DeleteThreshold)
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
             -- Delete orphaned entries in T_Dataset_ScanTypes
@@ -626,15 +627,15 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Dataset_ScanTypes since orphaned'
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
 
         END TRY
         BEGIN CATCH
             -- Error caught
-            Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'DeleteOldDataExperimentsJobsAndLogs')
-                    exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 0,
+            Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'delete_old_data_experiments_jobs_and_logs')
+                    exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 0,
                                             @ErrorNum = @myError output, @message = @message output
 
             Set @message = 'Exception deleting datasets: ' + @message
@@ -708,7 +709,7 @@ AS
             --
             Set @message = @message + ' and T_Experiments'
 
-            Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+            Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
 
             -- Delete orphaned entries in T_Experiment_Groups
             --
@@ -723,17 +724,17 @@ AS
             If @myRowCount > 0
             Begin
                 Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' entries from T_Experiment_Groups since orphaned and older than ' + Convert(varchar(24), @DeleteThreshold)
-                Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+                Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
             End
 
             -- Assure that MemberCount is accurate in T_Experiment_Groups
-            Exec UpdateExperimentGroupMemberCount @groupID = 0
+            Exec update_experiment_group_member_count @groupID = 0
 
         END TRY
         BEGIN CATCH
             -- Error caught
-            Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'DeleteOldDataExperimentsJobsAndLogs')
-                    exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 0,
+            Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'delete_old_data_experiments_jobs_and_logs')
+                    exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 0,
                                             @ErrorNum = @myError output, @message = @message output
 
             Set @message = 'Exception deleting experiments: ' + @message
@@ -770,7 +771,7 @@ AS
     If @myRowCount > 0
     Begin
         Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' experiment related entries from T_Aux_Info_Value since orphaned'
-        Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+        Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
     End
 
 
@@ -795,7 +796,7 @@ AS
     If @myRowCount > 0
     Begin
         Set @message = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' cell culture related entries from T_Aux_Info_Value since orphaned'
-        Exec PostLogEntry 'Normal', @message, 'DeleteOldDataExperimentsJobsAndLogs'
+        Exec post_log_entry 'Normal', @message, 'delete_old_data_experiments_jobs_and_logs'
     End
 
     -- Datasets (Target_Type_ID = 502)
@@ -850,5 +851,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteOldDataExperimentsJobsAndLogs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_old_data_experiments_jobs_and_logs] TO [DDL_Viewer] AS [dbo]
 GO

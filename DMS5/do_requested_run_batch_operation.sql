@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoRequestedRunBatchOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_requested_run_batch_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoRequestedRunBatchOperation]
+CREATE PROCEDURE [dbo].[do_requested_run_batch_operation]
 /****************************************************
 **
 **  Desc:
@@ -17,11 +17,12 @@ CREATE PROCEDURE [dbo].[DoRequestedRunBatchOperation]
 **          09/20/2006 jds - Added support for Granting High Priority and Denying High Priority for fields Actual_Bath_Priority and Requested_Batch_Priority
 **          08/27/2009 grk - Delete batch fixes requested run references in history table
 **          02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          07/25/2017 mem - Remove mode BatchOrder since unused
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/01/2022 mem - Exit the procedure if @batchID is 0
-**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**          02/10/2023 mem - Call update_cached_requested_run_batch_stats
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,7 +45,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoRequestedRunBatchOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_requested_run_batch_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -159,7 +160,7 @@ AS
             -- Update stats in T_Cached_Requested_Run_Batch_Stats
             ---------------------------------------------------
 
-            Exec UpdateCachedRequestedRunBatchStats @batchID
+            Exec update_cached_requested_run_batch_stats @batchID
 
             If @mode = 'FreeMembers'
             Begin
@@ -261,11 +262,11 @@ AS
     return 51222
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_requested_run_batch_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS_RunScheduler] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_requested_run_batch_operation] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoRequestedRunBatchOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_requested_run_batch_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoRequestedRunBatchOperation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_requested_run_batch_operation] TO [Limited_Table_Write] AS [dbo]
 GO

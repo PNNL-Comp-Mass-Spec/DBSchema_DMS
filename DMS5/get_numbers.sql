@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetNums] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_numbers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetNums]
+CREATE FUNCTION [dbo].[get_numbers]
 /****************************************************
 **
 **  Desc:
@@ -21,6 +21,7 @@ CREATE FUNCTION [dbo].[GetNums]
 **
 **  Auth:   mem
 **  Date:   04/14/2017
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

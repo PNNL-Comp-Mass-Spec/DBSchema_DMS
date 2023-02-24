@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunCopyFactors] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_copy_factors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunCopyFactors]
+CREATE PROCEDURE [dbo].[update_requested_run_copy_factors]
 /****************************************************
 **
 **  Desc:
@@ -13,9 +13,10 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunCopyFactors]
 **
 **  Auth:   grk
 **  Date:   02/24/2010
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/25/2012 mem - Now assuring that @callingUser is not blank
 **          11/11/2022 mem - Exclude unnamed factors when querying T_Factor
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -144,12 +145,12 @@ AS
 
     Declare @UsageMessage varchar(512) = ''
     Set @UsageMessage = 'Source: ' + Convert(varchar(12), @srcRequestID) + '; Target: ' + Convert(varchar(12), @destRequestID)
-    Exec PostUsageLogEntry 'UpdateRequestedRunCopyFactors', @UsageMessage
+    Exec post_usage_log_entry 'update_requested_run_copy_factors', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunCopyFactors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_copy_factors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunCopyFactors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_copy_factors] TO [Limited_Table_Write] AS [dbo]
 GO

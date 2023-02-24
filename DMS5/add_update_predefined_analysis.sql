@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdatePredefinedAnalysis] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_predefined_analysis] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
+CREATE PROCEDURE [dbo].[add_update_predefined_analysis]
 /****************************************************
 **
 **  Desc: Adds a new default analysis to DB
@@ -21,9 +21,9 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
 **          09/04/2009 mem - Added DatasetType parameter
 **          09/16/2009 mem - Now checking dataset type against the Instrument_Allowed_Dataset_Type table (Ticket #748)
 **          10/05/2009 mem - Now validating the parameter file name
-**          12/18/2009 mem - Switched to use GetInstrumentDatasetTypeList() to get the allowed dataset types for the dataset and GetAnalysisToolAllowedDSTypeList() to get the allowed dataset types for the analysis tool
-**          05/06/2010 mem - Now calling AutoResolveNameToPRN to validate @creator
-**          08/26/2010 mem - Now calling ValidateProteinCollectionParams to validate the protein collection info
+**          12/18/2009 mem - Switched to use get_instrument_dataset_type_list() to get the allowed dataset types for the dataset and get_analysis_tool_allowed_dataset_type_list() to get the allowed dataset types for the analysis tool
+**          05/06/2010 mem - Now calling auto_resolve_name_to_username to validate @creator
+**          08/26/2010 mem - Now calling validate_protein_collection_params to validate the protein collection info
 **          08/28/2010 mem - Now using T_Instrument_Group_Allowed_DS_Type to determine allowed dataset types for matching instruments
 **                         - Added try-catch for error handling
 **          11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to lookup the allowed instrument class names for a given analysis tool
@@ -38,11 +38,12 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
 **                         - Explicitly update Last_Affected
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          04/21/2017 mem - Add @instrumentExclCriteria
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/10/2018 mem - Validate the settings file name
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
     @instrumentExclCriteria varchar(64),
     @organismNameCriteria varchar(128),
     @datasetNameCriteria varchar(128),
-    @expCommentCriteria varchar(128),
+    @experimentCommentCriteria varchar(128),
     @labellingInclCriteria varchar(64),
     @labellingExclCriteria varchar(64),
     @analysisToolName varchar(64),
@@ -70,7 +71,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
     @description varchar(512),
     @creator varchar(50),
     @nextLevel varchar(12),
-    @ID int output,
+    @id int output,
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @separationTypeCriteria varchar(64)='',
@@ -78,9 +79,9 @@ CREATE PROCEDURE [dbo].[AddUpdatePredefinedAnalysis]
     @experimentExclCriteria varchar(128)='',
     @datasetExclCriteria varchar(128)='',
     @datasetTypeCriteria varchar(64)='',
-    @TriggerBeforeDisposition tinyint = 0,
-    @PropagationMode varchar(24)='Export',
-    @SpecialProcessing varchar(512)=''
+    @triggerBeforeDisposition tinyint = 0,
+    @propagationMode varchar(24)='Export',
+    @specialProcessing varchar(512)=''
 )
 AS
     Set XACT_ABORT, nocount on
@@ -109,7 +110,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdatePredefinedAnalysis', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_predefined_analysis', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -157,22 +158,22 @@ AS
     ---------------------------------------------------
     -- Update any null filter criteria
     ---------------------------------------------------
-    Set @instrumentClassCriteria = LTrim(RTrim(IsNull(@instrumentClassCriteria, '')))
-    Set @campaignNameCriteria    = LTrim(RTrim(IsNull(@campaignNameCriteria   , '')))
-    Set @experimentNameCriteria  = LTrim(RTrim(IsNull(@experimentNameCriteria , '')))
-    Set @instrumentNameCriteria  = LTrim(RTrim(IsNull(@instrumentNameCriteria , '')))
-    Set @instrumentExclCriteria  = LTrim(RTrim(IsNull(@instrumentExclCriteria , '')))
-    Set @organismNameCriteria    = LTrim(RTrim(IsNull(@organismNameCriteria   , '')))
-    Set @datasetNameCriteria     = LTrim(RTrim(IsNull(@datasetNameCriteria    , '')))
-    Set @expCommentCriteria      = LTrim(RTrim(IsNull(@expCommentCriteria     , '')))
-    Set @labellingInclCriteria   = LTrim(RTrim(IsNull(@labellingInclCriteria  , '')))
-    Set @labellingExclCriteria   = LTrim(RTrim(IsNull(@labellingExclCriteria  , '')))
-    Set @separationTypeCriteria  = LTrim(RTrim(IsNull(@separationTypeCriteria , '')))
-    Set @campaignExclCriteria    = LTrim(RTrim(IsNull(@campaignExclCriteria   , '')))
-    Set @experimentExclCriteria  = LTrim(RTrim(IsNull(@experimentExclCriteria , '')))
-    Set @datasetExclCriteria     = LTrim(RTrim(IsNull(@datasetExclCriteria    , '')))
-    Set @datasetTypeCriteria     = LTrim(RTrim(IsNull(@datasetTypeCriteria    , '')))
-    Set @SpecialProcessing       = LTrim(RTrim(IsNull(@SpecialProcessing      , '')))
+    Set @instrumentClassCriteria    = LTrim(RTrim(IsNull(@instrumentClassCriteria  , '')))
+    Set @campaignNameCriteria       = LTrim(RTrim(IsNull(@campaignNameCriteria     , '')))
+    Set @experimentNameCriteria     = LTrim(RTrim(IsNull(@experimentNameCriteria   , '')))
+    Set @instrumentNameCriteria     = LTrim(RTrim(IsNull(@instrumentNameCriteria   , '')))
+    Set @instrumentExclCriteria     = LTrim(RTrim(IsNull(@instrumentExclCriteria   , '')))
+    Set @organismNameCriteria       = LTrim(RTrim(IsNull(@organismNameCriteria     , '')))
+    Set @datasetNameCriteria        = LTrim(RTrim(IsNull(@datasetNameCriteria      , '')))
+    Set @experimentCommentCriteria  = LTrim(RTrim(IsNull(@experimentCommentCriteria, '')))
+    Set @labellingInclCriteria      = LTrim(RTrim(IsNull(@labellingInclCriteria    , '')))
+    Set @labellingExclCriteria      = LTrim(RTrim(IsNull(@labellingExclCriteria    , '')))
+    Set @separationTypeCriteria     = LTrim(RTrim(IsNull(@separationTypeCriteria   , '')))
+    Set @campaignExclCriteria       = LTrim(RTrim(IsNull(@campaignExclCriteria     , '')))
+    Set @experimentExclCriteria     = LTrim(RTrim(IsNull(@experimentExclCriteria   , '')))
+    Set @datasetExclCriteria        = LTrim(RTrim(IsNull(@datasetExclCriteria      , '')))
+    Set @datasetTypeCriteria        = LTrim(RTrim(IsNull(@datasetTypeCriteria      , '')))
+    Set @SpecialProcessing          = LTrim(RTrim(IsNull(@SpecialProcessing        , '')))
 
     ---------------------------------------------------
     -- Resolve propagation mode
@@ -333,11 +334,11 @@ AS
                 Begin -- <d1>
                     -- Example criteria that will result in this message: Instrument Criteria=Agilent_TOF%, Tool=AgilentSequest
 
-                    Set @allowedDatasetTypes = dbo.GetInstrumentDatasetTypeList(@InstrumentID)
+                    Set @allowedDatasetTypes = dbo.get_instrument_dataset_type_list(@InstrumentID)
 
                     Set @AllowedDSTypesForTool = ''
                     SELECT @AllowedDSTypesForTool = AllowedDatasetTypes
-                    FROM dbo.GetAnalysisToolAllowedDSTypeList(@analysisToolID)
+                    FROM dbo.get_analysis_tool_allowed_dataset_type_list(@analysisToolID)
 
                     set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @allowedDatasetTypes + '"'
                     set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these dataset types "' + @AllowedDSTypesForTool + '"'
@@ -358,7 +359,7 @@ AS
 
                     Set @AllowedInstClassesForTool = ''
                     SELECT @AllowedInstClassesForTool = AllowedInstrumentClasses
-                    FROM dbo.GetAnalysisToolAllowedInstClassList (@analysisToolID)
+                    FROM dbo.get_analysis_tool_allowed_inst_class_list (@analysisToolID)
 
                     set @msg = 'Criteria matched instrument "' + @instrumentName + '" which is Instrument Class "' + @instrumentClass + '"'
                     set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these instrument classes "' + @AllowedInstClassesForTool + '"'
@@ -376,7 +377,7 @@ AS
     ---------------------------------------------------
 
     declare @organismID int
-    execute @organismID = GetOrganismID @organismName
+    execute @organismID = get_organism_id @organismName
     if @organismID = 0
     begin
         set @msg = 'Could not find entry in database for organismName "' + @organismName + '"'
@@ -414,18 +415,18 @@ AS
     ---------------------------------------------------
 
     Declare @result int
-    Declare @ownerPRN varchar(64)
+    Declare @ownerUsername varchar(64)
 
     set @result = 0
-    Set @ownerPRN = ''
+    Set @ownerUsername = ''
 
-    exec @result = ValidateProteinCollectionParams
+    exec @result = validate_protein_collection_params
                     @analysisToolName,
                     @organismDBName output,
                     @organismName,
                     @protCollNameList output,
                     @protCollOptionsList output,
-                    @ownerPRN,
+                    @ownerUsername,
                     @message output,
                     @debugMode=0
 
@@ -436,17 +437,17 @@ AS
     End
 
     ---------------------------------------------------
-    -- @creator should be a userPRN
-    -- Auto-capitalize it or auto-resolve it from a name to a PRN
+    -- @creator should be a username
+    -- Auto-capitalize it or auto-resolve it from a name to a username
     ---------------------------------------------------
 
     Declare @userID int
 
-    execute @userID = GetUserID @creator
+    execute @userID = get_user_id @creator
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @creator contains simply the username
         --
         SELECT @creator = U_PRN
@@ -457,17 +458,17 @@ AS
     Begin
         ---------------------------------------------------
         -- @creator did not resolve to a User_ID
-        -- In case a name was entered (instead of a PRN),
+        -- In case a name was entered (instead of a username),
         --  try to auto-resolve using the U_Name column in T_Users
         ---------------------------------------------------
-        Declare @NewPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @creator, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @creator, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
             -- Single match was found; update @creator
-            Set @creator = @NewPRN
+            Set @creator = @newUsername
         End
     End
 
@@ -549,7 +550,7 @@ AS
             @datasetNameCriteria,
             @datasetExclCriteria,
             @datasetTypeCriteria,
-            @expCommentCriteria,
+            @experimentCommentCriteria,
             @labellingInclCriteria,
             @labellingExclCriteria,
             @separationTypeCriteria,
@@ -608,7 +609,7 @@ AS
             AD_datasetNameCriteria = @datasetNameCriteria,
             AD_datasetExclCriteria = @datasetExclCriteria,
             AD_datasetTypeCriteria = @datasetTypeCriteria,
-            AD_expCommentCriteria = @expCommentCriteria,
+            AD_expCommentCriteria = @experimentCommentCriteria,
             AD_labellingInclCriteria = @labellingInclCriteria,
             AD_labellingExclCriteria = @labellingExclCriteria,
             AD_separationTypeCriteria = @separationTypeCriteria,
@@ -641,23 +642,23 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdatePredefinedAnalysis'
+        Exec post_log_entry 'Error', @message, 'add_update_predefined_analysis'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_predefined_analysis] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_predefined_analysis] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePredefinedAnalysis] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_predefined_analysis] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePredefinedAnalysis] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_predefined_analysis] TO [Limited_Table_Write] AS [dbo]
 GO

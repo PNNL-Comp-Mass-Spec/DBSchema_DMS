@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSampleRequestAssignments] ******/
+/****** Object:  StoredProcedure [dbo].[update_sample_request_assignments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateSampleRequestAssignments]
+CREATE PROCEDURE [dbo].[update_sample_request_assignments]
 /****************************************************
 **
 **  Desc:
@@ -18,13 +18,14 @@ CREATE PROCEDURE [dbo].[UpdateSampleRequestAssignments]
 **          08/02/2005 grk - assignement also sets state to "open"
 **          08/14/2005 grk - update state changed date
 **          03/14/2006 grk - added stuff for estimated completion date
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          02/20/2012 mem - Now using a temporary table to track the requests to update
 **          02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
-**          06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/18/2014 mem - Now passing default to parse_delimited_integer_list
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/02/2022 mem - Fix bug that treated priority as an integer; instead, should be Normal or High
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateSampleRequestAssignments', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_sample_request_assignments', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -65,7 +66,7 @@ AS
 
     INSERT INTO @tblRequestsToProcess (RequestID)
     SELECT Value
-    FROM dbo.udfParseDelimitedIntegerList(@reqIDList, default)
+    FROM dbo.parse_delimited_integer_list(@reqIDList, default)
     ORDER BY Value
 
     -- Process each request in @tblRequestsToProcess
@@ -176,7 +177,7 @@ AS
             if @mode = 'delete'
             begin
                 -- Deletes are ignored by this procedure
-                -- Use DeleteSamplePrepRequest instead
+                -- Use delete_sample_prep_request instead
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
             end
@@ -198,18 +199,18 @@ AS
     Set @UsageMessage = 'Updated ' + Convert(varchar(12), @count) + ' prep request'
     If @count <> 0
         Set @UsageMessage = @UsageMessage + 's'
-    Exec PostUsageLogEntry 'UpdateSampleRequestAssignments', @UsageMessage
+    Exec post_usage_log_entry 'update_sample_request_assignments', @UsageMessage
 
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_sample_request_assignments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [DMS_Sample_Prep_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_sample_request_assignments] TO [DMS_Sample_Prep_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_sample_request_assignments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateSampleRequestAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_sample_request_assignments] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateSampleRequestAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_sample_request_assignments] TO [Limited_Table_Write] AS [dbo]
 GO

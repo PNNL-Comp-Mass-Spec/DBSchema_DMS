@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CleanupDatasetComments] ******/
+/****** Object:  StoredProcedure [dbo].[cleanup_dataset_comments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CleanupDatasetComments]
+CREATE PROCEDURE [dbo].[cleanup_dataset_comments]
 /****************************************************
 **
 **  Desc:   Remove error messages from dataset comments, provided the dataset state is Complete or Inactive
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[CleanupDatasetComments]
 **  Auth:   mem
 **  Date:   12/16/2017 mem - Initial version
 **          01/02/2018 mem - Check for "Authentication failure" and "Error: NeedToAbortProcessing"
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -82,7 +83,7 @@ AS
            DS_State_ID,
            ExistingComment = DS.DS_Comment,
            NewComment = DS.DS_Comment
-    FROM dbo.udfParseDelimitedIntegerList ( @datasetIDs, ',' ) Src
+    FROM dbo.parse_delimited_integer_list ( @datasetIDs, ',' ) Src
          LEFT OUTER JOIN T_Dataset DS
            ON Src.Value = DS.Dataset_ID
     --
@@ -219,7 +220,7 @@ AS
 
         If @myRowCount > 0
         Begin
-            Set @message = 'Removed error messages from the comment field of ' + Cast(@myRowCount as varchar(9)) + dbo.CheckPlural(@myRowCount, ' dataset', ' datasets')
+            Set @message = 'Removed error messages from the comment field of ' + Cast(@myRowCount as varchar(9)) + dbo.check_plural(@myRowCount, ' dataset', ' datasets')
             Print @message
         End
     End

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateRequestedRun] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_requested_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
+CREATE PROCEDURE [dbo].[add_update_requested_run]
 /****************************************************
 **
 **  Desc:
@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          02/21/2006 grk - Added stuff for EUS proposal and user tracking.
 **          11/09/2006 grk - Fixed error message handling (Ticket #318)
 **          01/12/2007 grk - added verification mode
-**          01/31/2007 grk - added verification for @requestorPRN (Ticket #371)
+**          01/31/2007 grk - added verification for @requestorUsername (Ticket #371)
 **          03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
 **          04/25/2007 grk - get new ID from UDF (Ticket #446)
 **          04/30/2007 grk - added better name validation (Ticket #450)
@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          07/17/2007 grk - Increased size of comment field (Ticket #500)
 **          07/30/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
 **          09/06/2007 grk - factored out instrument name and dataset type validation to ValidateInstrumentAndDatasetType (Ticket #512)
-**          09/06/2007 grk - added call to LookupInstrumentRunInfoFromExperimentSamplePrep (Ticket #512)
+**          09/06/2007 grk - added call to lookup_instrument_run_info_from_experiment_sample_prep (Ticket #512)
 **          09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **          02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **          04/09/2008 grk - Added secondary separation field (Ticket #658)
@@ -47,17 +47,17 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          03/27/2010 grk - fixed problem creating new requests with "Completed" status.
 **          04/20/2010 grk - fixed problem with experiment lookup validation
 **          04/21/2010 grk - try-catch for error handling
-**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @requestorPRN contains a person's real name rather than their username
+**          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @requestorUsername contains a person's real name rather than their username
 **          08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **          09/01/2010 mem - Added parameter @SkipTransactionRollback
 **          09/09/2010 mem - Added parameter @autoPopulateUserListIfBlank
-**          07/29/2011 mem - Now querying T_Requested_Run with both @reqName and @status when the mode is update or check_update
+**          07/29/2011 mem - Now querying T_Requested_Run with both @requestName and @status when the mode is update or check_update
 **          11/29/2011 mem - Tweaked warning messages when checking for existing request
 **          12/05/2011 mem - Updated @transName to use a custom transaction name
-**          12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
-**                         - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
+**          12/12/2011 mem - Updated call to validate_eus_usage to treat @eusUsageType as an input/output parameter
+**                         - Added parameter @callingUser, which is passed to alter_event_log_entry_user
 **          12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
-**          01/09/2012 grk - Added @secSep to LookupInstrumentRunInfoFromExperimentSamplePrep
+**          01/09/2012 grk - Added @secSep to lookup_instrument_run_info_from_experiment_sample_prep
 **          10/19/2012 mem - Now auto-updating secondary separation to separation group name when creating a new requested run
 **          05/08/2013 mem - Added @VialingConc and @VialingVol
 **          06/05/2013 mem - Now validating @WorkPackageNumber against T_Charge_Code
@@ -70,52 +70,53 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          02/29/2016 mem - Now looking up setting for 'RequestedRunRequireWorkpackage' using T_MiscOptions
 **          07/20/2016 mem - Tweak error message
-**          11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
+**          11/16/2016 mem - Call update_cached_requested_run_eus_users to update T_Active_Requested_Run_Cached_EUS_Users
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          01/09/2017 mem - Add parameter @logDebugMessages
 **          02/07/2017 mem - Change default for @logDebugMessages to 0
-**          06/13/2017 mem - Rename @operPRN to @requestorPRN
+**          06/13/2017 mem - Rename @operUsername to @requestorUsername
 **                         - Make sure the Work Package is capitalized properly
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
-**          09/03/2018 mem - Apply a maximum length restriction of 64 characters to @reqName when creating a new requested run
+**          09/03/2018 mem - Apply a maximum length restriction of 64 characters to @requestName when creating a new requested run
 **          12/10/2018 mem - Report an error if the comment contains 'experiment_group/show/0000'
 **          07/01/2019 mem - Allow @workPackage to be none if the Request is not active and either the Usage Type is Maintenance or the name starts with "AutoReq_"
 **          02/03/2020 mem - Raise an error if @eusUsersList contains multiple user IDs (since ERS only allows for a single user to be associated with a dataset)
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
-**                         - Use RemoveCrLf to replace linefeeds with semicolons
-**          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
+**          02/25/2021 mem - Use replace_character_codes to replace character codes with punctuation marks
+**                         - Use remove_cr_lf to replace linefeeds with semicolons
+**          05/25/2021 mem - Append new messages to @message (including from lookup_eus_from_experiment_sample_prep)
 **                         - Expand @message to varchar(1024)
 **          05/26/2021 mem - Check for undefined EUS Usage Type (ID = 1)
 **                     bcg - Bug fix: use @eusUsageTypeID to prevent use of EUS Usage Type "Undefined"
 **                     mem - When @mode is 'add', 'add-auto', or 'check_add', possibly override the EUSUsageType based on the campaign's EUS Usage Type
-**          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
+**          05/27/2021 mem - Refactor EUS Usage validation code into validate_eus_usage
 **          05/31/2021 mem - Add output parameter @resolvedInstrumentInfo
 **          06/01/2021 mem - Update the message stored in @resolvedInstrumentInfo
 **          10/06/2021 mem - Add @batch, @block, and @runOrder
 **          02/17/2022 mem - Update requestor username warning
 **          05/23/2022 mem - Rename requester username argument and update username warning
-**          11/25/2022 mem - Rename parameter to @wellplate
-**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**          11/25/2022 mem - Rename parameter to @wellplateName
+**          02/10/2023 mem - Call update_cached_requested_run_batch_stats
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @reqName varchar(128),
-    @experimentNum varchar(64),
-    @requesterPRN varchar(64),
+    @requestName varchar(128),
+    @experimentName varchar(64),
+    @requesterUsername varchar(64),
     @instrumentName varchar(64),                -- Instrument group; could also contain "(lookup)"
     @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @autoPopulateUserListIfBlank=1)
     @msType varchar(20),
     @instrumentSettings varchar(512) = 'na',
-    @wellplate varchar(64) = 'na',              -- Wellplate name
-    @wellNum varchar(24) = 'na',
+    @wellplateName varchar(64) = 'na',          -- Wellplate name
+    @wellNumber varchar(24) = 'na',
     @internalStandard varchar(50) = 'na',
     @comment varchar(1024) = 'na',
     @batch int = 0,                             -- When updating an existing requested run, if this is null or 0, the requested run will be removed from the batch
@@ -130,7 +131,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @secSep varchar(64) = 'LC-Formic_100min',   -- Separation group
     @mrmAttachment varchar(128),
     @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
-    @skipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure AddUpdateDataset calls this stored procedure
+    @skipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure add_update_dataset calls this stored procedure
     @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @callingUser varchar(128) = '',
     @vialingConc varchar(32) = null,
@@ -138,7 +139,7 @@ CREATE PROCEDURE [dbo].[AddUpdateRequestedRun]
     @stagingLocation varchar(64) = null,
     @requestIDForUpdate int = null,             -- Only used if @mode is 'update' or 'check_update' and only used if not 0 or null.  Can be used to rename an existing request
     @logDebugMessages tinyint = 0,
-    @resolvedInstrumentInfo varchar(256) = '' output      -- Output parameter that lists the the instrument group, run type, and separation group; used by AddRequestedRuns when previewing updates
+    @resolvedInstrumentInfo varchar(256) = '' output      -- Output parameter that lists the the instrument group, run type, and separation group; used by add_requested_runs when previewing updates
 )
 AS
     Set XACT_ABORT, nocount on
@@ -169,7 +170,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateRequestedRun', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_requested_run', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -196,16 +197,16 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Validate input fields'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
-    If IsNull(@reqName, '') = ''
+    If IsNull(@requestName, '') = ''
         RAISERROR ('Request name was blank', 11, 110)
     --
-    If IsNull(@experimentNum, '') = ''
+    If IsNull(@experimentName, '') = ''
         RAISERROR ('Experiment number was blank', 11, 111)
     --
-    If IsNull(@requesterPRN, '') = ''
+    If IsNull(@requesterUsername, '') = ''
         RAISERROR ('Requester username was blank', 11, 113)
     --
     Declare @instrumentGroup varchar(64) = @instrumentName
@@ -221,10 +222,10 @@ AS
     Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
 
     -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
-    Set @comment = dbo.ReplaceCharacterCodes(@comment)
+    Set @comment = dbo.replace_character_codes(@comment)
 
     -- Replace instances of CRLF (or LF) with semicolons
-    Set @comment = dbo.RemoveCrLf(@comment)
+    Set @comment = dbo.remove_cr_lf(@comment)
 
     If @comment like '%experiment_group/show/0000%'
         RAISERROR ('Please reference a valid experiment group ID, not 0000', 11, 116)
@@ -240,7 +241,7 @@ AS
     -- Validate name
     ---------------------------------------------------
 
-    Declare @badCh varchar(128) = dbo.ValidateChars(@reqName, '')
+    Declare @badCh varchar(128) = dbo.validate_chars(@requestName, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -249,9 +250,9 @@ AS
             RAISERROR ('Requested run name may not contain the character(s) "%s"', 11, 1, @badCh)
     End
 
-    Set @reqName = Ltrim(Rtrim(@reqName))
+    Set @requestName = Ltrim(Rtrim(@requestName))
 
-    Declare @nameLength int = Len(@reqName)
+    Declare @nameLength int = Len(@requestName)
 
     If @nameLength > 64 And @mode IN ('add', 'check_add') And @requestOrigin <> 'auto'
     Begin
@@ -263,7 +264,7 @@ AS
     -- Note that if a request is recycled, the old and new requests
     --  will have the same name but different IDs
     -- When @mode is Update, we should first look for an existing request
-    --  with name @reqName and status @status
+    --  with name @requestName and status @status
     -- If a match is not found, then simply look for a request with the same name
     ---------------------------------------------------
 
@@ -289,13 +290,13 @@ AS
             If @myError <> 0
                 RAISERROR ('Error looking for request ID %d', 11, 7, @requestIDForUpdate)
 
-            If @oldReqName <> @reqName
+            If @oldReqName <> @requestName
             Begin
                 If @status <> 'Active'
                     RAISERROR ('Requested run is not active; cannot rename: "%s"', 11, 7, @oldReqName)
 
-                If Exists (Select * from T_Requested_Run Where RDS_Name = @reqName)
-                    RAISERROR ('Cannot rename "%s" since new name already exists: "%s"', 11, 7, @oldReqName, @reqName)
+                If Exists (Select * from T_Requested_Run Where RDS_Name = @requestName)
+                    RAISERROR ('Cannot rename "%s" since new name already exists: "%s"', 11, 7, @oldReqName, @requestName)
             End
 
             If @myRowCount > 0
@@ -309,13 +310,13 @@ AS
                    @oldEusProposalID = RDS_EUS_Proposal_ID,
                    @oldStatus = RDS_Status
             FROM T_Requested_Run
-            WHERE RDS_Name = @reqName AND
+            WHERE RDS_Name = @requestName AND
                   RDS_Status = @status
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
-                RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
+                RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @requestName)
 
             If @myRowCount > 0
                 Set @matchFound = 1
@@ -332,12 +333,12 @@ AS
                @oldEusProposalID = RDS_EUS_Proposal_ID,
                @oldStatus = RDS_Status
         FROM T_Requested_Run
-        WHERE RDS_Name = @reqName
+        WHERE RDS_Name = @requestName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @reqName)
+            RAISERROR ('Error trying to find existing request: "%s"', 11, 7, @requestName)
     End
 
     -- Need non-null request even if we are just checking
@@ -347,7 +348,7 @@ AS
     -- Cannot create an entry that already exists
     --
     If @requestID <> 0 and (@mode IN ('add', 'check_add'))
-        RAISERROR ('Cannot add: Requested Run "%s" already in the database; cannot add', 11, 4, @reqName)
+        RAISERROR ('Cannot add: Requested Run "%s" already in the database; cannot add', 11, 4, @requestName)
 
     -- Cannot update a non-existent entry
     --
@@ -356,7 +357,7 @@ AS
         If @requestIDForUpdate > 0
             RAISERROR ('Cannot update: Requested Run ID "%d" is not in the database; cannot update', 11, 4, @requestIDForUpdate)
         Else
-            RAISERROR ('Cannot update: Requested Run "%s" is not in the database; cannot update', 11, 4, @reqName)
+            RAISERROR ('Cannot update: Requested Run "%s" is not in the database; cannot update', 11, 4, @requestName)
     End
 
 
@@ -384,11 +385,11 @@ AS
     If @mode IN ('update', 'check_update') AND (@oldStatus = 'Completed' AND @status <> 'Completed')
         RAISERROR ('Cannot change status of a request that has been consumed by a dataset', 11, 40)
 
-    If IsNull(@wellplate, '') IN ('', 'na')
-        Set @wellplate = null
+    If IsNull(@wellplateName, '') IN ('', 'na')
+        Set @wellplateName = null
 
-    If IsNull(@wellNum, '') IN ('', 'na')
-        Set @wellNum = null
+    If IsNull(@wellNumber, '') IN ('', 'na')
+        Set @wellNumber = null
 
     Declare @statusID int = 0
 
@@ -407,10 +408,10 @@ AS
 
     SELECT
         @experimentID = Exp_ID,
-        @wellplate = CASE WHEN @wellplate = '(lookup)' THEN EX_wellplate_num ELSE @wellplate END,
-        @wellNum =  CASE WHEN @wellNum = '(lookup)' THEN EX_well_num ELSE @wellNum END
+        @wellplateName = CASE WHEN @wellplateName = '(lookup)' THEN EX_wellplate_num ELSE @wellplateName END,
+        @wellNumber =  CASE WHEN @wellNumber = '(lookup)' THEN EX_well_num ELSE @wellNumber END
     FROM T_Experiments
-    WHERE Experiment_Num = @experimentNum
+    WHERE Experiment_Num = @experimentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -418,48 +419,48 @@ AS
         RAISERROR ('Error looking up experiment', 11, 17)
     --
     If @experimentID = 0
-        RAISERROR ('Could not find entry in database for experiment "%s"', 11, 18, @experimentNum)
+        RAISERROR ('Could not find entry in database for experiment "%s"', 11, 18, @experimentName)
 
     ---------------------------------------------------
-    -- verify user ID for operator PRN
+    -- verify user ID for operator username
     ---------------------------------------------------
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call GetUserID for ' + @requesterPRN
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        Set @debugMsg = 'Call get_user_id for ' + @requesterUsername
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @userID int
-    execute @userID = GetUserID @requesterPRN
+    execute @userID = get_user_id @requesterUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @requesterPRN contains simply the username
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @requesterUsername contains simply the username
         --
-        SELECT @requesterPRN = U_PRN
+        SELECT @requesterUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @requesterPRN
+        -- Could not find entry in database for username @requesterUsername
         -- Try to auto-resolve the name
 
         Declare @matchCount int
-        Declare @newPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @requesterPRN, @matchCount output, @newPRN output, @userID output
+        exec auto_resolve_name_to_username @requesterUsername, @matchCount output, @newUsername output, @userID output
 
         If @matchCount = 1
         Begin
-            -- Single match found; update @requesterPRN
-            Set @requesterPRN = @newPRN
+            -- Single match found; update @requesterUsername
+            Set @requesterUsername = @newUsername
         End
         Else
         Begin
-            RAISERROR ('Could not find entry in database for requester username "%s"', 11, 19, @requesterPRN)
+            RAISERROR ('Could not find entry in database for requester username "%s"', 11, 19, @requesterUsername)
             return 51019
         End
     End
@@ -471,19 +472,19 @@ AS
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'LookupInstrumentRunInfoFromExperimentSamplePrep for ' + @experimentNum
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        Set @debugMsg = 'lookup_instrument_run_info_from_experiment_sample_prep for ' + @experimentName
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
-    exec @myError = LookupInstrumentRunInfoFromExperimentSamplePrep
-                        @experimentNum,
+    exec @myError = lookup_instrument_run_info_from_experiment_sample_prep
+                        @experimentName,
                         @instrumentGroup output,
                         @msType output,
                         @instrumentSettings output,
                         @separationGroup output,
                         @msg output
     If @myError <> 0
-        RAISERROR ('LookupInstrumentRunInfoFromExperimentSamplePrep: %s', 11, 1, @msg)
+        RAISERROR ('lookup_instrument_run_info_from_experiment_sample_prep: %s', 11, 1, @msg)
 
 
     ---------------------------------------------------
@@ -504,19 +505,19 @@ AS
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'ValidateInstrumentGroupAndDatasetType for ' + @msType
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        Set @debugMsg = 'validate_instrument_group_and_dataset_type for ' + @msType
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @datasetTypeID int
     --
-    exec @myError = ValidateInstrumentGroupAndDatasetType
+    exec @myError = validate_instrument_group_and_dataset_type
                             @msType,
                             @instrumentGroup output,
                             @datasetTypeID output,
                             @msg output
     If @myError <> 0
-        RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
+        RAISERROR ('validate_instrument_group_and_dataset_type: %s', 11, 1, @msg)
 
     ---------------------------------------------------
     -- Resolve ID for @separationGroup
@@ -526,7 +527,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Resolve separation group: ' + @separationGroup
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @sepID int = 0
@@ -587,23 +588,23 @@ AS
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Lookup EUS info for: ' + @experimentNum
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        Set @debugMsg = 'Lookup EUS info for: ' + @experimentName
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
     --
-    exec @myError = LookupEUSFromExperimentSamplePrep
-                        @experimentNum,
+    exec @myError = lookup_eus_from_experiment_sample_prep
+                        @experimentName,
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
+        RAISERROR ('lookup_eus_from_experiment_sample_prep: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
     Begin
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
     End
 
     ---------------------------------------------------
@@ -612,16 +613,16 @@ AS
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call ValidateEUSUsage with ' +
+        Set @debugMsg = 'Call validate_eus_usage with ' +
             'type ' + IsNull(@eusUsageType, '?Null?') + ', ' +
             'proposal ' + IsNull(@eusProposalID, '?Null?') + ', and ' +
             'user list ' + IsNull(@eusUsersList, '?Null?')
 
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     -- Note that if @eusUsersList contains a list of names in the form "Baker, Erin (41136)",
-    -- ValidateEUSUsage will change this into a list of EUS user IDs (integers)
+    -- validate_eus_usage will change this into a list of EUS user IDs (integers)
 
     If Len(@eusUsersList) = 0 And @autoPopulateUserListIfBlank > 0
     Begin
@@ -636,7 +637,7 @@ AS
         Set @addingItem = 1
     End
 
-    exec @myError = ValidateEUSUsage
+    exec @myError = validate_eus_usage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
@@ -650,7 +651,7 @@ AS
 
 
     If @myError <> 0
-        RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+        RAISERROR ('validate_eus_usage: %s', 11, 1, @msg)
 
     If @eusUsageTypeID = 1
     Begin
@@ -659,16 +660,16 @@ AS
 
     If IsNull(@msg, '') <> ''
     Begin
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
     End
 
     Declare @commaPosition Int = CharIndex(',', @eusUsersList)
     If @commaPosition > 1
     Begin
-        Set @message = dbo.AppendToText('Requested runs can only have a single EUS user associated with them', @message, 0, '; ', 1024)
+        Set @message = dbo.append_to_text('Requested runs can only have a single EUS user associated with them', @message, 0, '; ', 1024)
 
         If @raiseErrorOnMultipleEUSUsers > 0
-            RAISERROR ('ValidateEUSUsage: %s', 11, 1, @message)
+            RAISERROR ('validate_eus_usage: %s', 11, 1, @message)
 
         -- Only keep the first user
         Set @eusUsersList = Left(@eusUsersList, @commaPosition - 1)
@@ -681,16 +682,16 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Lookup misc fields for the experiment'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
-    exec @myError = LookupOtherFromExperimentSamplePrep
-                        @experimentNum,
+    exec @myError = lookup_other_from_experiment_sample_prep
+                        @experimentName,
                         @workPackage output,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)
+        RAISERROR ('lookup_other_from_experiment_sample_prep: %s', 11, 1, @msg)
 
     ---------------------------------------------------
     -- Resolve staging location name to location ID
@@ -734,7 +735,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Validate the WP'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @allowNoneWP tinyint = @autoPopulateUserListIfBlank
@@ -749,18 +750,18 @@ AS
         Set @allowNoneWP = 1
     End
 
-    If @status <> 'Active' And (@eusUsageType = 'Maintenance' Or @reqName Like 'AutoReq[_]%')
+    If @status <> 'Active' And (@eusUsageType = 'Maintenance' Or @requestName Like 'AutoReq[_]%')
     Begin
         Set @allowNoneWP = 1
     End
 
-    exec @myError = ValidateWP
+    exec @myError = validate_wp
                         @workPackage,
                         @allowNoneWP,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+        RAISERROR ('validate_wp: %s', 11, 1, @msg)
 
     -- Make sure the Work Package is capitalized properly
     --
@@ -771,11 +772,11 @@ AS
     If @autoPopulateUserListIfBlank = 0
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
         Else
         Begin
             If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
-                Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
+                Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
         End
     End
 
@@ -787,13 +788,13 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Start a new transaction'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
-    Declare @transName varchar(256) = 'AddUpdateRequestedRun_' + @reqName
+    Declare @transName varchar(256) = 'add_update_requested_run_' + @requestName
 
     ---------------------------------------------------
     -- action for add mode
@@ -833,8 +834,8 @@ AS
             Vialing_Vol,
             Location_Id
         ) VALUES (
-            @reqName,
-            @requesterPRN,
+            @requestName,
+            @requesterUsername,
             @comment,
             GETDATE(),
             @instrumentGroup,
@@ -843,8 +844,8 @@ AS
             @defaultPriority, -- priority
             @experimentID,
             @workPackage,
-            @wellplate,
-            @wellNum,
+            @wellplateName,
+            @wellNumber,
             @internalStandard,
             @batch,
             @block,
@@ -863,32 +864,32 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Insert operation failed: "%s"', 11, 7, @reqName)
+            RAISERROR ('Insert operation failed: "%s"', 11, 7, @requestName)
 
         Set @request = SCOPE_IDENTITY()
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 11, @request, @statusID, @callingUser
+            Exec alter_event_log_entry_user 11, @request, @statusID, @callingUser
         End
 
         If @logDebugMessages > 0
         Begin
-            Set @debugMsg = 'Call AssignEUSUsersToRequestedRun'
-            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+            Set @debugMsg = 'Call assign_eus_users_to_requested_run'
+            exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
         End
 
         -- assign users to the request
         --
-        exec @myError = AssignEUSUsersToRequestedRun
+        exec @myError = assign_eus_users_to_requested_run
                                 @request,
                                 @eusProposalID,
                                 @eusUsersList,
                                 @msg output
         --
         If @myError <> 0
-            RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
+            RAISERROR ('assign_eus_users_to_requested_run: %s', 11, 19, @msg)
 
         If @@trancount > 0
         Begin
@@ -897,19 +898,19 @@ AS
         Else
         Begin
             Set @debugMsg = '@@trancount is 0; this is unexpected'
-            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateRequestedRun'
+            exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run'
         End
 
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Transaction committed'
-            exec PostLogEntry 'Debug', @debugMsg, 'AddUpdateRequestedRun'
+            exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
         End
 
         If @status = 'Active'
         Begin
             -- Add a new row to T_Active_Requested_Run_Cached_EUS_Users
-            exec UpdateCachedRequestedRunEUSUsers @request
+            exec update_cached_requested_run_eus_users @request
         End
 
     End -- </add>
@@ -931,16 +932,16 @@ AS
         --
         UPDATE T_Requested_Run
         SET
-            RDS_Name = CASE WHEN @requestIDForUpdate > 0 THEN @reqName ELSE RDS_Name END,
-            RDS_Requestor_PRN = @requesterPRN,
+            RDS_Name = CASE WHEN @requestIDForUpdate > 0 THEN @requestName ELSE RDS_Name END,
+            RDS_Requestor_PRN = @requesterUsername,
             RDS_comment = @comment,
             RDS_instrument_group = @instrumentGroup,
             RDS_type_ID = @datasetTypeID,
             RDS_instrument_setting = @instrumentSettings,
             Exp_ID = @experimentID,
             RDS_WorkPackage = @workPackage,
-            RDS_Well_Plate_Num = @wellplate,
-            RDS_Well_Num = @wellNum,
+            RDS_Well_Plate_Num = @wellplateName,
+            RDS_Well_Num = @wellNumber,
             RDS_internal_standard = @internalStandard,
             RDS_BatchID = @batch,
             RDS_Block = @block,
@@ -959,24 +960,24 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Update operation failed: "%s"', 11, 4, @reqName)
+            RAISERROR ('Update operation failed: "%s"', 11, 4, @requestName)
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 11, @requestID, @statusID, @callingUser
+            Exec alter_event_log_entry_user 11, @requestID, @statusID, @callingUser
         End
 
         -- assign users to the request
         --
-        exec @myError = AssignEUSUsersToRequestedRun
+        exec @myError = assign_eus_users_to_requested_run
                                 @requestID,
                                 @eusProposalID,
                                 @eusUsersList,
                                 @msg output
         --
         If @myError <> 0
-            RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
+            RAISERROR ('assign_eus_users_to_requested_run: %s', 11, 20, @msg)
 
         If @@trancount > 0
         Begin
@@ -985,16 +986,16 @@ AS
         Else
         Begin
             Set @debugMsg = '@@trancount is 0; this is unexpected'
-            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateRequestedRun'
+            exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run'
         End
 
         -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
-        exec UpdateCachedRequestedRunEUSUsers @request
+        exec update_cached_requested_run_eus_users @request
 
         If @batch = 0 And @currentBatch <> 0
         Begin
             Set @msg = 'Removed request ' + Cast(@request As Varchar(12)) + ' from batch ' + Cast(@currentBatch As Varchar(12))
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
     End -- </update>
 
@@ -1004,17 +1005,17 @@ AS
 
     If @batch > 0
     Begin
-        Exec UpdateCachedRequestedRunBatchStats @batch
+        Exec update_cached_requested_run_batch_stats @batch
     End
 
     If @currentBatch > 0
     Begin
-        Exec UpdateCachedRequestedRunBatchStats @currentBatch
+        Exec update_cached_requested_run_batch_stats @currentBatch
     End
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0 And IsNull(@skipTransactionRollback, 0) = 0
@@ -1022,8 +1023,8 @@ AS
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1500) = @message + '; Req Name ' + @reqName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateRequestedRun'
+            Declare @logMessage varchar(1500) = @message + '; Req Name ' + @requestName
+            exec post_log_entry 'Error', @logMessage, 'add_update_requested_run'
         End
 
     END CATCH
@@ -1031,11 +1032,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_requested_run] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRequestedRun] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_requested_run] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO

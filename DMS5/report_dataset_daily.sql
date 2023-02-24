@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReportDatasetDaily] ******/
+/****** Object:  StoredProcedure [dbo].[report_dataset_daily] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ReportDatasetDaily]
+CREATE PROCEDURE [dbo].[report_dataset_daily]
 /****************************************************
 **
 **  Desc: Generates report of daily dataset counts
@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[ReportDatasetDaily]
 **
 **  Auth:   grk
 **  Date:   08/22/2002
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 --  @message varchar(256) = '' output
@@ -75,11 +76,11 @@ AS
     RETURN
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportDatasetDaily] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_dataset_daily] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportDatasetDaily] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_dataset_daily] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportDatasetDaily] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_dataset_daily] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportDatasetDaily] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_dataset_daily] TO [Limited_Table_Write] AS [dbo]
 GO

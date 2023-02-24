@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunBlockingAndFactors] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_blocking_and_factors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunBlockingAndFactors]
+CREATE PROCEDURE [dbo].[update_requested_run_blocking_and_factors]
 /****************************************************
 **
 **  Desc:
@@ -24,12 +24,13 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunBlockingAndFactors]
 **
 **  Auth:   grk
 **  Date:   02/21/2010
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          11/07/2016 mem - Add optional logging via PostLogEntry
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          11/07/2016 mem - Add optional logging via post_log_entry
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/04/2019 mem - Tabs to spaces
-**          12/13/2022 mem - Log stored procedure usage even if UpdateRequestedRunBatchParameters returns a non-zero return code
+**          12/13/2022 mem - Log stored procedure usage even if update_requested_run_batch_parameters returns a non-zero return code
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBlockingAndFactors', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_requested_run_blocking_and_factors', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -73,7 +74,7 @@ AS
         Else
             Set @logMessage = '@blockingList: ' + @logMessage
 
-        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
+        exec post_log_entry 'Debug', @logMessage, 'update_requested_run_blocking_and_factors'
 
         Set @logMessage = Cast(@factorList as varchar(4000))
         If IsNull(@logMessage, '') = ''
@@ -81,7 +82,7 @@ AS
         Else
             Set @logMessage = '@factorList: ' + @logMessage
 
-        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBlockingAndFactors'
+        exec post_log_entry 'Debug', @logMessage, 'update_requested_run_blocking_and_factors'
     End
 
     -----------------------------------------------------------
@@ -90,7 +91,7 @@ AS
     --
     IF DATALENGTH(@blockingList) > 0
     BEGIN
-        EXEC @myError = UpdateRequestedRunBatchParameters
+        EXEC @myError = update_requested_run_batch_parameters
                             @blockingList,
                             'update',
                             @message OUTPUT,
@@ -104,7 +105,7 @@ AS
         -----------------------------------------------------------
         --
 
-        EXEC @myError = UpdateRequestedRunFactors
+        EXEC @myError = update_requested_run_factors
                                 @factorList,
                                 @message OUTPUT,
                                 @callingUser
@@ -116,14 +117,14 @@ AS
 
     Declare @UsageMessage varchar(512) = ''
     Set @UsageMessage = ''
-    Exec PostUsageLogEntry 'UpdateRequestedRunBlockingAndFactors', @UsageMessage
+    Exec post_usage_log_entry 'update_requested_run_blocking_and_factors', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBlockingAndFactors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_blocking_and_factors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunBlockingAndFactors] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_blocking_and_factors] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBlockingAndFactors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_blocking_and_factors] TO [Limited_Table_Write] AS [dbo]
 GO

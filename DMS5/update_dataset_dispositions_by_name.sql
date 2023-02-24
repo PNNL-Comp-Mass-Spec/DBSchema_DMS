@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetDispositionsByName] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_dispositions_by_name] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetDispositionsByName]
+CREATE PROCEDURE [dbo].[update_dataset_dispositions_by_name]
 /****************************************************
 **
 **  Desc:
@@ -15,14 +15,15 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDispositionsByName]
 **  Auth:   grk
 **  Date:   10/15/2008 grk - Initial release (Ticket #582)
 **          08/19/2010 grk - Try-catch for error handling
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          02/20/2013 mem - Expanded @message to varchar(1024)
 **          02/21/2013 mem - Now requiring @recycleRequest to be yes or no
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/03/2018 mem - Use @logErrors to toggle logging errors caught by the try/catch block
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetDispositionsByName', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_dispositions_by_name', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -86,7 +87,7 @@ AS
     --
     INSERT INTO @tbl( DatasetName )
     SELECT Item
-    FROM MakeTableFromList ( @datasetList )
+    FROM make_table_from_list ( @datasetList )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -166,7 +167,7 @@ AS
     -- Call sproc to update dataset disposition
     ---------------------------------------------------
 
-    exec @myError = UpdateDatasetDispositions
+    exec @myError = update_dataset_dispositions
                         @datasetIDList,
                         @rating,
                         @comment,
@@ -177,7 +178,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -185,7 +186,7 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositionsByName'
+            Exec post_log_entry 'Error', @message, 'update_dataset_dispositions_by_name'
         End
     END CATCH
 
@@ -195,14 +196,14 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
-    Exec PostUsageLogEntry 'UpdateDatasetDispositionsByName', @UsageMessage
+    Exec post_usage_log_entry 'update_dataset_dispositions_by_name', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositionsByName] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_dispositions_by_name] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDispositionsByName] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_dispositions_by_name] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositionsByName] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_dispositions_by_name] TO [Limited_Table_Write] AS [dbo]
 GO

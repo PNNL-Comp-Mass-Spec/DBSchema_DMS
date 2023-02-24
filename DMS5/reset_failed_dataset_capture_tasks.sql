@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetFailedDatasetCaptureTasks] ******/
+/****** Object:  StoredProcedure [dbo].[reset_failed_dataset_capture_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
+CREATE PROCEDURE [dbo].[reset_failed_dataset_capture_tasks]
 /****************************************************
 **
 **  Desc:   Looks for dataset entries with state=5 (Capture Failed)
@@ -20,12 +20,13 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetCaptureTasks]
 **          11/02/2016 mem - Check for Folder size changed and File size changed
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          08/08/2017 mem - Call RemoveCaptureErrorsFromString instead of RemoveFromString
+**          08/08/2017 mem - Call remove_capture_errors_from_string instead of remove_from_string
 **          08/16/2017 mem - Look for failed Openchrom conversion tasks
 **                         - Prevent dataset from being automatically reset more than 4 times
 **          08/16/2017 mem - Look for 'Authentication failure: The user name or password is incorrect'
 **          05/28/2019 mem - Use a holdoff of 15 minutes for authentication errors
 **          08/25/2022 mem - Use new column name in T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -166,14 +167,14 @@ AS
                                            Entered,
                                            [Type],
                                            message )
-                SELECT 'ResetFailedDatasetCaptureTasks',
+                SELECT 'reset_failed_dataset_capture_tasks',
                        GetDate(),
                        'Error',
                        DS.Reset_Comment + ' ' + DS.Dataset AS Log_Message
                 FROM #Tmp_Datasets DS
                      LEFT OUTER JOIN T_Log_Entries Logs
                        ON Logs.Message = DS.Reset_Comment + ' ' + DS.Dataset AND
-                          posted_by = 'ResetFailedDatasetCaptureTasks'
+                          posted_by = 'reset_failed_dataset_capture_tasks'
                 WHERE DS.Reset_Comment <> '' AND
                       Logs.Message IS NULL
                 --
@@ -189,7 +190,7 @@ AS
                 --
                 UPDATE T_Dataset
                 SET DS_state_ID = 1,
-                    DS_Comment = dbo.RemoveCaptureErrorsFromString(DS_Comment)
+                    DS_Comment = dbo.remove_capture_errors_from_string(DS_Comment)
                 FROM #Tmp_Datasets Src
                     INNER JOIN T_Dataset DS
                     ON Src.Dataset_ID = DS.Dataset_ID
@@ -201,8 +202,8 @@ AS
                 If @resetCount > 0
                 Begin -- <c>
                     Set @message = 'Reset dataset state from "Capture Failed" to "New" for ' + Cast(@resetCount as varchar(9)) +
-                                dbo.CheckPlural(@resetCount, ' Dataset', ' Datasets')
-                    Exec PostLogEntry 'Normal', @message, 'ResetFailedDatasetCaptureTasks'
+                                dbo.check_plural(@resetCount, ' Dataset', ' Datasets')
+                    Exec post_log_entry 'Normal', @message, 'reset_failed_dataset_capture_tasks'
 
                     ------------------------------------------------
                     -- Look for log entries in DMS_Capture to auto-update
@@ -248,12 +249,12 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
-        Exec PostLogEntry 'Error', @message, 'ResetFailedDatasetCaptureTasks'
+        EXEC format_error_message @message output, @myError output
+        Exec post_log_entry 'Error', @message, 'reset_failed_dataset_capture_tasks'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetCaptureTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_dataset_capture_tasks] TO [DDL_Viewer] AS [dbo]
 GO

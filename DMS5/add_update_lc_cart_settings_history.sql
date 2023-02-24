@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLCCartSettingsHistory] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_lc_cart_settings_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateLCCartSettingsHistory]
+CREATE PROCEDURE [dbo].[add_update_lc_cart_settings_history]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_LC_Cart_Settings_History
@@ -16,30 +16,31 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCartSettingsHistory]
 **  Date:   09/29/2008
 **          10/21/2008 grk - Added parameters @SolventA and @SolventB
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
-    @CartName varchar(128),
-    @ValveToColumnExtension varchar(128),
-    @OperatingPressure varchar(128),
-    @InterfaceConfiguration varchar(128),
-    @ValveToColumnExtensionDimensions varchar(128),
-    @MixerVolume varchar(128),
-    @SampleLoopVolume varchar(128),
-    @SampleLoadingTime varchar(128),
-    @SplitFlowRate varchar(128),
-    @SplitColumnDimensions varchar(128),
-    @PurgeFlowRate varchar(128),
-    @PurgeColumnDimensions varchar(128),
-    @PurgeVolume varchar(128),
-    @AcquisitionTime varchar(128),
-    @SolventA varchar(128),
-    @SolventB varchar(128),
-    @Comment varchar(512),
-    @DateOfChange varchar(24),
+    @id int,
+    @cartName varchar(128),
+    @valveToColumnExtension varchar(128),
+    @operatingPressure varchar(128),
+    @interfaceConfiguration varchar(128),
+    @valveToColumnExtensionDimensions varchar(128),
+    @mixerVolume varchar(128),
+    @sampleLoopVolume varchar(128),
+    @sampleLoadingTime varchar(128),
+    @splitFlowRate varchar(128),
+    @splitColumnDimensions varchar(128),
+    @purgeFlowRate varchar(128),
+    @purgeColumnDimensions varchar(128),
+    @purgeVolume varchar(128),
+    @acquisitionTime varchar(128),
+    @solventA varchar(128),
+    @solventB varchar(128),
+    @comment varchar(512),
+    @dateOfChange varchar(24),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -216,9 +217,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartSettingsHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart_settings_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCartSettingsHistory] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart_settings_history] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartSettingsHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart_settings_history] TO [Limited_Table_Write] AS [dbo]
 GO

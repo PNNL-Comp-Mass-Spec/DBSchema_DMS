@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ReplaceCharacterCodes] ******/
+/****** Object:  UserDefinedFunction [dbo].[replace_character_codes] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ReplaceCharacterCodes]
+CREATE FUNCTION [dbo].[replace_character_codes]
 /****************************************************
 **
 **  Desc:   Replaces character codes with punctuation marks
@@ -12,6 +12,7 @@ CREATE FUNCTION [dbo].[ReplaceCharacterCodes]
 **
 **  Auth:   mem
 **  Date:   02/25/2021 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,11 +37,11 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReplaceCharacterCodes] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[replace_character_codes] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReplaceCharacterCodes] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[replace_character_codes] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReplaceCharacterCodes] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[replace_character_codes] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReplaceCharacterCodes] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[replace_character_codes] TO [Limited_Table_Write] AS [dbo]
 GO

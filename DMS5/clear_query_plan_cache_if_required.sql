@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ClearQueryPlanCacheIfRequired] ******/
+/****** Object:  StoredProcedure [dbo].[clear_query_plan_cache_if_required] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ClearQueryPlanCacheIfRequired]
+CREATE PROCEDURE [dbo].[clear_query_plan_cache_if_required]
 /****************************************************
 **
 **  Desc:   Clears the ad-hoc query plan cache if too large
@@ -22,13 +22,14 @@ CREATE PROCEDURE [dbo].[ClearQueryPlanCacheIfRequired]
 **  Auth:   mem
 **  Date:   02/20/2014 mem - Initial version
 **          02/27/2014 mem - Updated to actually use @MemoryUsageThresholdPercent and @MemoryUsageMBThreshold (previously used hard-coded values)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MemoryUsageThresholdPercent int = 10,
-    @MemoryUsageMBThreshold int = 250,
+    @memoryUsageThresholdPercent int = 10,
+    @memoryUsageMBThreshold int = 250,
     @message varchar(512) = '' output,
-    @InfoOnly tinyint = 1
+    @infoOnly tinyint = 1
 )
 AS
     set nocount on
@@ -133,7 +134,7 @@ AS
     BEGIN
         DBCC FREESYSTEMCACHE('SQL Plans')
         Set @message = @StrMB + ' MB (' + @StrPercent + '% total ram) was allocated to single-use plan cache. Single-use plans have been cleared.'
-        Exec PostLogEntry 'Normal', @message, 'ClearQueryPlanCacheIfRequired'
+        Exec post_log_entry 'Normal', @message, 'clear_query_plan_cache_if_required'
     END
     Else
         Set @message = 'Only ' + @StrMB + ' MB (' + @StrPercent + '% total ram) is allocated to single-use plan cache - no need to clear cache now.'
@@ -145,5 +146,5 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ClearQueryPlanCacheIfRequired] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[clear_query_plan_cache_if_required] TO [DDL_Viewer] AS [dbo]
 GO

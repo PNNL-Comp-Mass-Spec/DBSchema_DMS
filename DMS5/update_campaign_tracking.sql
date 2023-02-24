@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCampaignTracking] ******/
+/****** Object:  StoredProcedure [dbo].[update_campaign_tracking] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCampaignTracking]
+CREATE PROCEDURE [dbo].[update_campaign_tracking]
 /****************************************************
 **
 **  Desc: Updates summary stats in T_Campaign_Tracking
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[UpdateCampaignTracking]
 **          04/15/2015 mem - Added Data_Package_Count
 **          08/29/2018 mem - Added Sample_Submission_Count and Sample_Submission_Most_Recent
 **          08/30/2018 mem - Use merge instead of truncate
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
@@ -306,7 +307,7 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCampaignTracking] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_campaign_tracking] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCampaignTracking] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_campaign_tracking] TO [Limited_Table_Write] AS [dbo]
 GO

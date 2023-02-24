@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetNewJobID] ******/
+/****** Object:  StoredProcedure [dbo].[get_new_job_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetNewJobID]
+CREATE PROCEDURE [dbo].[get_new_job_id]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[GetNewJobID]
 **          08/05/2009 grk - initial release (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
 **          08/05/2009 mem - Now using SCOPE_IDENTITY() to determine the ID of the newly added row
 **          06/24/2015 mem - Added parameter @infoOnly
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -65,9 +66,9 @@ AS
     return @id
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewJobID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_new_job_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetNewJobID] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_new_job_id] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewJobID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_new_job_id] TO [Limited_Table_Write] AS [dbo]
 GO

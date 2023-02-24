@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateAuxInfoDefinition] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_aux_info_definition] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateAuxInfoDefinition]
+CREATE PROCEDURE [dbo].[add_update_aux_info_definition]
 /****************************************************
 **
 **  Desc:
@@ -14,12 +14,13 @@ CREATE PROCEDURE [dbo].[AddUpdateAuxInfoDefinition]
 **
 **  Auth:   grk
 **  Date:   04/19/2002 grk - Initial release
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/16/2022 mem - Auto change @targetName from 'Cell Culture' to 'Biomaterial' if T_Aux_Info_Target has an entry for 'Biomaterial
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column names
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -56,7 +57,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateAuxInfoDefinition', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_aux_info_definition', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -463,7 +464,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfoDefinition] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_aux_info_definition] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAuxInfoDefinition] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_aux_info_definition] TO [Limited_Table_Write] AS [dbo]
 GO

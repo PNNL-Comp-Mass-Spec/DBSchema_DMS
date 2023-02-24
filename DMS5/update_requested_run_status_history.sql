@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunStatusHistory] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_status_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunStatusHistory]
+CREATE PROCEDURE [dbo].[update_requested_run_status_history]
 /****************************************************
 **
 **  Desc:
@@ -18,10 +18,11 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunStatusHistory]
 **  Auth:   mem
 **  Date:   09/25/2012 mem - Initial Version
 **          01/05/2023 mem - Use new column names in V_Requested_Run_Queue_Times
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MinimumTimeIntervalHours integer = 1,  -- Set this to 0 to force the addition of new data to T_Requested_Run_Status_History
+    @minimumTimeIntervalHours integer = 1,  -- Set this to 0 to force the addition of new data to T_Requested_Run_Status_History
     @message varchar(128) = '' OUTPUT
 )
 AS
@@ -95,5 +96,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunStatusHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_status_history] TO [DDL_Viewer] AS [dbo]
 GO

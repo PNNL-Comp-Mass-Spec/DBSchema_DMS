@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[TrimWhitespaceAndPunctuation] ******/
+/****** Object:  UserDefinedFunction [dbo].[trim_whitespace_and_punctuation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[TrimWhitespaceAndPunctuation]
+CREATE FUNCTION [dbo].[trim_whitespace_and_punctuation]
 /****************************************************
 **
 **  Desc:   Removes whitespace (including Cr, Lf, and tab) plus punctuation from the start and end of text
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[TrimWhitespaceAndPunctuation]
 **
 **  Auth:   mem
 **  Date:   09/11/2020 mem - Initial release (modelled after UDF ScrubWhitespace)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

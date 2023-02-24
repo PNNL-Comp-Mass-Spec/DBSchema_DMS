@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateDataAnalysisRequest] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_data_analysis_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
+CREATE PROCEDURE [dbo].[add_update_data_analysis_request]
 /****************************************************
 **
 **  Desc:
@@ -23,8 +23,9 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
 **                         - Add parameter @comment
 **          08/08/2022 mem - Update State_Changed when the state changes
 **          02/09/2023 bcg - Update view column name
-**          02/13/2023 bcg - Send the correct procedure name to ValidateRequestUsers
+**          02/13/2023 bcg - Send the correct procedure name to validate_request_users
 **                         - Rename parameter to requesterUsername
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdateDataAnalysisRequest]
     @comment varchar(2048),
     @batchIDs varchar(1024) = '',           -- Comma separated list of Requested Run Batch IDs
     @dataPackageID int = null,              -- Data Package ID; can be null
-    @expGroupID int = null,                 -- Experiment Group ID; can be null
+    @experimentGroupID int = null,          -- Experiment Group ID; can be null
     @workPackage varchar(64),
     @requestedPersonnel varchar(256),
     @assignedPersonnel varchar(256),
@@ -80,7 +81,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateDataAnalysisRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_data_analysis_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -148,7 +149,7 @@ AS
 
     Set @batchIDs = Ltrim(Rtrim(IsNull(@batchIDs, '')))
     Set @dataPackageID = IsNull(@dataPackageID, 0)
-    Set @expGroupID = IsNull(@expGroupID, 0)
+    Set @experimentGroupID = IsNull(@experimentGroupID, 0)
 
     Declare @batchDefined tinyint = 0
     Declare @dataPackageDefined tinyint = 0
@@ -158,7 +159,7 @@ AS
     Begin
         INSERT INTO #Tmp_BatchIDs( Batch_ID )
         SELECT VALUE
-        FROM dbo.udfParseDelimitedIntegerList ( @batchIDs, ',' )
+        FROM dbo.parse_delimited_integer_list ( @batchIDs, ',' )
         WHERE VALUE <> 0
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -198,11 +199,11 @@ AS
         End
     End
 
-    If @expGroupID > 0
+    If @experimentGroupID > 0
     Begin
-        If Not Exists (Select * From T_Experiment_Groups WHERE Group_ID = @expGroupID)
+        If Not Exists (Select * From T_Experiment_Groups WHERE Group_ID = @experimentGroupID)
         Begin
-            RAISERROR('Could not find entry in database for experiment group ID "%d"', 11, 14, @expGroupID)
+            RAISERROR('Could not find entry in database for experiment group ID "%d"', 11, 14, @experimentGroupID)
         End
         Else
         Begin
@@ -227,13 +228,13 @@ AS
 
     ---------------------------------------------------
     -- Validate requested and assigned personnel
-    -- Names should be in the form "Last Name, First Name (PRN)"
+    -- Names should be in the form "Last Name, First Name (Username)"
     ---------------------------------------------------
 
     Declare @result Int
 
-    Exec @result = ValidateRequestUsers
-        @requestName, 'AddUpdateDataAnalysisRequest',
+    Exec @result = validate_request_users
+        @requestName, 'add_update_data_analysis_request',
         @requestedPersonnel = @requestedPersonnel Output,
         @assignedPersonnel = @assignedPersonnel Output,
         @requireValidRequestedPersonnel= 0,
@@ -295,23 +296,23 @@ AS
 
     Declare @allowNoneWP tinyint = 0
 
-    exec @myError = ValidateWP
+    exec @myError = validate_wp
                         @workPackage,
                         @allowNoneWP,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+        RAISERROR ('validate_wp: %s', 11, 1, @msg)
 
     If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')
     Begin
-        Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
     End
     Else
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
         Begin
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
         End
     End
 
@@ -362,11 +363,11 @@ AS
     If @experimentGroupDefined > 0
     Begin
         INSERT INTO #Tmp_DatasetCountsByContainerType( ContainerType, ContainerID, SortWeight, DatasetCount )
-        SELECT 'Experiment Group', @expGroupID, 3 As SortWeight, Count(DISTINCT D.Dataset_ID) AS DatasetCount
+        SELECT 'Experiment Group', @experimentGroupID, 3 As SortWeight, Count(DISTINCT D.Dataset_ID) AS DatasetCount
         FROM T_Experiment_Group_Members E
              INNER JOIN T_Dataset D
                ON E.Exp_ID = D.Exp_ID
-        WHERE E.Group_ID = @expGroupID
+        WHERE E.Group_ID = @experimentGroupID
     End
 
     ---------------------------------------------------
@@ -486,7 +487,7 @@ AS
                       ON EG.Exp_ID = E.Exp_ID
                     INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
-               WHERE EG.Group_ID = @expGroupID
+               WHERE EG.Group_ID = @experimentGroupID
                GROUP BY C.Campaign_Num ) StatsQ
         ORDER BY StatsQ.Experiments DESC
 
@@ -498,7 +499,7 @@ AS
                       ON EG.Exp_ID = E.Exp_ID
                     INNER JOIN T_Organisms Org
                       ON E.EX_organism_ID = Org.Organism_ID
-               WHERE EG.Group_ID = @expGroupID
+               WHERE EG.Group_ID = @experimentGroupID
                GROUP BY Org.OG_name ) StatsQ
         ORDER BY StatsQ.Organisms DESC
 
@@ -512,7 +513,7 @@ AS
                       ON E.Exp_ID = D.Dataset_ID
                     INNER JOIN T_Requested_Run R
                       ON D.Dataset_ID = R.DatasetID
-               WHERE EG.Group_ID = @expGroupID
+               WHERE EG.Group_ID = @experimentGroupID
                GROUP BY R.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
 
@@ -622,7 +623,7 @@ AS
 
     Set @logErrors = 1
 
-    Declare @transName varchar(32) = 'AddUpdateDataAnalysisRequest'
+    Declare @transName varchar(32) = 'add_update_data_analysis_request'
 
     ---------------------------------------------------
     -- Action for add mode
@@ -663,7 +664,7 @@ AS
             @comment,
             Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
             Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
-            Case When @experimentGroupDefined > 0 Then @expGroupID Else Null End,
+            Case When @experimentGroupDefined > 0 Then @experimentGroupID Else Null End,
             @workPackage,
             @requestedPersonnel,
             @assignedPersonnel,
@@ -692,7 +693,7 @@ AS
         -- If @callingUser is defined, update Entered_By in T_Data_Analysis_Request_Updates
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEnteredByUser 'T_Data_Analysis_Request_Updates', 'Request_ID', @id, @callingUser,
+            Exec alter_entered_by_user 'T_Data_Analysis_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Entered', @enteredByColumnName='Entered_By'
         End
 
@@ -727,7 +728,7 @@ AS
             Comment = @comment,
             Representative_Batch_ID = Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
             Data_Package_ID = Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
-            Exp_Group_ID = Case When @experimentGroupDefined > 0 Then @expGroupID Else Null End,
+            Exp_Group_ID = Case When @experimentGroupDefined > 0 Then @experimentGroupID Else Null End,
             Work_Package = @workPackage,
             Requested_Personnel = @requestedPersonnel,
             Assigned_Personnel = @assignedPersonnel,
@@ -757,14 +758,14 @@ AS
         -- If @callingUser is defined, update Entered_By in T_Data_Analysis_Request_Updates
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEnteredByUser 'T_Data_Analysis_Request_Updates', 'Request_ID', @id, @callingUser,
+            Exec alter_entered_by_user 'T_Data_Analysis_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Entered', @enteredByColumnName='Entered_By'
         End
 
         If @currentEstimatedAnalysisTimeDays <> @estimatedAnalysisTimeDays And @allowUpdateEstimatedAnalysisTime = 0
         Begin
             Set @msg = 'Not updating estimated analysis time since user does not have permission'
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
 
         If @batchDefined > 0
@@ -787,7 +788,7 @@ AS
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -796,7 +797,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateDataAnalysisRequest'
+            exec post_log_entry 'Error', @logMessage, 'add_update_data_analysis_request'
         End
 
     End Catch
@@ -804,11 +805,11 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataAnalysisRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_data_analysis_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateDataAnalysisRequest] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_data_analysis_request] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateDataAnalysisRequest] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_data_analysis_request] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateDataAnalysisRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_data_analysis_request] TO [Limited_Table_Write] AS [dbo]
 GO

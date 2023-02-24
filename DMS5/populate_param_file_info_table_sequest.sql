@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PopulateParamFileInfoTableSequest] ******/
+/****** Object:  StoredProcedure [dbo].[populate_param_file_info_table_sequest] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PopulateParamFileInfoTableSequest]
+CREATE PROCEDURE [dbo].[populate_param_file_info_table_sequest]
 /****************************************************
 **
 **  Desc:
@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[PopulateParamFileInfoTableSequest]
 **  Date:   12/08/2006 mem - Initial version (Ticket #342)
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ParamFileInfoColumnList varchar(512)='' output,
+    @paramFileInfoColumnList varchar(512)='' output,
     @message varchar(512) = '' output
 )
 AS
@@ -174,7 +175,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PopulateParamFileInfoTableSequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[populate_param_file_info_table_sequest] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[PopulateParamFileInfoTableSequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[populate_param_file_info_table_sequest] TO [Limited_Table_Write] AS [dbo]
 GO

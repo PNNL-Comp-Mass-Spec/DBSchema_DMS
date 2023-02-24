@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CloneAnalysisJobs] ******/
+/****** Object:  StoredProcedure [dbo].[clone_analysis_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
+CREATE PROCEDURE [dbo].[clone_analysis_jobs]
 /****************************************************
 **
 **  Desc:
@@ -22,8 +22,9 @@ CREATE PROCEDURE [dbo].[CloneAnalysisJobs]
 **  Date:   07/12/2016 mem - Initial Release
 **          07/19/2016 mem - Add parameter @allowDuplicateJob
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          07/29/2022 mem - Use Coalesce instead of IsNull
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -137,7 +138,7 @@ AS
         --
         INSERT INTO #Tmp_SourceJobs (JobId, Valid, StateID, RowNum)
         SELECT Value, 0 as Valid, 0 AS StateID, Row_Number() Over (Order By Value) as RowNum
-        FROM dbo.udfParseDelimitedIntegerList(@sourceJobs, ',')
+        FROM dbo.parse_delimited_integer_list(@sourceJobs, ',')
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -327,7 +328,7 @@ AS
                 ID int NOT NULL
             )
 
-            EXEC GetNewJobIDBlock @JobCount = @jobCount, @note = 'CloneAnalysisJobs'
+            EXEC get_new_job_id_block @JobCount = @jobCount, @note = 'clone_analysis_jobs'
 
             SELECT @newJobIdStart = Min(Id)
             FROM #TmpNewJobIDs
@@ -426,7 +427,7 @@ AS
                 UPDATE T_Analysis_Job
                 SET AJ_Comment = CASE
                                      WHEN @updateOldJobComment = 0 THEN Target.AJ_Comment
-                                     ELSE dbo.AppendToText(Target.AJ_Comment, @action + ' ' + Cast(Src.JobId_New AS varchar(9)), 0, '; ', 512)
+                                     ELSE dbo.append_to_text(Target.AJ_Comment, @action + ' ' + Cast(Src.JobId_New AS varchar(9)), 0, '; ', 512)
                                  END,
                     AJ_StateID = CASE
                                      WHEN @supersedeOldJob = 0 THEN Target.AJ_StateID
@@ -452,13 +453,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @errorMessage output, @myError output
+        EXEC format_error_message @errorMessage output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'CloneAnalysisJobs'
+        Exec post_log_entry 'Error', @message, 'clone_analysis_jobs'
     END CATCH
 
 Done:
@@ -476,5 +477,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CloneAnalysisJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[clone_analysis_jobs] TO [DDL_Viewer] AS [dbo]
 GO

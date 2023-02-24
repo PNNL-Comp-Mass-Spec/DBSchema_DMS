@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] ******/
+/****** Object:  StoredProcedure [dbo].[lookup_instrument_run_info_from_experiment_sample_prep] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep]
+CREATE PROCEDURE [dbo].[lookup_instrument_run_info_from_experiment_sample_prep]
 /****************************************************
 **
 **  Desc:
@@ -22,12 +22,13 @@ CREATE PROCEDURE [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep]
 **          06/10/2014 mem - Now using Instrument_Group in T_Sample_Prep_Request
 **          08/20/2014 mem - Switched from Instrument_Name to Instrument_Group
 **                         - Renamed parameter @instrumentName to @instrumentGroup
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @experimentNum varchar(64),
+    @experimentName varchar(64),
     @instrumentGroup varchar(64) output,
-    @DatasetType varchar(20) output,
+    @datasetType varchar(20) output,
     @instrumentSettings varchar(512) output,
     @secSep varchar(64) output,
     @message varchar(512) output
@@ -55,13 +56,13 @@ AS
     --
     SELECT @samPrepID = EX_sample_prep_request_ID
     FROM T_Experiments
-    WHERE Experiment_Num = @experimentNum
+    WHERE Experiment_Num = @experimentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
-      set @message = 'Error trying to find sample prep request for experiment ' + @experimentNum + ': ' + Convert(varchar(12), @myError)
+      set @message = 'Error trying to find sample prep request for experiment ' + @experimentName + ': ' + Convert(varchar(12), @myError)
       return @myError
     end
 
@@ -73,12 +74,12 @@ AS
     begin
         if (@instrumentGroup = @ovr)
         begin
-            set @message = 'Instrument group is set to "' + @ovr + '"; the experiment (' + @experimentNum + ') does not have a sample prep request, therefore we cannot auto-define the instrument group.'
+            set @message = 'Instrument group is set to "' + @ovr + '"; the experiment (' + @experimentName + ') does not have a sample prep request, therefore we cannot auto-define the instrument group.'
             return 50966
         end
         if (@DatasetType = @ovr)
         begin
-            set @message = 'Run Type (Dataset Type) is set to "' + @ovr + '"; the experiment (' + @experimentNum + ') does not have a sample prep request, therefore we cannot auto-define the run type.'
+            set @message = 'Run Type (Dataset Type) is set to "' + @ovr + '"; the experiment (' + @experimentName + ') does not have a sample prep request, therefore we cannot auto-define the run type.'
             return 50966
         end
 
@@ -130,7 +131,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_instrument_run_info_from_experiment_sample_prep] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupInstrumentRunInfoFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_instrument_run_info_from_experiment_sample_prep] TO [Limited_Table_Write] AS [dbo]
 GO

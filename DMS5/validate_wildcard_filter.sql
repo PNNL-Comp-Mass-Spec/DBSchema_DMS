@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ValidateWildcardFilter] ******/
+/****** Object:  UserDefinedFunction [dbo].[validate_wildcard_filter] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ValidateWildcardFilter]
+CREATE FUNCTION [dbo].[validate_wildcard_filter]
 /****************************************************
 **
 **  Desc:   Makes sure that @wildcardFilter contains a percent sign
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[ValidateWildcardFilter]
 **
 **  Auth:   mem
 **  Date:   06/10/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

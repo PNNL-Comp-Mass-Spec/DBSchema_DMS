@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[NumberToString] ******/
+/****** Object:  UserDefinedFunction [dbo].[number_to_string] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[NumberToString]
+CREATE FUNCTION [dbo].[number_to_string]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[NumberToString]
 **  Date:   10/26/2017 mem - Initial version
 **          10/27/2017 mem - Update while loop to reduce string updates
 **                         - Change '-0' to '0'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

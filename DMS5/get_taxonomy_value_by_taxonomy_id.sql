@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetTaxonomyValueByTaxonomyID] ******/
+/****** Object:  StoredProcedure [dbo].[get_taxonomy_value_by_taxonomy_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
+CREATE PROCEDURE [dbo].[get_taxonomy_value_by_taxonomy_id]
 /****************************************************
 **
 **  Desc: Looks up taxonomy values for the given TaxonomyID
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetTaxonomyValueByTaxonomyID]
 **          03/03/2016 mem - Auto define Phylum as Community when @NCBITaxonomyID is 48479
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          08/08/2022 mem - Use Substring instead of Replace when removing genus name from species name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -121,7 +122,7 @@ AS
     SELECT Entry_ID,
            [Rank],
            [Name]
-    FROM dbo.[S_GetTaxIDTaxonomyTable] ( @ncbiTaxonomyID )
+    FROM dbo.[s_get_taxid_taxonomy_table] ( @ncbiTaxonomyID )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -132,42 +133,42 @@ AS
         ---------------------------------------------------
 
         -- Superkingdom
-        exec UpdateTaxonomyItemIfDefined 'superkingdom', @newDomain output
+        exec update_taxonomy_item_if_defined 'superkingdom', @newDomain output
 
         -- Subkingdom, Kingdom
-        exec UpdateTaxonomyItemIfDefined 'subkingdom', @newKingdom output
-        exec UpdateTaxonomyItemIfDefined 'kingdom', @newKingdom output
+        exec update_taxonomy_item_if_defined 'subkingdom', @newKingdom output
+        exec update_taxonomy_item_if_defined 'kingdom', @newKingdom output
 
         If @newKingdom = '' And @newDomain = 'bacteria'
             Set @newKingdom = 'Prokaryote'
 
         -- Subphylum, phylum
-        exec UpdateTaxonomyItemIfDefined 'subphylum', @newPhylum output
-        exec UpdateTaxonomyItemIfDefined 'phylum', @newPhylum output
+        exec update_taxonomy_item_if_defined 'subphylum', @newPhylum output
+        exec update_taxonomy_item_if_defined 'phylum', @newPhylum output
 
         -- Subclass, superclass, class
-        exec UpdateTaxonomyItemIfDefined 'subclass', @newClass output
-        exec UpdateTaxonomyItemIfDefined 'superclass', @newClass output
-        exec UpdateTaxonomyItemIfDefined 'class', @newClass output
+        exec update_taxonomy_item_if_defined 'subclass', @newClass output
+        exec update_taxonomy_item_if_defined 'superclass', @newClass output
+        exec update_taxonomy_item_if_defined 'class', @newClass output
 
 
         -- Suborder, superorder, order
-        exec UpdateTaxonomyItemIfDefined 'suborder', @newOrder output
-        exec UpdateTaxonomyItemIfDefined 'superorder', @newOrder output
-        exec UpdateTaxonomyItemIfDefined 'order', @newOrder output
+        exec update_taxonomy_item_if_defined 'suborder', @newOrder output
+        exec update_taxonomy_item_if_defined 'superorder', @newOrder output
+        exec update_taxonomy_item_if_defined 'order', @newOrder output
 
         -- Subfamily, superfamily, family
-        exec UpdateTaxonomyItemIfDefined 'subfamily', @newFamily output
-        exec UpdateTaxonomyItemIfDefined 'superfamily', @newFamily output
-        exec UpdateTaxonomyItemIfDefined 'family', @newFamily output
+        exec update_taxonomy_item_if_defined 'subfamily', @newFamily output
+        exec update_taxonomy_item_if_defined 'superfamily', @newFamily output
+        exec update_taxonomy_item_if_defined 'family', @newFamily output
 
         -- Subgenus, Genus
-        exec UpdateTaxonomyItemIfDefined 'subgenus', @newGenus output
-        exec UpdateTaxonomyItemIfDefined 'genus', @newGenus output
+        exec update_taxonomy_item_if_defined 'subgenus', @newGenus output
+        exec update_taxonomy_item_if_defined 'genus', @newGenus output
 
         -- Subspecies, species
-        exec UpdateTaxonomyItemIfDefined 'subspecies', @newSpecies output
-        exec UpdateTaxonomyItemIfDefined 'species', @newSpecies output
+        exec update_taxonomy_item_if_defined 'subspecies', @newSpecies output
+        exec update_taxonomy_item_if_defined 'species', @newSpecies output
 
         -- If the species name starts with the genus name, remove it
         If @newSpecies Like @newGenus + ' %' And Len(@newSpecies) > Len(@newGenus) + 1
@@ -257,5 +258,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetTaxonomyValueByTaxonomyID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_taxonomy_value_by_taxonomy_id] TO [DDL_Viewer] AS [dbo]
 GO

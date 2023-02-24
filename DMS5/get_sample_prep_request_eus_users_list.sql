@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetSamplePrepRequestEUSUsersList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_sample_prep_request_eus_users_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetSamplePrepRequestEUSUsersList]
+CREATE FUNCTION [dbo].[get_sample_prep_request_eus_users_list]
 /****************************************************
 **
 **  Desc:   Builds delimited list of EUS users for given sample prep request
@@ -16,8 +16,9 @@ CREATE FUNCTION [dbo].[GetSamplePrepRequestEUSUsersList]
 **
 **  Auth:   mem
 **  Date:   05/01/2014
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -70,7 +71,7 @@ Begin
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetSamplePrepRequestEUSUsersList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_sample_prep_request_eus_users_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetSamplePrepRequestEUSUsersList] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_sample_prep_request_eus_users_list] TO [public] AS [dbo]
 GO

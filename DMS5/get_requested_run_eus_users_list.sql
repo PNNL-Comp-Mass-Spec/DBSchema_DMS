@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetRequestedRunEUSUsersList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_requested_run_eus_users_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetRequestedRunEUSUsersList]
+CREATE FUNCTION [dbo].[get_requested_run_eus_users_list]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetRequestedRunEUSUsersList]
 **
 **  Auth:   grk
 **  Date:   02/15/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -72,7 +73,7 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunEUSUsersList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_eus_users_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunEUSUsersList] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_run_eus_users_list] TO [public] AS [dbo]
 GO

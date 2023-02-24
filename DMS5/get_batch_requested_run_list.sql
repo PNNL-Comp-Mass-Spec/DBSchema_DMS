@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetBatchRequestedRunList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_batch_requested_run_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetBatchRequestedRunList]
+CREATE FUNCTION [dbo].[get_batch_requested_run_list]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +18,7 @@ CREATE FUNCTION [dbo].[GetBatchRequestedRunList]
 **  Date:   01/11/2006 grk - Initial version
 **          03/29/2019 mem - Return an empty string when @batchID is 0 (meaning "unassigned", no batch)
 **          06/02/2021 mem - Expand the return value to varchar(max)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,5 +41,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetBatchRequestedRunList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_batch_requested_run_list] TO [DDL_Viewer] AS [dbo]
 GO

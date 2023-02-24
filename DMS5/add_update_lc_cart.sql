@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLCCart] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_lc_cart] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateLCCart]
+CREATE PROCEDURE [dbo].[add_update_lc_cart]
 /****************************************************
 **
 **  Desc: Adds new or edits existing LC Cart
@@ -16,19 +16,20 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCart]
 **  Date:   02/23/2006
 **          03/03/2006 grk - Fixed problem with duplicate entries
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/10/2018 mem - Fix bug checking for duplicate carts when adding a new cart
 **          04/11/2022 mem - Check for whitespace in @CartName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int output,
-    @CartName varchar(128),
-    @CartDescription varchar(1024),
-    @CartState varchar(50),
+    @id int output,
+    @cartName varchar(128),
+    @cartDescription varchar(1024),
+    @cartState varchar(50),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
 )
@@ -47,7 +48,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateLCCart', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_lc_cart', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -62,7 +63,7 @@ AS
     Set @CartState = LTrim(RTrim(IsNull(@CartState, '')))
     Set @mode = IsNull(@mode, '')
 
-    If dbo.udfWhitespaceChars(@CartName, 0) > 0
+    If dbo.whitespace_chars(@CartName, 0) > 0
     Begin
         If CharIndex(Char(9), @CartName) > 0
             RAISERROR ('LC Cart name cannot contain tabs', 11, 116)
@@ -194,11 +195,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCart] TO [DMS_LC_Column_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCart] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCart] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart] TO [Limited_Table_Write] AS [dbo]
 GO

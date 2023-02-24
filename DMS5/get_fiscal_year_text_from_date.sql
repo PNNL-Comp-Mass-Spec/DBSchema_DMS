@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetFiscalYearFromDate] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_fiscal_year_text_from_date] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetFiscalYearFromDate]
+CREATE FUNCTION [dbo].[get_fiscal_year_text_from_date]
 /****************************************************
 **
 **  Desc:
@@ -15,10 +15,11 @@ CREATE FUNCTION [dbo].[GetFiscalYearFromDate]
 **
 **  Auth:   grk
 **  Date:   07/18/2011
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @RawDate Datetime
+    @rawDate Datetime
 )
 RETURNS VARCHAR(32)
 AS
@@ -28,7 +29,7 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFiscalYearFromDate] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_fiscal_year_text_from_date] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFiscalYearFromDate] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_fiscal_year_text_from_date] TO [public] AS [dbo]
 GO

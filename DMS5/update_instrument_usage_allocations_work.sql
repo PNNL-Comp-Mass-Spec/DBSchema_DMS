@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateInstrumentUsageAllocationsWork] ******/
+/****** Object:  StoredProcedure [dbo].[update_instrument_usage_allocations_work] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocationsWork]
+CREATE PROCEDURE [dbo].[update_instrument_usage_allocations_work]
 /****************************************************
 **
 **  Desc:
@@ -27,8 +27,9 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocationsWork]
 **  Auth:   grk
 **  Date:   03/30/2012 mem - Factored out of UpdateInstrumentAllocations
 **          03/31/2012 mem - Updated Merge statement to not enter new rows if the allocation hours are 0 and comment is empty
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ AS
     SET @message = ''
 
     If IsNull(@callingUser, '') = ''
-        SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+        SET @callingUser = dbo.get_user_login_without_domain('')
 
     Set @infoOnly = IsNull(@infoOnly, 0)
 
@@ -72,7 +73,7 @@ AS
         ---------------------------------------------------
         --
         declare @transName varchar(32)
-        set @transName = 'UpdateInstrumentUsageAllocations'
+        set @transName = 'update_instrument_usage_allocations'
 
         begin transaction @transName
 
@@ -123,7 +124,7 @@ AS
         Begin -- <b>
 
             ------------------------------------------------
-            -- Call AlterEnteredByUser for each entry in #T_OPS
+            -- Call alter_entered_by_user for each entry in #T_OPS
             ------------------------------------------------
 
             Declare @EntryID int = 0
@@ -205,5 +206,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageAllocationsWork] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_instrument_usage_allocations_work] TO [DDL_Viewer] AS [dbo]
 GO

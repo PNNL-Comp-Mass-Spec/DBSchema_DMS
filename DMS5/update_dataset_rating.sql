@@ -1,20 +1,21 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetRating] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_rating] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetRating]
+CREATE PROCEDURE [dbo].[update_dataset_rating]
 /****************************************************
 **
-**  Desc:   Updates the rating for the given datasets by calling SP UpdateDatasets
+**  Desc:   Updates the rating for the given datasets by calling SP update_datasets
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   10/07/2015 mem - Initial release
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,7 +39,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetRating', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_rating', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -50,7 +51,7 @@ AS
 
     Declare @ratingID int
 
-    execute @ratingID = GetDatasetRatingID @rating
+    execute @ratingID = get_dataset_rating_id @rating
     if @ratingID = 0
     begin
         Set @message = 'Could not find entry in database for rating "' + @rating + '"'
@@ -61,7 +62,7 @@ AS
     Declare @DatasetCount int = 0
 
     SELECT @DatasetCount= COUNT (DISTINCT Value)
-    FROM udfParseDelimitedList(@datasets, ',', 'UpdateDatasetRating')
+    FROM parse_delimited_list(@datasets, ',', 'update_dataset_rating')
 
     If @DatasetCount = 0
     Begin
@@ -79,10 +80,10 @@ AS
         Set @mode = 'preview'
 
     ---------------------------------------------------
-    -- Call stored procedure UpdateDatasets
+    -- Call stored procedure update_datasets
     ---------------------------------------------------
 
-    Exec @myError = UpdateDatasets @datasets, @rating=@rating, @mode=@mode, @message=@message output, @callingUser=@callingUser
+    Exec @myError = update_datasets @datasets, @rating=@rating, @mode=@mode, @message=@message output, @callingUser=@callingUser
 
     If @myError = 0 And @infoOnly = 0
     Begin
@@ -98,5 +99,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetRating] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_rating] TO [DDL_Viewer] AS [dbo]
 GO

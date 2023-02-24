@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdatePrepLCRun] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_prep_lc_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
+CREATE PROCEDURE [dbo].[add_update_prep_lc_run]
 /****************************************************
 **
 **  Desc:
@@ -18,11 +18,12 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
 **          09/30/2011 grk - added datasets field
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/27/2022 mem - Update @samplePrepRequest to replace semicolons with commas, then assure that the list only contains integers
 **          06/06/2022 mem - Only validate @id if updating an existing item
 **          11/18/2022 mem - Rename parameter to @prepRunName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -36,7 +37,7 @@ CREATE PROCEDURE [dbo].[AddUpdatePrepLCRun]
     @lcColumn2 varchar(128),
     @comment varchar(1024),
     @guardColumn varchar(12),
-    @operatorPRN varchar(50),
+    @operatorUsername varchar(50),
     @digestionMethod varchar(128),
     @sampleType varchar(64),
     @samplePrepRequest varchar(1024),    -- Typically a single sample prep request ID, but can also be a comma separated list (or blank)
@@ -65,7 +66,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdatePrepLCRun', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_prep_lc_run', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -94,10 +95,10 @@ AS
     If Len(@samplePrepRequest) > 0
     Begin
         SELECT @itemCount = Count(*)
-        FROM dbo.MakeTableFromList ( @samplePrepRequest )
+        FROM dbo.make_table_from_list ( @samplePrepRequest )
 
         SELECT @integerCount = Count(*)
-        FROM dbo.udfParseDelimitedIntegerList ( @samplePrepRequest, ',' )
+        FROM dbo.parse_delimited_integer_list ( @samplePrepRequest, ',' )
 
         If @itemCount = 0 Or @itemCount <> @integerCount
         Begin
@@ -133,7 +134,7 @@ AS
 
     INSERT INTO #DSL( Dataset )
     SELECT Item AS Dataset
-    FROM dbo.MakeTableFromList ( @datasets )
+    FROM dbo.make_table_from_list ( @datasets )
 
     UPDATE #DSL
     SET Dataset_ID = dbo.T_Dataset.Dataset_ID
@@ -141,7 +142,7 @@ AS
          INNER JOIN dbo.T_Dataset
            ON #DSL.Dataset = dbo.T_Dataset.Dataset_Num
 
-    Declare @transName varchar(32) = 'AddUpdatePrepLCRun'
+    Declare @transName varchar(32) = 'add_update_prep_lc_run'
 
     ---------------------------------------------------
     -- Action for add mode
@@ -174,7 +175,7 @@ AS
             @lcColumn2,
             @comment,
             @guardColumn,
-            @operatorPRN,
+            @operatorUsername,
             @digestionMethod,
             @sampleType,
             @samplePrepRequest,
@@ -216,7 +217,7 @@ AS
             LC_Column_2 = @lcColumn2,
             COMMENT = @comment,
             Guard_Column = @guardColumn,
-            OperatorPRN = @operatorPRN,
+            OperatorPRN = @operatorUsername,
             Digestion_Method = @digestionMethod,
             Sample_Type = @sampleType,
             SamplePrepRequest = @samplePrepRequest,
@@ -247,7 +248,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -257,11 +258,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_prep_lc_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_prep_lc_run] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdatePrepLCRun] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_prep_lc_run] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdatePrepLCRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_prep_lc_run] TO [Limited_Table_Write] AS [dbo]
 GO

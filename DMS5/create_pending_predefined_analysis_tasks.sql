@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreatePendingPredefinedAnalysesTasks] ******/
+/****** Object:  StoredProcedure [dbo].[create_pending_predefined_analysis_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
+CREATE PROCEDURE [dbo].[create_pending_predefined_analysis_tasks]
 /****************************************************
 **
 **  Desc:
@@ -16,16 +16,17 @@ CREATE PROCEDURE [dbo].[CreatePendingPredefinedAnalysesTasks]
 **  Auth:   grk
 **  Date:   08/26/2010 grk - initial release
 **          08/26/2010 mem - Added @MaxDatasetsToProcess and @InfoOnly
-**                         - Now passing @PreventDuplicateJobs to CreatePredefinedAnalysesJobs
+**                         - Now passing @PreventDuplicateJobs to create_predefined_analysis_jobs
 **          03/27/2013 mem - Now obtaining Dataset name from T_Dataset
 **          07/21/2016 mem - Fix logic error examining @myError
 **          05/30/2018 mem - Do not create predefined jobs for inactive datasets
 **          03/25/2020 mem - Append a row to T_Predefined_Analysis_Scheduling_Queue_History for each dataset processed
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MaxDatasetsToProcess int = 0,            -- Set to a positive number to limit the number of affected datasets
-    @InfoOnly tinyint = 0
+    @maxDatasetsToProcess int = 0,            -- Set to a positive number to limit the number of affected datasets
+    @infoOnly tinyint = 0
 )
 AS
     Set nocount on
@@ -113,7 +114,7 @@ AS
             Else
             Begin
 
-                EXEC @myError = dbo.CreatePredefinedAnalysesJobs
+                EXEC @myError = dbo.create_predefined_analysis_jobs
                                                 @datasetName,
                                                 @callingUser,
                                                 @AnalysisToolNameFilter,
@@ -171,7 +172,7 @@ AS
     REturn 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreatePendingPredefinedAnalysesTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_pending_predefined_analysis_tasks] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreatePendingPredefinedAnalysesTasks] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_pending_predefined_analysis_tasks] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateTrackingDataset] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_tracking_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
+CREATE PROCEDURE [dbo].[add_update_tracking_dataset]
 /****************************************************
 **
 **  Desc:   Adds new or edits existing tracking dataset
@@ -11,31 +11,32 @@ CREATE PROCEDURE [dbo].[AddUpdateTrackingDataset]
 **  Auth:   grk
 **  Date:   07/03/2012
 **          07/19/2012 grk - Extended interval update range around dataset date
-**          05/08/2013 mem - Now setting @wellplateNum and @wellNum to Null instead of 'na'
+**          05/08/2013 mem - Now setting @wellplateName and @wellNumber to Null instead of 'na'
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**          06/13/2017 mem - Rename @operatorUsername to @requestorUsername when calling add_update_requested_run
 **                         - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
-**                         - Use RemoveCrLf to replace linefeeds with semicolons
+**          02/25/2021 mem - Use replace_character_codes to replace character codes with punctuation marks
+**                         - Use remove_cr_lf to replace linefeeds with semicolons
 **          02/17/2022 mem - Rename variables, adjust formatting, convert tabs to spaces
-**          02/18/2022 mem - Call AddUpdateRequestedRun if the EUS usage info is updated
-**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
+**          02/18/2022 mem - Call add_update_requested_run if the EUS usage info is updated
+**          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
 **          11/18/2022 mem - Use new column name in V_Requested_Run_Detail_Report
-**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          11/27/2022 mem - Remove query artifact that was used for debugging
 **          12/24/2022 mem - Fix logic error evaluating @runDuration
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @datasetNum varchar(128) = 'TrackingDataset1',
-    @experimentNum varchar(64) = 'Placeholder',
-    @operPRN varchar(64) = 'D3J410',
+    @datasetName varchar(128) = 'TrackingDataset1',
+    @experimentName varchar(64) = 'Placeholder',
+    @operatorUsername varchar(64) = 'D3J410',
     @instrumentName varchar(64),
     @runStart VARCHAR(32) = '6/1/2012',
     @runDuration VARCHAR(16) = '10',            -- Acquisition length, in minutes (as text)
@@ -63,8 +64,8 @@ AS
 
     Declare @requestID int = 0
     Declare @reqName varchar(128)
-    Declare @wellplate varchar(64) = NULL
-    Declare @wellNum varchar(64) = NULL
+    Declare @wellplateName varchar(64) = NULL
+    Declare @wellNumber varchar(64) = NULL
     Declare @secSep varchar(64) = 'none'
     Declare @rating varchar(32) = 'Unknown'
 
@@ -86,7 +87,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateTrackingDataset', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_tracking_dataset', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -104,7 +105,7 @@ AS
     END
 
     Declare @datasetTypeID int
-    execute @datasetTypeID = GetDatasetTypeID @msType
+    execute @datasetTypeID = get_dataset_type_id @msType
 
     ---------------------------------------------------
     -- Validate input fields
@@ -116,15 +117,15 @@ AS
         RAISERROR (@msg, 11, 17)
     End
 
-    If IsNull(@datasetNum, '') = ''
+    If IsNull(@datasetName, '') = ''
     Begin
         Set @msg = 'Dataset name was blank'
         RAISERROR (@msg, 11, 10)
     End
 
-    Set @folderName = @datasetNum
+    Set @folderName = @datasetName
 
-    If IsNull(@experimentNum, '') = ''
+    If IsNull(@experimentName, '') = ''
     Begin
         Set @msg = 'Experiment name was blank'
         RAISERROR (@msg, 11, 11)
@@ -136,7 +137,7 @@ AS
         RAISERROR (@msg, 11, 12)
     End
 
-    If IsNull(@operPRN, '') = ''
+    If IsNull(@operatorUsername, '') = ''
     Begin
         Set @msg = 'Operator payroll number/HID was blank'
         RAISERROR (@msg, 11, 13)
@@ -149,10 +150,10 @@ AS
     End
 
     -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
-    Set @comment = dbo.ReplaceCharacterCodes(@comment)
+    Set @comment = dbo.replace_character_codes(@comment)
 
     -- Replace instances of CRLF (or LF) with semicolons
-    Set @comment = dbo.RemoveCrLf(@comment)
+    Set @comment = dbo.remove_cr_lf(@comment)
 
     Set @eusProposalID = IsNull(@eusProposalID, '')
     Set @eusUsageType = IsNull(@eusUsageType, '')
@@ -171,7 +172,7 @@ AS
     -- Validate dataset name
     ---------------------------------------------------
     --
-    Declare @badCh varchar(128) = dbo.ValidateChars(@datasetNum, '')
+    Declare @badCh varchar(128) = dbo.validate_chars(@datasetName, '')
 
     If @badCh <> ''
     Begin
@@ -190,7 +191,7 @@ AS
         RAISERROR (@msg, 11, 1)
     End
 
-    If @datasetNum Like '%[.]raw' Or @datasetNum Like '%[.]wiff' Or @datasetNum Like '%[.]d'
+    If @datasetName Like '%[.]raw' Or @datasetName Like '%[.]wiff' Or @datasetName Like '%[.]d'
     Begin
         Set @msg = 'Dataset name may not end in .raw, .wiff, or .d'
         RAISERROR (@msg, 11, 2)
@@ -214,7 +215,7 @@ AS
         @curDSStateID = DS_state_ID,
         @curDSRatingID = DS_Rating
     FROM T_Dataset
-    WHERE Dataset_Num = @datasetNum
+    WHERE Dataset_Num = @datasetName
 
     Set @datasetID = IsNull(@datasetID, 0)
 
@@ -224,7 +225,7 @@ AS
         --
         If @mode IN ('update', 'check_update')
         Begin
-            Set @msg = 'Cannot update: Dataset ' + @datasetNum + ' is not in database'
+            Set @msg = 'Cannot update: Dataset ' + @datasetName + ' is not in database'
             RAISERROR (@msg, 11, 4)
         End
     End
@@ -234,7 +235,7 @@ AS
         --
         If @addingDataset = 1
         Begin
-            Set @msg = 'Cannot add dataset ' + @datasetNum + ' since already in database'
+            Set @msg = 'Cannot add dataset ' + @datasetName + ' since already in database'
             RAISERROR (@msg, 11, 5)
         End
     End
@@ -244,11 +245,11 @@ AS
     ---------------------------------------------------
 
     Declare @experimentID int
-    execute @experimentID = GetExperimentID @experimentNum
+    execute @experimentID = get_experiment_id @experimentName
 
     If @experimentID = 0
     Begin
-        Set @msg = 'Could not find entry in database for experiment ' + @experimentNum
+        Set @msg = 'Could not find entry in database for experiment ' + @experimentName
         RAISERROR (@msg, 11, 12)
     End
 
@@ -260,7 +261,7 @@ AS
     Declare @instrumentGroup varchar(64) = ''
     Declare @defaultDatasetTypeID int
 
-    execute @instrumentID = GetinstrumentID @instrumentName
+    execute @instrumentID = get_instrument_id @instrumentName
 
     If @instrumentID = 0
     Begin
@@ -273,35 +274,35 @@ AS
     ---------------------------------------------------
 
     Declare @userID int
-    execute @userID = GetUserID @operPRN
+    execute @userID = get_user_id @operatorUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @operPRN contains simply the username
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @operatorUsername contains simply the username
         --
-        SELECT @operPRN = U_PRN
+        SELECT @operatorUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @operPRN
+        -- Could not find entry in database for username @operatorUsername
         -- Try to auto-resolve the name
 
         Declare @matchCount int
-        Declare @newPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @operPRN, @matchCount output, @newPRN output, @userID output
+        exec auto_resolve_name_to_username @operatorUsername, @matchCount output, @newUsername output, @userID output
 
         If @matchCount = 1
         Begin
-            -- Single match found; update @operPRN
-            Set @operPRN = @newPRN
+            -- Single match found; update @operatorUsername
+            Set @operatorUsername = @newUsername
         End
         Else
         Begin
-            Set @msg = 'Could not find entry in database for operator username ' + @operPRN
+            Set @msg = 'Could not find entry in database for operator username ' + @operatorUsername
             RAISERROR (@msg, 11, 19)
         End
     End
@@ -319,7 +320,7 @@ AS
         --
         Declare @storagePathID int = 0
 
-        Exec @storagePathID = GetInstrumentStoragePathForNewDatasets @instrumentID, @refDate, @autoSwitchActiveStorage=1, @infoOnly=0
+        Exec @storagePathID = get_instrument_storage_path_for_new_datasets @instrumentID, @refDate, @autoSwitchActiveStorage=1, @infoOnly=0
         --
         If @storagePathID = 0
         Begin
@@ -332,7 +333,7 @@ AS
         -- Start transaction
         --
         Declare @transName varchar(32)
-        Set @transName = 'AddNewDataset'
+        Set @transName = 'add_new_dataset'
         Begin transaction @transName
 
         Set @newDSStateID = 3
@@ -359,13 +360,13 @@ AS
             Acq_Time_Start,
             Acq_Time_End
         ) VALUES (
-            @datasetNum,
-            @operPRN,
+            @datasetName,
+            @operatorUsername,
             @comment,
             @refDate,
             @instrumentID,
             @datasetTypeID,
-            @wellNum,
+            @wellNumber,
             @secSep,
             @newDSStateID,
             @folderName,
@@ -373,7 +374,7 @@ AS
             @experimentID,
             @ratingID,
             @columnID,
-            @wellplate,
+            @wellplateName,
             @intStdID,
             @acqStart,
             @acqEnd
@@ -383,7 +384,7 @@ AS
 
         If @myError <> 0 or @myRowCount <> 1
         Begin
-            Set @msg = 'Insert operation failed for dataset ' + @datasetNum
+            Set @msg = 'Insert operation failed for dataset ' + @datasetName
             RAISERROR (@msg, 11, 7)
         End
 
@@ -391,12 +392,12 @@ AS
         --
         Set @datasetID = SCOPE_IDENTITY()
 
-        -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 4, @datasetID, @newDSStateID, @callingUser
+            Exec alter_event_log_entry_user 4, @datasetID, @newDSStateID, @callingUser
 
-            Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+            Exec alter_event_log_entry_user 8, @datasetID, @ratingID, @callingUser
         End
 
         ---------------------------------------------------
@@ -409,18 +410,18 @@ AS
             If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
                 Set @warning = @message
 
-            Set @reqName = 'AutoReq_' + @datasetNum
+            Set @reqName = 'AutoReq_' + @datasetName
 
-            EXEC @result = dbo.AddUpdateRequestedRun
+            EXEC @result = dbo.add_update_requested_run
                                     @reqName = @reqName,
-                                    @experimentNum = @experimentNum,
-                                    @requesterPRN = @operPRN,
+                                    @experimentName = @experimentName,
+                                    @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentName,
                                     @workPackage = 'none',
                                     @msType = @msType,
                                     @instrumentSettings = 'na',
-                                    @wellplate = NULL,
-                                    @wellNum = NULL,
+                                    @wellplateName = NULL,
+                                    @wellNumber = NULL,
                                     @internalStandard = 'na',
                                     @comment = 'Automatically created by Dataset entry',
                                     @eusProposalID = @eusProposalID,
@@ -440,7 +441,7 @@ AS
 
             If @myError <> 0
             Begin
-                Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetNum + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+                Set @msg = 'Create AutoReq run request failed: dataset ' + @datasetName + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
                 RAISERROR (@msg, 11, 24)
             End
         End -- </b3>
@@ -453,18 +454,18 @@ AS
 
         SELECT @datasetID = Dataset_ID
         FROM T_Dataset
-        WHERE Dataset_Num = @datasetNum
+        WHERE Dataset_Num = @datasetName
 
         If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
             Set @warning = @message
 
-        exec @result = ConsumeScheduledRun @datasetID, @requestID, @message output, @callingUser
+        exec @result = consume_scheduled_run @datasetID, @requestID, @message output, @callingUser
         --
         Set @myError = @result
 
         If @myError <> 0
         Begin
-            Set @msg = 'Consume operation failed: dataset ' + @datasetNum + ' -> ' + @message
+            Set @msg = 'Consume operation failed: dataset ' + @datasetName + ' -> ' + @message
             RAISERROR (@msg, 11, 16)
         End
 
@@ -474,11 +475,11 @@ AS
         End
         Else
         Begin
-            exec PostLogEntry 'Error', '@@trancount is 0; this is unexpected', 'AddUpdateTrackingDataset'
+            exec post_log_entry 'Error', '@@trancount is 0; this is unexpected', 'add_update_tracking_dataset'
         End
 
         -- Update T_Cached_Dataset_Instruments
-        Exec dbo.UpdateCachedDatasetInstruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
+        Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
     End -- </AddMode>
 
@@ -491,7 +492,7 @@ AS
         Set @myError = 0
         --
         UPDATE T_Dataset
-        SET     DS_Oper_PRN = @operPRN,
+        SET     DS_Oper_PRN = @operatorUsername,
                 DS_comment = @comment,
                 DS_instrument_name_ID = @instrumentID,
                 DS_type_ID = @datasetTypeID,
@@ -499,22 +500,22 @@ AS
                 Exp_ID = @experimentID,
                 Acq_Time_Start = @acqStart,
                 Acq_Time_End = @acqEnd
-        WHERE Dataset_Num = @datasetNum
+        WHERE Dataset_Num = @datasetName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myError <> 0
         Begin
-            Set @msg = 'Update operation failed: dataset ' + @datasetNum
+            Set @msg = 'Update operation failed: dataset ' + @datasetName
             RAISERROR (@msg, 11, 4)
         End
 
-        -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0 AND @ratingID <> IsNull(@curDSRatingID, -1000)
-            Exec AlterEventLogEntryUser 8, @datasetID, @ratingID, @callingUser
+            Exec alter_event_log_entry_user 8, @datasetID, @ratingID, @callingUser
 
 
-        -- Call AddUpdateRequestedRun if the EUS info has changed
+        -- Call add_update_requested_run if the EUS info has changed
 
         SELECT @reqName = RR.RDS_Name,
                @existingEusProposal = RR.RDS_EUS_Proposal_ID,
@@ -525,7 +526,7 @@ AS
                ON DS.Dataset_ID = RR.DatasetID
              INNER JOIN V_Requested_Run_Detail_Report AS RRD
                ON RR.ID = RRD.Request
-        WHERE DS.Dataset_Num = @datasetNum
+        WHERE DS.Dataset_Num = @datasetName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -535,16 +536,16 @@ AS
           Coalesce(@existingEusUser, '') <> @eusUsersList)
         Begin
 
-            EXEC @result = dbo.AddUpdateRequestedRun
+            EXEC @result = dbo.add_update_requested_run
                                     @reqName = @reqName,
-                                    @experimentNum = @experimentNum,
-                                    @requesterPRN = @operPRN,
+                                    @experimentName = @experimentName,
+                                    @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentName,
                                     @workPackage = 'none',
                                     @msType = @msType,
                                     @instrumentSettings = 'na',
-                                    @wellplate = NULL,
-                                    @wellNum = NULL,
+                                    @wellplateName = NULL,
+                                    @wellNumber = NULL,
                                     @internalStandard = 'na',
                                     @comment = 'Automatically created by Dataset entry',
                                     @eusProposalID = @eusProposalID,
@@ -564,7 +565,7 @@ AS
 
             If @myError <> 0
             Begin
-                Set @msg = 'Call to AddUpdateRequestedRun failed: dataset ' + @datasetNum + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
+                Set @msg = 'Call to add_update_requested_run failed: dataset ' + @datasetName + ' with EUS Proposal ID ' + @eusProposalID + ', Usage Type ' + @eusUsageType + ', and Users List ' + @eusUsersList + ' ->' + @message
                 RAISERROR (@msg, 11, 24)
             End
         End
@@ -599,23 +600,23 @@ AS
     Declare @nd DATETIME = DATEADD(MONTH, 1, @refDate)
     Declare @st DATETIME = DATEADD(MONTH, -1, @refDate)
 
-    EXEC UpdateDatasetInterval @instrumentName, @st, @nd, @message OUTPUT, 0
+    EXEC update_dataset_interval @instrumentName, @st, @nd, @message OUTPUT, 0
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddUpdateTrackingDataset'
+        Exec post_log_entry 'Error', @message, 'add_update_tracking_dataset'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateTrackingDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_tracking_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateTrackingDataset] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_tracking_dataset] TO [DMS2_SP_User] AS [dbo]
 GO

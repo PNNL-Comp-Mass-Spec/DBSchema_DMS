@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReportProductionStats] ******/
+/****** Object:  StoredProcedure [dbo].[report_production_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ReportProductionStats]
+CREATE PROCEDURE [dbo].[report_production_stats]
 /****************************************************
 **
 **  Desc:   Generates dataset statistics for production instruments
@@ -32,7 +32,7 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **                         - Added new columns, including "% EMSL Owned", "EMSL-Funded Study Specific Datasets", and "EF Study Specific Datasets per day"
 **          03/15/2012 mem - Added parameter @eusUsageFilterList
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          04/05/2017 mem - Determine whether a dataset is EMSL funded using EUS usage type (previously used CM_Fraction_EMSL_Funded, which is estimated by the user for each campaign)
 **                         - No longer differentiate reruns or unreviewed
 **                         - Added parameter @instrumentFilterList
@@ -43,11 +43,12 @@ CREATE PROCEDURE [dbo].[ReportProductionStats]
 **                         - If the campaign for a dataset has Fraction_EMSL_Funded of 0.75 or more, flag the dataset as EMSL Funded
 **          04/20/2018 mem - Allow Request_ID to be null
 **          04/27/2018 mem - Add column [% EF Study Specific by AcqTime]
-**          07/22/2019 mem - Refactor code into PopulateCampaignFilterTable, PopulateInstrumentFilterTable, and ResolveStartAndEndDates
+**          07/22/2019 mem - Refactor code into populate_campaign_filter_table, populate_instrument_filter_table, and resolve_start_and_end_dates
 **          05/16/2022 mem - Treat 'Resource Owner' proposals as not EMSL funded
 **          05/18/2022 mem - Treat additional proposal types as not EMSL funded
 **          10/12/2022 mem - Add @showDebug
 **                         - No longer use Fraction_EMSL_Funded from t_campaign to determine EMSL funding status
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -100,7 +101,7 @@ AS
 
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_CampaignFilter ON #Tmp_CampaignFilter (Campaign_ID)
 
-    Exec @result = PopulateCampaignFilterTable @campaignIDFilterList, @message=@message output
+    Exec @result = populate_campaign_filter_table @campaignIDFilterList, @message=@message output
 
     If @result <> 0
     Begin
@@ -118,7 +119,7 @@ AS
 
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_InstrumentFilter ON #Tmp_InstrumentFilter (Instrument_ID)
 
-    Exec @result = PopulateInstrumentFilterTable @instrumentFilterList, @message=@message output
+    Exec @result = populate_instrument_filter_table @instrumentFilterList, @message=@message output
 
     If @result <> 0
     Begin
@@ -141,7 +142,7 @@ AS
     Begin
         INSERT INTO #Tmp_EUSUsageFilter (Usage_Name, Usage_ID)
         SELECT DISTINCT Value AS Usage_Name, 0 AS ID
-        FROM dbo.udfParseDelimitedList(@eusUsageFilterList, ',', 'ReportProductionStats')
+        FROM dbo.parse_delimited_list(@eusUsageFilterList, ',', 'report_production_stats')
         ORDER BY Value
 
         -- Look for invalid Usage_Name values
@@ -198,7 +199,7 @@ AS
     -- Determine the start and end dates
     --------------------------------------------------------------------
 
-    Exec @result = ResolveStartAndEndDates @startDate, @endDate, @stDate Output, @eDate Output, @message=@message output
+    Exec @result = resolve_start_and_end_dates @startDate, @endDate, @stDate Output, @eDate Output, @message=@message output
 
     If @result <> 0
     Begin
@@ -469,23 +470,23 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ReportProductionStats'
+        Exec post_log_entry 'Error', @message, 'report_production_stats'
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportProductionStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_production_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportProductionStats] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_production_stats] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportProductionStats] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_production_stats] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportProductionStats] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_production_stats] TO [Limited_Table_Write] AS [dbo]
 GO

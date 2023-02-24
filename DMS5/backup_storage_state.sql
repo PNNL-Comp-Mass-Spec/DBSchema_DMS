@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[BackUpStorageState] ******/
+/****** Object:  StoredProcedure [dbo].[backup_storage_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[BackUpStorageState]
+CREATE PROCEDURE [dbo].[backup_storage_state]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[BackUpStorageState]
 **          04/07/2006 grk - Got rid of CDBurn stuff
 **          05/01/2009 mem - Updated description field in T_Storage_Path and T_Storage_Path_Bkup to be named SP_description
 **          08/30/2010 mem - Now copying IN_Created
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -117,7 +118,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[BackUpStorageState] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[backup_storage_state] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[BackUpStorageState] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[backup_storage_state] TO [Limited_Table_Write] AS [dbo]
 GO

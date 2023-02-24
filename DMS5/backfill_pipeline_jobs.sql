@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[BackfillPipelineJobs] ******/
+/****** Object:  StoredProcedure [dbo].[backfill_pipeline_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
+CREATE PROCEDURE [dbo].[backfill_pipeline_jobs]
 /****************************************************
 **
 **  Desc:
@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[BackfillPipelineJobs]
 **          07/29/2022 mem - Settings file names can no longer be null
 **          10/04/2022 mem - Assure that auto-generated dataset names only contain alphanumeric characters (plus underscore or dash)
 **          02/06/2023 bcg - Update column names from views
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -231,7 +232,7 @@ AS
                     If @infoOnly > 0
                         print @message
                     Else
-                        Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                        Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
 
                     Goto NextJob
                 End
@@ -258,7 +259,7 @@ AS
                     If @infoOnly > 0
                         print @message
                     Else
-                        Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                        Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
 
                     Set @organismID = 1
                 End
@@ -281,7 +282,7 @@ AS
                     If @infoOnly > 0
                         print @message
                     Else
-                        Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                        Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
 
                     Set @state = 4
                 End
@@ -391,12 +392,12 @@ AS
 
                     If Len(@dataset) > 80
                     Begin
-                        -- Truncate the dataset name to avoid triggering an error in AddUpdateDataset
+                        -- Truncate the dataset name to avoid triggering an error in add_update_dataset
                         Set @dataset = Substring(@dataset, 1, 80)
                     End
 
                     -- Make sure there are no invalid characters in @dataset
-                    -- Dataset names can only contain letters, underscores, or dashes (see function ValidateChars)
+                    -- Dataset names can only contain letters, underscores, or dashes (see function validate_chars)
 
                     Set @dataset = Replace(@dataset, ' ', '_')
 
@@ -443,7 +444,7 @@ AS
                         -- Dataset does not exist; create it
                         ------------------------------------------------
 
-                        Set @currentLocation = 'Call AddUpdateDataset to create dataset ' + @dataset
+                        Set @currentLocation = 'Call add_update_dataset to create dataset ' + @dataset
 
                         If @infoOnly > 0
                         Begin
@@ -453,10 +454,10 @@ AS
                         Else
                             Set @mode = 'add'
 
-                        Exec @myError = AddUpdateDataset
+                        Exec @myError = add_update_dataset
                                             @dataset,               -- Dataset
                                             'DMS_Pipeline_Data',    -- Experiment
-                                            'MSDADMIN',             -- Operator PRN
+                                            'MSDADMIN',             -- Operator Username
                                             'DMS_Pipeline_Data',    -- Instrument
                                             'DataFiles',            -- Dataset Type
                                             'unknown',              -- LC Column
@@ -488,7 +489,7 @@ AS
                             If @infoOnly > 0
                                 Print @message
                             Else
-                                Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                                Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
 
                             Set @datasetID = -1
                         End
@@ -514,8 +515,8 @@ AS
 
                                 If @myRowCount = 0
                                 Begin
-                                    Set @message = 'Error creating dataset ' + @dataset + ' for DMS Pipeline job ' + @jobStr + '; call to AddUpdateDataset succeeded but dataset not found in T_Dataset'
-                                    Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                                    Set @message = 'Error creating dataset ' + @dataset + ' for DMS Pipeline job ' + @jobStr + '; call to add_update_dataset succeeded but dataset not found in T_Dataset'
+                                    Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
                                     Set @datasetID = -1
                                 End
 
@@ -602,7 +603,7 @@ AS
                             Set @message = 'Error adding new row to #Tmp_Job_Backfill_Details for job ' + @jobStr
 
                             If @infoOnly = 0
-                                Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                                Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
                             Else
                                 Print @message
 
@@ -633,7 +634,7 @@ AS
                             If @myRowCount = 0
                             Begin
                                 Set @message = 'Error adding DMS Pipeline job ' + @jobStr + ' to T_Analysis_Job'
-                                Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                                Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
                             End
 
                         End
@@ -645,8 +646,8 @@ AS
             END TRY
             BEGIN CATCH
                 -- Error caught; log the error then continue with the next job to backfill
-                    Set @callingProcName = Coalesce(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
-                    exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1,
+                    Set @callingProcName = Coalesce(ERROR_PROCEDURE(), 'backfill_pipeline_jobs')
+                    exec local_error_handler  @callingProcName, @currentLocation, @logError = 1,
                                             @errorNum = @myError output, @message = @message output
             END CATCH
 
@@ -716,15 +717,15 @@ NextJob:
             Begin
                 Set @message = 'Error synchronizing T_Analysis_Job with S_V_Pipeline_Jobs_Backfill, error code ' + Convert(varchar(12), @myError)
 
-                Exec PostLogEntry 'Error', @message, 'BackfillPipelineJobs'
+                Exec post_log_entry 'Error', @message, 'backfill_pipeline_jobs'
 
             End
 
         END TRY
         BEGIN CATCH
             -- Error caught; log the error then continue with the next job to backfill
-                Set @callingProcName = Coalesce(ERROR_PROCEDURE(), 'BackfillPipelineJobs')
-                exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1,
+                Set @callingProcName = Coalesce(ERROR_PROCEDURE(), 'backfill_pipeline_jobs')
+                exec local_error_handler  @callingProcName, @currentLocation, @logError = 1,
                                         @errorNum = @myError output, @message = @message output
         END CATCH
 
@@ -735,5 +736,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[BackfillPipelineJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[backfill_pipeline_jobs] TO [DDL_Viewer] AS [dbo]
 GO

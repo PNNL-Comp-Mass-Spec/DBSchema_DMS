@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetInstrumentArchivePathForNewDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[get_instrument_archive_path_for_new_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetInstrumentArchivePathForNewDatasets]
+CREATE PROCEDURE [dbo].[get_instrument_archive_path_for_new_datasets]
 /****************************************************
 **
 **  Desc:   Returns the ID for the most appropriate archive path for
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[GetInstrumentArchivePathForNewDatasets]
 **          If @DatasetID is defined, then uses the DS_Created value of the given dataset
 **          rather than the current date
 **
-**          If necessary, will call AddUpdateArchivePath to auto-create an entry in T_Archive_Path
+**          If necessary, will call add_update_archive_path to auto-create an entry in T_Archive_Path
 **          Optionally set @AutoSwitchActiveArchive to 0 to not auto-update the system to use the
 **          archive path determined for future datasets for this instrument
 **
@@ -29,12 +29,13 @@ CREATE PROCEDURE [dbo].[GetInstrumentArchivePathForNewDatasets]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
 **          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InstrumentID int,
-    @DatasetID int = null,
-    @AutoSwitchActiveArchive tinyint = 1,
+    @instrumentID int,
+    @datasetID int = null,
+    @autoSwitchActiveArchive tinyint = 1,
     @infoOnly tinyint = 0
 )
 AS
@@ -108,7 +109,7 @@ AS
                 Set @message = 'One or more Auto_SP fields are empty or null for instrument ' + @InstrumentName + '; unable to auto-define the archive path'
 
                 If @infoOnly = 0
-                    exec PostLogEntry 'Error', @message, 'GetInstrumentArchivePathForNewDatasets'
+                    exec post_log_entry 'Error', @message, 'get_instrument_archive_path_for_new_datasets'
                 Else
                     print @message
             End
@@ -168,7 +169,7 @@ AS
                         Print 'Auto-defined archive path "' + @ArchivePathName + '" not found T_Archive_Path; need to add it'
                     Else
                     Begin
-                        Set @CurrentLocation = 'Call AddUpdateArchivePath to add ' + @ArchivePathName
+                        Set @CurrentLocation = 'Call add_update_archive_path to add ' + @ArchivePathName
 
                         Declare @ArchiveFunction varchar(24)
 
@@ -177,7 +178,7 @@ AS
                         Else
                             Set @ArchiveFunction = 'Active'
 
-                        Exec AddUpdateArchivePath @ArchivePathID output,
+                        Exec add_update_archive_path @ArchivePathID output,
                                                   @ArchivePathName,
                                                   @AutoSPArchiveServerName,
                                                   @InstrumentName,
@@ -204,8 +205,8 @@ AS
     Begin Catch
         -- Error caught; log the error and set @ArchivePathID to 0
 
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'GetInstrumentArchivePathForNewDatasets')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'get_instrument_archive_path_for_new_datasets')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                             @ErrorNum = @myError output, @message = @message output
 
     End Catch
@@ -219,5 +220,5 @@ AS
     return @ArchivePathID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentArchivePathForNewDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_archive_path_for_new_datasets] TO [DDL_Viewer] AS [dbo]
 GO

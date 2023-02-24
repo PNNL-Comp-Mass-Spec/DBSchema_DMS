@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateOrganismListForBiomaterial] ******/
+/****** Object:  StoredProcedure [dbo].[update_organism_list_for_biomaterial] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateOrganismListForBiomaterial]
+CREATE PROCEDURE [dbo].[update_organism_list_for_biomaterial]
 /****************************************************
 **
 **  Desc: Updates organisms associated with a single biomaterial (cell_culture) item
@@ -12,15 +12,16 @@ CREATE PROCEDURE [dbo].[UpdateOrganismListForBiomaterial]
 **
 **  Auth:   mem
 **  Date:   12/02/2016 mem - Initial version
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/06/2018 mem - Fix delete bug in Merge statement
 **          03/31/2021 mem - Expand Organism_Name, @unknownOrganism, and @newOrganismName to varchar(128)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @biomaterialName varchar(64),      -- Biomaterial name, aka cell culture
-    @organismList varchar(max),        -- Comma-separated list of organism names.  Should be full organism name, but can also be short names, in which case AutoResolveOrganismName will try to resolve the short name to a full organsim name
+    @organismList varchar(max),        -- Comma-separated list of organism names.  Should be full organism name, but can also be short names, in which case auto_resolve_organism_name will try to resolve the short name to a full organsim name
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateOrganismListForBiomaterial', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_organism_list_for_biomaterial', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -115,7 +116,7 @@ AS
     --
     INSERT INTO #Tmp_BiomaterialOrganisms ( Organism_Name )
     SELECT Item
-    FROM dbo.MakeTableFromList(@organismList) AS Organisms
+    FROM dbo.make_table_from_list(@organismList) AS Organisms
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -170,7 +171,7 @@ AS
         Begin -- <b>
             Set @matchCount = 0
 
-            exec AutoResolveOrganismName @unknownOrganism, @matchCount output, @newOrganismName output, @newOrganismID output
+            exec auto_resolve_organism_name @unknownOrganism, @matchCount output, @newOrganismName output, @newOrganismID output
 
             If @matchCount = 1
             Begin
@@ -237,7 +238,7 @@ AS
     ---------------------------------------------------
     --
     UPDATE T_Cell_Culture
-    Set Cached_Organism_List = dbo.GetBiomaterialOrganismList(@biomaterialID)
+    Set Cached_Organism_List = dbo.get_biomaterial_organism_list(@biomaterialID)
     WHERE CC_ID = @biomaterialID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -250,10 +251,10 @@ Done:
 
     Declare @usageMessage varchar(512) = ''
     Set @usageMessage = 'Biomaterial: ' + @biomaterialName
-    Exec PostUsageLogEntry 'UpdateOrganismListForBiomaterial', @usageMessage
+    Exec post_usage_log_entry 'update_organism_list_for_biomaterial', @usageMessage
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateOrganismListForBiomaterial] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_organism_list_for_biomaterial] TO [DDL_Viewer] AS [dbo]
 GO

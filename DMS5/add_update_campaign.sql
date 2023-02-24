@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateCampaign] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_campaign] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateCampaign]
+CREATE PROCEDURE [dbo].[add_update_campaign]
 /****************************************************
 **
 **  Desc:
@@ -13,30 +13,30 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **
 **  Auth:   grk
 **  Date:   01/08/2002
-**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          01/15/2010 grk - Added new fields (http://prismtrac.pnl.gov/trac/ticket/753)
 **          02/05/2010 grk - Split team member field
 **          02/07/2010 grk - Added validation for campaign name
-**          02/07/2010 mem - No longer validating @progmgrUsername or @piUsername in this procedure since this is now handled by UpdateResearchTeamForCampaign
+**          02/07/2010 mem - No longer validating @progmgrUsername or @piUsername in this procedure since this is now handled by update_research_team_for_campaign
 **          03/17/2010 grk - DataReleaseRestrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
 **          04/21/2010 grk - try-catch for error handling
 **          10/27/2011 mem - Added parameter @fractionEMSLFunded
 **          12/01/2011 mem - Updated @fractionEMSLFunded to be a required value
-**                         - Now calling AlterEventLogEntryUser for updates to CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions
+**                         - Now calling alter_event_log_entry_user for updates to CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions
 **          10/23/2012 mem - Now validating that @fractionEMSLFunded is a number between 0 and 1 using a real (since conversion of 100 to Decimal(3, 2) causes an overflow error)
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          02/23/2016 mem - Add set XACT_ABORT on\
 **          02/26/2016 mem - Define a default for @fractionEMSLFunded
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Tweak error messages
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
-**          11/23/2016 mem - Include the campaign name when calling PostLogEntry from within the catch block
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
+**          11/23/2016 mem - Include the campaign name when calling post_log_entry from within the catch block
 **                         - Trim trailing and leading spaces from input parameters
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/13/2017 mem - Disable logging when the campaign name has invalid characters
 **          06/14/2017 mem - Allow @fractionEMSLFundedValue to be empty
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **          05/26/2021 mem - Add @eusUsageType
@@ -44,11 +44,12 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          05/16/2022 mem - Fix potential arithmetic overflow error when parsing @fractionEMSLFunded
 **          02/13/2023 bcg - Rename parameters to progmgrUsername and piUsername
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @campaignNum varchar(64),               -- Campaign name
-    @projectNum varchar(64),                -- Project name
+    @campaignName varchar(64),              -- Campaign name
+    @projectName varchar(64),               -- Project name
     @progmgrUsername varchar(64),           -- Project Manager Username (required)
     @piUsername varchar(64),                -- Principal Investigator Username (required)
     @technicalLead varchar(256),            -- Technical Lead
@@ -69,7 +70,7 @@ CREATE PROCEDURE [dbo].[AddUpdateCampaign]
     @eusUsageType varchar(50) = 'USER_ONSITE',
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
-       @callingUser varchar(128) = ''
+    @callingUser varchar(128) = ''
 )
 AS
     Set XACT_ABORT, nocount on
@@ -98,7 +99,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateCampaign', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_campaign', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -110,23 +111,23 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    Set @campaignNum = LTrim(RTrim(IsNull(@campaignNum, '')))
-    Set @projectNum = LTrim(RTrim(IsNull(@projectNum, '')))
+    Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
+    Set @projectName = LTrim(RTrim(IsNull(@projectName, '')))
     Set @progmgrUsername = LTrim(RTrim(IsNull(@progmgrUsername, '')))
     Set @piUsername = LTrim(RTrim(IsNull(@piUsername, '')))
 
     Set @myError = 0
-    If LEN(@campaignNum) < 1
+    If LEN(@campaignName) < 1
         RAISERROR ('Campaign name is blank', 11, 1)
     --
-    If LEN(@projectNum) < 1
-        RAISERROR ('Project Number is blank', 11, 1)
+    If LEN(@projectName) < 1
+        RAISERROR ('Project name is blank', 11, 1)
     --
     If LEN(@progmgrUsername) < 1
-        RAISERROR ('Project Manager Username is blank', 11, 2)
+        RAISERROR ('Project Manager username is blank', 11, 2)
     --
     If LEN(@piUsername) < 1
-        RAISERROR ('Principle Investigator Username is blank', 11, 3)
+        RAISERROR ('Principle Investigator username is blank', 11, 3)
 
     ---------------------------------------------------
     -- Is entry already in database?
@@ -138,17 +139,17 @@ AS
     SELECT @campaignID = Campaign_ID,
            @researchTeamID = ISNULL(CM_Research_Team, 0)
     FROM T_Campaign
-    WHERE Campaign_Num = @campaignNum
+    WHERE Campaign_Num = @campaignName
 
     -- Cannot create an entry that already exists
     --
     If @campaignID <> 0 and @mode = 'add'
-        RAISERROR ('Cannot add: Campaign "%s" already in database', 11, 4, @campaignNum)
+        RAISERROR ('Cannot add: Campaign "%s" already in database', 11, 4, @campaignName)
 
     -- Cannot update a non-existent entry
     --
     If @campaignID = 0 and @mode = 'update'
-        RAISERROR ('Cannot update: Campaign "%s" is not in database', 11, 5, @campaignNum)
+        RAISERROR ('Cannot update: Campaign "%s" is not in database', 11, 5, @campaignName)
 
     ---------------------------------------------------
     -- Resolve data release restriction name to ID
@@ -211,7 +212,7 @@ AS
     If @mode = 'add'
     Begin
         Declare @badCh varchar(128)
-        Set @badCh = dbo.ValidateChars(@campaignNum, '')
+        Set @badCh = dbo.validate_chars(@campaignName, '')
         Set @badCh = REPLACE(@badCh, '[space]', '')
 
         If @badCh <> ''
@@ -304,7 +305,7 @@ AS
     -- Transaction name
     ---------------------------------------------------
     --
-    Declare @transName varchar(32) = 'AddUpdateCampaign'
+    Declare @transName varchar(32) = 'add_update_campaign'
 
     ---------------------------------------------------
     -- Action for add mode
@@ -318,8 +319,8 @@ AS
         -- Create research team
         ---------------------------------------------------
         --
-        EXEC @myError = UpdateResearchTeamForCampaign
-                            @campaignNum,
+        EXEC @myError = update_research_team_for_campaign
+                            @campaignName,
                             @progmgrUsername ,
                             @piUsername,
                             @technicalLead,
@@ -357,8 +358,8 @@ AS
             CM_Fraction_EMSL_Funded,
             CM_EUS_Usage_Type
         ) VALUES (
-            @campaignNum,
-            @projectNum,
+            @campaignName,
+            @projectName,
             @comment,
             @state,
             @description,
@@ -377,7 +378,7 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Insert operation failed: "%s"', 11, 12, @campaignNum )
+            RAISERROR ('Insert operation failed: "%s"', 11, 12, @campaignName )
 
         -- Get the ID of newly created campaign
         Set @campaignID = SCOPE_IDENTITY()
@@ -387,16 +388,16 @@ AS
 
         SELECT @idConfirm = Campaign_ID
         FROM T_Campaign
-        WHERE Campaign_Num = @campaignNum
+        WHERE Campaign_Num = @campaignName
 
         If @campaignID <> IsNull(@idConfirm, @campaignID)
         Begin
             Declare @debugMsg varchar(512)
-            Set @debugMsg = 'Warning: Inconsistent identity values when adding campaign ' + @campaignNum + ': Found ID ' +
+            Set @debugMsg = 'Warning: Inconsistent identity values when adding campaign ' + @campaignName + ': Found ID ' +
                             Cast(@idConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@campaignID as varchar(12))
 
-            exec PostLogEntry 'Error', @debugMsg, 'AddUpdateCampaign'
+            exec post_log_entry 'Error', @debugMsg, 'add_update_campaign'
 
             Set @campaignID = @iDConfirm
         End
@@ -406,12 +407,12 @@ AS
         Set @stateID = 1
         Set @percentEMSLFunded = CONVERT(int, @fractionEMSLFundedToStore * 100)
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 1, @campaignID, @stateID, @callingUser
-            Exec AlterEventLogEntryUser 9, @campaignID, @percentEMSLFunded, @callingUser
-            Exec AlterEventLogEntryUser 10, @campaignID, @dataReleaseRestrictionsID, @callingUser
+            Exec alter_event_log_entry_user 1, @campaignID, @stateID, @callingUser
+            Exec alter_event_log_entry_user 9, @campaignID, @percentEMSLFunded, @callingUser
+            Exec alter_event_log_entry_user 10, @campaignID, @dataReleaseRestrictionsID, @callingUser
         End
 
     End -- add mode
@@ -432,7 +433,7 @@ AS
         --
         UPDATE T_Campaign
         SET
-            CM_Project_Num = @projectNum,
+            CM_Project_Num = @projectName,
             CM_comment = @comment,
             CM_State = @state,
             CM_Description = @description,
@@ -444,19 +445,19 @@ AS
             CM_Data_Release_Restrictions = @dataReleaseRestrictionsID,
             CM_Fraction_EMSL_Funded = @fractionEMSLFundedToStore,
             CM_EUS_Usage_Type = @eusUsageTypeID
-        WHERE Campaign_Num = @campaignNum
+        WHERE Campaign_Num = @campaignName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-            RAISERROR ('Update operation failed: "%s"', 11, 14, @campaignNum)
+            RAISERROR ('Update operation failed: "%s"', 11, 14, @campaignName)
 
         ---------------------------------------------------
         -- Update research team membershipe
         ---------------------------------------------------
         --
-        EXEC @myError = UpdateResearchTeamForCampaign
-                            @campaignNum,
+        EXEC @myError = update_research_team_for_campaign
+                            @campaignName,
                             @progmgrUsername ,
                             @piUsername,
                             @technicalLead,
@@ -477,17 +478,17 @@ AS
 
         Set @percentEMSLFunded = CONVERT(int, @fractionEMSLFundedToStore * 100)
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec AlterEventLogEntryUser 9, @campaignID, @percentEMSLFunded, @callingUser
-            Exec AlterEventLogEntryUser 10, @campaignID, @dataReleaseRestrictionsID, @callingUser
+            Exec alter_event_log_entry_user 9, @campaignID, @percentEMSLFunded, @callingUser
+            Exec alter_event_log_entry_user 10, @campaignID, @dataReleaseRestrictionsID, @callingUser
         End
     End -- update mode
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -496,8 +497,8 @@ AS
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Campaign ' + @campaignNum
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateCampaign'
+            Declare @logMessage varchar(1024) = @message + '; Campaign ' + @campaignName
+            exec post_log_entry 'Error', @logMessage, 'add_update_campaign'
         End
 
     END CATCH
@@ -505,11 +506,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateCampaign] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_campaign] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_campaign] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateCampaign] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_campaign] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateCampaign] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_campaign] TO [Limited_Table_Write] AS [dbo]
 GO

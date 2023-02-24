@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunAssignments] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_assignments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
+CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 /****************************************************
 **
 **  Desc:
@@ -29,27 +29,28 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunAssignments]
 **          08/28/2010 mem - Now auto-switching @newValue to be instrument group instead of instrument name (when @mode = 'instrument')
 **                         - Now validating dataset type for instrument using T_Instrument_Group_Allowed_DS_Type
 **                         - Added try-catch for error handling
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          12/12/2011 mem - Added parameter @callingUser, which is passed to DeleteRequestedRun
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          12/12/2011 mem - Added parameter @callingUser, which is passed to delete_requested_run
 **          06/26/2013 mem - Added mode 'instrumentIgnoreType' (doesn't validate dataset type when changing the instrument group)
 **                         - Added mode 'datasetType'
 **          07/24/2013 mem - Added mode 'separationGroup'
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
+**          03/22/2016 mem - Now passing @skipDatasetCheck to delete_requested_run
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/31/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/13/2017 mem - Do not log an error when a requested run cannot be deleted because it is associated with a dataset
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/01/2019 mem - Change argument @reqRunIDList from varchar(2048) to varchar(max)
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          10/20/2020 mem - Rename mode 'instrument' to 'instrumentGroup'
 **                         - Rename mode 'instrumentIgnoreType' to 'instrumentGroupIgnoreType'
 **                         - Add mode 'assignedInstrument'
-**          02/04/2021 mem - Provide a delimiter when calling GetInstrumentGroupDatasetTypeList
-**          01/13/2023 mem - Refactor instrument group validation code into ValidateInstrumentGroupForRequestedRuns
+**          02/04/2021 mem - Provide a delimiter when calling get_instrument_group_dataset_type_list
+**          01/13/2023 mem - Refactor instrument group validation code into validate_instrument_group_for_requested_runs
 **                         - Validate the instrument group for modes 'instrumentGroup' and 'assignedInstrument'
 **          01/15/2023 mem - Fix variable usage typo
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunAssignments', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_requested_run_assignments', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -101,7 +102,7 @@ AS
         -- Uncomment to log the values of the procedure arguments in T_Log_Entries
         --
         -- Set @msg = 'Procedure called with @mode=' + Coalesce(@mode, '??') + ', @newValue=' + Coalesce(@newValue, '??') + ', @reqRunIDList=' + Coalesce(@reqRunIDList, '??')
-        -- exec PostLogEntry 'Debug', @msg, 'UpdateRequestedRunAssignments'
+        -- exec post_log_entry 'Debug', @msg, 'update_requested_run_assignments'
 
         ---------------------------------------------------
         -- Validate the inputs
@@ -121,7 +122,7 @@ AS
 
         INSERT INTO #Tmp_RequestIDs (RequestID)
         SELECT Convert(int, Item)
-        FROM MakeTableFromList(@reqRunIDList)
+        FROM make_table_from_list(@reqRunIDList)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -189,7 +190,7 @@ AS
                 -- is appropriate for instrument group @newInstrumentGroup
                 ---------------------------------------------------
 
-                Exec ValidateInstrumentGroupForRequestedRuns @reqRunIDList, @newInstrumentGroup, @message = @message output, @returnCode = @returnCode output
+                Exec validate_instrument_group_for_requested_runs @reqRunIDList, @newInstrumentGroup, @message = @message output, @returnCode = @returnCode output
 
                 If @returnCode <> ''
                 Begin
@@ -235,7 +236,7 @@ AS
                 -- is appropriate for instrument group @newInstrumentGroup
                 ---------------------------------------------------
 
-                Exec ValidateInstrumentGroupForRequestedRuns @reqRunIDList, @newInstrumentGroup, @message = @message output, @returnCode = @returnCode output
+                Exec validate_instrument_group_for_requested_runs @reqRunIDList, @newInstrumentGroup, @message = @message output, @returnCode = @returnCode output
 
                 If @returnCode <> ''
                 Begin
@@ -390,7 +391,7 @@ AS
 
                 If @myRowCount > 0
                 Begin
-                    Set @message = @message + '; skipped ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'request', 'requests') + ' since not Active'
+                    Set @message = @message + '; skipped ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests') + ' since not Active'
                 End
             End
         End
@@ -450,7 +451,7 @@ AS
                     Set @continue = 0
                 Else
                 Begin -- <c>
-                    exec @myError = DeleteRequestedRun
+                    exec @myError = delete_requested_run
                                         @requestID,
                                         @skipDatasetCheck=0,
                                         @message=@message OUTPUT,
@@ -485,7 +486,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -500,7 +501,7 @@ AS
             Else
                 Set @msg = @msg + Substring(@reqRunIDList, 1, 128) + ' ...'
 
-            exec PostLogEntry 'Error', @msg, 'UpdateRequestedRunAssignments'
+            exec post_log_entry 'Error', @msg, 'update_requested_run_assignments'
         End
 
     END CATCH
@@ -515,7 +516,7 @@ AS
     If @requestCount <> 1
         Set @usageMessage = @usageMessage + 's'
 
-    Exec PostUsageLogEntry 'UpdateRequestedRunAssignments', @usageMessage
+    Exec post_usage_log_entry 'update_requested_run_assignments', @usageMessage
 
     If @returnCode <> ''
     Begin
@@ -526,15 +527,15 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_assignments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_assignments] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS_RunScheduler] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_assignments] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_assignments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_assignments] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_assignments] TO [Limited_Table_Write] AS [dbo]
 GO

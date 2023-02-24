@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddDatasetsToPredefinedSchedulingQueue] ******/
+/****** Object:  StoredProcedure [dbo].[add_datasets_to_predefined_scheduling_queue] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddDatasetsToPredefinedSchedulingQueue]
+CREATE PROCEDURE [dbo].[add_datasets_to_predefined_scheduling_queue]
 /****************************************************
 **
 **  Desc:   Adds datasets to T_Predefined_Analysis_Scheduling_Queue
@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[AddDatasetsToPredefinedSchedulingQueue]
 **
 **  Auth:   mem
 **  Date:   03/31/2016 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetIDs varchar(4000) = '',         -- List of dataset IDs (comma, tab, or newline separated)
-    @InfoOnly tinyint = 0,
+    @datasetIDs varchar(4000) = '',         -- List of dataset IDs (comma, tab, or newline separated)
+    @infoOnly tinyint = 0,
     @callingUser varchar(128) = ''
 )
 AS
@@ -55,7 +56,7 @@ AS
 
     INSERT INTO #Tmp_DatasetsToProcess (Dataset_ID, IsValid, AlreadyWaiting)
     SELECT DISTINCT Value, 0, 0
-    FROM dbo.udfParseDelimitedIntegerList(@DatasetIDs, ',')
+    FROM dbo.parse_delimited_integer_list(@DatasetIDs, ',')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -146,5 +147,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddDatasetsToPredefinedSchedulingQueue] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_datasets_to_predefined_scheduling_queue] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveEventLogEntries] ******/
+/****** Object:  StoredProcedure [dbo].[move_event_log_entries] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MoveEventLogEntries]
+CREATE PROCEDURE [dbo].[move_event_log_entries]
 /****************************************************
 **
 **  Desc:   Move log entries from event log into the historic log (insert and then delete)
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[MoveEventLogEntries]
 **          10/04/2011 mem - Removed @DBName parameter
 **          07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
 **          06/08/2022 mem - Rename column Index to Event_ID
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -37,7 +38,7 @@ AS
 
     -- Start transaction
     --
-    Declare @transName varchar(64) = 'TRAN_MoveEventLogEntries'
+    Declare @transName varchar(64) = 'TRAN_move_event_log_entries'
 
     begin transaction @transName
 
@@ -87,7 +88,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveEventLogEntries] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_event_log_entries] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveEventLogEntries] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_event_log_entries] TO [Limited_Table_Write] AS [dbo]
 GO

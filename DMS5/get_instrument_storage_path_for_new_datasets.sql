@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetInstrumentStoragePathForNewDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[get_instrument_storage_path_for_new_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetInstrumentStoragePathForNewDatasets]
+CREATE PROCEDURE [dbo].[get_instrument_storage_path_for_new_datasets]
 /****************************************************
 **
 **  Desc:
@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[GetInstrumentStoragePathForNewDatasets]
 **      T_Instrument_Name, then will auto-define the storage path
 **      based on the current year and quarter
 **
-**      If necessary, will call AddUpdateStorage to auto-create an entry in T_Storage_Path
+**      If necessary, will call add_update_storage to auto-create an entry in T_Storage_Path
 **
 **  Returns: The storage path ID; 0 if an error
 **
@@ -22,13 +22,14 @@ CREATE PROCEDURE [dbo].[GetInstrumentStoragePathForNewDatasets]
 **  Date:   05/11/2011 mem - Initial Version
 **          05/12/2011 mem - Added @RefDate and @autoSwitchActiveStorage
 **          02/23/2016 mem - Add Set XACT_ABORT on
-**          10/27/2020 mem - Pass Auto_SP_URL_Domain to AddUpdateStorage
-**          12/17/2020 mem - Rollback any open transactions before calling LocalErrorHandler
+**          10/27/2020 mem - Pass Auto_SP_URL_Domain to add_update_storage
+**          12/17/2020 mem - Rollback any open transactions before calling local_error_handler
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InstrumentID int,
-    @RefDate datetime = null,
+    @instrumentID int,
+    @refDate datetime = null,
     @autoSwitchActiveStorage tinyint = 1,
     @infoOnly tinyint = 0
 )
@@ -101,7 +102,7 @@ AS
                 Set @message = 'One or more Auto_SP fields are empty or null for instrument ' + @InstrumentName + '; unable to auto-define the storage path'
 
                 If @infoOnly = 0
-                    exec PostLogEntry 'Error', @message, 'GetInstrumentStoragePathForNewDatasets'
+                    exec post_log_entry 'Error', @message, 'get_instrument_storage_path_for_new_datasets'
                 Else
                     print @message
             End
@@ -148,7 +149,7 @@ AS
                         Print 'Auto-defined storage path "' + @StoragePathName + '" not found T_Storage_Path; need to add it'
                     Else
                     Begin
-                        Set @CurrentLocation = 'Call AddUpdateStorage to add ' + @StoragePathName
+                        Set @CurrentLocation = 'Call add_update_storage to add ' + @StoragePathName
 
                         Declare @StorageFunction varchar(24)
 
@@ -157,7 +158,7 @@ AS
                         Else
                             Set @StorageFunction = 'raw-storage'
 
-                        Exec AddUpdateStorage @StoragePathName,
+                        Exec add_update_storage @StoragePathName,
                                               @autoSPVolNameClient,
                                               @autoSPVolNameServer,
                                               @storFunction=@StorageFunction,
@@ -188,8 +189,8 @@ AS
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'GetInstrumentStoragePathForNewDatasets')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'get_instrument_storage_path_for_new_datasets')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                             @ErrorNum = @myError output, @message = @message output
 
     End catch
@@ -203,7 +204,7 @@ AS
     return @StoragePathID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentStoragePathForNewDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_storage_path_for_new_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetInstrumentStoragePathForNewDatasets] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_instrument_storage_path_for_new_datasets] TO [svc-dms] AS [dbo]
 GO

@@ -12,14 +12,15 @@ CREATE PROCEDURE [dbo].[predefined_analysis_jobs_proc]
 **
 **  Auth:   mem
 **  Date:   11/08/2022 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasetName varchar(128),
     @message varchar(512) = '' output,
-    @ExcludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
-    @CreateJobsForUnreviewedDatasets Tinyint = 1,   -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
-    @AnalysisToolNameFilter varchar(128) = ''       -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
+    @excludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
+    @createJobsForUnreviewedDatasets Tinyint = 1,   -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
+    @analysisToolNameFilter varchar(128) = ''       -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
 )
 AS
     Set nocount on
@@ -33,7 +34,7 @@ AS
     Set @CreateJobsForUnreviewedDatasets = IsNull(@CreateJobsForUnreviewedDatasets, 1)
     Set @AnalysisToolNameFilter = IsNull(@AnalysisToolNameFilter, '')
 
-    Exec @myError = EvaluatePredefinedAnalysisRules
+    Exec @myError = evaluate_predefined_analysis_rules
                         @datasetName,
                         'Show Jobs',
                         @message = @message Output,

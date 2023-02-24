@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetBatchGroupRequestedRunList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_batch_group_requested_run_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetBatchGroupRequestedRunList]
+CREATE FUNCTION [dbo].[get_batch_group_requested_run_list]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE FUNCTION [dbo].[GetBatchGroupRequestedRunList]
 **
 **  Auth:   mem
 **  Date:   02/09/2023 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -37,5 +38,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetBatchGroupRequestedRunList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_batch_group_requested_run_list] TO [DDL_Viewer] AS [dbo]
 GO

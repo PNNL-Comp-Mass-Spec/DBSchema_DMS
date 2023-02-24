@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetFASTAFilePath] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_fasta_file_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetFASTAFilePath]
+CREATE FUNCTION [dbo].[get_fasta_file_path]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE FUNCTION [dbo].[GetFASTAFilePath]
 **  Date:   01/23/2007
 **          09/06/2007 mem - Updated to reflect Protein_Sequences DB move to server ProteinSeqs (Ticket #531)
 **          09/11/2015 mem - Now using synonym S_ProteinSeqs_T_Archived_Output_Files
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -66,7 +67,7 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFASTAFilePath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_fasta_file_path] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFASTAFilePath] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_fasta_file_path] TO [public] AS [dbo]
 GO

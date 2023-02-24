@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PopulateParamFileModInfoTable] ******/
+/****** Object:  StoredProcedure [dbo].[populate_param_file_mod_info_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PopulateParamFileModInfoTable]
+CREATE PROCEDURE [dbo].[populate_param_file_mod_info_table]
 /****************************************************
 **
 **  Desc:   Populates temporary table #TmpParamFileModResults
@@ -17,16 +17,17 @@ CREATE PROCEDURE [dbo].[PopulateParamFileModInfoTable]
 **  Date:   12/08/2006 mem - Initial version (Ticket #342)
 **          04/07/2008 mem - Added parameters @MassModFilterTextColumn, @MassModFilterText, and @MassModFilterSql
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ShowModSymbol tinyint = 1,                        -- Set to 1 to display the modification symbol
-    @ShowModName tinyint = 1,                        -- Set to 1 to display the modification name
-    @ShowModMass tinyint = 0,                        -- Set to 1 to display the modification mass
-    @UseModMassAlternativeName tinyint = 0,
-    @MassModFilterTextColumn varchar(64) = '',        -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
-    @MassModFilterText varchar(64) = '',            -- If text is defined here, then @MassModFilterSql will be populated with SQL to filter the results to only show rows that contain this text in one of the mass mod columns
-    @MassModFilterSql varchar(4000) = ''output,
+    @showModSymbol tinyint = 1,                        -- Set to 1 to display the modification symbol
+    @showModName tinyint = 1,                        -- Set to 1 to display the modification name
+    @showModMass tinyint = 0,                        -- Set to 1 to display the modification mass
+    @useModMassAlternativeName tinyint = 0,
+    @massModFilterTextColumn varchar(64) = '',        -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
+    @massModFilterText varchar(64) = '',            -- If text is defined here, then @MassModFilterSql will be populated with SQL to filter the results to only show rows that contain this text in one of the mass mod columns
+    @massModFilterSql varchar(4000) = ''output,
     @message varchar(512) = '' output
 )
 AS
@@ -315,7 +316,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PopulateParamFileModInfoTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[populate_param_file_mod_info_table] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[PopulateParamFileModInfoTable] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[populate_param_file_mod_info_table] TO [Limited_Table_Write] AS [dbo]
 GO

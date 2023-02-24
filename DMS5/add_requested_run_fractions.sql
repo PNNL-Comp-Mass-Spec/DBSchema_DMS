@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddRequestedRunFractions] ******/
+/****** Object:  StoredProcedure [dbo].[add_requested_run_fractions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
+CREATE PROCEDURE [dbo].[add_requested_run_fractions]
 /****************************************************
 **
 **  Desc:   Adds requested runs based on a parent requested run that has separation group LC-NanoHpH-6, LC-NanoSCX-6, or similar
@@ -14,28 +14,29 @@ CREATE PROCEDURE [dbo].[AddRequestedRunFractions]
 **  Date:   10/22/2020 mem - Initial Version
 **          10/23/2020 mem - Set the Origin of the new requested runs to "Fraction"
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          02/25/2021 mem - Use ReplaceCharacterCodes to replace character codes with punctuation marks
-**                         - Use RemoveCrLf to replace linefeeds with semicolons
-**          05/25/2021 mem - Append new messages to @message (including from LookupEUSFromExperimentSamplePrep)
+**          02/25/2021 mem - Use replace_character_codes to replace character codes with punctuation marks
+**                         - Use remove_cr_lf to replace linefeeds with semicolons
+**          05/25/2021 mem - Append new messages to @message (including from lookup_eus_from_experiment_sample_prep)
 **                         - Expand @message to varchar(1024)
-**          05/27/2021 mem - Specify @samplePrepRequest, @experimentID, @campaignID, and @addingItem when calling ValidateEUSUsage
+**          05/27/2021 mem - Specify @samplePrepRequest, @experimentID, @campaignID, and @addingItem when calling validate_eus_usage
 **          06/01/2021 mem - Add newly created requested run fractions to the parent request's batch (which will be 0 if not in a batch)
 **                         - Raise an error if @mode is invalid
 **          10/13/2021 mem - Append EUS User ID list to warning message
-**                         - Do not call PostLogEntry where @mode is 'preview'
+**                         - Do not call post_log_entry where @mode is 'preview'
 **          10/22/2021 mem - Use a new instrument group for the new requested runs
 **          11/15/2021 mem - If the the instrument group for the source request is the target instrument group instead of a fraction based group, auto update the source instrument group
 **          01/15/2022 mem - Copy date created from the parent requested run to new requested runs, allowing Days in Queue on the list report to be based on the parent requested run's creation date
 **          02/17/2022 mem - Update requestor username warning
 **          05/23/2022 mem - Rename requester username argument and update username warning
-**          10/13/2022 mem - Fix bug calling LookupEUSFromExperimentSamplePrep
-**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**          10/13/2022 mem - Fix bug calling lookup_eus_from_experiment_sample_prep
+**          02/10/2023 mem - Call update_cached_requested_run_batch_stats
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @sourceRequestID int,
     @separationGroup varchar(64) = 'LC-Formic_2hr',
-    @requesterPRN varchar(80),                      -- Supports either just the username, or 'LastName, FirstName (Username)'
+    @requesterUsername varchar(80),                 -- Supports either just the username, or 'LastName, FirstName (Username)'
     @instrumentSettings varchar(512) = 'na',
     @stagingLocation varchar(64) = null,
     @wellplateName varchar(64) = '',                -- If (lookup), will look for a wellplate defined in T_Experiments
@@ -110,7 +111,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddRequestedRunFractions', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_requested_run_fractions', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -125,13 +126,13 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Validate input fields'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     If IsNull(@sourceRequestID, 0) = 0
         RAISERROR ('Source request ID not provided', 11, 110)
     --
-    If IsNull(@requesterPRN, '') = ''
+    If IsNull(@requesterUsername, '') = ''
         RAISERROR ('Requester username was blank', 11, 113)
     --
     If IsNull(@separationGroup, '') = ''
@@ -148,10 +149,10 @@ AS
     End
 
     -- Assure that @comment is not null and assure that it doesn't have &quot; or &#34; or &amp;
-    Set @comment = dbo.ReplaceCharacterCodes(@comment)
+    Set @comment = dbo.replace_character_codes(@comment)
 
     -- Replace instances of CRLF (or LF) with semicolons
-    Set @comment = dbo.RemoveCrLf(@comment)
+    Set @comment = dbo.remove_cr_lf(@comment)
 
     If IsNull(@wellplateName, '') IN ('', 'na')
         Set @wellplateName = null
@@ -194,7 +195,7 @@ AS
         RAISERROR ('Source request ID not found: %d', 11, 117, @sourceRequestID)
     End
 
-    Declare @badCh varchar(128) = dbo.ValidateChars(@sourceRequestName, '')
+    Declare @badCh varchar(128) = dbo.validate_chars(@sourceRequestName, '')
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -266,45 +267,45 @@ AS
         RAISERROR ('Could not find entry in database for experiment ID %d', 11, 18, @experimentID)
 
     ---------------------------------------------------
-    -- Verify user ID for operator PRN
+    -- Verify user ID for operator username
     ---------------------------------------------------
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call GetUserID for ' + @requesterPRN
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        Set @debugMsg = 'Call get_user_id for ' + @requesterUsername
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     Declare @userID int
-    execute @userID = GetUserID @requesterPRN
+    execute @userID = get_user_id @requesterUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-        -- Assure that @requesterPRN contains simply the username
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- Assure that @requesterUsername contains simply the username
         --
-        SELECT @requesterPRN = U_PRN
+        SELECT @requesterUsername = U_PRN
         FROM T_Users
         WHERE ID = @userID
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @requesterPRN
+        -- Could not find entry in database for username @requesterUsername
         -- Try to auto-resolve the name
 
         Declare @matchCount int
-        Declare @newPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @requesterPRN, @matchCount output, @newPRN output, @userID output
+        exec auto_resolve_name_to_username @requesterUsername, @matchCount output, @newUsername output, @userID output
 
         If @matchCount = 1
         Begin
-            -- Single match found; update @requesterPRN
-            Set @requesterPRN = @newPRN
+            -- Single match found; update @requesterUsername
+            Set @requesterUsername = @newUsername
         End
         Else
         Begin
-            RAISERROR ('Could not find entry in database for requester username"%s"', 11, 19, @requesterPRN)
+            RAISERROR ('Could not find entry in database for requester username"%s"', 11, 19, @requesterUsername)
             return 51019
         End
     End
@@ -356,19 +357,19 @@ AS
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'ValidateInstrumentGroupAndDatasetType for ' + @msType
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        Set @debugMsg = 'validate_instrument_group_and_dataset_type for ' + @msType
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     Declare @datasetTypeID int
     --
-    exec @myError = ValidateInstrumentGroupAndDatasetType
+    exec @myError = validate_instrument_group_and_dataset_type
                             @msType,
                             @targetInstrumentGroup output,
                             @datasetTypeID output,
                             @msg output
     If @myError <> 0
-        RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
+        RAISERROR ('validate_instrument_group_and_dataset_type: %s', 11, 1, @msg)
 
     ---------------------------------------------------
     -- Examine the fraction count of the source separation group
@@ -377,7 +378,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Examine fraction counts of source and target separation groups: ' + @sourceSeparationGroup + ' and ' + @separationGroup
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     SELECT @fractionCount = Fraction_Count
@@ -441,10 +442,10 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Lookup EUS info for: ' + @experimentName
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
     --
-    exec @myError = LookupEUSFromExperimentSamplePrep
+    exec @myError = lookup_eus_from_experiment_sample_prep
                         @experimentName,
                         @eusUsageType output,
                         @eusProposalID output,
@@ -452,11 +453,11 @@ AS
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('LookupEUSFromExperimentSamplePrep: %s', 11, 1, @msg)
+        RAISERROR ('lookup_eus_from_experiment_sample_prep: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
     Begin
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
     End
 
     ---------------------------------------------------
@@ -465,16 +466,16 @@ AS
 
     If @logDebugMessages > 0
     Begin
-        Set @debugMsg = 'Call ValidateEUSUsage with ' +
+        Set @debugMsg = 'Call validate_eus_usage with ' +
             'type ' + IsNull(@eusUsageType, '?Null?') + ', ' +
             'proposal ' + IsNull(@eusProposalID, '?Null?') + ', and ' +
             'user list ' + IsNull(@eusUserID, '?Null?')
 
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     -- Note that if @eusUserID contains a list of names in the form "Baker, Erin (41136)",
-    -- ValidateEUSUsage will change this into a list of EUS user IDs (integers)
+    -- validate_eus_usage will change this into a list of EUS user IDs (integers)
 
     If Len(@eusUserID) = 0 And @autoPopulateUserListIfBlank > 0
     Begin
@@ -489,7 +490,7 @@ AS
         Set @addingItem = 1
     End
 
-    exec @myError = ValidateEUSUsage
+    exec @myError = validate_eus_usage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUserID output,
@@ -502,21 +503,21 @@ AS
                         @addingItem = @addingItem
 
     If @myError <> 0
-        RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+        RAISERROR ('validate_eus_usage: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
     Begin
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
     End
 
     Declare @commaPosition Int = CharIndex(',', @eusUserID)
     If @commaPosition > 1
     Begin
         Set @msg = 'Requested runs can only have a single EUS user associated with them; current list: ' + @eusUserID
-        Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@msg, @message, 0, '; ', 1024)
 
         If @raiseErrorOnMultipleEUSUsers > 0
-            RAISERROR ('ValidateEUSUsage: %s', 11, 1, @message)
+            RAISERROR ('validate_eus_usage: %s', 11, 1, @message)
 
         -- Only keep the first user
         Set @eusUserID = Left(@eusUserID, @commaPosition - 1)
@@ -529,16 +530,16 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Lookup misc fields for the experiment'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
-    exec @myError = LookupOtherFromExperimentSamplePrep
+    exec @myError = lookup_other_from_experiment_sample_prep
                         @experimentName,
                         @workPackage output,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('LookupOtherFromExperimentSamplePrep: %s', 11, 1, @msg)
+        RAISERROR ('lookup_other_from_experiment_sample_prep: %s', 11, 1, @msg)
 
     ---------------------------------------------------
     -- Resolve staging location name to location ID
@@ -569,7 +570,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Validate the WP'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     Declare @allowNoneWP tinyint = @autoPopulateUserListIfBlank
@@ -584,13 +585,13 @@ AS
         Set @allowNoneWP = 1
     End
 
-    exec @myError = ValidateWP
+    exec @myError = validate_wp
                         @workPackage,
                         @allowNoneWP,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+        RAISERROR ('validate_wp: %s', 11, 1, @msg)
 
     -- Make sure the Work Package is capitalized properly
     --
@@ -602,13 +603,13 @@ AS
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Deactivated = 'Y')
         Begin
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackage + ' is deactivated', 0, '; ', 1024)
         End
         Else
         Begin
             If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackage And Charge_Code_State = 0)
             Begin
-                Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
+                Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackage + ' is likely deactivated', 0, '; ', 1024)
             End
         End
     End
@@ -622,13 +623,13 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Start a new transaction'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
 
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Check for name conflicts'
-        exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+        exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
     End
     ---------------------------------------------------
     -- Make sure none of the new requested runs will conflict with an existing requested run
@@ -672,7 +673,7 @@ AS
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Create preview message'
-            exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+            exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
         End
 
         SELECT TOP 1 @firstRequest = Request_Name
@@ -685,7 +686,7 @@ AS
 
         Set @msg = 'Would create ' + CAST(@fractionCount as varchar(12)) + ' requested runs named ' + @firstRequest + ' ... ' + @lastRequest +
                    ' with instrument group ' + @targetInstrumentGroup + ' and separation group ' + @separationGroup
-        Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@msg, @message, 0, '; ', 1024)
     End
 
     ---------------------------------------------------
@@ -698,7 +699,7 @@ AS
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Start a new transaction'
-            exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+            exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
         End
 
         -- Start transaction
@@ -750,7 +751,7 @@ AS
                 Location_Id
             ) VALUES (
                 @requestName,
-                @requesterPRN,
+                @requesterUsername,
                 @comment,
                 @sourceCreated,
                 @targetInstrumentGroup,
@@ -785,28 +786,28 @@ AS
             SET Request_ID = @requestID
             WHERE Request_Name = @requestName
 
-            -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+            -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
             If Len(@callingUser) > 0
             Begin
-                Exec AlterEventLogEntryUser 11, @requestID, @statusID, @callingUser
+                Exec alter_event_log_entry_user 11, @requestID, @statusID, @callingUser
             End
 
             If @logDebugMessages > 0
             Begin
-                Set @debugMsg = 'Call AssignEUSUsersToRequestedRun'
-                exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+                Set @debugMsg = 'Call assign_eus_users_to_requested_run'
+                exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
             End
 
             -- Assign users to the request
             --
-            exec @myError = AssignEUSUsersToRequestedRun
+            exec @myError = assign_eus_users_to_requested_run
                                     @requestID,
                                     @eusProposalID,
                                     @eusUserID,
                                     @msg output
             --
             If @myError <> 0
-                RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 19, @msg)
+                RAISERROR ('assign_eus_users_to_requested_run: %s', 11, 19, @msg)
 
             -- Append the new request ID to @requestIdList
             --
@@ -832,13 +833,13 @@ AS
         Else
         Begin
             Set @debugMsg = '@@trancount is 0; this is unexpected'
-            exec PostLogEntry 'Error', @debugMsg, 'AddRequestedRunFractions'
+            exec post_log_entry 'Error', @debugMsg, 'add_requested_run_fractions'
         End
 
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Transaction committed'
-            exec PostLogEntry 'Debug', @debugMsg, 'AddRequestedRunFractions'
+            exec post_log_entry 'Debug', @debugMsg, 'add_requested_run_fractions'
         End
 
         ---------------------------------------------------
@@ -863,7 +864,7 @@ AS
             End
             Else
             Begin
-                exec UpdateCachedRequestedRunEUSUsers @requestID
+                exec update_cached_requested_run_eus_users @requestID
             End
         End
 
@@ -873,19 +874,19 @@ AS
 
         If @sourceRequestBatchID > 0
         Begin
-            Exec UpdateCachedRequestedRunBatchStats @sourceRequestBatchID
+            Exec update_cached_requested_run_batch_stats @sourceRequestBatchID
         End
 
         Set @msg = 'Created new requested runs based on source request ' + CAST(@sourceRequestID as varchar(12)) + ', creating: ' + @requestIdList
-        Set @message = dbo.AppendToText(@msg, @message, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@msg, @message, 0, '; ', 1024)
 
-        EXEC PostLogEntry 'Normal', @message, 'AddRequestedRunFractions'
+        EXEC post_log_entry 'Normal', @message, 'add_requested_run_fractions'
 
     End -- </add>
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -894,7 +895,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1500) = @message + '; Source Request ID ' + CAST(@sourceRequestID as varchar(12))
-            exec PostLogEntry 'Error', @logMessage, 'AddRequestedRunFractions'
+            exec post_log_entry 'Error', @logMessage, 'add_requested_run_fractions'
         End
 
     END CATCH
@@ -902,11 +903,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunFractions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_requested_run_fractions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRunFractions] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_requested_run_fractions] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRunFractions] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_requested_run_fractions] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRunFractions] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_requested_run_fractions] TO [Limited_Table_Write] AS [dbo]
 GO

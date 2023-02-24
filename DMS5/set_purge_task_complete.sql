@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[SetPurgeTaskComplete] ******/
+/****** Object:  StoredProcedure [dbo].[set_purge_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SetPurgeTaskComplete]
+CREATE PROCEDURE [dbo].[set_purge_task_complete]
 /****************************************************
 **
-**  Desc:   Sets archive state of dataset record given by @datasetNum
+**  Desc:   Sets archive state of dataset record given by @datasetName
 **          according to given completion code
 **
 **  Auth:   grk
@@ -17,25 +17,26 @@ CREATE PROCEDURE [dbo].[SetPurgeTaskComplete]
 **          01/28/2011 mem - Changed holdoff bump from 12 to 24 hours when @completionCode = 2
 **          02/01/2011 mem - Added support for @completionCode 3
 **          09/02/2011 mem - Now updating AJ_Purged for jobs associated with this dataset
-**                         - Now calling PostUsageLogEntry
+**                         - Now calling post_usage_log_entry
 **          01/27/2012 mem - Now bumping AS_purge_holdoff_date by 90 minutes when @completionCode = 3
 **          04/17/2012 mem - Added support for @completionCode = 4 (drive missing)
 **          06/12/2012 mem - Added support for @completionCode = 5 and @completionCode = 6  (corresponding to Archive States 14 and 15)
 **          06/15/2012 mem - No longer changing the purge holdoff date if @completionCode = 4 (drive missing)
-**          08/13/2013 mem - Now using explicit parameter names when calling S_MakeNewArchiveUpdateJob
+**          08/13/2013 mem - Now using explicit parameter names when calling s_make_new_archive_update_job
 **          08/15/2013 mem - Added support for @completionCode = 7 (dataset folder missing in archive)
 **          08/26/2013 mem - Now mentioning "permissions error" when @completionCode = 7
 **          03/21/2014 mem - Tweaked log message for @completionCode = 7
 **          07/05/2016 mem - Added support for @completionCode = 8 (Aurora is offline)
 **                         - Archive path is now aurora.emsl.pnl.gov
 **          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
-**          11/09/2016 mem - Include the storage server name when calling PostLogEntry
+**          11/09/2016 mem - Include the storage server name when calling post_log_entry
 **          07/11/2017 mem - Add support for @completionCode = 9 (Previewed purge)
 **          09/09/2022 mem - Use new argument names when calling MakeNewArchiveUpdateJob
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @completionCode int = 0,    -- 0 = success, 1 = Purge Failed, 2 = Archive Update required, 3 = Stage MD5 file required, 4 = Drive Missing, 5 = Purged Instrument Data (and any other auto-purge items), 6 = Purged all data except QC folder, 7 = Dataset folder missing in archive, 8 = Archive offline, 9 = Preview purge
     @message varchar(512) output
 )
@@ -64,13 +65,13 @@ AS
     FROM T_Dataset DS
          LEFT OUTER JOIN T_Storage_Path SPath
            ON DS.DS_storage_path_ID = SPath.SP_path_ID
-    WHERE (DS.Dataset_Num = @datasetNum)
+    WHERE (DS.Dataset_Num = @datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
-        set @message = 'Could not get dataset ID for dataset ' + @datasetNum
+        set @message = 'Could not get dataset ID for dataset ' + @datasetName
         goto done
     end
 
@@ -94,14 +95,14 @@ AS
     --
     if @myError <> 0
     begin
-        set @message = 'Could not get current archive state for dataset ' + @datasetNum
+        set @message = 'Could not get current archive state for dataset ' + @datasetName
         goto done
     end
 
     if @currentState <> 7
     begin
         set @myError = 1
-        set @message = 'Current archive state incorrect for dataset ' + @datasetNum
+        set @message = 'Current archive state incorrect for dataset ' + @datasetName
         goto done
     end
 
@@ -163,7 +164,7 @@ Code 6 (Purged all data except QC folder)
     begin
         set @completionState = 3    -- complete
         set @currentUpdateState = 2 -- Update Required
-        EXEC S_MakeNewArchiveUpdateJob @datasetNum, @resultsDirectoryName='', @allowBlankResultsDirectory=1, @PushDatasetToMyEMSL=0, @message=@message output
+        EXEC s_make_new_archive_update_job @datasetName, @resultsDirectoryName='', @allowBlankResultsDirectory=1, @PushDatasetToMyEMSL=0, @message=@message output
         goto SetStates
     end
 
@@ -177,13 +178,13 @@ Code 6 (Purged all data except QC folder)
     If IsNull(@storageServerName, '') = ''
         Set @storageServerName = '??'
 
-    Declare @postedBy varchar(128) = 'SetPurgeTaskComplete: ' + @storageServerName
+    Declare @postedBy varchar(128) = 'set_purge_task_complete: ' + @storageServerName
 
     -- (Drive Missing)
     if @completionCode = 4
     begin
-        set @message = 'Drive not found for dataset ' + @datasetNum
-        Exec PostLogEntry 'Error', @message, @postedBy
+        set @message = 'Drive not found for dataset ' + @datasetName
+        Exec post_log_entry 'Error', @message, @postedBy
         set @message = ''
 
         set @completionState = 3    -- complete
@@ -207,8 +208,8 @@ Code 6 (Purged all data except QC folder)
     -- (Dataset folder missing in archive, either in MyEMSL or at \\adms.emsl.pnl.gov\dmsarch)
     if @completionCode = 7
     begin
-        set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetNum
-        Exec PostLogEntry 'Error', @message, @postedBy
+        set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetName
+        Exec post_log_entry 'Error', @message, @postedBy
         set @message = ''
 
         set @completionState = 3    -- complete
@@ -218,8 +219,8 @@ Code 6 (Purged all data except QC folder)
     -- (Archive is offline (Aurora is offline): \\adms.emsl.pnl.gov\dmsarch)
     if @completionCode = 8
     begin
-        set @message = 'Archive is offline; cannot purge dataset ' + @datasetNum
-        Exec PostLogEntry 'Error', @message, @postedBy
+        set @message = 'Archive is offline; cannot purge dataset ' + @datasetName
+        Exec post_log_entry 'Error', @message, @postedBy
         set @message = ''
 
         set @completionState = 3    -- complete
@@ -315,8 +316,8 @@ Done:
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'Dataset: ' + @datasetNum
-    Exec PostUsageLogEntry 'SetPurgeTaskComplete', @UsageMessage
+    Set @UsageMessage = 'Dataset: ' + @datasetName
+    Exec post_usage_log_entry 'set_purge_task_complete', @UsageMessage
 
     if @message <> ''
     begin
@@ -326,15 +327,15 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_purge_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_purge_task_complete] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_purge_task_complete] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_purge_task_complete] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetPurgeTaskComplete] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_purge_task_complete] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetPurgeTaskComplete] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_purge_task_complete] TO [svc-dms] AS [dbo]
 GO

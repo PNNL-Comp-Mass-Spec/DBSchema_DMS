@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindDuplicateParamFiles] ******/
+/****** Object:  StoredProcedure [dbo].[find_duplicate_param_files] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindDuplicateParamFiles]
+CREATE PROCEDURE [dbo].[find_duplicate_param_files]
 /****************************************************
 **
 **  Desc:
@@ -14,15 +14,16 @@ CREATE PROCEDURE [dbo].[FindDuplicateParamFiles]
 **  Date:   05/15/2008 mem - Initial version (Ticket:671)
 **          07/11/2014 mem - Optimized execution speed by adding #Tmp_MassModCounts
 **                         - Updated default value for @ParamFileTypeList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ParamFileNameFilter varchar(256) = '',                 -- One or more param file name specifiers, separated by commas (filters can contain % wildcards)
-    @ParamFileTypeList varchar(64) = 'MSGFDB',              -- Other options are Sequest or XTandem
-    @IgnoreParentMassType tinyint = 1,                      -- Ignores 'ParentMassType' differences in T_Param_Entries
-    @ConsiderInsignificantParameters tinyint = 0,
-    @CheckValidOnly tinyint = 1,
-    @MaxFilesToTest int = 0,
+    @paramFileNameFilter varchar(256) = '',                 -- One or more param file name specifiers, separated by commas (filters can contain % wildcards)
+    @paramFileTypeList varchar(64) = 'MSGFDB',              -- Other options are Sequest or XTandem
+    @ignoreParentMassType tinyint = 1,                      -- Ignores 'ParentMassType' differences in T_Param_Entries
+    @considerInsignificantParameters tinyint = 0,
+    @checkValidOnly tinyint = 1,
+    @maxFilesToTest int = 0,
     @previewSql tinyint = 0,
     @message varchar(512)='' OUTPUT
 )
@@ -148,7 +149,7 @@ AS
 
     INSERT INTO #Tmp_ParamFileTypeFilter (Param_File_Type, Valid)
     SELECT DISTINCT Item, 1
-    FROM dbo.MakeTableFromListDelim(@ParamFileTypeList, ',')
+    FROM dbo.make_table_from_list_delim(@ParamFileTypeList, ',')
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -200,7 +201,7 @@ AS
         Set @S = @S + ' WHERE (PF.Valid = PF.Valid)'
 
     IF Len(@ParamFileNameFilter) > 0
-        Set @S = @S + ' AND (' + dbo.CreateLikeClauseFromSeparatedString(@ParamFileNameFilter, 'Param_File_Name', ',') + ')'
+        Set @S = @S + ' AND (' + dbo.create_like_clause_from_separated_string(@ParamFileNameFilter, 'Param_File_Name', ',') + ')'
 
     Set @S = @S + ' ORDER BY Param_File_Type, Param_File_ID'
 
@@ -725,11 +726,11 @@ Done:
     Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[FindDuplicateParamFiles] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_duplicate_param_files] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindDuplicateParamFiles] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_duplicate_param_files] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindDuplicateParamFiles] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_duplicate_param_files] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindDuplicateParamFiles] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_duplicate_param_files] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateArchivePath] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_archive_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateArchivePath]
+CREATE PROCEDURE [dbo].[add_update_archive_path]
 /****************************************************
 **
 **  Desc:   Adds new or updates existing archive paths in database
@@ -15,19 +15,20 @@ CREATE PROCEDURE [dbo].[AddUpdateArchivePath]
 **          12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
 **          05/11/2011 mem - Expanded @ArchivePath, @ArchiveServer, @NetworkSharePath, and @ArchiveNote to larger varchar() variables
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/16/2022 mem - Change RAISERROR severity to 11 (required so that the web page shows the error message)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ArchiveID varchar(32) output,            -- ID value (as a string)
-    @ArchivePath varchar(128),
-    @ArchiveServer varchar(64),
+    @archiveID varchar(32) output,            -- ID value (as a string)
+    @archivePath varchar(128),
+    @archiveServer varchar(64),
     @instrumentName varchar(24),
-    @NetworkSharePath varchar(128),
-    @ArchiveNote varchar(128),
-    @ArchiveFunction varchar(32),
+    @networkSharePath varchar(128),
+    @archiveNote varchar(128),
+    @archiveFunction varchar(32),
     @mode varchar(12) = 'add',                -- 'add' or 'update'
     @message varchar(512) output
 )
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateArchivePath', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_archive_path', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -93,7 +94,7 @@ AS
     declare @ArchiveID1 int
     set @ArchiveID1 = 0
     --
-    execute @ArchiveID1 = GetArchivePathID @ArchivePath
+    execute @ArchiveID1 = get_archive_path_id @ArchivePath
 
     -- cannot create an entry that already exists
     --
@@ -109,7 +110,7 @@ AS
     ---------------------------------------------------
 
     declare @instrumentID int
-    execute @instrumentID = GetinstrumentID @instrumentName
+    execute @instrumentID = get_instrument_id @instrumentName
     if @instrumentID = 0
     begin
         set @msg = 'Could not find entry in database for instrument "' + @instrumentName + '"'
@@ -147,7 +148,7 @@ AS
     -- check for active instrument to prevent multiple Active paths for an instrument
     --
     declare @instrumentIDTemp int
-    execute @instrumentIDTemp = GetActiveInstrumentID @instrumentName
+    execute @instrumentIDTemp = get_active_instrument_id @instrumentName
     if @instrumentIDTemp <> 0 and @ArchiveFunction = 'Active'
     begin
         UPDATE T_Archive_Path
@@ -231,11 +232,11 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateArchivePath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_archive_path] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateArchivePath] TO [DMS_Archive_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_archive_path] TO [DMS_Archive_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateArchivePath] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_archive_path] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateArchivePath] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_archive_path] TO [Limited_Table_Write] AS [dbo]
 GO

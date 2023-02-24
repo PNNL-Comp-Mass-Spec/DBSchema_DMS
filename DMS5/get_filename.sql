@@ -1,15 +1,16 @@
-/****** Object:  UserDefinedFunction [dbo].[udfGetFilename] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_filename] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udfGetFilename]
+CREATE FUNCTION [dbo].[get_filename]
 /****************************************************
 ** Examines @filePath to look for a filename
 ** If found, returns the filename, otherwise, returns @filePath
 **
 **  Auth:   mem
 **  Date:   05/18/2017
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (

@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[UpdateTaxonomyItemIfDefined] ******/
+/****** Object:  StoredProcedure [dbo].[update_taxonomy_item_if_defined] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateTaxonomyItemIfDefined]
+CREATE PROCEDURE [dbo].[update_taxonomy_item_if_defined]
 /****************************************************
 **
-**  Desc: This procedure is called via GetTaxonomyValueByTaxonomyID
-**        (Note that GetTaxonomyValueByTaxonomyID is called by AddUpdateOrganisms when auto-defining taxonomy)
+**  Desc: This procedure is called via get_taxonomy_value_by_taxonomy_id
+**        (Note that get_taxonomy_value_by_taxonomy_id is called by add_update_organisms when auto-defining taxonomy)
 **
 **  The calling procedure must create table #Tmp_TaxonomyInfo
 **
@@ -20,12 +20,12 @@ CREATE PROCEDURE [dbo].[UpdateTaxonomyItemIfDefined]
 **
 **  Auth:   mem
 **  Date:   03/02/2016
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Rank varchar(32),
-    @Value varchar(255) output      -- input/output variable
-
+    @rank varchar(32),
+    @value varchar(255) output      -- input/output variable
 )
 AS
     set nocount on
@@ -42,5 +42,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateTaxonomyItemIfDefined] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_taxonomy_item_if_defined] TO [DDL_Viewer] AS [dbo]
 GO

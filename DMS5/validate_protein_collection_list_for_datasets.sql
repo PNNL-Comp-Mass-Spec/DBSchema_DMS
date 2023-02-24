@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateProteinCollectionListForDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[validate_protein_collection_list_for_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDatasets]
+CREATE PROCEDURE [dbo].[validate_protein_collection_list_for_datasets]
 /****************************************************
 **
 **  Desc:   Validates that the protein collection names in @protCollNameList
@@ -22,15 +22,16 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionListForDatasets]
 **          03/21/2011 mem - Expanded @datasets to varchar(max)
 **          03/14/2012 mem - Now preventing both Tryp_Pig_Bov and Tryp_Pig from being included in @protCollNameList
 **          10/23/2017 mem - Do not add any enzyme-related protein collections if any of the protein collections in @protCollNameList already include contaminants
-**                         - Place auto-added protein collections at the end of @protCollNameList, which is more consistent with the order we get after calling ValidateAnalysisJobParameters
+**                         - Place auto-added protein collections at the end of @protCollNameList, which is more consistent with the order we get after calling validate_analysis_job_parameters
 **          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasets varchar(max),
     @protCollNameList varchar(4000)='' output,
     @collectionCountAdded int = 0 output,
-    @ShowMessages tinyint = 1,
+    @showMessages tinyint = 1,
     @message varchar(512)='' output,
     @showDebug tinyint = 0
 )
@@ -114,7 +115,7 @@ AS
     --
     INSERT INTO #ProteinCollections (Protein_Collection_Name, Collection_Appended)
     SELECT Value, 0 AS Collection_Appended
-    FROM dbo.udfParseDelimitedList(@protCollNameList, ',', 'ValidateProteinCollectionListForDatasets')
+    FROM dbo.parse_delimited_list(@protCollNameList, ',', 'validate_protein_collection_list_for_datasets')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -171,7 +172,7 @@ AS
     --
     INSERT INTO #TmpDatasets (Dataset_Num)
     SELECT Value
-    FROM dbo.udfParseDelimitedList(@datasets, ',', 'ValidateProteinCollectionListForDatasets')
+    FROM dbo.parse_delimited_list(@datasets, ',', 'validate_protein_collection_list_for_datasets')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -404,7 +405,7 @@ AS
         --  internal standard collections and contaminant collections
         --  are listed first and that the original collection order is preserved
         --
-        -- Note that ValidateAnalysisJobParameters will call ValidateProteinCollectionParams,
+        -- Note that validate_analysis_job_parameters will call validate_protein_collection_params,
         --  which calls s_validate_analysis_job_protein_parameters in the Protein_Sequences database,
         --  and that procedure uses standardize_protein_collection_list to order the protein collections in a standard manner,
         --  so the order here is not critical
@@ -499,9 +500,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionListForDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_protein_collection_list_for_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ValidateProteinCollectionListForDatasets] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[validate_protein_collection_list_for_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionListForDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_protein_collection_list_for_datasets] TO [Limited_Table_Write] AS [dbo]
 GO

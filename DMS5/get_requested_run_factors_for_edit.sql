@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetRequestedRunFactorsForEdit] ******/
+/****** Object:  StoredProcedure [dbo].[get_requested_run_factors_for_edit] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetRequestedRunFactorsForEdit]
+CREATE PROCEDURE [dbo].[get_requested_run_factors_for_edit]
 /****************************************************
 **
 **  Desc:
@@ -14,8 +14,9 @@ CREATE PROCEDURE [dbo].[GetRequestedRunFactorsForEdit]
 **  Date:   02/20/2010
 **          03/02/2010 grk - added status field to requested run
 **          03/08/2010 grk - improved field validation
-**          03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
+**          03/18/2010 grk - eliminated call to get_factor_crosstab_by_factor_id
 **          01/23/2023 mem - Use lowercase column names when querying V_Requested_Run_Unified_List
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ AS
     -- populate it with list of requests
     -----------------------------------------
     --
-    EXEC @myError = GetRequestedRunsFromItemList
+    EXEC @myError = get_requested_runs_from_item_list
                             @itemList,
                             @itemType,
                             @message OUTPUT
@@ -85,14 +86,14 @@ AS
 */
     -----------------------------------------
     -- Build the SQL for obtaining the factors for the requested runs
-    -- MakeFactorCrosstabSQL will query V_Requested_Run_Unified_List
+    -- make_factor_crosstab_sql will query V_Requested_Run_Unified_List
     -----------------------------------------
     --
     DECLARE @colList varchar(256) = ' ''x'' as sel, batch_id, experiment, dataset, name, status, request'
     --
     DECLARE @FactorNameContains varchar(48) = ''
     --
-    EXEC @myError = MakeFactorCrosstabSQL
+    EXEC @myError = make_factor_crosstab_sql
                         @colList,
                         @FactorNameContains,
                         @Sql OUTPUT,
@@ -114,9 +115,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForEdit] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_factors_for_edit] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunFactorsForEdit] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_run_factors_for_edit] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForEdit] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_factors_for_edit] TO [Limited_Table_Write] AS [dbo]
 GO

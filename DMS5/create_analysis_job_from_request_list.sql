@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateAnalysisJobFromRequestList] ******/
+/****** Object:  StoredProcedure [dbo].[create_analysis_job_from_request_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
+CREATE PROCEDURE [dbo].[create_analysis_job_from_request_list]
 /****************************************************
 **
 **  Desc:
@@ -15,14 +15,15 @@ CREATE PROCEDURE [dbo].[CreateAnalysisJobFromRequestList]
 **          09/20/2007 mem - Now checks for existing jobs if @mode <> 'add'
 **          02/27/2009 mem - Expanded @comment to varchar(512)
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
-**          08/01/2012 mem - Now sending @specialProcessing to AddAnalysisJobGroup
+**          08/01/2012 mem - Now sending @specialProcessing to add_analysis_job_group
 **                         - Updated @datasetList to be varchar(max)
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
-**          04/08/2015 mem - Now parsing the job request list using udfParseDelimitedIntegerList
+**          04/08/2015 mem - Now parsing the job request list using parse_delimited_integer_list
 **          04/11/2022 mem - Expand @protCollNameList to varchar(4000)
 **          06/30/2022 mem - Rename parameter file argument
 **          07/01/2022 mem - Rename parameter file column in temporary table
 **          10/21/2022 mem - Fix logic bug
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -45,7 +46,7 @@ AS
     Declare @datasetList varchar(max)
     Declare @comment varchar(512)
     Declare @specialProcessing varchar(512)
-    Declare @ownerPRN varchar(32)
+    Declare @ownerUsername varchar(32)
     Declare @protCollNameList varchar(4000)
     Declare @protCollOptionsList varchar(256)
     Declare @message varchar(512)
@@ -64,7 +65,7 @@ AS
         datasetList varchar(max),
         comment varchar(512),
         specialProcessing varchar(512),
-        ownerPRN varchar(32),
+        ownerUsername varchar(32),
         protCollNameList varchar(4000),
         protCollOptionsList varchar(256),
         stateName varchar(24)
@@ -86,7 +87,7 @@ AS
         datasetList,
         comment,
         specialProcessing,
-        ownerPRN,
+        ownerUsername,
         protCollNameList,
         protCollOptionsList,
         stateName
@@ -107,7 +108,7 @@ AS
       State
     FROM
       V_Analysis_Job_Request_Entry
-    WHERE request_id IN (SELECT Value FROM dbo.udfParseDelimitedIntegerList(@jobRequestList, ','))
+    WHERE request_id IN (SELECT Value FROM dbo.parse_delimited_integer_list(@jobRequestList, ','))
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -201,7 +202,7 @@ AS
                 @datasetList = datasetList,
                 @comment = comment,
                 @specialProcessing = specialProcessing,
-                @ownerPRN =  ownerPRN,
+                @ownerUsername = ownerUsername,
                 @protCollNameList = protCollNameList,
                 @protCollOptionsList = protCollOptionsList
             FROM #TRL
@@ -234,7 +235,7 @@ AS
             -------------------------------------------------
             -- Use it to make a bunch of jobs
             -------------------------------------------------
-            exec @result = AddAnalysisJobGroup
+            exec @result = add_analysis_job_group
                                 @datasetList=@datasetList,
                                 @priority=@priority,
                                 @toolName=@toolName,
@@ -244,7 +245,7 @@ AS
                                 @organismName=@organismName,
                                 @protCollNameList=@protCollNameList,
                                 @protCollOptionsList=@protCollOptionsList,
-                                @ownerPRN=@ownerPRN,
+                                @ownerUsername=@ownerUsername,
                                 @comment=@comment,
                                 @specialProcessing=@specialProcessing,
                                 @requestID=@requestID,
@@ -281,9 +282,9 @@ ReportResults:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_analysis_job_from_request_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CreateAnalysisJobFromRequestList] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[create_analysis_job_from_request_list] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateAnalysisJobFromRequestList] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_analysis_job_from_request_list] TO [Limited_Table_Write] AS [dbo]
 GO

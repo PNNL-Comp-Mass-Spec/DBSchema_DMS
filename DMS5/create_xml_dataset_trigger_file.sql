@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreateXmlDatasetTriggerFile] ******/
+/****** Object:  StoredProcedure [dbo].[create_xml_dataset_trigger_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CreateXmlDatasetTriggerFile]
+CREATE PROCEDURE [dbo].[create_xml_dataset_trigger_file]
 /****************************************************
 **  Desc:   Creates an XML dataset trigger file to deposit into a directory
 **          where the DIM will pick it up, validate the dataset file(s) are available,
@@ -14,40 +14,41 @@ CREATE PROCEDURE [dbo].[CreateXmlDatasetTriggerFile]
 **  Auth:   jds
 **  Date:   10/03/2007 jds - Initial version
 **          04/26/2010 grk - widened @Dataset_Name to 128 characters
-**          02/03/2011 mem - Now calling XMLQuoteCheck() to replace double quotes with &quot;
-**          07/31/2012 mem - Now using udfCombinePaths to build the output file path
-**          05/08/2013 mem - Removed IsNull() checks since XMLQuoteCheck() now changes Nulls to empty strings
+**          02/03/2011 mem - Now calling xml_quote_check() to replace double quotes with &quot;
+**          07/31/2012 mem - Now using combine_paths to build the output file path
+**          05/08/2013 mem - Removed IsNull() checks since xml_quote_check() now changes Nulls to empty strings
 **          06/23/2015 mem - Added @Capture_Subfolder
 **          02/23/2017 mem - Added @LC_Cart_Config
 **          03/15/2017 mem - Log an error if @triggerFolderPath does not exist
 **          04/28/2017 mem - Disable logging certain messages to T_Log_Entries
 **          07/02/2019 mem - Add parameter @workPackage
 **          11/25/2022 mem - Rename parameter to @Wellplate
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Dataset_Name       varchar(128),       -- @datasetNum
-    @Experiment_Name    varchar(64),        -- @experimentNum
-    @Instrument_Name    varchar(64),        -- @instrumentName
-    @Separation_Type    varchar(64),        -- @secSep
-    @LC_Cart_Name       varchar(128),       -- @LCCartName
-    @LC_Column          varchar(64),        -- @LCColumnNum
-    @Wellplate          varchar(64),        -- @wellplate
-    @Well_Number        varchar(64),        -- @wellNum
-    @Dataset_Type       varchar(20),        -- @msType
-    @Operator_PRN       varchar(64),        -- @operPRN
-    @DSCreator_PRN      varchar(64),        -- @DScreatorPRN
-    @Comment            varchar(512),       -- @comment
-    @Interest_Rating    varchar(32),        -- @rating
-    @Request            int,                -- @requestID
+    @dataset_Name       varchar(128),       -- @datasetName
+    @experiment_Name    varchar(64),        -- @experimentName
+    @instrument_Name    varchar(64),        -- @instrumentName
+    @separation_Type    varchar(64),        -- @secSep
+    @lc_Cart_Name       varchar(128),       -- @LCCartName
+    @lc_Column          varchar(64),        -- @LCColumnName
+    @wellplate_Name     varchar(64),        -- @wellplateName
+    @well_Number        varchar(64),        -- @wellNumber
+    @dataset_Type       varchar(20),        -- @msType
+    @operator_Username  varchar(64),        -- @operatorUsername
+    @dsCreator_Username varchar(64),        -- @DScreatorUsername
+    @comment            varchar(512),       -- @comment
+    @interest_Rating    varchar(32),        -- @rating
+    @request            int,                -- @requestID
     @workPackage        varchar(50) = '',
-    @EMSL_Usage_Type    varchar(50) = '',   -- @eusUsageType
-    @EMSL_Proposal_ID   varchar(10) = '',   -- @eusProposalID
-    @EMSL_Users_List    varchar(1024) = '', -- @eusUsersList
-    @Run_Start          varchar(64),
-    @Run_Finish         varchar(64),
-    @Capture_Subfolder  varchar(255),
-    @LC_Cart_Config     varchar(128),
+    @emsl_Usage_Type    varchar(50) = '',   -- @eusUsageType
+    @emsl_Proposal_ID   varchar(10) = '',   -- @eusProposalID
+    @emsl_Users_List    varchar(1024) = '', -- @eusUsersList
+    @run_Start          varchar(64),
+    @run_Finish         varchar(64),
+    @capture_Subfolder  varchar(255),
+    @lc_Cart_Config     varchar(128),
     @message            varchar(512) output
 )
 AS
@@ -93,7 +94,7 @@ set nocount on
     EXEC @hr = sp_OAMethod  @fso, 'FolderExists', @result OUT, @triggerFolderPath
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @fso, @hr, @message OUT
+        EXEC load_get_oa_error_message @fso, @hr, @message OUT
         set @myError = 72
         If IsNull(@message, '') = ''
             Set @message = 'Error verifying that the trigger folder exists at ' + IsNull(@triggerFolderPath, '??')
@@ -107,7 +108,7 @@ set nocount on
         goto DestroyFSO
     End
 
-    Declare @filePath varchar(150) = dbo.udfCombinePaths(@triggerFolderPath, 'man_' + @Dataset_Name + '.xml')
+    Declare @filePath varchar(150) = dbo.combine_paths(@triggerFolderPath, 'man_' + @Dataset_Name + '.xml')
 
     Declare @xmlLine varchar(50)
     set @xmlLine = ''
@@ -121,7 +122,7 @@ set nocount on
     -- Create XML dataset trigger file lines
     -- Be sure to replace double quote characters with &quot; to avoid mal-formed XML
     -- In reality, only the comment should have double-quote characters, but we'll check all text fields just to be safe
-    -- Note that XMLQuoteCheck will also change Null values to empty strings
+    -- Note that xml_quote_check will also change Null values to empty strings
     ---------------------------------------------------
     --
     Declare @tmpXmlLine varchar(4000)
@@ -131,28 +132,28 @@ set nocount on
     set @tmpXmlLine = '<?xml version="1.0" ?>' + @newLine
 
     set @tmpXmlLine = @tmpXmlLine + '<Dataset>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Name" Value="' +       dbo.XMLQuoteCheck(@Dataset_Name) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Experiment Name" Value="' +    dbo.XMLQuoteCheck(@Experiment_Name) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Instrument Name" Value="' +    dbo.XMLQuoteCheck( @Instrument_Name) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Capture Subfolder" Value="' +  dbo.XMLQuoteCheck( @Capture_Subfolder) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Separation Type" Value="' +    dbo.XMLQuoteCheck(@Separation_Type) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Name" Value="' +       dbo.XMLQuoteCheck(@LC_Cart_Name) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Config" Value="' +     dbo.XMLQuoteCheck(@LC_Cart_Config) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Column" Value="' +          dbo.XMLQuoteCheck(@LC_Column) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Wellplate Number" Value="' +   dbo.XMLQuoteCheck(@Wellplate) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Well Number" Value="' +        dbo.XMLQuoteCheck(@Well_Number) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Type" Value="' +       dbo.XMLQuoteCheck(@Dataset_Type) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Operator (PRN)" Value="' +     dbo.XMLQuoteCheck(@Operator_PRN) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="DS Creator (PRN)" Value="' +   dbo.XMLQuoteCheck(@DSCreator_PRN) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Comment" Value="' +            dbo.XMLQuoteCheck(@Comment) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Interest Rating" Value="' +    dbo.XMLQuoteCheck(@Interest_Rating) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Request" Value="' +            cast(@Request as varchar(32)) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Work Package" Value="' +       dbo.XMLQuoteCheck(@workPackage) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Proposal ID" Value="' +   dbo.XMLQuoteCheck(@EMSL_Proposal_ID) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Usage Type" Value="' +    dbo.XMLQuoteCheck(@EMSL_Usage_Type) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Users List" Value="' +    dbo.XMLQuoteCheck(@EMSL_Users_List) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Start" Value="' +          dbo.XMLQuoteCheck(@Run_Start) + '"/>' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Finish" Value="' +         dbo.XMLQuoteCheck(@Run_Finish) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Name" Value="' +            dbo.xml_quote_check(@Dataset_Name) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Experiment Name" Value="' +         dbo.xml_quote_check(@Experiment_Name) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Instrument Name" Value="' +         dbo.xml_quote_check( @Instrument_Name) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Capture Subfolder" Value="' +       dbo.xml_quote_check( @Capture_Subfolder) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Separation Type" Value="' +         dbo.xml_quote_check(@Separation_Type) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Name" Value="' +            dbo.xml_quote_check(@LC_Cart_Name) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Cart Config" Value="' +          dbo.xml_quote_check(@LC_Cart_Config) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="LC Column" Value="' +               dbo.xml_quote_check(@LC_Column) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Wellplate Name" Value="' +          dbo.xml_quote_check(@Wellplate_Name) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Well Number" Value="' +             dbo.xml_quote_check(@Well_Number) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Dataset Type" Value="' +            dbo.xml_quote_check(@Dataset_Type) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Operator (Username)" Value="' +     dbo.xml_quote_check(@operator_Username) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="DS Creator (Username)" Value="' +   dbo.xml_quote_check(@dsCreator_Username) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Comment" Value="' +                 dbo.xml_quote_check(@Comment) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Interest Rating" Value="' +         dbo.xml_quote_check(@Interest_Rating) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Request" Value="' +                 cast(@Request as varchar(32)) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Work Package" Value="' +            dbo.xml_quote_check(@workPackage) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Proposal ID" Value="' +        dbo.xml_quote_check(@EMSL_Proposal_ID) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Usage Type" Value="' +         dbo.xml_quote_check(@EMSL_Usage_Type) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="EMSL Users List" Value="' +         dbo.xml_quote_check(@EMSL_Users_List) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Start" Value="' +               dbo.xml_quote_check(@Run_Start) + '"/>' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '<Parameter Name="Run Finish" Value="' +              dbo.xml_quote_check(@Run_Finish) + '"/>' + @newLine
 
     --Close XML file
     set @tmpXmlLine = @tmpXmlLine + '</Dataset>' + @newLine
@@ -170,7 +171,7 @@ set nocount on
     EXEC @hr = sp_OAMethod  @fso, 'FileExists', @result OUT, @filePath
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @fso, @hr, @message OUT
+        EXEC load_get_oa_error_message @fso, @hr, @message OUT
         set @myError = 76
         If IsNull(@message, '') = ''
             Set @message = 'Error looking for an existing trigger file at ' + IsNull(@filePath, '??')
@@ -233,7 +234,7 @@ DestroyFSO:
     EXEC @hr = sp_OADestroy @fso
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @fso, @hr, @message OUT
+        EXEC load_get_oa_error_message @fso, @hr, @message OUT
         set @myError = 86
         Set @message = 'Error destroying FileSystemObject'
         goto done
@@ -247,16 +248,16 @@ Done:
     If @myError <> 0
     Begin
         If IsNull(@message, '') = ''
-            Set @message = 'Error code ' + Cast(@myError as varchar(9)) + ' in CreateXmlDatasetTriggerFile'
+            Set @message = 'Error code ' + Cast(@myError as varchar(9)) + ' in create_xml_dataset_trigger_file'
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'CreateXmlDatasetTriggerFile'
+            Exec post_log_entry 'Error', @message, 'create_xml_dataset_trigger_file'
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateXmlDatasetTriggerFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_xml_dataset_trigger_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateXmlDatasetTriggerFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_xml_dataset_trigger_file] TO [Limited_Table_Write] AS [dbo]
 GO

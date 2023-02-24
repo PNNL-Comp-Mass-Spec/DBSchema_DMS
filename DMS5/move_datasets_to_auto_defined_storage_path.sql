@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveDatasetsToAutoDefinedStoragePath] ******/
+/****** Object:  StoredProcedure [dbo].[move_datasets_to_auto_defined_storage_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MoveDatasetsToAutoDefinedStoragePath]
+CREATE PROCEDURE [dbo].[move_datasets_to_auto_defined_storage_path]
 /****************************************************
 **
 **  Desc:   Updates the storage and archive locations for one or more datasets to use the
@@ -17,14 +17,15 @@ CREATE PROCEDURE [dbo].[MoveDatasetsToAutoDefinedStoragePath]
 **  Auth:   mem
 **  Date:   05/12/2011 mem - Initial version
 **          05/14/2011 mem - Updated the content of MoveCmd
-**          06/18/2014 mem - Now passing default to udfParseDelimitedIntegerList
+**          06/18/2014 mem - Now passing default to parse_delimited_integer_list
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          08/19/2016 mem - Call UpdateCachedDatasetFolderPaths
+**          08/19/2016 mem - Call update_cached_dataset_folder_paths
 **          09/02/2016 mem - Replace archive\dmsarch with simply dmsarch due to switch from \\aurora.emsl.pnl.gov\archive\dmsarch\ to \\adms.emsl.pnl.gov\dmsarch\
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetIDList varchar(max),
+    @datasetIDList varchar(max),
     @infoOnly tinyint = 1,
     @message varchar(256) = ''
 )
@@ -82,7 +83,7 @@ AS
 
         INSERT INTO #TmpDatasets (DatasetID)
         SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedIntegerList(@DatasetIDList, default)
+        FROM dbo.parse_delimited_integer_list(@DatasetIDList, default)
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -184,7 +185,7 @@ AS
                 -- Lookup the auto-defined storage path
                 -----------------------------------------
                 --
-                Exec @StoragePathIDNew = GetInstrumentStoragePathForNewDatasets @InstrumentID, @RefDate, @AutoSwitchActiveStorage=0, @infoOnly=0
+                Exec @StoragePathIDNew = get_instrument_storage_path_for_new_datasets @InstrumentID, @RefDate, @AutoSwitchActiveStorage=0, @infoOnly=0
 
                 If @StoragePathIDNew <> 0 And @StoragePathID <> @StoragePathIDNew
                 Begin -- <c1>
@@ -239,7 +240,7 @@ AS
                     -----------------------------------------
                     --
 
-                    Exec @ArchivePathIDNew = GetInstrumentArchivePathForNewDatasets @InstrumentID, @DatasetID, @AutoSwitchActiveArchive=0, @infoOnly=0
+                    Exec @ArchivePathIDNew = get_instrument_archive_path_for_new_datasets @InstrumentID, @DatasetID, @AutoSwitchActiveArchive=0, @infoOnly=0
 
                     If @ArchivePathIDNew <> 0 And @ArchivePathID <> @ArchivePathIDNew
                     Begin -- <d2>
@@ -290,7 +291,7 @@ AS
             FROM T_Cached_Dataset_Folder_Paths Target Inner Join #TmpDatasets Src
             On Target.Dataset_ID = Src.DatasetID
 
-            Exec UpdateCachedDatasetFolderPaths @ProcessingMode = 0
+            Exec update_cached_dataset_folder_paths @ProcessingMode = 0
 
         End
 
@@ -298,8 +299,8 @@ AS
     Begin Catch
         -- Error caught; log the error and set @StoragePathID to 0
 
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'GetInstrumentStoragePathForNewDatasets')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 0,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'get_instrument_storage_path_for_new_datasets')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 0,
                             @ErrorNum = @myError output, @message = @message output
 
         SELECT @message AS ErrorMessage
@@ -312,5 +313,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveDatasetsToAutoDefinedStoragePath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_datasets_to_auto_defined_storage_path] TO [DDL_Viewer] AS [dbo]
 GO

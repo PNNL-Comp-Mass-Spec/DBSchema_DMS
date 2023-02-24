@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetRequestedRunFactorsForExport] ******/
+/****** Object:  StoredProcedure [dbo].[get_requested_run_factors_for_export] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetRequestedRunFactorsForExport]
+CREATE PROCEDURE [dbo].[get_requested_run_factors_for_export]
 /****************************************************
 **
 **  Desc:
@@ -12,7 +12,8 @@ CREATE PROCEDURE [dbo].[GetRequestedRunFactorsForExport]
 **
 **  Auth:   grk
 **  Date:   03/22/2010
-**  03/22/2010 grk - initial release
+**          03/22/2010 grk - initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ AS
     -- populate it with list of requests
     -----------------------------------------
     --
-    EXEC @myError = GetRequestedRunsFromItemList
+    EXEC @myError = get_requested_runs_from_item_list
                             @itemList,
                             @itemType,
                             @message OUTPUT
@@ -93,7 +94,7 @@ AS
     DECLARE @FactorNameContains VARCHAR(48)
     SET @FactorNameContains = ''
     --
-    EXEC @myError = MakeFactorCrosstabSQL
+    EXEC @myError = make_factor_crosstab_sql
                         @colList,
                         @FactorNameContains,
                         @Sql OUTPUT,
@@ -113,11 +114,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_factors_for_export] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunFactorsForExport] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_run_factors_for_export] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunFactorsForExport] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_run_factors_for_export] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunFactorsForExport] TO [RBAC-DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_run_factors_for_export] TO [RBAC-DMS_User] AS [dbo]
 GO

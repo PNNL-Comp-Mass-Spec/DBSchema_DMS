@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewDataset] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewDataset]
+CREATE PROCEDURE [dbo].[add_new_dataset]
 /****************************************************
 **
 **  Desc:
@@ -35,7 +35,7 @@ CREATE PROCEDURE [dbo].[AddNewDataset]
 **          11/15/2013 mem - Now scrubbing "Buzzard:" out of the comment if there is no other text
 **          06/20/2014 mem - Now removing "Buzzard:" from the end of the comment
 **          12/18/2014 mem - Replaced QC_Shew_1[0-9] with QC_Shew[_-][0-9][0-9]
-**          03/25/2015 mem - Now also checking the dataset's experiment name against dbo.GetDatasetPriority() to see if we should auto-release the dataset
+**          03/25/2015 mem - Now also checking the dataset's experiment name against dbo.get_dataset_priority() to see if we should auto-release the dataset
 **          05/29/2015 mem - Added support for "Capture Subfolder"
 **          06/22/2015 mem - Now ignoring "Capture Subfolder" if it is an absolute path to a local drive (e.g. D:\ProteomicsData)
 **          11/21/2016 mem - Added parameter @logDebugMessages
@@ -48,7 +48,8 @@ CREATE PROCEDURE [dbo].[AddNewDataset]
 **          12/17/2020 mem - Ignore @captureSubfolder if it is an absolute path to a network share (e.g. \\proto-2\External_Orbitrap_Xfer)
 **          05/26/2021 mem - Expand @message to varchar(1024)
 **          08/25/2022 mem - Use new column name in T_Log_Entries
-**          11/25/2022 mem - Rename variable and use new parameter name when calling AddUpdateDataset
+**          11/25/2022 mem - Rename variable and use new parameter name when calling add_update_dataset
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -78,30 +79,30 @@ AS
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
 
     Declare
-        @datasetName          varchar(128)  = '',
-        @experimentName       varchar(64)   = '',
-        @instrumentName       varchar(64)   = '',
-        @captureSubdirectory  varchar(255)  = '',
-        @separationType       varchar(64)   = '',
-        @lcCartName           varchar(128)  = '',
-        @lcCartConfig         varchar(128)  = '',
-        @lcColumn             varchar(64)   = '',
-        @wellplate            varchar(64)   = '',
-        @wellNumber           varchar(64)   = '',
-        @datasetType          varchar(64)   = '',
-        @operatorPRN          varchar(64)   = '',
-        @comment              varchar(512)  = '',
-        @interestRating       varchar(32)   = '',
-        @requestID            int           = 0,      -- Request ID; this might get updated by AddUpdateDataset
-        @workPackage          varchar(50)   = '',
-        @emslUsageType        varchar(50)   = '',
-        @emslProposalID       varchar(10)   = '',
-        @emslUsersList        varchar(1024) = '',
-        @runStart             varchar(64)   = '',
-        @runFinish            varchar(64)   = '',
-        @datasetCreatorPRN    varchar(128)  = ''
+        @datasetName             varchar(128)  = '',
+        @experimentName          varchar(64)   = '',
+        @instrumentName          varchar(64)   = '',
+        @captureSubdirectory     varchar(255)  = '',
+        @separationType          varchar(64)   = '',
+        @lcCartName              varchar(128)  = '',
+        @lcCartConfig            varchar(128)  = '',
+        @lcColumn                varchar(64)   = '',
+        @wellplateName           varchar(64)   = '',
+        @wellNumber              varchar(64)   = '',
+        @datasetType             varchar(64)   = '',
+        @operatorUsername        varchar(64)   = '',
+        @comment                 varchar(512)  = '',
+        @interestRating          varchar(32)   = '',
+        @requestID               int           = 0,      -- Request ID; this might get updated by add_update_dataset
+        @workPackage             varchar(50)   = '',
+        @emslUsageType           varchar(50)   = '',
+        @emslProposalID          varchar(10)   = '',
+        @emslUsersList           varchar(1024) = '',
+        @runStart                varchar(64)   = '',
+        @runFinish               varchar(64)   = '',
+        @datasetCreatorUsername  varchar(128)  = ''
 
-        -- Note that @datasetCreatorPRN is the PRN of the person that created the dataset;
+        -- Note that @datasetCreatorUsername is the username of the person that created the dataset;
         -- It is typically only present in trigger files created due to a dataset manually being created by a user
 
     ---------------------------------------------------
@@ -161,36 +162,36 @@ AS
     -- Get arguments from parsed parameters
     ---------------------------------------------------
 
-    SELECT    @datasetName          = paramValue FROM #TPAR WHERE paramName = 'Dataset Name'
-    SELECT    @experimentName       = paramValue FROM #TPAR WHERE paramName = 'Experiment Name'
-    SELECT    @instrumentName       = paramValue FROM #TPAR WHERE paramName = 'Instrument Name'
-    SELECT    @captureSubdirectory  = paramValue FROM #TPAR WHERE paramName IN ('Capture Subfolder', 'Capture Subdirectory')
-    SELECT    @separationType       = paramValue FROM #TPAR WHERE paramName = 'Separation Type'
-    SELECT    @lcCartName           = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name'
-    SELECT    @lcCartConfig         = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
-    SELECT    @lcColumn             = paramValue FROM #TPAR WHERE paramName = 'LC Column'
-    SELECT    @wellplate            = paramValue FROM #TPAR WHERE paramName = 'Wellplate Number'
-    SELECT    @wellNumber           = paramValue FROM #TPAR WHERE paramName = 'Well Number'
-    SELECT    @datasetType          = paramValue FROM #TPAR WHERE paramName = 'Dataset Type'
-    SELECT    @operatorPRN          = paramValue FROM #TPAR WHERE paramName = 'Operator (PRN)'
-    SELECT    @comment              = paramValue FROM #TPAR WHERE paramName = 'Comment'
-    SELECT    @interestRating       = paramValue FROM #TPAR WHERE paramName = 'Interest Rating'
-    SELECT    @requestID            = paramValue FROM #TPAR WHERE paramName = 'Request'
-    SELECT    @workPackage          = paramValue FROM #TPAR WHERE paramName = 'Work Package'
-    SELECT    @emslUsageType        = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type'
-    SELECT    @emslProposalID       = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID'
-    SELECT    @emslUsersList        = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List'
-    SELECT    @runStart             = paramValue FROM #TPAR WHERE paramName = 'Run Start'
-    SELECT    @runFinish            = paramValue FROM #TPAR WHERE paramName = 'Run Finish'
-    SELECT    @datasetCreatorPRN    = paramValue FROM #TPAR WHERE paramName = 'DS Creator (PRN)'
+    SELECT    @datasetName             = paramValue FROM #TPAR WHERE paramName = 'Dataset Name'
+    SELECT    @experimentName          = paramValue FROM #TPAR WHERE paramName = 'Experiment Name'
+    SELECT    @instrumentName          = paramValue FROM #TPAR WHERE paramName = 'Instrument Name'
+    SELECT    @captureSubdirectory     = paramValue FROM #TPAR WHERE paramName IN ('Capture Subfolder', 'Capture Subdirectory')
+    SELECT    @separationType          = paramValue FROM #TPAR WHERE paramName = 'Separation Type'
+    SELECT    @lcCartName              = paramValue FROM #TPAR WHERE paramName = 'LC Cart Name'
+    SELECT    @lcCartConfig            = paramValue FROM #TPAR WHERE paramName = 'LC Cart Config'
+    SELECT    @lcColumn                = paramValue FROM #TPAR WHERE paramName = 'LC Column'
+    SELECT    @wellplateName           = paramValue FROM #TPAR WHERE paramName IN ('Wellplate Number', 'Wellplate Name')
+    SELECT    @wellNumber              = paramValue FROM #TPAR WHERE paramName = 'Well Number'
+    SELECT    @datasetType             = paramValue FROM #TPAR WHERE paramName = 'Dataset Type'
+    SELECT    @operatorUsername        = paramValue FROM #TPAR WHERE paramName IN ('Operator (PRN)', 'Operator (Username)')
+    SELECT    @comment                 = paramValue FROM #TPAR WHERE paramName = 'Comment'
+    SELECT    @interestRating          = paramValue FROM #TPAR WHERE paramName = 'Interest Rating'
+    SELECT    @requestID               = paramValue FROM #TPAR WHERE paramName = 'Request'
+    SELECT    @workPackage             = paramValue FROM #TPAR WHERE paramName = 'Work Package'
+    SELECT    @emslUsageType           = paramValue FROM #TPAR WHERE paramName = 'EMSL Usage Type'
+    SELECT    @emslProposalID          = paramValue FROM #TPAR WHERE paramName = 'EMSL Proposal ID'
+    SELECT    @emslUsersList           = paramValue FROM #TPAR WHERE paramName = 'EMSL Users List'
+    SELECT    @runStart                = paramValue FROM #TPAR WHERE paramName = 'Run Start'
+    SELECT    @runFinish               = paramValue FROM #TPAR WHERE paramName = 'Run Finish'
+    SELECT    @datasetCreatorUsername  = paramValue FROM #TPAR WHERE paramName IN ('DS Creator (PRN)', 'DS Creator (Username)')
 
 
      ---------------------------------------------------
     -- Check for QC or Blank datasets
      ---------------------------------------------------
 
-    If dbo.GetDatasetPriority(@datasetName) > 0 OR
-       dbo.GetDatasetPriority(@experimentName) > 0 OR
+    If dbo.get_dataset_priority(@datasetName) > 0 OR
+       dbo.get_dataset_priority(@experimentName) > 0 OR
        (@datasetName LIKE 'Blank%' AND Not @datasetName LIKE '%-bad')
     Begin
         If @interestRating Not In ('Not Released', 'No Interest') And @interestRating Not Like 'No Data%'
@@ -250,7 +251,7 @@ AS
     Begin
         Set @message = 'Capture subfolder is not a relative path for dataset ' + @datasetName + '; ignoring ' + @captureSubdirectory
 
-        exec PostLogEntry 'Error', @message, 'AddNewDataset'
+        exec post_log_entry 'Error', @message, 'add_new_dataset'
 
         Set @captureSubdirectory = ''
     End
@@ -266,7 +267,7 @@ AS
            WHERE message LIKE 'Capture subfolder is identical to the dataset name%' AND
                  Entered > DATEADD(day, -3, GETDATE()) )
         Begin
-            exec PostLogEntry 'Debug', @message, 'AddNewDataset'
+            exec post_log_entry 'Debug', @message, 'add_new_dataset'
         End
 
         Set @captureSubdirectory = ''
@@ -275,14 +276,14 @@ AS
     ---------------------------------------------------
     -- Create new dataset
     ---------------------------------------------------
-    exec @myError = AddUpdateDataset
+    exec @myError = add_update_dataset
                         @datasetName,
                         @experimentName,
-                        @operatorPRN,
+                        @operatorUsername,
                         @instrumentName,
                         @datasetType,
                         @lcColumn,
-                        @wellplate,
+                        @wellplateName,
                         @wellNumber,
                         @separationType,
                         @internalStandards,
@@ -313,7 +314,7 @@ AS
 
 
     ---------------------------------------------------
-    -- It's possible that @requestID got updated by AddUpdateDataset
+    -- It's possible that @requestID got updated by add_update_dataset
     -- Lookup the current value
     ---------------------------------------------------
 
@@ -363,14 +364,14 @@ AS
     If @existingRequestID <> 0
         Set @requestID = @existingRequestID
 
-    If Len(@datasetCreatorPRN) > 0
+    If Len(@datasetCreatorUsername) > 0
     Begin -- <a>
         ---------------------------------------------------
-        -- Update T_Event_Log to reflect @datasetCreatorPRN creating this dataset
+        -- Update T_Event_Log to reflect @datasetCreatorUsername creating this dataset
         ---------------------------------------------------
 
         UPDATE T_Event_Log
-        SET Entered_By = @datasetCreatorPRN + '; via ' + IsNull(Entered_By, '')
+        SET Entered_By = @datasetCreatorUsername + '; via ' + IsNull(Entered_By, '')
         FROM T_Event_Log
         WHERE Target_ID = @datasetId AND
               Target_State = 1 AND
@@ -430,13 +431,13 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_new_dataset] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddNewDataset] TO [DMS_DS_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_new_dataset] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewDataset] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_dataset] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddNewDataset] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_new_dataset] TO [svc-dms] AS [dbo]
 GO

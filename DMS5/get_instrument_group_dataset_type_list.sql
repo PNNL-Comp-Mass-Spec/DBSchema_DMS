@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetInstrumentGroupDatasetTypeList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_instrument_group_dataset_type_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetInstrumentGroupDatasetTypeList]
+CREATE FUNCTION [dbo].[get_instrument_group_dataset_type_list]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[GetInstrumentGroupDatasetTypeList]
 **  Auth:   grk
 **  Date:   08/28/2010 grk - Initial version
 **          02/04/2021 mem - Add argument @delimiter
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -39,5 +40,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentGroupDatasetTypeList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_group_dataset_type_list] TO [DDL_Viewer] AS [dbo]
 GO

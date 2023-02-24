@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetDatasetDetailsFromDatasetInfoXML] ******/
+/****** Object:  StoredProcedure [dbo].[get_dataset_details_from_dataset_info_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetDatasetDetailsFromDatasetInfoXML]
+CREATE PROCEDURE [dbo].[get_dataset_details_from_dataset_info_xml]
 /****************************************************
 **
 **  Desc:   Extracts the dataset name from @datasetInfoXML
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[GetDatasetDetailsFromDatasetInfoXML]
 **
 **  Auth:   mem
 **  Date:   02/29/2020 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -56,13 +57,13 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error extracting the dataset name from @datasetInfoXML for DatasetID ' + @datasetIDText + ' in SP GetDatasetDetailsFromDatasetInfoXML'
+        set @message = 'Error extracting the dataset name from @datasetInfoXML for DatasetID ' + @datasetIDText + ' in SP get_dataset_details_from_dataset_info_xml'
         Goto Done
     End
 
     If @myRowCount = 0 or IsNull(@datasetName, '') = ''
     Begin
-        set @message = 'XML in @datasetInfoXML is not in the expected form for DatasetID ' + @datasetIDText + ' in SP GetDatasetDetailsFromDatasetInfoXML; Could not match /DatasetInfo/Dataset'
+        set @message = 'XML in @datasetInfoXML is not in the expected form for DatasetID ' + @datasetIDText + ' in SP get_dataset_details_from_dataset_info_xml; Could not match /DatasetInfo/Dataset'
         Set @myError = 50000
         Goto Done
     End
@@ -81,7 +82,7 @@ AS
 
         If @myRowCount = 0
         Begin
-            Set @message = 'Dataset "' + @datasetName + '" not found in table T_Dataset by SP GetDatasetDetailsFromDatasetInfoXML'
+            Set @message = 'Dataset "' + @datasetName + '" not found in table T_Dataset by SP get_dataset_details_from_dataset_info_xml'
             Set @myError = 50001
             Goto Done
         End
@@ -93,7 +94,7 @@ AS
         -- Validate that @datasetID exists in T_Dataset
         If Not Exists (SELECT * FROM T_Dataset WHERE Dataset_ID = @datasetID)
         Begin
-            Set @message = 'Dataset ID "' + @datasetIDText + '" not found in table T_Dataset by SP GetDatasetDetailsFromDatasetInfoXML'
+            Set @message = 'Dataset ID "' + @datasetIDText + '" not found in table T_Dataset by SP get_dataset_details_from_dataset_info_xml'
             Set @myError = 50002
             Goto Done
         End
@@ -106,7 +107,7 @@ AS
 
         If @myRowCount = 0
         Begin
-            Set @message = 'Dataset "' + @datasetName + '" not found in table T_Dataset by SP GetDatasetDetailsFromDatasetInfoXML'
+            Set @message = 'Dataset "' + @datasetName + '" not found in table T_Dataset by SP get_dataset_details_from_dataset_info_xml'
             Set @myError = 50003
             Goto Done
         End

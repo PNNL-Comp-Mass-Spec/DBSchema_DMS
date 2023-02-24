@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReconcileInstNameTableToStorageAssignments] ******/
+/****** Object:  StoredProcedure [dbo].[reconcile_inst_name_table_to_storage_assignments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ReconcileInstNameTableToStorageAssignments]
+CREATE PROCEDURE [dbo].[reconcile_inst_name_table_to_storage_assignments]
 /****************************************************
 **
 **  Desc:
@@ -20,13 +20,14 @@ CREATE PROCEDURE [dbo].[ReconcileInstNameTableToStorageAssignments]
 **
 **  Auth:   grk
 **  Date:   01/26/2001
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
     -- start transaction
     --
     declare @transName varchar(32)
-    set @transName = 'ReconcileInstNameTableToStorageAssignments'
+    set @transName = 'reconcile_inst_name_table_to_storage_assignments'
     begin transaction @transName
 
     -- set source path assignment
@@ -67,10 +68,11 @@ AS
     commit transaction @transName
 
     return 0
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReconcileInstNameTableToStorageAssignments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reconcile_inst_name_table_to_storage_assignments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReconcileInstNameTableToStorageAssignments] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[reconcile_inst_name_table_to_storage_assignments] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReconcileInstNameTableToStorageAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reconcile_inst_name_table_to_storage_assignments] TO [Limited_Table_Write] AS [dbo]
 GO

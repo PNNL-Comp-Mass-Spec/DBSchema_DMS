@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetFileInfoXML] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_file_info_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
+CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 /****************************************************
 **
 **  Desc:   Updates the information for the dataset specified by @datasetID
@@ -65,26 +65,27 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
 **          08/03/2010 mem - Removed unneeded fields from the T_Dataset_Info MERGE Source
 **          09/01/2010 mem - Now checking for invalid dates and storing Null in Acq_Time_Start and Acq_Time_End If invalid
 **          09/09/2010 mem - Fixed bug extracting StartTime and EndTime values
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          08/21/2012 mem - Now including DatasetID in the error message
 **          04/18/2014 mem - Added support for ProfileScanCountMS1, ProfileScanCountMS2, CentroidScanCountMS1, and CentroidScanCountMS2
 **          02/24/2015 mem - Now validating that @datasetID exists in T_Dataset
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW If not authorized
 **          06/13/2018 mem - Store instrument files info in T_Dataset_Files
 **          06/25/2018 mem - Populate the File_Size_Rank column
 **          08/08/2018 mem - Fix null value where clause bug in @DuplicateDatasetsTable
 **          08/09/2018 mem - Use @duplicateEntryHoldoffHours when logging the duplicate dataset error
-**          08/10/2018 mem - Update duplicate dataset message and use PostEmailAlert to add to T_Email_Alerts
+**          08/10/2018 mem - Update duplicate dataset message and use post_email_alert to add to T_Email_Alerts
 **          11/09/2018 mem - Set deleted to 0 when updating existing entries
 **                           No longer removed deleted files and sort them last when updating File_Size_Rank
 **          02/11/2020 mem - Ignore zero-byte files when checking for duplicates
-**          02/29/2020 mem - Refactor code into GetDatasetDetailsFromDatasetInfoXML
-**          03/01/2020 mem - Add call to UpdateDatasetDeviceInfoXML
-**          10/10/2020 mem - Use AutoUpdateSeparationType to auto-update the dataset separation type, based on the acquisition length
+**          02/29/2020 mem - Refactor code into get_dataset_details_from_dataset_info_xml
+**          03/01/2020 mem - Add call to update_dataset_device_info_xml
+**          10/10/2020 mem - Use auto_update_separation_type to auto-update the dataset separation type, based on the acquisition length
 **          02/14/2022 mem - Log an error if the acquisition length is overly long
-**          06/13/2022 mem - Update call to GetDatasetScanTypeList since now a scalar-valued function
+**          06/13/2022 mem - Update call to get_dataset_scan_type_list since now a scalar-valued function
 **          08/25/2022 mem - Use new column name in T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -92,7 +93,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoXML]
     @datasetInfoXML xml,                    -- XML describing the properties of a single dataset
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0,
-    @validateDatasetType tinyint = 1        -- If non-zero, will call ValidateDatasetType after updating T_Dataset_ScanTypes
+    @validateDatasetType tinyint = 1        -- If non-zero, will call validate_dataset_type after updating T_Dataset_ScanTypes
 )
 AS
     set nocount on
@@ -122,7 +123,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoXML', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_file_info_xml', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -189,7 +190,7 @@ AS
     -- Examine the XML to determine the dataset name and update or validate @datasetID
     ---------------------------------------------------
     --
-    Exec GetDatasetDetailsFromDatasetInfoXML
+    Exec get_dataset_details_from_dataset_info_xml
         @datasetInfoXML,
         @datasetID = @datasetID Output,
         @datasetName = @datasetName Output,
@@ -253,7 +254,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -317,7 +318,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing ScanType nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error parsing ScanType nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -336,7 +337,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -357,7 +358,7 @@ AS
         set @msg = 'Unrecognized file hash type: ' + @unrecognizedHashType + '; all rows in T_Dataset_File are assumed to be SHA1. ' +
                    'Will add the file info anyway, but this hashtype could be problematic elsewhere'
 
-        Exec PostLogEntry 'Error', @msg, 'UpdateDatasetFileInfoXML'
+        Exec post_log_entry 'Error', @msg, 'update_dataset_file_info_xml'
     End
 
     ---------------------------------------------------
@@ -388,7 +389,7 @@ AS
         --
         If @myError <> 0
         Begin
-            set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+            set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
             Goto Done
         End
 
@@ -422,7 +423,7 @@ AS
             -- The message "Duplicate dataset found" is used by a SQL Server Agent job that notifies admins hourly if a duplicate dataset is uploaded
             Set @message = 'Duplicate dataset found: DatasetID ' + @datasetIdText + @duplicateDatasetInfoSuffix
 
-            Exec PostEmailAlert 'Error', @message, 'UpdateDatasetFileInfoXML', @recipients='admins', @postMessageToLogEntries=1, @duplicateEntryHoldoffHours=6
+            Exec post_email_alert 'Error', @message, 'update_dataset_file_info_xml', @recipients='admins', @postMessageToLogEntries=1, @duplicateEntryHoldoffHours=6
 
             -- Error code 53600 is used by stored procedure update_dms_dataset_state in the DMS_Capture database
             -- Call stack: update_context->update_job_state->update_dms_dataset_state->update_dms_file_info_xml->update_dataset_file_info_xml
@@ -446,7 +447,7 @@ AS
             Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: ' +
                        'DatasetID ' + Cast(@datasetIdText As varchar(12)) + @duplicateDatasetInfoSuffix
 
-            Exec PostLogEntry 'Warning', @msg, 'UpdateDatasetFileInfoXML'
+            Exec post_log_entry 'Warning', @msg, 'update_dataset_file_info_xml'
         End
     End
 
@@ -466,8 +467,8 @@ AS
     If @acqLengthMinutes > 1 AND ISNULL(@separationType, '') <> ''
     Begin
         -- Possibly update the separation type
-        -- Note that UpdateDatasetFileInfoXML will also call UpdateDatasetFileInfoXML when the MSFileInfoScanner tool runs
-        EXEC AutoUpdateSeparationType @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
+        -- Note that update_dataset_file_info_xml will also call update_dataset_file_info_xml when the MSFileInfoScanner tool runs
+        EXEC auto_update_separation_type @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
 
         If @optimalSeparationType <> @separationType AND @infoOnly = 0
         Begin
@@ -478,7 +479,7 @@ AS
             If NOT Exists (SELECT * FROM T_Log_Entries WHERE Message Like 'Auto-updated separation type%' And Entered >= DateAdd(hour, -2, getdate()))
             Begin
                 Set @msg = 'Auto-updated separation type from ' + @separationType + ' to ' + @optimalSeparationType + ' for dataset ' + @datasetName
-                Exec PostLogEntry 'Normal', @msg, 'UpdateDatasetFileInfoXML'
+                Exec post_log_entry 'Normal', @msg, 'update_dataset_file_info_xml'
             End
 
         End
@@ -499,7 +500,7 @@ AS
         SELECT *
         FROM @InstrumentFilesTable
 
-        Exec UpdateDatasetDeviceInfoXML @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=1, @skipValidation=1
+        Exec update_dataset_device_info_xml @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=1, @skipValidation=1
 
         Goto Done
     End
@@ -545,7 +546,7 @@ AS
             'relative to Acq_Time_Start (' + Convert(varchar(24), @acqTimeStart, 121) + '); ' +
             'setting Acq_Time_End to be 60 minutes after Acq_Time_Start'
 
-        exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML'
+        exec post_log_entry 'Error', @message, 'update_dataset_file_info_xml'
     End
 
     -----------------------------------------------
@@ -573,7 +574,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -643,7 +644,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -668,7 +669,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -677,7 +678,7 @@ AS
     -----------------------------------------------
     --
     UPDATE T_Dataset_Info
-    SET Scan_Types = dbo.GetDatasetScanTypeList(@datasetID)
+    SET Scan_Types = dbo.get_dataset_scan_type_list(@datasetID)
     FROM T_Dataset DS
          INNER JOIN T_Dataset_Info DSInfo
            ON DSInfo.Dataset_ID = DS.Dataset_ID
@@ -710,7 +711,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetFileInfoXML'
+        set @message = 'Error updating T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -756,14 +757,14 @@ AS
     --
     If @validateDatasetType <> 0
     Begin
-        exec dbo.ValidateDatasetType @datasetID, @message=@message output, @infoonly=@infoOnly
+        exec dbo.validate_dataset_type @datasetID, @message=@message output, @infoonly=@infoOnly
     End
 
     -----------------------------------------------
     -- Add/update T_Dataset_Device_Map
     -----------------------------------------------
     --
-    Exec UpdateDatasetDeviceInfoXML @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=0, @skipValidation=1
+    Exec update_dataset_device_info_xml @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=0, @skipValidation=1
 
     Set @message = 'Dataset info update successful'
 
@@ -773,12 +774,12 @@ Done:
     If @myError Not In (0, 53600)
     Begin
         If @message = ''
-            Set @message = 'Error in UpdateDatasetFileInfoXML'
+            Set @message = 'Error in update_dataset_file_info_xml'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @InfoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'UpdateDatasetFileInfoXML'
+            Exec post_log_entry 'Error', @message, 'update_dataset_file_info_xml'
     End
 
     If Len(@message) > 0 AND @InfoOnly <> 0
@@ -795,12 +796,12 @@ Done:
         Set @usageMessage = 'Dataset: ' + @datasetName
 
     If @InfoOnly = 0
-        Exec PostUsageLogEntry 'UpdateDatasetFileInfoXML', @usageMessage
+        Exec post_usage_log_entry 'update_dataset_file_info_xml', @usageMessage
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_file_info_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoXML] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_file_info_xml] TO [Limited_Table_Write] AS [dbo]
 GO

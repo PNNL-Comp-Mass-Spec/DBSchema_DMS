@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UnconsumeScheduledRun] ******/
+/****** Object:  StoredProcedure [dbo].[unconsume_scheduled_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UnconsumeScheduledRun]
+CREATE PROCEDURE [dbo].[unconsume_scheduled_run]
 /****************************************************
 **
 **  Desc:
@@ -42,22 +42,23 @@ CREATE PROCEDURE [dbo].[UnconsumeScheduledRun]
 **          02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **          03/02/2010 grk - added status field to requested run
 **          08/04/2010 mem - No longer updating the "date created" date for the recycled request
-**          12/13/2011 mem - Added parameter @callingUser, which is sent to CopyRequestedRun, AlterEventLogEntryUser, and DeleteRequestedRun
+**          12/13/2011 mem - Added parameter @callingUser, which is sent to copy_requested_run, alter_event_log_entry_user, and delete_requested_run
 **          02/20/2013 mem - Added ability to lookup the original request from an auto-created recycled request
 **          02/21/2013 mem - Now validating that the RequestID extracted from "Automatically created by recycling request 12345" actually exists
 **          05/08/2013 mem - Removed parameters @wellplateNum and @wellNum since no longer used
 **          07/08/2014 mem - Now checking for empty requested run comment
-**          03/22/2016 mem - Now passing @skipDatasetCheck to DeleteRequestedRun
-**          11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
+**          03/22/2016 mem - Now passing @skipDatasetCheck to delete_requested_run
+**          11/16/2016 mem - Call update_cached_requested_run_eus_users to update T_Active_Requested_Run_Cached_EUS_Users
 **          03/07/2017 mem - Append _Recycled to new requests created when @recycleRequest is yes
 **                         - Remove leading space in message ' (recycled from dataset ...'
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          06/14/2019 mem - Change cart to Unknown when making the request active again
 **          10/23/2021 mem - If recycling a request with queue state 3 (Analyzed), change the queue state to 2 (Assigned)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @retainHistory tinyint = 0,
     @message varchar(1024) output,
     @callingUser varchar(128) = ''
@@ -77,19 +78,19 @@ AS
     --
     SELECT @datasetID = Dataset_ID
     FROM T_Dataset
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE (Dataset_Num = @datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
-        set @message = 'Could not get Id or state for dataset "' + @datasetNum + '"'
+        set @message = 'Could not get Id or state for dataset "' + @datasetName + '"'
         return 51140
     end
     --
     if @datasetID = 0
     begin
-        set @message = 'Dataset does not exist"' + @datasetNum + '"'
+        set @message = 'Dataset does not exist"' + @datasetName + '"'
         return 51141
     end
 
@@ -102,7 +103,7 @@ AS
     Declare @currentQueueState Tinyint     -- 1=Unassigned, 2=Assigned, 3=Analyzed
 
     Declare @requestIDOriginal int = 0
-    Declare @copyRequestedRun tinyint = 0
+    Declare @copy_requested_run tinyint = 0
     Declare @recycleOriginalRequest tinyint = 0
 
     SELECT @requestID = ID,
@@ -155,7 +156,7 @@ AS
     If @myRowCount < 1
     Begin
         Set @warningMessage = 'Could not find the cart named "unknown" in T_LC_Cart; the Cart ID of the recycled requested run will be left unchanged'
-        Exec PostLogEntry 'Error', @warningMessage, 'UnconsumeScheduledRun'
+        Exec post_log_entry 'Error', @warningMessage, 'unconsume_scheduled_run'
     End
 
     ---------------------------------------------------
@@ -165,7 +166,7 @@ AS
     Declare @addnlText varchar(1024)
 
     Declare @transName varchar(32)
-    set @transName = 'UnconsumeScheduledRun'
+    set @transName = 'unconsume_scheduled_run'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -185,7 +186,7 @@ AS
 
         If @retainHistory = 1
         Begin
-            Set @copyRequestedRun = 1
+            Set @copy_requested_run = 1
         End
 
     END -- </a1>
@@ -198,7 +199,7 @@ AS
         --
         if @retainHistory = 0
         BEGIN -- <b2>
-            EXEC @myError = DeleteRequestedRun
+            EXEC @myError = delete_requested_run
                                  @requestID,
                                  @skipDatasetCheck=1,
                                  @message=@message OUTPUT,
@@ -270,26 +271,26 @@ AS
 
                             If @requestIDOriginal = @requestID
                             Begin
-                                Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetNum + ' since it is already active'
-                                Exec PostLogEntry 'Warning', @addnlText, 'UnconsumeScheduledRun'
+                                Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetName + ' since it is already active'
+                                Exec post_log_entry 'Warning', @addnlText, 'unconsume_scheduled_run'
 
                                 Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' since it is already active'
-                                Set @message = dbo.AppendToText(@message, @addnlText, 0, '; ', 1024)
+                                Set @message = dbo.append_to_text(@message, @addnlText, 0, '; ', 1024)
                             End
                             Else
                             Begin
-                                Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetNum + ' since dataset already has an active request (' + @extracted + ')'
-                                Exec PostLogEntry 'Warning', @addnlText, 'UnconsumeScheduledRun'
+                                Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetName + ' since dataset already has an active request (' + @extracted + ')'
+                                Exec post_log_entry 'Warning', @addnlText, 'unconsume_scheduled_run'
 
                                 Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' since dataset already has an active request (' + @extracted + ')'
-                                Set @message = dbo.AppendToText(@message, @addnlText, 0, '; ', 1024)
+                                Set @message = dbo.append_to_text(@message, @addnlText, 0, '; ', 1024)
                             End
 
                             Set @requestIDOriginal = 0
                         End
                         Else
                         Begin
-                            Set @copyRequestedRun = 1
+                            Set @copy_requested_run = 1
                             Set @datasetID = @originalRequesetDatasetID
                         End
 
@@ -298,15 +299,15 @@ AS
             End -- </c>
             Else
             Begin
-                Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetNum + ' since AutoRequest'
-                Set @message = dbo.AppendToText(@message, @addnlText, 0, '; ', 1024)
+                Set @addnlText = 'Not recycling request ' + Convert(varchar(12), @requestID) + ' for dataset ' + @datasetName + ' since AutoRequest'
+                Set @message = dbo.append_to_text(@message, @addnlText, 0, '; ', 1024)
             End
 
         End -- </b3>
 
     END -- <a2>
 
-    If @requestIDOriginal > 0 And @copyRequestedRun = 1
+    If @requestIDOriginal > 0 And @copy_requested_run = 1
     BEGIN -- <a3>
 
         ---------------------------------------------------
@@ -319,7 +320,7 @@ AS
 
         Declare @requestNameAppendText varchar(128) = '_Recycled'
 
-        EXEC @myError = CopyRequestedRun
+        EXEC @myError = copy_requested_run
                             @requestIDOriginal,
                             @datasetID,
                             'Completed',
@@ -391,14 +392,14 @@ AS
             FROM T_Requested_Run_State_Name
             WHERE (State_Name = @newStatus)
 
-            Exec AlterEventLogEntryUser 11, @requestIDOriginal, @stateID, @callingUser
+            Exec alter_event_log_entry_user 11, @requestIDOriginal, @stateID, @callingUser
         End
 
         ---------------------------------------------------
         -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
         ---------------------------------------------------
         --
-        exec UpdateCachedRequestedRunEUSUsers @requestIDOriginal
+        exec update_cached_requested_run_eus_users @requestIDOriginal
 
     End -- </a4>
 
@@ -410,13 +411,13 @@ AS
     return 0
 
 GO
-GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[unconsume_scheduled_run] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UnconsumeScheduledRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[unconsume_scheduled_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[unconsume_scheduled_run] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UnconsumeScheduledRun] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[unconsume_scheduled_run] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UnconsumeScheduledRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[unconsume_scheduled_run] TO [Limited_Table_Write] AS [dbo]
 GO

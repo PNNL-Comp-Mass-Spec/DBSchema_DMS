@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[DoDatasetCompletionActions] ******/
+/****** Object:  StoredProcedure [dbo].[do_dataset_completion_actions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoDatasetCompletionActions]
+CREATE PROCEDURE [dbo].[do_dataset_completion_actions]
 /****************************************************
 **
-**  Desc: Sets state of dataset record given by @datasetNum
+**  Desc: Sets state of dataset record given by @datasetName
 **        according to given completion code and
 **        adjusts related database entries accordingly.
 **
@@ -17,18 +17,19 @@ CREATE PROCEDURE [dbo].[DoDatasetCompletionActions]
 **  Auth:   grk
 **  Date:   11/04/2002
 **          08/06/2003 grk - added handling for "Not Ready" state
-**          07/01/2005 grk - changed to use "SchedulePredefinedAnalyses"
-**          11/18/2010 mem - Now checking dataset rating and not calling SchedulePredefinedAnalyses if the rating is -10 (unreviewed)
+**          07/01/2005 grk - changed to use "schedule_predefined_analysis_jobs"
+**          11/18/2010 mem - Now checking dataset rating and not calling schedule_predefined_analysis_jobs if the rating is -10 (unreviewed)
 **                         - Removed CD burn schedule code
-**          02/09/2011 mem - Added back calling SchedulePredefinedAnalyses regardless of dataset rating
+**          02/09/2011 mem - Added back calling schedule_predefined_analysis_jobs regardless of dataset rating
 **                         - Required since predefines with Trigger_Before_Disposition should create jobs even if a dataset is unreviewed
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/08/2018 mem - Add state 14 (Duplicate dataset files)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @completionState int = 0, -- 3 (complete), 5 (capture failed), 6 (received), 8 (prep. failed), 9 (not ready), 14 (Duplicate Dataset Files)
     @message varchar(512) output
 )
@@ -49,7 +50,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoDatasetCompletionActions', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_dataset_completion_actions', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -63,13 +64,13 @@ AS
            @datasetState = DS_state_ID,
            @datasetRating = DS_rating
     FROM T_Dataset
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE (Dataset_Num = @datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
-        set @message = 'Could not get dataset ID for dataset ' + @datasetNum
+        set @message = 'Could not get dataset ID for dataset ' + @datasetName
         goto done
     end
 
@@ -79,25 +80,25 @@ AS
     --
     if not @completionState in (3, 5, 6, 8, 9, 14)
     begin
-        set @message = 'Completion state argument incorrect for ' + @datasetNum
+        set @message = 'Completion state argument incorrect for ' + @datasetName
         goto done
     end
 
     if not @datasetState in (2, 7)
     begin
-        set @message = 'Dataset in incorrect state: ' + @datasetNum
+        set @message = 'Dataset in incorrect state: ' + @datasetName
         goto done
     end
 
     if @datasetState = 2 and not @completionState in (3, 5, 6, 9, 14)
     begin
-        set @message = 'Transition 1 not allowed: ' + @datasetNum
+        set @message = 'Transition 1 not allowed: ' + @datasetName
         goto done
     end
 
     if @datasetState = 7 and not @completionState in (3, 6, 8)
     begin
-        set @message = 'Transition 2 not allowed: ' + @datasetNum
+        set @message = 'Transition 2 not allowed: ' + @datasetName
         goto done
     end
 
@@ -156,7 +157,7 @@ AS
     begin
         rollback transaction @transName
         set @myError = 51252
-        set @message = 'Update was unsuccessful for dataset ' + @datasetNum
+        set @message = 'Update was unsuccessful for dataset ' + @datasetName
         goto done
     end
 
@@ -177,13 +178,13 @@ AS
     ---------------------------------------------------
     --
     declare @result int
-    execute @result = AddArchiveDataset @datasetID
+    execute @result = add_archive_dataset @datasetID
     --
     if @result <> 0
     begin
         rollback transaction @transName
         set @myError = 51254
-        set @message = 'Update was unsuccessful for archive table ' + @datasetNum
+        set @message = 'Update was unsuccessful for archive table ' + @datasetName
         goto done
     end
 
@@ -191,10 +192,10 @@ AS
 
     ---------------------------------------------------
     -- Schedule default analyses for this dataset
-    -- Call SchedulePredefinedAnalyses even if the rating is -10 = Unreviewed
+    -- Call schedule_predefined_analysis_jobs even if the rating is -10 = Unreviewed
     ---------------------------------------------------
     --
-    execute @result = SchedulePredefinedAnalyses @datasetNum
+    execute @result = schedule_predefined_analysis_jobs @datasetName
 
     ---------------------------------------------------
     -- Exit
@@ -208,7 +209,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoDatasetCompletionActions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_dataset_completion_actions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoDatasetCompletionActions] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_dataset_completion_actions] TO [Limited_Table_Write] AS [dbo]
 GO

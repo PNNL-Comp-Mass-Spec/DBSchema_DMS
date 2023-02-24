@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunFactors] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_factors] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
+CREATE PROCEDURE [dbo].[update_requested_run_factors]
 /****************************************************
 **
 **  Desc:
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **      <r i="OpSaliva_009_b_7Mar11_Phoenix_11-01-20" f="Factor2" v="Bb" />
 **
 **
-**      XML coming from stored procedure MakeAutomaticRequestedRunFactors will look like the following
+**      XML coming from stored procedure make_automatic_requested_run_factors will look like the following
 **      - Here, the identifier is RequestID
 **
 **      <r i="193911" f="Factor1" v="Aa" />
@@ -52,7 +52,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **  Date:   02/20/2010 grk - initial release
 **          03/17/2010 grk - expanded blacklist
 **          03/22/2010 grk - allow dataset id
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          12/08/2011 mem - Added additional blacklisted factor names: Experiment, Dataset, Name, and Status
 **          12/09/2011 mem - Now checking for invalid Requested Run IDs
 **          12/15/2011 mem - Added support for the "type" attribute in the <id> tag
@@ -60,9 +60,9 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/06/2016 mem - Populate column Last_Updated in T_Factor
 **                         - Expand the warning message for unrecognized @IDType
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/12/2022 mem - Trim leading and trailing whitespace when storing factors
@@ -70,6 +70,7 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunFactors]
 **          12/13/2022 mem - Ignore factors named 'Dataset ID'
 **                         - Rename temp table
 **          01/25/2023 mem - Block factors named 'Run_Order'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -96,7 +97,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunFactors', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_requested_run_factors', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -109,13 +110,13 @@ AS
     SET @message = ''
 
     If IsNull(@callingUser, '') = ''
-        SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+        SET @callingUser = dbo.get_user_login_without_domain('')
 
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     -- Uncomment to log the XML for debugging purposes
     -- Declare @debugMessage Varchar(4096) = Cast(@factorList As varchar(4096))
-    -- exec PostLogEntry 'Debug', @debugMessage, 'UpdateRequestedRunFactors'
+    -- exec post_log_entry 'Debug', @debugMessage, 'update_requested_run_factors'
 
     -----------------------------------------------------------
     -- Temp table to hold factors
@@ -598,14 +599,14 @@ AS
 
     Declare @UsageMessage varchar(512) = ''
     Set @UsageMessage = ''
-    Exec PostUsageLogEntry 'UpdateRequestedRunFactors', @UsageMessage
+    Exec post_usage_log_entry 'update_requested_run_factors', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_factors] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunFactors] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_factors] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunFactors] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_factors] TO [Limited_Table_Write] AS [dbo]
 GO

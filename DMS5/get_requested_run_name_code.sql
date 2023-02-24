@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE FUNCTION [dbo].[get_requested_run_name_code]
 /****************************************************
 **
@@ -11,7 +10,7 @@ CREATE FUNCTION [dbo].[get_requested_run_name_code]
 **      Generates the Name Code string for a given requested run
 **      This string is used when grouping requested runs for run planning purposes
 **
-**      The request name code will be based on the request name, date, requester PRN, dataset type, and separation type if @batchID = 0
+**      The request name code will be based on the request name, date, requester username, dataset type, and separation type if @batchID = 0
 **      Otherwise, if @batchID is non-zero, it is based on the batch group ID, batch name, date, batch ID, dataset type, and separation type
 **
 **      Examples:
@@ -24,15 +23,16 @@ CREATE FUNCTION [dbo].[get_requested_run_name_code]
 **  Date:   08/05/2010
 **          08/10/2010 mem - Added @datasetTypeID and @separationType
 **                         - Increased size of return string to varchar(64)
-**          08/26/2021 mem - Use Batch ID instead of PRN
+**          08/26/2021 mem - Use Batch ID instead of username
 **          06/22/2022 mem - Remove parameter @batchRequesterPRN since unused
 **          02/21/2023 mem - Rename function and add parameter @batchGroupID
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @requestName varchar(128),
     @requestCreated datetime,
-    @requesterPRN varchar(64),
+    @requesterUsername varchar(64),
     @batchID int,
     @batchName varchar(128),
     @batchGroupID int,
@@ -48,7 +48,7 @@ BEGIN
                     SUBSTRING(@requestName, 1, 3) + '_' +
                     CONVERT(varchar(10), @requestCreated, 112) + '_' +
                     'R_' +
-                    @requesterPRN + '_' +
+                    @requesterUsername + '_' +
                     CONVERT(varchar(4), ISNULL(@datasetTypeID, 0)) + '_' +
                     IsNull(@separationType, '')
                 ELSE

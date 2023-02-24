@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteExperiment] ******/
+/****** Object:  StoredProcedure [dbo].[delete_experiment] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteExperiment]
+CREATE PROCEDURE [dbo].[delete_experiment]
 /****************************************************
 **
 **  Desc:
@@ -18,18 +18,19 @@ CREATE PROCEDURE [dbo].[DeleteExperiment]
 **          06/16/2005 grk - added delete for experiment group members table
 **          02/27/2006 grk - added delete for experiment group table
 **          08/31/2006 jds - added check for requested runs (Ticket #199)
-**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          02/26/2010 mem - Merged T_Requested_Run_History with T_Requested_Run
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          12/06/2018 mem - Call UpdateExperimentGroupMemberCount to update T_Experiment_Groups
+**          12/06/2018 mem - Call update_experiment_group_member_count to update T_Experiment_Groups
 **          09/10/2019 mem - Delete from T_Experiment_Plex_Members if mapped to Plex_Exp_ID
 **                         - Prevent deletion if the experiment is a plex channel in T_Experiment_Plex_Members
 **                         - Add @infoOnly
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @experimentNum varchar(128),
+    @experimentName varchar(128),
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
@@ -47,7 +48,7 @@ AS
 
     Declare @result int
 
-    Set @experimentNum = IsNull(@experimentNum, '')
+    Set @experimentName = IsNull(@experimentName, '')
     Set @infoOnly = IsNull(@infoonly, 0)
 
     ---------------------------------------------------
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteExperiment', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_experiment', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -69,13 +70,13 @@ AS
     --
     SELECT @experimentId = Exp_ID
     FROM T_Experiments
-    WHERE (Experiment_Num = @experimentNum)
+    WHERE (Experiment_Num = @experimentName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0 or @experimentId = 0
     Begin
-        set @message = 'Could not get Id for Experiment "' + @experimentNum + '"'
+        set @message = 'Could not get Id for Experiment "' + @experimentName + '"'
         RAISERROR (@message, 10, 1)
         return 51140
     End
@@ -94,7 +95,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get dataset count for Experiment "' + @experimentNum + '"'
+        set @message = 'Could not get dataset count for Experiment "' + @experimentName + '"'
         RAISERROR (@message, 10, 1)
         return 51141
     End
@@ -120,7 +121,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get requested run count for Experiment "' + @experimentNum + '"'
+        set @message = 'Could not get requested run count for Experiment "' + @experimentName + '"'
         RAISERROR (@message, 10, 1)
         return 51142
     End
@@ -146,7 +147,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get requested run history count for Experiment "' + @experimentNum + '"'
+        set @message = 'Could not get requested run history count for Experiment "' + @experimentName + '"'
         RAISERROR (@message, 10, 1)
         return 51143
     End
@@ -172,14 +173,14 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Could not get plex member count for Experiment "' + @experimentNum + '"'
+        set @message = 'Could not get plex member count for Experiment "' + @experimentName + '"'
         RAISERROR (@message, 10, 1)
         return 51144
     End
     --
     If @plexMemberCount > 0
     Begin
-        set @message = 'Cannot delete experiment that is mapped to a plex channel; see https://dms2.pnl.gov/experiment_plex_members_tsv/report/-/-/-/' + @experimentNum + '/-/-/-'
+        set @message = 'Cannot delete experiment that is mapped to a plex channel; see https://dms2.pnl.gov/experiment_plex_members_tsv/report/-/-/-/' + @experimentName + '/-/-/-'
         RAISERROR (@message, 10, 1)
         return 51144
     End
@@ -188,7 +189,7 @@ AS
     -- Start transaction
     ---------------------------------------------------
 
-    Declare @transName varchar(32) = 'DeleteExperiment'
+    Declare @transName varchar(32) = 'delete_experiment'
 
     Begin Transaction @transName
 
@@ -260,7 +261,7 @@ AS
         Begin
             -- Update MemberCount
             --
-            Exec @myError = UpdateExperimentGroupMemberCount @groupID = @groupID
+            Exec @myError = update_experiment_group_member_count @groupID = @groupID
 
             If @myError <> 0
             Begin
@@ -327,7 +328,7 @@ AS
 
     If @infoonly > 0
     Begin
-        Select 'exec DeleteAuxInfo for ' + @experimentNum
+        Select 'exec delete_aux_info for ' + @experimentName
     End
     Else
     Begin
@@ -335,7 +336,7 @@ AS
         -- Delete any auxiliary info associated with Experiment
         ---------------------------------------------------
 
-        exec @result = DeleteAuxInfo 'Experiment', @experimentNum, @message output
+        exec @result = delete_aux_info 'Experiment', @experimentName, @message output
 
         If @result <> 0
         Begin
@@ -372,12 +373,12 @@ AS
         return 51130
     End
 
-    -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+    -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
     If @infoonly = 0 And Len(@callingUser) > 0
     Begin
         Declare @stateID Int = 0
 
-        Exec AlterEventLogEntryUser 3, @experimentId, @stateID, @callingUser
+        Exec alter_event_log_entry_user 3, @experimentId, @stateID, @callingUser
     End
 
     commit transaction @transName
@@ -385,11 +386,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_experiment] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_experiment] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteExperiment] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_experiment] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteExperiment] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_experiment] TO [Limited_Table_Write] AS [dbo]
 GO

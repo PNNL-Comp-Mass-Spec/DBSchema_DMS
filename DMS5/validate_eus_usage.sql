@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateEUSUsage] ******/
+/****** Object:  StoredProcedure [dbo].[validate_eus_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateEUSUsage]
+CREATE PROCEDURE [dbo].[validate_eus_usage]
 /****************************************************
 **
 **  Desc:
@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          01/09/2016 mem - Added option for disabling EUS validation using table T_MiscOptions
 **          01/20/2017 mem - Auto-fix USER_UNKOWN to USER_UNKNOWN for @eusUsageType
-**          03/17/2017 mem - Only call MakeTableFromList if @eusUsersList contains a semicolon
+**          03/17/2017 mem - Only call make_table_from_list if @eusUsersList contains a semicolon
 **          04/10/2017 mem - Auto-change USER_UNKNOWN to CAP_DEV
 **          07/19/2019 mem - Custom error message if @eusUsageType is blank
 **          11/06/2019 mem - Auto-change @eusProposalID if a value is defined for Proposal_ID_AutoSupersede
@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[ValidateEUSUsage]
 **          10/13/2021 mem - Use Like when extracting integers
 **                         - Add additional debug messages
 **                         - Use Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -278,7 +279,7 @@ AS
                                       'has Proposal_ID_AutoSupersede set to itself; this is invalid'
 
                     If @infoOnly = 0
-                        exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                        exec post_log_entry 'Error', @logMessage, 'validate_eus_usage', 1
                     Else
                         Print @logMessage
 
@@ -293,7 +294,7 @@ AS
                                           'but that proposal does not exist in T_EUS_Proposals'
 
                         If @infoOnly = 0
-                            exec PostLogEntry 'Error', @logMessage, 'ValidateEUSUsage', 1
+                            exec post_log_entry 'Error', @logMessage, 'validate_eus_usage', 1
                         Else
                             Print @logMessage
 
@@ -339,7 +340,7 @@ AS
                             INSERT INTO #Tmp_Proposal_Stack (Proposal_ID, Numeric_ID)
                             Values (@autoSupersedeProposalID, Coalesce(@numericID, 0))
 
-                            Set @message = dbo.AppendToText(
+                            Set @message = dbo.append_to_text(
                                     @message,
                                     'Proposal ' + @eusProposalID + ' is superseded by ' + @autoSupersedeProposalID,
                                     0, '; ', 1024)
@@ -391,7 +392,7 @@ AS
             If IsNull(@personID, 0) > 0
             Begin
                 Set @eusUsersList = Convert(varchar(12), @personID)
-                Set @message = dbo.AppendToText(
+                Set @message = dbo.append_to_text(
                                 @message,
                                 'Warning: EUS User list was empty; auto-selected user "' + @eusUsersList + '"',
                                 0, '; ', 1024)
@@ -459,7 +460,7 @@ AS
             Begin
                 INSERT INTO @tmpUsers (Item)
                 SELECT Item
-                FROM MakeTableFromList(@eusUsersList)
+                FROM make_table_from_list(@eusUsersList)
             End
             Else
             Begin
@@ -572,7 +573,7 @@ AS
                 End
 
                 Set @eusUsersList = IsNull(@newUserList, '')
-                Set @message = dbo.AppendToText(
+                Set @message = dbo.append_to_text(
                         @message,
                         'Warning: Removed users from EUS User list that are not associated with proposal "' + @eusProposalID + '"',
                         0, '; ', 1024)
@@ -622,7 +623,7 @@ AS
                 Set @msg = 'Warning: campaign has EUS Usage Type USER_REMOTE; the new item should likely also be of type USER_REMOTE'
             End
 
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
 
         If @eusUsageTypeCampaign = 'USER_ONSITE' And @eusUsageType = 'USER' And @proposalType <> 'Resource Owner'
@@ -643,7 +644,7 @@ AS
 
     If @usageTypeUpdated > 0
     Begin
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
 
         SELECT @eusUsageTypeID = ID
         FROM T_EUS_UsageType
@@ -654,17 +655,17 @@ AS
         If @myRowCount= 0
         Begin
             Set @msg = @msg + '; Could not find usage type "' + @eusUsageType + '" in T_EUS_UsageType; this is unexpected'
-            exec PostLogEntry 'Error', @msg, 'ValidateEUSUsage'
+            exec post_log_entry 'Error', @msg, 'validate_eus_usage'
 
             -- Only append @msg to @message if an error occurs
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
     End
 
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_eus_usage] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateEUSUsage] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_eus_usage] TO [Limited_Table_Write] AS [dbo]
 GO

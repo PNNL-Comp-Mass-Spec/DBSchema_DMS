@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindActiveRequestedRunForDataset] ******/
+/****** Object:  StoredProcedure [dbo].[find_active_requested_run_for_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindActiveRequestedRunForDataset]
+CREATE PROCEDURE [dbo].[find_active_requested_run_for_dataset]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[FindActiveRequestedRunForDataset]
 **  Auth:   mem
 **  Date:   06/10/2016 mem - Initial version
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -151,5 +152,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindActiveRequestedRunForDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_active_requested_run_for_dataset] TO [DDL_Viewer] AS [dbo]
 GO

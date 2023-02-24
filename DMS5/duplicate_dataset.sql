@@ -1,23 +1,24 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateDataset] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DuplicateDataset]
+CREATE PROCEDURE [dbo].[duplicate_dataset]
 /****************************************************
 **
-**  Desc:   Duplicates a dataset by adding a new row to T_Dataset and calling AddUpdateRequestedRun
+**  Desc:   Duplicates a dataset by adding a new row to T_Dataset and calling add_update_requested_run
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   12/12/2018 mem - Initial version
-**          08/19/2020 mem - Add @newOperatorPRN
-**                         - Add call to UpdateCachedDatasetInstruments
+**          08/19/2020 mem - Add @newOperatorUsername
+**                         - Add call to update_cached_dataset_instruments
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
-**          11/25/2022 mem - Rename variable and update call to AddUpdateRequestedRun to use new parameter name
+**          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
+**          11/25/2022 mem - Rename variable and update call to add_update_requested_run to use new parameter name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -25,7 +26,7 @@ CREATE PROCEDURE [dbo].[DuplicateDataset]
     @newDataset varchar(128),                   -- New dataset name
     @newComment varchar(512) = '',              -- New dataset comment; use source dataset's comment if blank; use a blank comment if '.' or '<blank>' or '<empty>'
     @newCaptureSubfolder varchar(255) = '',     -- Capture subfolder name; use source dataset's capture subfolder if blank
-    @newOperatorPRN varchar(64) = '',           -- Operator username
+    @newOperatorUsername varchar(64) = '',      -- Operator username
     @datasetStateID int = 1,                    -- 1 for a new dataset, which will create a dataset capture job; 3=Complete; 4=Inactive; 13=Holding
     @infoOnly tinyint = 1,                      -- 0 to create the dataset, 1 to preview
     @message varchar(512) = '' output           -- Output message
@@ -41,7 +42,7 @@ AS
 
     Declare @sourceDatasetRequestID int
     Declare @reqName varchar(128)
-    Declare @experimentNum varchar(64)
+    Declare @experimentName varchar(64)
     Declare @instrumentName varchar(64)
     Declare @instrumentSettings Varchar(1024)
     Declare @msType varchar(50)
@@ -60,7 +61,7 @@ AS
     Set @newDataset = IsNull(@newDataset, '')
     Set @newComment = IsNull(@newComment, '')
     Set @newCaptureSubfolder = IsNull(@newCaptureSubfolder, '')
-    Set @newOperatorPRN = ISNULL(@newOperatorPRN, '')
+    Set @newOperatorUsername = ISNULL(@newOperatorUsername, '')
     Set @datasetStateID = IsNull(@datasetStateID, 1)
     Set @infoOnly  = IsNull(@infoOnly, 1)
 
@@ -99,17 +100,17 @@ AS
     End
 
     Declare @sourceDatasetId int
-    Declare @operPRN varchar(64)
+    Declare @operatorUsername varchar(64)
     Declare @comment varchar(512)
     Declare @instrumentID int
     Declare @datasetTypeID int
-    Declare @wellNum varchar(64)
+    Declare @wellNumber varchar(64)
     Declare @secSep varchar(64)
     Declare @storagePathID int
     Declare @experimentID int
     Declare @ratingID int
     Declare @columnID int
-    Declare @wellplate varchar(64)
+    Declare @wellplateName varchar(64)
     Declare @intStdID Int
     Declare @captureSubfolder varchar(255)
     Declare @cartConfigID int
@@ -119,21 +120,21 @@ AS
     ---------------------------------------------------
     --
     SELECT @sourceDatasetId = D.Dataset_ID,
-           @operPRN = D.DS_Oper_PRN,
+           @operatorUsername = D.DS_Oper_PRN,
            @comment = D.DS_comment,
            @instrumentID = D.DS_instrument_name_ID,
            @datasetTypeID = D.DS_type_ID,
-           @wellNum = D.DS_well_num,
+           @wellNumber = D.DS_well_num,
            @secSep = D.DS_sec_sep,
            @storagePathID = D.DS_storage_path_ID,
            @experimentID = D.Exp_ID,
            @ratingID = D.DS_rating,
            @columnID = D.DS_LC_column_ID,
-           @wellplate = D.DS_wellplate_num,
+           @wellplateName = D.DS_wellplate_num,
            @intStdID = D.DS_internal_standard_ID,
            @captureSubfolder = D.Capture_Subfolder,
            @cartConfigID = D.Cart_Config_ID,
-           @experimentNum = E.Experiment_Num
+           @experimentName = E.Experiment_Num
     FROM T_Dataset D
          INNER JOIN T_Experiments E
            ON D.Exp_ID = E.Exp_ID
@@ -183,50 +184,50 @@ AS
 
     If @myRowCount = 0
     Begin
-        Set @message = 'Source dataset does not have a requested run; use AddMissingRequestedRun to add one'
+        Set @message = 'Source dataset does not have a requested run; use add_missing_requested_run to add one'
         Select @message as Error
 
         Goto Done
     End
 
-    Set @eusUsersList = dbo.GetRequestedRunEUSUsersList(@sourceDatasetRequestID, 'I')
+    Set @eusUsersList = dbo.get_requested_run_eus_users_list(@sourceDatasetRequestID, 'I')
 
-    If @newOperatorPRN <> ''
+    If @newOperatorUsername <> ''
     Begin
         ---------------------------------------------------
-        -- Resolve user ID for operator PRN
+        -- Resolve user ID for operator username
         ---------------------------------------------------
 
         Declare @userID int
-        execute @userID = GetUserID @newOperatorPRN
+        execute @userID = get_user_id @newOperatorUsername
 
         If @userID > 0
         Begin
-            -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
-            -- Assure that @operPRN contains simply the username
+            -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
+            -- Assure that @operatorUsername contains simply the username
             --
-            SELECT @operPRN = U_PRN
+            SELECT @operatorUsername = U_PRN
             FROM T_Users
             WHERE ID = @userID
         End
         Else
         Begin
-            -- Could not find entry in database for PRN @newOperatorPRN
+            -- Could not find entry in database for username @newOperatorUsername
             -- Try to auto-resolve the name
 
             Declare @matchCount int
-            Declare @newPRN varchar(64)
+            Declare @newUsername varchar(64)
 
-            exec AutoResolveNameToPRN @newOperatorPRN, @matchCount output, @newPRN output, @userID output
+            exec auto_resolve_name_to_username @newOperatorUsername, @matchCount output, @newUsername output, @userID output
 
             If @MatchCount = 1
             Begin
-                -- Single match found; update @operPRN
-                Set @operPRN = @newPRN
+                -- Single match found; update @operatorUsername
+                Set @operatorUsername = @newUsername
             End
             Else
             Begin
-                Set @message = 'Could not find entry in database for operator PRN ' + @newOperatorPRN
+                Set @message = 'Could not find entry in database for operator username ' + @newOperatorUsername
                 Select @message as Error
                 Goto Done
             End
@@ -236,12 +237,12 @@ AS
     If @infoOnly <> 0
     Begin
         SELECT @newDataset AS Dataset,
-               @operPRN AS Operator_PRN,
+               @operatorUsername AS Operator_PRN,
                @comment AS [Comment],
                GetDate() AS DS_Created,
                @instrumentID AS Instrument_ID,
                @datasetTypeID AS DS_TypeID,
-               @wellNum AS WellNum,
+               @wellNumber AS WellNumber,
                @secSep AS SecondarySep,
                @datasetStateID AS DatasetStateID,
                @newDataset AS Dataset_Folder,
@@ -249,22 +250,22 @@ AS
                @experimentID AS ExperimentID,
                @ratingID AS RatingID,
                @columnID AS ColumnID,
-               @wellplate AS WellplateNum,
+               @wellplateName AS WellplateName,
                @intStdID AS InternalStandardID,
                @captureSubfolder AS Capture_SubFolder,
                @cartConfigID AS CartConfigID
 
 
         Select 'AutoReq_' + @newDataset As Requested_Run,
-                                @experimentNum As Experiment,
-                                @operPRN As Operator_PRN,
+                                @experimentName As Experiment,
+                                @operatorUsername As Operator_Username,
                                 @instrumentName As Instrument,
                                 @workPackage As WP,
                                 @msType As MSType,
                                 @separationGroup As SeparationGroup,
                                 @instrumentSettings As Instrument_Settings,
-                                @wellplate As WellplateNum,
-                                @wellNum As WellNum,
+                                @wellplateName As WellplateName,
+                                @wellNumber As WellNumber,
                                 'na' As InternalStandard,
                                 'Automatically created by Dataset entry' As [Comment],
                                 @eusProposalID As EUS_ProposalID,
@@ -279,7 +280,7 @@ AS
     Else
     Begin
 
-        Declare @transName varchar(32) = 'AddNewDataset'
+        Declare @transName varchar(32) = 'add_new_dataset'
 
         Begin transaction @transName
 
@@ -308,12 +309,12 @@ AS
             Cart_Config_ID
         ) VALUES (
             @newDataset,
-            @operPRN,
+            @operatorUsername,
             @comment,
             GetDate(),
             @instrumentID,
             @datasetTypeID,
-            @wellNum,
+            @wellNumber,
             @secSep,
             @datasetStateID,
             @newDataset,        -- DS_folder_name
@@ -321,7 +322,7 @@ AS
             @experimentID,
             @ratingID,
             @columnID,
-            @wellplate,
+            @wellplateName,
             @intStdID,
             @captureSubfolder,
             @cartConfigID
@@ -348,16 +349,16 @@ AS
         --
         Set @reqName = 'AutoReq_' + @newDataset
 
-        EXEC @myError = dbo.AddUpdateRequestedRun
+        EXEC @myError = dbo.add_update_requested_run
                                 @reqName = @reqName,
-                                @experimentNum = @experimentNum,
-                                @requesterPRN = @operPRN,
+                                @experimentName = @experimentName,
+                                @requesterUsername = @operatorUsername,
                                 @instrumentName = @instrumentName,
                                 @workPackage = @workPackage,
                                 @msType = @msType,
                                 @instrumentSettings = @instrumentSettings,
-                                @wellplate = @wellplate,
-                                @wellNum = @wellNum,
+                                @wellplateName = @wellplateName,
+                                @wellNumber = @wellNumber,
                                 @internalStandard = 'na',
                                 @comment = 'Automatically created by Dataset entry',
                                 @eusProposalID = @eusProposalID,
@@ -387,7 +388,7 @@ AS
         -- Consume the scheduled run
         ---------------------------------------------------
 
-        exec @myError = ConsumeScheduledRun @datasetID, @requestID, @message output
+        exec @myError = consume_scheduled_run @datasetID, @requestID, @message output
         --
         If @myError <> 0
         Begin
@@ -402,7 +403,7 @@ AS
         Commit transaction @transName
 
         -- Update T_Cached_Dataset_Instruments
-        Exec dbo.UpdateCachedDatasetInstruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
+        Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
         Select @newDataset As Dataset_New, @datasetID As Dataset_ID, @requestID As RequestedRun_ID, 'Duplicated dataset ' + @sourceDataset As Status
 

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDataAnalysisRequestBatchList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_data_analysis_request_batch_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDataAnalysisRequestBatchList]
+CREATE FUNCTION [dbo].[get_data_analysis_request_batch_list]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetDataAnalysisRequestBatchList]
 **
 **  Auth:   mem
 **  Date:   03/25/2022 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

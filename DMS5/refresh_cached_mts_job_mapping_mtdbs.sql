@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RefreshCachedMTSJobMappingMTDBs] ******/
+/****** Object:  StoredProcedure [dbo].[refresh_cached_mts_job_mapping_mtdbs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RefreshCachedMTSJobMappingMTDBs]
+CREATE PROCEDURE [dbo].[refresh_cached_mts_job_mapping_mtdbs]
 /****************************************************
 **
 **  Desc:   Updates the data in T_MTS_MT_DB_Jobs_Cached using MTS
@@ -14,11 +14,12 @@ CREATE PROCEDURE [dbo].[RefreshCachedMTSJobMappingMTDBs]
 **  Date:   04/21/2010 mem - Initial Version
 **          10/21/2011 mem - Now checking for duplicate rows in T_MTS_MT_DB_Jobs_Cached
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobMinimum int = 0,        -- Set to a positive value to limit the jobs examined; when non-zero, then jobs outside this range are ignored
-    @JobMaximum int = 0,
+    @jobMinimum int = 0,        -- Set to a positive value to limit the jobs examined; when non-zero, then jobs outside this range are ignored
+    @jobMaximum int = 0,
     @message varchar(255) = '' output
 )
 AS
@@ -73,7 +74,7 @@ AS
             Set @message = @message + 'entries'
         Set @message = @message + ' from T_MTS_MT_DB_Jobs_Cached; this is unexpected'
 
-        execute PostLogEntry 'Error', @message, 'RefreshCachedMTSJobMappingMTDBs'
+        execute post_log_entry 'Error', @message, 'refresh_cached_mts_job_mapping_mtdbs'
 
         Set @message = ''
     End
@@ -120,7 +121,7 @@ AS
 
         Set @CurrentLocation = 'Update T_MTS_Cached_Data_Status'
         --
-        Exec UpdateMTSCachedDataStatus 'T_MTS_MT_DB_Jobs_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = @JobMinimum
+        Exec update_mts_cached_data_status 'T_MTS_MT_DB_Jobs_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = @JobMinimum
 
 
         -- Use a MERGE Statement (introduced in Sql Server 2008) to synchronize T_MTS_MT_DB_Jobs_Cached with S_MTS_Analysis_Job_to_MT_DB_Map
@@ -159,7 +160,7 @@ AS
         if @myError <> 0
         begin
             set @message = 'Error merging S_MTS_Analysis_Job_to_MT_DB_Map with T_MTS_MT_DB_Jobs_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'RefreshCachedMTSJobMappingMTDBs'
+            execute post_log_entry 'Error', @message, 'refresh_cached_mts_job_mapping_mtdbs'
             goto Done
         end
 
@@ -184,7 +185,7 @@ AS
         Set @CurrentLocation = 'Update stats in T_MTS_Cached_Data_Status'
         --
         --
-        Exec UpdateMTSCachedDataStatus 'T_MTS_MT_DB_Jobs_Cached',
+        Exec update_mts_cached_data_status 'T_MTS_MT_DB_Jobs_Cached',
                                             @IncrementRefreshCount = 1,
                                             @InsertCountNew = @MergeInsertCount,
                                             @UpdateCountNew = @MergeUpdateCount,
@@ -195,8 +196,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTSJobMappingMTDBs')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'refresh_cached_mts_job_mapping_mtdbs')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -205,7 +206,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSJobMappingMTDBs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mts_job_mapping_mtdbs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTSJobMappingMTDBs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mts_job_mapping_mtdbs] TO [Limited_Table_Write] AS [dbo]
 GO

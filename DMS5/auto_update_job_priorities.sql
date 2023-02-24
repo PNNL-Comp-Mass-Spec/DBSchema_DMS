@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoUpdateJobPriorities] ******/
+/****** Object:  StoredProcedure [dbo].[auto_update_job_priorities] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoUpdateJobPriorities]
+CREATE PROCEDURE [dbo].[auto_update_job_priorities]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[AutoUpdateJobPriorities]
 **  Auth:   mem
 **  Date:   10/04/2017 mem - Initial version
 **          07/29/2022 mem - No longer filter out null parameter file or settings file names since neither column allows null values
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -250,9 +251,9 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            Set @message = 'Updated job priority for ' + Cast(@myRowCount as varchar(9)) + ' long running ' + dbo.CheckPlural(@myRowCount, 'job', 'jobs')
+            Set @message = 'Updated job priority for ' + Cast(@myRowCount as varchar(9)) + ' long running ' + dbo.check_plural(@myRowCount, 'job', 'jobs')
 
-            Exec PostLogEntry 'Normal', @message, 'AutoUpdateJobPriorities'
+            Exec post_log_entry 'Normal', @message, 'auto_update_job_priorities'
         End
 
         Print @message

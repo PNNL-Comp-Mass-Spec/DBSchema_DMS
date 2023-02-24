@@ -1,28 +1,29 @@
-/****** Object:  StoredProcedure [dbo].[AutoUpdateDatasetRatingViaQCMetrics] ******/
+/****** Object:  StoredProcedure [dbo].[auto_update_dataset_rating_via_qc_metrics] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoUpdateDatasetRatingViaQCMetrics]
+CREATE PROCEDURE [dbo].[auto_update_dataset_rating_via_qc_metrics]
 /****************************************************
 **
 **  Desc:   Looks for Datasets that have low QC metric values
 **          and auto-updates their rating to Not_Released
 **
-**          If one more more entries is found, then updates @MatchingPRN and @MatchingUserID for the first match
+**          If one more more entries is found, then updates @MatchingUsername and @MatchingUserID for the first match
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   10/18/2012
 **          01/16/2014 mem - Added parameter @ExperimentExclusion
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @CampaignName varchar(128) = 'QC-Shew-Standard',                    -- Campaign name to filter on; filter uses Like so the name can contain a wild card
-    @ExperimentExclusion varchar(128) = '%Intact%',
-    @DatasetCreatedMinimum datetime = '1/1/2000',
-    @InfoOnly tinyint = 1,
+    @campaignName varchar(128) = 'QC-Shew-Standard',                    -- Campaign name to filter on; filter uses Like so the name can contain a wild card
+    @experimentExclusion varchar(128) = '%Intact%',
+    @datasetCreatedMinimum datetime = '1/1/2000',
+    @infoOnly tinyint = 1,
     @message varchar(128) = '' output
 )
 AS
@@ -151,11 +152,11 @@ AS
     Else
     Begin
         If @myRowCount > 0
-            Exec PostLogEntry 'Normal', @message, 'AutoUpdateDatasetRatingViaQCMetrics'
+            Exec post_log_entry 'Normal', @message, 'auto_update_dataset_rating_via_qc_metrics'
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoUpdateDatasetRatingViaQCMetrics] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_update_dataset_rating_via_qc_metrics] TO [DDL_Viewer] AS [dbo]
 GO

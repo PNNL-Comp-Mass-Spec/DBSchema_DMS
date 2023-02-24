@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMyEMSLUrlExperiment] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_myemsl_url_experiment] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMyEMSLUrlExperiment]
+CREATE FUNCTION [dbo].[get_myemsl_url_experiment]
 /****************************************************
 **
 **  Desc:
@@ -11,20 +11,21 @@ CREATE FUNCTION [dbo].[GetMyEMSLUrlExperiment]
 **
 **  Auth:   mem
 **  Date:   09/12/2013
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ExperimentName varchar(128)
+    @experimentName varchar(128)
 )
 RETURNS varchar(1024)
 AS
 BEGIN
     Declare @KeyName varchar(128) = 'extended_metadata.gov_pnnl_emsl_dms_experiment.name.untouched'
-    Declare @Url varchar(1024) = dbo.GetMyEMSLUrlWork(@KeyName, @ExperimentName)
+    Declare @Url varchar(1024) = dbo.get_myemsl_url_work(@KeyName, @ExperimentName)
 
     Return @Url
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMyEMSLUrlExperiment] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_myemsl_url_experiment] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetLongIntervalThreshold] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_long_interval_threshold] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetLongIntervalThreshold]
+CREATE FUNCTION [dbo].[get_long_interval_threshold]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetLongIntervalThreshold]
 **
 **  Auth:   grk
 **  Date:   06/08/2012 grk - initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 ()
@@ -26,7 +27,7 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetLongIntervalThreshold] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_long_interval_threshold] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetLongIntervalThreshold] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_long_interval_threshold] TO [DMS2_SP_User] AS [dbo]
 GO

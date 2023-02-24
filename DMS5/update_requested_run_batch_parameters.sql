@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRequestedRunBatchParameters] ******/
+/****** Object:  StoredProcedure [dbo].[update_requested_run_batch_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
+CREATE PROCEDURE [dbo].[update_requested_run_batch_parameters]
 /****************************************************
 **
 **  Desc:
@@ -25,19 +25,20 @@ CREATE PROCEDURE [dbo].[UpdateRequestedRunBatchParameters]
 **  Auth:   grk
 **  Date:   02/09/2010
 **          02/16/2010 grk - eliminated batchID from arg list
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          12/15/2011 mem - Now updating @callingUser to SUSER_SNAME() if empty
 **          03/28/2013 grk - added handling for cart, instrument
-**          11/07/2016 mem - Add optional logging via PostLogEntry
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
-**          11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers for updated Requested runs
+**          11/07/2016 mem - Add optional logging via post_log_entry
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
+**          11/16/2016 mem - Call update_cached_requested_run_eus_users for updated Requested runs
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/04/2019 mem - Update Last_Ordered if the run order changes
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
-**          02/11/2023 mem - Update the usage message sent to PostUsageLogEntry
+**          02/11/2023 mem - Update the usage message sent to post_usage_log_entry
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRequestedRunBatchParameters', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_requested_run_batch_parameters', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -74,7 +75,7 @@ AS
     Set @message = ''
 
     If IsNull(@callingUser, '') = ''
-        Set @callingUser = dbo.GetUserLoginWithoutDomain('')
+        Set @callingUser = dbo.get_user_login_without_domain('')
 
     -- Set to 1 to log the contents of @blockingList
     Declare @debugEnabled tinyint = 0
@@ -84,7 +85,7 @@ AS
     Begin
         Set @logMessage = Cast(@blockingList as varchar(4000))
 
-        exec PostLogEntry 'Debug', @logMessage, 'UpdateRequestedRunBatchParameters'
+        exec post_log_entry 'Debug', @logMessage, 'update_requested_run_batch_parameters'
     End
 
 
@@ -207,7 +208,7 @@ AS
         --
         IF @mode = 'update'
         BEGIN --<c>
-            Declare @transName VARCHAR(32) = 'UpdateRequestedRunBatchParameters'
+            Declare @transName VARCHAR(32) = 'update_requested_run_batch_parameters'
 
             BEGIN TRANSACTION @transName
 
@@ -289,14 +290,14 @@ AS
                                           Cast(@minBatchID As varchar(12)) + ' vs. ' + Cast(@maxBatchID As varchar(12)) +
                                           '; see requested runs ' + @requestedRunList
 
-                        exec PostLogEntry 'Warning', @logMessage, 'UpdateRequestedRunBatchParameters'
+                        exec post_log_entry 'Warning', @logMessage, 'update_requested_run_batch_parameters'
                     End
                 End
             End
 
             If Exists (SELECT * FROM #Tmp_NewBatchParams WHERE Parameter = 'Status')
             Begin
-                -- Call UpdateCachedRequestedRunEUSUsers for each entry in #Tmp_NewBatchParams
+                -- Call update_cached_requested_run_eus_users for each entry in #Tmp_NewBatchParams
                 --
                 Declare @continue tinyint = 1
                 Declare @requestId int = -100000
@@ -316,7 +317,7 @@ AS
                     End
                     Else
                     Begin
-                        Exec UpdateCachedRequestedRunEUSUsers @requestId
+                        Exec update_cached_requested_run_eus_users @requestId
                     End
 
                 End
@@ -367,25 +368,25 @@ AS
                     Set @UsageMessage = 'Request IDs: ' + Convert(varchar(12), @requestIdFirst) + ' - ' + Convert(varchar(12), @requestIdLast)
             End
 
-            EXEC PostUsageLogEntry 'UpdateRequestedRunBatchParameters', @UsageMessage
+            EXEC post_usage_log_entry 'update_requested_run_batch_parameters', @UsageMessage
         END --<c>
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
+        EXEC format_error_message @message OUTPUT, @myError OUTPUT
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateRequestedRunBatchParameters'
+        Exec post_log_entry 'Error', @message, 'update_requested_run_batch_parameters'
     END CATCH
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_batch_parameters] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRequestedRunBatchParameters] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_requested_run_batch_parameters] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRequestedRunBatchParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_requested_run_batch_parameters] TO [Limited_Table_Write] AS [dbo]
 GO

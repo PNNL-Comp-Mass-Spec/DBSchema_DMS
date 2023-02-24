@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[BackupDMSDBs] ******/
+/****** Object:  StoredProcedure [dbo].[backup_dms_dbs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[BackupDMSDBs]
+CREATE PROCEDURE [dbo].[backup_dms_dbs]
 /****************************************************
 **
 **  Desc:   Performs database backups of the specified databases
@@ -17,7 +17,7 @@ CREATE PROCEDURE [dbo].[BackupDMSDBs]
 **  Date:   05/23/2006
 **          05/25/2006 mem - Expanded functionality
 **          07/02/2006 mem - Now combining the status log files created by SQL Backup into a single text file for each backup session
-**          08/26/2006 mem - Updated to use GetServerVersionInfo
+**          08/26/2006 mem - Updated to use get_server_version_info
 **          10/27/2006 mem - Added parameter @DaysToKeepOldBackups
 **          05/02/2007 mem - Added parameters @BackupBatchSize and @UseLocalTransferFolder
 **                         - Replaced parameter @FileAndThreadCount with parameters @FileCount and @ThreadCount
@@ -33,7 +33,7 @@ CREATE PROCEDURE [dbo].[BackupDMSDBs]
 **          09/15/2015 mem - Added parameter @UseRedgateBackup
 **          03/17/2016 mem - Now calling xp_delete_file to delete old backup files when @UseRedgateBackup = 0
 **          03/18/2016 mem - Update e-mail address for the MAILTO_ONERROR parameter
-**          03/22/2016 mem - Now calling VerifyDirectoryExists to create the output directory if missing
+**          03/22/2016 mem - Now calling verify_directory_exists to create the output directory if missing
 **          11/16/2016 mem - Mention Powershell script DeleteOldBackups.ps1
 **          04/18/2017 mem - Remove support for Redgate backup, including removing several parameters
 **                         - Added parameter @BackupTool for optionally using Ola Hallengren's Maintenance Solution
@@ -43,19 +43,20 @@ CREATE PROCEDURE [dbo].[BackupDMSDBs]
 **                         - Remove parameter @UpdateLastBackup
 **          05/04/2017 mem - Look for existing settings to clone when targeting a new backup location not tracked by T_Database_Backups
 **                         - Require that @BackupFolderRoot start with \\ if non-empty
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @BackupFolderRoot varchar(128) = '',            -- If blank, then looks up the value in T_MiscPaths
-    @DBNameMatchList varchar(2048) = 'DMS%',        -- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
-    @BackupMode tinyint = 2,                        -- Set to 0 for a full backup, 1 for a transaction log backup, 2 to auto-choose full or transaction log based on @FullBackupIntervalDays and entries in T_Database_Backups
-    @FullBackupIntervalDays float = 7,              -- Default days between full backups.  Backup intervals in T_Database_Backups will override this value
-    @IncludeSystemDBs tinyint = 0,                  -- Set to 1 to include master, model and MSDB databases; these always get full DB backups since transaction log backups are not allowed
-    @DaysToKeepOldBackups smallint = 20,            -- Defines the number of days to retain full or transaction log backups; files older than @DaysToKeepOldBackups days prior to the present will be deleted; minimum value is 3.  Only used if @BackupTool = 1
-    @Verify tinyint = 1,                            -- Set to 1 to verify each backup
-    @InfoOnly tinyint = 1,                          -- Set to 1 to display the backup SQL that would be run
-    @CompressionLevel tinyint = 1,                  -- Set to 1 to compress backups, 0 to disable compression
-    @BackupTool tinyint = 0,                        -- 0 to use native backup, 1 to use Ola Hallengren's Maintenance Solution
+    @backupFolderRoot varchar(128) = '',            -- If blank, then looks up the value in T_MiscPaths
+    @dbNameMatchList varchar(2048) = 'DMS%',        -- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
+    @backupMode tinyint = 2,                        -- Set to 0 for a full backup, 1 for a transaction log backup, 2 to auto-choose full or transaction log based on @FullBackupIntervalDays and entries in T_Database_Backups
+    @fullBackupIntervalDays float = 7,              -- Default days between full backups.  Backup intervals in T_Database_Backups will override this value
+    @includeSystemDBs tinyint = 0,                  -- Set to 1 to include master, model and MSDB databases; these always get full DB backups since transaction log backups are not allowed
+    @daysToKeepOldBackups smallint = 20,            -- Defines the number of days to retain full or transaction log backups; files older than @DaysToKeepOldBackups days prior to the present will be deleted; minimum value is 3.  Only used if @BackupTool = 1
+    @verify tinyint = 1,                            -- Set to 1 to verify each backup
+    @infoOnly tinyint = 1,                          -- Set to 1 to display the backup SQL that would be run
+    @compressionLevel tinyint = 1,                  -- Set to 1 to compress backups, 0 to disable compression
+    @backupTool tinyint = 0,                        -- 0 to use native backup, 1 to use Ola Hallengren's Maintenance Solution
     @message varchar(2048) = '' OUTPUT
 )
 AS
@@ -132,7 +133,7 @@ AS
     Declare @FailedBackupCount int = 0
     Declare @FailedVerifyCount int = 0
 
-    Declare @procedureName varchar(24) = 'BackupDMSDBs'
+    Declare @procedureName varchar(24) = 'backup_dms_dbs'
 
     ---------------------------------------
     -- Validate @BackupFolderRoot
@@ -162,7 +163,7 @@ AS
         Begin
             Set @myError = 50001
             Set @message = '@BackupFolderRoot must be a network share path starting with two back slashes, not ' + @BackupFolderRoot
-            exec PostLogEntry 'Error', @message, @procedureName
+            exec post_log_entry 'Error', @message, @procedureName
             Goto Done
         End
     End
@@ -172,7 +173,7 @@ AS
     Begin
         Set @myError = 50002
         Set @message = 'Backup path not defined via @BackupFolderRoot parameter, and could not be found in table T_MiscPaths'
-        exec PostLogEntry 'Error', @message, @procedureName
+        exec post_log_entry 'Error', @message, @procedureName
         Goto Done
     End
 
@@ -303,7 +304,7 @@ AS
     --
     Declare @VersionMajor int
 
-    exec GetServerVersionInfo @VersionMajor output
+    exec get_server_version_info @VersionMajor output
 
     If @VersionMajor >= 9
     Begin
@@ -414,7 +415,7 @@ AS
             If @message Like '%,'
                 Set @message = Left(@message, Len(@message)-1)
 
-            exec PostLogEntry 'Normal', @message, @procedureName
+            exec post_log_entry 'Normal', @message, @procedureName
         End
 
         -- Find databases that have had recent full backups
@@ -496,7 +497,7 @@ AS
     If @myRowCount = 0
     Begin
         Set @Message = 'Warning: no databases were found matching the given specifications'
-        exec PostLogEntry 'Warning', @message, @procedureName
+        exec post_log_entry 'Warning', @message, @procedureName
         Goto Done
     End
 
@@ -608,13 +609,13 @@ AS
                 Set @BackupFileBaseName = @DBName + '_backup_' + @BackupTime
 
                 -- Append the database name to the base path
-                Set @BackupFileBasePath = dbo.udfCombinePaths(@BackupFolderRoot, @DBName)
+                Set @BackupFileBasePath = dbo.combine_paths(@BackupFolderRoot, @DBName)
 
                 If @InfoOnly = 0
                 Begin
                     -- Verify that the output directory exists; create if missing
                     --
-                    EXEC @ExitCode = VerifyDirectoryExists @BackupFileBasePath, @createIfMissing=1, @message=@message OUTPUT, @showDebugMessages=@InfoOnly
+                    EXEC @ExitCode = verify_directory_exists @BackupFileBasePath, @createIfMissing=1, @message=@message OUTPUT, @showDebugMessages=@InfoOnly
                 End
                 Else
                     Set @ExitCode = 0
@@ -622,10 +623,10 @@ AS
                 If @ExitCode <> 0
                 Begin
                     Set @myError = @ExitCode
-                    Set @message = 'Error verifying the backup folder with VerifyDirectoryExists, path=' + @BackupFileBasePath + ', errorCode=' + Cast(@ExitCode as varchar(12))
+                    Set @message = 'Error verifying the backup folder with verify_directory_exists, path=' + @BackupFileBasePath + ', errorCode=' + Cast(@ExitCode as varchar(12))
 
                     If @InfoOnly = 0
-                        exec PostLogEntry 'Error', @message, @procedureName
+                        exec post_log_entry 'Error', @message, @procedureName
                     else
                         Print @message
 
@@ -633,7 +634,7 @@ AS
                 End
 
                 -- Append the file name to the base path
-                Set @BackupFileBasePath = dbo.udfCombinePaths(@BackupFileBasePath, @BackupFileBaseName)
+                Set @BackupFileBasePath = dbo.combine_paths(@BackupFileBasePath, @BackupFileBaseName)
 
                 -- Example command:
                 -- TO DISK = '\\server\share\directory\DatabaseName\DatabaseName_backup_2016_03_22_103334.bak'
@@ -670,7 +671,7 @@ AS
                     ---------------------------------------
 
                     Set @message = 'SQL Backup of DB ' + @DBName + ' failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
-                    exec PostLogEntry 'Error', @message, @procedureName
+                    exec post_log_entry 'Error', @message, @procedureName
 
                     UPDATE T_Database_Backups
                     SET Last_Failed_Backup = GetDate(),
@@ -701,7 +702,7 @@ AS
                             ---------------------------------------
 
                             Set @message = 'SQL Backup Verify of DB ' + @DBName + ' failed with exitcode: ' + Convert(varchar(19), @ExitCode) + ' and SQL error code: ' + Convert(varchar(19), @SqlErrorCode)
-                            exec PostLogEntry 'Error', @message, @procedureName
+                            exec post_log_entry 'Error', @message, @procedureName
 
                             UPDATE T_Database_Backups
                             SET Last_Failed_Backup = GetDate(),
@@ -817,9 +818,9 @@ AS
         If @DBBackupFullCount + @DBBackupTransCount > 0
         Begin
             If @FailedBackupCount > 0
-                exec PostLogEntry 'Error',  @message, @procedureName
+                exec post_log_entry 'Error',  @message, @procedureName
             Else
-                exec PostLogEntry 'Normal', @message, @procedureName
+                exec post_log_entry 'Normal', @message, @procedureName
         End
     End
     Else
@@ -832,7 +833,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[BackupDMSDBs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[backup_dms_dbs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[BackupDMSDBs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[backup_dms_dbs] TO [Limited_Table_Write] AS [dbo]
 GO

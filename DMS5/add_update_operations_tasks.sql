@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateOperationsTasks] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_operations_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
+CREATE PROCEDURE [dbo].[add_update_operations_tasks]
 /****************************************************
 **
 **  Desc:
@@ -16,13 +16,14 @@ CREATE PROCEDURE [dbo].[AddUpdateOperationsTasks]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/16/2022 mem - Rename parameters
 **          05/10/2022 mem - Add parameters @taskType and @labName
 **                         - Remove parameter @hoursSpent
 **          05/16/2022 mem - Do not log data validation errors
 **          11/18/2022 mem - Rename parameter to @task
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -62,7 +63,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateOperationsTasks', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_operations_tasks', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -224,7 +225,7 @@ AS
     ---------------------------------------------------
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -232,16 +233,16 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'AddUpdateOperationsTasks'
+            Exec post_log_entry 'Error', @message, 'add_update_operations_tasks'
         End
     End CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateOperationsTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_operations_tasks] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOperationsTasks] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_operations_tasks] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOperationsTasks] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_operations_tasks] TO [DMS2_SP_User] AS [dbo]
 GO

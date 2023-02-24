@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddMassCorrectionEntry] ******/
+/****** Object:  StoredProcedure [dbo].[add_mass_correction_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
+CREATE PROCEDURE [dbo].[add_mass_correction_entry]
 /****************************************************
 **
 **  Desc:   Adds a new or updates an existing global modification
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[AddMassCorrectionEntry]
 **          10/17/2013 mem - Expanded @modDescription to varchar(128)
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
 **          04/02/2020 mem - Expand @modName to varchar(32)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ AS
 
     Declare @MassCorrectionID int = 0
     --
-    execute @MassCorrectionID = GetMassCorrectionID @modMassChange
+    execute @MassCorrectionID = get_mass_correction_id @modMassChange
 
     -- Cannot create an entry that already exists
 
@@ -76,7 +77,7 @@ AS
     -- Is entry already in database?
     ---------------------------------------------------
 
-    execute @MassCorrectionID = GetMassCorrectionIDFromName @modName
+    execute @MassCorrectionID = get_mass_correction_id_from_name @modName
 
     if @MassCorrectionID <> 0
     begin
@@ -90,7 +91,7 @@ AS
     ---------------------------------------------------
 
     Declare @transName varchar(32)
-    set @transName = 'AddMassCorrectionFactor'
+    set @transName = 'Add_Mass_Correction_Factor'
     begin transaction @transName
 
 
@@ -131,11 +132,11 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMassCorrectionEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_mass_correction_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddMassCorrectionEntry] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_mass_correction_entry] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddMassCorrectionEntry] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_mass_correction_entry] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMassCorrectionEntry] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_mass_correction_entry] TO [Limited_Table_Write] AS [dbo]
 GO

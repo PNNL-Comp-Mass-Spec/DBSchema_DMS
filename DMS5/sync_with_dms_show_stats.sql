@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[SyncWithDMSShowStats] ******/
+/****** Object:  StoredProcedure [dbo].[sync_with_dms_show_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SyncWithDMSShowStats]
+CREATE PROCEDURE [dbo].[sync_with_dms_show_stats]
 /****************************************************
 **
 **  Desc:
-**      Called from stored procedure SyncWithDMS5
+**      Called from stored procedure sync_with_dms5
 **
 **      The calling procedure must create temporary table #Tmp_SummaryOfChanges
 **
@@ -23,12 +23,13 @@ CREATE PROCEDURE [dbo].[SyncWithDMSShowStats]
 **  Auth:   mem
 **  Date:   10/27/2015 mem - Initial release
 **          10/29/2015 mem - Added parameter @tableName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @tableName varchar(128),
     @rowCountUpdated int,
-    @ShowUpdateDetails tinyint
+    @showUpdateDetails tinyint
 )
 AS
     set nocount on
@@ -52,9 +53,9 @@ AS
     FROM #Tmp_SummaryOfChanges
     WHERE UpdateAction = 'DELETE'
 
-    Set @updateStats = 'Added ' + Cast(@MergeInsertCount as varchar(12)) + dbo.CheckPlural(@MergeInsertCount, ' row', ' rows')   + ', ' +
-                       'Updated ' + Cast(@MergeUpdateCount as varchar(12)) + dbo.CheckPlural(@MergeUpdateCount, ' row', ' rows') + ', '  +
-                       'Deleted ' + Cast(@MergeDeleteCount as varchar(12)) + dbo.CheckPlural(@MergeDeleteCount, ' row', ' rows')
+    Set @updateStats = 'Added ' + Cast(@MergeInsertCount as varchar(12)) + dbo.check_plural(@MergeInsertCount, ' row', ' rows')   + ', ' +
+                       'Updated ' + Cast(@MergeUpdateCount as varchar(12)) + dbo.check_plural(@MergeUpdateCount, ' row', ' rows') + ', '  +
+                       'Deleted ' + Cast(@MergeDeleteCount as varchar(12)) + dbo.check_plural(@MergeDeleteCount, ' row', ' rows')
 
     Print ' - ' + @updateStats
 
@@ -72,7 +73,7 @@ AS
 
     If @MergeInsertCount + @MergeUpdateCount + @MergeDeleteCount > 0
     Begin
-        Exec PostLogEntry 'Normal', @message, 'SyncWithDMS5'
+        Exec post_log_entry 'Normal', @message, 'sync_with_dms5'
     End
 
     If @ShowUpdateDetails <> 0
@@ -85,5 +86,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncWithDMSShowStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[sync_with_dms_show_stats] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,17 +1,17 @@
-/****** Object:  UserDefinedFunction [dbo].[DaysInDateRange] ******/
+/****** Object:  UserDefinedFunction [dbo].[days_in_date_range] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[DaysInDateRange]
+CREATE FUNCTION [dbo].[days_in_date_range]
 (
     @startDate datetime = '1/1/2005',
     @endDate datetime = '1/21/2005'
 )
 RETURNS @dates TABLE
-   (
+(
     dy   datetime
-   )
+)
 AS
 BEGIN
     -- how many entries in table
@@ -40,7 +40,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DaysInDateRange] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[days_in_date_range] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[DaysInDateRange] TO [public] AS [dbo]
+GRANT SELECT ON [dbo].[days_in_date_range] TO [public] AS [dbo]
 GO

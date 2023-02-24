@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[VerifyFileExists] ******/
+/****** Object:  StoredProcedure [dbo].[verify_file_exists] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[VerifyFileExists]
+CREATE PROCEDURE [dbo].[verify_file_exists]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[VerifyFileExists]
 **  Auth:   grk
 **  Date:   06/07/2004 grk - Initial version
 **          03/22/2016 mem - Updated formatting to match VerifyDirectoryExists
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -63,7 +64,7 @@ AS
     Exec @hr = sp_OACreate 'Scripting.FileSystemObject', @FSOObject OUT
     If @hr <> 0
     Begin
-        Exec LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        Exec load_get_oa_error_message @FSOObject, @hr, @message OUT
         Set @message = IsNull(@message, 'Unknown error instantiating the FileSystemObject')
         Set @myError = 60
         If @showDebugMessages > 0 Print @message
@@ -81,7 +82,7 @@ AS
     Exec @hr = sp_OAMethod  @FSOObject, 'FileExists', @result OUT, @filePath
     If @hr <> 0
     Begin
-        Exec LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        Exec load_get_oa_error_message @FSOObject, @hr, @message OUT
         Set @message = IsNull(@message, 'Unknown error calling FileExists, first time')
         Set @myError = 60
         If @showDebugMessages > 0 Print @message
@@ -108,7 +109,7 @@ DestroyFSO:
     Exec @hr = sp_OADestroy @FSOObject
     If @hr <> 0
     Begin
-        Exec LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        Exec load_get_oa_error_message @FSOObject, @hr, @message OUT
         Set @message = IsNull(@message, 'Unknown error calling sp_OADestroy')
         Set @myError = 60
         If @showDebugMessages > 0 Print @message
@@ -122,9 +123,9 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[VerifyFileExists] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[verify_file_exists] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[VerifyFileExists] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[verify_file_exists] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[VerifyFileExists] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[verify_file_exists] TO [Limited_Table_Write] AS [dbo]
 GO

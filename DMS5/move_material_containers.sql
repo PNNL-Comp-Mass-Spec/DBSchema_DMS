@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveMaterialContainers] ******/
+/****** Object:  StoredProcedure [dbo].[move_material_containers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MoveMaterialContainers]
+CREATE PROCEDURE [dbo].[move_material_containers]
 /****************************************************
 **
 **  Desc:
@@ -16,15 +16,16 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainers]
 **          08/27/2018 mem - Rename the view Material Location list report view
 **          06/21/2022 mem - Use new column name Container_Limit in view V_Material_Location_List_Report
 **          10/31/2022 mem - Use new column name id in views V_Material_Location_List_Report and V_Material_Containers_List_Report
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @freezerTagOld varchar(24),
-    @ShelfOld int,
-    @RackOld int,
+    @shelfOld int,
+    @rackOld int,
     @freezerTagNew varchar(24),
-    @ShelfNew int,
-    @RackNew int,
+    @shelfNew int,
+    @rackNew int,
     @infoOnly tinyint = 1,
     @message varchar(255) = '' output,
     @callingUser varchar(128) = ''
@@ -166,7 +167,7 @@ AS
     Declare @locStatus varchar(64)
 
     Declare @moveStatus varchar(32)
-    Declare @transName varchar(32) = 'UpdateMaterialContainers'
+    Declare @transName varchar(32) = 'update_material_containers'
 
     Begin transaction @transName
 
@@ -319,5 +320,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveMaterialContainers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_material_containers] TO [DDL_Viewer] AS [dbo]
 GO

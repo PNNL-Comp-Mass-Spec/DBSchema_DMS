@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[XmlToHTML] ******/
+/****** Object:  UserDefinedFunction [dbo].[xml_to_html] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[XmlToHTML]
+CREATE FUNCTION [dbo].[xml_to_html]
 /****************************************************
 **
 **  Desc:   Converts XML to HTML text, adding a carriage return before each XML tag
@@ -13,10 +13,11 @@ CREATE FUNCTION [dbo].[XmlToHTML]
 **
 **  Auth:   mem
 **  Date:   06/10/2010 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @XML XML
+    @xml XML
 )
     RETURNS varchar(max)
 AS
@@ -41,5 +42,5 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[XmlToHTML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[xml_to_html] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetNewJobIDBlock] ******/
+/****** Object:  StoredProcedure [dbo].[get_new_job_id_block] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetNewJobIDBlock]
+CREATE PROCEDURE [dbo].[get_new_job_id_block]
 /****************************************************
 **
 **  Desc:
@@ -22,12 +22,13 @@ CREATE PROCEDURE [dbo].[GetNewJobIDBlock]
 **
 **  Auth:   mem
 **  Date:   08/05/2009 - initial release (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @JobCount int,          -- Number of jobs to make
+    @jobCount int,          -- Number of jobs to make
     @note varchar(266)
 )
 AS
@@ -96,7 +97,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_new_job_id_block] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNewJobIDBlock] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_new_job_id_block] TO [Limited_Table_Write] AS [dbo]
 GO

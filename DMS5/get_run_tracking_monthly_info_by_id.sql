@@ -1,18 +1,19 @@
-/****** Object:  UserDefinedFunction [dbo].[GetRunTrackingMonthlyInfoByID] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_run_tracking_monthly_info_by_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfoByID]
+CREATE FUNCTION [dbo].[get_run_tracking_monthly_info_by_id]
 /****************************************************
 **
 **  Desc:   Returns run tracking information for given EUS Instrument ID
-**          Modeled after GetRunTrackingMonthlyInfo
+**          Modeled after get_run_tracking_monthly_info
 **
 **  Auth:   mem
 **  Date:   02/14/2012 mem - Initial release
 **          04/27/2020 mem - Update data validation checks
 **                         - Make several columns in the output table nullable
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ RETURNS @TX TABLE (
 )
 AS
     BEGIN
-        Declare @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
+        Declare @maxNormalInterval INT = dbo.get_long_interval_threshold()
         Declare @message varchar(512) = ''
 
         ---------------------------------------------------

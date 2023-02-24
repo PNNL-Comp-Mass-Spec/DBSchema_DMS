@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetParamEntryID] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_param_entry_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetParamEntryID]
+CREATE FUNCTION [dbo].[get_param_entry_id]
 /****************************************************
 **
 **  Desc: Gets ParamEntryID for given set of param entry specs
@@ -13,17 +13,18 @@ CREATE PROCEDURE [dbo].[GetParamEntryID]
 **  Auth:   kja
 **  Date:   08/22/2004
 **          08/03/2017 mem - Add Set NoCount On
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ParamFileID int,
-    @EntryType varchar(32),
-    @EntrySpecifier varchar(32),
-    @EntrySeqOrder int
+    @paramFileID int,
+    @entryType varchar(32),
+    @entrySpecifier varchar(32),
+    @entrySeqOrder int
 )
+RETURNS int
 AS
-    Set NoCount On
-
+BEGIN
     Declare @ParamEntryID int = 0
 
     SELECT @ParamEntryID = Param_Entry_ID
@@ -35,11 +36,12 @@ AS
 
 
     return(@ParamEntryID)
+END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_entry_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamEntryID] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_param_entry_id] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamEntryID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_entry_id] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[EvaluatePredefinedAnalysisRules] ******/
+/****** Object:  StoredProcedure [dbo].[evaluate_predefined_analysis_rules] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
+CREATE PROCEDURE [dbo].[evaluate_predefined_analysis_rules]
 /****************************************************
 **
 **  Desc:
@@ -23,7 +23,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          organismName varchar(128),
 **          proteinCollectionList varchar(4000),
 **          proteinOptionsList varchar(256),
-**          ownerPRN varchar(128),
+**          ownerUsername varchar(128),
 **          comment varchar(128),
 **          associatedProcessorGroup varchar(64),
 **          numJobs int,
@@ -54,7 +54,7 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **          07/22/2009 mem - Now returning 0 if @jobsCreated = 0 and @myError = 0 (previously, we were returning 1, which a calling procedure could erroneously interpret as meaning an error had occurred)
 **          09/04/2009 mem - Added DatasetType filter
 **          12/18/2009 mem - Now using T_Analysis_Tool_Allowed_Dataset_Type to determine valid dataset types for a given analysis tool
-**          07/12/2010 mem - Now calling ValidateProteinCollectionListForDatasets to validate the protein collection list (and possibly add mini proteome or enzyme-related protein collections)
+**          07/12/2010 mem - Now calling validate_protein_collection_list_for_datasets to validate the protein collection list (and possibly add mini proteome or enzyme-related protein collections)
 **                         - Expanded protein Collection fields and variables to varchar(4000)
 **          09/24/2010 mem - Now testing for a rating of -6 (Not Accepted)
 **          11/18/2010 mem - Rearranged rating check code for clarity
@@ -77,16 +77,17 @@ CREATE PROCEDURE [dbo].[EvaluatePredefinedAnalysisRules]
 **                         - No longer show processor group for mode 'Show Jobs'
 **                         - Remove periods from output columns for mode 'Show Rules' (and change to lowercase)
 **                         - Rename columns in temporary table #JX, and add column predefine_id
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasetName varchar(128),
     @outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
     @message varchar(512) = '' output,
-    @RaiseErrorMessages tinyint = 1,
-    @ExcludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
-    @CreateJobsForUnreviewedDatasets tinyint = 1,    -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
-    @AnalysisToolNameFilter varchar(128) = ''        -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
+    @raiseErrorMessages tinyint = 1,
+    @excludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
+    @createJobsForUnreviewedDatasets tinyint = 1,    -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
+    @analysisToolNameFilter varchar(128) = ''        -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
 )
 AS
     Set nocount on
@@ -207,9 +208,9 @@ AS
                 Else
                 Begin
                     -- Do not allow the jobs to be created
-                    -- Note that SP CreatePredefinedAnalysesJobs expects the format of @message to be something like:
+                    -- Note that SP create_predefined_analysis_jobs expects the format of @message to be something like:
                     --   Dataset rating (-10) does not allow creation of jobs: 47538_Pls_FF_IGT_23_25Aug10_Andromeda_10-07-10
-                    -- Thus, be sure to update CreatePredefinedAnalysesJobs if you change the following line
+                    -- Thus, be sure to update create_predefined_analysis_jobs if you change the following line
                     Set @message = 'Dataset rating (' + Convert(varchar(6), @Rating) + ') does not allow creation of jobs: ' + @datasetName
 
                     If @RaiseErrorMessages <> 0
@@ -409,7 +410,7 @@ AS
         AND ((@Organism LIKE PA.AD_organismNameCriteria) OR (PA.AD_organismNameCriteria = ''))
         AND (
               -- Note that we always create jobs for predefines with Trigger_Before_Disposition = 1
-              -- Procedure SchedulePredefinedAnalyses will typically be called with @PreventDuplicateJobs = 1 so duplicate jobs will not get created after a dataset is reviewed
+              -- Procedure schedule_predefined_analysis_jobs will typically be called with @PreventDuplicateJobs = 1 so duplicate jobs will not get created after a dataset is reviewed
              (PA.Trigger_Before_Disposition = 1) OR
              (@Rating <> -10 AND PA.Trigger_Before_Disposition = 0) OR
              (@outputType = 'Show Rules')
@@ -526,7 +527,7 @@ AS
         organismName varchar(128),
         proteinCollectionList varchar(4000),
         proteinOptionsList varchar(256),
-        ownerPRN varchar(128),
+        ownerUsername varchar(128),
         comment varchar(128),
         associatedProcessorGroup varchar(64),
         numJobs int,
@@ -570,8 +571,7 @@ AS
     Declare @PropagationMode tinyint
     Declare @SpecialProcessing varchar(512)
 
-    Declare @jobNum varchar(32)
-    Declare @ownerPRN varchar(32)
+    Declare @ownerUsername varchar(32)
 
     Declare @tmpPriority int
     Declare @tmpProcessorGroupID int
@@ -746,16 +746,16 @@ AS
                 ---------------------------------------------------
                 --
                 Set @comment = 'Auto predefined ' + convert(varchar(10), @predefineRuleID)
-                Set @ownerPRN = 'H09090911' -- autouser
+                Set @ownerUsername = 'H09090911' -- autouser
 
                 ---------------------------------------------------
                 -- Possibly auto-add the Mini Proteome or Enzyme-related protein collections to @proteinCollectionList
                 ---------------------------------------------------
                 --
                 Set @proteinCollectionListValidated = LTrim(RTrim(IsNull(@proteinCollectionList, '')))
-                If Len(@proteinCollectionListValidated) > 0 And dbo.ValidateNAParameter(@proteinCollectionListValidated, 1) <> 'na'
+                If Len(@proteinCollectionListValidated) > 0 And dbo.validate_na_parameter(@proteinCollectionListValidated, 1) <> 'na'
                 Begin
-                    exec @result = ValidateProteinCollectionListForDatasets
+                    exec @result = validate_protein_collection_list_for_datasets
                                         @datasetName,
                                         @protCollNameList=@proteinCollectionListValidated output,
                                         @ShowMessages=@RaiseErrorMessages,
@@ -787,7 +787,7 @@ AS
                 -- Insert job in job holding table
                 ---------------------------------------------------
                 --
-                -- Note that AddUpdateAnalysisJob will call ValidateAnalysisJobParameters to validate this data
+                -- Note that add_update_analysis_job will call validate_analysis_job_parameters to validate this data
                 --
                 Set @jobsCreated = @jobsCreated + 1
                 --
@@ -801,7 +801,7 @@ AS
                     organismName,
                     proteinCollectionList,
                     proteinOptionsList,
-                    ownerPRN,
+                    ownerUsername,
                     comment,
                     associatedProcessorGroup,
                     numJobs,
@@ -818,7 +818,7 @@ AS
                     @organismName,
                     @proteinCollectionListValidated,
                     @proteinOptionsList,
-                    @ownerPRN,
+                    @ownerUsername,
                     @comment,
                     @associatedProcessorGroup,
                     @numJobs,
@@ -930,7 +930,7 @@ AS
             proteinOptionsList AS protein_options,
             organismDBName AS organism_db_name,
             specialProcessing AS special_processing,
-            ownerPRN AS owner,
+            ownerUsername AS owner,
             CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS export_mode
         FROM #JB
         --
@@ -955,7 +955,7 @@ AS
             organismName,
             proteinCollectionList,
             proteinOptionsList,
-            ownerPRN,
+            ownerUsername,
             comment,
             associatedProcessorGroup,
             numJobs,
@@ -973,7 +973,7 @@ AS
             organismName,
             proteinCollectionList,
             proteinOptionsList,
-            ownerPRN,
+            ownerUsername,
             comment,
             associatedProcessorGroup,
             numJobs,
@@ -989,11 +989,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[evaluate_predefined_analysis_rules] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[evaluate_predefined_analysis_rules] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[EvaluatePredefinedAnalysisRules] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[evaluate_predefined_analysis_rules] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[EvaluatePredefinedAnalysisRules] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[evaluate_predefined_analysis_rules] TO [Limited_Table_Write] AS [dbo]
 GO

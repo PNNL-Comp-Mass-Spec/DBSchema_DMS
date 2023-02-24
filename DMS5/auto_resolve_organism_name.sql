@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoResolveOrganismName] ******/
+/****** Object:  StoredProcedure [dbo].[auto_resolve_organism_name] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoResolveOrganismName]
+CREATE PROCEDURE [dbo].[auto_resolve_organism_name]
 /****************************************************
 **
 **  Desc:   Looks for entries in T_Organisms that match @nameSearchSpec
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[AutoResolveOrganismName]
 **  Auth:   mem
 **  Date:   12/02/2016 mem - Initial Version
 **          03/31/2021 mem - Expand @nameSearchSpec and @matchingOrganismName to varchar(128)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -78,5 +79,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoResolveOrganismName] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_resolve_organism_name] TO [DDL_Viewer] AS [dbo]
 GO

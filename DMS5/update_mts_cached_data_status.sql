@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMTSCachedDataStatus] ******/
+/****** Object:  StoredProcedure [dbo].[update_mts_cached_data_status] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateMTSCachedDataStatus]
+CREATE PROCEDURE [dbo].[update_mts_cached_data_status]
 /****************************************************
 **
 **  Desc:   Updates the data in T_MTS_Cached_Data_Status using MTS
@@ -13,16 +13,17 @@ CREATE PROCEDURE [dbo].[UpdateMTSCachedDataStatus]
 **  Auth:   mem
 **  Date:   02/05/2010 mem - Initial Version
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @CachedDataTableName varchar(128),
-    @IncrementRefreshCount tinyint = 0,
-    @InsertCountNew int = 0,                -- Ignored if @IncrementRefreshCount = 0
-    @UpdateCountNew int = 0,                -- Ignored if @IncrementRefreshCount = 0
-    @DeleteCountNew int = 0,                -- Ignored if @IncrementRefreshCount = 0
-    @FullRefreshPerformed tinyint = 0,      -- When 1, then updates both Last_Refreshed and Last_Full_Refresh; otherwise, just updates Last_Refreshed
-    @LastRefreshMinimumID int = 0,
+    @cachedDataTableName varchar(128),
+    @incrementRefreshCount tinyint = 0,
+    @insertCountNew int = 0,                -- Ignored if @IncrementRefreshCount = 0
+    @updateCountNew int = 0,                -- Ignored if @IncrementRefreshCount = 0
+    @deleteCountNew int = 0,                -- Ignored if @IncrementRefreshCount = 0
+    @fullRefreshPerformed tinyint = 0,      -- When 1, then updates both Last_Refreshed and Last_Full_Refresh; otherwise, just updates Last_Refreshed
+    @lastRefreshMinimumID int = 0,
     @message varchar(255) = '' output
 )
 AS
@@ -101,8 +102,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateMTSCachedDataStatus')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_mts_cached_data_status')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -111,7 +112,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_mts_cached_data_status] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMTSCachedDataStatus] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_mts_cached_data_status] TO [Limited_Table_Write] AS [dbo]
 GO

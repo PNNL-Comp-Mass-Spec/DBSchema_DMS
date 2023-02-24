@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetBatchDatasetInstrumentList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_batch_dataset_instrument_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetBatchDatasetInstrumentList]
+CREATE FUNCTION [dbo].[get_batch_dataset_instrument_list]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[GetBatchDatasetInstrumentList]
 **  Auth:   mem
 **  Date:   08/29/2010 mem - Initial version
 **          03/29/2019 mem - Return an empty string when @batchID is 0 (meaning "unassigned", no batch)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -43,5 +44,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetBatchDatasetInstrumentList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_batch_dataset_instrument_list] TO [DDL_Viewer] AS [dbo]
 GO

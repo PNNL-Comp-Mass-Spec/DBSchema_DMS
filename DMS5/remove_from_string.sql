@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[RemoveFromString] ******/
+/****** Object:  UserDefinedFunction [dbo].[remove_from_string] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[RemoveFromString]
+CREATE FUNCTION [dbo].[remove_from_string]
 /****************************************************
 **
 **  Desc:   Removes the specified text from the parent string, including
@@ -18,6 +18,7 @@ CREATE FUNCTION [dbo].[RemoveFromString]
 **  Date:   10/25/2016 mem - Initial version
 **          08/08/2017 mem - Add support for @textToRemove ending in %
 **          06/23/2022 mem - Move logic that handles wildcards (percent signs) outside the while loop
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -99,5 +100,5 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RemoveFromString] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_from_string] TO [DDL_Viewer] AS [dbo]
 GO

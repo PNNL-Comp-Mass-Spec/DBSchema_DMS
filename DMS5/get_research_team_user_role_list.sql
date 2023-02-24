@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetResearchTeamUserRoleList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_research_team_user_role_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetResearchTeamUserRoleList]
+CREATE FUNCTION [dbo].[get_research_team_user_role_list]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[GetResearchTeamUserRoleList]
 **
 **  Auth:   grk
 **  Date:   03/28/2010
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -42,6 +43,7 @@ AS
 
         RETURN @list
     END
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetResearchTeamUserRoleList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_research_team_user_role_list] TO [DDL_Viewer] AS [dbo]
 GO

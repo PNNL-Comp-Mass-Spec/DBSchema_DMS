@@ -1,24 +1,25 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedExperimentComponentNames] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_experiment_component_names] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedExperimentComponentNames]
+CREATE PROCEDURE [dbo].[update_cached_experiment_component_names]
 /****************************************************
 **
 **  Desc:   Updates T_Cached_Experiment_Components,
 **          which tracks the semicolon separated list of
-**          cell culture names and reference compound names for each exeriment
+**          biomaterial names and reference compound names for each exeriment
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   11/29/2017 mem - Initial version
 **          01/04/2018 mem - Now caching reference compounds using the ID_Name field (which is of the form Compound_ID:Compound_Name)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @expID int,         -- Set to 0 to process all experiments, or a positive number to only process the given experiment
+    @experimentID int,         -- Set to 0 to process all experiments, or a positive number to only process the given experiment
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
@@ -34,14 +35,14 @@ AS
     -- Validate the inputs
     ------------------------------------------------
     --
-    Set @expID = IsNull(@expID, 0)
+    Set @experimentID = IsNull(@experimentID, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
 
     Declare @cellCultureList varchar(2048) = null
     Declare @refCompoundList varchar(2048) = null
 
-    If @expID > 0
+    If @experimentID > 0
     Begin -- <SingleExperiment>
 
         ------------------------------------------------
@@ -52,7 +53,7 @@ AS
         FROM T_Experiment_Cell_Cultures ECC
              INNER JOIN T_Cell_Culture CC
                ON ECC.CC_ID = CC.CC_ID
-        WHERE ECC.Exp_ID = @expID
+        WHERE ECC.Exp_ID = @experimentID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -61,19 +62,19 @@ AS
         FROM T_Experiment_Reference_Compounds ERC
              INNER JOIN T_Reference_Compound RC
                ON ERC.Compound_ID = RC.Compound_ID
-        WHERE ERC.Exp_ID = @expID
+        WHERE ERC.Exp_ID = @experimentID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @infoOnly > 0
         Begin
-            SELECT @expID AS Experiment_ID, @cellCultureList AS Cell_Culture_List, @refCompoundList AS Reference_Compound_List
+            SELECT @experimentID AS Experiment_ID, @cellCultureList AS Cell_Culture_List, @refCompoundList AS Reference_Compound_List
         End
         Else
         Begin
 
             MERGE T_Cached_Experiment_Components AS t
-            USING (SELECT @expID AS Exp_ID, @cellCultureList AS Cell_Culture_List, @refCompoundList AS Reference_Compound_List) as s
+            USING (SELECT @experimentID AS Exp_ID, @cellCultureList AS Cell_Culture_List, @refCompoundList AS Reference_Compound_List) as s
             ON ( t.[Exp_ID] = s.[Exp_ID])
             WHEN MATCHED AND (
                 ISNULL( NULLIF(t.[Cell_Culture_List], s.[Cell_Culture_List]),
@@ -153,7 +154,7 @@ AS
                           HAVING COUNT(*) = 1 ) FilterQ
                ON ERC.Exp_ID = FilterQ.Exp_ID
 
-        Declare @currentExpID int
+        Declare @currentExperimentID int
         Declare @continue tinyint
 
         -- Add experiments with multiple cell cultures
@@ -166,14 +167,14 @@ AS
         GROUP BY Exp_ID
         HAVING COUNT(*) > 1
 
-        Set @currentExpID = 0
+        Set @currentExperimentID = 0
         Set @continue = 1
 
         While @continue > 0
         Begin
-            SELECT TOP 1 @currentExpID = Exp_ID
+            SELECT TOP 1 @currentExperimentID = Exp_ID
             FROM #Tmp_AdditionalExperiments
-            WHERE Exp_ID > @currentExpID
+            WHERE Exp_ID > @currentExperimentID
             ORDER BY Exp_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -190,12 +191,12 @@ AS
                 FROM T_Experiment_Cell_Cultures ECC
                     INNER JOIN T_Cell_Culture CC
                     ON ECC.CC_ID = CC.CC_ID
-                WHERE ECC.Exp_ID = @currentExpID
+                WHERE ECC.Exp_ID = @currentExperimentID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 INSERT INTO #Tmp_ExperimentCellCultures (Exp_ID, Cell_Culture_List, Items)
-                SELECT @currentExpID, @cellCultureList, @myRowCount
+                SELECT @currentExperimentID, @cellCultureList, @myRowCount
 
             End
 
@@ -211,14 +212,14 @@ AS
         GROUP BY Exp_ID
         HAVING COUNT(*) > 1
 
-        Set @currentExpID = 0
+        Set @currentExperimentID = 0
         Set @continue = 1
 
         While @continue > 0
         Begin
-            SELECT TOP 1 @currentExpID = Exp_ID
+            SELECT TOP 1 @currentExperimentID = Exp_ID
             FROM #Tmp_AdditionalExperiments
-            WHERE Exp_ID > @currentExpID
+            WHERE Exp_ID > @currentExperimentID
             ORDER BY Exp_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -235,12 +236,12 @@ AS
                 FROM T_Experiment_Reference_Compounds ERC
                      INNER JOIN T_Reference_Compound RC
                        ON ERC.Compound_ID = RC.Compound_ID
-                WHERE ERC.Exp_ID = @currentExpID
+                WHERE ERC.Exp_ID = @currentExperimentID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
                 INSERT INTO #Tmp_ExperimentRefCompounds (Exp_ID, Reference_Compound_List, Items)
-                SELECT @currentExpID, @refCompoundList, @myRowCount
+                SELECT @currentExperimentID, @refCompoundList, @myRowCount
 
             End
         End

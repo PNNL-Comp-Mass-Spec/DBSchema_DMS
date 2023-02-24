@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoResetFailedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[auto_reset_failed_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoResetFailedJobs]
+CREATE PROCEDURE [dbo].[auto_reset_failed_jobs]
 /****************************************************
 **
 **  Desc:
@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[AutoResetFailedJobs]
 **
 **  Auth:   mem
 **  Date:   09/30/2010 mem - Initial Version
-**          10/01/2010 mem - Added call to PostLogEntry when changing ManagerErrorCleanupMode for a processor
+**          10/01/2010 mem - Added call to post_log_entry when changing ManagerErrorCleanupMode for a processor
 **          02/16/2012 mem - Fixed major bug that reset the state for all steps of a job to state 2, rather than only resetting the state for the running step
 **                         - Fixed bug finding jobs that are running, but started over 60 minutes ago and for which the processor is reporting Stopped_Error in T_Processor_Status
 **          07/25/2013 mem - Now auto-updating the settings file for MSGF+ jobs that report a comment similar to "MSGF+ skipped 99.2% of the spectra because they did not appear centroided"
@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[AutoResetFailedJobs]
 **          11/19/2015 mem - Now auto-resetting jobs with a DataExtractor step reporting "Not enough free memory"
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
-**          07/12/2016 mem - Now using a synonym when calling S_SetManagerErrorCleanupMode in the Manager_Control database
+**          07/12/2016 mem - Now using a synonym when calling s_set_manager_error_cleanup_mode in the Manager_Control database
 **          09/02/2016 mem - Switch the archive server path from \\a2 to \\adms
 **          01/18/2017 mem - Auto-reset Bruker_DA_Export jobs up to 2 times
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
@@ -39,12 +39,13 @@ CREATE PROCEDURE [dbo].[AutoResetFailedJobs]
 **          04/21/2017 mem - Add check for "An unexpected network error occurred"
 **          09/05/2017 mem - Check for Mz_Refinery reporting Not enough free memory
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @WindowHours int = 12,                -- Will look for jobs that failed within @WindowHours hours of the present time
+    @windowHours int = 12,                -- Will look for jobs that failed within @WindowHours hours of the present time
     @infoOnly tinyint = 1,
-    @StepToolFilter varchar(32) = '',    -- Optional Step Tool to filter on (must be an exact match to a tool name in T_Job_Steps)
+    @stepToolFilter varchar(32) = '',    -- Optional Step Tool to filter on (must be an exact match to a tool name in T_Job_Steps)
     @message varchar(512) = '' output,
     @callingUser varchar(128) = ''
 )
@@ -467,7 +468,7 @@ AS
 
                             Set @LogMessage = 'Auto-reset job ' + Convert(varchar(12), @job) + '; ' + @ResetReason + '; ' + @NewComment
 
-                            Exec PostLogEntry 'Warning', @LogMessage, 'AutoResetFailedJobs'
+                            Exec post_log_entry 'Warning', @LogMessage, 'auto_reset_failed_jobs'
                         End
 
                         If @SetProcessorAutoRecover = 1
@@ -475,13 +476,13 @@ AS
                             If @infoOnly = 0
                             Begin
                                 Set @LogMessage = @Processor + ' reports "Stopped Error"; setting ManagerErrorCleanupMode to 1 in the Manager_Control DB'
-                                Exec PostLogEntry 'Warning', @LogMessage, 'AutoResetFailedJobs'
+                                Exec post_log_entry 'Warning', @LogMessage, 'auto_reset_failed_jobs'
 
                                 -- Call ProteinSeqs.Manager_Control.dbo.SetManagerErrorCleanupMode
-                                Exec S_SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1
+                                Exec s_set_manager_error_cleanup_mode @ManagerList = @Processor, @CleanupMode = 1
                             End
                             Else
-                                print 'Exec S_SetManagerErrorCleanupMode @ManagerList = @Processor, @CleanupMode = 1'
+                                print 'Exec s_set_manager_error_cleanup_mode @ManagerList = @Processor, @CleanupMode = 1'
                         End
 
                     End     -- </retryJob>
@@ -501,19 +502,19 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AutoResetFailedJobs'
+        Exec post_log_entry 'Error', @message, 'auto_reset_failed_jobs'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoResetFailedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_reset_failed_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoResetFailedJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_reset_failed_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

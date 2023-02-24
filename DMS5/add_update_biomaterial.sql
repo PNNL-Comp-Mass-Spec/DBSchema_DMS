@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateBiomaterial] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_biomaterial] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateBiomaterial]
+CREATE PROCEDURE [dbo].[add_update_biomaterial]
 /****************************************************
 **
 **  Desc:
@@ -15,32 +15,33 @@ CREATE PROCEDURE [dbo].[AddUpdateBiomaterial]
 **  Date:   03/12/2002
 **          01/12/2007 grk - Added verification mode
 **          03/11/2008 grk - Added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
-**          03/25/2008 mem - Now calling AlterEventLogEntryUser if @callingUser is not blank (Ticket #644)
-**          05/05/2010 mem - Now calling AutoResolveNameToPRN to check if @ownerPRN and @piPRN contain a person's real name rather than their username
+**          03/25/2008 mem - Now calling alter_event_log_entry_user if @callingUser is not blank (Ticket #644)
+**          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @ownerUsername and @piUsername contain a person's real name rather than their username
 **          08/19/2010 grk - Try-catch for error handling
-**          11/15/2012 mem - Renamed parameter @ownerPRN to @contactPRN; renamed column CC_Owner_PRN to CC_Contact_PRN
+**          11/15/2012 mem - Renamed parameter @ownerUsername to @contactUsername; renamed column CC_Owner_PRN to CC_Contact_PRN
 **                         - Added new fields to support peptide standards
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          07/20/2016 mem - Fix spelling in error messages
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
-**          11/23/2016 mem - Include the cell culture name when calling PostLogEntry from within the catch block
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
+**          11/23/2016 mem - Include the cell culture name when calling post_log_entry from within the catch block
 **                         - Trim trailing and leading spaces from input parameters
 **          12/02/2016 mem - Add @organismList
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**          01/06/2017 mem - When adding a new entry, only call UpdateOrganismListForBiomaterial if @organismList is not null
+**          01/06/2017 mem - When adding a new entry, only call update_organism_list_for_biomaterial if @organismList is not null
 **                         - When updating an existing entry, update @organismList to be '' if null (since the DMS website sends null when a form field is blank)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/27/2017 mem - Fix variable name bug
 **          11/28/2017 mem - Deprecate old fields that are now tracked by Reference Compounds
 **          08/31/2018 mem - Add @mutation, @plasmid, and @cellLine
 **                         - Remove deprecated parameters that are now tracked in T_Reference_Compound
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
-**          07/08/2022 mem - Rename procedure from AddUpdateCellCulture to AddUpdateBiomaterial and update argument names
+**          07/08/2022 mem - Rename procedure from AddUpdateCellCulture to add_update_biomaterial and update argument names
 **          02/13/2023 bcg - Rename parameters to @contactUsername and @piUsername
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -77,7 +78,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateCellBiomaterial', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_biomaterial', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -100,7 +101,7 @@ AS
     Set @container = LTrim(RTrim(IsNull(@container, '')))
 
     -- Note: leave @organismList null
-    -- Procedure UpdateOrganismListForBiomaterial will leave T_Biomaterial_Organisms unchanged if @organismList is null
+    -- Procedure update_organism_list_for_biomaterial will leave T_Biomaterial_Organisms unchanged if @organismList is null
 
     Set @mutation = LTrim(RTrim(IsNull(@mutation, '')))
     Set @plasmid = LTrim(RTrim(IsNull(@plasmid, '')))
@@ -116,7 +117,7 @@ AS
     --
     If LEN(@piUsername) < 1
     Begin
-        RAISERROR ('Principle Investigator PRN must be defined', 11, 3)
+        RAISERROR ('Principle Investigator Username must be defined', 11, 3)
     End
     --
     If LEN(@biomaterialName) < 1
@@ -188,7 +189,7 @@ AS
 
     Declare @campaignID int = 0
     --
-    execute @campaignID = GetCampaignID @campaignName
+    execute @campaignID = get_campaign_id @campaignName
     --
     If @campaignID = 0
     Begin
@@ -256,22 +257,22 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve PRNs to user number
+    -- Resolve usernames to user number
     ---------------------------------------------------
 
-    -- Verify that Owner PRN  is valid
+    -- Verify that Owner username  is valid
     -- and get its id number
     --
     Declare @userID int
 
     Declare @MatchCount int
-    Declare @NewPRN varchar(64)
+    Declare @newUsername varchar(64)
 
-    execute @userID = GetUserID @contactUsername
+    execute @userID = get_user_id @contactUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @contactUsername contains simply the username
         --
         SELECT @contactUsername = U_PRN
@@ -280,27 +281,27 @@ AS
     End
     Else
     Begin
-        -- Could not find entry in database for Username @contactUsername
+        -- Could not find entry in database for username @contactUsername
         -- Try to auto-resolve the name
 
-        exec AutoResolveNameToPRN @contactUsername, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @contactUsername, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
             -- Single match found; update @contactUsername
-            Set @contactUsername = @NewPRN
+            Set @contactUsername = @newUsername
         End
 
     End
 
-    -- Verify that principle investigator PRN is valid
+    -- Verify that principle investigator username is valid
     -- and get its id number
     --
-    execute @userID = GetUserID @piUsername
+    execute @userID = get_user_id @piUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @piUsername contains simply the username
         --
         SELECT @piUsername = U_PRN
@@ -311,20 +312,20 @@ AS
     Begin
         ---------------------------------------------------
         -- @piUsername did not resolve to a User_ID
-        -- In case a name was entered (instead of a PRN),
+        -- In case a name was entered (instead of a username),
         --  try to auto-resolve using the U_Name column in T_Users
         ---------------------------------------------------
 
-        exec AutoResolveNameToPRN @piUsername, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @piUsername, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
             -- Single match was found; update @piUsername
-            Set @piUsername = @NewPRN
+            Set @piUsername = @newUsername
         End
         Else
         Begin
-            Set @msg = 'Could not find entry in database for principle investigator PRN "' + @piUsername + '"'
+            Set @msg = 'Could not find entry in database for principle investigator username "' + @piUsername + '"'
             RAISERROR (@msg, 11, 17)
         End
     End
@@ -391,22 +392,22 @@ AS
                             Cast(@IDConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@biomaterialID as varchar(12))
 
-            exec postlogentry 'Error', @DebugMsg, 'AddUpdateBiomaterial'
+            exec post_log_entry 'Error', @DebugMsg, 'add_update_biomaterial'
 
             Set @biomaterialID = @IDConfirm
         End
 
         Declare @StateID int = 1
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 2, @biomaterialID, @StateID, @callingUser
+            Exec alter_event_log_entry_user 2, @biomaterialID, @StateID, @callingUser
 
         -- Material movement logging
         --
         If @curContainerID != @contID
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                  'Biomaterial Move',
                  @biomaterialName,
                  'na',
@@ -418,7 +419,7 @@ AS
         If IsNull(@organismList, '') <> ''
         Begin
             -- Update the associated organism(s)
-            exec UpdateOrganismListForBiomaterial @biomaterialName, @organismList, @infoOnly=0, @message = @message output
+            exec update_organism_list_for_biomaterial @biomaterialName, @organismList, @infoOnly=0, @message = @message output
         End
 
     End -- </add>
@@ -458,7 +459,7 @@ AS
         --
         If @curContainerID != @contID
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                  'Biomaterial Move',
                  @biomaterialName,
                  @curContainerName,
@@ -469,13 +470,13 @@ AS
 
         -- Update the associated organism(s)
         Set @organismList = IsNull(@organismList, '')
-        exec UpdateOrganismListForBiomaterial @biomaterialName, @organismList, @infoOnly=0, @message = @message output
+        exec update_organism_list_for_biomaterial @biomaterialName, @organismList, @infoOnly=0, @message = @message output
 
     End -- </update>
 
     End TRY
     Begin CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -484,7 +485,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Biomaterial ' + @biomaterialName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateBiomaterial'
+            exec post_log_entry 'Error', @logMessage, 'add_update_biomaterial'
         End
 
     End CATCH
@@ -492,11 +493,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateBiomaterial] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_biomaterial] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateBiomaterial] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_biomaterial] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateBiomaterial] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_biomaterial] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateBiomaterial] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_biomaterial] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateInstrumentGroupAndDatasetType] ******/
+/****** Object:  StoredProcedure [dbo].[validate_instrument_group_and_dataset_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateInstrumentGroupAndDatasetType]
+CREATE PROCEDURE [dbo].[validate_instrument_group_and_dataset_type]
 /****************************************************
 **
 **  Desc:   Validates the dataset type for the given instrument group
@@ -18,10 +18,11 @@ CREATE PROCEDURE [dbo].[ValidateInstrumentGroupAndDatasetType]
 **          07/04/2012 grk - Added handling for 'Tracking' type
 **          11/12/2013 mem - Changed @instrumentName to be an input/output parameter
 **          03/25/2014 mem - Now auto-updating dataset type from HMS-HMSn to HMS-HCD-HMSn for group QExactive
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetType varchar(20),
+    @datasetType varchar(20),
     @instrumentGroup varchar(64) output,            -- Input/output parameter
     @datasetTypeID int output,
     @message varchar(512) output
@@ -50,7 +51,7 @@ AS
     -- and get its id number
     ---------------------------------------------------
 
-    execute @datasetTypeID = GetDatasetTypeID @DatasetType
+    execute @datasetTypeID = get_dataset_type_id @DatasetType
 
     -- No further validation required for certain dataset types
     -- In particular, dataset type 100 (Tracking)
@@ -114,7 +115,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentGroupAndDatasetType] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_instrument_group_and_dataset_type] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateInstrumentGroupAndDatasetType] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_instrument_group_and_dataset_type] TO [Limited_Table_Write] AS [dbo]
 GO

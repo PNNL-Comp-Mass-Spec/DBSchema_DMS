@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyRequestedRun] ******/
+/****** Object:  StoredProcedure [dbo].[copy_requested_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CopyRequestedRun]
+CREATE PROCEDURE [dbo].[copy_requested_run]
 /****************************************************
 **
 **  Desc:   Make copy of given requested run and associate
@@ -13,19 +13,20 @@ CREATE PROCEDURE [dbo].[CopyRequestedRun]
 **  Date:   02/26/2010
 **          03/03/2010 grk - added status field
 **          08/04/2010 mem - Now using the Created date from the original request as the Created date for the new request
-**          08/30/2010 mem - Now clearing @message after a successful call to UpdateRequestedRunCopyFactors
-**          12/13/2011 mem - Added parameter @callingUser, which is sent to UpdateRequestedRunCopyFactors
+**          08/30/2010 mem - Now clearing @message after a successful call to update_requested_run_copy_factors
+**          12/13/2011 mem - Added parameter @callingUser, which is sent to update_requested_run_copy_factors
 **          04/25/2012 mem - Fixed @callingUser bug when updating @callingUserUnconsume
 **          02/21/2013 mem - Now verifying that a new row was added to T_Requested_Run
 **          05/08/2013 mem - Now copying Vialing_Conc and Vialing_Vol
-**          11/16/2016 mem - Call UpdateCachedRequestedRunEUSUsers to update T_Active_Requested_Run_Cached_EUS_Users
+**          11/16/2016 mem - Call update_cached_requested_run_eus_users to update T_Active_Requested_Run_Cached_EUS_Users
 **          02/23/2017 mem - Add column RDS_Cart_Config_ID
 **          03/07/2017 mem - Add parameter @requestNameAppendText
 **                         - Assure that the newly created request has a unique name
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          01/19/2021 mem - Add parameters @requestNameOverride and @infoOnly
-**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**          02/10/2023 mem - Call update_cached_requested_run_batch_stats
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -85,7 +86,7 @@ AS
     if @myRowCount = 0
     begin
         set @message = 'Source request not found in T_Requested_Run: ' + Cast(@requestID as varchar(9))
-        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        exec post_log_entry 'Error', @message, 'copy_requested_run'
         goto Done
     end
 
@@ -102,7 +103,7 @@ AS
         ORDER BY State_ID
 
         set @message = 'Invalid status: ' + @status + '; valid states are ' + @stateNameList
-        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        exec post_log_entry 'Error', @message, 'copy_requested_run'
         goto Done
     end
 
@@ -273,7 +274,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Problem trying to renumber request in history; @myError = ' + Convert(varchar(12), @myError)
-        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        exec post_log_entry 'Error', @message, 'copy_requested_run'
         goto Done
     end
     --
@@ -284,13 +285,13 @@ AS
         else
             Set @message = 'Problem trying to renumber request in history; No rows added for RequestID ' + Convert(varchar(12), @requestID)
 
-        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        exec post_log_entry 'Error', @message, 'copy_requested_run'
         goto Done
     end
 
     If Len(@callingUser) > 0
     Begin
-        Exec AlterEventLogEntryUser 11, @newReqID, @stateID, @callingUser
+        Exec alter_event_log_entry_user 11, @newReqID, @stateID, @callingUser
     End
 
     ------------------------------------------------------------
@@ -309,7 +310,7 @@ AS
 
     -- Now copy the factors
     --
-    EXEC @myError = UpdateRequestedRunCopyFactors
+    EXEC @myError = update_requested_run_copy_factors
                         @requestID,
                         @newReqID,
                         @message OUTPUT,
@@ -318,7 +319,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Problem copying factors to new request; @myError = ' + Convert(varchar(12), @myError)
-        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        exec post_log_entry 'Error', @message, 'copy_requested_run'
         goto Done
     end
     else
@@ -347,7 +348,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Problem trying to copy EUS users; @myError = ' + Convert(varchar(12), @myError)
-        exec PostLogEntry 'Error', @message, 'CopyRequestedRun'
+        exec post_log_entry 'Error', @message, 'copy_requested_run'
         goto Done
     end
 
@@ -356,7 +357,7 @@ AS
     -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
     ---------------------------------------------------
 
-    exec UpdateCachedRequestedRunEUSUsers @newReqID
+    exec update_cached_requested_run_eus_users @newReqID
 
 
     ---------------------------------------------------
@@ -369,7 +370,7 @@ AS
 
     If @batchID > 0
     Begin
-        Exec UpdateCachedRequestedRunBatchStats @batchID
+        Exec update_cached_requested_run_batch_stats @batchID
     End
 
     ---------------------------------------------------
@@ -380,7 +381,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyRequestedRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_requested_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO

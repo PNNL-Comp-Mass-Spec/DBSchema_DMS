@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PostMaterialLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[post_material_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PostMaterialLogEntry]
+CREATE PROCEDURE [dbo].[post_material_log_entry]
 /****************************************************
 **
 **  Desc: Adds new entry to T_Material_Log
@@ -16,15 +16,16 @@ CREATE PROCEDURE [dbo].[PostMaterialLogEntry]
 **  Date:   03/20/2008
 **          03/25/2008 mem - Now validating that @callingUser is not blank
 **          03/26/2008 grk - added handling for comment
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Type varchar(32),
-    @Item varchar(128),
-    @InitialState varchar(128),
-    @FinalState varchar(128),
+    @type varchar(32),
+    @item varchar(128),
+    @initialState varchar(128),
+    @finalState varchar(128),
     @callingUser varchar(128) = '',
     @comment varchar(512)
 )
@@ -87,11 +88,10 @@ AS
         return 51007
     end
 
-
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PostMaterialLogEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[post_material_log_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[PostMaterialLogEntry] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[post_material_log_entry] TO [Limited_Table_Write] AS [dbo]
 GO

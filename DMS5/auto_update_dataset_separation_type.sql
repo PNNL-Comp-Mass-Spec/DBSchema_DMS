@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoUpdateDatasetSeparationType] ******/
+/****** Object:  StoredProcedure [dbo].[auto_update_dataset_separation_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoUpdateDatasetSeparationType]
+CREATE PROCEDURE [dbo].[auto_update_dataset_separation_type]
 /****************************************************
 **
 **  Desc:   Possibly update the separation type for the specified datasets,
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[AutoUpdateDatasetSeparationType]
 **
 **  Auth:   mem
 **  Date:   10/09/2020
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -85,7 +86,7 @@ AS
                 Print 'Processing separation type ' + @separationType + ', acq length ' + CAST(@acqLengthMinutes as VARCHAR(12)) + ' minutes, for dataset ' + @datasetName
             END
 
-            EXEC AutoUpdateSeparationType @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
+            EXEC auto_update_separation_type @separationType, @acqLengthMinutes, @optimalSeparationType = @optimalSeparationType output
 
             IF @separationType <> @optimalSeparationType
             Begin
@@ -187,7 +188,7 @@ AS
                     Set @message = @message + 's'
                 End
 
-                EXEC PostLogEntry 'Normal', @message, 'AutoUpdateDatasetSeparationType'
+                EXEC post_log_entry 'Normal', @message, 'auto_update_dataset_separation_type'
             End
         End
     End

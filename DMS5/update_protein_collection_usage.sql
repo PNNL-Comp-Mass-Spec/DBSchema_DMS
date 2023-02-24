@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateProteinCollectionUsage] ******/
+/****** Object:  StoredProcedure [dbo].[update_protein_collection_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateProteinCollectionUsage]
+CREATE PROCEDURE [dbo].[update_protein_collection_usage]
 /****************************************************
 **
 **  Desc:   Updates the data in T_Protein_Collection_Usage
@@ -15,10 +15,11 @@ CREATE PROCEDURE [dbo].[UpdateProteinCollectionUsage]
 **          11/20/2012 mem - Now updating Job_Usage_Count_Last12Months
 **          08/14/2014 mem - Fixed bug updating Job_Usage_Count_Last12Months (occurred when a protein collection had not been used in the last year)
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/17/2017 mem - Use tables T_Cached_Protein_Collection_List_Map and T_Cached_Protein_Collection_List_Members to minimize calls to MakeTableFromListDelim
+**          03/17/2017 mem - Use tables T_Cached_Protein_Collection_List_Map and T_Cached_Protein_Collection_List_Members to minimize calls to make_table_from_list_delim
 **          10/23/2017 mem - Use S_V_Protein_Collections_by_Organism instead of S_V_Protein_Collection_Picker since S_V_Protein_Collection_Picker only includes active protein collections
 **          08/30/2018 mem - Tabs to spaces
 **          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -74,14 +75,14 @@ AS
         If @myError <> 0
         Begin
             set @message = 'Error merging S_V_Protein_Collections_by_Organism with T_Protein_Collection_Usage (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'UpdateProteinCollectionUsage'
+            execute post_log_entry 'Error', @message, 'update_protein_collection_usage'
         End
 
         ---------------------------------------------------
         -- Update the usage counts in T_Protein_Collection_Usage
         -- We use tables T_Cached_Protein_Collection_List_Map and
         -- T_Cached_Protein_Collection_List_Members to
-        -- minimize calls to MakeTableFromListDelim
+        -- minimize calls to make_table_from_list_delim
         ---------------------------------------------------
 
         -- First add any missing protein collection lists to T_Cached_Protein_Collection_List_Map
@@ -111,7 +112,7 @@ AS
                       ON PCLMap.ProtCollectionList_ID = PCLMembers.ProtCollectionList_ID
                WHERE (PCLMembers.Protein_Collection_Name IS NULL)
              ) SourceQ
-             CROSS APPLY dbo.MakeTableFromListDelim ( SourceQ.Protein_Collection_List, ',' ) AS ProteinCollections
+             CROSS APPLY dbo.make_table_from_list_delim ( SourceQ.Protein_Collection_List, ',' ) AS ProteinCollections
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -149,8 +150,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateProteinCollectionUsage')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_protein_collection_usage')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -159,5 +160,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateProteinCollectionUsage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_protein_collection_usage] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobProcessorGroupMembership] ******/
+/****** Object:  StoredProcedure [dbo].[update_analysis_job_processor_group_membership] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobProcessorGroupMembership]
+CREATE PROCEDURE [dbo].[update_analysis_job_processor_group_membership]
 /****************************************************
 **
 **  Desc:
@@ -19,8 +19,9 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobProcessorGroupMembership]
 **          02/20/2007 grk - Fixed reference to group ID
 **          02/12/2008 grk - Modified temp table #TP to have explicit NULL columns for DMS2 upgrade
 **          03/28/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          03/30/2015 mem - Tweak warning message grammar
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -89,7 +90,7 @@ AS
     INSERT INTO #TP
     (Processor_Name)
     SELECT DISTINCT Item
-    FROM MakeTableFromList(@processorNameList)
+    FROM make_table_from_list(@processorNameList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -289,7 +290,7 @@ AS
     -- If @callingUser is defined, then update Entered_By in T_Analysis_Job_Processor_Group
     If Len(@callingUser) > 0 And @AlterEnteredByRequired <> 0
     Begin
-        -- Call AlterEnteredByUser for each processor ID in #TP
+        -- Call alter_entered_by_user for each processor ID in #TP
 
         -- If the mode was 'add_processors' then this will possibly match some rows that
         --  were previously present in the table.  However, those rows should be excluded since
@@ -305,7 +306,7 @@ AS
         SELECT ID
         FROM #TP
 
-        Exec AlterEnteredByUserMultiID 'T_Analysis_Job_Processor_Group_Membership', 'Processor_ID', @CallingUser, @EntryTimeWindowSeconds=5, @EntryDateColumnName='Last_Affected'
+        Exec alter_entered_by_user_multi_id 'T_Analysis_Job_Processor_Group_Membership', 'Processor_ID', @CallingUser, @EntryTimeWindowSeconds=5, @EntryDateColumnName='Last_Affected'
 
     End
 
@@ -315,16 +316,16 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = 'Processor group: ' + Convert(varchar(12), @pgid)
-    Exec PostUsageLogEntry 'UpdateAnalysisJobProcessorGroupMembership', @UsageMessage
+    Exec post_usage_log_entry 'update_analysis_job_processor_group_membership', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_processor_group_membership] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_analysis_job_processor_group_membership] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_analysis_job_processor_group_membership] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobProcessorGroupMembership] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_processor_group_membership] TO [Limited_Table_Write] AS [dbo]
 GO

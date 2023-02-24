@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetTissueID] ******/
+/****** Object:  StoredProcedure [dbo].[get_tissue_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetTissueID]
+CREATE PROCEDURE [dbo].[get_tissue_id]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[GetTissueID]
 **  Auth:   mem
 **  Date:   09/01/2017 mem - Initial version
 **          10/09/2017 mem - Auto-change @tissue to '' if 'none', 'na', or 'n/a'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

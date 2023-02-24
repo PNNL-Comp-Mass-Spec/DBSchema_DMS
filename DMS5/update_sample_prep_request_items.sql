@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSamplePrepRequestItems] ******/
+/****** Object:  StoredProcedure [dbo].[update_sample_prep_request_items] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
+CREATE PROCEDURE [dbo].[update_sample_prep_request_items]
 /****************************************************
 **
 **  Desc:
@@ -18,10 +18,11 @@ CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItems]
 **  Date:   07/05/2013 grk - initial release
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          07/08/2022 mem - Change Item_ID from text to integer
 **                         - No longer clear the Created column for existing items
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateSamplePrepRequestItems', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_sample_prep_request_items', @raiseError = 1
     If @authorized = 0
     Begin;
         Throw 51000, 'Access denied', 1;
@@ -91,7 +92,7 @@ AS
                 B.CC_Material_Active AS [Status],
                 B.CC_Created AS Created
         FROM    dbo.T_Sample_Prep_Request SPR
-                CROSS APPLY dbo.MakeTableFromListDelim(SPR.Cell_Culture_List, ';') TL
+                CROSS APPLY dbo.make_table_from_list_delim(SPR.Cell_Culture_List, ';') TL
                 INNER JOIN dbo.T_Cell_Culture B ON B.CC_Name = TL.Item
         WHERE   SPR.ID = @samplePrepRequestID
                 AND SPR.Cell_Culture_List <> '(none)'
@@ -178,7 +179,7 @@ AS
                             CONVERT(INT, TL.Item) AS SPR_ID,
                             LCRun.Created
                   FROM      T_Prep_LC_Run LCRun
-                            CROSS APPLY dbo.MakeTableFromList(LCRun.SamplePrepRequest) TL
+                            CROSS APPLY dbo.make_table_from_list(LCRun.SamplePrepRequest) TL
                   WHERE     SamplePrepRequest LIKE '%' + CONVERT(VARCHAR(12), @samplePrepRequestID)
                             + '%'
                 ) TX
@@ -219,7 +220,7 @@ AS
         if @mode = 'update'
         BEGIN --<update>
 
-            DECLARE @transName VARCHAR(64) = 'UpdateSamplePrepRequestItems'
+            DECLARE @transName VARCHAR(64) = 'update_sample_prep_request_items'
 
             BEGIN TRANSACTION @transName
 
@@ -289,7 +290,7 @@ AS
             -- update item counts
             ---------------------------------------------------
 
-            EXEC UpdateSamplePrepRequestItemCount @samplePrepRequestID
+            EXEC update_sample_prep_request_item_count @samplePrepRequestID
 
             COMMIT TRANSACTION @transName
 
@@ -311,12 +312,12 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateSamplePrepRequestItems'
+        Exec post_log_entry 'Error', @message, 'update_sample_prep_request_items'
     END CATCH
 
     ---------------------------------------------------
@@ -325,5 +326,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateSamplePrepRequestItems] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_sample_prep_request_items] TO [DDL_Viewer] AS [dbo]
 GO

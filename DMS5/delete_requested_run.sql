@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteRequestedRun] ******/
+/****** Object:  StoredProcedure [dbo].[delete_requested_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteRequestedRun]
+CREATE PROCEDURE [dbo].[delete_requested_run]
 /****************************************************
 **
 **  Desc:
@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[DeleteRequestedRun]
 **  Date:   02/23/2006
 **          10/29/2009 mem - Made @message an optional output parameter
 **          02/26/2010 grk - delete factors
-**          12/12/2011 mem - Added parameter @callingUser, which is passed to AlterEventLogEntryUser
+**          12/12/2011 mem - Added parameter @callingUser, which is passed to alter_event_log_entry_user
 **          03/22/2016 mem - Added parameter @skipDatasetCheck
 **          06/13/2017 mem - Fix typo
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          02/10/2023 mem - Call UpdateCachedRequestedRunBatchStats
+**          02/10/2023 mem - Call update_cached_requested_run_batch_stats
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,7 +45,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteRequestedRun', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_requested_run', @raiseError = 1
 
     If @authorized = 0
     Begin;
@@ -105,7 +106,7 @@ AS
     -- Start a transaction
     ---------------------------------------------------
 
-    declare @transName varchar(32) = 'DeleteRequestedRun'
+    declare @transName varchar(32) = 'delete_requested_run'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -153,13 +154,13 @@ AS
         goto Done
     end
 
-    -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+    -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
     If Len(@callingUser) > 0
     Begin
         Declare @stateID int
         Set @stateID = 0
 
-        Exec AlterEventLogEntryUser 11, @requestID, @stateID, @callingUser
+        Exec alter_event_log_entry_user 11, @requestID, @stateID, @callingUser
     End
 
     commit transaction @transName
@@ -170,7 +171,7 @@ AS
 
     If @batchID > 0
     Begin
-        Exec UpdateCachedRequestedRunBatchStats @batchID
+        Exec update_cached_requested_run_batch_stats @batchID
     End
 
     ---------------------------------------------------
@@ -181,11 +182,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_requested_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_requested_run] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteRequestedRun] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO

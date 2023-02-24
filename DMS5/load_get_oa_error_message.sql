@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LoadGetOAErrorMessage] ******/
+/****** Object:  StoredProcedure [dbo].[load_get_oa_error_message] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LoadGetOAErrorMessage]
+CREATE PROCEDURE [dbo].[load_get_oa_error_message]
 /****************************************************
 **
 **  Desc:
@@ -14,7 +14,8 @@ CREATE PROCEDURE [dbo].[LoadGetOAErrorMessage]
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   8/25/2001
+**  Date:   08/25/2001
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
     @object int,
@@ -43,8 +44,9 @@ AS
     END
 
     Return
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadGetOAErrorMessage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[load_get_oa_error_message] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadGetOAErrorMessage] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[load_get_oa_error_message] TO [Limited_Table_Write] AS [dbo]
 GO

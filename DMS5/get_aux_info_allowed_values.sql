@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetAuxInfoAllowedValues] ******/
+/****** Object:  UserDefinedFunction [dbo].[Get_Aux_Info_Allowed_Values] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetAuxInfoAllowedValues]
+CREATE FUNCTION [dbo].[get_aux_info_allowed_values]
 /****************************************************
 **
 **  Desc:
@@ -15,10 +15,11 @@ CREATE FUNCTION [dbo].[GetAuxInfoAllowedValues]
 **  Date:   08/24/2010
 **          08/15/2022 mem - Use new column name
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ID int
+    @id int
 )
 RETURNS varchar(1024)
 AS
@@ -37,7 +38,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetAuxInfoAllowedValues] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[Get_Aux_Info_Allowed_Values] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetAuxInfoAllowedValues] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[Get_Aux_Info_Allowed_Values] TO [DMS2_SP_User] AS [dbo]
 GO

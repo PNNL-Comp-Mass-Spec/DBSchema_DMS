@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateParamFileMassMods] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_param_file_mass_mods] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DuplicateParamFileMassMods]
+CREATE PROCEDURE [dbo].[duplicate_param_file_mass_mods]
 /****************************************************
 **
 **  Desc:
@@ -21,13 +21,14 @@ CREATE PROCEDURE [dbo].[DuplicateParamFileMassMods]
 **          07/01/2009 mem - Added parameter @DestParamFileID
 **          07/22/2009 mem - Now returning the suggested query for tweaking the newly entered mass mods
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceParamFileID int,
-    @DestParamFileID int,
-    @UpdateParamEntries tinyint = 1,        -- When non-zero, updates T_Param_Entries in addition to T_Param_File_Mass_Mods
-    @InfoOnly tinyint = 0,
+    @sourceParamFileID int,
+    @destParamFileID int,
+    @updateParamEntries tinyint = 1,        -- When non-zero, updates T_Param_Entries in addition to T_Param_File_Mass_Mods
+    @infoOnly tinyint = 0,
     @message varchar(512)='' OUTPUT
 )
 AS
@@ -196,11 +197,11 @@ Done:
     Return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[DuplicateParamFileMassMods] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[duplicate_param_file_mass_mods] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateParamFileMassMods] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_param_file_mass_mods] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateParamFileMassMods] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_param_file_mass_mods] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DuplicateParamFileMassMods] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[duplicate_param_file_mass_mods] TO [PNL\D3M578] AS [dbo]
 GO

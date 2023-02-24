@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedDatasetLinks] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_dataset_links] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
+CREATE PROCEDURE [dbo].[update_cached_dataset_links]
 /****************************************************
 **
 **  Desc:   Updates T_Cached_Dataset_Links, which is used by the
@@ -13,9 +13,10 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetLinks]
 **
 **  Auth:   mem
 **  Date:   07/25/2017 mem - Initial version
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          07/31/2020 mem - Update MASIC_Directory_Name
 **          09/06/2022 mem - When @processingMode is 3, update datasets in batches (to decrease the likelihood of deadlock issues)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -82,7 +83,7 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount > 0
-        Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.CheckPlural(@myRowCount, 'dataset', 'datasets')
+        Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.check_plural(@myRowCount, 'dataset', 'datasets')
 
     SELECT @datasetIdMax = Max(Dataset_ID)
     FROM T_Cached_Dataset_Links
@@ -138,8 +139,8 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
-            Set @message = dbo.AppendToText(@message,
-                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion or SPath_RowVersion',
+            Set @message = dbo.append_to_text(@message,
+                                            Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion or SPath_RowVersion',
                                             0, '; ', 512)
 
     End
@@ -497,11 +498,11 @@ AS
 
     If @myRowCount > 0
     Begin
-        Set @message = dbo.AppendToText(@message,
-                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Links',
+        Set @message = dbo.append_to_text(@message,
+                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Links',
                                         0, '; ', 512)
 
-        -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetLinks'
+        -- Exec post_log_entry 'Debug', @message, 'update_cached_dataset_links'
     End
 
 Done:

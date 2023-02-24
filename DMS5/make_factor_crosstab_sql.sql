@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeFactorCrosstabSQL] ******/
+/****** Object:  StoredProcedure [dbo].[make_factor_crosstab_sql] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeFactorCrosstabSQL]
+CREATE PROCEDURE [dbo].[make_factor_crosstab_sql]
 /****************************************************
 **
 **  Desc:
@@ -25,12 +25,13 @@ CREATE PROCEDURE [dbo].[MakeFactorCrosstabSQL]
 **  Date:   03/22/2010 grk - Initial release
 **          11/11/2022 mem - Exclude unnamed factors when querying T_Factor
 **          01/24/2023 mem - Add example value for @colList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @colList varchar(256),              -- Example: ' ''x'' as sel, batch_id, experiment, dataset, name, status, request'
-    @FactorNameContains varchar(48) = '',
-    @Sql varchar(max) OUTPUT,
+    @factorNameContains varchar(48) = '',
+    @sql varchar(max) OUTPUT,
     @message varchar(512) = '' OUTPUT
 )
 AS
@@ -125,9 +126,9 @@ AS
         Set @Sql = @Sql + ' LEFT OUTER JOIN (' + @CrossTabSql + ') CrosstabQ ON UQ.Request = CrossTabQ.TargetID'
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_factor_crosstab_sql] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MakeFactorCrosstabSQL] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[make_factor_crosstab_sql] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeFactorCrosstabSQL] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_factor_crosstab_sql] TO [Limited_Table_Write] AS [dbo]
 GO

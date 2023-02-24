@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEMSLInstrumentUsageReport] ******/
+/****** Object:  StoredProcedure [dbo].[update_emsl_instrument_usage_report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
+CREATE PROCEDURE [dbo].[update_emsl_instrument_usage_report]
 /****************************************************
 **
 **  Desc:
@@ -23,16 +23,16 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          01/31/2013 mem - Now using IsNull(@message, '') when copying @message to @debug
 **          03/12/2014 grk - Allow null [EMSL_Inst_ID] in #STAGING (OMCDA-1058)
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
 **          04/10/2017 mem - Remove @day and @hour since not used
 **          04/11/2017 mem - Populate columns DMS_Inst_ID and Usage_Type instead of Instrument and Usage
 **                         - Add parameter @infoOnly
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**                         - Set @validateTotal to 0 when calling ParseUsageText
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**                         - Set @validateTotal to 0 when calling parse_usage_text
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          08/02/2017 mem - Trim whitespace from the cleaned comment returned by ParseUsageText
+**          08/02/2017 mem - Trim whitespace from the cleaned comment returned by parse_usage_text
 **          01/05/2017 mem - Remove LF and CR from dataset comments
 **          05/03/2019 mem - Add parameter @eusInstrumentId
 **          04/17/2020 mem - Use Dataset_ID instead of ID
@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentUsageReport]
 **          03/17/2022 mem - After populating the staging table, update @instrument if required
 **                         - Call stored procedure UpdateEMSLInstrumentAcqOverlapColumn
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -85,7 +86,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateEMSLInstrumentUsageReport', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_emsl_instrument_usage_report', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -107,7 +108,7 @@ AS
         --
         INSERT INTO #Tmp_DebugReports (Debug_ID)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@message, ',')
+        FROM dbo.parse_delimited_integer_list(@message, ',')
         ORDER BY Value
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -122,9 +123,9 @@ AS
     Set @message = ''
 
     BEGIN TRY
-        Set @maxNormalInterval = dbo.GetLongIntervalThreshold()
+        Set @maxNormalInterval = dbo.get_long_interval_threshold()
 
-        Set @callingUser = dbo.GetUserLoginWithoutDomain('')
+        Set @callingUser = dbo.get_user_login_without_domain('')
 
         ---------------------------------------------------
         -- Figure out our time context
@@ -184,7 +185,7 @@ AS
                   [Month],
                   [Dataset_ID]
                 )
-        EXEC GetMonthlyInstrumentUsageReport @instrument, @eusInstrumentId,
+        EXEC get_monthly_instrument_usage_report @instrument, @eusInstrumentId,
                                              @year, @month,
                                              @outputFormat, @message OUTPUT
 
@@ -316,16 +317,16 @@ AS
                 Else
                 Begin
                     ---------------------------------------------------
-                    -- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
+                    -- parse_usage_text looks for special usage tags in the comment and extracts that information, returning it as XML
                     --
                     -- If @cleanedComment is initially 'User[100%], Proposal[49361], PropUser[50082] Extra information about interval'
-                    -- after calling ParseUsageText, @cleanedComment will be ' Extra information about interval''
+                    -- after calling parse_usage_text, @cleanedComment will be ' Extra information about interval''
                     -- and @xml will be <u User="100" Proposal="49361" PropUser="50082" />
                     --
-                    -- If @cleanedComment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to ParseUsageText
+                    -- If @cleanedComment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to parse_usage_text
                     ---------------------------------------------------
 
-                    EXEC dbo.ParseUsageText @cleanedComment output, @xml output, @message output, @seq=@seq, @showDebug=@infoOnly, @validateTotal=0
+                    EXEC dbo.parse_usage_text @cleanedComment output, @xml output, @message output, @seq=@seq, @showDebug=@infoOnly, @validateTotal=0
                 End
 
                 UPDATE #STAGING
@@ -606,7 +607,7 @@ AS
             If @infoOnly = 0
             Begin
                 UPDATE T_EMSL_Instrument_Usage_Report
-                SET [Comment] = dbo.GetNearestPrecedingLogEntry(InstUsage.Seq, 0)
+                SET [Comment] = dbo.get_nearest_preceding_log_entry(InstUsage.Seq, 0)
                 FROM T_EMSL_Instrument_Usage_Report InstUsage
                     LEFT OUTER JOIN T_EMSL_Instrument_Usage_Type InstUsageType
                     ON InstUsage.Usage_Type = InstUsageType.ID
@@ -624,7 +625,7 @@ AS
                        InstUsage.Seq,
                        InstName.IN_Name AS Instrument,
                        [Comment] AS OldComment,
-                       dbo.GetNearestPrecedingLogEntry(InstUsage.Seq, 0) AS NewComment
+                       dbo.get_nearest_preceding_log_entry(InstUsage.Seq, 0) AS NewComment
                 FROM T_EMSL_Instrument_Usage_Report InstUsage
                      INNER JOIN T_Instrument_Name InstName
                        ON InstUsage.DMS_Inst_ID = InstName.Instrument_ID
@@ -685,27 +686,27 @@ AS
             -- Populate field Dataset_ID_Acq_Overlap, which is used to track datasets with identical acquisition start times
             ---------------------------------------------------
 
-            Exec UpdateEMSLInstrumentAcqOverlapData @instrument, @year, @month, @message = @message Output, @infoOnly = @infoOnly
+            Exec update_emsl_instrument_acq_overlap_data @instrument, @year, @month, @message = @message Output, @infoOnly = @infoOnly
 
         End -- </a>
 
     END TRY
     BEGIN CATCH
 
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateEMSLInstrumentUsageReport'
+        Exec post_log_entry 'Error', @message, 'update_emsl_instrument_usage_report'
 
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_emsl_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateEMSLInstrumentUsageReport] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_emsl_instrument_usage_report] TO [DMS2_SP_User] AS [dbo]
 GO

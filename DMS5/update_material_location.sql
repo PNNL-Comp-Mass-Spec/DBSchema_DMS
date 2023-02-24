@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMaterialLocation] ******/
+/****** Object:  StoredProcedure [dbo].[update_material_location] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateMaterialLocation]
+CREATE PROCEDURE [dbo].[update_material_location]
 /****************************************************
 **
 **  Desc:   Change properties of a single material location item
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateMaterialLocation]
 **
 **  Auth:   mem
 **  Date:   08/27/2018 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateMaterialLocation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_material_location', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -63,7 +64,7 @@ AS
         Set @status = Ltrim(Rtrim(IsNull(@status, '')))
 
         If IsNull(@callingUser, '') = ''
-            SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+            SET @callingUser = dbo.get_user_login_without_domain('')
 
         If LEN(@locationTag) < 1
             RAISERROR ('Location tag must be defined', 11, 30)
@@ -126,7 +127,7 @@ AS
             Begin
                 Set @errorMessage = 'Location cannot be set to inactive because it has ' +
                                     Cast(@activeContainers As varchar(12)) + ' active ' +
-                                    dbo.CheckPlural(@activeContainers, 'container', 'containers')
+                                    dbo.check_plural(@activeContainers, 'container', 'containers')
                 RAISERROR (@errorMessage, 11, 91)
             End
         End
@@ -158,7 +159,7 @@ AS
             Set @logMessage = 'Material location status changed from ' + @oldStatus + ' to ' + @status +
                               ' by ' + @callingUser + ' for material location ' + @locationTag
 
-            Exec PostLogEntry 'Normal', @logMessage, 'UpdateMaterialLocation'
+            Exec post_log_entry 'Normal', @logMessage, 'update_material_location'
 
             Set @message = 'Set status to ' + @status
         End
@@ -194,30 +195,30 @@ AS
                                       @callingUser + ' for material location ' + @locationTag
                 End
 
-                Exec PostLogEntry 'Normal', @logMessage, 'UpdateMaterialLocation'
+                Exec post_log_entry 'Normal', @logMessage, 'update_material_location'
             End
 
         End
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
+        EXEC format_error_message @message OUTPUT, @myError OUTPUT
 
         If @logErrors > 0
         Begin
             Set @logMessage = @message + '; Location tag ' + @locationTag
-            exec PostLogEntry 'Error', @logMessage, 'UpdateMaterialLocation'
+            exec post_log_entry 'Error', @logMessage, 'update_material_location'
         End
 
     END CATCH
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialLocation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_location] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialLocation] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_material_location] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialLocation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_material_location] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialLocation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_location] TO [Limited_Table_Write] AS [dbo]
 GO

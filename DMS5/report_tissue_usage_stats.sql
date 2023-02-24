@@ -1,15 +1,16 @@
-/****** Object:  StoredProcedure [dbo].[ReportTissueUsageStats] ******/
+/****** Object:  StoredProcedure [dbo].[report_tissue_usage_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ReportTissueUsageStats]
+CREATE PROCEDURE [dbo].[report_tissue_usage_stats]
 /****************************************************
 **
 **  Desc:   Generates tissue usage statistics for experiments
 **
 **  Auth:   mem
 **  Date:   07/23/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -58,7 +59,7 @@ AS
 
     CREATE UNIQUE CLUSTERED INDEX #IX_Tmp_CampaignFilter ON #Tmp_CampaignFilter (Campaign_ID)
 
-    Exec @result = PopulateCampaignFilterTable @campaignIDFilterList, @message=@message output
+    Exec @result = populate_campaign_filter_table @campaignIDFilterList, @message=@message output
 
     If @result <> 0
     Begin
@@ -78,7 +79,7 @@ AS
 
     If Len(@instrumentFilterList) > 0
     Begin
-        Exec @result = PopulateInstrumentFilterTable @instrumentFilterList, @message=@message output
+        Exec @result = populate_instrument_filter_table @instrumentFilterList, @message=@message output
 
         If @result <> 0
         Begin
@@ -102,7 +103,7 @@ AS
     Begin
         INSERT INTO #Tmp_OrganismFilter (Organism_ID)
         SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedIntegerList(@organismIDFilterList, ',')
+        FROM dbo.parse_delimited_integer_list(@organismIDFilterList, ',')
         ORDER BY Value
 
         -- Look for invalid Organism ID values
@@ -141,7 +142,7 @@ AS
     -- Determine the start and end dates
     --------------------------------------------------------------------
 
-    Exec @result = ResolveStartAndEndDates @startDate, @endDate, @stDate Output, @eDate Output, @message=@message output
+    Exec @result = resolve_start_and_end_dates @startDate, @endDate, @stDate Output, @eDate Output, @message=@message output
 
     If @result <> 0
     Begin
@@ -244,7 +245,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -252,18 +253,18 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'ReportTissueUsageStats'
+            Exec post_log_entry 'Error', @message, 'report_tissue_usage_stats'
         End
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportTissueUsageStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_tissue_usage_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportTissueUsageStats] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_tissue_usage_stats] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportTissueUsageStats] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_tissue_usage_stats] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportTissueUsageStats] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_tissue_usage_stats] TO [Limited_Table_Write] AS [dbo]
 GO

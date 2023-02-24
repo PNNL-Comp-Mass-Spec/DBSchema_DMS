@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNotificationDatasetEvents] ******/
+/****** Object:  StoredProcedure [dbo].[make_notification_dataset_events] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeNotificationDatasetEvents]
+CREATE PROCEDURE [dbo].[make_notification_dataset_events]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[MakeNotificationDatasetEvents]
 **          04/02/2010 mem - Updated the "Not Released" check to cover Dataset Rating -9 to 1
 **                         - Now also looking for "Released" datasets
 **          11/03/2016 mem - Fix bug that was failing to remove events of type 20 (Dataset Not Released) from T_Notification_Event
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
@@ -144,7 +145,7 @@ AS
           Entered < @window
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationDatasetEvents] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_notification_dataset_events] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationDatasetEvents] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_notification_dataset_events] TO [Limited_Table_Write] AS [dbo]
 GO

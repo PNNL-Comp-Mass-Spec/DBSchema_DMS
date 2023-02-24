@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMTDBsForPeptideDB] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_mtdbs_for_peptide_db] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMTDBsForPeptideDB]
+CREATE FUNCTION [dbo].[get_mtdbs_for_peptide_db]
 /****************************************************
 **
 **  Desc:
@@ -16,10 +16,11 @@ CREATE FUNCTION [dbo].[GetMTDBsForPeptideDB]
 **
 **  Auth:   mem
 **  Date:   10/18/2012
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @PeptideDBName varchar(128)
+    @peptideDBName varchar(128)
 )
 RETURNS varchar(3500)
 AS
@@ -34,5 +35,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMTDBsForPeptideDB] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_mtdbs_for_peptide_db] TO [DDL_Viewer] AS [dbo]
 GO

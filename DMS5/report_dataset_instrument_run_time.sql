@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReportDatasetInstrumentRunTime] ******/
+/****** Object:  StoredProcedure [dbo].[report_dataset_instrument_run_time] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ReportDatasetInstrumentRunTime]
+CREATE PROCEDURE [dbo].[report_dataset_instrument_run_time]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[ReportDatasetInstrumentRunTime]
 **          01/31/2012 grk - Added Interval column to output and made separate interval rows an option
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -104,26 +105,26 @@ AS
     ---------------------------------------------------
 
     SELECT *
-    FROM dbo.GetDatasetInstrumentRuntime(@stDate, @eDate, @instrumentName, @reportOptions)
+    FROM dbo.get_dataset_instrument_runtime(@stDate, @eDate, @instrumentName, @reportOptions)
     ORDER BY Seq
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'ReportDatasetInstrumentRunTime'
+        Exec post_log_entry 'Error', @message, 'report_dataset_instrument_run_time'
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReportDatasetInstrumentRunTime] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_dataset_instrument_run_time] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportDatasetInstrumentRunTime] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_dataset_instrument_run_time] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ReportDatasetInstrumentRunTime] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_dataset_instrument_run_time] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetCampaignRolePerson] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_campaign_role_person] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetCampaignRolePerson]
+CREATE FUNCTION [dbo].[get_campaign_role_person]
 /****************************************************
 **
 **  Desc:
@@ -16,7 +16,8 @@ CREATE FUNCTION [dbo].[GetCampaignRolePerson]
 **
 **  Auth:   grk
 **  Date:   02/03/2010
-**          12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and PRN
+**          12/08/2014 mem - Now using Name_with_PRN to obtain the user's name and username
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -45,6 +46,7 @@ AS
 
         RETURN @result
     END
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetCampaignRolePerson] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_campaign_role_person] TO [DDL_Viewer] AS [dbo]
 GO

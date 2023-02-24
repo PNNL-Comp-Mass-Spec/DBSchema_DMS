@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateJobDatasetStates] ******/
+/****** Object:  StoredProcedure [dbo].[validate_job_dataset_states] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateJobDatasetStates]
+CREATE PROCEDURE [dbo].[validate_job_dataset_states]
 /****************************************************
 **
 **  Desc:   Validates job and dataset states vs. DMS_Pipeline and DMS_Capture
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[ValidateJobDatasetStates]
 **  Date:   11/11/2016 mem - Initial Version
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/01/2023 mem - Use new synonym names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -144,8 +145,8 @@ AS
                 -- Remove the trailing comma
                 Set @itemList = Left(@itemList, Len(@itemList)-1)
 
-                Set @message = 'Updated dataset state for dataset ' +  dbo.CheckPlural(@myRowCount, 'ID ', 'IDs ') + @itemList + ' due to mismatch with DMS_Capture'
-                exec PostLogEntry 'Warning', @message, 'ValidateJobDatasetStates'
+                Set @message = 'Updated dataset state for dataset ' +  dbo.check_plural(@myRowCount, 'ID ', 'IDs ') + @itemList + ' due to mismatch with DMS_Capture'
+                exec post_log_entry 'Warning', @message, 'validate_job_dataset_states'
             End -- </datasets>
 
             If Exists (Select * FROM #Tmp_Jobs)
@@ -172,8 +173,8 @@ AS
                 -- Remove the trailing comma
                 Set @itemList = Left(@itemList, Len(@itemList)-1)
 
-                Set @message = 'Updated job state for ' +  dbo.CheckPlural(@myRowCount, 'job ', 'jobs ') + @itemList + ' due to mismatch with DMS_Pipeline'
-                exec PostLogEntry 'Warning', @message, 'ValidateJobDatasetStates'
+                Set @message = 'Updated job state for ' +  dbo.check_plural(@myRowCount, 'job ', 'jobs ') + @itemList + ' due to mismatch with DMS_Pipeline'
+                exec post_log_entry 'Warning', @message, 'validate_job_dataset_states'
             End -- </jobs>
 
         End -- </ApplyChanges>
@@ -181,8 +182,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'ValidateJobDatasetStates')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'validate_job_dataset_states')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
 
@@ -191,5 +192,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateJobDatasetStates] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_job_dataset_states] TO [DDL_Viewer] AS [dbo]
 GO

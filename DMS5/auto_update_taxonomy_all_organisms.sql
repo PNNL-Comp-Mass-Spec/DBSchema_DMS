@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoUpdateTaxonomyAllOrganisms] ******/
+/****** Object:  StoredProcedure [dbo].[auto_update_taxonomy_all_organisms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoUpdateTaxonomyAllOrganisms]
+CREATE PROCEDURE [dbo].[auto_update_taxonomy_all_organisms]
 /****************************************************
 **
 **  Desc:   Auto-defines the taxonomy for all organisms
@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[AutoUpdateTaxonomyAllOrganisms]
 **  Auth:    mem
 **  Date:    03/02/2016 mem - Initial version
 **           03/31/2021 mem - Expand OrganismName to varchar(128)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -123,7 +124,7 @@ AS
             Set @orgSpecies = @oldSpecies
             Set @orgStrain  = @oldStrain
 
-            EXEC GetTaxonomyValueByTaxonomyID
+            EXEC get_taxonomy_value_by_taxonomy_id
                     @ncbiTaxonomyID,
                     @orgDomain =  @orgDomain output,
                     @orgKingdom = @orgKingdom output,
@@ -208,5 +209,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoUpdateTaxonomyAllOrganisms] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_update_taxonomy_all_organisms] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCartParameters] ******/
+/****** Object:  StoredProcedure [dbo].[update_cart_parameters] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCartParameters]
+CREATE PROCEDURE [dbo].[update_cart_parameters]
 /****************************************************
 **
 **  Desc:
 **      Changes cart parameters for given requested run
-**      This procedure is used by AddUpdateDataset
+**      This procedure is used by add_update_dataset
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -24,10 +24,11 @@ CREATE PROCEDURE [dbo].[UpdateCartParameters]
 **  Date:   12/16/2003
 **          02/27/2006 grk - added cart ID stuff
 **          05/10/2006 grk - added verification of request ID
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/02/2013 mem - Now using @message to return errors looking up cart name from T_LC_Cart
 **          01/09/2017 mem - Update @message when using RAISERROR
 **          01/10/2023 mem - Include previous @message text when updating @message
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -175,7 +176,7 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = 'Request ' + Convert(varchar(12), @requestID)
-    Exec PostUsageLogEntry 'UpdateCartParameters', @UsageMessage
+    Exec post_usage_log_entry 'update_cart_parameters', @UsageMessage
 
     ---------------------------------------------------
     -- report any errors
@@ -190,9 +191,9 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cart_parameters] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCartParameters] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cart_parameters] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCartParameters] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cart_parameters] TO [Limited_Table_Write] AS [dbo]
 GO

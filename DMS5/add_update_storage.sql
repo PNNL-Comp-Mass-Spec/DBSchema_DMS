@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateStorage] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_storage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateStorage]
+CREATE PROCEDURE [dbo].[add_update_storage]
 /****************************************************
 **
 **  Desc:
@@ -40,10 +40,11 @@ CREATE PROCEDURE [dbo].[AddUpdateStorage]
 **          05/01/2009 mem - Updated description field in T_Storage_Path to be named SP_description
 **          05/09/2011 mem - Now validating @instrumentName
 **          07/15/2015 mem - Now checking for an existing entry to prevent adding a duplicate
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/27/2020 mem - Add parameter @urlDomain and update SP_URL_Domain
 **          06/24/2021 mem - Add support for re-using an existing storage path when @mode is 'add'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ CREATE PROCEDURE [dbo].[AddUpdateStorage]
     @instrumentName varchar(50),
     @description varchar(255) = '(na)',
     @urlDomain varchar(64) = 'pnl.gov',
-    @ID varchar(32) output,
+    @id varchar(32) output,
     @mode varchar(12) = 'add',                -- 'add' or 'update'
     @message varchar(512) output
 )
@@ -76,7 +77,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateStorage', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_storage', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -221,14 +222,14 @@ AS
             -- Begin transaction
             ---------------------------------------------------
             --
-            Declare @transName varchar(32) = 'AddUpdateStoragePath'
+            Declare @transName varchar(32) = 'add_update_storagePath'
             Begin transaction @transName
 
             ---------------------------------------------------
             -- Save existing state of instrument and storage tables
             ---------------------------------------------------
             --
-            exec @result = BackUpStorageState @msg output
+            exec @result = backup_storage_state @msg output
             --
             If @result <> 0
             Begin
@@ -398,14 +399,14 @@ AS
         -- Begin transaction
         ---------------------------------------------------
         --
-        Set @transName = 'AddUpdateStoragePath'
+        Set @transName = 'add_update_storagePath'
         Begin transaction @transName
 
         ---------------------------------------------------
         -- Save existing state of instrument and storage tables
         ---------------------------------------------------
         --
-        exec @result = BackUpStorageState @msg output
+        exec @result = backup_storage_state @msg output
         --
         If @result <> 0
         Begin
@@ -531,11 +532,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_storage] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS_Storage_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_storage] TO [DMS_Storage_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateStorage] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_storage] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateStorage] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_storage] TO [Limited_Table_Write] AS [dbo]
 GO

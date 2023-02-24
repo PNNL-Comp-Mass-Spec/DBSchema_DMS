@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[SetCaptureTaskComplete] ******/
+/****** Object:  StoredProcedure [dbo].[set_capture_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
+CREATE PROCEDURE [dbo].[set_capture_task_complete]
 /****************************************************
 **
-**  Desc:   Sets state of dataset record given by @datasetNum
+**  Desc:   Sets state of dataset record given by @datasetName
 **          according to given completion code and
 **          adjusts related database entries accordingly.
 **
@@ -16,20 +16,21 @@ CREATE PROCEDURE [dbo].[SetCaptureTaskComplete]
 **          08/06/2003 grk - added handling for "Not Ready" state
 **          11/13/2003 dac - changed "FTICR" instrument class to "Finnigan_FTICR" following instrument class renaming
 **          06/21/2005 grk - added handling "requires_preparation"
-**          09/25/2007 grk - return result from DoDatasetCompletionActions (http://prismtrac.pnl.gov/trac/ticket/537)
+**          09/25/2007 grk - return result from do_dataset_completion_actions (http://prismtrac.pnl.gov/trac/ticket/537)
 **          10/09/2007 grk - limit number of retries (ticket 537)
 **          12/16/2007 grk - add completion code '100' for use by capture broker
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/04/2012 mem - Added parameter @failureMessage
 **          08/19/2015 mem - If @completionCode is 0, now looking for and removing messages of the form "Error while copying \\15TFTICR64\data\"
-**          12/16/2017 mem - If @completionCode is 0, now calling CleanupDatasetComments to remove error messages in the comment field
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          12/16/2017 mem - If @completionCode is 0, now calling cleanup_dataset_comments to remove error messages in the comment field
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          06/13/2018 mem - Add support for @completionCode 101
 **          08/08/2018 mem - Add @completionState 14 (Duplicate Dataset Files)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @completionCode int = 0,    -- 0=success, 1=failed, 2=not ready, 100=success (capture broker), 101=Duplicate dataset files (capture broker)
     @message varchar(512) output,
     @failureMessage varchar(512) = ''
@@ -67,13 +68,13 @@ AS
            ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
          INNER JOIN T_Instrument_Class
            ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE (Dataset_Num = @datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        Set @message = 'Could not get dataset ID for dataset ' + @datasetNum
+        Set @message = 'Could not get dataset ID for dataset ' + @datasetName
         goto done
     End
 
@@ -123,18 +124,18 @@ AS
         --
         If @myError <> 0
         Begin
-            Set @message = 'Error checking for retry count ' + @datasetNum
+            Set @message = 'Error checking for retry count ' + @datasetName
             goto done
         End
         --
         If @result > @maxRetries
         Begin
             Set @completionState = 5 -- capture failed
-            Set @message = 'Number of capture retries exceeded limit of ' + cast(@maxRetries as varchar(12)) + ' for dataset "' + @datasetNum + '"'
-            exec PostLogEntry
+            Set @message = 'Number of capture retries exceeded limit of ' + cast(@maxRetries as varchar(12)) + ' for dataset "' + @datasetName + '"'
+            exec post_log_entry
                     'Error',
                     @message,
-                    'SetCaptureTaskComplete'
+                    'set_capture_task_complete'
             Set @message = ''
         End
     End
@@ -143,7 +144,7 @@ AS
     -- perform the actions necessary when dataset is complete
     ---------------------------------------------------
     --
-    execute @myError = DoDatasetCompletionActions @datasetNum, @completionState, @message output
+    execute @myError = do_dataset_completion_actions @datasetName, @completionState, @message output
 
     ---------------------------------------------------
     -- Update the comment as needed
@@ -156,14 +157,14 @@ AS
         -- Dataset successfully captured
         -- Remove error messages of the form Error while copying \\15TFTICR64\data\ ...
 
-        exec CleanupDatasetComments @DatasetID, @infoonly=0
+        exec cleanup_dataset_comments @DatasetID, @infoonly=0
 
     End
 
     If @completionState = 5 And @failureMessage <> ''
     Begin
         -- Add @failureMessage to the dataset comment (If not yet present)
-        Set @Comment = dbo.AppendToText(@Comment, @failureMessage, 0, '; ', 512)
+        Set @Comment = dbo.append_to_text(@Comment, @failureMessage, 0, '; ', 512)
 
         UPDATE T_Dataset
         SET DS_Comment = @Comment
@@ -182,8 +183,8 @@ Done:
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'Dataset: ' + @datasetNum
-    Exec PostUsageLogEntry 'SetCaptureTaskComplete', @UsageMessage
+    Set @UsageMessage = 'Dataset: ' + @datasetName
+    Exec post_usage_log_entry 'set_capture_task_complete', @UsageMessage
 
     If @message <> ''
     Begin
@@ -192,7 +193,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_capture_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetCaptureTaskComplete] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_capture_task_complete] TO [Limited_Table_Write] AS [dbo]
 GO

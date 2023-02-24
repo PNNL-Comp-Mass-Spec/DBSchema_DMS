@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetWPforEUSProposal] ******/
+/****** Object:  StoredProcedure [dbo].[get_wp_for_eus_proposal] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetWPforEUSProposal]
+CREATE PROCEDURE [dbo].[get_wp_for_eus_proposal]
 /****************************************************
 **
 **  Desc:   Determines best work package to use for a given EUS user proposal
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetWPforEUSProposal]
 **
 **  Auth:   mem
 **  Date:   01/29/2016 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -96,5 +97,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetWPforEUSProposal] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_wp_for_eus_proposal] TO [DDL_Viewer] AS [dbo]
 GO

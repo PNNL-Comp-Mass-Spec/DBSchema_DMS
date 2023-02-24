@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[update_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasets]
+CREATE PROCEDURE [dbo].[update_datasets]
 /****************************************************
 **
 **  Desc:
@@ -15,16 +15,17 @@ CREATE PROCEDURE [dbo].[UpdateDatasets]
 **
 **  Auth:   jds
 **  Date:   09/21/2006
-**          03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUserMultiID (Ticket #644)
+**          03/28/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user_multi_id (Ticket #644)
 **          08/19/2010 grk - try-catch for error handling
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          03/30/2015 mem - Tweak warning message grammar
 **          10/07/2015 mem - Added @mode "preview"
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -81,7 +82,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasets', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_datasets', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -113,7 +114,7 @@ AS
     ---------------------------------------------------
 
     CREATE TABLE #TDS (
-        DatasetNum varchar(128) NOT NULL
+        DatasetName varchar(128) NOT NULL
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -127,16 +128,16 @@ AS
 
     CREATE TABLE #TmpDatasetSchedulePredefine (
         Entry_ID int Identity(1,1),
-        DatasetNum varchar(128) NOT NULL
+        DatasetName varchar(128) NOT NULL
     )
 
     ---------------------------------------------------
     -- Populate table from dataset list
     ---------------------------------------------------
 
-    INSERT INTO #TDS (DatasetNum)
+    INSERT INTO #TDS (DatasetName)
     SELECT DISTINCT Value
-    FROM udfParseDelimitedList(@datasetList, ',', 'UpdateDatasets')
+    FROM parse_delimited_list(@datasetList, ',', 'update_datasets')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -154,11 +155,11 @@ AS
     set @list = ''
     --
     SELECT @list = @list + CASE
-                               WHEN @list = '' THEN DatasetNum
-                               ELSE ', ' + DatasetNum
+                               WHEN @list = '' THEN DatasetName
+                               ELSE ', ' + DatasetName
                            END
     FROM #TDS
-    WHERE NOT DatasetNum IN ( SELECT Dataset_Num FROM T_Dataset )
+    WHERE NOT DatasetName IN ( SELECT Dataset_Num FROM T_Dataset )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -269,7 +270,7 @@ AS
                    ELSE DS_Comment
                END AS Comment_via_Replace
         FROM T_Dataset
-        WHERE (Dataset_Num IN ( SELECT DatasetNum FROM #TDS ))
+        WHERE (Dataset_Num IN ( SELECT DatasetName FROM #TDS ))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -286,7 +287,7 @@ AS
 
         ---------------------------------------------------
         declare @transName varchar(32)
-        set @transName = 'UpdateDatasets'
+        set @transName = 'update_datasets'
         begin transaction @transName
 
         -----------------------------------------------
@@ -294,7 +295,7 @@ AS
         begin
             UPDATE T_Dataset
             SET DS_state_ID = @stateID
-            WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
+            WHERE (Dataset_Num in (SELECT DatasetName FROM #TDS))
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -312,13 +313,13 @@ AS
         if @rating <> '[no change]'
         begin -- <UpdateRating>
             -- Find the datasets that have an existing rating of -5, -6, or -7
-            INSERT INTO #TmpDatasetSchedulePredefine (DatasetNum)
+            INSERT INTO #TmpDatasetSchedulePredefine (DatasetName)
             SELECT DS.Dataset_Num
             FROM T_Dataset DS
                  LEFT OUTER JOIN T_Analysis_Job J
                    ON DS.Dataset_ID = J.AJ_datasetID AND
                       J.AJ_DatasetUnreviewed = 0
-            WHERE DS.Dataset_Num IN ( SELECT DatasetNum FROM #TDS ) AND
+            WHERE DS.Dataset_Num IN ( SELECT DatasetName FROM #TDS ) AND
                   DS.DS_Rating IN (-5, -6, -7) AND
                   J.AJ_jobID IS NULL
             --
@@ -327,7 +328,7 @@ AS
 
             UPDATE T_Dataset
             SET DS_rating = @ratingID
-            WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
+            WHERE (Dataset_Num in (SELECT DatasetName FROM #TDS))
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -348,7 +349,7 @@ AS
 
                 While @ContinueUpdate > 0
                 Begin -- <ForEach>
-                    SELECT TOP 1 @EntryID = Entry_ID, @CurrentDataset = DatasetNum
+                    SELECT TOP 1 @EntryID = Entry_ID, @CurrentDataset = DatasetName
                     FROM #TmpDatasetSchedulePredefine
                     WHERE Entry_ID > @EntryID
                     ORDER BY Entry_ID
@@ -358,7 +359,7 @@ AS
                     If @myRowCount = 0
                         Set @ContinueUpdate = 0
                     Else
-                        Exec SchedulePredefinedAnalyses @CurrentDataset
+                        Exec schedule_predefined_analysis_jobs @CurrentDataset
 
                 End -- </ForEach>
 
@@ -371,7 +372,7 @@ AS
         begin
             UPDATE T_Dataset
             SET DS_comment = DS_comment + ' ' + @comment
-            WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
+            WHERE (Dataset_Num in (SELECT DatasetName FROM #TDS))
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -388,7 +389,7 @@ AS
         begin
             UPDATE T_Dataset
             SET DS_comment = Replace(DS_comment, @findText, @replaceText)
-            WHERE (Dataset_Num in (SELECT DatasetNum FROM #TDS))
+            WHERE (Dataset_Num in (SELECT DatasetName FROM #TDS))
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -405,7 +406,7 @@ AS
 
         If Len(@callingUser) > 0 And (@DatasetStateUpdated <> 0 Or @DatasetRatingUpdated <> 0)
         Begin
-            -- @callingUser is defined; call AlterEventLogEntryUserMultiID
+            -- @callingUser is defined; call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
             --
 
@@ -419,26 +420,26 @@ AS
             INSERT INTO #TmpIDUpdateList (TargetID)
             SELECT DISTINCT Dataset_ID
             FROM T_Dataset
-            WHERE (Dataset_Num IN (SELECT DatasetNum FROM #TDS))
+            WHERE (Dataset_Num IN (SELECT DatasetName FROM #TDS))
 
             If @DatasetStateUpdated <> 0
-                Exec AlterEventLogEntryUserMultiID 4, @stateID, @callingUser
+                Exec alter_event_log_entry_user_multi_id 4, @stateID, @callingUser
 
             If @DatasetRatingUpdated <> 0
-                Exec AlterEventLogEntryUserMultiID 8, @ratingID, @callingUser
+                Exec alter_event_log_entry_user_multi_id 8, @ratingID, @callingUser
         End
 
     end -- update mode
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateDatasets'
+        Exec post_log_entry 'Error', @message, 'update_datasets'
     END CATCH
 
     ---------------------------------------------------
@@ -447,16 +448,16 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
-    Exec PostUsageLogEntry 'UpdateDatasets', @UsageMessage
+    Exec post_usage_log_entry 'update_datasets', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_datasets] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasets] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_datasets] TO [PNL\D3M578] AS [dbo]
 GO

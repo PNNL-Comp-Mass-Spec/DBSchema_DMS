@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateDatasetType] ******/
+/****** Object:  StoredProcedure [dbo].[validate_dataset_type] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateDatasetType]
+CREATE PROCEDURE [dbo].[validate_dataset_type]
 /****************************************************
 **
 **  Desc:   Validates the dataset type defined in T_Dataset for the given dataset
@@ -26,12 +26,13 @@ CREATE PROCEDURE [dbo].[ValidateDatasetType]
 **          08/25/2016 mem - Do not change the dataset type from EI-HMS to HMS
 **                         - Do not update the dataset comment when auto-changing an HMS dataset
 **          04/28/2017 mem - Do not update the dataset comment when auto-changing an IMS dataset
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          06/03/2019 mem - Check for 'IMS' in ScanFilter
 **          10/10/2020 mem - No longer update the comment when auto switching the dataset type
 **          10/13/2020 mem - Add support for datasets that only have MS2 spectra (they will be assigned dataset type HMS or MS, despite the fact that they have no MS1 spectra; this is by design)
 **          05/26/2021 mem - Add support for low res HCD
 **          07/01/2021 mem - Auto-switch from HMS-CID-MSn to HMS-MSn
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -708,7 +709,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDatasetType] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_dataset_type] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateDatasetType] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_dataset_type] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CheckDataIntegrity] ******/
+/****** Object:  StoredProcedure [dbo].[check_data_integrity] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CheckDataIntegrity]
+CREATE PROCEDURE [dbo].[check_data_integrity]
 /****************************************************
 **
 **  Desc:   Run miscellaneous data integrity checks
@@ -13,7 +13,8 @@ CREATE PROCEDURE [dbo].[CheckDataIntegrity]
 **
 **  Auth:   mem
 **  Date:   06/10/2016 mem - Initial Version
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -66,11 +67,11 @@ AS
         End
         Else
         Begin
-            Exec PostLogEntry 'Error', @errMsg, 'CheckDataIntegrity'
+            Exec post_log_entry 'Error', @errMsg, 'check_data_integrity'
             Print @errMsg
         End
 
-        set @message = dbo.AppendToText(@message, @errMsg, 0, '; ', 512)
+        set @message = dbo.append_to_text(@message, @errMsg, 0, '; ', 512)
     End
 
      ---------------------------------------------------
@@ -81,5 +82,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckDataIntegrity] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_data_integrity] TO [DDL_Viewer] AS [dbo]
 GO

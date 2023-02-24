@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetRunTrackingMonthlyInfo] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_run_tracking_monthly_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfo]
+CREATE FUNCTION [dbo].[get_run_tracking_monthly_info]
 /****************************************************
 **
 **  Desc:   Returns run tracking information for given instrument
@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[GetRunTrackingMonthlyInfo]
 **          06/08/2012 grk - added lookup for @maxNormalInterval
 **          04/27/2020 mem - Update data validation checks
 **                         - Make several columns in the output table nullable
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -37,7 +38,7 @@ RETURNS @TX TABLE (
 )
 AS
     BEGIN
-        Declare @maxNormalInterval INT = dbo.GetLongIntervalThreshold()
+        Declare @maxNormalInterval INT = dbo.get_long_interval_threshold()
         Declare @message VARCHAR(512) = ''
 
         ---------------------------------------------------
@@ -221,5 +222,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRunTrackingMonthlyInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_run_tracking_monthly_info] TO [DDL_Viewer] AS [dbo]
 GO

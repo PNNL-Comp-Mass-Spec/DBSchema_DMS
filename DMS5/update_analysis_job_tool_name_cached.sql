@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobToolNameCached] ******/
+/****** Object:  StoredProcedure [dbo].[update_analysis_job_tool_name_cached] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobToolNameCached]
+CREATE PROCEDURE [dbo].[update_analysis_job_tool_name_cached]
 /****************************************************
 **
 **  Desc: Updates column AJ_ToolNameCached in T_Analysis_Job
@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobToolNameCached]
 **
 **  Auth:   mem
 **  Date:   04/03/2014 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobStart int = 0,
-    @JobFinish int = 0,
+    @jobStart int = 0,
+    @jobFinish int = 0,
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
@@ -101,10 +102,10 @@ Done:
     Set @UsageMessage = Convert(varchar(12), @JobCount) + ' jobs updated'
 
     If @infoOnly = 0
-        Exec PostUsageLogEntry 'UpdateAnalysisJobToolNameCached', @UsageMessage
+        Exec post_usage_log_entry 'update_analysis_job_tool_name_cached', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobToolNameCached] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_tool_name_cached] TO [DDL_Viewer] AS [dbo]
 GO

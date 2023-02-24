@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetFailedDatasetPurgeTasks] ******/
+/****** Object:  StoredProcedure [dbo].[reset_failed_dataset_purge_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ResetFailedDatasetPurgeTasks]
+CREATE PROCEDURE [dbo].[reset_failed_dataset_purge_tasks]
 /****************************************************
 **
 **  Desc:   Looks for dataset archive entries with state 8=Purge Failed
@@ -19,14 +19,15 @@ CREATE PROCEDURE [dbo].[ResetFailedDatasetPurgeTasks]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ResetHoldoffHours real = 2,            -- Holdoff time to apply to column AS_state_Last_Affected
-    @MaxTasksToReset int = 0,               -- If greater than 0, then will limit the number of tasks to reset
-    @InfoOnly tinyint = 0,                  -- 1 to preview the tasks that would be reset
+    @resetHoldoffHours real = 2,            -- Holdoff time to apply to column AS_state_Last_Affected
+    @maxTasksToReset int = 0,               -- If greater than 0, then will limit the number of tasks to reset
+    @infoOnly tinyint = 0,                  -- 1 to preview the tasks that would be reset
     @message varchar(512) = '' output,      -- Status message
-    @ResetCount int = 0 output              -- Number of tasks reset
+    @resetCount int = 0 output              -- Number of tasks reset
 )
 AS
     Set XACT_ABORT, nocount on
@@ -106,14 +107,14 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
-        Exec PostLogEntry 'Error', @message, 'ResetFailedDatasetPurgeTasks'
+        EXEC format_error_message @message output, @myError output
+        Exec post_log_entry 'Error', @message, 'reset_failed_dataset_purge_tasks'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetPurgeTasks] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_dataset_purge_tasks] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetFailedDatasetPurgeTasks] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_dataset_purge_tasks] TO [Limited_Table_Write] AS [dbo]
 GO

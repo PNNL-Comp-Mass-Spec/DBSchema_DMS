@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateUser] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_user] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateUser]
+CREATE PROCEDURE [dbo].[add_update_user]
 /****************************************************
 **
 **  Desc:
@@ -17,30 +17,31 @@ CREATE PROCEDURE [dbo].[AddUpdateUser]
 **          01/23/2008 grk - Added @userUpdate
 **          10/14/2010 mem - Added @comment
 **          06/01/2012 mem - Added Try/Catch block
-**          06/05/2013 mem - Now calling AddUpdateUserOperations
+**          06/05/2013 mem - Now calling add_update_user_operations
 **          06/11/2013 mem - Renamed the first two parameters (previously @UserPRN and @username)
 **          02/23/2016 mem - Add Set XACT_ABORT on
-**          08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @hanfordIdNum starts with a number
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
+**          08/23/2016 mem - Auto-add 'H' when @mode is 'add' and @hanfordId starts with a number
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
-**          07/11/2017 mem - Require @hanfordIdNum to be at least 2 characters long
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
+**          07/11/2017 mem - Require @hanfordId to be at least 2 characters long
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/16/2018 mem - Remove any text before a backslash in @username (e.g., change from PNL\D3L243 to D3L243)
 **          02/10/2022 mem - Remove obsolete payroll field
-**                         - Always add 'H' to @hanfordIdNum if it starts with a number
+**                         - Always add 'H' to @hanfordId if it starts with a number
 **          03/16/2022 mem - Replace tab characters with spaces
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @username varchar(50),              -- Network login for the user (was traditionally D+Payroll number, but switched to last name plus 3 digits around 2011)
-    @hanfordIdNum varchar(50),          -- Hanford ID number for user; cannot be blank
-    @lastNameFirstName varchar(128),    -- Cannot be blank (though this field is auto-updated by UpdateUsersFromWarehouse)
-    @email varchar(64),                 -- Can be blank; will be auto-updated by UpdateUsersFromWarehouse
+    @hanfordId varchar(50),             -- Hanford ID number for user; cannot be blank
+    @lastNameFirstName varchar(128),    -- Cannot be blank (though this field is auto-updated by update_users_from_warehouse)
+    @email varchar(64),                 -- Can be blank; will be auto-updated by update_users_from_warehouse
     @userStatus varchar(24),            -- Active or Inactive (whether or not user is Active in DMS)
-    @userUpdate varchar(1),             -- Y or N  (whether or not to auto-update using UpdateUsersFromWarehouse)
+    @userUpdate varchar(1),             -- Y or N  (whether or not to auto-update using update_users_from_warehouse)
     @operationsList varchar(1024),      -- List of access permissions for user
     @comment varchar(512) = '',
     @mode varchar(12) = 'add', -- or 'update'
@@ -63,7 +64,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateUser', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_user', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -77,7 +78,7 @@ AS
 
         Set @username = Ltrim(RTrim(Replace(@username, Char(9), ' ')))
         Set @lastNameFirstName = Ltrim(RTrim(Replace(@lastNameFirstName, Char(9), ' ')))
-        Set @hanfordIdNum = Ltrim(RTrim(Replace(@hanfordIdNum, Char(9), ' ')))
+        Set @hanfordId = Ltrim(RTrim(Replace(@hanfordId, Char(9), ' ')))
         Set @userStatus = Ltrim(RTrim(@userStatus))
 
         Set @myError = 0
@@ -101,7 +102,7 @@ AS
             RAISERROR ('Last Name, First Name was blank', 11, 1)
         End
         --
-        If LEN(@hanfordIdNum) <= 1
+        If LEN(@hanfordId) <= 1
         Begin
             Set @myError = 51002
             RAISERROR ('Hanford ID number cannot be blank or a single character', 11, 1)
@@ -122,7 +123,7 @@ AS
 
         Declare @userID int = 0
         --
-        execute @userID = GetUserID @username
+        execute @userID = get_user_id @username
 
         -- cannot create an entry that already exists
         --
@@ -143,12 +144,12 @@ AS
         End
 
         ---------------------------------------------------
-        -- Add an H to @hanfordIdNum if it starts with a number
+        -- Add an H to @hanfordId if it starts with a number
         ---------------------------------------------------
 
-        If @hanfordIdNum Like '[0-9]%'
+        If @hanfordId Like '[0-9]%'
         Begin
-            Set @hanfordIdNum = 'H' + @hanfordIdNum
+            Set @hanfordId = 'H' + @hanfordId
         End
 
         Set @logErrors = 1
@@ -170,7 +171,7 @@ AS
             ) VALUES (
                 @username,
                 @lastNameFirstName,
-                @hanfordIdNum,
+                @hanfordId,
                 @email,
                 @userStatus,
                 @userUpdate,
@@ -205,7 +206,7 @@ AS
                 UPDATE T_Users
                 SET
                     U_Name = @lastNameFirstName,
-                    U_HID = @hanfordIdNum,
+                    U_HID = @hanfordId,
                     U_Email = @email,
                     U_Status = @userStatus,
                     U_Active = 'N',
@@ -229,7 +230,7 @@ AS
                 UPDATE T_Users
                 SET
                     U_Name = @lastNameFirstName,
-                    U_HID = @hanfordIdNum,
+                    U_HID = @hanfordId,
                     U_Email = @email,
                     U_Status = @userStatus,
                     U_update = @userUpdate,
@@ -251,11 +252,11 @@ AS
         -- Add/update operations defined for user
         ---------------------------------------------------
 
-        exec @myError = AddUpdateUserOperations @userID, @operationsList, @message output
+        exec @myError = add_update_user_operations @userID, @operationsList, @message output
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -264,7 +265,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Username ' + @username
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateUser'
+            exec post_log_entry 'Error', @logMessage, 'add_update_user'
         End
 
     END CATCH
@@ -272,11 +273,11 @@ AS
     Return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_user] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_user] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_user] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateUser] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_user] TO [Limited_Table_Write] AS [dbo]
 GO

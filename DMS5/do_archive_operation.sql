@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoArchiveOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_archive_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoArchiveOperation]
+CREATE PROCEDURE [dbo].[do_archive_operation]
 /****************************************************
 **
 **  Desc:
@@ -14,13 +14,14 @@ CREATE PROCEDURE [dbo].[DoArchiveOperation]
 **  Auth:   grk
 **  Date:   10/06/2004
 **          04/17/2006 grk - added stuf for set archive update
-**          03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          03/27/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @mode varchar(12),              -- 'archivereset' or 'update_req'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -42,7 +43,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoArchiveOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_archive_operation', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -63,13 +64,13 @@ AS
     FROM
         T_Dataset INNER JOIN
         T_Dataset_Archive ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE (Dataset_Num = @datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0 or @datasetID = 0
     begin
-        set @msg = 'Could not get Id or archive state for dataset "' + @datasetNum + '"'
+        set @msg = 'Could not get Id or archive state for dataset "' + @datasetName + '"'
         RAISERROR (@msg, 10, 1)
         return 51140
     end
@@ -84,7 +85,7 @@ AS
         --
         if @ArchiveStateID not in (6, 2) -- "Operation Failed" or "Archive In Progress"
         begin
-            set @msg = 'Archive state for dataset "' + @datasetNum + '" not in proper state to be reset'
+            set @msg = 'Archive state for dataset "' + @datasetName + '" not in proper state to be reset'
             RAISERROR (@msg, 10, 1)
             return 51693
         end
@@ -102,14 +103,14 @@ AS
         --
         if @myError <> 0 or @myRowCount <> 1
         begin
-            set @msg = 'Update was unsuccessful for dataset archive table "' + @datasetNum + '"'
+            set @msg = 'Update was unsuccessful for dataset archive table "' + @datasetName + '"'
             RAISERROR (@msg, 10, 1)
             return 51694
         end
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 6, @datasetID, @NewState, @callingUser
+            Exec alter_event_log_entry_user 6, @datasetID, @NewState, @callingUser
 
         return 0
     end -- mode 'reset_archive'
@@ -134,14 +135,14 @@ AS
         --
         if @myError <> 0 or @myRowCount <> 1
         begin
-            set @msg = 'Update was unsuccessful for dataset archive table "' + @datasetNum + '"'
+            set @msg = 'Update was unsuccessful for dataset archive table "' + @datasetName + '"'
             RAISERROR (@msg, 10, 1)
             return 51695
         end
 
-        -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
-            Exec AlterEventLogEntryUser 7, @datasetID, @NewState, @callingUser
+            Exec alter_event_log_entry_user 7, @datasetID, @NewState, @callingUser
 
         return 0
     end -- mode 'update_req'
@@ -155,11 +156,11 @@ AS
     return 51222
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_archive_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS_Archive_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_archive_operation] TO [DMS_Archive_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoArchiveOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_archive_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoArchiveOperation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_archive_operation] TO [Limited_Table_Write] AS [dbo]
 GO

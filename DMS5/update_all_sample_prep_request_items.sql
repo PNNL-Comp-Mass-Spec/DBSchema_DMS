@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAllSamplePrepRequestItems] ******/
+/****** Object:  StoredProcedure [dbo].[update_all_sample_prep_request_items] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAllSamplePrepRequestItems]
+CREATE PROCEDURE [dbo].[update_all_sample_prep_request_items]
 /****************************************************
 **
 **  Desc:
@@ -15,9 +15,10 @@ CREATE PROCEDURE [dbo].[UpdateAllSamplePrepRequestItems]
 **  Date:   07/05/2013 grk - initial release
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/15/2021 mem - Also update counts for prep requests whose state changed within the last year
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -38,7 +39,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateAllSamplePrepRequestItems', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_all_sample_prep_request_items', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -96,7 +97,7 @@ AS
             Begin
                 Set @prevId = @currentId
 
-                EXEC @myError = UpdateSamplePrepRequestItems
+                EXEC @myError = update_sample_prep_request_items
                         @currentId,
                         @mode,
                         @message OUTPUT,
@@ -116,12 +117,12 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateAllSamplePrepRequestItems'
+        Exec post_log_entry 'Error', @message, 'update_all_sample_prep_request_items'
     END CATCH
 
     ---------------------------------------------------
@@ -130,5 +131,5 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAllSamplePrepRequestItems] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_all_sample_prep_request_items] TO [DDL_Viewer] AS [dbo]
 GO

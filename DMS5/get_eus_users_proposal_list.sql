@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetEUSUsersProposalList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_eus_users_proposal_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetEUSUsersProposalList]
+CREATE FUNCTION [dbo].[get_eus_users_proposal_list]
 /****************************************************
 **
 **  Desc: Builds delimited list of proposals for
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetEUSUsersProposalList]
 **  Auth:   grk
 **  Date:   12/28/2008 mem - Initial version
 **          09/15/2011 mem - Now excluding users with State_ID = 5
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,5 +41,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEUSUsersProposalList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_eus_users_proposal_list] TO [DDL_Viewer] AS [dbo]
 GO

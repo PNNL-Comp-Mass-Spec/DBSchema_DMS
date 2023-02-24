@@ -1,5 +1,5 @@
-/****** Object:  Synonym [dbo].[S_GetTaxIDTaxonomyTable] ******/
-CREATE SYNONYM [dbo].[S_GetTaxIDTaxonomyTable] FOR [Ontology_Lookup].[dbo].[get_taxid_taxonomy_table]
+/****** Object:  Synonym [dbo].[s_get_taxid_taxonomy_table] ******/
+CREATE SYNONYM [dbo].[s_get_taxid_taxonomy_table] FOR [Ontology_Lookup].[dbo].[get_taxid_taxonomy_table]
 GO
-GRANT VIEW DEFINITION ON [dbo].[S_GetTaxIDTaxonomyTable] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[s_get_taxid_taxonomy_table] TO [DDL_Viewer] AS [dbo]
 GO

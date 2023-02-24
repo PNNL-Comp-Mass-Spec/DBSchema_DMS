@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddRequestedRuns] ******/
+/****** Object:  StoredProcedure [dbo].[add_requested_runs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddRequestedRuns]
+CREATE PROCEDURE [dbo].[add_requested_runs]
 /****************************************************
 **
 **  Desc:
@@ -28,18 +28,18 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          03/02/2010 grk - added status field to requested run
 **          08/27/2010 mem - Now referring to @instrumentGroup as an instrument group
 **          09/29/2011 grk - fixed limited size of variable holding delimited list of experiments from group
-**          12/14/2011 mem - Added parameter @callingUser, which is passed to AddUpdateRequestedRun
+**          12/14/2011 mem - Added parameter @callingUser, which is passed to add_update_requested_run
 **          02/20/2012 mem - Now using a temporary table to track the experiment names for which requested runs need to be created
 **          02/22/2012 mem - Switched to using a table-variable instead of a physical temporary table
 **          06/13/2013 mem - Added @vialingConc and @vialingVol
                            - Now validating @workPackageNumber against T_Charge_Code
-**          06/18/2014 mem - Now passing default to udfParseDelimitedList
+**          06/18/2014 mem - Now passing default to parse_delimited_list
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
+**          06/13/2017 mem - Rename @operatorUsername to @requestorUsername when calling add_update_requested_run
 **          12/12/2017 mem - Add @stagingLocation (points to T_Material_Locations)
 **          05/29/2021 mem - Add parameters to allow also creating a batch
 **          06/01/2021 mem - Show names of the new requests when previewing updates
@@ -48,17 +48,18 @@ CREATE PROCEDURE [dbo].[AddRequestedRuns]
 **          07/09/2021 mem - Fix bug handling instrument group name when @batchName is blank
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/17/2022 mem - Update operator username warning
-**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
-**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
-**          02/14/2023 mem - Use new parameter names for ValidateRequestedRunBatchParams
-**          02/17/2023 mem - Use new parameter name when calling AddUpdateRequestedRunBatch
+**          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
+**          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
+**          02/14/2023 mem - Use new parameter names for validate_requested_run_batch_params
+**          02/17/2023 mem - Use new parameter name when calling add_update_requested_run_batch
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @experimentGroupID varchar(12) = '',        -- Specify ExperimentGroupID or ExperimentList, but not both
     @experimentList varchar(3500) = '',
     @requestNameSuffix varchar(32) = '',        -- Actually used as the request name Suffix
-    @operPRN varchar(64),
+    @operatorUsername varchar(64),
     @instrumentGroup varchar(64),               -- Instrument group; could also contain '(lookup)'
     @workPackage varchar(50),                   -- Work Package; could also contain '(lookup)'
     @msType varchar(20),                        -- Run type; could also contain '(lookup)'
@@ -131,7 +132,7 @@ AS
         End
     End
     --
-    If LEN(@operPRN) < 1
+    If LEN(@operatorUsername) < 1
     Begin
         Set @myError = 51113
         RAISERROR ('Operator username was blank', 11, 22)
@@ -163,14 +164,14 @@ AS
 
     ---------------------------------------------------
     -- Validate the work package
-    -- This validation also occurs in AddUpdateRequestedRun but we want to validate it now before we enter the while loop
+    -- This validation also occurs in add_update_requested_run but we want to validate it now before we enter the while loop
     ---------------------------------------------------
 
     Declare @allowNoneWP tinyint = 0
 
     If @workPackage <> '(lookup)'
     Begin
-        exec @myError = ValidateWP
+        exec @myError = validate_wp
                             @workPackage,
                             @allowNoneWP,
                             @msg output
@@ -178,7 +179,7 @@ AS
         If @myError <> 0
         Begin
             Set @logErrors = 0
-            RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+            RAISERROR ('validate_wp: %s', 11, 1, @msg)
         End
     End
 
@@ -242,7 +243,7 @@ AS
 
         INSERT INTO #Tmp_ExperimentsToProcess (Experiment)
         SELECT Value
-        FROM dbo.udfParseDelimitedList(@experimentList, default, 'AddRequestedRuns')
+        FROM dbo.parse_delimited_list(@experimentList, default, 'add_requested_runs')
         WHERE Len(Value) > 0
         ORDER BY Value
     End
@@ -252,8 +253,8 @@ AS
     -- from experiments
     ---------------------------------------------------
     --
-    Declare @wellplate varchar(64) = '(lookup)'
-    Declare @wellNum varchar(24) = '(lookup)'
+    Declare @wellplateName varchar(64) = '(lookup)'
+    Declare @wellNumber varchar(24) = '(lookup)'
 
     Declare @instrumentGroupToUse varchar(64)
     Declare @userID int
@@ -264,11 +265,11 @@ AS
         -- Validate batch fields
         ---------------------------------------------------
 
-        Exec @myError = ValidateRequestedRunBatchParams
+        Exec @myError = validate_requested_run_batch_params
                 @batchID = 0,
                 @name = @batchName,
                 @description = @batchDescription,
-                @ownerUsername = @operPRN,
+                @ownerUsername = @operatorUsername,
                 @requestedBatchPriority = @batchPriority,
                 @requestedCompletionDate = @batchCompletionDate,
                 @justificationHighPriority = @batchPriorityJustification,
@@ -347,16 +348,16 @@ AS
             Else
                 Set @reqNameLast = @reqName
 
-            EXEC @myError = dbo.AddUpdateRequestedRun
+            EXEC @myError = dbo.add_update_requested_run
                                     @reqName = @reqName,
-                                    @experimentNum = @experimentName,
-                                    @requesterPRN = @operPRN,
+                                    @experimentName = @experimentName,
+                                    @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentGroupToUse,
                                     @workPackage = @workPackage,
                                     @msType = @msType,
                                     @instrumentSettings = @instrumentSettings,
-                                    @wellplate = @wellplate,
-                                    @wellNum = @wellNum,
+                                    @wellplateName = @wellplateName,
+                                    @wellNumber = @wellNumber,
                                     @internalStandard = @internalStandard,
                                     @comment = @comment,
                                     @eusProposalID = @eusProposalID,
@@ -419,7 +420,7 @@ AS
     Begin
         If @count <= 1
         Begin
-            Set @message = dbo.AppendToText(@message, 'Not creating a batch since did not create multiple requested runs', 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, 'Not creating a batch since did not create multiple requested runs', 0, '; ', 1024)
         End
         Else
         Begin
@@ -427,12 +428,12 @@ AS
 
             -- Auto-create a batch for the new requests
             --
-            Exec @myError = AddUpdateRequestedRunBatch
+            Exec @myError = add_update_requested_run_batch
                                             @id = @batchID output
                                            ,@name = @batchName
                                            ,@description = @batchDescription
                                            ,@requestedRunList = @requestedRunList
-                                           ,@ownerPRN = @operPRN
+                                           ,@ownerUsername = @operatorUsername
                                            ,@requestedBatchPriority = @batchPriority
                                            ,@requestedCompletionDate = @batchCompletionDate
                                            ,@justificationHighPriority = @batchPriorityJustification
@@ -445,7 +446,7 @@ AS
             If @myError > 0
             Begin
                 If IsNull(@msg, '') = ''
-                    Set @msg = 'AddUpdateRequestedRunBatch returned error code ' + Cast(@myError As Varchar(12))
+                    Set @msg = 'add_update_requested_run_batch returned error code ' + Cast(@myError As Varchar(12))
                 Else
                     Set @msg = 'Error adding new batch, ' + @msg
             End
@@ -457,30 +458,30 @@ AS
                     Set @msg = 'Created batch ' + Cast(@batchID As Varchar(12))
             End
 
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
     End
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'AddRequestedRuns'
+            Exec post_log_entry 'Error', @message, 'add_requested_runs'
         End
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_requested_runs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_Experiment_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_requested_runs] TO [DMS_Experiment_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_requested_runs] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRequestedRuns] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_requested_runs] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRequestedRuns] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_requested_runs] TO [Limited_Table_Write] AS [dbo]
 GO

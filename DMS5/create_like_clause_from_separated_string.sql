@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[CreateLikeClauseFromSeparatedString] ******/
+/****** Object:  UserDefinedFunction [dbo].[create_like_clause_from_separated_string] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[CreateLikeClauseFromSeparatedString]
+CREATE FUNCTION [dbo].[create_like_clause_from_separated_string]
 /****************************************************
 **
 **  Desc: Parses the text in @inString, looking for @separator
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[CreateLikeClauseFromSeparatedString]
 **  Date:   12/16/2004
 **          07/26/2005 mem - Now trimming white space from beginning and end of text extracted from @inString
 **                         - Increased size of return variable from 2048 to 4096 characters
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -60,7 +61,7 @@ begin
 end
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreateLikeClauseFromSeparatedString] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_like_clause_from_separated_string] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CreateLikeClauseFromSeparatedString] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[create_like_clause_from_separated_string] TO [public] AS [dbo]
 GO

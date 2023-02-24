@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[RemoveCaptureErrorsFromString] ******/
+/****** Object:  UserDefinedFunction [dbo].[remove_capture_errors_from_string] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[RemoveCaptureErrorsFromString]
+CREATE FUNCTION [dbo].[remove_capture_errors_from_string]
 /****************************************************
 **
 **  Desc:   Removes common dataset capture error messages
@@ -14,7 +14,8 @@ CREATE FUNCTION [dbo].[RemoveCaptureErrorsFromString]
 **  Date:   08/08/2017 mem - Initial version
 **          08/16/2017 mem - Add "Error running OpenChrom"
 **          11/22/2017 mem - Add "Authentication failure: The user name or password is incorrect."
-**          06/23/2022 mem - Bug fix: pass @updatedComment to RemoveFromString() instead of @comment
+**          06/23/2022 mem - Bug fix: pass @updatedComment to remove_from_string() instead of @comment
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -59,7 +60,7 @@ Begin
         End
         Else
         Begin
-            Set @updatedComment = dbo.RemoveFromString(@updatedComment, @textToFind)
+            Set @updatedComment = dbo.remove_from_string(@updatedComment, @textToFind)
         End
     End
 
@@ -67,7 +68,7 @@ Begin
     --   Data file size is less than 50 KB
     --   Data folder size is less than 50 KB'
     --   Dataset data file not found at \\server\share
-    Set @updatedComment = dbo.RemoveFromString(dbo.RemoveFromString(dbo.RemoveFromString(
+    Set @updatedComment = dbo.remove_from_string(dbo.remove_from_string(dbo.remove_from_string(
             @updatedComment,
             'Data file size is less than %'),
             'Data folder size is less than %'),

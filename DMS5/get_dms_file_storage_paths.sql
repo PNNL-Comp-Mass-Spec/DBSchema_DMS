@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDMSFileStoragePaths] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dms_file_storage_paths] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDMSFileStoragePaths]
+CREATE FUNCTION [dbo].[get_dms_file_storage_paths]
 /****************************************************
 **
 **  Desc:
@@ -13,10 +13,11 @@ CREATE FUNCTION [dbo].[GetDMSFileStoragePaths]
 **
 **  Auth:   grk
 **  Date:   04/28/2010
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ID INT,
+    @id INT,
     @type varchar(32)
 )
 RETURNS @table_variable TABLE (package VARCHAR(128), path_local_root VARCHAR(128), path_shared_root VARCHAR(128), path_folder VARCHAR(256))
@@ -29,7 +30,7 @@ AS
                 'Sample_Submission_' + CONVERT(VARCHAR(12), @ID),
                 Path_Local_Root,
                 Path_Shared_Root,
-                dbo.GetDMSFileStoragePath(Campaign_Num, @ID, @type) AS path_folder
+                dbo.get_dms_file_storage_path(Campaign_Num, @ID, @type) AS path_folder
             FROM
                 T_Sample_Submission
                 INNER JOIN T_Campaign ON T_Sample_Submission.Campaign_ID = T_Campaign.Campaign_ID
@@ -41,5 +42,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDMSFileStoragePaths] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dms_file_storage_paths] TO [DDL_Viewer] AS [dbo]
 GO

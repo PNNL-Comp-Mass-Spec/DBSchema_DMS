@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateRunOpLog] ******/
+/****** Object:  StoredProcedure [dbo].[update_run_op_log] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateRunOpLog]
+CREATE PROCEDURE [dbo].[update_run_op_log]
 /****************************************************
 **
 **  Desc:   Update selected items from instrument run
@@ -21,11 +21,12 @@ CREATE PROCEDURE [dbo].[UpdateRunOpLog]
 **  Date:   02/21/2013 grk - Initial release
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          08/02/2017 mem - Pass @invalidUsage to AddUpdateRunInterval; continue updating long intervals if the usage info fails validation for a given entry
-**          06/12/2018 mem - Send @maxLength to AppendToText
-**          05/24/2022 mem - Do not call PostlogEntry for errors of the form "Total percentage (0) does not add up to 100 for ID 1017648"
+**          08/02/2017 mem - Pass @invalidUsage to add_update_run_interval; continue updating long intervals if the usage info fails validation for a given entry
+**          06/12/2018 mem - Send @maxLength to append_to_text
+**          05/24/2022 mem - Do not call post_log_entry for errors of the form "Total percentage (0) does not add up to 100 for ID 1017648"
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -56,7 +57,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateRunOpLog', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_run_op_log', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -148,7 +149,7 @@ AS
             END
             ELSE
             BEGIN --<c>
-                exec @myError = ValidateEUSUsage
+                exec @myError = validate_eus_usage
                             @eusUsageType output,
                             @eusProposalID output,
                             @eusUsersList output,
@@ -158,7 +159,7 @@ AS
 
                 If @myError <> 0
                 Begin
-                    RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+                    RAISERROR ('validate_eus_usage: %s', 11, 1, @msg)
                 End
 
                 -----------------------------------------------------------
@@ -176,22 +177,22 @@ AS
                 if @myError <> 0
                     RAISERROR ('Update operation failed: "%s"', 11, 4, @curID)
 
-                -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+                -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
                 If Len(@callingUser) > 0
                 Begin
-                    Exec AlterEventLogEntryUser 11, @curID, @StatusID, @callingUser
+                    Exec alter_event_log_entry_user 11, @curID, @StatusID, @callingUser
                 End
 
                 -- Assign users to the request
                 --
-                exec @myError = AssignEUSUsersToRequestedRun
+                exec @myError = assign_eus_users_to_requested_run
                                         @curID,
                                         @eusProposalID,
                                         @eusUsersList,
                                         @msg output
                 if @myError <> 0
                 Begin
-                    RAISERROR ('AssignEUSUsersToRequestedRun: %s', 11, 20, @msg)
+                    RAISERROR ('assign_eus_users_to_requested_run: %s', 11, 20, @msg)
                 End
             END --<c>
         END --<a>
@@ -225,7 +226,7 @@ AS
             ELSE
             BEGIN --<y>
 
-                exec @myError = AddUpdateRunInterval
+                exec @myError = add_update_run_interval
                                             @curID,
                                             @comment,
                                             'update',
@@ -237,13 +238,13 @@ AS
                 If @invalidUsage > 0
                 Begin
                     -- Update @message then continue to the next item
-                    Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 512)
+                    Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 512)
                     Set @myError = 0
                     Set @invalidEntries = @invalidEntries + 1
                 End
                 Else If @myError <> 0
                 Begin
-                    RAISERROR ('AddUpdateRunInterval: %s', 11, 20, @msg)
+                    RAISERROR ('add_update_run_interval: %s', 11, 20, @msg)
                 End
 
             END --<y>
@@ -257,13 +258,13 @@ AS
             End
 
             -- @msg will be 'Parse error: error details' or 'Parse errors: error details'
-            Set @msg = 'Parse ' + dbo.CheckPlural(@invalidEntries, 'error', 'errors') + ': ' + @message
+            Set @msg = 'Parse ' + dbo.check_plural(@invalidEntries, 'error', 'errors') + ': ' + @message
             RAISERROR (@msg, 11, 21)
         End
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -271,16 +272,16 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'UpdateRunOpLog'
+            Exec post_log_entry 'Error', @message, 'update_run_op_log'
         End
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateRunOpLog] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_run_op_log] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRunOpLog] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_run_op_log] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateRunOpLog] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_run_op_log] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedInstrumentUsageByProposal] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_instrument_usage_by_proposal] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedInstrumentUsageByProposal]
+CREATE PROCEDURE [dbo].[update_cached_instrument_usage_by_proposal]
 /****************************************************
 **
 **  Desc:   Updates the data in T_Cached_Instrument_Usage_by_Proposal
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedInstrumentUsageByProposal]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          02/10/2022 mem - Add new usage type codes added to T_EUS_UsageType on 2021-05-26
 **                         - Use the last 12 months for determining usage (previously used last two fiscal years)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ AS
                 WHERE TD.DS_rating > 1
                       AND TRR.RDS_EUS_UsageType IN (16, 19, 20, 21)           -- User, User_Unknown, User_Onsite, User_Remote
                       AND TD.DS_state_ID = 3                                  -- Complete
-                      AND TD.Acq_Time_Start >= DateAdd(Month, -12, GetDate()) -- The last 12 months (previously used >= dbo.GetFiscalYearStart(1))
+                      AND TD.Acq_Time_Start >= DateAdd(Month, -12, GetDate()) -- The last 12 months (previously used >= dbo.get_fiscal_year_start(1))
                       AND NOT TRR.RDS_EUS_Proposal_ID IS NULL
                 GROUP BY TIN.IN_Group, TRR.RDS_EUS_Proposal_ID
             ) AS Source (IN_Group, EUS_Proposal_ID, Actual_Hours)
@@ -70,7 +71,7 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error updating T_Cached_Instrument_Usage_by_Proposal via merge (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            Execute PostLogEntry 'Error', @message, 'UpdateCachedInstrumentUsage'
+            Execute post_log_entry 'Error', @message, 'UpdateCachedInstrumentUsage'
             Goto Done
         End
 
@@ -78,7 +79,7 @@ AS
     Begin Catch
         -- Error caught; log the error then abort processing
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateCachedInstrumentUsage')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -87,5 +88,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedInstrumentUsageByProposal] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_instrument_usage_by_proposal] TO [DDL_Viewer] AS [dbo]
 GO

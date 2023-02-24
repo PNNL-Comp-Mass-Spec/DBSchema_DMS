@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateResearchTeamObserver] ******/
+/****** Object:  StoredProcedure [dbo].[update_research_team_observer] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateResearchTeamObserver]
+CREATE PROCEDURE [dbo].[update_research_team_observer]
 /****************************************************
 **
 **  Desc:
@@ -17,14 +17,15 @@ CREATE PROCEDURE [dbo].[UpdateResearchTeamObserver]
 **  Date:   04/03/2010
 **          04/03/2010 grk - initial release
 **          04/04/2010 grk - callable as operatons_sproc
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/20/2021 mem - Reformat queries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @campaignNum varchar(64),
+    @campaignName varchar(64),
     @mode varchar(12) = 'add', -- or 'remove'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -44,7 +45,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateResearchTeamObserver', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_research_team_observer', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -61,7 +62,7 @@ AS
         GOTO Done
     End
     --
-    Declare @PRN varchar(15) = @callingUser
+    Declare @username varchar(15) = @callingUser
 
     ---------------------------------------------------
     -- Resolve
@@ -74,13 +75,13 @@ AS
     SELECT @campaignID = Campaign_ID,
            @researchTeamID = ISNULL(CM_Research_Team, 0)
     FROM T_Campaign
-    WHERE Campaign_Num = @campaignNum
+    WHERE Campaign_Num = @campaignName
 
     --
     If @campaignID = 0
     Begin
         Set @myError = 51
-        Set @message = 'Campaign "' + @campaignNum + '" is not valid'
+        Set @message = 'Campaign "' + @campaignName + '" is not valid'
         GOTO Done
     End
 
@@ -92,12 +93,12 @@ AS
     --
     SELECT @userID = ID
     FROM T_Users
-    WHERE U_PRN = @PRN
+    WHERE U_PRN = @username
     --
     If @userID = 0
     Begin
         Set @myError = 52
-        Set @message = 'User "' + @PRN + '" is not valid'
+        Set @message = 'User "' + @username + '" is not valid'
         GOTO Done
     End
 
@@ -140,15 +141,15 @@ Done:
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512) = ''
-    Set @UsageMessage = 'Campaign: ' + @campaignNum + '; user: ' + @PRN + '; mode: ' + @mode
-    Exec PostUsageLogEntry 'UpdateResearchTeamObserver', @UsageMessage
+    Set @UsageMessage = 'Campaign: ' + @campaignName + '; user: ' + @username + '; mode: ' + @mode
+    Exec post_usage_log_entry 'update_research_team_observer', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateResearchTeamObserver] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_research_team_observer] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateResearchTeamObserver] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_research_team_observer] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateResearchTeamObserver] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_research_team_observer] TO [Limited_Table_Write] AS [dbo]
 GO

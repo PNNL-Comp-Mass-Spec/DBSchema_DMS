@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CheckDMSDBs] ******/
+/****** Object:  StoredProcedure [dbo].[check_dms_dbs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CheckDMSDBs]
+CREATE PROCEDURE [dbo].[check_dms_dbs]
 /****************************************************
 **
 **  Desc:   Runs DBCC CHECKDB and/or DBCC SHRINKDATABASE
@@ -20,16 +20,17 @@ CREATE PROCEDURE [dbo].[CheckDMSDBs]
 **                           @ShrinkDB=0 means do not shrink; this is the default
 **                           @ShrinkDB=1 will use DBCC SHRINKDATABASE ('DBName', TargetPercent, TRUNATEONLY); relatively fast operation, not moving any data
 **                           @ShrinkDB=2 will use DBCC SHRINKDATABASE ('DBName', TargetPercent);              slower operation since it consolidates data on disk
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DBNameMatchList varchar(2048) = 'DMS%',        -- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
-    @IncludeSystemDBs tinyint = 0,
-    @CheckDB tinyint = 1,                           -- Set to 1 to call DBCC CHECKDB against each DB
-    @ShrinkDB tinyint = 0,                          -- Set to 1 to call DBCC SHRINKDATABASE using TRUNCATEONLY (fast); Set to 2 to call DBCC SHRINKDATABASE without TRUNATEONLY (slower)
-    @CheckPhysicalOnly tinyint = 0,                 -- Set to 1 to use the PHYSICAL_ONLY switch with DBCC, which performs a quick, less thorough check of each DB
-    @ShrinkTargetPercent tinyint = 20,              -- Target percentage for shrinking each database
-    @InfoOnly tinyint = 0,                          -- Set to 1 to display the SQL that would be run
+    @dbNameMatchList varchar(2048) = 'DMS%',        -- Comma-separated list of databases on this server to include; can include wildcard symbols since used with a LIKE clause.  Leave blank to ignore this parameter
+    @includeSystemDBs tinyint = 0,
+    @checkDB tinyint = 1,                           -- Set to 1 to call DBCC CHECKDB against each DB
+    @shrinkDB tinyint = 0,                          -- Set to 1 to call DBCC SHRINKDATABASE using TRUNCATEONLY (fast); Set to 2 to call DBCC SHRINKDATABASE without TRUNATEONLY (slower)
+    @checkPhysicalOnly tinyint = 0,                 -- Set to 1 to use the PHYSICAL_ONLY switch with DBCC, which performs a quick, less thorough check of each DB
+    @shrinkTargetPercent tinyint = 20,              -- Target percentage for shrinking each database
+    @infoOnly tinyint = 0,                          -- Set to 1 to display the SQL that would be run
     @message varchar(255) = '' OUTPUT
 )
 AS
@@ -235,7 +236,7 @@ AS
                         -- Error occurred; post a log entry
                         ---------------------------------------
                         Set @message = 'Error calling DBCC CHECKDB for DB ' + @DBName + '; SQL error code: ' + Convert(varchar(19), @myError)
-                        Execute PostLogEntry 'Error', @message, 'CheckDMSDBs'
+                        Execute post_log_entry 'Error', @message, 'check_dms_dbs'
                     End
                 End
 
@@ -249,7 +250,7 @@ AS
                         -- Error occurred; post a log entry
                         ---------------------------------------
                         Set @message = 'Error calling DBCC SHRINKDATABASE for DB ' + @DBName + '; SQL error code: ' + Convert(varchar(19), @myError)
-                        Execute PostLogEntry 'Error', @message, 'CheckDMSDBs'
+                        Execute post_log_entry 'Error', @message, 'check_dms_dbs'
                     End
                 End
             End -- </c1>
@@ -298,7 +299,7 @@ AS
     If @InfoOnly = 0
     Begin
         If @DBProcessCount > 0
-            Execute PostLogEntry 'Normal', @message, 'CheckDMSDBs'
+            Execute post_log_entry 'Normal', @message, 'check_dms_dbs'
     End
     Else
         SELECT @Message As TheMessage
@@ -310,7 +311,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckDMSDBs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_dms_dbs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CheckDMSDBs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[check_dms_dbs] TO [Limited_Table_Write] AS [dbo]
 GO

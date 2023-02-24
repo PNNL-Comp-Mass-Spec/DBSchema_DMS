@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetBiomaterialOrganismList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_biomaterial_organism_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetBiomaterialOrganismList]
+CREATE FUNCTION [dbo].[get_biomaterial_organism_list]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[GetBiomaterialOrganismList]
 **
 **  Auth:   mem
 **  Date:   12/02/2016 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -39,5 +40,5 @@ AS
     End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetBiomaterialOrganismList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_biomaterial_organism_list] TO [DDL_Viewer] AS [dbo]
 GO

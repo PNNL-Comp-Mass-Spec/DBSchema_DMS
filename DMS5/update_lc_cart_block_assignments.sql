@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateLCCartBlockAssignments] ******/
+/****** Object:  StoredProcedure [dbo].[update_lc_cart_block_assignments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateLCCartBlockAssignments]
+CREATE PROCEDURE [dbo].[update_lc_cart_block_assignments]
 /****************************************************
 **
 **  Desc:
@@ -17,10 +17,11 @@ CREATE PROCEDURE [dbo].[UpdateLCCartBlockAssignments]
 **
 **  Auth:   grk
 **  Date:   02/15/2010
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          11/07/2016 mem - Add optional logging via PostLogEntry
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          11/07/2016 mem - Add optional logging via post_log_entry
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -42,14 +43,14 @@ AS
     SET @message = ''
 
     -- Uncomment to log the XML for debugging purposes
-    -- exec PostLogEntry 'Debug', @cartAssignmentList, 'UpdateLCCartBlockAssignments'
+    -- exec post_log_entry 'Debug', @cartAssignmentList, 'update_lc_cart_block_assignments'
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateLCCartBlockAssignments', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_lc_cart_block_assignments', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -131,14 +132,14 @@ AS
     Set @UsageMessage = 'Updated ' + convert(varchar(12), @myRowCount) + ' requested run'
     If @myRowCount <> 1
         Set @UsageMessage = @UsageMessage + 's'
-    Exec PostUsageLogEntry 'UpdateLCCartBlockAssignments', @UsageMessage
+    Exec post_usage_log_entry 'update_lc_cart_block_assignments', @UsageMessage
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartBlockAssignments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_lc_cart_block_assignments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateLCCartBlockAssignments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_lc_cart_block_assignments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartBlockAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_lc_cart_block_assignments] TO [Limited_Table_Write] AS [dbo]
 GO

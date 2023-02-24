@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateInstrumentOperationHistory] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_instrument_operation_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateInstrumentOperationHistory]
+CREATE PROCEDURE [dbo].[add_update_instrument_operation_history]
 /****************************************************
 **
 **  Desc:
@@ -18,19 +18,20 @@ CREATE PROCEDURE [dbo].[AddUpdateInstrumentOperationHistory]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          04/25/2017 mem - Require that @Instrument and @Note be defined
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/02/2017 mem - Assure that the username is properly capitalized
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
-    @Instrument varchar(24),
+    @id int,
+    @instrument varchar(24),
     @postedBy VARCHAR(64),
-    @Note text,
+    @note text,
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -52,7 +53,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateInstrumentOperationHistory', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_instrument_operation_history', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -80,15 +81,15 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve poster PRN
+    -- Resolve poster username
     ---------------------------------------------------
 
     Declare @userID int
-    execute @userID = GetUserID @postedBy
+    execute @userID = get_user_id @postedBy
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @postedBy contains simply the username
         --
         SELECT @postedBy = U_PRN
@@ -97,18 +98,18 @@ AS
     End
     Else
     Begin
-        -- Could not find entry in database for PRN @postedBy
+        -- Could not find entry in database for username @postedBy
         -- Try to auto-resolve the name
 
         Declare @MatchCount int
-        Declare @NewPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @postedBy, @MatchCount output, @NewPRN output, @userID output
+        exec auto_resolve_name_to_username @postedBy, @MatchCount output, @newUsername output, @userID output
 
         If @MatchCount = 1
         Begin
             -- Single match found; update @postedBy
-            Set @postedBy = @NewPRN
+            Set @postedBy = @newUsername
         End
     End
 
@@ -183,7 +184,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -192,7 +193,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Instrument ' + @Instrument
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateInstrumentOperationHistory'
+            exec post_log_entry 'Error', @logMessage, 'add_update_instrument_operation_history'
         End
 
     END CATCH
@@ -200,9 +201,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentOperationHistory] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument_operation_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateInstrumentOperationHistory] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_instrument_operation_history] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateInstrumentOperationHistory] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_instrument_operation_history] TO [Limited_Table_Write] AS [dbo]
 GO

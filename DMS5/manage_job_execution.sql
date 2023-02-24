@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ManageJobExecution] ******/
+/****** Object:  StoredProcedure [dbo].[manage_job_execution] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ManageJobExecution]
+CREATE PROCEDURE [dbo].[manage_job_execution]
 /****************************************************
 **
 **  Desc:
@@ -14,13 +14,14 @@ CREATE PROCEDURE [dbo].[ManageJobExecution]
 **
 **  Auth:   grk
 **          07/09/2009 grk - Initial release
-**          09/16/2009 mem - Updated to pass table #TAJ to UpdateAnalysisJobsWork
+**          09/16/2009 mem - Updated to pass table #TAJ to update_analysis_jobs_work
 **                         - Updated to resolve job state defined in the XML with T_Analysis_State_Name
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -41,7 +42,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'ManageJobExecution', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'manage_job_execution', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -95,7 +96,7 @@ AS
 
     ---------------------------------------------------
     -- Set up default arguments
-    -- for calling UpdateAnalysisJobs
+    -- for calling update_analysis_jobs
     ---------------------------------------------------
     --
     Declare @noChangeText varchar(32) = '[no change]'
@@ -161,11 +162,11 @@ AS
     End
 
     ---------------------------------------------------
-    -- Call UpdateAnalysisJobsWork function
+    -- Call update_analysis_jobs_work function
     -- It uses #TAJ to determine which jobs to update
     ---------------------------------------------------
     --
-    exec @myError = UpdateAnalysisJobsWork
+    exec @myError = update_analysis_jobs_work
         @state,
         @priority,
         @comment,
@@ -193,7 +194,7 @@ AS
         If IsNull(@message, '') <> ''
             Set @result = 'Error: ' + @message + '; '
         Else
-            Set @result = 'Unknown error calling UpdateAnalysisJobsWork; '
+            Set @result = 'Unknown error calling update_analysis_jobs_work; '
     End
     Else
     Begin
@@ -201,7 +202,7 @@ AS
 
         If IsNull(@result, '') = ''
         Begin
-            Set @result = 'Empty message returned by UpdateAnalysisJobsWork.  '
+            Set @result = 'Empty message returned by update_analysis_jobs_work.  '
             Set @result = @result + 'The action was "' + @action + '".  '
             Set @result = @result + 'The value was "' + @value + '".  '
             Set @result = @result + 'There were ' + convert(varchar(12), @jobCount) + ' jobs in the list: '
@@ -211,9 +212,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ManageJobExecution] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[manage_job_execution] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ManageJobExecution] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[manage_job_execution] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ManageJobExecution] TO [RBAC-Web_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[manage_job_execution] TO [RBAC-Web_Analysis] AS [dbo]
 GO

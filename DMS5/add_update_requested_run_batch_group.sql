@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch_group]
 **
 **  Auth:   mem
 **  Date:   02/14/2023 - initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'add_update_requested_run_batch_group', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_requested_run_batch_group', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -97,11 +98,11 @@ AS
     -- Resolve user ID for owner username
     ---------------------------------------------------
 
-    execute @userID = GetUserID @ownerUsername
+    execute @userID = get_user_id @ownerUsername
 
     If @userID > 0
     Begin
-        -- SP GetUserID recognizes both a username and the form 'LastName, FirstName (Username)'
+        -- SP get_user_id recognizes both a username and the form 'LastName, FirstName (Username)'
         -- Assure that @ownerUsername contains simply the username
         --
         SELECT @ownerUsername = U_PRN
@@ -114,14 +115,14 @@ AS
         -- Try to auto-resolve the name
 
         Declare @matchCount int
-        Declare @newPRN varchar(64)
+        Declare @newUsername varchar(64)
 
-        exec AutoResolveNameToPRN @ownerUsername, @matchCount output, @newPRN output, @userID output
+        exec auto_resolve_name_to_username @ownerUsername, @matchCount output, @newUsername output, @userID output
 
         If @matchCount = 1
         Begin
             -- Single match found; update @ownerUsername
-            Set @ownerUsername = @newPRN
+            Set @ownerUsername = @newUsername
         End
         Else
         Begin
@@ -149,7 +150,7 @@ AS
     --
     INSERT INTO #Tmp_BatchIDs (EntryID, Batch_ID_Text)
     SELECT Min(EntryID), Value
-    FROM dbo.udfParseDelimitedListOrdered(@requestedRunBatchList, ',', 0)
+    FROM dbo.parse_delimited_list_ordered(@requestedRunBatchList, ',', 0)
     GROUP BY Value
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -299,7 +300,7 @@ AS
                             Cast(@batchGroupIdConfirm as varchar(12)) + ' but SCOPE_IDENTITY reported ' +
                             Cast(@id as varchar(12))
 
-            exec PostLogEntry 'Error', @debugMsg, 'add_update_requested_run_batch_group'
+            exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run_batch_group'
 
             Set @id = @batchGroupIdConfirm
         End
@@ -377,14 +378,14 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'add_update_requested_run_batch_group'
+            Exec post_log_entry 'Error', @message, 'add_update_requested_run_batch_group'
     END CATCH
 
     Return @myError

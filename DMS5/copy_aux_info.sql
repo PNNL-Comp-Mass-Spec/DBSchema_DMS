@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CopyAuxInfo] ******/
+/****** Object:  StoredProcedure [dbo].[copy_aux_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CopyAuxInfo]
+CREATE PROCEDURE [dbo].[copy_aux_info]
 /****************************************************
 **
 **  Desc:   Copies aux info from a source item to a target item
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[CopyAuxInfo]
 **          07/06/2022 mem - Use new aux info definition view name
 **          08/15/2022 mem - Use new column name
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
     @targetName varchar(128),
@@ -137,7 +138,7 @@ if @mode = 'copyCategory'
 begin
     -- Start transaction
     --
-    set @transName = 'CopyAuxInfo-copyCategory'
+    set @transName = 'copy_aux_info-copyCategory'
     begin transaction @transName
 
     -- delete any existing values
@@ -202,7 +203,7 @@ if @mode = 'copySubcategory'
 begin
     -- Start transaction
     --
-    set @transName = 'CopyAuxInfo-copySubcategory'
+    set @transName = 'copy_aux_info-copySubcategory'
     begin transaction @transName
 
     -- delete any existing values
@@ -269,7 +270,7 @@ if @mode = 'copyAll'
 begin
     -- Start transaction
     --
-    set @transName = 'CopyAuxInfo-copyAll'
+    set @transName = 'copy_aux_info-copyAll'
     begin transaction @transName
 
     -- delete any existing values
@@ -328,11 +329,11 @@ end
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_aux_info] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CopyAuxInfo] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[copy_aux_info] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[CopyAuxInfo] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[copy_aux_info] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CopyAuxInfo] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_aux_info] TO [Limited_Table_Write] AS [dbo]
 GO

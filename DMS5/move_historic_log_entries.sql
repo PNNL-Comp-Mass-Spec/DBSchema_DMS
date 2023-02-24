@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveHistoricLogEntries] ******/
+/****** Object:  StoredProcedure [dbo].[move_historic_log_entries] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
+CREATE PROCEDURE [dbo].[move_historic_log_entries]
 /****************************************************
 **
 **  Desc:   Move log entries from the main log table into the
@@ -14,11 +14,12 @@ CREATE PROCEDURE [dbo].[MoveHistoricLogEntries]
 **          03/10/2009 mem - Now removing non-noteworthy entries from T_Log_Entries before moving old entries to DMSHistoricLog1
 **          10/04/2011 mem - Removed @DBName parameter
 **          07/31/2012 mem - Renamed Historic Log DB from DMSHistoricLog1 to DMSHistoricLog
-**          10/15/2012 mem - Now excluding routine messages from BackupDMSDBs and RebuildFragmentedIndices
+**          10/15/2012 mem - Now excluding routine messages from backup_dms_dbs and rebuild_fragmented_indices
 **          10/29/2015 mem - Increase default value from 5 days to 14 days (336 hours)
 **          06/09/2022 mem - Rename target table from T_Historic_Log_Entries to T_Log_Entries
 **                         - No longer store the database name in the target table
 **          08/26/2022 mem - Use new column name in T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,7 +41,7 @@ AS
     -- Start transaction
     --
     Declare @transName varchar(64)
-    set @transName = 'TRAN_MoveHistoricLogEntries'
+    set @transName = 'TRAN_move_historic_log_entries'
     begin transaction @transName
 
     -- Delete log entries that we do not want to move to the DMS Historic Log DB
@@ -51,8 +52,8 @@ AS
                        'Capture complete for all available tasks') OR
            message LIKE '%: No Data Files to import.' OR
            message LIKE '%: Completed task'           OR
-           posted_by = 'BackupDMSDBs'             AND type = 'Normal' AND message LIKE 'DB Backup Complete (LogBU%' OR
-           posted_by = 'RebuildFragmentedIndices' AND type = 'Normal' AND message LIKE 'Reindexed % due to Fragmentation%'
+           posted_by = 'backup_dms_dbs'             AND type = 'Normal' AND message LIKE 'DB Backup Complete (LogBU%' OR
+           posted_by = 'rebuild_fragmented_indices' AND type = 'Normal' AND message LIKE 'Reindexed % due to Fragmentation%'
            )
     --
     if @@error <> 0
@@ -99,15 +100,15 @@ AS
     return 0
 
 GO
-GRANT ALTER ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]
+GRANT ALTER ON [dbo].[move_historic_log_entries] TO [D3L243] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[move_historic_log_entries] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [D3L243] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_historic_log_entries] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_historic_log_entries] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MoveHistoricLogEntries] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[move_historic_log_entries] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MoveHistoricLogEntries] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_historic_log_entries] TO [Limited_Table_Write] AS [dbo]
 GO

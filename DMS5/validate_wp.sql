@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateWP] ******/
+/****** Object:  StoredProcedure [dbo].[validate_wp] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateWP]
+CREATE PROCEDURE [dbo].[validate_wp]
 /****************************************************
 **
 **  Desc:   Verifies that given work package exists in T_Charge_Code
@@ -13,10 +13,11 @@ CREATE PROCEDURE [dbo].[ValidateWP]
 **  Auth:   mem
 **  Date:   06/05/2013 mem - Initial Version
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @WorkPackage varchar(64),
+    @workPackage varchar(64),
     @allowNoneWP tinyint,                    -- Set to 1 to allow @WorkPackage to be "none"
     @message varchar(512) output
 )
@@ -59,5 +60,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateWP] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_wp] TO [DDL_Viewer] AS [dbo]
 GO

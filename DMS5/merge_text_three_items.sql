@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[MergeTextThreeItems] ******/
+/****** Object:  UserDefinedFunction [dbo].[merge_text_three_items] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[MergeTextThreeItems]
+CREATE FUNCTION [dbo].[merge_text_three_items]
 /****************************************************
 **  Merges together the text in three variables
 **  However, if the same text is present in each,
@@ -11,12 +11,13 @@ CREATE FUNCTION [dbo].[MergeTextThreeItems]
 **
 **  Auth:   mem
 **  Date:   08/03/2007
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @Text1 varchar(2048),
-    @Text2 varchar(2048),
-    @Text3 varchar(2048)
+    @text1 varchar(2048),
+    @text2 varchar(2048),
+    @text3 varchar(2048)
 )
 RETURNS varchar(8000)
 AS
@@ -27,7 +28,7 @@ BEGIN
     Set @Text2 = LTrim(RTrim(IsNull(@Text2, '')))
     Set @Text3 = LTrim(RTrim(IsNull(@Text3, '')))
 
-    Set @CombinedText = dbo.MergeText(@Text1, @Text2)
+    Set @CombinedText = dbo.merge_text(@Text1, @Text2)
 
     If Len(@Text3) > 0
     Begin
@@ -44,7 +45,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MergeTextThreeItems] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[merge_text_three_items] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MergeTextThreeItems] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[merge_text_three_items] TO [public] AS [dbo]
 GO

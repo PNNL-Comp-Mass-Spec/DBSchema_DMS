@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetExpGroupExperimentList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_exp_group_experiment_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetExpGroupExperimentList]
+CREATE FUNCTION [dbo].[get_exp_group_experiment_list]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetExpGroupExperimentList]
 **
 **  Auth:   grk
 **  Date:   7/11/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -42,5 +43,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetExpGroupExperimentList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_exp_group_experiment_list] TO [DDL_Viewer] AS [dbo]
 GO

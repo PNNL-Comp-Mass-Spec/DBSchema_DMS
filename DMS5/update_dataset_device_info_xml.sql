@@ -1,15 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetDeviceInfoXML] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_device_info_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
+CREATE PROCEDURE [dbo].[update_dataset_device_info_xml]
 /****************************************************
 **
 **  Desc:   Adds (or updates) information about the device (or devices) for a dataset
 **          Adds new devices to T_Dataset_Device as necessary
 **
-**          Device information is provided via XML, using the same format as recognized by UpdateDatasetFileInfoXML, for example:
+**          Device information is provided via XML, using the same format as recognized by update_dataset_file_info_xml, for example:
 **
 **      Typical XML file contents:
 **
@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
 **
 **  Auth:   mem
 **  Date:   03/01/2020 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDeviceInfoXML]
     @datasetInfoXML xml,                -- Dataset info, in XML format
     @message varchar(512) = '' Output,
     @infoOnly tinyint = 0,
-    @skipValidation tinyint = 0         -- When 1, if @datasetID is non-zero, skip calling GetDatasetDetailsFromDatasetInfoXML
+    @skipValidation tinyint = 0         -- When 1, if @datasetID is non-zero, skip calling get_dataset_details_from_dataset_info_xml
 )
 AS
     Set XACT_ABORT, nocount on
@@ -73,7 +74,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetDeviceInfoXML', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_device_info_xml', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -110,7 +111,7 @@ AS
         -- Examine the XML to determine the dataset name and update or validate @datasetID
         ---------------------------------------------------
         --
-        Exec GetDatasetDetailsFromDatasetInfoXML
+        Exec get_dataset_details_from_dataset_info_xml
             @datasetInfoXML,
             @datasetID = @datasetID Output,
             @datasetName = @datasetName Output,
@@ -124,7 +125,7 @@ AS
 
         If @datasetID = 0
         Begin
-            Set @message = 'Procedure GetDatasetDetailsFromDatasetInfoXML was unable to determine the dataset ID value'
+            Set @message = 'Procedure get_dataset_details_from_dataset_info_xml was unable to determine the dataset ID value'
             Goto Done
         End
     End
@@ -161,7 +162,7 @@ AS
     --
     If @myError <> 0
     Begin
-        Set @message = 'Error parsing Device nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP UpdateDatasetDeviceInfoXML'
+        Set @message = 'Error parsing Device nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_device_info_xml'
         Goto Done
     End
     --
@@ -279,12 +280,12 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in UpdateDatasetDeviceInfoXML'
+            Set @message = 'Error in update_dataset_device_info_xml'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
         If @InfoOnly = 0
-            Exec PostLogEntry 'Error', @message, 'UpdateDatasetDeviceInfoXML'
+            Exec post_log_entry 'Error', @message, 'update_dataset_device_info_xml'
     End
 
     If Len(@message) > 0 AND @InfoOnly <> 0
@@ -293,13 +294,13 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDeviceInfoXML] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_device_info_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDeviceInfoXML] TO [DMS_DS_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_device_info_xml] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDeviceInfoXML] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_device_info_xml] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDeviceInfoXML] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_device_info_xml] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDeviceInfoXML] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_device_info_xml] TO [Limited_Table_Write] AS [dbo]
 GO

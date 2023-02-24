@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[BooleanTextToTinyint] ******/
+/****** Object:  UserDefinedFunction [dbo].[boolean_text_to_tinyint] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[BooleanTextToTinyint]
+CREATE FUNCTION [dbo].[boolean_text_to_tinyint]
 /****************************************************
 **
 **  Desc:
@@ -12,6 +12,7 @@ CREATE FUNCTION [dbo].[BooleanTextToTinyint]
 **
 **  Auth:   mem
 **  Date:   05/28/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoAnalysisJobOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_analysis_job_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoAnalysisJobOperation]
+CREATE PROCEDURE [dbo].[do_analysis_job_operation]
 /****************************************************
 **
 **  Desc:   Perform analysis job operation defined by 'mode'
@@ -13,19 +13,20 @@ CREATE PROCEDURE [dbo].[DoAnalysisJobOperation]
 **  Auth:   grk
 **  Date:   05/02/2002
 **          05/05/2005 grk - removed default mode value
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          08/19/2010 grk - try-catch for error handling
-**          11/18/2010 mem - Now returning 0 after successful call to DeleteNewAnalysisJob
+**          11/18/2010 mem - Now returning 0 after successful call to delete_new_analysis_job
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          04/21/2017 mem - Add @mode previewDelete
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/27/2018 mem - Rename @previewMode to @infoonly
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @jobNum varchar(32),
+    @job varchar(32),
     @mode varchar(24),          -- 'delete, reset, previewDelete' ; recognizes mode 'reset', but no changes are made (it is a legacy mode)
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoAnalysisJobOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_analysis_job_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -74,7 +75,7 @@ AS
         -- delete the job
         ---------------------------------------------------
 
-        execute @result = DeleteNewAnalysisJob @jobNum, @msg output, @callingUser, @infoonly
+        execute @result = delete_new_analysis_job @job, @msg output, @callingUser, @infoonly
         --
         if @result <> 0
         begin
@@ -90,7 +91,7 @@ AS
 
     if @mode = 'reset'
     begin
-        set @msg = 'Warning: the reset mode does not do anything in procedure DoAnalysisJobOperation'
+        set @msg = 'Warning: the reset mode does not do anything in procedure do_analysis_job_operation'
         RAISERROR (@msg, 11, 3)
 
         return 0
@@ -105,22 +106,22 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'DoAnalysisJobOperation'
+        Exec post_log_entry 'Error', @message, 'do_analysis_job_operation'
     END CATCH
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoAnalysisJobOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_analysis_job_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoAnalysisJobOperation] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_analysis_job_operation] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoAnalysisJobOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_analysis_job_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoAnalysisJobOperation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_analysis_job_operation] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE [dbo].[Find_Scheduled_Run_History]
+CREATE PROCEDURE [dbo].[find_scheduled_run_history]
 /****************************************************
 **
 **  Desc:
@@ -16,28 +16,29 @@ CREATE PROCEDURE [dbo].[Find_Scheduled_Run_History]
 **
 **  Auth:   grk
 **  Date:   05/15/2006
-**          12/20/2006 mem - Now querying V_Find_Scheduled_Run_History using dynamic SQL (Ticket #349)
+**          12/20/2006 mem - Now querying V_find_scheduled_run_history using dynamic SQL (Ticket #349)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @RequestID varchar(20) = '',
-    @RequestName varchar(128) = '',
-    @ReqCreated_After varchar(20) = '',
-    @ReqCreated_Before varchar(20) = '',
-    @Experiment varchar(50) = '',
-    @Dataset varchar(128) = '',
-    @DScreated_After varchar(20) = '',
-    @DScreated_Before varchar(20) = '',
-    @WorkPackage varchar(50) = '',
-    @Campaign varchar(50) = '',
-    @Requestor varchar(50) = '',
-    @Instrument varchar(128) = '',
-    @RunType varchar(50) = '',
-    @Comment varchar(244) = '',
-    @Batch varchar(20) = '',
-    @BlockingFactor varchar(50) = '',
+    @requestID varchar(20) = '',
+    @requestName varchar(128) = '',
+    @reqCreated_After varchar(20) = '',
+    @reqCreated_Before varchar(20) = '',
+    @experiment varchar(50) = '',
+    @dataset varchar(128) = '',
+    @dscreated_After varchar(20) = '',
+    @dscreated_Before varchar(20) = '',
+    @workPackage varchar(50) = '',
+    @campaign varchar(50) = '',
+    @requestor varchar(50) = '',
+    @instrument varchar(128) = '',
+    @runType varchar(50) = '',
+    @comment varchar(244) = '',
+    @batch varchar(20) = '',
+    @blockingFactor varchar(50) = '',
     @message varchar(512) output
 )
 AS
@@ -114,7 +115,7 @@ AS
     ---------------------------------------------------
     -- Construct the query
     ---------------------------------------------------
-    Set @S = ' SELECT * FROM V_Find_Scheduled_Run_History'
+    Set @S = ' SELECT * FROM V_find_scheduled_run_history'
 
     Set @W = ''
     If Len(@RequestID) > 0

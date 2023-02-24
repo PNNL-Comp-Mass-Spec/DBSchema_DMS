@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMaterialItems] ******/
+/****** Object:  StoredProcedure [dbo].[update_material_items] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateMaterialItems]
+CREATE PROCEDURE [dbo].[update_material_items]
 /****************************************************
 **
 **  Desc:
@@ -17,12 +17,13 @@ CREATE PROCEDURE [dbo].[UpdateMaterialItems]
 **  Date:   03/27/2008 grk - Initial release (ticket http://prismtrac.pnl.gov/trac/ticket/603)
 **          07/24/2008 grk - Added retirement mode
 **          09/14/2016 mem - When retiring a single experiment, will abort and update @message if the experiment is already retired
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/28/2017 mem - Add support for Reference_Compound
 **                         - Only update Container_ID if @mode is 'move_material'
 **          10/25/2022 mem - Fix logic bug that used row counts from reference compounds instead of experiments
 **          02/08/2023 bcg - Use V_Biomaterial_List_Report_2
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateMaterialItems', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_material_items', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -139,7 +140,7 @@ AS
         SELECT
             substring(Item, 3, 300) as ID,
             substring(Item, 1, 1) as iType      -- B for Biomaterial, E for Experiment, R for RefCompound
-        FROM dbo.MakeTableFromList(@itemList)
+        FROM dbo.make_table_from_list(@itemList)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -282,7 +283,7 @@ AS
                        Compound_ID AS Item_ID
                 FROM T_Reference_Compound
             ) AS T ON T.C_ID = T_Material_Containers.ID
-        WHERE T.C_ID in (SELECT Try_Cast(Item AS int) FROM dbo.MakeTableFromList(@itemList))
+        WHERE T.C_ID in (SELECT Try_Cast(Item AS int) FROM dbo.make_table_from_list(@itemList))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -295,7 +296,7 @@ AS
 
 -- debug
 /*
-select 'UpdateMaterialItems' as Sproc, @mode as Mode, CASE WHEN @mode = 'retire_items' THEN 'Inactive' ELSE '(unchanged)' END as Status, @contID as Container
+select 'update_material_items' as Sproc, @mode as Mode, CASE WHEN @mode = 'retire_items' THEN 'Inactive' ELSE '(unchanged)' END as Status, @contID as Container
 select * from @material_items
 return @myError
 */
@@ -305,7 +306,7 @@ return @myError
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    set @transName = 'UpdateMaterialItems'
+    set @transName = 'update_material_items'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -433,9 +434,9 @@ return @myError
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialItems] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_items] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialItems] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_material_items] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialItems] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_items] TO [Limited_Table_Write] AS [dbo]
 GO

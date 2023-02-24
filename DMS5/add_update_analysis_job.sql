@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateAnalysisJob] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_analysis_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
+CREATE PROCEDURE [dbo].[add_update_analysis_job]
 /****************************************************
 **
 **  Desc:
@@ -20,7 +20,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          02/10/2005 grk - fixed update to include assigned processor
 **          03/28/2006 grk - added protein collection fields
 **          04/04/2006 grk - increased size of param file name
-**          04/07/2006 grk - revised validation logic to use ValidateAnalysisJobParameters
+**          04/07/2006 grk - revised validation logic to use validate_analysis_job_parameters
 **          04/11/2006 grk - added state field and reset mode
 **          04/21/2006 grk - reset now allowed even if job not in "new" state
 **          06/01/2006 grk - added code to handle '(default)' organism
@@ -35,13 +35,13 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **          02/22/2008 mem - Updated to allow updating jobs in state "holding"
 **                         - Updated to convert @comment and @associatedProcessorGroup to '' if null (Ticket #648)
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644, http://prismtrac.pnl.gov/trac/ticket/644)
-**          04/22/2008 mem - Updated to call AlterEnteredByUser when updating T_Analysis_Job_Processor_Group_Associations
-**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644, http://prismtrac.pnl.gov/trac/ticket/644)
+**          04/22/2008 mem - Updated to call alter_entered_by_user when updating T_Analysis_Job_Processor_Group_Associations
+**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to validate_analysis_job_parameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          02/27/2009 mem - Expanded @comment to varchar(512)
 **          04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
-**          05/05/2010 mem - Now passing @ownerPRN to ValidateAnalysisJobParameters as input/output
+**          05/05/2010 mem - Now passing @ownerUsername to validate_analysis_job_parameters as input/output
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **          08/18/2010 mem - Now allowing job update if state is Failed, in addition to New or Holding
 **          08/19/2010 grk - try-catch for error handling
@@ -55,8 +55,8 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          01/04/2013 mem - Now ignoring @organismName, @protCollNameList, @protCollOptionsList, and @organismDBName for analysis tools that do not use protein collections (AJT_orgDbReqd = 0)
 **          04/02/2013 mem - Now updating @msg if it is blank yet @result is non-zero
-**          03/13/2014 mem - Now passing @Job to ValidateAnalysisJobParameters
-**          04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided and @Warning to ValidateAnalysisJobParameters
+**          03/13/2014 mem - Now passing @Job to validate_analysis_job_parameters
+**          04/08/2015 mem - Now passing @autoUpdateSettingsFileToCentroided and @Warning to validate_analysis_job_parameters
 **          05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **          06/24/2015 mem - Added parameter @infoOnly
 **          07/21/2015 mem - Now allowing job comment and Export Mode to be changed
@@ -64,22 +64,23 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
 **          02/15/2016 mem - Re-enabled handling of @associatedProcessorGroup
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          07/20/2016 mem - Expand error messages
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/09/2017 mem - Add support for state 13 (inactive)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/09/2017 mem - Allow job state to be changed from Complete (state 4) to No Export (state 14) if @propagationMode is 1 (aka 'No Export')
-**          12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          12/06/2017 mem - Set @allowNewDatasets to 0 when calling validate_analysis_job_parameters
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          09/05/2018 mem - When @mode is 'add', if @state is 'hold' or 'holding', create the job, but put it on hold (state 8)
 **          06/30/2022 mem - Rename parameter file argument
 **          07/29/2022 mem - Assure that the parameter file and settings file names are not null
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @priority int = 2,
     @toolName varchar(64),
     @paramFileName varchar(255),
@@ -88,19 +89,19 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJob]
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
     @organismDBName varchar(128),
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @associatedProcessorGroup varchar(64) = '',     -- Processor group
     @propagationMode varchar(24),                   -- Propagation mode, aka export mode
     @stateName varchar(32),                         -- Job state when updating or resetting the job.  When @mode is 'add', if this is 'hold' or 'holding', the job will be created and placed in state holding
-    @jobNum varchar(32) = '0' output,               -- New job number if adding a job; existing job number if updating or resetting a job
+    @job varchar(32) = '0' output,               -- New job number if adding a job; existing job number if updating or resetting a job
     @mode varchar(12) = 'add',  -- or 'update' or 'reset'; use 'previewadd' or 'previewupdate' to validate the parameters but not actually make the change (used by the Spreadsheet loader page)
     @message varchar(512) output,
     @callingUser varchar(128) = '',
-    @PreventDuplicateJobs tinyint = 0,              -- Only used if @Mode is 'add'; ignores jobs with state 5 (failed), 13 (inactive) or 14 (no export)
-    @PreventDuplicatesIgnoresNoExport tinyint = 1,
-    @SpecialProcessingWaitUntilReady tinyint = 0,   -- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
+    @preventDuplicateJobs tinyint = 0,              -- Only used if @Mode is 'add'; ignores jobs with state 5 (failed), 13 (inactive) or 14 (no export)
+    @preventDuplicatesIgnoresNoExport tinyint = 1,
+    @specialProcessingWaitUntilReady tinyint = 0,   -- When 1, then sets the job state to 19="Special Proc. Waiting" when the @specialProcessing parameter is not empty
     @infoOnly tinyint = 0                           -- When 1, preview the change even when @mode is 'add' or 'update'
 )
 AS
@@ -137,7 +138,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJob', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_analysis_job', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -160,11 +161,11 @@ AS
             @jobID = AJ_jobID,
             @currentStateID = AJ_StateID
         FROM T_Analysis_Job
-        WHERE AJ_jobID = Try_Cast(@jobNum AS int)
+        WHERE AJ_jobID = Try_Cast(@job AS int)
 
         If @jobID = 0
         Begin
-            Set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in database'
+            Set @msg = 'Cannot update: Analysis Job "' + @job + '" is not in database'
             If @infoOnly <> 0
                 print @msg
 
@@ -240,17 +241,17 @@ AS
                             SELECT @myError = @@error, @myRowCount = @@rowcount
                         End
 
-                        Set @message = dbo.AppendToText(@message, 'set job state to "No export"', 0, '; ', 512)
+                        Set @message = dbo.append_to_text(@message, 'set job state to "No export"', 0, '; ', 512)
                     End
                     Else
                     Begin
                         Set @msg = 'job state cannot be changed from ' + @currentStateName + ' to ' + @stateName
-                        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 512)
+                        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 512)
 
                         If @propagationMode = 'Export' And @stateName = 'No export'
                         Begin
                             -- Job propagation mode is Export (0) but user wants to set the state to No export
-                            Set @message = dbo.AppendToText(@message, 'to make this change, set the Export Mode to "No Export"', 0, '; ', 512)
+                            Set @message = dbo.append_to_text(@message, 'to make this change, set the Export Mode to "No Export"', 0, '; ', 512)
                         End
                     End
                 End
@@ -261,7 +262,7 @@ AS
                 Goto Done
             End
 
-            set @msg = 'Cannot update: Analysis Job "' + @jobNum + '" is not in "new", "holding", or "failed" state'
+            set @msg = 'Cannot update: Analysis Job "' + @job + '" is not in "new", "holding", or "failed" state'
             If @infoOnly <> 0
                 print @msg
 
@@ -338,7 +339,7 @@ AS
     INSERT INTO #TD
         (Dataset_Num)
     VALUES
-        (@datasetNum)
+        (@datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -364,7 +365,7 @@ AS
             T_Dataset ON T_Experiments.Exp_ID = T_Dataset.Exp_ID INNER JOIN
             T_Organisms ON T_Experiments.Ex_organism_ID = T_Organisms.Organism_ID
         WHERE
-            (T_Dataset.Dataset_Num = @datasetNum)
+            (T_Dataset.Dataset_Num = @datasetName)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -391,7 +392,7 @@ AS
     Declare @Warning varchar(255) = ''
     set @msg = ''
     --
-    exec @result = ValidateAnalysisJobParameters
+    exec @result = validate_analysis_job_parameters
                             @toolName = @toolName,
                             @paramFileName = @paramFileName output,
                             @settingsFileName = @settingsFileName output,
@@ -399,7 +400,7 @@ AS
                             @organismName = @organismName,
                             @protCollNameList = @protCollNameList output,
                             @protCollOptionsList = @protCollOptionsList output,
-                            @ownerPRN = @ownerPRN output,
+                            @ownerUsername = @ownerUsername output,
                             @mode = @mode,
                             @userID = @userID output,
                             @analysisToolID = @analysisToolID output,
@@ -407,7 +408,7 @@ AS
                             @message = @msg output,
                             @AutoRemoveNotReleasedDatasets = 0,
                             @Job = @jobID,
-                            @AutoUpdateSettingsFileToCentroided = 1,
+                            @autoUpdateSettingsFileToCentroided = 1,
                             @allowNewDatasets = 0,
                             @Warning = @Warning output,
                             @showDebugMessages = @infoOnly
@@ -415,7 +416,7 @@ AS
     If @result <> 0
     Begin
         If Coalesce(@msg, '') = ''
-            Set @msg = 'Error code ' + Convert(varchar(12), @result) + ' returned by ValidateAnalysisJobParameters'
+            Set @msg = 'Error code ' + Convert(varchar(12), @result) + ' returned by validate_analysis_job_parameters'
 
         If @infoOnly <> 0
             print @msg
@@ -425,7 +426,7 @@ AS
 
     If Coalesce(@Warning, '') <> ''
     Begin
-        Set @comment = dbo.AppendToText(@comment, @Warning, 0, '; ', 512)
+        Set @comment = dbo.append_to_text(@comment, @Warning, 0, '; ', 512)
 
         If @mode Like 'preview%'
             Set @message = @warning
@@ -447,7 +448,7 @@ AS
     -- set up transaction variables
     ---------------------------------------------------
     --
-    Declare @transName varchar(32) = 'AddUpdateAnalysisJob'
+    Declare @transName varchar(32) = 'add_update_analysis_job'
 
     ---------------------------------------------------
     -- action for add mode
@@ -501,7 +502,7 @@ AS
                 If @infoOnly <> 0
                     print @message
 
-                -- Do not change this error code since SP CreatePredefinedAnalysesJobs
+                -- Do not change this error code since SP create_predefined_analysis_jobs
                 -- checks for error code 52500
                 return 52500
             End
@@ -521,7 +522,7 @@ AS
         -- Get ID for new job
         ---------------------------------------------------
         --
-        exec @jobID = GetNewJobID 'Job created in DMS', @infoOnly
+        exec @jobID = get_new_job_id 'Job created in DMS', @infoOnly
         If @jobID = 0
         Begin
             set @msg = 'Failed to get valid new job ID'
@@ -530,9 +531,8 @@ AS
 
             RAISERROR (@msg, 11, 15)
         End
-        set @jobNum = cast(@jobID as varchar(32))
+        set @job = cast(@jobID as varchar(32))
 
-        Declare @newJobNum int
         Declare @newStateID int = 1
 
         If Coalesce(@SpecialProcessingWaitUntilReady, 0) > 0 And Coalesce(@specialProcessing, '') <> ''
@@ -557,10 +557,10 @@ AS
                    @datasetID AS AJ_datasetID,
                    REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)) AS AJ_comment,
                    @specialProcessing AS AJ_specialProcessing,
-                   @ownerPRN AS AJ_owner,
+                   @ownerUsername AS AJ_owner,
                    @batchID AS AJ_batchID,
                    @newStateID AS AJ_StateID,
-                @propMode AS AJ_propagationMode,
+                   @propMode AS AJ_propagationMode,
                    @DatasetUnreviewed AS AJ_DatasetUnreviewed
 
         End
@@ -606,7 +606,7 @@ AS
                 @datasetID,
                 REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), @datasetID)),
                 @specialProcessing,
-                @ownerPRN,
+                @ownerUsername,
                 @batchID,
                 @newStateID,
                 @propMode,
@@ -624,9 +624,9 @@ AS
                 RAISERROR (@msg, 11, 13)
             End
 
-            -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+            -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
             If Len(@callingUser) > 0
-                Exec AlterEventLogEntryUser 5, @jobID, @newStateID, @callingUser
+                Exec alter_event_log_entry_user 5, @jobID, @newStateID, @callingUser
 
             ---------------------------------------------------
             -- Associate job with processor group
@@ -733,7 +733,7 @@ AS
                    @datasetID AS AJ_datasetID,
                   @comment AJ_comment,
                    @specialProcessing AS AJ_specialProcessing,
-                   @ownerPRN AS AJ_owner,
+                   @ownerUsername AS AJ_owner,
                    AJ_batchID,
                    @updateStateID AS AJ_StateID,
                    CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End AS AJ_start,
@@ -767,7 +767,7 @@ AS
                 AJ_datasetID = @datasetID,
                 AJ_comment = @comment,
                 AJ_specialProcessing = @specialProcessing,
-                AJ_owner = @ownerPRN,
+                AJ_owner = @ownerUsername,
                 AJ_StateID = @updateStateID,
                 AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End,
                 AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL End,
@@ -778,13 +778,13 @@ AS
             --
             If @myError <> 0
             Begin
-                set @msg = 'Update operation failed: "' + @jobNum + '"'
+                set @msg = 'Update operation failed: "' + @job + '"'
                 RAISERROR (@msg, 11, 17)
             End
 
-            -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+            -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
             If Len(@callingUser) > 0
-                Exec AlterEventLogEntryUser 5, @jobID, @updateStateID, @callingUser
+                Exec alter_event_log_entry_user 5, @jobID, @updateStateID, @callingUser
 
             ---------------------------------------------------
             -- Deal with job association with group,
@@ -847,10 +847,10 @@ AS
 
             If Len(@callingUser) > 0 AND @AlterEnteredByRequired <> 0
             Begin
-                -- Call AlterEnteredByUser
+                -- Call alter_entered_by_user
                 -- to alter the Entered_By field in T_Analysis_Job_Processor_Group_Associations
 
-                Exec AlterEnteredByUser 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @jobID, @CallingUser
+                Exec alter_entered_by_user 'T_Analysis_Job_Processor_Group_Associations', 'Job_ID', @jobID, @CallingUser
             End
         End
 
@@ -858,7 +858,7 @@ AS
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -866,8 +866,8 @@ AS
 
         If @logErrors > 0
         Begin
-            Declare @logMessage varchar(1024) = @message + '; Job ' + @jobNum
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJob'
+            Declare @logMessage varchar(1024) = @message + '; Job ' + @job
+            exec post_log_entry 'Error', @logMessage, 'add_update_analysis_job'
         End
 
     End Catch
@@ -877,13 +877,13 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJob] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateChargeCodeUsage] ******/
+/****** Object:  StoredProcedure [dbo].[update_charge_code_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateChargeCodeUsage]
+CREATE PROCEDURE [dbo].[update_charge_code_usage]
 /****************************************************
 **
 **  Desc:   Updates the Usage columns in T_Charge_Code
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateChargeCodeUsage]
 **
 **  Auth:   mem
 **  Date:   06/04/2013 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -96,5 +97,5 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateChargeCodeUsage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_charge_code_usage] TO [DDL_Viewer] AS [dbo]
 GO

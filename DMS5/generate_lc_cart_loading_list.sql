@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GenerateLCCartLoadingList] ******/
+/****** Object:  StoredProcedure [dbo].[generate_lc_cart_loading_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GenerateLCCartLoadingList]
+CREATE PROCEDURE [dbo].[generate_lc_cart_loading_list]
 /****************************************************
 **
 **  Desc:
@@ -20,14 +20,15 @@ CREATE PROCEDURE [dbo].[GenerateLCCartLoadingList]
 **          07/31/2007 mem - now returning Dataset Type for each request (Ticket #505)
 **          08/27/2007 grk - add ability to start columns with a blank (Ticket #517)
 **          09/17/2009 grk - added check for requests that don't have column assignments
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @LCCartName varchar(128),
-    @BlanksFollowingRequests varchar(2048),
-    @ColumnsWithLeadingBlanks varchar(256),
+    @lcCartName varchar(128),
+    @blanksFollowingRequests varchar(2048),
+    @columnsWithLeadingBlanks varchar(256),
     @mode varchar(12) = '', --
     @message varchar(512) output
 )
@@ -128,7 +129,7 @@ AS
         INSERT INTO #XR ([request], col, os)
         SELECT 0, col, os + 1
         FROM #XR
-        WHERE [request] in (SELECT Item FROM dbo.MakeTableFromList(@BlanksFollowingRequests))
+        WHERE [request] in (SELECT Item FROM dbo.make_table_from_list(@BlanksFollowingRequests))
     end
 
     ---------------------------------------------------
@@ -139,7 +140,7 @@ AS
         --
         INSERT INTO #XR ([request], col, os)
         SELECT 0, CAST(Item as int), 0
-        FROM dbo.MakeTableFromList(@ColumnsWithLeadingBlanks)
+        FROM dbo.make_table_from_list(@ColumnsWithLeadingBlanks)
     end
 
     ---------------------------------------------------
@@ -360,7 +361,7 @@ AS
         RR.RDS_Run_Order AS [Batch Run Order],
         EUT.Name AS [EMSL Usage Type],
         RR.RDS_EUS_Proposal_ID AS [EMSL Proposal ID],
-        dbo.GetRequestedRunEUSUsersList(RR.ID, 'I') AS [EMSL Users List]
+        dbo.get_requested_run_eus_users_list(RR.ID, 'I') AS [EMSL Users List]
     FROM T_Experiments E INNER JOIN
          T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID INNER JOIN
          T_EUS_UsageType EUT ON RR.RDS_EUS_UsageType = EUT.ID INNER JOIN
@@ -372,13 +373,13 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[generate_lc_cart_loading_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_LC_Column_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[generate_lc_cart_loading_list] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS_RunScheduler] AS [dbo]
+GRANT EXECUTE ON [dbo].[generate_lc_cart_loading_list] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GenerateLCCartLoadingList] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[generate_lc_cart_loading_list] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GenerateLCCartLoadingList] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[generate_lc_cart_loading_list] TO [Limited_Table_Write] AS [dbo]
 GO

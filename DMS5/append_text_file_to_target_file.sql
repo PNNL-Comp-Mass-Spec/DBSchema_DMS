@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AppendTextFileToTargetFile] ******/
+/****** Object:  StoredProcedure [dbo].[append_text_file_to_target_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AppendTextFileToTargetFile]
+CREATE PROCEDURE [dbo].[append_text_file_to_target_file]
 /****************************************************
 **
 **  Desc:
@@ -16,15 +16,16 @@ CREATE PROCEDURE [dbo].[AppendTextFileToTargetFile]
 **  Auth:   mem
 **  Date:   07/01/2006
 **          07/03/2006 mem - Switched to using xp_cmdshell to append the file contents
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceFilePath varchar(512),
-    @TargetFilePath varchar(512),
-    @FileSeparatorText varchar(128) = '-----------------------',
-    @DeleteSourceAfterAppend tinyint = 0,
-    @SourceIsUnicode smallint = -1,         -- Set to 0 for Ascii, 1 for Unicode, any other number to auto-determine type based on the first two bytes
-    @TargetIsUnicode smallint = 0,          -- Set to 0 for Ascii, 1 for Unicode
+    @sourceFilePath varchar(512),
+    @targetFilePath varchar(512),
+    @fileSeparatorText varchar(128) = '-----------------------',
+    @deleteSourceAfterAppend tinyint = 0,
+    @sourceIsUnicode smallint = -1,         -- Set to 0 for Ascii, 1 for Unicode, any other number to auto-determine type based on the first two bytes
+    @targetIsUnicode smallint = 0,          -- Set to 0 for Ascii, 1 for Unicode
     @message varchar(255)='' output
 )
 AS
@@ -78,7 +79,7 @@ AS
     EXEC @hr = sp_OACreate 'Scripting.FileSystemObject', @FSOObject OUT
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error creating FileSystemObject'
         set @myError = 55002
@@ -92,7 +93,7 @@ AS
     EXEC @hr = sp_OAMethod  @FSOObject, 'FileExists', @result OUT, @SourceFilePath
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error calling FileExists for: ' + @SourceFilePath
         set @myError = 55003
@@ -184,7 +185,7 @@ AS
             EXEC @hr = sp_OAMethod  @FSOObject, 'OpenTextFile', @TextStreamInFile OUT, @SourceFilePath, @IOModeForReading, @CreateFile, @FileFormatToUse
             IF @hr <> 0
             BEGIN
-                EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+                EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
                 If Len(IsNull(@message, '')) = 0
                     Set @message = 'Error calling OpenTextFile for ' + @SourceFilePath
                 set @myError = 55007
@@ -200,7 +201,7 @@ AS
             EXEC @hr = sp_OAMethod @TextStreamInFile, 'AtEndOfStream', @AtEOF OUT
             IF @hr <> 0
             BEGIN
-                EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+                EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
                 If Len(IsNull(@message, '')) = 0
                     Set @message = 'Error checking EndOfStream for ' + @SourceFilePath
 
@@ -218,7 +219,7 @@ AS
                 EXEC @hr = sp_OAMethod  @TextStreamInFile, 'Readline', @LineIn OUT
                 IF @hr <> 0
                 Begin
-                    EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+                    EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
                     If Len(IsNull(@message, '')) = 0
                         Set @message = 'Error reading text from ' + @SourceFilePath
 
@@ -256,7 +257,7 @@ AS
         EXEC @hr = sp_OAMethod  @FSOObject, 'OpenTextFile', @TextStreamInFile OUT, @SourceFilePath, @IOModeForReading, @CreateFile, @FileFormatToUse
         IF @hr <> 0
         BEGIN
-            EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+            EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
             If Len(IsNull(@message, '')) = 0
                 Set @message = 'Error calling OpenTextFile for ' + @SourceFilePath
             set @myError = 55010
@@ -277,7 +278,7 @@ AS
         EXEC @hr = sp_OAMethod  @FSOObject, 'OpenTextFile', @TextStreamOutFile OUT, @TargetFilePath, @IOModeForAppending, @CreateFile, @FileFormatToUse
         IF @hr <> 0
         BEGIN
-            EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+            EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
             If Len(IsNull(@message, '')) = 0
                 Set @message = 'Error calling OpenTextFile for ' + @TargetFilePath
             set @myError = 55011
@@ -292,7 +293,7 @@ AS
             EXEC @hr = sp_OAMethod @TextStreamOutFile, 'WriteLine', NULL, @FileSeparatorText
             IF @hr <> 0
             BEGIN
-                EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+                EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
                 If Len(IsNull(@message, '')) = 0
                     Set @message = 'Error writing the file separator text to ' + @TargetFilePath
                 set @myError = 55012
@@ -306,7 +307,7 @@ AS
         EXEC @hr = sp_OAMethod @TextStreamInFile, 'AtEndOfStream', @AtEOF OUT
         IF @hr <> 0
         BEGIN
-            EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+            EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
             If Len(IsNull(@message, '')) = 0
                 Set @message = 'Error checking EndOfStream for ' + @SourceFilePath
 
@@ -324,7 +325,7 @@ AS
             EXEC @hr = sp_OAMethod  @TextStreamInFile, 'Readline', @LineIn OUT
             IF @hr <> 0
             BEGIN
-                EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+                EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
                 If Len(IsNull(@message, '')) = 0
                     Set @message = 'Error reading text from ' + @SourceFilePath
 
@@ -354,7 +355,7 @@ AS
             EXEC @hr = sp_OAMethod @TextStreamInFile, 'Close'
         IF @hr <> 0
         BEGIN
-            EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+            EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
             If Len(IsNull(@message, '')) = 0
                 Set @message = 'Error closing the textstream for ' + @TargetFilePath
 
@@ -367,7 +368,7 @@ AS
             EXEC @hr = sp_OAMethod @TextStreamOutFile, 'Close'
         IF @hr <> 0
         BEGIN
-            EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+            EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
             If Len(IsNull(@message, '')) = 0
                 Set @message = 'Error closing the textstream for ' + @TargetFilePath
 
@@ -392,7 +393,7 @@ AS
         EXEC @hr = sp_OAMethod  @FSOObject, 'DeleteFile', NULL, @SourceFilePath
         IF @hr <> 0
         BEGIN
-            EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+            EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
             set @myError = 50020
             goto DestroyFSO
         END
@@ -406,7 +407,7 @@ DestroyFSO:
         EXEC @hr = sp_OADestroy @FSOObject
     IF @hr <> 0
     BEGIN
-        EXEC LoadGetOAErrorMessage @FSOObject, @hr, @message OUT
+        EXEC load_get_oa_error_message @FSOObject, @hr, @message OUT
         If Len(IsNull(@message, '')) = 0
             Set @message = 'Error destroying FileSystemObject'
 
@@ -418,7 +419,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AppendTextFileToTargetFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[append_text_file_to_target_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AppendTextFileToTargetFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[append_text_file_to_target_file] TO [Limited_Table_Write] AS [dbo]
 GO

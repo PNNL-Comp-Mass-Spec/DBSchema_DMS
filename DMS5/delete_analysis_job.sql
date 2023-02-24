@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteAnalysisJob] ******/
+/****** Object:  StoredProcedure [dbo].[delete_analysis_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteAnalysisJob]
+CREATE PROCEDURE [dbo].[delete_analysis_job]
 /****************************************************
 **
 **  Desc:   Deletes given analysis job from the analysis job table
@@ -17,20 +17,21 @@ CREATE PROCEDURE [dbo].[DeleteAnalysisJob]
 **          04/07/2006 grk - eliminated job to request map table
 **          02/20/2007 grk - added code to remove any job-to-group associations
 **          03/16/2007 mem - Fixed bug that required 1 or more rows be deleted from T_Analysis_Job_Processor_Group_Associations (Ticket #393)
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
 **          12/31/2008 mem - Now calling DMS_Pipeline.dbo.DeleteJob
 **          02/19/2008 grk - Modified not to call broker DB (Ticket #723)
 **          05/28/2015 mem - No longer deleting processor group entries
 **          03/08/2017 mem - Delete jobs in the DMS_Pipeline database if they are new, holding, or failed
 **          04/21/2017 mem - Added parameter @previewMode
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/27/2018 mem - Rename @previewMode to @infoonly
 **          08/18/2020 mem - Delete jobs from T_Reporter_Ion_Observation_Rates
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @jobNum varchar(32),
+    @job varchar(32),
     @callingUser varchar(128) = '',
     @infoonly tinyint = 0
 )
@@ -40,17 +41,17 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Set @jobNum = IsNull(@jobNum, '')
+    Set @job = IsNull(@job, '')
     Set @infoonly = IsNull(@infoonly, 0)
 
     Declare @message varchar(512)
     Declare @msg varchar(128)
 
-    Declare @jobID int = Try_Cast(@jobNum as int)
+    Declare @jobID int = Try_Cast(@job as int)
 
     If @jobID is null
     Begin
-        Set @msg = 'Job number is not numeric: ' + @jobNum
+        Set @msg = 'Job number is not numeric: ' + @job
         RAISERROR (@msg, 10, 1)
         return 54449
     End
@@ -60,7 +61,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteAnalysisJob', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_analysis_job', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -72,7 +73,7 @@ AS
     --
     If Not Exists (SELECT * FROM T_Analysis_Job WHERE AJ_jobID = @jobID)
     Begin
-        Set @msg = 'Job not found; nothing to delete: ' + @jobNum
+        Set @msg = 'Job not found; nothing to delete: ' + @job
         If @infoonly > 0
             Print @msg
         Else
@@ -94,7 +95,7 @@ AS
         -- Start transaction
         -------------------------------------------------------
         --
-        Declare @transName varchar(32) = 'DeleteAnalysisJob'
+        Declare @transName varchar(32) = 'delete_analysis_job'
         Begin transaction @transName
 
 
@@ -126,7 +127,7 @@ AS
         Print 'Deleted analysis job ' + Cast(@jobID As varchar(12)) + ' from T_Analysis_Job in DMS5'
 
         -------------------------------------------------------
-        -- If @callingUser is defined, call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+        -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         -------------------------------------------------------
         --
         If Len(@callingUser) > 0
@@ -134,7 +135,7 @@ AS
             Declare @stateID int
             Set @stateID = 0
 
-            Exec AlterEventLogEntryUser 5, @jobID, @stateID, @callingUser
+            Exec alter_event_log_entry_user 5, @jobID, @stateID, @callingUser
         End
 
         commit transaction @transName
@@ -145,16 +146,16 @@ AS
     -- Ignore any jobs with running job steps (though if the step started over 48 hours ago, ignore that job step)
     -------------------------------------------------------
     --
-    exec S_DeleteJobIfNewOrFailed @jobID, @callingUser, @message output, @infoonly
+    exec s_delete_job_if_new_or_failed @jobID, @callingUser, @message output, @infoonly
 
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_analysis_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [DMS_Ops_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_analysis_job] TO [DMS_Ops_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteAnalysisJob] TO [Limited_Table_Write] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_analysis_job] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteAnalysisJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_analysis_job] TO [Limited_Table_Write] AS [dbo]
 GO

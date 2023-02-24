@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSamplePrepRequestItemCount] ******/
+/****** Object:  StoredProcedure [dbo].[update_sample_prep_request_item_count] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItemCount]
+CREATE PROCEDURE [dbo].[update_sample_prep_request_item_count]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateSamplePrepRequestItemCount]
 **
 **  Auth:   grk
 **  Date:   07/05/2013 grk - initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -65,5 +66,5 @@ AS
     WHERE dbo.T_Sample_Prep_Request.ID = @samplePrepRequestID
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateSamplePrepRequestItemCount] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_sample_prep_request_item_count] TO [DDL_Viewer] AS [dbo]
 GO

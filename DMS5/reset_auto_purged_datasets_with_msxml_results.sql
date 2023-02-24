@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetAutoPurgedDatasetsWithMSXmlResults] ******/
+/****** Object:  StoredProcedure [dbo].[reset_auto_purged_datasets_with_msxml_results] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ResetAutoPurgedDatasetsWithMSXmlResults]
+CREATE PROCEDURE [dbo].[reset_auto_purged_datasets_with_msxml_results]
 /****************************************************
 **
 **  Desc:   Looks for datasets with archive state 14 (Purged Instrument Data (plus auto-purge))
@@ -20,11 +20,12 @@ CREATE PROCEDURE [dbo].[ResetAutoPurgedDatasetsWithMSXmlResults]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InfoOnly tinyint = 0,                  -- 1 to preview the datasets that would be reset
-    @ResetCount int = 0 output,             -- Number of datasets that were reset
+    @infoOnly tinyint = 0,                  -- 1 to preview the datasets that would be reset
+    @resetCount int = 0 output,             -- Number of datasets that were reset
     @message varchar(512)='' output
 )
 AS
@@ -112,19 +113,19 @@ AS
 
             If @ResetCount > 0
             Begin
-                exec PostLogEntry 'Normal', @message, 'ResetAutoPurgedDatasetsWithMSXmlResults'
+                exec post_log_entry 'Normal', @message, 'reset_auto_purged_datasets_with_msxml_results'
             End
         End
 
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
-        Exec PostLogEntry 'Error', @message, 'ResetAutoPurgedDatasetsWithMSXmlResults'
+        EXEC format_error_message @message output, @myError output
+        Exec post_log_entry 'Error', @message, 'reset_auto_purged_datasets_with_msxml_results'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetAutoPurgedDatasetsWithMSXmlResults] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_auto_purged_datasets_with_msxml_results] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LoadMetadataForMultipleDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[load_metadata_for_multiple_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LoadMetadataForMultipleDatasets]
+CREATE PROCEDURE [dbo].[load_metadata_for_multiple_datasets]
 /****************************************************
 **
 **  Desc:
@@ -28,12 +28,13 @@ CREATE PROCEDURE [dbo].[LoadMetadataForMultipleDatasets]
 **  Date:   11/01/2006
 **          05/30/2007 grk - Added "ORDER BY" for migration to SS2005 (ticket #226)
 **          07/06/2022 mem - Use new aux info definition view name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
- (
-    @Options varchar(256), -- ignore for now
+(
+    @options varchar(256), -- ignore for now
     @message varchar(512) output
- )
+)
 AS
     set nocount on
 
@@ -189,7 +190,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[load_metadata_for_multiple_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[load_metadata_for_multiple_datasets] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetIntervalForMultipleInstruments] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_interval_for_multiple_instruments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
+CREATE PROCEDURE [dbo].[update_dataset_interval_for_multiple_instruments]
 /****************************************************
 **
 **  Desc:
@@ -16,9 +16,9 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 **  Auth:   grk
 **  Date:   02/09/2012 grk - Initial version
 **          03/07/2012 mem - Added parameters @daysToProcess, @infoOnly, and @message
-**          03/21/2012 grk - Added call to UpdateEMSLInstrumentUsageReport
+**          03/21/2012 grk - Added call to update_emsl_instrument_usage_report
 **          03/22/2012 mem - Added parameter @updateEMSLInstrumentUsage
-**          03/26/2012 grk - Added call to UpdateEMSLInstrumentUsageReport for previous month
+**          03/26/2012 grk - Added call to update_emsl_instrument_usage_report for previous month
 **          03/27/2012 grk - Added code to delete entries from T_EMSL_Instrument_Usage_Report
 **          03/27/2012 grk - Using V_Instrument_Tracked
 **          04/09/2012 grk - modified algorithm
@@ -28,17 +28,18 @@ CREATE PROCEDURE [dbo].[UpdateDatasetIntervalForMultipleInstruments]
 **          03/12/2014 grk - Added processing for "tracked" instruments (OMCDA-1058)
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/10/2017 mem - Add parameter @instrumentsToProcess
-**          04/11/2017 mem - Now passing @infoOnly to UpdateEMSLInstrumentUsageReport
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          04/11/2017 mem - Now passing @infoOnly to update_emsl_instrument_usage_report
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          05/03/2019 mem - Pass @eusInstrumentId to UpdateEMSLInstrumentUsageReport for select instruments
-**          01/28/2022 mem - Call UpdateEMSLInstrumentUsageReport for both the current month, plus also previous months if @daysToProcess is greater than 15
+**          05/03/2019 mem - Pass @eusInstrumentId to update_emsl_instrument_usage_report for select instruments
+**          01/28/2022 mem - Call update_emsl_instrument_usage_report for both the current month, plus also previous months if @daysToProcess is greater than 15
 **          02/15/2022 mem - Fix major bug decrementing @instrumentUsageMonth when processing multiple instruments
 **                         - Add missing Order By clause
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @daysToProcess int = 60,                  -- Also affects whether UpdateEMSLInstrumentUsageReport is called for previous months
+    @daysToProcess int = 60,                  -- Also affects whether update_emsl_instrument_usage_report is called for previous months
     @updateEMSLInstrumentUsage tinyint = 1,
     @infoOnly tinyint = 0,
     @instrumentsToProcess varchar(255) = '',
@@ -55,7 +56,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetIntervalForMultipleInstruments', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_interval_for_multiple_instruments', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -82,7 +83,7 @@ AS
     Declare @currentInstrumentUsageMonth DATETIME
 
     -- Update instrument usage for the current month, plus possibly the last few months, depending on @daysToProcess
-    -- For example, if @daysToProcess is 60, will call UpdateEMSLInstrumentUsageReport for this month plus the last two months
+    -- For example, if @daysToProcess is 60, will call update_emsl_instrument_usage_report for this month plus the last two months
     Declare @instrumentUsageMonthsToUpdate float = 1 + Round(@daysToProcess / 31.0, 0)
 
     Declare @startDate DATETIME = DATEADD(DAY, -@daysToProcess, @endDate)
@@ -137,8 +138,8 @@ AS
 
             INSERT INTO #Tmp_InstrumentFilter( Instrument )
             SELECT VALUE
-            FROM dbo.udfParseDelimitedList ( @instrumentsToProcess, ',',
-                   'UpdateDatasetIntervalForMultipleInstruments' )
+            FROM dbo.parse_delimited_list ( @instrumentsToProcess, ',',
+                   'update_dataset_interval_for_multiple_instruments' )
             --
             SELECT @myError = @@Error, @myRowCount = @@RowCount
 
@@ -187,7 +188,7 @@ AS
 
         ---------------------------------------------------
         -- Flag instruments where we need to use EUS instrument ID
-        -- instead of instrument name when calling UpdateEMSLInstrumentUsageReport
+        -- instead of instrument name when calling update_emsl_instrument_usage_report
         ---------------------------------------------------
 
         UPDATE #Tmp_Instruments
@@ -272,17 +273,17 @@ AS
 
                     If @infoOnly >= 2
                     Begin
-                        Print 'EXEC UpdateDatasetInterval ' + @instrument + ', ' + Cast(@startDate As Varchar(16)) + ', ' + Cast(@bonm As Varchar(16)) + ', @message output, @infoOnly=@infoOnly'
+                        Print 'EXEC update_dataset_interval ' + @instrument + ', ' + Cast(@startDate As Varchar(16)) + ', ' + Cast(@bonm As Varchar(16)) + ', @message output, @infoOnly=@infoOnly'
                     End
                     Else
                     Begin
-                        EXEC UpdateDatasetInterval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
+                        EXEC update_dataset_interval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
                     End
 
                     If @updateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
                     Begin -- <d>
 
-                        -- Call UpdateEMSLInstrumentUsageReport for this month, plus optionally previous months (if @instrumentUsageMonthsToUpdate is greater than 1)
+                        -- Call update_emsl_instrument_usage_report for this month, plus optionally previous months (if @instrumentUsageMonthsToUpdate is greater than 1)
                         --
                         Set @iteration = 0
                         Set @currentInstrumentUsageMonth = @InstrumentUsageMonth
@@ -293,7 +294,7 @@ AS
 
                             If @infoOnly > 0
                             Begin
-                                Print 'Call UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument +
+                                Print 'Call update_emsl_instrument_usage_report for Instrument ' + @instrument +
                                       ', target month ' +
                                       Cast(Year(@currentInstrumentUsageMonth) As varchar(12)) + '-' +
                                       Cast(Month(@currentInstrumentUsageMonth) As varchar(12))
@@ -303,11 +304,11 @@ AS
                             Begin
                                 If @useEUSid > 0
                                 Begin
-                                    EXEC UpdateEMSLInstrumentUsageReport '', @eusInstrumentId, @currentInstrumentUsageMonth, @message output, @infoonly=@infoonly
+                                    EXEC update_emsl_instrument_usage_report '', @eusInstrumentId, @currentInstrumentUsageMonth, @message output, @infoonly=@infoonly
                                 End
                                 Else
                                 Begin
-                                    EXEC UpdateEMSLInstrumentUsageReport @instrument, 0, @currentInstrumentUsageMonth, @message output, @infoonly=@infoonly
+                                    EXEC update_emsl_instrument_usage_report @instrument, 0, @currentInstrumentUsageMonth, @message output, @infoonly=@infoonly
                                 End
                             End
 
@@ -321,7 +322,7 @@ AS
                     Begin
                         If @infoOnly > 0
                         Begin
-                            Print 'Skip call to UpdateEMSLInstrumentUsageReport for Instrument ' + @instrument
+                            Print 'Skip call to update_emsl_instrument_usage_report for Instrument ' + @instrument
                             Print ''
                         End
                     End
@@ -331,13 +332,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateDatasetIntervalForMultipleInstruments'
+        Exec post_log_entry 'Error', @message, 'update_dataset_interval_for_multiple_instruments'
 
     END CATCH
 
@@ -347,5 +348,5 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetIntervalForMultipleInstruments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_interval_for_multiple_instruments] TO [DDL_Viewer] AS [dbo]
 GO

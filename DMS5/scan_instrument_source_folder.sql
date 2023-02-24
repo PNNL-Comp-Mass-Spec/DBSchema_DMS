@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ScanInstrumentSourceFolder] ******/
+/****** Object:  StoredProcedure [dbo].[scan_instrument_source_folder] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ScanInstrumentSourceFolder]
+CREATE PROCEDURE [dbo].[scan_instrument_source_folder]
 /****************************************************
 **  File:
 **  Desc:
@@ -13,17 +13,20 @@ CREATE PROCEDURE [dbo].[ScanInstrumentSourceFolder]
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   4/25/2002
+**  Date:   04/25/2002
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 **  NOTE: DO NOT USE IN 'Update' MODE
 **  This is under development pending resolution
 **  of access permissions issue inside xp_cmdshell
 **
 *****************************************************/
+(
     @instrumentName varchar(64),
     @scanFileDir varchar(256) output,
     @mode varchar(12) = 'update', -- or ''
     @message varchar(512) output
+)
 AS
     declare @myError int
     set @myError = 0
@@ -87,9 +90,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ScanInstrumentSourceFolder] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[scan_instrument_source_folder] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ScanInstrumentSourceFolder] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[scan_instrument_source_folder] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ScanInstrumentSourceFolder] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[scan_instrument_source_folder] TO [Limited_Table_Write] AS [dbo]
 GO

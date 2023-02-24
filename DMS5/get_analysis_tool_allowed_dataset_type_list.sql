@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetAnalysisToolAllowedDSTypeList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_analysis_tool_allowed_dataset_type_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetAnalysisToolAllowedDSTypeList]
+CREATE FUNCTION [dbo].[get_analysis_tool_allowed_dataset_type_list]
 /****************************************************
 **
 **  Desc:
@@ -16,10 +16,11 @@ CREATE FUNCTION [dbo].[GetAnalysisToolAllowedDSTypeList]
 **
 **  Auth:   mem
 **  Date:   12/18/2009
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @AnalysisToolID int
+    @analysisToolID int
 )
 RETURNS
 @TableOfResults TABLE
@@ -54,5 +55,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetAnalysisToolAllowedDSTypeList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_analysis_tool_allowed_dataset_type_list] TO [DDL_Viewer] AS [dbo]
 GO

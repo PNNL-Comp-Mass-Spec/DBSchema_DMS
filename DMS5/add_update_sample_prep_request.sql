@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateSamplePrepRequest] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_sample_prep_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
+CREATE PROCEDURE [dbo].[add_update_sample_prep_request]
 /****************************************************
 **
 **  Desc:
@@ -41,7 +41,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          08/15/2010 grk - widened @cellCultureList field
 **          08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **          08/15/2011 grk - added Separation_Type
-**          12/12/2011 mem - Updated call to ValidateEUSUsage to treat @eusUsageType as an input/output parameter
+**          12/12/2011 mem - Updated call to validate_eus_usage to treat @eusUsageType as an input/output parameter
 **          10/19/2012 mem - Now auto-changing @separationType to Separation_Group if @separationType specifies a separation type
 **          04/05/2013 mem - Now requiring that @estimatedMSRuns be defined.  If it is non-zero, then instrument group, dataset type, and separation group must also be defined
 **          04/08/2013 grk - Added @blockAndRandomizeSamples, @blockAndRandomizeRuns, and @iOPSPermitsCurrent
@@ -60,7 +60,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          05/29/2015 mem - Now validating that @estimatedCompletionDate is today or later
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/12/2017 mem - Remove 9 deprecated parameters:
@@ -72,34 +72,35 @@ CREATE PROCEDURE [dbo].[AddUpdateSamplePrepRequest]
 **          06/13/2017 mem - Validate @priority
 **                         - Check for name collisions when @mode is update
 **                         - Use SCOPE_IDENTITY
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/25/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **          09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          08/22/2018 mem - Change the EUS User parameter from a varchar(1024) to an integer
 **          08/29/2018 mem - Remove call to DoSamplePrepMaterialOperation since we stopped associating biomaterial (cell cultures) with Sample Prep Requests in June 2017
 **          11/30/2018 mem - Make @reason an input/output parameter
 **          01/23/2019 mem - Switch @reason back to a normal input parameter since view V_Sample_Prep_Request_Entry now appends the __NoCopy__ flag to several fields
 **          01/13/2020 mem - Require @requestedPersonnel to include a sample prep staff member (no longer allow 'na' or 'any')
-**          08/12/2020 mem - Check for ValidateEUSUsage returning a message, even if it returns 0
+**          08/12/2020 mem - Check for validate_eus_usage returning a message, even if it returns 0
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
-**          05/25/2021 mem - Set @samplePrepRequest to 1 when calling ValidateEUSUsage
+**          05/25/2021 mem - Set @samplePrepRequest to 1 when calling validate_eus_usage
 **          05/26/2021 mem - Override @eusUsageType if @mode is 'add' and the campaign has EUSUsageType = 'USER_REMOTE
-**          05/27/2021 mem - Refactor EUS Usage validation code into ValidateEUSUsage
+**          05/27/2021 mem - Refactor EUS Usage validation code into validate_eus_usage
 **          06/10/2021 mem - Add parameters @estimatedPrepTimeDays and @stateComment
 **          06/11/2021 mem - Auto-remove 'na' from @assignedPersonnel
 **          10/11/2021 mem - Clear @stateComment when @state is 'Closed'
 **                         - Only allow sample prep staff to update estimated prep time
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          12/03/2021 mem - Clear @stateComment when creating a new prep request
-**          03/21/2022 mem - Refactor personnel validation code into ValidateRequestUsers
+**          03/21/2022 mem - Refactor personnel validation code into validate_request_users
 **          04/11/2022 mem - Check for whitespace in @requestName
 **          04/18/2022 mem - Replace tabs in prep request names with spaces
 **          08/08/2022 mem - Update StateChanged when the state changes
 **          08/25/2022 mem - Use view V_Operations_Task_Staff when checking if the user can update a closed prep request item
 **          02/08/2023 bcg - Update view column name
 **          02/13/2023 bcg - Rename parameter to requesterUsername
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -182,7 +183,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateSamplePrepRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_sample_prep_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -210,7 +211,7 @@ AS
     If Len(IsNull(@reason, '')) < 1
         RAISERROR ('The reason field is required', 11, 116)
 
-    If dbo.udfWhitespaceChars(@requestName, 1) > 0
+    If dbo.whitespace_chars(@requestName, 1) > 0
     Begin
         -- Auto-replace CR, LF, or tabs with spaces
         If CharIndex(Char(10), @requestName) > 0
@@ -301,13 +302,13 @@ AS
 
         Declare @datasetTypeID int
         --
-        exec @myError = ValidateInstrumentGroupAndDatasetType
+        exec @myError = validate_instrument_group_and_dataset_type
                                 @datasetType,
                                 @instrumentGroup,
                                 @datasetTypeID output,
                                 @msg output
         If @myError <> 0
-            RAISERROR ('ValidateInstrumentGroupAndDatasetType: %s', 11, 1, @msg)
+            RAISERROR ('validate_instrument_group_and_dataset_type: %s', 11, 1, @msg)
     End
 
 
@@ -317,7 +318,7 @@ AS
 
     Declare @campaignID int = 0
     --
-    execute @campaignID = GetCampaignID @campaign
+    execute @campaignID = get_campaign_id @campaign
     --
     If @campaignID = 0
         RAISERROR('Could not find entry in database for campaign "%s"', 11, 14, @campaign)
@@ -340,7 +341,7 @@ AS
     -- Get names of material containers from list argument into table
     --
     INSERT INTO #MC ([name])
-    SELECT item FROM MakeTableFromList(@materialContainerList)
+    SELECT item FROM make_table_from_list(@materialContainerList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -371,7 +372,7 @@ AS
     ---------------------------------------------------
 
     Declare @organismID int
-    execute @organismID = GetOrganismID @organism
+    execute @organismID = get_organism_id @organism
     If @organismID = 0
         RAISERROR ('Could not find entry in database for organism "%s"', 11, 38, @organism)
 
@@ -383,7 +384,7 @@ AS
     Declare @tissueName varchar(128)
     Declare @errorCode int
 
-    EXEC @errorCode = GetTissueID
+    EXEC @errorCode = get_tissue_id
         @tissueNameOrID=@tissue,
         @tissueIdentifier=@tissueIdentifier output,
         @tissueName=@tissueName output
@@ -405,13 +406,13 @@ AS
 
     ---------------------------------------------------
     -- Validate requested and assigned personnel
-    -- Names should be in the form "Last Name, First Name (PRN)"
+    -- Names should be in the form "Last Name, First Name (Username)"
     ---------------------------------------------------
 
     Declare @result Int
 
-    Exec @result = ValidateRequestUsers
-        @requestName, 'AddUpdateSamplePrepRequest',
+    Exec @result = validate_request_users
+        @requestName, 'add_update_sample_prep_request',
         @requestedPersonnel = @requestedPersonnel Output,
         @assignedPersonnel = @assignedPersonnel Output,
         @requireValidRequestedPersonnel= 1,
@@ -468,7 +469,7 @@ AS
         Set @eusUserID = Null
     End
 
-    exec @myError = ValidateEUSUsage
+    exec @myError = validate_eus_usage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
@@ -481,11 +482,11 @@ AS
                         @addingItem = @addingItem
 
     If @myError <> 0
-        RAISERROR ('ValidateEUSUsage: %s', 11, 1, @msg)
+        RAISERROR ('validate_eus_usage: %s', 11, 1, @msg)
 
     If IsNull(@msg, '') <> ''
     Begin
-        Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
     End
 
     If Len(IsNull(@eusUsersList, '')) > 0
@@ -502,23 +503,23 @@ AS
 
     Declare @allowNoneWP tinyint = 0
 
-    exec @myError = ValidateWP
+    exec @myError = validate_wp
                         @workPackageNumber,
                         @allowNoneWP,
                         @msg output
 
     If @myError <> 0
-        RAISERROR ('ValidateWP: %s', 11, 1, @msg)
+        RAISERROR ('validate_wp: %s', 11, 1, @msg)
 
     If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Deactivated = 'Y')
     Begin
-        Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 1024)
+        Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackageNumber + ' is deactivated', 0, '; ', 1024)
     End
     Else
     Begin
         If Exists (SELECT * FROM T_Charge_Code WHERE Charge_Code = @workPackageNumber And Charge_Code_State = 0)
         Begin
-            Set @message = dbo.AppendToText(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, 'Warning: Work Package ' + @workPackageNumber + ' is likely deactivated', 0, '; ', 1024)
         End
     End
 
@@ -620,7 +621,7 @@ AS
 
     Set @logErrors = 1
 
-    Declare @transName varchar(32) = 'AddUpdateSamplePrepRequest'
+    Declare @transName varchar(32) = 'add_update_sample_prep_request'
 
     ---------------------------------------------------
     -- Action for add mode
@@ -713,7 +714,7 @@ AS
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
+            Exec alter_entered_by_user 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Date_of_Change', @enteredByColumnName='System_Account'
 
     End -- Add mode
@@ -779,20 +780,20 @@ AS
 
         -- If @callingUser is defined, then update System_Account in T_Sample_Prep_Request_Updates
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
+            Exec alter_entered_by_user 'T_Sample_Prep_Request_Updates', 'Request_ID', @id, @callingUser,
                                     @entryDateColumnName='Date_of_Change', @enteredByColumnName='System_Account'
 
         If @currentEstimatedPrepTimeDays <> @estimatedPrepTimeDays And @allowUpdateEstimatedPrepTime = 0
         Begin
             Set @msg = 'Not updating estimated prep time since user is not a sample prep request staff member'
-            Set @message = dbo.AppendToText(@message, @msg, 0, '; ', 1024)
+            Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
 
     End -- update mode
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -801,7 +802,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateSamplePrepRequest'
+            exec post_log_entry 'Error', @logMessage, 'add_update_sample_prep_request'
         End
 
     End Catch
@@ -809,11 +810,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_sample_prep_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_sample_prep_request] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSamplePrepRequest] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_sample_prep_request] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSamplePrepRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_sample_prep_request] TO [Limited_Table_Write] AS [dbo]
 GO

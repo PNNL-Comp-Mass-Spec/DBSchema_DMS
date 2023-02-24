@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[AlterEnteredByUserMultiID] ******/
+/****** Object:  StoredProcedure [dbo].[alter_entered_by_user_multi_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AlterEnteredByUserMultiID]
+CREATE PROCEDURE [dbo].[alter_entered_by_user_multi_id]
 /****************************************************
 **
-**  Desc:   Calls AlterEnteredByUser for each entry in #TmpIDUpdateList
+**  Desc:   Calls alter_entered_by_user for each entry in #TmpIDUpdateList
 **
 **          The calling procedure must create and populate temporary table #TmpIDUpdateList:
 **              CREATE TABLE #TmpIDUpdateList (
@@ -22,19 +22,20 @@ CREATE PROCEDURE [dbo].[AlterEnteredByUserMultiID]
 **  Auth:   mem
 **  Date:   03/28/2008 mem - Initial version (Ticket: #644)
 **          05/23/2008 mem - Expanded @EntryDescription to varchar(512)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @TargetTableName varchar(128),
-    @TargetIDColumnName varchar(128),
-    @NewUser varchar(128),
-    @ApplyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
-    @EntryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
-    @EntryDateColumnName varchar(128) = 'Entered',
-    @EnteredByColumnName varchar(128) = 'Entered_By',
+    @targetTableName varchar(128),
+    @targetIDColumnName varchar(128),
+    @newUser varchar(128),
+    @applyTimeFilter tinyint = 1,       -- If 1, then filters by the current date and time; if 0, looks for the most recent matching entry
+    @entryTimeWindowSeconds int = 15,   -- Only used if @ApplyTimeFilter = 1
+    @entryDateColumnName varchar(128) = 'Entered',
+    @enteredByColumnName varchar(128) = 'Entered_By',
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0,
-    @PreviewSql tinyint = 0
+    @previewSql tinyint = 0
 )
 AS
     Set nocount on
@@ -123,7 +124,7 @@ AS
 
     ------------------------------------------------
     -- Parse the values in #TmpIDUpdateList
-    -- Call AlterEnteredByUser for each
+    -- Call alter_entered_by_user for each
     ------------------------------------------------
 
     Set @CountUpdated = 0
@@ -142,7 +143,7 @@ AS
             Set @continue = 0
         Else
         Begin
-            Exec @myError = AlterEnteredByUser
+            Exec @myError = alter_entered_by_user
                                 @TargetTableName,
                                 @TargetIDColumnName,
                                 @TargetID,
@@ -173,7 +174,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUserMultiID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[alter_entered_by_user_multi_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AlterEnteredByUserMultiID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[alter_entered_by_user_multi_id] TO [Limited_Table_Write] AS [dbo]
 GO

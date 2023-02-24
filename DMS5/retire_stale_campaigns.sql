@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RetireStaleCampaigns] ******/
+/****** Object:  StoredProcedure [dbo].[retire_stale_campaigns] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RetireStaleCampaigns]
+CREATE PROCEDURE [dbo].[retire_stale_campaigns]
 /****************************************************
 **
 **  Desc:
@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[RetireStaleCampaigns]
 **
 **  Auth:   mem
 **  Date:   06/11/2022
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -84,8 +85,8 @@ AS
 
         If @myRowCount > 0
         Begin
-            Set @message = 'Retired ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' campaigns', ' campaigns') + ' that have not been used in at last 18 months and were created over 7 years ago'
-            exec PostLogEntry 'Normal', @message, 'RetireStaleCampaigns'
+            Set @message = 'Retired ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' campaigns', ' campaigns') + ' that have not been used in at last 18 months and were created over 7 years ago'
+            exec post_log_entry 'Normal', @message, 'retire_stale_campaigns'
         End
     End
 

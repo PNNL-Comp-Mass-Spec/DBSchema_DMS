@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddAnalysisJobGroup] ******/
+/****** Object:  StoredProcedure [dbo].[add_analysis_job_group] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
+CREATE PROCEDURE [dbo].[add_analysis_job_group]
 /****************************************************
 **
 **  Desc:   Adds new analysis jobs for list of datasets
@@ -24,20 +24,20 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          02/21/2007 grk - removed @assignedProcessor  (Ticket #383)
 **          10/11/2007 grk - Expand protein collection list size to 4000 characters (https://prismtrac.pnl.gov/trac/ticket/545)
 **          02/19/2008 grk - add explicit NULL column attribute to #TD
-**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID (Ticket #644)
-**          05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling AlterEventLogEntryUserMultiID
-**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          02/29/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user or alter_event_log_entry_user_multi_id (Ticket #644)
+**          05/27/2008 mem - Increased @EntryTimeWindowSeconds value to 45 seconds when calling alter_event_log_entry_user_multi_id
+**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to validate_analysis_job_parameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          02/27/2009 mem - Expanded @comment to varchar(512)
 **          04/15/2009 grk - handles wildcard DTA folder name in comment field (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          08/05/2009 grk - assign job number from separate table (Ticket #744, http://prismtrac.pnl.gov/trac/ticket/744)
 **          08/05/2009 mem - Now removing duplicates when populating #TD
-**                         - Updated to use GetNewJobIDBlock to obtain job numbers
+**                         - Updated to use get_new_job_id_block to obtain job numbers
 **          09/17/2009 grk - Don't make new jobs for datasets with existing jobs (optional mode) (Ticket #747, http://prismtrac.pnl.gov/trac/ticket/747)
 **          09/19/2009 grk - Improved return message
 **          09/23/2009 mem - Updated to handle requests with state "New (Review Required)"
 **          12/21/2009 mem - Now updating field AJR_jobCount in T_Analysis_Job_Request when @requestID is > 1
 **          04/22/2010 grk - try-catch for error handling
-**          05/05/2010 mem - Now passing @ownerPRN to ValidateAnalysisJobParameters as input/output
+**          05/05/2010 mem - Now passing @ownerUsername to validate_analysis_job_parameters as input/output
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **          01/31/2011 mem - Expanded @datasetList to varchar(max)
 **          02/24/2011 mem - No longer skipping jobs with state "No Export" when finding datasets that have existing, matching jobs
@@ -47,23 +47,23 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          11/08/2012 mem - Now auto-updating @protCollOptionsList to have "seq_direction=forward" if it contains "decoy" and the search tool is MSGFDB and the parameter file does not contain "NoDecoy"
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
-**          03/26/2013 mem - Now calling AlterEventLogEntryUser after updating T_Analysis_Job_Request
-**          03/27/2013 mem - Now auto-updating @ownerPRN to @callingUser if @callingUser maps to a valid user
+**          03/26/2013 mem - Now calling alter_event_log_entry_user after updating T_Analysis_Job_Request
+**          03/27/2013 mem - Now auto-updating @ownerUsername to @callingUser if @callingUser maps to a valid user
 **          06/06/2013 mem - Now setting job state to 19="Special Proc. Waiting" if analysis tool has Use_SpecialProcWaiting enabled
-**          04/08/2015 mem - Now passing @autoUpdateSettingsFileToCentroided and @warning to ValidateAnalysisJobParameters
+**          04/08/2015 mem - Now passing @autoUpdateSettingsFileToCentroided and @warning to validate_analysis_job_parameters
 **          05/28/2015 mem - No longer creating processor group entries (thus @associatedProcessorGroup is ignored)
 **          12/17/2015 mem - Now considering @specialProcessing when looking for existing jobs
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/18/2016 mem - Log errors to T_Log_Entries
 **          05/18/2016 mem - Include the Request ID in error messages
-**          07/12/2016 mem - Pass @priority to ValidateAnalysisJobParameters
+**          07/12/2016 mem - Pass @priority to validate_analysis_job_parameters
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          12/06/2017 mem - Set @allowNewDatasets to 0 when calling ValidateAnalysisJobParameters
+**          12/06/2017 mem - Set @allowNewDatasets to 0 when calling validate_analysis_job_parameters
 **          05/11/2018 mem - When the settings file is Decon2LS_DefSettings.xml, also match jobs with a settings file of 'na'
-**          06/12/2018 mem - Send @maxLength to AppendToText
-**          07/30/2019 mem - Call UpdateCachedJobRequestExistingJobs after creating new jobs
+**          06/12/2018 mem - Send @maxLength to append_to_text
+**          07/30/2019 mem - Call update_cached_job_request_existing_jobs after creating new jobs
 **          03/10/2021 mem - Add @dataPackageID
 **          03/11/2021 mem - Associate new pipeline-based jobs with their analysis job request
 **          03/15/2021 mem - Read setting CacheFolderRootPath from MaxQuant settings files
@@ -80,6 +80,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
 **          06/30/2022 mem - Rename parameter file argument
 **          07/01/2022 mem - Rename auto generated parameters to use ParamFileName and ParamFileStoragePath
 **          07/29/2022 mem - Assure that the parameter file and settings file names are not null
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -92,7 +93,7 @@ CREATE PROCEDURE [dbo].[AddAnalysisJobGroup]
     @organismName varchar(128),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
-    @ownerPRN varchar(32),                          -- Will get updated to @callingUser if @callingUser is valid
+    @ownerUsername varchar(32),                          -- Will get updated to @callingUser if @callingUser is valid
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @requestID int,                                 -- 0 if not associated with a request; otherwise, Request ID in T_Analysis_Job_Request
@@ -131,7 +132,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddAnalysisJobGroup', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_analysis_job_group', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -261,7 +262,7 @@ AS
         SELECT
             DISTINCT LTrim(RTrim(Item))
         FROM
-            MakeTableFromList(@datasetList)
+            make_table_from_list(@datasetList)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -309,18 +310,18 @@ AS
     End
 
     ---------------------------------------------------
-    -- Auto-update @ownerPRN to @callingUser if possible
+    -- Auto-update @ownerUsername to @callingUser if possible
     ---------------------------------------------------
     If Len(@callingUser) > 0
     Begin
-        Declare @newPRN varchar(128) = @callinguser
-        Declare @slashIndex int = CHARINDEX('\', @newPRN)
+        Declare @newUsername varchar(128) = @callinguser
+        Declare @slashIndex int = CHARINDEX('\', @newUsername)
 
         If @slashIndex > 0
-            Set @newPRN = SUBSTRING(@newPRN, @slashIndex+1, LEN(@newPRN))
+            Set @newUsername = SUBSTRING(@newUsername, @slashIndex+1, LEN(@newUsername))
 
-        If Exists (SELECT * FROM T_Users Where U_PRN = @newPRN)
-            Set @ownerPRN = @newPRN
+        If Exists (SELECT * FROM T_Users Where U_PRN = @newUsername)
+            Set @ownerUsername = @newUsername
     End
 
     ---------------------------------------------------
@@ -429,7 +430,7 @@ AS
     Declare @result int = 0
     Declare @warning varchar(255) = ''
     --
-    exec @result = ValidateAnalysisJobParameters
+    exec @result = validate_analysis_job_parameters
                             @toolName = @toolName,
                             @paramFileName = @paramFileName output,
                             @settingsFileName = @settingsFileName output,
@@ -437,24 +438,24 @@ AS
                             @organismName = @organismName,
                             @protCollNameList = @protCollNameList output,
                             @protCollOptionsList = @protCollOptionsList output,
-                            @ownerPRN = @ownerPRN output,
+                            @ownerUsername = @ownerUsername output,
                             @mode = @mode,
                             @userID = @userID output,
                             @analysisToolID = @analysisToolID output,
                             @organismID = @organismID output,
                             @message = @msg output,
                             @AutoRemoveNotReleasedDatasets = 0,
-                            @AutoUpdateSettingsFileToCentroided = 1,
+                            @autoUpdateSettingsFileToCentroided = 1,
                             @allowNewDatasets = 0,
                             @Warning = @warning output,
                             @priority = @priority output
     --
     If @result <> 0
-        RAISERROR ('ValidateAnalysisJobParameters: %s for request %d', 11, 8, @msg, @requestID)
+        RAISERROR ('validate_analysis_job_parameters: %s for request %d', 11, 8, @msg, @requestID)
 
     If Coalesce(@warning, '') <> ''
     Begin
-        Set @comment = dbo.AppendToText(@comment, @warning, 0, '; ', 512)
+        Set @comment = dbo.append_to_text(@comment, @warning, 0, '; ', 512)
     End
 
     ---------------------------------------------------
@@ -696,9 +697,10 @@ AS
             --
             Declare @pipelineJob int = 0
             Declare @resultsFolderName varchar(128)
-            Declare @jobParam varchar(8000) =
+            Declare @jobParam varchar(8000) =    -- TODO: Remove parameter named 'DatasetNum'
                '<Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
                 <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
+                <Param Section="JobParameters" Name="DatasetName" Value="Aggregation" />
                 <Param Section="JobParameters" Name="CacheFolderRootPath" Value="' + @cacheFolderRootPath + '" />
                 <Param Section="JobParameters" Name="SettingsFileName" Value="' + @settingsFileName + '" />
                 <Param Section="MSXMLGenerator" Name="MSXMLGenerator" Value="' + @msXmlGenerator + '" />
@@ -871,14 +873,14 @@ AS
             End
 
             -- Call add_update_local_job_in_broker
-            exec @myError = dbo.S_Pipeline_AddUpdateLocalJob
+            exec @myError = dbo.s_pipeline_add_update_local_job
                                 @job = @pipelineJob output,
                                 @scriptName = @scriptName,
-                                @datasetNum = 'Aggregation',
+                                @datasetName = 'Aggregation',
                                 @priority = @priority,
                                 @jobParam = @jobParam,
                                 @comment = @comment,
-                                @ownerUsername = @ownerPRN,
+                                @ownerUsername = @ownerUsername,
                                 @dataPackageID = @dataPackageID,
                                 @resultsFolderName = @resultsFolderName output,
                                 @mode = @mode,
@@ -888,14 +890,14 @@ AS
 
             if @myError <> 0
             Begin
-                Set @msgForLog = 'Error code ' + Cast(@myError as varchar(12)) + ' S_Pipeline_AddUpdateLocalJob: ' + Coalesce(@message, '??')
-                exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+                Set @msgForLog = 'Error code ' + Cast(@myError as varchar(12)) + ' s_pipeline_add_update_local_job: ' + Coalesce(@message, '??')
+                exec post_log_entry 'Error', @msgForLog, 'add_analysis_job_group'
             End
 
             If @myError = 0 And @pipelineJob > 0
             Begin
                 -- Insert details for the job into T_Analysis_Job
-                exec @backfillError = dbo.BackfillPipelineJobs @infoOnly = 0, @jobsToProcess = 0, @startJob = @pipelineJob, @message = @msgForLog output
+                exec @backfillError = dbo.backfill_pipeline_jobs @infoOnly = 0, @jobsToProcess = 0, @startJob = @pipelineJob, @message = @msgForLog output
 
                 If @backfillError = 0
                 Begin
@@ -916,8 +918,8 @@ AS
                 End
                 Else
                 Begin
-                    Set @msgForLog = 'Error code ' + Cast(@backfillError as varchar(12)) + ' calling BackfillPipelineJobs: ' + Coalesce(@msgForLog, '??')
-                    exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+                    Set @msgForLog = 'Error code ' + Cast(@backfillError as varchar(12)) + ' calling backfill_pipeline_jobs: ' + Coalesce(@msgForLog, '??')
+                    exec post_log_entry 'Error', @msgForLog, 'add_analysis_job_group'
                 End
             End
 
@@ -942,10 +944,10 @@ AS
 
             If Len(@callingUser) > 0
             Begin
-                -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+                -- @callingUser is defined; call alter_event_log_entry_user or alter_event_log_entry_user_multi_id
                 -- to alter the Entered_By field in T_Event_Log
                 --
-                Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+                Exec alter_event_log_entry_user 12, @requestID, @requestStateID, @callingUser
             End
 
             Set @message = ' Created aggregation job ' + Cast(@pipelineJob as varchar(12)) + ' for '
@@ -977,7 +979,7 @@ AS
         ---------------------------------------------------
         --
         Declare @transName varchar(32)
-        Set @transName = 'AddAnalysisJobGroup'
+        Set @transName = 'add_analysis_job_group'
         Begin transaction @transName
 
         ---------------------------------------------------
@@ -1048,10 +1050,10 @@ AS
 
                 If Len(@callingUser) > 0
                 Begin
-                    -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+                    -- @callingUser is defined; call alter_event_log_entry_user or alter_event_log_entry_user_multi_id
                     -- to alter the Entered_By field in T_Event_Log
                     --
-                    Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+                    Exec alter_event_log_entry_user 12, @requestID, @requestStateID, @callingUser
                 End
             End
             Else
@@ -1066,10 +1068,10 @@ AS
         -- in temporary table
         ---------------------------------------------------
 
-        -- Stored procedure GetNewJobIDBlock will populate #TmpNewJobIDs
+        -- Stored procedure get_new_job_id_block will populate #TmpNewJobIDs
         CREATE TABLE #TmpNewJobIDs (ID int)
 
-        exec @myError = GetNewJobIDBlock @numDatasets, 'Job created in DMS'
+        exec @myError = get_new_job_id_block @numDatasets, 'Job created in DMS'
         If @myError <> 0
             RAISERROR ('Error obtaining block of Job IDs', 11, 10)
 
@@ -1086,7 +1088,7 @@ AS
 
         -- Make sure @jobIDStart and @jobIDEnd define a contiguous block of jobs
         If @jobIDEnd - @jobIDStart + 1 <> @numDatasets
-            RAISERROR ('GetNewJobIDBlock did not return a contiguous block of jobs; requested %d jobs but job range is %d to %d', 11, 11, @numDatasets, @jobIDStart, @jobIDEnd)
+            RAISERROR ('get_new_job_id_block did not return a contiguous block of jobs; requested %d jobs but job range is %d to %d', 11, 11, @numDatasets, @jobIDStart, @jobIDEnd)
 
         -- The JobQ subquery uses Row_Number() and @jobIDStart to define the new job numbers for each entry in #TD
         UPDATE #TD
@@ -1139,7 +1141,7 @@ AS
             #TD.Dataset_ID,
             REPLACE(@comment, '#DatasetNum#', CONVERT(varchar(12), #TD.Dataset_ID)),
             @specialProcessing,
-            @ownerPRN,
+            @ownerUsername,
             @batchID,
             @jobStateID,
             @requestID,
@@ -1162,10 +1164,10 @@ AS
 
                 If Len(@callingUser) > 0
                 Begin
-                    -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+                    -- @callingUser is defined; call alter_event_log_entry_user or alter_event_log_entry_user_multi_id
                     -- to alter the Entered_By field in T_Event_Log
                     --
-                    Exec AlterEventLogEntryUser 12, @requestID, @requestStateID, @callingUser
+                    Exec alter_event_log_entry_user 12, @requestID, @requestStateID, @callingUser
                 End
             End
             --
@@ -1253,17 +1255,17 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-            Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+            Exec update_cached_job_request_existing_jobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
 
         End
 
         If Len(@callingUser) > 0
         Begin
-            -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+            -- @callingUser is defined; call alter_event_log_entry_user or alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
             --
             If @batchID = 0
-                Exec AlterEventLogEntryUser 5, @jobID, @jobStateID, @callingUser
+                Exec alter_event_log_entry_user 5, @jobID, @jobStateID, @callingUser
             Else
             Begin
                 -- Populate a temporary table with the list of Job IDs just created
@@ -1278,7 +1280,7 @@ AS
                 FROM T_Analysis_Job
                 WHERE AJ_batchID = @batchID
 
-                Exec AlterEventLogEntryUserMultiID 5, @jobStateID, @callingUser, @EntryTimeWindowSeconds=45
+                Exec alter_event_log_entry_user_multi_id 5, @jobStateID, @callingUser, @EntryTimeWindowSeconds=45
             End
         End
     End -- </add>
@@ -1316,7 +1318,7 @@ Explain:
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Set @msgForLog = ERROR_MESSAGE()
 
@@ -1326,18 +1328,18 @@ Explain:
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @msgForLog, 'AddAnalysisJobGroup'
+            Exec post_log_entry 'Error', @msgForLog, 'add_analysis_job_group'
         End
     End Catch
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_analysis_job_group] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_analysis_job_group] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddAnalysisJobGroup] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_analysis_job_group] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddAnalysisJobGroup] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_analysis_job_group] TO [Limited_Table_Write] AS [dbo]
 GO

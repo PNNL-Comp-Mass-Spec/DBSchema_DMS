@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetArchiveUpdateTaskComplete] ******/
+/****** Object:  StoredProcedure [dbo].[set_archive_update_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskComplete]
+CREATE PROCEDURE [dbo].[set_archive_update_task_complete]
 /****************************************************
 **
 **  Desc:
@@ -13,21 +13,22 @@ CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskComplete]
 **  Return values: 0: success, otherwise, error code
 **
 **  Parameters:
-**    @datasetNum                dataset for which archive task is being completed
+**    @datasetName               dataset for which archive task is being completed
 **    @completionCode            0->success, 1->failure, anything else ->no intermediate files
 **
 **  Auth:   grk
 **  Date:   12/03/2002
 **          12/06/2002 dac - Corrected state values used in update state test, update complete output
 **          11/30/2007 dac - Removed unused processor name parameter
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/16/2014 mem - Now changing archive state to 3 if it is 14
 **          07/09/2022 mem - Tabs to spaces
 **          01/10/2023 mem - Rename view to V_Dataset_Archive_Ex and use new column name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
+    @datasetName varchar(128),
     @completionCode int = 0,
     @message varchar(512) output
 )
@@ -52,14 +53,14 @@ AS
     SELECT @datasetID = Dataset_ID,
            @updateState = Update_State
     FROM V_Dataset_Archive_Ex
-    WHERE Dataset = @datasetNum
+    WHERE Dataset = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0 or @myRowCount <> 1
     begin
         set @myError = 51220
-        set @message = 'Error trying to get dataset ID for dataset "' + @datasetNum + '"'
+        set @message = 'Error trying to get dataset ID for dataset "' + @datasetName + '"'
         goto done
     end
 
@@ -69,7 +70,7 @@ AS
     if @updateState <> 3
     begin
         set @myError = 51250
-        set @message = 'Archive update state for dataset "' + @datasetNum + '" is not correct'
+        set @message = 'Archive update state for dataset "' + @datasetName + '" is not correct'
         goto done
     end
 
@@ -125,15 +126,15 @@ Done:
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'Dataset: ' + @datasetNum
-    Exec PostUsageLogEntry 'SetArchiveUpdateTaskComplete', @UsageMessage
+    Set @UsageMessage = 'Dataset: ' + @datasetName
+    Exec post_usage_log_entry 'set_archive_update_task_complete', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_archive_update_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[SetArchiveUpdateTaskComplete] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_archive_update_task_complete] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskComplete] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_archive_update_task_complete] TO [Limited_Table_Write] AS [dbo]
 GO

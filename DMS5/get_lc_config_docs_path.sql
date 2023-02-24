@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetLCConfigDocsPath] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_lc_config_docs_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetLCConfigDocsPath]
+CREATE FUNCTION [dbo].[get_lc_config_docs_path]
 /****************************************************
 **
 **  Desc:
@@ -15,7 +15,8 @@ CREATE FUNCTION [dbo].[GetLCConfigDocsPath]
 **  Parameters:
 **
 **  Auth:   grk
-**  Date:   3/17/2006
+**  Date:   03/17/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,5 +45,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetLCConfigDocsPath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_lc_config_docs_path] TO [DDL_Viewer] AS [dbo]
 GO

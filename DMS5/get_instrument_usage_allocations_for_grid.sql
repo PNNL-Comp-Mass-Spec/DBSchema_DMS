@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetInstrumentUsageAllocationsForGrid] ******/
+/****** Object:  StoredProcedure [dbo].[get_instrument_usage_allocations_for_grid] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetInstrumentUsageAllocationsForGrid]
+CREATE PROCEDURE [dbo].[get_instrument_usage_allocations_for_grid]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[GetInstrumentUsageAllocationsForGrid]
 **  Date:   01/15/2013 grk - Initial release
 **          01/16/2013 grk - Single fiscal year
 **          10/31/2022 mem - Use new column name in view V_Instrument_Allocation_List_Report
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -41,7 +42,7 @@ AS
     --
     INSERT INTO #PROPOSALS (Item)
     SELECT Item
-    FROM dbo.MakeTableFromList(@itemList)
+    FROM dbo.make_table_from_list(@itemList)
 
 
     -----------------------------------------
@@ -70,9 +71,9 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_usage_allocations_for_grid] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_instrument_usage_allocations_for_grid] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetInstrumentUsageAllocationsForGrid] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_instrument_usage_allocations_for_grid] TO [DMS2_SP_User] AS [dbo]
 GO

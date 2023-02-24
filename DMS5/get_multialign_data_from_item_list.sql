@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetMultiAlignDataFromItemList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_multialign_data_from_item_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetMultiAlignDataFromItemList]
+CREATE FUNCTION [dbo].[get_multialign_data_from_item_list]
 /****************************************************
 **  Desc:
 **
@@ -11,11 +11,12 @@ CREATE FUNCTION [dbo].[GetMultiAlignDataFromItemList]
 **
 **  Auth:   grk
 **  Date:   02/05/2013 grk - initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SourceType VARCHAR(32), -- 'JobID, DatasetName, DataPackageID, DataPackageName
-    @SourceList TEXT
+    @sourceType VARCHAR(32), -- 'JobID, DatasetName, DataPackageID, DataPackageName
+    @sourceList TEXT
 )
 RETURNS
 @datasets TABLE (
@@ -50,7 +51,7 @@ BEGIN
     )
     INSERT INTO @items (Item)
     SELECT Item
-    FROM dbo.MakeTableFromList(@SourceList)
+    FROM dbo.make_table_from_list(@SourceList)
 
     IF(@SourceType = 'JobID')
     BEGIN
@@ -83,5 +84,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMultiAlignDataFromItemList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_multialign_data_from_item_list] TO [DDL_Viewer] AS [dbo]
 GO

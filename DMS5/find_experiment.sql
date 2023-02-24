@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindExperiment] ******/
+/****** Object:  StoredProcedure [dbo].[find_experiment] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER OFF
 GO
-CREATE PROCEDURE [dbo].[FindExperiment]
+CREATE PROCEDURE [dbo].[find_experiment]
 /****************************************************
 **
 **  Desc:
@@ -17,21 +17,22 @@ CREATE PROCEDURE [dbo].[FindExperiment]
 **  Auth:   grk
 **  Date:   07/06/2005
 **          12/20/2006 mem - Now querying V_Find_Experiment using dynamic SQL (Ticket #349)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Experiment varchar(50) = '',
-    @Researcher varchar(50) = '',
-    @Organism varchar(50) = '',
-    @Reason varchar(500) = '',
-    @Comment varchar(500) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
-    @Campaign varchar(50) = '',
-    @CellCultures varchar(1024) = '',
-    @ID varchar(20) = '',
+    @experiment varchar(50) = '',
+    @researcher varchar(50) = '',
+    @organism varchar(50) = '',
+    @reason varchar(500) = '',
+    @comment varchar(500) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
+    @campaign varchar(50) = '',
+    @biomaterials varchar(1024) = '',
+    @id varchar(20) = '',
     @message varchar(512) output
 )
 AS
@@ -82,7 +83,7 @@ AS
     SET @iCampaign = '%' + @Campaign + '%'
     --
     DECLARE @iCellCultures varchar(1024)
-    SET @iCellCultures = '%' + @CellCultures + '%'
+    SET @iCellCultures = '%' + @biomaterials + '%'
     --
     DECLARE @iID int
     SET @iID = CONVERT(int, @ID)
@@ -112,7 +113,7 @@ AS
 
     If Len(@Campaign) > 0
         Set @W = @W + ' AND ([Campaign] LIKE ''' + @iCampaign + ''' )'
-    If Len(@CellCultures) > 0
+    If Len(@biomaterials) > 0
         Set @W = @W + ' AND ([Cell Cultures] LIKE ''' + @iCellCultures + ''' )'
     If Len(@ID) > 0
         Set @W = @W + ' AND ([ID] = ' + Convert(varchar(19), @iID) + ' )'
@@ -142,11 +143,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindExperiment] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_experiment] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExperiment] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_experiment] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExperiment] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_experiment] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindExperiment] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_experiment] TO [Limited_Table_Write] AS [dbo]
 GO

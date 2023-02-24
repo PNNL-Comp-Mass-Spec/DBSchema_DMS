@@ -1,15 +1,16 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDatasetPredefineJobCount] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dataset_predefine_job_count] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDatasetPredefineJobCount]
+CREATE FUNCTION [dbo].[get_dataset_predefine_job_count]
 /****************************************************
 **
 **  Desc: Returns a count of the number of predefined jobs created for this dataset
 **
 **  Auth:   mem
 **  Date:   07/25/2017 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,5 +29,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetPredefineJobCount] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_predefine_job_count] TO [DDL_Viewer] AS [dbo]
 GO

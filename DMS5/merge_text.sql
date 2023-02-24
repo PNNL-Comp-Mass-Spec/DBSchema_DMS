@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[MergeText] ******/
+/****** Object:  UserDefinedFunction [dbo].[merge_text] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[MergeText]
+CREATE FUNCTION [dbo].[merge_text]
 /****************************************************
 **  Merges together the text in two variables
 **  However, if the same text is present in each,
@@ -11,11 +11,12 @@ CREATE FUNCTION [dbo].[MergeText]
 **
 **  Auth:   mem
 **  Date:   08/03/2007
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @Text1 varchar(2048),
-    @Text2 varchar(2048)
+    @text1 varchar(2048),
+    @text2 varchar(2048)
 )
 RETURNS varchar(8000)
 AS
@@ -40,7 +41,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MergeText] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[merge_text] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[MergeText] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[merge_text] TO [public] AS [dbo]
 GO

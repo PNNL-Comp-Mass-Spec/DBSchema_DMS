@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindAnalysisJob] ******/
+/****** Object:  StoredProcedure [dbo].[find_analysis_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindAnalysisJob]
+CREATE PROCEDURE [dbo].[find_analysis_job]
 /****************************************************
 **
 **  Desc:
@@ -24,34 +24,35 @@ CREATE PROCEDURE [dbo].[FindAnalysisJob]
 **          01/24/2008 mem - Switched the @i_ variables to use the datetime data type (Ticket #225)
 **          06/30/2022 mem - Use new parameter file column name
 **                         - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Job varchar(20) = '',
-    @Pri varchar(20) = '',
-    @State varchar(32) = '',
-    @Tool varchar(64) = '',
-    @Dataset varchar(128) = '',
-    @Campaign varchar(50) = '',
-    @Experiment varchar(50) = '',
-    @Instrument varchar(24) = '',
-    @ParamFile varchar(255) = '',
-    @SettingsFile varchar(255) = '',
-    @Organism varchar(50) = '',
-    @OrganismDB varchar(64) = '',
+    @job varchar(20) = '',
+    @priority varchar(20) = '',
+    @state varchar(32) = '',
+    @tool varchar(64) = '',
+    @dataset varchar(128) = '',
+    @campaign varchar(50) = '',
+    @experiment varchar(50) = '',
+    @instrument varchar(24) = '',
+    @paramFile varchar(255) = '',
+    @settingsFile varchar(255) = '',
+    @organism varchar(50) = '',
+    @organismDB varchar(64) = '',
     @proteinCollectionList varchar(512) = '',
     @proteinOptionsList varchar(256) = '',
-    @Comment varchar(255) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
-    @Started_After varchar(20) = '',
-    @Started_Before varchar(20) = '',
-    @Finished_After varchar(20) = '',
-    @Finished_Before varchar(20) = '',
-    @Processor varchar(64) = '',
-    @RunRequest varchar(255) = '',
+    @comment varchar(255) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
+    @started_After varchar(20) = '',
+    @started_Before varchar(20) = '',
+    @finished_After varchar(20) = '',
+    @finished_Before varchar(20) = '',
+    @processor varchar(64) = '',
+    @runRequest varchar(255) = '',
     @message varchar(512) output
 )
 AS
@@ -82,7 +83,7 @@ AS
     SET @i_Job = CONVERT(int, @Job)
     --
     DECLARE @i_Pri int
-    SET @i_Pri = CONVERT(int, @Pri)
+    SET @i_Pri = CONVERT(int, @priority)
     --
     DECLARE @i_State varchar(32)
     SET @i_State = '%' + @State + '%'
@@ -153,7 +154,7 @@ AS
     Set @W = ''
     If Len(@Job) > 0
         Set @W = @W + ' AND ([Job] = ' + Convert(varchar(19), @i_Job) + ' )'
-    If Len(@Pri) > 0
+    If Len(@priority) > 0
         Set @W = @W + ' AND ([Pri] = ' + Convert(varchar(19), @i_Pri) + ' )'
 
     If Len(@State) > 0
@@ -229,11 +230,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindAnalysisJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_analysis_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindAnalysisJob] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_analysis_job] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindAnalysisJob] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_analysis_job] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindAnalysisJob] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_analysis_job] TO [Limited_Table_Write] AS [dbo]
 GO

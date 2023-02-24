@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[DecodeBase64] ******/
+/****** Object:  UserDefinedFunction [dbo].[decode_base64] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[DecodeBase64]
+CREATE FUNCTION [dbo].[decode_base64]
 /****************************************************
 **
 **  Desc:
@@ -13,10 +13,11 @@ CREATE FUNCTION [dbo].[DecodeBase64]
 **
 **  Auth:   mem
 **  Date:   09/12/2013
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @EncodedText varchar(max)
+    @encodedText varchar(max)
 )
 RETURNS varchar(max)
 AS
@@ -39,5 +40,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DecodeBase64] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[decode_base64] TO [DDL_Viewer] AS [dbo]
 GO

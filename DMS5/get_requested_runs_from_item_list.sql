@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetRequestedRunsFromItemList] ******/
+/****** Object:  StoredProcedure [dbo].[get_requested_runs_from_item_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetRequestedRunsFromItemList]
+CREATE PROCEDURE [dbo].[get_requested_runs_from_item_list]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[GetRequestedRunsFromItemList]
 **          03/12/2012 grk - added 'Data_Package_ID' mode
 **          01/05/2023 mem - Use new column name in V_Requested_Run_Unified_List
 **          01/23/2023 mem - Add comment with list of supported item types
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -58,7 +59,7 @@ AS
     --
     INSERT INTO #ITEMS (Item)
     SELECT Item
-    FROM dbo.MakeTableFromList(@itemList)
+    FROM dbo.make_table_from_list(@itemList)
 
     -----------------------------------------
     -- Validate the list items
@@ -179,9 +180,9 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_runs_from_item_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetRequestedRunsFromItemList] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_requested_runs_from_item_list] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetRequestedRunsFromItemList] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_requested_runs_from_item_list] TO [Limited_Table_Write] AS [dbo]
 GO

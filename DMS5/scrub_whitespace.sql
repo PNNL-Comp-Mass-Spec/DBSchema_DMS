@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ScrubWhitespace] ******/
+/****** Object:  UserDefinedFunction [dbo].[scrub_whitespace] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ScrubWhitespace]
+CREATE FUNCTION [dbo].[scrub_whitespace]
 /****************************************************
 **
 **  Desc: Removes whitespace (including Cr, Lf, and tab) from the start and end of text
@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[ScrubWhitespace]
 **
 **  Auth:   mem
 **  Date:   07/01/2014 mem - Initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -71,5 +72,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ScrubWhitespace] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[scrub_whitespace] TO [DDL_Viewer] AS [dbo]
 GO

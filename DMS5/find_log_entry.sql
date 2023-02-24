@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindLogEntry] ******/
+/****** Object:  StoredProcedure [dbo].[find_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindLogEntry]
+CREATE PROCEDURE [dbo].[find_log_entry]
 /****************************************************
 **
 **  Desc:
@@ -19,17 +19,18 @@ CREATE PROCEDURE [dbo].[FindLogEntry]
 **                         - Use sp_executesql
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          01/05/2023 mem - Use new column names in V_Log_Report
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @Entry varchar(20) = '',
-    @PostedBy varchar(64) = '',
-    @PostingTime_After varchar(20) = '',
-    @PostingTime_Before varchar(20) = '',
-    @EntryType varchar(32) = '',
-    @MessageText varchar(500) = '',
+    @entry varchar(20) = '',
+    @postedBy varchar(64) = '',
+    @postingTime_After varchar(20) = '',
+    @postingTime_Before varchar(20) = '',
+    @entryType varchar(32) = '',
+    @messageText varchar(500) = '',
     @message varchar(512) ='' output
 )
 AS
@@ -107,11 +108,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_log_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_log_entry] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindLogEntry] TO [DMSReader] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_log_entry] TO [DMSReader] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindLogEntry] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_log_entry] TO [Limited_Table_Write] AS [dbo]
 GO

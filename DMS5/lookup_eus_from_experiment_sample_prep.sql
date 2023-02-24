@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LookupEUSFromExperimentSamplePrep] ******/
+/****** Object:  StoredProcedure [dbo].[lookup_eus_from_experiment_sample_prep] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LookupEUSFromExperimentSamplePrep]
+CREATE PROCEDURE [dbo].[lookup_eus_from_experiment_sample_prep]
 /****************************************************
 **
 **  Desc:
@@ -17,10 +17,11 @@ CREATE PROCEDURE [dbo].[LookupEUSFromExperimentSamplePrep]
 **          07/16/2007 grk - Added check for "(lookup)"
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **          05/25/2021 mem - Change @eusUsageType to USER_REMOTE if the prep request has UsageType USER_REMOTE, even if @eusUsageType is already USER_ONSITE
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @experimentNum varchar(64),
+    @experimentName varchar(64),
     @eusUsageType varchar(50) output,       -- If this is "(lookup)", will override with the EUS info from the sample prep request (if found)
     @eusProposalID varchar(10) output,      -- If this is "(lookup)", will override with the EUS info from the sample prep request (if found)
     @eusUsersList varchar(1024) output,     -- If this is "(lookup)", will override with the EUS info from the sample prep request (if found)
@@ -46,7 +47,7 @@ AS
     --
     SELECT @prepRequestID = EX_sample_prep_request_ID
     FROM T_Experiments
-    WHERE Experiment_Num = @experimentNum
+    WHERE Experiment_Num = @experimentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -109,7 +110,7 @@ AS
     End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_eus_from_experiment_sample_prep] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LookupEUSFromExperimentSamplePrep] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[lookup_eus_from_experiment_sample_prep] TO [Limited_Table_Write] AS [dbo]
 GO

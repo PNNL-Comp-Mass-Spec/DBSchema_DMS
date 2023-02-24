@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedDatasetFolderPaths] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_dataset_folder_paths] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
+CREATE PROCEDURE [dbo].[update_cached_dataset_folder_paths]
 /****************************************************
 **
 **  Desc:   Updates T_Cached_Dataset_Folder_Paths
@@ -14,9 +14,10 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetFolderPaths]
 **  Date:   11/14/2013 mem - Initial version
 **          11/15/2013 mem - Added parameter
 **          11/19/2013 mem - Tweaked logging
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          02/27/2019 mem - Use T_Storage_Path_Hosts instead of SP_URL
 **          09/06/2022 mem - When @processingMode is 3, update datasets in batches (to decrease the likelihood of deadlock issues)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -83,7 +84,7 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If @myRowCount > 0
-        Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.CheckPlural(@myRowCount, 'dataset', 'datasets')
+        Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.check_plural(@myRowCount, 'dataset', 'datasets')
 
     SELECT @datasetIdMax = Max(Dataset_ID)
     FROM T_Cached_Dataset_Links
@@ -136,8 +137,8 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
-            Set @message = dbo.AppendToText(@message,
-                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on SPath_RowVersion',
+            Set @message = dbo.append_to_text(@message,
+                                            Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' dataset differs', ' datasets differ') + ' on SPath_RowVersion',
                                             0, '; ', 512)
 
         ------------------------------------------------
@@ -155,8 +156,8 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount > 0
-            Set @message = dbo.AppendToText(@message,
-                                            Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion',
+            Set @message = dbo.append_to_text(@message,
+                                            Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' dataset differs', ' datasets differ') + ' on DS_RowVersion',
                                             0, '; ', 512)
 
     End
@@ -177,14 +178,14 @@ AS
         UPDATE T_Cached_Dataset_Folder_Paths
         SET DS_RowVersion = DS.DS_RowVersion,
             SPath_RowVersion = SPath.SPath_RowVersion,
-            Dataset_Folder_Path = ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client,
-                                         dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))), ''),
+            Dataset_Folder_Path = ISNULL(dbo.combine_paths(SPath.SP_vol_name_client,
+                                         dbo.combine_paths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))), ''),
             Archive_Folder_Path = CASE
                                       WHEN AP.AP_network_share_path IS NULL THEN ''
-                                      ELSE dbo.udfCombinePaths(AP.AP_network_share_path,
+                                      ELSE dbo.combine_paths(AP.AP_network_share_path,
                                                                ISNULL(DS.DS_folder_name, DS.Dataset_Num))
                                   END,
-            MyEMSL_Path_Flag = '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)),
+            MyEMSL_Path_Flag = '\\MyEMSL\' + dbo.combine_paths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)),
             -- Old: Dataset_URL =             SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/',
             Dataset_URL = CASE WHEN SPath.SP_function Like '%inbox%'
                           THEN ''
@@ -250,14 +251,14 @@ AS
                 SELECT DS.Dataset_ID,
                        DS.DS_RowVersion AS DS_RowVersion,
                        SPath.SPath_RowVersion AS SPath_RowVersion,
-                       ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client,
-                              dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))), '') AS Dataset_Folder_Path,
+                       ISNULL(dbo.combine_paths(SPath.SP_vol_name_client,
+                              dbo.combine_paths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num))), '') AS Dataset_Folder_Path,
                        CASE
                            WHEN AP.AP_network_share_path IS NULL THEN ''
-                           ELSE dbo.udfCombinePaths(AP.AP_network_share_path,
+                           ELSE dbo.combine_paths(AP.AP_network_share_path,
                                                     ISNULL(DS.DS_folder_name, DS.Dataset_Num))
                        END AS Archive_Folder_Path,
-                       '\\MyEMSL\' + dbo.udfCombinePaths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)) AS MyEMSL_Path_Flag,
+                       '\\MyEMSL\' + dbo.combine_paths(SPath.SP_path, ISNULL(DS.DS_folder_name, DS.Dataset_Num)) AS MyEMSL_Path_Flag,
                        -- Old:             SPath.SP_URL + ISNULL(DS.DS_folder_name, DS.Dataset_Num) + '/' AS Dataset_URL
                        CASE WHEN SPath.SP_function Like '%inbox%'
                             THEN ''
@@ -320,16 +321,16 @@ AS
 
     If @myRowCount > 0
     Begin
-        Set @message = dbo.AppendToText(@message,
-                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Folder_Paths',
+        Set @message = dbo.append_to_text(@message,
+                                        'Updated ' + Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' row', ' rows') + ' in T_Cached_Dataset_Folder_Paths',
                                         0, '; ', 512)
 
-        -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetFolderPaths'
+        -- Exec post_log_entry 'Debug', @message, 'update_cached_dataset_folder_paths'
     End
 
 Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedDatasetFolderPaths] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_dataset_folder_paths] TO [DDL_Viewer] AS [dbo]
 GO

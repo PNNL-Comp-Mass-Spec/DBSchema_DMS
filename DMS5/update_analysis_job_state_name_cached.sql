@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateAnalysisJobStateNameCached] ******/
+/****** Object:  StoredProcedure [dbo].[update_analysis_job_state_name_cached] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateAnalysisJobStateNameCached]
+CREATE PROCEDURE [dbo].[update_analysis_job_state_name_cached]
 /****************************************************
 **
 **  Desc: Updates column AJ_StateNameCached in T_Analysis_Job
@@ -15,14 +15,15 @@ CREATE PROCEDURE [dbo].[UpdateAnalysisJobStateNameCached]
 **
 **  Auth:   mem
 **  Date:   12/12/2007 mem - Initial version (Ticket #585)
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/03/2014 mem - Now showing @message when @infoOnly > 0
 **          05/27/2014 mem - Now using a temporary table to track the jobs that need to be updated (due to deadlock issues)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @JobStart int = 0,
-    @JobFinish int = 0,
+    @jobStart int = 0,
+    @jobFinish int = 0,
     @message varchar(512) = '' output,
     @infoOnly tinyint = 0
 )
@@ -126,12 +127,12 @@ Done:
     Set @UsageMessage = Convert(varchar(12), @JobCount) + ' jobs updated'
 
     If @infoOnly = 0
-        Exec PostUsageLogEntry 'UpdateAnalysisJobStateNameCached', @UsageMessage
+        Exec post_usage_log_entry 'update_analysis_job_state_name_cached', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobStateNameCached] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_state_name_cached] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateAnalysisJobStateNameCached] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_analysis_job_state_name_cached] TO [Limited_Table_Write] AS [dbo]
 GO

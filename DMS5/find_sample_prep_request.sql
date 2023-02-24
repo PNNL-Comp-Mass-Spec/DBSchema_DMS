@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindSamplePrepRequest] ******/
+/****** Object:  StoredProcedure [dbo].[find_sample_prep_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindSamplePrepRequest]
+CREATE PROCEDURE [dbo].[find_sample_prep_request]
 /****************************************************
 **
 **  Desc:
@@ -18,28 +18,29 @@ CREATE PROCEDURE [dbo].[FindSamplePrepRequest]
 **  Date:   05/15/2006
 **          12/20/2006 mem - Now querying V_Find_Sample_Prep_Request using dynamic SQL (Ticket #349)
 **          03/14/2014 mem - Expanded @PrepMethod to varchar(512)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @RequestID varchar(20) = '',
-    @RequestName varchar(128) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
-    @EstComplete_After varchar(20) = '',
-    @EstComplete_Before varchar(20) = '',
-    @Priority varchar(20) = '',
-    @State varchar(32) = '',
-    @Reason varchar(512) = '',
-    @PrepMethod varchar(512) = '',
-    @RequestedPersonnel varchar(32) = '',
-    @AssignedPersonnel varchar(256) = '',
-    @Requester varchar(85) = '',
-    @Organism varchar(128) = '',
-    @BiohazardLevel varchar(12) = '',
-    @Campaign varchar(128) = '',
-    @Comment varchar(1024) = '',
+    @requestID varchar(20) = '',
+    @requestName varchar(128) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
+    @estComplete_After varchar(20) = '',
+    @estComplete_Before varchar(20) = '',
+    @priority varchar(20) = '',
+    @state varchar(32) = '',
+    @reason varchar(512) = '',
+    @prepMethod varchar(512) = '',
+    @requestedPersonnel varchar(32) = '',
+    @assignedPersonnel varchar(256) = '',
+    @requester varchar(85) = '',
+    @organism varchar(128) = '',
+    @biohazardLevel varchar(12) = '',
+    @campaign varchar(128) = '',
+    @comment varchar(1024) = '',
     @message varchar(512) output
 )
 AS
@@ -186,11 +187,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindSamplePrepRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_sample_prep_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindSamplePrepRequest] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_sample_prep_request] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindSamplePrepRequest] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_sample_prep_request] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindSamplePrepRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_sample_prep_request] TO [Limited_Table_Write] AS [dbo]
 GO

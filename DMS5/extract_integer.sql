@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ExtractInteger] ******/
+/****** Object:  UserDefinedFunction [dbo].[extract_integer] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ExtractInteger]
+CREATE FUNCTION [dbo].[extract_integer]
 /****************************************************
 **
 **  Desc: Returns the first contiguous integer in the text
@@ -18,6 +18,7 @@ CREATE FUNCTION [dbo].[ExtractInteger]
 **
 **  Auth:   mem
 **  Date:   04/26/2016 mem - Initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -69,5 +70,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExtractInteger] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[extract_integer] TO [DDL_Viewer] AS [dbo]
 GO

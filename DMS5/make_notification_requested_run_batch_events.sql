@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MakeNotificationRequestedRunBatchEvents] ******/
+/****** Object:  StoredProcedure [dbo].[make_notification_requested_run_batch_events] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MakeNotificationRequestedRunBatchEvents]
+CREATE PROCEDURE [dbo].[make_notification_requested_run_batch_events]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_Bogus
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[MakeNotificationRequestedRunBatchEvents]
 **  Date:   03/26/2010
 **          03/30/2010 grk - added intermediate table
 **          04/01/2010 grk - added Latest_Suspect_Dataset
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -250,7 +251,7 @@ SELECT * FROM #ENV
         AND Entered < @window
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationRequestedRunBatchEvents] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_notification_requested_run_batch_events] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MakeNotificationRequestedRunBatchEvents] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_notification_requested_run_batch_events] TO [Limited_Table_Write] AS [dbo]
 GO

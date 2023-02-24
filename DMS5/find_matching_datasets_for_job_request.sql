@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindMatchingDatasetsForJobRequest] ******/
+/****** Object:  StoredProcedure [dbo].[find_matching_datasets_for_job_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindMatchingDatasetsForJobRequest]
+CREATE PROCEDURE [dbo].[find_matching_datasets_for_job_request]
 /****************************************************
 **
 **  Desc:
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[FindMatchingDatasetsForJobRequest]
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          06/09/2017 mem - Add support for state 13 (inactive)
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ AS
         )
         --
         insert into @requestDatasets(dataset)
-        select Item from dbo.MakeTableFromList(@datasetList)
+        select Item from dbo.make_table_from_list(@datasetList)
 
         ---------------------------------------------------
         -- get list of datasets that have jobs that match
@@ -133,9 +134,9 @@ AS
         where not dataset in (select dataset from @matchingJobDatasets)
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindMatchingDatasetsForJobRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_matching_datasets_for_job_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindMatchingDatasetsForJobRequest] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_matching_datasets_for_job_request] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindMatchingDatasetsForJobRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_matching_datasets_for_job_request] TO [Limited_Table_Write] AS [dbo]
 GO

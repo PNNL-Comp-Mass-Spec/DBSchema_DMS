@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateMaterialContainer] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_material_container] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
+CREATE PROCEDURE [dbo].[add_update_material_container]
 /****************************************************
 **
 **  Desc: Adds new or edits an existing material container
@@ -18,12 +18,13 @@ CREATE PROCEDURE [dbo].[AddUpdateMaterialContainer]
 **          11/25/2008 grk - Corrected update not to check for room if location doesn't change
 **          07/28/2011 grk - Added owner field
 **          08/01/2011 grk - Always create new container if mode is "add"
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Validate inputs
 **          12/19/2018 mem - Standardize the researcher name
 **          11/11/2019 mem - If @researcher is 'na' or 'none', store an empty string in the Researcher column of T_Material_Containers
 **          07/02/2021 mem - Require that the researcher is a valid DMS user
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -54,7 +55,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateMaterialContainer', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_material_container', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -107,7 +108,7 @@ AS
 
     If @container In ('na', 'Staging', '-80_Staging', 'Met_Staging')
     Begin
-        Set @message = 'The "' + @container + '" container cannot be updated via the website; contact a DMS admin (see AddUpdateMaterialContainer)'
+        Set @message = 'The "' + @container + '" container cannot be updated via the website; contact a DMS admin (see add_update_material_container)'
         Return 51003
     End
 
@@ -133,7 +134,7 @@ AS
     ---------------------------------------------------
 
     Declare @matchCount int
-    Declare @researcherPRN varchar(64)
+    Declare @researcherUsername varchar(64)
     Declare @userID Int
 
     If @researcher In ('', 'na', 'none')
@@ -142,7 +143,7 @@ AS
         Return 51011
     End
 
-    exec AutoResolveNameToPRN @researcher, @matchCount output, @researcherPRN output, @userID output
+    exec auto_resolve_name_to_username @researcher, @matchCount output, @researcherUsername output, @userID output
 
     If @matchCount = 1
     Begin
@@ -150,7 +151,7 @@ AS
 
         SELECT @researcher = Name_with_PRN
         FROM T_Users
-        WHERE U_PRN = @researcherPRN
+        WHERE U_PRN = @researcherUsername
 
     End
     Else
@@ -303,7 +304,7 @@ AS
 
         -- Material movement logging
         --
-        exec PostMaterialLogEntry
+        exec post_material_log_entry
              'Container Creation',
              @container,
              'na',
@@ -342,7 +343,7 @@ AS
         --
         If @curLocationName <> @location
         Begin
-            exec PostMaterialLogEntry
+            exec post_material_log_entry
                  'Container Move',
                  @container,
                  @curLocationName,
@@ -356,9 +357,9 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateMaterialContainer] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_material_container] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateMaterialContainer] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_material_container] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateMaterialContainer] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_material_container] TO [Limited_Table_Write] AS [dbo]
 GO

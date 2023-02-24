@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetDatasetStatsByCampaign] ******/
+/****** Object:  StoredProcedure [dbo].[get_dataset_stats_by_campaign] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetDatasetStatsByCampaign]
+CREATE PROCEDURE [dbo].[get_dataset_stats_by_campaign]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[GetDatasetStatsByCampaign]
 **  Date:   06/07/2019 mem - Initial release
 **          06/10/2019 mem - Add parameters @excludeQCAndBlankWithoutWP, @campaignNameExclude, and @instrumentBuilding
 **          03/24/2020 mem - Add parameter @excludeAllQCAndBlank
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -89,9 +90,9 @@ AS
         Set @optionalBuildingNot = 'Not'
     End
 
-    Set @campaignNameFilter = dbo.ValidateWildcardFilter(@campaignNameFilter)
-    Set @campaignNameExclude = dbo.ValidateWildcardFilter(@campaignNameExclude)
-    Set @instrumentBuilding = dbo.ValidateWildcardFilter(@instrumentBuilding)
+    Set @campaignNameFilter = dbo.validate_wildcard_filter(@campaignNameFilter)
+    Set @campaignNameExclude = dbo.validate_wildcard_filter(@campaignNameExclude)
+    Set @instrumentBuilding = dbo.validate_wildcard_filter(@instrumentBuilding)
 
     If @previewSql > 0 And @campaignNameFilter <> ''
     Begin
@@ -250,9 +251,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetStatsByCampaign] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_stats_by_campaign] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetDatasetStatsByCampaign] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_dataset_stats_by_campaign] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDatasetStatsByCampaign] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dataset_stats_by_campaign] TO [Limited_Table_Write] AS [dbo]
 GO

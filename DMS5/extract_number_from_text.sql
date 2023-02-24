@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ExtractNumberFromText] ******/
+/****** Object:  UserDefinedFunction [dbo].[extract_number_from_text] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ExtractNumberFromText]
+CREATE FUNCTION [dbo].[extract_number_from_text]
 /****************************************************
 **
 **  Desc:
@@ -15,17 +15,18 @@ CREATE FUNCTION [dbo].[ExtractNumberFromText]
 **  Parameters: @SearchText - the text to search for a number
 **              @StartLoc - the position to start searching at
 **
-**  See also UDF ExtractInteger
+**  See also UDF extract_integer
 **  That UDF does not have a @StartLoc parameter, and it returns null if a number is not found
 **
 **  Auth:   mem
 **  Date:   07/31/2007
 **          04/26/2016 mem - Check for negative numbers
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SearchText varchar(4000),
-    @StartLoc int
+    @searchText varchar(4000),
+    @startLoc int
 )
 RETURNS int
 AS
@@ -78,7 +79,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ExtractNumberFromText] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[extract_number_from_text] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ExtractNumberFromText] TO [public] AS [dbo]
+GRANT EXECUTE ON [dbo].[extract_number_from_text] TO [public] AS [dbo]
 GO

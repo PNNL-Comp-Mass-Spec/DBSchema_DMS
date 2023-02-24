@@ -1,21 +1,22 @@
-/****** Object:  StoredProcedure [dbo].[DuplicateAnalysisJob] ******/
+/****** Object:  StoredProcedure [dbo].[duplicate_analysis_job] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DuplicateAnalysisJob]
+CREATE PROCEDURE [dbo].[duplicate_analysis_job]
 /****************************************************
 **
-**  Desc:   Duplicates an analysis job by calling AddUpdateAnalysisJob
+**  Desc:   Duplicates an analysis job by calling add_update_analysis_job
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
 **  Date:   01/20/2016 mem - Initial version
 **          01/28/2016 mem - Added parameter @newSettingsFile
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          06/30/2022 mem - Rename parameter file argument
 **          07/01/2022 mem - Rename parameter file column when previewing the new job
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -63,7 +64,7 @@ AS
     Declare @protCollNameList varchar(4000)
     Declare @protCollOptionsList varchar(256)
     Declare @organismDBName varchar(128)
-    Declare @ownerPRN varchar(64)
+    Declare @ownerUsername varchar(64)
     Declare @comment varchar(512)
     Declare @specialProcessing varchar(512)
     Declare @propMode smallint
@@ -81,7 +82,7 @@ AS
            @protCollNameList = J.AJ_proteinCollectionList,
            @protCollOptionsList = J.AJ_proteinOptionsList,
            @organismDBName = J.AJ_organismDBName,
-           @ownerPRN = J.AJ_owner,
+           @ownerUsername = J.AJ_owner,
            @comment = J.AJ_comment,
            @specialProcessing = J.AJ_specialProcessing,
            @propMode = J.AJ_propagationMode
@@ -110,7 +111,7 @@ AS
     If @appendOldJobToComment <> 0
     Begin
         Declare @oldJobInfo varchar(24) = 'Compare to job ' + Cast(@job as varchar(12))
-        Set @comment = dbo.AppendToText(@comment, @oldJobInfo, 0, '; ', 512)
+        Set @comment = dbo.append_to_text(@comment, @oldJobInfo, 0, '; ', 512)
     End
 
     If @newSettingsFile <> ''
@@ -137,7 +138,7 @@ AS
                @protCollNameList AS protCollNameList,
                @protCollOptionsList AS protCollOptionsList,
                @organismDBName AS organismDBName,
-               @ownerPRN AS ownerPRN,
+               @ownerUsername AS ownerUsername,
                @comment AS [Comment],
                @specialProcessing AS specialProcessing,
                @propagationMode as Propagation_Mode
@@ -146,7 +147,7 @@ AS
     Declare @newJob varchar(32)
 
     -- Call the stored procedure to create/preview the job creation
-    EXEC @myError = AddUpdateAnalysisjob
+    EXEC @myError = add_update_analysis_job
         @dataset,
         @priority,
         @toolName,
@@ -156,7 +157,7 @@ AS
         @protCollNameList,
         @protCollOptionsList,
         @organismDBName,
-        @ownerPRN,
+        @ownerUsername,
         @comment,
         @specialProcessing,
         @propagationMode      = @propagationMode,
@@ -165,7 +166,7 @@ AS
         @message              = @message OUTPUT,
         @PreventDuplicateJobs = 0,
         @infoOnly             = @infoOnly,
-        @jobNum = @newJob OUTPUT
+        @job = @newJob OUTPUT
 
     If @infoOnly = 0
     Begin
@@ -177,7 +178,7 @@ AS
         Else
         Begin
             If Coalesce(@message, '') = ''
-                Set @message = 'AddUpdateAnalysisjob returned error code = ' + Cast(@myError as varchar(12))
+                Set @message = 'add_update_analysis_job returned error code = ' + Cast(@myError as varchar(12))
             Select @message as Error
         End
 
@@ -189,5 +190,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DuplicateAnalysisJob] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[duplicate_analysis_job] TO [DDL_Viewer] AS [dbo]
 GO

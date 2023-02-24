@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[TinyintToEnabledDisabled] ******/
+/****** Object:  UserDefinedFunction [dbo].[tinyint_to_enabled_disabled] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[TinyintToEnabledDisabled]
+CREATE FUNCTION [dbo].[tinyint_to_enabled_disabled]
 /****************************************************
 **
 **  Desc:
@@ -11,6 +11,7 @@ CREATE FUNCTION [dbo].[TinyintToEnabledDisabled]
 **
 **  Auth:   mem
 **  Date:   11/14/2012 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -29,5 +30,5 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[TinyintToEnabledDisabled] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[tinyint_to_enabled_disabled] TO [DDL_Viewer] AS [dbo]
 GO

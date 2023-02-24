@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetParamFileCrosstab] ******/
+/****** Object:  StoredProcedure [dbo].[get_param_file_crosstab] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetParamFileCrosstab]
+CREATE PROCEDURE [dbo].[get_param_file_crosstab]
 /****************************************************
 **
 **  Desc:   Returns a crosstab table displaying modification details
@@ -12,26 +12,27 @@ CREATE PROCEDURE [dbo].[GetParamFileCrosstab]
 **  Return values: 0: success, otherwise, error code
 **
 **  Date:   12/05/2006 mem - Initial version (Ticket #337)
-**          12/11/2006 mem - Renamed from GetSequestParamFileCrosstab to GetParamFileCrosstab (Ticket #342)
+**          12/11/2006 mem - Renamed from GetSequestParamFileCrosstab to get_param_file_crosstab (Ticket #342)
 **                         - Added parameters @ParameterFileTypeName and @ShowValidOnly
-**                         - Updated to call PopulateParamFileInfoTableSequest and PopulateParamFileModInfoTable
+**                         - Updated to call populate_param_file_info_table_sequest and populate_param_file_mod_info_table
 **          04/07/2008 mem - Added parameters @previewSql, @MassModFilterTextColumn, and @MassModFilterText
 **          05/19/2009 mem - Now returning column Job_Usage_Count
 **          02/12/2010 mem - Expanded @ParameterFileFilter to varchar(255)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ParameterFileTypeName varchar(64) = 'Sequest',     -- Should be 'Sequest' or 'XTandem'
-    @ParameterFileFilter varchar(255) = '',             -- Optional parameter file name filter
-    @ShowValidOnly tinyint = 0,                         -- Set to 1 to only show "Valid" parameter files
-    @ShowModSymbol tinyint = 0,                         -- Set to 1 to display the modification symbol
-    @ShowModName tinyint = 1,                           -- Set to 1 to display the modification name
-    @ShowModMass tinyint = 1,                           -- Set to 1 to display the modification mass
-    @UseModMassAlternativeName tinyint = 1,
+    @parameterFileTypeName varchar(64) = 'Sequest',     -- Should be 'Sequest' or 'XTandem'
+    @parameterFileFilter varchar(255) = '',             -- Optional parameter file name filter
+    @showValidOnly tinyint = 0,                         -- Set to 1 to only show "Valid" parameter files
+    @showModSymbol tinyint = 0,                         -- Set to 1 to display the modification symbol
+    @showModName tinyint = 1,                           -- Set to 1 to display the modification name
+    @showModMass tinyint = 1,                           -- Set to 1 to display the modification mass
+    @useModMassAlternativeName tinyint = 1,
     @message varchar(512) = '' output,
     @previewSql tinyint = 0,
-    @MassModFilterTextColumn varchar(64) = '',          -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
-    @MassModFilterText varchar(64) = ''                 -- If text is defined here, then results are filtered to only show rows that contain this text in one of the mass mod columns
+    @massModFilterTextColumn varchar(64) = '',          -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
+    @massModFilterText varchar(64) = ''                 -- If text is defined here, then results are filtered to only show rows that contain this text in one of the mass mod columns
 )
 AS
     set nocount on
@@ -135,7 +136,7 @@ AS
 
     If @ParameterFileTypeName = 'Sequest'
     Begin
-        Exec @myError = PopulateParamFileInfoTableSequest
+        Exec @myError = populate_param_file_info_table_sequest
                                 @ParamFileInfoColumnList = @ParamFileInfoColumnList output,
                                 @message = @message output
         If @myError <> 0
@@ -145,7 +146,7 @@ AS
     -----------------------------------------------------------
     -- Populate #TmpParamFileModResults
     -----------------------------------------------------------
-    Exec @myError = PopulateParamFileModInfoTable   @ShowModSymbol, @ShowModName, @ShowModMass,
+    Exec @myError = populate_param_file_mod_info_table   @ShowModSymbol, @ShowModName, @ShowModMass,
                                                     @UseModMassAlternativeName,
                                                     @MassModFilterTextColumn,
                                                     @MassModFilterText,
@@ -194,11 +195,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamFileCrosstab] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_file_crosstab] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_param_file_crosstab] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileCrosstab] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_param_file_crosstab] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamFileCrosstab] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_file_crosstab] TO [Limited_Table_Write] AS [dbo]
 GO

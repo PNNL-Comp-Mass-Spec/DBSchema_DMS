@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetNearestPrecedingLogEntry] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_nearest_preceding_log_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
+CREATE FUNCTION [dbo].[get_nearest_preceding_log_entry]
 /****************************************************
 **
 **  Desc:
@@ -17,11 +17,12 @@ CREATE FUNCTION [dbo].[GetNearestPrecedingLogEntry]
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Seq int,
-    @OmitText SMALLINT = 0
+    @seq int,
+    @omitText SMALLINT = 0
 )
 RETURNS varchar(4096)
 AS
@@ -94,5 +95,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNearestPrecedingLogEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_nearest_preceding_log_entry] TO [DDL_Viewer] AS [dbo]
 GO

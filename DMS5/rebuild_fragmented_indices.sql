@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RebuildFragmentedIndices] ******/
+/****** Object:  StoredProcedure [dbo].[rebuild_fragmented_indices] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RebuildFragmentedIndices]
+CREATE PROCEDURE [dbo].[rebuild_fragmented_indices]
 /****************************************************
 **
 **  Desc:
@@ -23,13 +23,14 @@ CREATE PROCEDURE [dbo].[RebuildFragmentedIndices]
 **                         - Changed default value for @MaxFragmentation from 15 to 25
 **                         - Changed default value for @TrivialPageCount from 12 to 22
 **          03/17/2016 mem - New parameter, @PercentFreeSpace; ignored if 0 or 100 (note that FillFactor is 100 - @PercentFreeSpace so when @PercentFreeSpace is 10, FillFactor is 90)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @MaxFragmentation int = 25,
-    @TrivialPageCount int = 22,
-    @PercentFreeSpace int = 10,             -- Used to define FillFactor; @PercentFreeSpace=10 means FillFactor = 90; ignored if 0 or 100
-    @VerifyUpdateEnabled tinyint = 1,       -- When non-zero, then calls VerifyUpdateEnabled to assure that database updating is enabled
+    @maxFragmentation int = 25,
+    @trivialPageCount int = 22,
+    @percentFreeSpace int = 10,             -- Used to define FillFactor; @PercentFreeSpace=10 means FillFactor = 90; ignored if 0 or 100
+    @verifyUpdateEnabled tinyint = 1,       -- When non-zero, then calls VerifyUpdateEnabled to assure that database updating is enabled
     @infoOnly tinyint = 1,
     @message varchar(1024) = '' output
 )
@@ -266,16 +267,16 @@ AS
                 exec sp_executesql @command
 
                 Set @message = 'Reindexed ' + @indexname + ' due to Fragmentation = ' + Convert(varchar(12), Convert(decimal(9,1), @frag)) + '%; '
-                Exec PostLogEntry 'Normal', @message, 'RebuildFragmentedIndices'
+                Exec post_log_entry 'Normal', @message, 'rebuild_fragmented_indices'
 
                 Set @IndexCountProcessed = @IndexCountProcessed + 1
 
                 If @VerifyUpdateEnabled <> 0
                 Begin
                     -- Validate that updating is enabled, abort if not enabled
-                    If Exists (select * from sys.objects where name = 'VerifyUpdateEnabled')
+                    If Exists (select * from sys.objects where name = 'verify_update_enabled')
                     Begin
-                        exec VerifyUpdateEnabled @CallingFunctionDescription = 'RebuildFragmentedIndices', @AllowPausing = 1, @UpdateEnabled = @UpdateEnabled output, @message = @message output
+                        exec verify_update_enabled @CallingFunctionDescription = 'rebuild_fragmented_indices', @AllowPausing = 1, @UpdateEnabled = @UpdateEnabled output, @message = @message output
                         If @UpdateEnabled = 0
                             Goto Done
                     End
@@ -292,7 +293,7 @@ AS
         -----------------------------------------------------------
 
         Set @message = 'Reindexed ' + Convert(varchar(12), @IndexCountProcessed) + ' indices in ' + convert(varchar(12), Convert(decimal(9,1), DateDiff(second, @StartTime, GetDate()) / 60.0)) + ' minutes'
-        Exec PostLogEntry 'Normal', @message, 'RebuildFragmentedIndices'
+        Exec post_log_entry 'Normal', @message, 'rebuild_fragmented_indices'
     End
 
 Done:
@@ -303,7 +304,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RebuildFragmentedIndices] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[rebuild_fragmented_indices] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RebuildFragmentedIndices] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[rebuild_fragmented_indices] TO [Limited_Table_Write] AS [dbo]
 GO

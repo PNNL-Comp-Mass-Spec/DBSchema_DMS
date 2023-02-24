@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMaterialLocations] ******/
+/****** Object:  StoredProcedure [dbo].[update_material_locations] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateMaterialLocations]
+CREATE PROCEDURE [dbo].[update_material_locations]
 /****************************************************
 **
 **  Desc:
@@ -24,11 +24,12 @@ CREATE PROCEDURE [dbo].[UpdateMaterialLocations]
 **          06/03/2013 grk - added action attribute to XML
 **          06/06/2013 grk - added code to update status
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**          11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**          11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**          11/10/2016 mem - Pass '' to get_user_login_without_domain
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -56,7 +57,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateMaterialLocations', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_material_locations', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -69,7 +70,7 @@ AS
         -----------------------------------------------------------
 
         If IsNull(@callingUser, '') = ''
-            SET @callingUser = dbo.GetUserLoginWithoutDomain('')
+            SET @callingUser = dbo.get_user_login_without_domain('')
 
         Set @infoOnly = IsNull(@infoOnly, 0)
 
@@ -147,20 +148,20 @@ AS
         BEGIN
             Declare @UsageMessage varchar(512)
             Set @UsageMessage = Cast(@locationList as varchar(512))
-            Exec PostUsageLogEntry 'UpdateMaterialLocations', @UsageMessage
+            Exec post_usage_log_entry 'update_material_locations', @UsageMessage
         END
 */
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
-        Exec PostLogEntry 'Error', @message, 'UpdateMaterialLocations'
+        EXEC format_error_message @message OUTPUT, @myError OUTPUT
+        Exec post_log_entry 'Error', @message, 'update_material_locations'
     END CATCH
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialLocations] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_locations] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialLocations] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_material_locations] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialLocations] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_material_locations] TO [DMS2_SP_User] AS [dbo]
 GO

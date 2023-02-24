@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedDatasetInstruments] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_dataset_instruments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedDatasetInstruments]
+CREATE PROCEDURE [dbo].[update_cached_dataset_instruments]
 /****************************************************
 **
 **  Desc:   Updates T_Cached_Dataset_Instruments
@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedDatasetInstruments]
 **
 **  Auth:   mem
 **  Date:   04/15/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -113,7 +114,7 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount > 0
-                Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.CheckPlural(@myRowCount, 'dataset', 'datasets')
+                Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.check_plural(@myRowCount, 'dataset', 'datasets')
         End
 
     End
@@ -181,23 +182,23 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount > 0
-                Set @message = dbo.AppendToText(@message,
-                                                Convert(varchar(12), @myRowCount) + dbo.CheckPlural(@myRowCount, ' dataset was updated', ' datasets were updated') + ' via a merge',
+                Set @message = dbo.append_to_text(@message,
+                                                Convert(varchar(12), @myRowCount) + dbo.check_plural(@myRowCount, ' dataset was updated', ' datasets were updated') + ' via a merge',
                                                 0, '; ', 512)
         End
 
     End
 
 Done:
-    -- Exec PostLogEntry 'Debug', @message, 'UpdateCachedDatasetInstruments'
+    -- Exec post_log_entry 'Debug', @message, 'update_cached_dataset_instruments'
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedDatasetInstruments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_dataset_instruments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedDatasetInstruments] TO [DMS_DS_Entry] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_dataset_instruments] TO [DMS_DS_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedDatasetInstruments] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_dataset_instruments] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedDatasetInstruments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_dataset_instruments] TO [DMS2_SP_User] AS [dbo]
 GO

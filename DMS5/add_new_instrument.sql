@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewInstrument] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_instrument] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewInstrument]
+CREATE PROCEDURE [dbo].[add_new_instrument]
 /****************************************************
 **
 **  Desc:
@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
 **  Auth:   grk
 **  Date:   01/26/2001
 **          07/24/2001 grk - Added Archive Path setup
-**          03/12/2003 grk - Modified to call AddUpdateStorage:
+**          03/12/2003 grk - Modified to call add_update_storage:
 **          11/06/2003 grk - Modified to handle new ID for archive path independent of instrument id
 **          01/30/2004 grk - Modified to return message (grk)
 **          02/24/2004 grk - Fixed problem inserting first entry into empty tables
@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
 **          08/30/2010 mem - Replaced parameter @allowedDatasetTypes with @InstrumentGroup
 **          05/12/2011 mem - Added @autoDefineStoragePath
 **                         - Expanded @archivePath, @archiveServer, and @archiveNote to larger varchar() variables
-**          05/13/2011 mem - Now calling ValidateAutoStoragePathParams
+**          05/13/2011 mem - Now calling validate_auto_storage_path_params
 **          11/30/2011 mem - Added parameter @PercentEMSLOwned
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
@@ -39,33 +39,35 @@ CREATE PROCEDURE [dbo].[AddNewInstrument]
 **          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **          05/03/2019 mem - Add the source machine to T_Storage_Path_Hosts
 **          10/27/2020 mem - Populate Auto_SP_URL_Domain and store https:// in T_Storage_Path_Hosts.URL_Prefix
-**                           Pass @urlDomain to AddUpdateStorage
+**                           Pass @urlDomain to add_update_storage
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @iName varchar(24),                 -- name of new instrument
-    @iClass varchar(32),                -- class of instrument
-    @iMethod varchar(10),               -- capture method of instrument
-    @iRoomNum varchar(50),              -- where new instrument is located
-    @iDescription varchar(50),          -- description of instrument
+    @instrumentName varchar(24),        -- name of new instrument
+    @instrumentClass varchar(32),       -- class of instrument
+    @instrumentGroup varchar(64),       -- Item in T_Instrument_Group
+    @captureMethod varchar(10),         -- capture method of instrument
+    @roomNumber varchar(50),            -- where new instrument is located
+    @description varchar(50),           -- description of instrument
+    @usage varchar(50),                 -- optional description of instrument usage
+    @operationsRole varchar(50),        -- Production, QC, Research, or Unused
+
+    @percentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
+    @autoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
 
     @sourceMachineName varchar(128),    -- Source Machine to capture data from
     @sourcePath varchar(255),           -- transfer directory on source machine
 
-    @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @autoDefineStoragePath is yes (e.g. Lumos01\)
     @spVolClient  varchar(128),         -- Storage server name, e.g. \\proto-8\
     @spVolServer  varchar(128),         -- Drive letter on storage server (local to server itself), e.g. F:\
+    @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @autoDefineStoragePath is yes (e.g. Lumos01\)
 
     @archivePath varchar(128),          -- storage path on EMSL archive, e.g.
     @archiveServer varchar(64),         -- archive server name
     @archiveNote varchar(128),          -- note describing archive path
-    @Usage varchar(50),                 -- optional description of instrument usage
-    @OperationsRole varchar(50),        -- Production, QC, Research, or Unused
-    @InstrumentGroup varchar(64),       -- Item in T_Instrument_Group
-    @PercentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
 
-    @autoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
     @message varchar(512) output
 )
 AS
@@ -105,7 +107,7 @@ AS
     --
     SELECT @hit = Instrument_ID
     FROM T_Instrument_Name
-    WHERE IN_name = @iName
+    WHERE IN_name = @instrumentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -173,7 +175,7 @@ AS
         -- Validate the @autoSP parameteres
         ---------------------------------------------------
 
-        exec @myError = ValidateAutoStoragePathParams  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
+        exec @myError = validate_auto_storage_path_params  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
                                                        @autoSPPathRoot, @autoSPArchiveServerName,
                                                        @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
 
@@ -184,7 +186,7 @@ AS
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    Set @transName = 'AddNewInstrument'
+    Set @transName = 'add_new_instrument'
     begin transaction @transName
 
     ---------------------------------------------------
@@ -193,8 +195,8 @@ AS
 
     -- get new instrument ID
     --
-    Declare @iID int
-    SELECT @iID = isnull(MAX(Instrument_ID), 0) + 1 FROM T_Instrument_Name
+    Declare @instrumentID int
+    SELECT @instrumentID = isnull(MAX(Instrument_ID), 0) + 1 FROM T_Instrument_Name
 
     -- make entry into instrument table
     --
@@ -220,15 +222,15 @@ AS
         Auto_SP_Archive_Path_Root,
         Auto_SP_Archive_Share_Path_Root
     ) VALUES (
-        @iName,
-        @iID,
-        @iClass,
+        @instrumentName,
+        @instrumentID,
+        @instrumentClass,
         @InstrumentGroup,
         @spSourcePathID,
         @spStoragePathID,
-        @iMethod,
-        @iRoomNum,
-        @iDescription,
+        @captureMethod,
+        @roomNumber,
+        @description,
         IsNull(@Usage, ''),
         @OperationsRole,
         @PercentEMSLOwnedVal,
@@ -281,7 +283,7 @@ AS
 
         Set @logMessage = 'Added machine ' + @sourceMachineNameToFind + ' to T_Storage_Path_Hosts with host name ' + @hostName
 
-        Exec PostLogEntry 'Normal', @logMessage, 'AddNewInstrument'
+        Exec post_log_entry 'Normal', @logMessage, 'add_new_instrument'
     End
 
     If @valAutoDefineStoragePath <> 0
@@ -294,12 +296,12 @@ AS
         -- make new raw storage directory in storage table
         ---------------------------------------------------
         --
-        exec @result = AddUpdateStorage
+        exec @result = add_update_storage
                 @spPath,
                 @spVolClient,
                 @spVolServer,
                 'raw-storage',
-                @iName,
+                @instrumentName,
                 '(na)',
                 @autoSPUrlDomain,
                 @spStoragePathID output,
@@ -320,12 +322,12 @@ AS
     -- Make new source (inbox) directory in storage table
     ---------------------------------------------------
     --
-    exec @result = AddUpdateStorage
+    exec @result = add_update_storage
             @sourcePath,
             '(na)',
-            @sourceMachineName,     -- Note that AddUpdateStorage will remove '\' characters from @sourceMachineName since @storFunction = 'inbox'
+            @sourceMachineName,     -- Note that add_update_storage will remove '\' characters from @sourceMachineName since @storFunction = 'inbox'
             'inbox',
-            @iName,
+            @instrumentName,
             '(na)',
             '',
             @spSourcePathID output,
@@ -361,7 +363,7 @@ AS
             AP_Server_Name,
             AP_Function
         ) VALUES (
-            @iID,
+            @instrumentID,
             @archivePath,
             @archiveNetworkSharePath,
             @archiveNote,
@@ -396,9 +398,9 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewInstrument] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_instrument] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddNewInstrument] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_new_instrument] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewInstrument] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_instrument] TO [Limited_Table_Write] AS [dbo]
 GO

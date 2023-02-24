@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[AutoUpdateSettingsFileToCentroid] ******/
+/****** Object:  UserDefinedFunction [dbo].[auto_update_settings_file_to_centroid] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[AutoUpdateSettingsFileToCentroid]
+CREATE FUNCTION [dbo].[auto_update_settings_file_to_centroid]
 /****************************************************
 **
 **  Desc:
@@ -21,10 +21,11 @@ CREATE FUNCTION [dbo].[AutoUpdateSettingsFileToCentroid]
 **          03/30/2015 mem - Added parameter @toolName
 **                         - Now retrieving MSGF+ auto-centroid values from column MSGFPlus_AutoCentroid
 **                         - Renamed the procedure from AutoUpdateQExactiveSettingsFile
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @SettingsFile varchar(128),
+    @settingsFile varchar(128),
     @toolName varchar(64)
 )
 RETURNS varchar(128)
@@ -64,5 +65,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoUpdateSettingsFileToCentroid] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_update_settings_file_to_centroid] TO [DDL_Viewer] AS [dbo]
 GO

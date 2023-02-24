@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateWellplate] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_wellplate] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateWellplate]
+CREATE PROCEDURE [dbo].[add_update_wellplate]
 /****************************************************
 **
 **  Desc:
@@ -11,15 +11,16 @@ CREATE PROCEDURE [dbo].[AddUpdateWellplate]
 **
 **  Auth:   grk
 **  Date:   07/23/2009
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          11/25/2022 mem - Rename parameter to @wellplate
+**          11/25/2022 mem - Rename parameter to @wellplateName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @wellplate varchar(64) output,      -- Wellplate name
+    @wellplateName varchar(64) output,      -- Wellplate name
     @description varchar(512),
     @mode varchar(12) = 'add', -- or 'update' or 'assure'
     @message varchar(512) output,
@@ -38,7 +39,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateWellplate', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_wellplate', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -49,7 +50,7 @@ AS
     ---------------------------------------------------
     declare @idx int
 
-    If @wellplate = '(generate name)'
+    If @wellplateName = '(generate name)'
     begin
         --
         SELECT @idx = MAX(ID) + 1
@@ -69,7 +70,7 @@ AS
             set @idx = 1000
         End
 
-        set @wellplate = 'WP-' + cast(@idx as varchar(12))
+        set @wellplateName = 'WP-' + cast(@idx as varchar(12))
     end
 
     ---------------------------------------------------
@@ -80,7 +81,7 @@ AS
     --
     SELECT @tmp = ID
     FROM  T_Wellplates
-    WHERE(WP_Well_Plate_Num = @wellplate)
+    WHERE(WP_Well_Plate_Num = @wellplateName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -129,7 +130,7 @@ AS
         WP_Well_Plate_Num,
         WP_Description
     ) VALUES (
-        @wellplate,
+        @wellplateName,
         @description
     )
     --
@@ -154,15 +155,15 @@ AS
         --
         UPDATE T_Wellplates
         SET
-        WP_Well_Plate_Num = @wellplate,
+        WP_Well_Plate_Num = @wellplateName,
         WP_Description = @description
-        WHERE(WP_Well_Plate_Num = @wellplate)
+        WHERE(WP_Well_Plate_Num = @wellplateName)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
-            set @message = 'Update operation failed: "' + @wellplate + '"'
+            set @message = 'Update operation failed: "' + @wellplateName + '"'
             RAISERROR (@message, 10, 1)
             return 51004
         end
@@ -171,11 +172,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateWellplate] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_wellplate] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateWellplate] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_wellplate] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateWellplate] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_wellplate] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateWellplate] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_wellplate] TO [Limited_Table_Write] AS [dbo]
 GO

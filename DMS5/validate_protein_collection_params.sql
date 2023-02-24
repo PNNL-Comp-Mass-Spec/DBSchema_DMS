@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateProteinCollectionParams] ******/
+/****** Object:  StoredProcedure [dbo].[validate_protein_collection_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateProteinCollectionParams]
+CREATE PROCEDURE [dbo].[validate_protein_collection_params]
 /****************************************************
 **
 **  Desc:   Validates the organism DB and/or protein collection options
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionParams]
 **          08/19/2013 mem - Auto-clearing @organismDBName if both @organismDBName and @protCollNameList are defined and @organismDBName is the auto-generated FASTA file for the specified protein collection
 **          07/12/2016 mem - Now using a synonym when calling validate_analysis_job_protein_parameters in the Protein_Sequences database
 **          04/11/2022 mem - Increase warning threshold for length of @protCollNameList to 4000
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -27,7 +28,7 @@ CREATE PROCEDURE [dbo].[ValidateProteinCollectionParams]
     @organismName varchar(128),
     @protCollNameList varchar(4000) output,     -- Will raise an error if over 4000 characters long; necessary since the Broker DB (DMS_Pipeline) has a 4000 character limit on analysis job parameter values
     @protCollOptionsList varchar(256) output,
-    @ownerPRN varchar(64) = '',                 -- Only required if the user chooses an "Encrypted" protein collection; as of August 2010 we don't have any encrypted protein collections
+    @ownerUsername varchar(64) = '',            -- Only required if the user chooses an "Encrypted" protein collection; as of August 2010 we don't have any encrypted protein collections
     @message varchar(255) = '' output,
     @debugMode tinyint = 0                      -- If non-zero then will display some debug info
 )
@@ -46,7 +47,7 @@ AS
     -----------------------------------------------------------
 
     Set @message = ''
-    Set @ownerPRN = IsNull(@ownerPRN, '')
+    Set @ownerUsername = IsNull(@ownerUsername, '')
     Set @debugMode = IsNull(@debugMode, 0)
 
     ---------------------------------------------------
@@ -55,9 +56,9 @@ AS
     --  Therefore, @settingsFileName needs to be lowercase 'na' for compatibility with the analysis manager
     ---------------------------------------------------
     --
-    Set @organismDBName =      dbo.ValidateNAParameter(@organismDBName, 1)
-    Set @protCollNameList =    dbo.ValidateNAParameter(@protCollNameList, 1)
-    Set @protCollOptionsList = dbo.ValidateNAParameter(@protCollOptionsList, 1)
+    Set @organismDBName =      dbo.validate_na_parameter(@organismDBName, 1)
+    Set @protCollNameList =    dbo.validate_na_parameter(@protCollNameList, 1)
+    Set @protCollOptionsList = dbo.validate_na_parameter(@protCollOptionsList, 1)
 
 
     if @organismDBName = '' set @organismDBName = 'na'
@@ -200,20 +201,20 @@ AS
         begin
             Set @message =  'Calling s_validate_analysis_job_protein_parameters: ' +
                                 IsNull(@organismName, '??') + '; ' +
-                                IsNull(@ownerPRN, '??') + '; ' +
+                                IsNull(@ownerUsername, '??') + '; ' +
                                 IsNull(@organismDBName, '??') + '; ' +
                                 IsNull(@protCollNameList, '??') + '; ' +
                                 IsNull(@protCollOptionsList, '??')
 
             Print @message
-            -- exec PostLogEntry 'Debug',@message, 'ValidateProteinCollectionParams'
+            -- exec post_log_entry 'Debug',@message, 'validate_protein_collection_params'
             Set @message = ''
         end
 
         -- Call ProteinSeqs.Protein_Sequences.dbo.validate_analysis_job_protein_parameters
         exec @result = s_validate_analysis_job_protein_parameters
                             @organismName,
-                            @ownerPRN,
+                            @ownerUsername,
                             @organismDBName,
                             @protCollNameList output,
                             @protCollOptionsList output,
@@ -227,12 +228,13 @@ AS
     end
 
     return 0
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionParams] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_protein_collection_params] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ValidateProteinCollectionParams] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[validate_protein_collection_params] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[ValidateProteinCollectionParams] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[validate_protein_collection_params] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateProteinCollectionParams] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_protein_collection_params] TO [Limited_Table_Write] AS [dbo]
 GO

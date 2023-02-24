@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateInstrumentUsageAllocations] ******/
+/****** Object:  StoredProcedure [dbo].[update_instrument_usage_allocations] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocations]
+CREATE PROCEDURE [dbo].[update_instrument_usage_allocations]
 /****************************************************
 **
 **  Desc:
@@ -15,34 +15,35 @@ CREATE PROCEDURE [dbo].[UpdateInstrumentUsageAllocations]
 **  Date:   03/28/2012 grk - Initial release
 **          03/30/2012 grk - Added change command capability
 **          03/30/2012 mem - Added support for x="Comment" in the XML
-**                         - Now calling UpdateInstrumentUsageAllocationsWork to apply the updates
+**                         - Now calling update_instrument_usage_allocations_work to apply the updates
 **          03/31/2012 mem - Added @FiscalYear, @ProposalID, and @mode
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @FYProposal varchar(64),            -- Only used when @mode is 'update'
-    @FiscalYear varchar(24),            -- Only used when @mode is 'add'
-    @ProposalID varchar(128),            -- Only used when @mode is 'add'
-    @FT varchar(24) = '',
-    @FTComment varchar(256) = '',
-    @IMS varchar(24) = '',
-    @IMSComment varchar(256) = '',
-    @ORB varchar(24) = '',
-    @ORBComment varchar(256) = '',
-    @EXA varchar(24) = '',
-    @EXAComment varchar(256) = '',
-    @LTQ varchar(24) = '',
-    @LTQComment varchar(256) = '',
-    @GC varchar(24) = '',
-    @GCComment varchar(256) = '',
-    @QQQ varchar(24) = '',
-    @QQQComment varchar(256) = '',
+    @fyProposal varchar(64),            -- Only used when @mode is 'update'
+    @fiscalYear varchar(24),            -- Only used when @mode is 'add'
+    @proposalID varchar(128),            -- Only used when @mode is 'add'
+    @ft varchar(24) = '',
+    @ftComment varchar(256) = '',
+    @ims varchar(24) = '',
+    @imsComment varchar(256) = '',
+    @orb varchar(24) = '',
+    @orbComment varchar(256) = '',
+    @exa varchar(24) = '',
+    @exaComment varchar(256) = '',
+    @ltq varchar(24) = '',
+    @ltqComment varchar(256) = '',
+    @gc varchar(24) = '',
+    @gcComment varchar(256) = '',
+    @qqq varchar(24) = '',
+    @qqqComment varchar(256) = '',
     @mode varchar(12) = 'update',    -- 'add' or 'update'
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = '',
@@ -69,7 +70,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateInstrumentUsageAllocations', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_instrument_usage_allocations', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -289,26 +290,26 @@ AS
         End
 
         -----------------------------------------------------------
-        -- Call UpdateInstrumentUsageAllocationsWork to perform the work
+        -- Call update_instrument_usage_allocations_work to perform the work
         -----------------------------------------------------------
         --
-        EXEC @myError = UpdateInstrumentUsageAllocationsWork @fy, @message output, @callingUser, @infoOnly
+        EXEC @myError = update_instrument_usage_allocations_work @fy, @message output, @callingUser, @infoOnly
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateInstrumentUsageAllocations'
+        Exec post_log_entry 'Error', @message, 'update_instrument_usage_allocations'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateInstrumentUsageAllocations] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_instrument_usage_allocations] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateInstrumentUsageAllocations] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_instrument_usage_allocations] TO [DMS2_SP_User] AS [dbo]
 GO

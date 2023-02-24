@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobRequestDatasetNameList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_job_request_dataset_name_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetJobRequestDatasetNameList]
+CREATE FUNCTION [dbo].[get_job_request_dataset_name_list]
 /****************************************************
 **
 **  Desc:
@@ -12,6 +12,7 @@ CREATE FUNCTION [dbo].[GetJobRequestDatasetNameList]
 **
 **  Auth:   mem
 **  Date:   07/30/2019 mem - Initial release
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,5 +41,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobRequestDatasetNameList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_request_dataset_name_list] TO [DDL_Viewer] AS [dbo]
 GO

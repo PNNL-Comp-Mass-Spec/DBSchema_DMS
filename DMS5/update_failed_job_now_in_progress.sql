@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateFailedJobNowInProgress] ******/
+/****** Object:  StoredProcedure [dbo].[update_failed_job_now_in_progress] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateFailedJobNowInProgress]
+CREATE PROCEDURE [dbo].[update_failed_job_now_in_progress]
 /****************************************************
 **
 **  Desc:   Updates job state to 2 for an analysis job that is now in-progress in the DMS_Pipeline database
@@ -16,13 +16,14 @@ CREATE PROCEDURE [dbo].[UpdateFailedJobNowInProgress]
 **
 **  Auth:   mem
 **  Date:   02/21/2013 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int,
-    @NewBrokerJobState int,
-    @JobStart datetime,
-    @UpdateCode int,                    -- Safety feature to prevent unauthorized job updates
+    @job int,
+    @newBrokerJobState int,
+    @jobStart datetime,
+    @updateCode int,                    -- Safety feature to prevent unauthorized job updates
     @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
@@ -104,5 +105,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateFailedJobNowInProgress] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_failed_job_now_in_progress] TO [DDL_Viewer] AS [dbo]
 GO

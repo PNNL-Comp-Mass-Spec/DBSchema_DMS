@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLCCartConfiguration] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_lc_cart_configuration] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
+CREATE PROCEDURE [dbo].[add_update_lc_cart_configuration]
 /****************************************************
 **
 **  Desc: Adds new or edits existing T_LC_Cart_Configuration entry
@@ -23,12 +23,13 @@ CREATE PROCEDURE [dbo].[AddUpdateLCCartConfiguration]
 **          03/03/2017 mem - Add parameter @entryUser
 **          09/17/2018 mem - Update cart config name error message
 **          03/03/2021 mem - Update admin-required message
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int,
+    @id int,
     @configName varchar(128),
     @description varchar(512),
     @autosampler varchar(128),
@@ -116,7 +117,7 @@ AS
     -- First assure that it does not have invalid characters and is long enough
     ---------------------------------------------------
 
-    Declare @badCh varchar(128) = dbo.ValidateChars(@configName, '')
+    Declare @badCh varchar(128) = dbo.validate_chars(@configName, '')
     if @badCh <> ''
     begin
         If @badCh = '[space]'
@@ -459,15 +460,15 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfiguration] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart_configuration] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCartConfiguration] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart_configuration] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCartConfiguration] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart_configuration] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCartConfiguration] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart_configuration] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCCartConfiguration] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_cart_configuration] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCCartConfiguration] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_cart_configuration] TO [Limited_Table_Write] AS [dbo]
 GO

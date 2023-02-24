@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[AddMissingPredefinedJobs] ******/
+/****** Object:  StoredProcedure [dbo].[add_missing_predefined_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddMissingPredefinedJobs]
+CREATE PROCEDURE [dbo].[add_missing_predefined_jobs]
 /****************************************************
 **
 **  Desc:   Looks for Datasets that don't have predefined analysis jobs
-**          but possibly should.  Calls SchedulePredefinedAnalyses for each.
+**          but possibly should.  Calls schedule_predefined_analysis_jobs for each.
 **          This procedure is intended to be run once per day to add missing jobs
 **          for datasets created within the last 30 days (but more than 12 hours ago).
 **
@@ -20,16 +20,17 @@ CREATE PROCEDURE [dbo].[AddMissingPredefinedJobs]
 **          02/10/2011 mem - Added parameters @excludeUnreviewedDatasets and @instrumentSkipList
 **          05/24/2011 mem - Added parameter @ignoreJobsCreatedBeforeDisposition
 **                         - Added support for rating -7
-**          08/05/2013 mem - Now passing @analysisToolNameFilter to EvaluatePredefinedAnalysisRules when @infoOnly is non-zero
+**          08/05/2013 mem - Now passing @analysisToolNameFilter to evaluate_predefined_analysis_rules when @infoOnly is non-zero
 **                         - Added parameter @campaignFilter
 **          01/08/2014 mem - Now returning additional debug information when @infoOnly > 0
-**          06/18/2014 mem - Now passing default to udfParseDelimitedList
+**          06/18/2014 mem - Now passing default to parse_delimited_list
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          03/03/2017 mem - Exclude datasets associated with the Tracking experiment
 **                         - Exclude datasets of type Tracking
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          03/25/2020 mem - Add parameter @datasetIDFilterList and add support for @infoOnly = 2
-**          11/28/2022 mem - Always log an error if SchedulePredefinedAnalyses has a non-zero return code
+**          11/28/2022 mem - Always log an error if schedule_predefined_analysis_jobs has a non-zero return code
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -139,7 +140,7 @@ AS
     BEGIN
         INSERT INTO #TmpDatasetIDFilterList (Dataset_ID)
         SELECT Value
-        FROM dbo.udfParseDelimitedIntegerList(@datasetIDFilterList, ',')
+        FROM dbo.parse_delimited_integer_list(@datasetIDFilterList, ',')
     END
 
     ---------------------------------------------------
@@ -254,7 +255,7 @@ AS
         ORDER BY DS.Dataset_ID
     End
 
-    -- Next, exclude any datasets that have been processed by SchedulePredefinedAnalyses
+    -- Next, exclude any datasets that have been processed by schedule_predefined_analysis_jobs
     -- This check also compares the dataset's current rating to the rating it had when previously processed
     --
     UPDATE #Tmp_DatasetsToProcess
@@ -313,7 +314,7 @@ AS
                ON Target.Dataset_ID = DS.Dataset_ID
              INNER JOIN T_Instrument_Name InstName
              ON InstName.Instrument_ID = DS.DS_instrument_name_ID
-             INNER JOIN udfParseDelimitedList(@instrumentSkipList, default, 'AddMissingPredefinedJobs') AS ExclusionList
+             INNER JOIN parse_delimited_list(@instrumentSkipList, default, 'add_missing_predefined_jobs') AS ExclusionList
                ON InstName.IN_name = ExclusionList.Value
     End
 
@@ -394,7 +395,7 @@ AS
 
         ---------------------------------------------------
         -- Loop through the datasets in #Tmp_DatasetsToProcess
-        -- Call EvaluatePredefinedAnalysisRules or SchedulePredefinedAnalyses for each one
+        -- Call evaluate_predefined_analysis_rules or schedule_predefined_analysis_jobs for each one
         ---------------------------------------------------
 
         Set @datasetsProcessed = 0
@@ -426,16 +427,16 @@ AS
 
                     If @infoOnly <> 0
                     Begin
-                        Set @currentLocation = 'Calling SchedulePredefinedAnalyses for ' + @datasetName
+                        Set @currentLocation = 'Calling schedule_predefined_analysis_jobs for ' + @datasetName
 
-                        Exec EvaluatePredefinedAnalysisRules @datasetName, @previewOutputType, @message = @message output, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @analysisToolNameFilter=@analysisToolNameFilter
+                        Exec evaluate_predefined_analysis_rules @datasetName, @previewOutputType, @message = @message output, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @analysisToolNameFilter=@analysisToolNameFilter
                     End
 
 
-                    Set @currentLocation = 'Calling SchedulePredefinedAnalyses for ' + @datasetName
+                    Set @currentLocation = 'Calling schedule_predefined_analysis_jobs for ' + @datasetName
                     Set @startDate = GetDate()
 
-                    Exec @myError = SchedulePredefinedAnalyses @datasetName, @analysisToolNameFilter=@analysisToolNameFilter, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @infoOnly=@infoOnly
+                    Exec @myError = schedule_predefined_analysis_jobs @datasetName, @analysisToolNameFilter=@analysisToolNameFilter, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @infoOnly=@infoOnly
 
                     If @myError = 0 And @infoOnly = 0
                     Begin -- <e1>
@@ -462,7 +463,7 @@ AS
                             If @myRowCount <> @jobCountAdded
                             Begin
                                 Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job(s) for dataset ' + @datasetName + ', but updated the comment for ' + convert(varchar(12), @myRowCount) + ' job(s); mismatch is unexpected'
-                                Exec PostLogEntry 'Error', @message, 'AddMissingPredefinedJobs'
+                                Exec post_log_entry 'Error', @message, 'add_missing_predefined_jobs'
                             End
 
                             Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job'
@@ -473,7 +474,7 @@ AS
 
                             Set @message = @message + ' for dataset ' + @datasetName
 
-                            Exec PostLogEntry 'Warning', @message, 'AddMissingPredefinedJobs'
+                            Exec post_log_entry 'Warning', @message, 'add_missing_predefined_jobs'
 
                             Set @datasetsWithNewJobs = @datasetsWithNewJobs + 1
                         End
@@ -482,8 +483,8 @@ AS
                     Begin -- <e2>
                         If @infoOnly = 0
                         Begin
-                            Set @message = 'Error calling SchedulePredefinedAnalyses for dataset ' + @datasetName + '; error code ' + Convert(varchar(12), @myError)
-                            Exec PostLogEntry 'Error', @message, 'AddMissingPredefinedJobs'
+                            Set @message = 'Error calling schedule_predefined_analysis_jobs for dataset ' + @datasetName + '; error code ' + Convert(varchar(12), @myError)
+                            Exec post_log_entry 'Error', @message, 'add_missing_predefined_jobs'
                             Set @message = ''
                         End
                     End -- </e2>
@@ -492,8 +493,8 @@ AS
                 End Try
                 Begin Catch
                     -- Error caught; log the error then abort processing
-                    Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'AddMissingPredefinedJobs')
-                    exec LocalErrorHandler  @callingProcName, @currentLocation, @logError = 1,
+                    Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'add_missing_predefined_jobs')
+                    exec local_error_handler  @callingProcName, @currentLocation, @logError = 1,
                                             @errorNum = @myError output, @message = @message output
 
                 End Catch
@@ -525,7 +526,7 @@ AS
 
             If @datasetsWithNewJobs > 0 And @infoOnly = 0
             Begin
-                Exec PostLogEntry 'Normal', @message, 'AddMissingPredefinedJobs'
+                Exec post_log_entry 'Normal', @message, 'add_missing_predefined_jobs'
             End
         End
 
@@ -535,9 +536,9 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[AddMissingPredefinedJobs] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_missing_predefined_jobs] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMissingPredefinedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_missing_predefined_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMissingPredefinedJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_missing_predefined_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

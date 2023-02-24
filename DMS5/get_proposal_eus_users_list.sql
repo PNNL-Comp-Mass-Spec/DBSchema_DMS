@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetProposalEUSUsersList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_proposal_eus_users_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetProposalEUSUsersList]
+CREATE FUNCTION [dbo].[get_proposal_eus_users_list]
 /****************************************************
 **
 **  Desc:   Builds delimited list of EUS users for
@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[GetProposalEUSUsersList]
 **                         - Now excluding users with State_ID 5="No longer associated with proposal"
 **          06/13/2013 mem - Added mode 'L' (last names only)
 **          02/19/2018 mem - Added parameter @maxUsers
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -96,9 +97,9 @@ AS
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetProposalEUSUsersList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_proposal_eus_users_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetProposalEUSUsersList] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_proposal_eus_users_list] TO [DMS_User] AS [dbo]
 GO
-GRANT REFERENCES ON [dbo].[GetProposalEUSUsersList] TO [DMS_User] AS [dbo]
+GRANT REFERENCES ON [dbo].[get_proposal_eus_users_list] TO [DMS_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udfWhitespaceChars] ******/
+/****** Object:  UserDefinedFunction [dbo].[whitespace_chars] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udfWhitespaceChars]
+CREATE FUNCTION [dbo].[whitespace_chars]
 /****************************************************
 **  Checks for whitespace characters: CRLF, tab, and space
 **  Allows symbols and letters, including periods, dashes,
@@ -17,11 +17,12 @@ CREATE FUNCTION [dbo].[udfWhitespaceChars]
 **
 **  Auth:   mem
 **  Date:   02/15/2011
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
-    @EntityName varchar(512),
-    @AllowSpace tinyint = 0
+    @entityName varchar(512),
+    @allowSpace tinyint = 0
 )
 RETURNS tinyint
 AS
@@ -40,5 +41,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfWhitespaceChars] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[whitespace_chars] TO [DDL_Viewer] AS [dbo]
 GO

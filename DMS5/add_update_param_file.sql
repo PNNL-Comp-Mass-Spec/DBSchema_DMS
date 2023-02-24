@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateParamFile] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_param_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateParamFile]
+CREATE PROCEDURE [dbo].[add_update_param_file]
 /****************************************************
 **
 **  Desc:
@@ -17,17 +17,18 @@ CREATE PROCEDURE [dbo].[AddUpdateParamFile]
 **          12/06/2016 mem - Add parameters @paramFileID, @paramfileValid, @paramfileMassMods, and @replaceExistingMassMods
 **                     mem - Replaced parameter @paramFileTypeID with @paramFileType
 **          05/26/2017 mem - Update @paramfileMassMods to remove tabs
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/28/2017 mem - Add @validateUnimod
 **          10/02/2017 mem - Abort adding a new parameter file if @paramfileMassMods does not validate (when @validateUnimod is 1)
-**          08/17/2018 mem - Pass @paramFileType to StoreParamFileMassMods
-**          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
+**          08/17/2018 mem - Pass @paramFileType to store_param_file_mass_mods
+**          11/19/2018 mem - Pass 0 to the @maxRows parameter to parse_delimited_list_ordered
 **          11/30/2018 mem - Make @paramFileID an input/output parameter
-**          11/04/2021 mem - Populate the Mod_List field using GetParamFileMassModCodeList
+**          11/04/2021 mem - Populate the Mod_List field using get_param_file_mass_mod_code_list
 **          04/11/2022 mem - Check for whitespace in @paramFileName
 **          02/23/2023 mem - Add mode 'previewadd'
-**                         - If the mode is 'previewadd', set @infoOnly to 1 when calling StoreParamFileMassMods
+**                         - If the mode is 'previewadd', set @infoOnly to 1 when calling store_param_file_mass_mods
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -59,7 +60,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateParamFile', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_param_file', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -100,7 +101,7 @@ AS
         RAISERROR ('ParamFileType was null', 11, 1)
     End
 
-    If dbo.udfWhitespaceChars(@paramFileName, 0) > 0
+    If dbo.whitespace_chars(@paramFileName, 0) > 0
     Begin
         If CharIndex(Char(9), @paramFileName) > 0
             RAISERROR ('Parameter file name cannot contain tabs', 11, 116)
@@ -146,7 +147,7 @@ AS
     --
     Declare @existingParamFileID int = 0
     --
-    execute @existingParamFileID = GetParamFileID @ParamFileName
+    execute @existingParamFileID = get_param_file_id @ParamFileName
 
     -- Check for a name conflict when adding
     --
@@ -224,7 +225,7 @@ AS
 
         INSERT INTO #Tmp_Mods_Precheck (EntryID, Value)
         SELECT EntryID, Value
-        FROM dbo.udfParseDelimitedListOrdered(@paramfileMassMods, @Delimiter, 0)
+        FROM dbo.parse_delimited_list_ordered(@paramfileMassMods, @Delimiter, 0)
 
         DELETE FROM #Tmp_Mods_Precheck
         WHERE Value Is Null Or Value Like '#%' or LTrim(RTrim(Value)) = ''
@@ -239,12 +240,12 @@ AS
         Begin -- <b>
 
             ---------------------------------------------------
-            -- Validate the mods by calling StoreParamFileMassMods with @paramFileID = 0
+            -- Validate the mods by calling store_param_file_mass_mods with @paramFileID = 0
             ---------------------------------------------------
 
             Set @infoOnly = Case When @mode Like 'preview%' Then 1 Else 0 End;
 
-            exec @myError = StoreParamFileMassMods
+            exec @myError = store_param_file_mass_mods
                  @paramFileID = 0,
                  @mods = @paramfileMassMods,
                  @infoOnly = @infoOnly,
@@ -256,9 +257,9 @@ AS
             If @myError <> 0
             Begin
                 If IsNull(@message, '') = ''
-                    Set @msg = 'StoreParamFileMassMods returned error code ' + cast(@myError as varchar(9)) + '; unknown error'
+                    Set @msg = 'store_param_file_mass_mods returned error code ' + cast(@myError as varchar(9)) + '; unknown error'
                 Else
-                    Set @msg = 'StoreParamFileMassMods: "' + @message + '"'
+                    Set @msg = 'store_param_file_mass_mods: "' + @message + '"'
 
                 RAISERROR (@msg, 11, 1)
             End
@@ -342,7 +343,7 @@ AS
         If @updateMassMods = 1
         Begin
             -- Store the param file mass mods in T_Param_File_Mass_Mods
-            exec @myError = StoreParamFileMassMods
+            exec @myError = store_param_file_mass_mods
                 @paramFileID,
                 @mods=@paramfileMassMods,
                 @InfoOnly=0,
@@ -352,7 +353,7 @@ AS
 
             If @myError <> 0
             Begin
-                Set @msg = 'StoreParamFileMassMods: "' + @message + '"'
+                Set @msg = 'store_param_file_mass_mods: "' + @message + '"'
                 RAISERROR (@msg, 11, 1)
             End
         End
@@ -362,7 +363,7 @@ AS
     Begin
         -- Update the Mod_List field
         Update T_Param_Files
-        Set Mod_List = dbo.GetParamFileMassModCodeList(Param_File_ID, 0)
+        Set Mod_List = dbo.get_param_file_mass_mod_code_list(Param_File_ID, 0)
         Where Param_File_ID = @paramFileID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -371,7 +372,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -383,7 +384,7 @@ AS
            Not @message Like '%%'
         Begin
             Declare @logMessage varchar(1024) = @message + '; Param file ' + @paramFileName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateParamFile'
+            exec post_log_entry 'Error', @logMessage, 'add_update_param_file'
         End
 
     END CATCH
@@ -392,15 +393,15 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_param_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_file] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_file] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_file] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateParamFile] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_param_file] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateParamFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_param_file] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetPSMJobDefinitions] ******/
+/****** Object:  StoredProcedure [dbo].[get_psm_job_definitions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetPSMJobDefinitions]
+CREATE PROCEDURE [dbo].[get_psm_job_definitions]
 /****************************************************
 **
 **  Desc: Returns sets of parameters for setting up
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[GetPSMJobDefinitions]
 **          11/20/2012 grk - removed extra RETURN that was blocking error return
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -45,7 +46,7 @@ AS
         @organismName varchar(128) ,
         @protCollNameList varchar(1024) ,
         @protCollOptionsList varchar(256)
-        EXEC @myError = GetPSMJobDefaults
+        EXEC @myError = get_psm_job_defaults
                             @datasets = @datasets output,
                             @Metadata = @metadata output,
                             @toolName = @toolName output,
@@ -73,20 +74,20 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'GetPSMJobDefinitions'
+        Exec post_log_entry 'Error', @message, 'get_psm_job_definitions'
     END CATCH
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetPSMJobDefinitions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_psm_job_definitions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetPSMJobDefinitions] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_psm_job_definitions] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetPSMJobDefinitions] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_psm_job_definitions] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetInstrumentDatasetTypeList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_instrument_dataset_type_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetInstrumentDatasetTypeList]
+CREATE FUNCTION [dbo].[get_instrument_dataset_type_list]
 /****************************************************
 **
 **  Desc:
@@ -16,12 +16,13 @@ CREATE FUNCTION [dbo].[GetInstrumentDatasetTypeList]
 **
 **  Auth:   mem
 **  Date:   09/17/2009 mem - Initial version (Ticket #748)
-**          08/28/2010 mem - Updated to use GetInstrumentGroupDatasetTypeList
-**          02/04/2021 mem - Provide a delimiter when calling GetInstrumentGroupDatasetTypeList
+**          08/28/2010 mem - Updated to use get_instrument_group_dataset_type_list
+**          02/04/2021 mem - Provide a delimiter when calling get_instrument_group_dataset_type_list
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InstrumentID int
+    @instrumentID int
 )
 RETURNS varchar(4000)
 AS
@@ -36,11 +37,11 @@ AS
         WHERE Instrument_ID = @InstrumentID
 
         IF @InstrumentGroup <> ''
-            SELECT @list = dbo.GetInstrumentGroupDatasetTypeList(@InstrumentGroup, ', ')
+            SELECT @list = dbo.get_instrument_group_dataset_type_list(@InstrumentGroup, ', ')
 
         RETURN @list
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentDatasetTypeList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_dataset_type_list] TO [DDL_Viewer] AS [dbo]
 GO

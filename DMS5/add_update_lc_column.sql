@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateLCColumn] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_lc_column] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateLCColumn]
+CREATE PROCEDURE [dbo].[add_update_lc_column]
 /****************************************************
 **
 **  Desc: Adds a new entry to LC Column table
@@ -17,10 +17,11 @@ CREATE PROCEDURE [dbo].[AddUpdateLCColumn]
 **          07/20/2016 mem - Fix error message entity name
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/30/2018 mem - Make @columnNumber an output parameter
 **          03/21/2022 mem - Fix typo in comment and update capitalization of keywords
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -33,7 +34,7 @@ CREATE PROCEDURE [dbo].[AddUpdateLCColumn]
     @columnOuterDia varchar(64),
     @length varchar(64),
     @state  varchar(32),
-    @operator_prn varchar(50),
+    @operator_username varchar(50),
     @comment varchar(244),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output
@@ -54,7 +55,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateLCColumn', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_lc_column', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -163,7 +164,7 @@ AS
             @columnOuterDia,
             @length,
             @stateID,
-            @operator_prn,
+            @operator_username,
             @comment,
             GETDATE()
         )
@@ -196,7 +197,7 @@ AS
             SC_Column_Outer_Dia = @columnOuterDia,
             SC_Length = @length,
             SC_State = @stateID,
-            SC_Operator_PRN = @operator_prn,
+            SC_Operator_PRN = @operator_username,
             SC_Comment = @comment
         WHERE (ID = @columnID)
         --
@@ -211,7 +212,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -219,18 +220,18 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec PostLogEntry 'Error', @message, 'AddUpdateLCColumn'
+            Exec post_log_entry 'Error', @message, 'add_update_lc_column'
         End
     END Catch
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_column] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS_LC_Column_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_column] TO [DMS_LC_Column_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateLCColumn] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_lc_column] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateLCColumn] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_lc_column] TO [Limited_Table_Write] AS [dbo]
 GO

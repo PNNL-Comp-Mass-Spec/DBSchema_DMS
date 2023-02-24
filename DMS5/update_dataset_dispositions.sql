@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetDispositions] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_dispositions] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetDispositions]
+CREATE PROCEDURE [dbo].[update_dataset_dispositions]
 /****************************************************
 **
 **  Desc:
@@ -17,21 +17,22 @@ CREATE PROCEDURE [dbo].[UpdateDatasetDispositions]
 **  Date:   04/25/2007
 **          06/26/2007 grk - Fix problem with multiple datasets (Ticket #495)
 **          08/22/2007 mem - Disallow setting datasets to rating 5 (Released) when their state is 5 (Capture Failed); Ticket #524
-**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call AlterEventLogEntryUser (Ticket #644)
-**          08/15/2008 mem - Added call to AlterEventLogEntryUser to handle dataset rating entries (event log target type 8)
+**          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will call alter_event_log_entry_user (Ticket #644)
+**          08/15/2008 mem - Added call to alter_event_log_entry_user to handle dataset rating entries (event log target type 8)
 **          08/19/2010 grk - try-catch for error handling
-**          11/18/2010 mem - Updated logic for calling SchedulePredefinedAnalyses to include dataset state 4 (Inactive)
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          12/13/2011 mem - Now passing @callingUser to UnconsumeScheduledRun
+**          11/18/2010 mem - Updated logic for calling schedule_predefined_analysis_jobs to include dataset state 4 (Inactive)
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          12/13/2011 mem - Now passing @callingUser to unconsume_scheduled_run
 **          02/20/2013 mem - Expanded @message to varchar(1024)
 **          02/21/2013 mem - More informative error messages
-**          05/08/2013 mem - No longer passing @wellplateNum and @wellNum to UnconsumeScheduledRun
+**          05/08/2013 mem - No longer passing @wellplateNum and @wellNum to unconsume_scheduled_run
 **          03/30/2015 mem - Tweak warning message grammar
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/23/2021 mem - Use a semicolon when appending to an existing dataset comment
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetDispositions', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_dispositions', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -129,7 +130,7 @@ AS
 
     INSERT INTO #TDS (DatasetID)
     SELECT CAST(Item as int)
-    FROM MakeTableFromList(@datasetIDList)
+    FROM make_table_from_list(@datasetIDList)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -214,7 +215,7 @@ AS
         Declare @curDatasetStateName varchar(64) = ''
         Declare @curComment varchar(512) = ''
         Declare @done int = 0
-        Declare @transName varchar(32) = 'UpdateDatasetDispositions'
+        Declare @transName varchar(32) = 'update_dataset_dispositions'
 
         ---------------------------------------------------
         while @done = 0
@@ -288,7 +289,7 @@ AS
                     --
                     if @recycleRequest = 'Yes'
                     begin
-                        exec @myError = UnconsumeScheduledRun @curDatasetName, @retainHistory=1, @message=@message output, @callingUser=@callingUser
+                        exec @myError = unconsume_scheduled_run @curDatasetName, @retainHistory=1, @message=@message output, @callingUser=@callingUser
                         --
                         if @myError <> 0
                         begin
@@ -306,7 +307,7 @@ AS
                     begin
                         -- schedule default analyses for this dataset
                         --
-                        execute @myError = SchedulePredefinedAnalyses @curDatasetName, @callingUser
+                        execute @myError = schedule_predefined_analysis_jobs @curDatasetName, @callingUser
                         --
                         if @myError <> 0
                         begin
@@ -320,9 +321,9 @@ AS
                     --
                     commit transaction @transName
 
-                    -- If @callingUser is defined, then call AlterEventLogEntryUser to alter the Entered_By field in T_Event_Log
+                    -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
                     If Len(@callingUser) > 0
-                        Exec AlterEventLogEntryUser 8, @curDatasetID, @ratingID, @callingUser
+                        Exec alter_event_log_entry_user 8, @curDatasetID, @ratingID, @callingUser
 
                     set @prevDatasetID = @curDatasetID
                 end
@@ -332,13 +333,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateDatasetDispositions'
+        Exec post_log_entry 'Error', @message, 'update_dataset_dispositions'
     END CATCH
 
     ---------------------------------------------------
@@ -347,16 +348,16 @@ AS
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = Convert(varchar(12), @datasetCount) + ' datasets updated'
-    Exec PostUsageLogEntry 'UpdateDatasetDispositions', @UsageMessage
+    Exec post_usage_log_entry 'update_dataset_dispositions', @UsageMessage
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositions] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_dispositions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS_RunScheduler] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_dispositions] TO [DMS_RunScheduler] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetDispositions] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_dispositions] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetDispositions] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_dispositions] TO [Limited_Table_Write] AS [dbo]
 GO

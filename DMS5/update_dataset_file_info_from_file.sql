@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[UpdateDatasetFileInfoFromFile] ******/
+/****** Object:  StoredProcedure [dbo].[update_dataset_file_info_from_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoFromFile]
+CREATE PROCEDURE [dbo].[update_dataset_file_info_from_file]
 /****************************************************
 **
 **  ############################################################################
 **
-**  ### NOTE: This procedure has been superseded by UpdateDatasetFileInfoXML ###
+**  ### NOTE: This procedure has been superseded by update_dataset_file_info_xml ###
 **
 **  ############################################################################
 **
@@ -23,14 +23,15 @@ CREATE PROCEDURE [dbo].[UpdateDatasetFileInfoFromFile]
 **  Auth:   mem
 **  Date:   09/15/2005
 **          08/27/2007 mem - Added support for a 9th column in the source file
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          06/23/2017 mem - Use Try_Cast
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @DatasetInfoFilePath varchar(255),
+    @datasetInfoFilePath varchar(255),
     @message varchar(255) = '' output
 )
 AS
@@ -53,7 +54,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateDatasetFileInfoFromFile', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_dataset_file_info_from_file', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -90,12 +91,12 @@ AS
     -- Verify that input file exists, count the number of columns,
     -- and preview the first row
     -----------------------------------------------
-    Exec @result = ValidateDelimitedFile @DatasetInfoFilePath, 0, @fileExists OUTPUT, @columnCount OUTPUT, @FirstRowPreview OUTPUT, @message OUTPUT
+    Exec @result = validate_delimited_file @DatasetInfoFilePath, 0, @fileExists OUTPUT, @columnCount OUTPUT, @FirstRowPreview OUTPUT, @message OUTPUT
 
     If @result <> 0
     Begin
         If Len(@message) = 0
-            Set @message = 'Error calling ValidateDelimitedFile for ' + @DatasetInfoFilePath + ' (Code ' + Convert(varchar(11), @result) + ')'
+            Set @message = 'Error calling validate_delimited_file for ' + @DatasetInfoFilePath + ' (Code ' + Convert(varchar(11), @result) + ')'
 
         Set @myError = 60001
         Goto Done
@@ -224,14 +225,14 @@ Done:
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = @DatasetInfoFilePath
-    Exec PostUsageLogEntry 'UpdateDatasetFileInfoFromFile', @UsageMessage
+    Exec post_usage_log_entry 'update_dataset_file_info_from_file', @UsageMessage
 
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateDatasetFileInfoFromFile] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_dataset_file_info_from_file] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoFromFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_file_info_from_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateDatasetFileInfoFromFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_dataset_file_info_from_file] TO [Limited_Table_Write] AS [dbo]
 GO

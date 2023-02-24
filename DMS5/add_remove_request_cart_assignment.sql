@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddRemoveRequestCartAssignment] ******/
+/****** Object:  StoredProcedure [dbo].[add_remove_request_cart_assignment] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddRemoveRequestCartAssignment]
+CREATE PROCEDURE [dbo].[add_remove_request_cart_assignment]
 /****************************************************
 **
 **  Desc:
@@ -23,13 +23,14 @@ CREATE PROCEDURE [dbo].[AddRemoveRequestCartAssignment]
 **  Date:   01/16/2008 grk - Initial Release (ticket http://prismtrac.pnl.gov/trac/ticket/715)
 **          01/28/2009 dac - Added "output" keyword to @message parameter
 **          02/23/2017 mem - Added parameter @CartConfigName, which is used to populate column RDS_Cart_Config_ID
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @RequestIDList varchar(8000),
-    @CartName varchar(128),
-    @CartConfigName varchar(128) = '',
-    @Mode varchar(32) = 'Add', -- "Add" or "Remove"
+    @requestIDList varchar(8000),
+    @cartName varchar(128),
+    @cartConfigName varchar(128) = '',
+    @mode varchar(32) = 'Add', -- "Add" or "Remove"
     @message varchar(512) output
 )
 AS
@@ -94,7 +95,7 @@ AS
             if @cartConfigID is null
             begin
                 Declare @msg varchar(256) = 'Could not resolve cart config name "' + @CartConfigName + '" to ID for Request(s) ' + @RequestIDList
-                exec PostLogEntry 'Error', @msg, 'AddRemoveRequestCartAssignment'
+                exec post_log_entry 'Error', @msg, 'add_remove_request_cart_assignment'
             end
         End
     end
@@ -114,7 +115,7 @@ AS
     --
     INSERT INTO @requests( requestID )
     SELECT Value
-    FROM dbo.udfParseDelimitedIntegerList ( @RequestIDList, ',' )
+    FROM dbo.parse_delimited_integer_list ( @RequestIDList, ',' )
 
     ---------------------------------------------------
     -- validate request ids
@@ -171,14 +172,15 @@ AS
     --
 Done:
     return @myError
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRemoveRequestCartAssignment] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_remove_request_cart_assignment] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRemoveRequestCartAssignment] TO [DMS_Instrument_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_remove_request_cart_assignment] TO [DMS_Instrument_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRemoveRequestCartAssignment] TO [DMS_LCMSNet_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_remove_request_cart_assignment] TO [DMS_LCMSNet_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddRemoveRequestCartAssignment] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_remove_request_cart_assignment] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddRemoveRequestCartAssignment] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_remove_request_cart_assignment] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ReindexDatabase] ******/
+/****** Object:  StoredProcedure [dbo].[reindex_database] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ReindexDatabase]
+CREATE PROCEDURE [dbo].[reindex_database]
 /****************************************************
 **
 **  Desc:
@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[ReindexDatabase]
 **          11/21/2012 mem - Removed T_Analysis_Log
 **          05/28/2015 mem - Removed T_Analysis_Job_Processor_Group_Associations
 **          11/21/2022 mem - Use new aux info table and column names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -182,13 +183,13 @@ AS
     -----------------------------------------------------------
 
     Set @message = 'Reindexed ' + Convert(varchar(12), @TableCount) + ' tables'
-    Exec PostLogEntry 'Normal', @message, 'ReindexDatabase'
+    Exec post_log_entry 'Normal', @message, 'reindex_database'
 
 Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reindex_database] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ReindexDatabase] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reindex_database] TO [Limited_Table_Write] AS [dbo]
 GO

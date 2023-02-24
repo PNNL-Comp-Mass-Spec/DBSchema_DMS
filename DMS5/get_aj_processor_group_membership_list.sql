@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetAJProcessorGroupMembershipList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_aj_processor_group_membership_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetAJProcessorGroupMembershipList]
+CREATE FUNCTION [dbo].[get_aj_processor_group_membership_list]
 /****************************************************
 **
 **  Desc:
@@ -19,11 +19,12 @@ CREATE FUNCTION [dbo].[GetAJProcessorGroupMembershipList]
 **          02/20/2007 grk - Fixed reference to group ID
 **          02/22/2007 mem - Now grouping processors by Membership_Enabled values
 **          02/23/2007 mem - Added parameter @EnableDisableFilter
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @groupID int,
-    @EnableDisableFilter tinyint    -- 0 means disabled only, 1 means enabled only, anything else means all
+    @enableDisableFilter tinyint    -- 0 means disabled only, 1 means enabled only, anything else means all
 )
 RETURNS varchar(4000)
 AS
@@ -79,5 +80,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorGroupMembershipList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_aj_processor_group_membership_list] TO [DDL_Viewer] AS [dbo]
 GO

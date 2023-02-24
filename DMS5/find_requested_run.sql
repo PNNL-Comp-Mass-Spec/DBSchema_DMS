@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[Find_Requested_Run]
+CREATE PROCEDURE [dbo].[find_requested_run]
 /****************************************************
 **
 **  Desc:
@@ -16,28 +16,29 @@ CREATE PROCEDURE [dbo].[Find_Requested_Run]
 **
 **  Auth:   grk
 **  Date:   05/15/2006
-**          12/20/2006 mem - Now querying V_Find_Requested_Run using dynamic SQL (Ticket #349)
+**          12/20/2006 mem - Now querying V_find_requested_run using dynamic SQL (Ticket #349)
 **          04/27/2007 grk - Added LC Cart field and dropped some never-used fields (Ticket #447)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @RequestID varchar(20) = '',
-    @RequestName varchar(128) = '',
-    @Experiment varchar(50) = '',
-    @Instrument varchar(128) = '',
-    @LCCart varchar(128) = '',
-    @Requester varchar(50) = '',
-    @Created_After varchar(20) = '',
-    @Created_Before varchar(20) = '',
-    @WorkPackage varchar(50) = '',
-    @Usage varchar(50) = '',
-    @Proposal varchar(10) = '',
-    @Comment varchar(244) = '',
-    @Wellplate varchar(50) = '',
-    @Well varchar(50) = '',
-    @Batch varchar(20) = '',
+    @requestID varchar(20) = '',
+    @requestName varchar(128) = '',
+    @experiment varchar(50) = '',
+    @instrument varchar(128) = '',
+    @lcCart varchar(128) = '',
+    @requester varchar(50) = '',
+    @created_After varchar(20) = '',
+    @created_Before varchar(20) = '',
+    @workPackage varchar(50) = '',
+    @usage varchar(50) = '',
+    @proposal varchar(10) = '',
+    @comment varchar(244) = '',
+    @wellplateName varchar(50) = '',
+    @well varchar(50) = '',
+    @batch varchar(20) = '',
     @message varchar(512) output
 )
 AS
@@ -100,7 +101,7 @@ AS
     SET @iComment = '%' + @Comment + '%'
     --
     DECLARE @iWellplate varchar(50)
-    SET @iWellplate = '%' + @Wellplate + '%'
+    SET @iWellplate = '%' + @wellplateName + '%'
     --
     DECLARE @iWell varchar(50)
     SET @iWell = '%' + @Well + '%'
@@ -112,7 +113,7 @@ AS
     ---------------------------------------------------
     -- Construct the query
     ---------------------------------------------------
-    Set @S = ' SELECT * FROM V_Find_Requested_Run'
+    Set @S = ' SELECT * FROM V_find_requested_run'
     Set @W = ''
     If Len(@RequestID) > 0
         Set @W = @W + ' AND ([Request_ID] = ' + Convert(varchar(19), @iRequestID) + ' )'
@@ -138,7 +139,7 @@ AS
         Set @W = @W + ' AND ([Proposal] LIKE ''' + @iProposal + ''' )'
     If Len(@Comment) > 0
         Set @W = @W + ' AND ([Comment] LIKE ''' + @iComment + ''' )'
-    If Len(@Wellplate) > 0
+    If Len(@wellplateName) > 0
         Set @W = @W + ' AND ([Wellplate] LIKE ''' + @iWellplate + ''' )'
     If Len(@Well) > 0
         Set @W = @W + ' AND ([Well] LIKE ''' + @iWell + ''' )'

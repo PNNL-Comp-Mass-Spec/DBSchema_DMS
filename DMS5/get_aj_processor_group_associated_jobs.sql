@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetAJProcessorGroupAssociatedJobs] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_aj_processor_group_associated_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetAJProcessorGroupAssociatedJobs]
+CREATE FUNCTION [dbo].[get_aj_processor_group_associated_jobs]
 /****************************************************
 **
 **  Desc:
@@ -16,11 +16,12 @@ CREATE FUNCTION [dbo].[GetAJProcessorGroupAssociatedJobs]
 **  Auth:   grk
 **  Date:   02/16/2007
 **          02/23/2007 mem - Added parameter @JobStateFilter
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @groupID int,
-    @JobStateFilter tinyint     -- 0 means new only, 1 means new and in progress only, anything else means all states
+    @jobStateFilter tinyint     -- 0 means new only, 1 means new and in progress only, anything else means all states
 )
 RETURNS varchar(64)
 AS
@@ -70,5 +71,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetAJProcessorGroupAssociatedJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_aj_processor_group_associated_jobs] TO [DDL_Viewer] AS [dbo]
 GO

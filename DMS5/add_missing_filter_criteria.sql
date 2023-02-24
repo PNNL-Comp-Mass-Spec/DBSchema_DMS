@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddMissingFilterCriteria] ******/
+/****** Object:  StoredProcedure [dbo].[add_missing_filter_criteria] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddMissingFilterCriteria]
+CREATE PROCEDURE [dbo].[add_missing_filter_criteria]
 /****************************************************
 **
 **  Desc:
@@ -19,11 +19,12 @@ CREATE PROCEDURE [dbo].[AddMissingFilterCriteria]
 **          12/04/2012 mem - Added MSAlign_PValue and MSAlign_FDR
 **          05/07/2013 mem - Added MSGFPlus_PepQValue
 **                           Renamed MSGFDB_FDR to MSGFPlus_QValue
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @FilterSetID int,
-    @ProcessGroupsWithNoCurrentCriteriaDefined tinyint = 0,
+    @filterSetID int,
+    @processGroupsWithNoCurrentCriteriaDefined tinyint = 0,
     @message varchar(255)='' OUTPUT
 )
 AS
@@ -269,9 +270,9 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_missing_filter_criteria] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddMissingFilterCriteria] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_missing_filter_criteria] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddMissingFilterCriteria] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_missing_filter_criteria] TO [Limited_Table_Write] AS [dbo]
 GO

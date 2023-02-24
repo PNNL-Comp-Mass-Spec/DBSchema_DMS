@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[StoreParamFileMassMods] ******/
+/****** Object:  StoredProcedure [dbo].[store_param_file_mass_mods] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[StoreParamFileMassMods]
+CREATE PROCEDURE [dbo].[store_param_file_mass_mods]
 /****************************************************
 **
 **  Stores (or validates) the dynamic and static mods to associate with a given parameter file
@@ -101,7 +101,7 @@ CREATE PROCEDURE [dbo].[StoreParamFileMassMods]
 **          10/02/2017 mem - If @paramFileID is 0 or negative, validate mods only.  Returns 0 if valid, error code if not valid
 **          08/17/2018 mem - Add support for TopPIC mods
 **                           Add parameter @paramFileType
-**          11/19/2018 mem - Pass 0 to the @maxRows parameter to udfParseDelimitedListOrdered
+**          11/19/2018 mem - Pass 0 to the @maxRows parameter to parse_delimited_list_ordered
 **          04/23/2019 mem - Add support for MSFragger mod defs
 **          03/05/2021 mem - Add support for MaxQuant mod defs
 **          05/13/2021 mem - Fix handling of static MaxQuant mods that are N-terminal or C-terminal
@@ -110,6 +110,7 @@ CREATE PROCEDURE [dbo].[StoreParamFileMassMods]
 **                         - Collapse isobaric mods into a single entry
 **          09/07/2021 mem - Add support for dynamic N-terminal TMT mods in MSFragger (notated with n^)
 **          02/23/2023 mem - Add support for DIA-NN
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -344,7 +345,7 @@ AS
 
         INSERT INTO #Tmp_Mods (EntryID, Value)
         SELECT EntryID, Value
-        FROM dbo.udfParseDelimitedListOrdered(@mods, @delimiter, 0)
+        FROM dbo.parse_delimited_list_ordered(@mods, @delimiter, 0)
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -480,7 +481,7 @@ AS
 
                         INSERT INTO #Tmp_ModDef (EntryID, Value)
                         SELECT EntryID, Value
-                        FROM dbo.udfParseDelimitedListOrdered(@rowValue, ' ', 0)
+                        FROM dbo.parse_delimited_list_ordered(@rowValue, ' ', 0)
 
                         Update #Tmp_ModDef
                         Set Value = 'DynamicMod=' + Value
@@ -498,7 +499,7 @@ AS
 
                         INSERT INTO #Tmp_ModDef (EntryID, Value)
                         SELECT EntryID, Value
-                        FROM dbo.udfParseDelimitedListOrdered(@rowValue, ' ', 0)
+                        FROM dbo.parse_delimited_list_ordered(@rowValue, ' ', 0)
 
                         Update #Tmp_ModDef
                         Set Value = 'StaticMod=' + Value
@@ -590,7 +591,7 @@ AS
                 -- MS-GF+ style mod (also used by DIA-NN and TOPIC)
                 INSERT INTO #Tmp_ModDef (EntryID, Value)
                 SELECT EntryID, Value
-                FROM dbo.udfParseDelimitedListOrdered(@row, ',', 0)
+                FROM dbo.parse_delimited_list_ordered(@row, ',', 0)
             End
 
             If Not Exists (SELECT * FROM #Tmp_ModDef)
@@ -1376,5 +1377,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[StoreParamFileMassMods] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[store_param_file_mass_mods] TO [DDL_Viewer] AS [dbo]
 GO

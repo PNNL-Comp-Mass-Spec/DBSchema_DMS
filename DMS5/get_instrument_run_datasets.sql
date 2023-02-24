@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetInstrumentRunDatasets] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_instrument_run_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetInstrumentRunDatasets]
+CREATE FUNCTION [dbo].[get_instrument_run_datasets]
 /****************************************************
 **
 **  Desc:
@@ -18,6 +18,7 @@ CREATE FUNCTION [dbo].[GetInstrumentRunDatasets]
 **  Date:   09/14/2010
 **          09/04/2010 grk - initial release
 **          02/15/2012 mem - Now using T_Dataset.Acq_Length_Minutes
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -156,5 +157,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetInstrumentRunDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_instrument_run_datasets] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DoMaterialContainerOperation] ******/
+/****** Object:  StoredProcedure [dbo].[do_material_container_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DoMaterialContainerOperation]
+CREATE PROCEDURE [dbo].[do_material_container_operation]
 /****************************************************
 **
 **  Desc: Do an operation on a container, using the container name
@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[DoMaterialContainerOperation]
 **          08/19/2010 grk - try-catch for error handling
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Prevent updating containers of type 'na'
-**          07/07/2022 mem - Include container name when logging error messages from UpdateMaterialContainers
+**          07/07/2022 mem - Include container name when logging error messages from update_material_containers
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -46,7 +47,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DoMaterialContainerOperation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_material_container_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -69,7 +70,7 @@ AS
 
     If Exists (Select * From V_Material_Containers_List_Report Where Container = @name And [Type] = 'na')
     Begin
-        Set @msg = 'Container "' + @name + '" cannot be updated by the website; contact a DMS admin (see DoMaterialContainerOperation)'
+        Set @msg = 'Container "' + @name + '" cannot be updated by the website; contact a DMS admin (see do_material_container_operation)'
         Set @logErrors = 1
         RAISERROR (@msg, 11, 1)
     End
@@ -93,7 +94,7 @@ AS
         Declare @comment varchar(512) = ''
         Set @logErrors = 1
 
-        exec @myError = UpdateMaterialContainers
+        exec @myError = update_material_containers
                 @iMode,
                 @containerList,
                 @newValue,
@@ -109,7 +110,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         If (XACT_STATE()) <> 0
@@ -122,7 +123,7 @@ AS
             Else
                 Set @msg = @message + ' (container ' + @name + ')'
 
-            Exec PostLogEntry 'Error', @msg, 'DoMaterialContainerOperation'
+            Exec post_log_entry 'Error', @msg, 'do_material_container_operation'
         End
 
     END CATCH
@@ -130,9 +131,9 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_material_container_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DoMaterialContainerOperation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_material_container_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DoMaterialContainerOperation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_material_container_operation] TO [Limited_Table_Write] AS [dbo]
 GO

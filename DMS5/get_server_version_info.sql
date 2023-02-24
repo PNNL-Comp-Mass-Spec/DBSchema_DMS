@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetServerVersionInfo] ******/
+/****** Object:  StoredProcedure [dbo].[get_server_version_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetServerVersionInfo]
+CREATE PROCEDURE [dbo].[get_server_version_info]
 /****************************************************
 **
 **  Desc:
@@ -15,13 +15,14 @@ CREATE PROCEDURE [dbo].[GetServerVersionInfo]
 **  Date:   07/15/2006 mem - Initial version
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @VersionMajor int = 0 OUTPUT,
-    @VersionMinor int = 0 OUTPUT,
-    @VersionBuild int = 0 OUTPUT,
-    @ServicePack varchar(24)='' OUTPUT
+    @versionMajor int = 0 OUTPUT,
+    @versionMinor int = 0 OUTPUT,
+    @versionBuild int = 0 OUTPUT,
+    @servicePack varchar(24)='' OUTPUT
 )
 AS
     Set nocount on
@@ -102,7 +103,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_server_version_info] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetServerVersionInfo] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_server_version_info] TO [Limited_Table_Write] AS [dbo]
 GO

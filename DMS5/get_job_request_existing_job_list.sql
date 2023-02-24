@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobRequestExistingJobList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_job_request_existing_job_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetJobRequestExistingJobList]
+CREATE FUNCTION [dbo].[get_job_request_existing_job_list]
 /****************************************************
 **
 **  Desc:   Builds a comma separated list of existing jobs
@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[GetJobRequestExistingJobList]
 **  Date:   12/06/2005
 **          03/27/2009 mem - Increased maximum size of the list to varchar(3500)
 **          07/30/2019 mem - Get jobs from T_Analysis_Job_Request_Existing_Jobs
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -41,5 +42,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobRequestExistingJobList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_request_existing_job_list] TO [DDL_Viewer] AS [dbo]
 GO

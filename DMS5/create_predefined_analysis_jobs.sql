@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CreatePredefinedAnalysesJobs] ******/
+/****** Object:  StoredProcedure [dbo].[create_predefined_analysis_jobs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
+CREATE PROCEDURE [dbo].[create_predefined_analysis_jobs]
 /****************************************************
 **
 **  Desc: Schedules analysis jobs for dataset according to defaults
@@ -14,43 +14,44 @@ CREATE PROCEDURE [dbo].[CreatePredefinedAnalysesJobs]
 **  Date:   06/29/2005 grk - Supersedes "ScheduleDefaultAnalyses"
 **          03/28/2006 grk - Added protein collection fields
 **          04/04/2006 grk - Increased sized of param file name
-**          06/01/2006 grk - Fixed calling sequence to AddUpdateAnalysisJob
-**          03/15/2007 mem - Updated call to AddUpdateAnalysisJob (Ticket #394)
+**          06/01/2006 grk - Fixed calling sequence to add_update_analysis_job
+**          03/15/2007 mem - Updated call to add_update_analysis_job (Ticket #394)
 **                         - Replaced processor name with associated processor group (Ticket #388)
-**          02/29/2008 mem - Added optional parameter @callingUser; If provided, then will call AlterEventLogEntryUser (Ticket #644)
-**          04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
+**          02/29/2008 mem - Added optional parameter @callingUser; If provided, then will call alter_event_log_entry_user (Ticket #644)
+**          04/11/2008 mem - Now passing @RaiseErrorMessages to evaluate_predefined_analysis_rules
 **          05/14/2009 mem - Added parameters @AnalysisToolNameFilter, @ExcludeDatasetsNotReleased, and @infoOnly
-**          07/22/2009 mem - Improved error reporting for non-zero return values from EvaluatePredefinedAnalysisRules
+**          07/22/2009 mem - Improved error reporting for non-zero return values from evaluate_predefined_analysis_rules
 **          07/12/2010 mem - Expanded protein Collection fields and variables to varchar(4000)
-**          08/26/2010 grk - This was cloned from SchedulePredefinedAnalyses; added try-catch error handling
+**          08/26/2010 grk - This was cloned from schedule_predefined_analysis_jobs; added try-catch error handling
 **          08/26/2010 mem - Added output parameter @JobsCreated
 **          02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
-**          04/11/2011 mem - Updated call to AddUpdateAnalysisJob
-**          04/26/2011 mem - Now sending @PreventDuplicatesIgnoresNoExport = 0 to AddUpdateAnalysisJob
+**          04/11/2011 mem - Updated call to add_update_analysis_job
+**          04/26/2011 mem - Now sending @PreventDuplicatesIgnoresNoExport = 0 to add_update_analysis_job
 **          05/03/2012 mem - Added support for the Special Processing field
 **          08/02/2013 mem - Removed extra semicolon in status message
-**          06/24/2015 mem - Now passing @infoOnly to AddUpdateAnalysisJob
+**          06/24/2015 mem - Now passing @infoOnly to add_update_analysis_job
 **          02/23/2016 mem - Add Set XACT_ABORT on
-**          07/21/2016 mem - Log errors in PostLogEntry
+**          07/21/2016 mem - Log errors in post_log_entry
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          08/29/2018 mem - Tabs to spaces
 **          03/31/2021 mem - Expand @organismName and @organismDBName to varchar(128)
-**          06/14/2022 mem - Send procedure name to PostLogEntry
+**          06/14/2022 mem - Send procedure name to post_log_entry
 **          06/30/2022 mem - Rename parameter file column
 **          06/30/2022 mem - Rename parameter file argument
 **          01/27/2023 mem - Rename dataset argument to @datasetName
 **                         - Rename columns in temp table #JX
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasetName varchar(128),
     @callingUser varchar(128) = '',
-    @AnalysisToolNameFilter varchar(128) = '',      -- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
-    @ExcludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
-    @PreventDuplicateJobs tinyint = 1,              -- When non-zero, will not create new jobs that duplicate old jobs
+    @analysisToolNameFilter varchar(128) = '',      -- Optional: if not blank, then only considers predefines that match the given tool name (can contain wildcards)
+    @excludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
+    @preventDuplicateJobs tinyint = 1,              -- When non-zero, will not create new jobs that duplicate old jobs
     @infoOnly tinyint = 0,
     @message VARCHAR(max) output,
-    @JobsCreated int = 0 output
+    @jobsCreated int = 0 output
 )
 AS
     Set XACT_ABORT, nocount on
@@ -77,7 +78,7 @@ AS
 
     ---------------------------------------------------
     -- Temporary job holding table to receive created jobs
-    -- This table is populated in EvaluatePredefinedAnalysisRules
+    -- This table is populated in evaluate_predefined_analysis_rules
     ---------------------------------------------------
 
     CREATE TABLE #JX (
@@ -91,7 +92,7 @@ AS
         organismName varchar(128),
         proteinCollectionList varchar(4000),
         proteinOptionsList varchar(256),
-        ownerPRN varchar(128),
+        ownerUsername varchar(128),
         comment varchar(128),
         associatedProcessorGroup varchar(64),
         numJobs int,
@@ -113,11 +114,11 @@ AS
     ---------------------------------------------------
     Declare @result int
 
-    exec @result = EvaluatePredefinedAnalysisRules @datasetName, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
+    exec @result = evaluate_predefined_analysis_rules @datasetName, 'Export Jobs', @message output, @RaiseErrorMessages=0, @ExcludeDatasetsNotReleased=@ExcludeDatasetsNotReleased
     --
     If @result <> 0
     Begin
-        Set @ErrorMessage = 'EvaluatePredefinedAnalysisRules returned error code ' + Convert(varchar(12), @result)
+        Set @ErrorMessage = 'evaluate_predefined_analysis_rules returned error code ' + Convert(varchar(12), @result)
 
         If Not IsNull(@message, '') = ''
             Set @ErrorMessage = @ErrorMessage + '; ' + @message
@@ -145,8 +146,8 @@ AS
     Declare @propagationModeText varchar(24)
     Declare @specialProcessing varchar(512)
 
-    Declare @jobNum varchar(32)
-    Declare @ownerPRN varchar(32)
+    Declare @job varchar(32)
+    Declare @ownerUsername varchar(32)
 
     Declare @associatedProcessorGroup varchar(64)
     Set @associatedProcessorGroup = ''
@@ -175,7 +176,7 @@ AS
             @organismName = organismName,
             @proteinCollectionList = proteinCollectionList,
             @proteinOptionsList = proteinOptionsList,
-            @ownerPRN = ownerPRN,
+            @ownerUsername = ownerUsername,
             @comment = comment,
             @associatedProcessorGroup = associatedProcessorGroup,
             @propagationMode = propagationMode,
@@ -229,14 +230,14 @@ AS
                 If @infoOnly <> 0
                 Begin
                     Print ''
-                    Print 'Call AddUpdateAnalysisJob for dataset ' + @datasetName + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@paramFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
+                    Print 'Call add_update_analysis_job for dataset ' + @datasetName + ' and tool ' + @analysisToolName + '; param file: ' + IsNull(@paramFileName, '') + '; settings file: ' + IsNull(@settingsFileName, '')
                 End
 
                 ---------------------------------------------------
                 -- create the job
                 ---------------------------------------------------
-                execute @result = AddUpdateAnalysisJob
-                            @datasetNum = @datasetName,
+                execute @result = add_update_analysis_job
+                            @datasetName = @datasetName,
                             @priority = @priority,
                             @toolName = @analysisToolName,
                             @paramFileName = @paramFileName,
@@ -245,12 +246,12 @@ AS
                             @protCollNameList = @proteinCollectionList,
                             @protCollOptionsList = @proteinOptionsList,
                             @organismDBName = @organismDBName,
-                            @ownerPRN = @ownerPRN,
+                            @ownerUsername = @ownerUsername,
                             @comment = @comment,
                             @associatedProcessorGroup = @associatedProcessorGroup,
                             @propagationMode = @propagationModeText,
                             @stateName = 'new',
-                            @jobNum = @jobNum output,
+                            @job = @job output,
                             @mode = 'add',
                             @message = @NewMessage output,
                             @callingUser = @callingUser,
@@ -305,7 +306,7 @@ AS
 
                         Set @logMessage = @logMessage + @analysisToolName
 
-                        exec PostLogEntry 'Error', @logMessage, 'CreatePredefinedAnalysesJobs'
+                        exec post_log_entry 'Error', @logMessage, 'create_predefined_analysis_jobs'
                     End -- </e>
 
                 End -- </d>
@@ -349,15 +350,15 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
-        Exec PostLogEntry 'Error', @message, 'CreatePredefinedAnalysesJobs'
+        Exec post_log_entry 'Error', @message, 'create_predefined_analysis_jobs'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreatePredefinedAnalysesJobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_predefined_analysis_jobs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CreatePredefinedAnalysesJobs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_predefined_analysis_jobs] TO [Limited_Table_Write] AS [dbo]
 GO

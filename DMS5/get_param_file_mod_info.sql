@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetParamFileModInfo] ******/
+/****** Object:  StoredProcedure [dbo].[get_param_file_mod_info] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetParamFileModInfo]
+CREATE PROCEDURE [dbo].[get_param_file_mod_info]
 /****************************************************
 **
 **  Desc:
@@ -24,15 +24,16 @@ CREATE PROCEDURE [dbo].[GetParamFileModInfo]
 **          08/22/2004 grk - added @paramFileID
 **          02/12/2010 mem - Increased size of @ParamFileName to varchar(255)
 **          04/02/2020 mem - Remove cast of Mass_Correction_Tag to varchar since no longer char(8)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @parameterFileName varchar(255),
     @paramFileID int output,
     @paramFileFound tinyint=0 output,
-    @PM_TargetSymbolList varchar(128) output,
-    @PM_MassCorrectionTagList varchar(512) output,
-    @NP_MassCorrectionTagList varchar(512) output,
+    @pm_TargetSymbolList varchar(128) output,
+    @pm_MassCorrectionTagList varchar(512) output,
+    @np_MassCorrectionTagList varchar(512) output,
     @message varchar(256) output
 )
 AS
@@ -137,11 +138,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_file_mod_info] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_param_file_mod_info] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetParamFileModInfo] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_param_file_mod_info] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetParamFileModInfo] TO [MTS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_param_file_mod_info] TO [MTS_SP_User] AS [dbo]
 GO

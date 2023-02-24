@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetFactorCrosstabByFactorID] ******/
+/****** Object:  StoredProcedure [dbo].[get_factor_crosstab_by_factor_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetFactorCrosstabByFactorID]
+CREATE PROCEDURE [dbo].[get_factor_crosstab_by_factor_id]
 /****************************************************
 **
 **  Desc:
@@ -18,12 +18,13 @@ CREATE PROCEDURE [dbo].[GetFactorCrosstabByFactorID]
 **  Auth:   mem
 **  Date:   02/18/2010
 **          02/19/2010 grk - tweaked logic that creates @FactorNameList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @GenerateSQLOnly tinyint = 0,           -- If non-zero, then generates the Sql required to return the results, but doesn't actually return the results
-    @CrossTabSql varchar(max)='' OUTPUT,
-    @FactorNameList varchar(max)='' OUTPUT,
+    @generateSQLOnly tinyint = 0,           -- If non-zero, then generates the Sql required to return the results, but doesn't actually return the results
+    @crossTabSql varchar(max)='' OUTPUT,
+    @factorNameList varchar(max)='' OUTPUT,
     @message varchar(512)='' OUTPUT
 )
 AS
@@ -100,9 +101,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByFactorID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_factor_crosstab_by_factor_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFactorCrosstabByFactorID] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_factor_crosstab_by_factor_id] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByFactorID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_factor_crosstab_by_factor_id] TO [Limited_Table_Write] AS [dbo]
 GO

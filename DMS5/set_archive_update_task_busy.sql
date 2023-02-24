@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SetArchiveUpdateTaskBusy] ******/
+/****** Object:  StoredProcedure [dbo].[set_archive_update_task_busy] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskBusy]
+CREATE PROCEDURE [dbo].[set_archive_update_task_busy]
 /****************************************************
 **
 **  Desc:
@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[SetArchiveUpdateTaskBusy]
 **
 **  Auth:   grk
 **  Date:   12/15/2009
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @datasetNum varchar(128),
-    @StorageServerName VARCHAR(64),
+    @datasetName varchar(128),
+    @storageServerName VARCHAR(64),
     @message varchar(512) output
 )
 AS
@@ -43,7 +44,7 @@ AS
         T_Dataset_Archive
         INNER JOIN T_Dataset ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
     WHERE
-        T_Dataset.Dataset_Num = @datasetNum
+        T_Dataset.Dataset_Num = @datasetName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -57,14 +58,14 @@ AS
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'Dataset: ' + @datasetNum
-    Exec PostUsageLogEntry 'SetArchiveUpdateTaskBusy', @UsageMessage
+    Set @UsageMessage = 'Dataset: ' + @datasetName
+    Exec post_usage_log_entry 'set_archive_update_task_busy', @UsageMessage
 
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskBusy] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_archive_update_task_busy] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[SetArchiveUpdateTaskBusy] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_archive_update_task_busy] TO [Limited_Table_Write] AS [dbo]
 GO

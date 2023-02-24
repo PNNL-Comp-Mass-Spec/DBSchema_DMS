@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateNotificationUserRegistration] ******/
+/****** Object:  StoredProcedure [dbo].[update_notification_user_registration] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateNotificationUserRegistration]
+CREATE PROCEDURE [dbo].[update_notification_user_registration]
 /****************************************************
 **
 **  Desc:
@@ -15,21 +15,22 @@ CREATE PROCEDURE [dbo].[UpdateNotificationUserRegistration]
 **
 **  Auth:   grk
 **  Date:   04/03/2010
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          06/11/2012 mem - Renamed @Dataset to @DatasetNotReleased
 **                         - Added @DatasetReleased
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @PRN varchar(15),
-    @Name varchar(64),
-    @RequestedRunBatch varchar(4),      -- 'Yes' or 'No'
-    @AnalysisJobRequest varchar(4),     -- 'Yes' or 'No'
-    @SamplePrepRequest varchar(4),      -- 'Yes' or 'No'
-    @DatasetNotReleased varchar(4),     -- 'Yes' or 'No'
-    @DatasetReleased varchar(4),        -- 'Yes' or 'No'
+    @username varchar(15),
+    @name varchar(64),
+    @requestedRunBatch varchar(4),      -- 'Yes' or 'No'
+    @analysisJobRequest varchar(4),     -- 'Yes' or 'No'
+    @samplePrepRequest varchar(4),      -- 'Yes' or 'No'
+    @datasetNotReleased varchar(4),     -- 'Yes' or 'No'
+    @datasetReleased varchar(4),        -- 'Yes' or 'No'
     @mode varchar(12) = 'update',
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -47,7 +48,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateNotificationUserRegistration', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_notification_user_registration', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -61,11 +62,11 @@ AS
     --
     SELECT @userID = ID
     FROM T_Users
-    WHERE U_PRN = @PRN
+    WHERE U_PRN = @username
     --
     IF @userID = 0
     BEGIN
-        SET @message = 'User PRN "' + @PRN + '" is not valid'
+        SET @message = 'Username "' + @username + '" is not valid'
         SET @myError = 15
         GOTO Done
     END
@@ -144,16 +145,16 @@ Done:
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'User ' + IsNull(@PRN, 'NULL')
-    Exec PostUsageLogEntry 'UpdateNotificationUserRegistration', @UsageMessage
+    Set @UsageMessage = 'User ' + IsNull(@username, 'NULL')
+    Exec post_usage_log_entry 'update_notification_user_registration', @UsageMessage
 
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateNotificationUserRegistration] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_notification_user_registration] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateNotificationUserRegistration] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_notification_user_registration] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateNotificationUserRegistration] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_notification_user_registration] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateRequestUsers] ******/
+/****** Object:  StoredProcedure [dbo].[validate_request_users] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateRequestUsers]
+CREATE PROCEDURE [dbo].[validate_request_users]
 /****************************************************
 **
 **  Desc:
@@ -13,12 +13,13 @@ CREATE PROCEDURE [dbo].[ValidateRequestUsers]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**  Date:   03/21/2022 mem - Initial version (refactored code from AddUpdateSamplePrepRequest)
+**  Date:   03/21/2022 mem - Initial version (refactored code from add_update_sample_prep_request)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @requestName varchar(128),
-    @callingProcedure varchar(64),              -- AddUpdateDataAnalysisRequest or AddUpdateSamplePrepRequest
+    @callingProcedure varchar(64),              -- add_update_data_analysis_request or add_update_sample_prep_request
     @requestedPersonnel varchar(256) output,    -- Input/output parameter
     @assignedPersonnel varchar(256)  output,    -- Input/output parameter
     @requireValidRequestedPersonnel tinyint = 1,
@@ -40,7 +41,7 @@ AS
 
     ---------------------------------------------------
     -- Validate requested and assigned personnel
-    -- Names should be in the form "Last Name, First Name (PRN)"
+    -- Names should be in the form "Last Name, First Name (Username)"
     ---------------------------------------------------
 
     CREATE TABLE #Tmp_UserInfo (
@@ -62,7 +63,7 @@ AS
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
             SELECT Value
-            FROM dbo.udfParseDelimitedList(@requestedPersonnel, ';', @callingProcedure)
+            FROM dbo.parse_delimited_list(@requestedPersonnel, ';', @callingProcedure)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -72,7 +73,7 @@ AS
         Begin
             INSERT INTO #Tmp_UserInfo ( Name_and_PRN )
             SELECT Value
-            FROM dbo.udfParseDelimitedList(@assignedPersonnel, ';', @callingProcedure)
+            FROM dbo.parse_delimited_list(@assignedPersonnel, ';', @callingProcedure)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -102,7 +103,7 @@ AS
         Declare @continue tinyint = 1
         Declare @unknownUser varchar(255)
         Declare @matchCount tinyint
-        Declare @newPRN varchar(64)
+        Declare @newUsername varchar(64)
         Declare @newUserID int
 
         While @continue = 1
@@ -121,7 +122,7 @@ AS
             Begin -- <c>
                 Set @matchCount = 0
 
-                exec AutoResolveNameToPRN @unknownUser, @matchCount output, @newPRN output, @newUserID output
+                exec auto_resolve_name_to_username @unknownUser, @matchCount output, @newUsername output, @newUserID output
 
                 If @matchCount = 1
                 Begin
@@ -198,7 +199,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateRequestUsers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_request_users] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateRequestUsers] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_request_users] TO [Limited_Table_Write] AS [dbo]
 GO

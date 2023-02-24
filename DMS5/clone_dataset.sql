@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CloneDataset] ******/
+/****** Object:  StoredProcedure [dbo].[clone_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CloneDataset]
+CREATE PROCEDURE [dbo].[clone_dataset]
 /****************************************************
 **
 **  Desc:
@@ -19,16 +19,17 @@ CREATE PROCEDURE [dbo].[CloneDataset]
 **          09/25/2014 mem - Updated T_Job_Step_Dependencies to use Job
 **                           Removed the Machine column from T_Job_Steps
 **          02/23/2016 mem - Add set XACT_ABORT on
-**          06/13/2017 mem - Rename @operPRN to @requestorPRN when calling AddUpdateRequestedRun
-**          05/23/2022 mem - Rename @requestorPRN to @requesterPRN when calling AddUpdateRequestedRun
-**          11/25/2022 mem - Update call to AddUpdateRequestedRun to use new parameter name
+**          06/13/2017 mem - Rename @operatorUsername to @requestorUsername when calling add_update_requested_run
+**          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
+**          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 1,                      -- Change to 0 to actually perform the clone; 1 to preview items that would be created
-    @Dataset varchar(128),                      -- Dataset name to clone
-    @Suffix varchar(24) = '_Test1',             -- Suffix to apply to cloned dataset and requested run
-    @CreateDatasetArchiveTask tinyint = 0,      -- Set to 1 to instruct DMS to archive the cloned dataset
+    @dataset varchar(128),                      -- Dataset name to clone
+    @suffix varchar(24) = '_Test1',             -- Suffix to apply to cloned dataset and requested run
+    @createDatasetArchiveTask tinyint = 0,      -- Set to 1 to instruct DMS to archive the cloned dataset
     @message varchar(255) = '' OUTPUT
 )
 AS
@@ -44,14 +45,14 @@ AS
     Declare @TranClone varchar(24) = 'Clone'
     Declare @RequestID int = 0
 
-    Declare @experimentNum varchar(64)
-    Declare @operPRN varchar(50)
+    Declare @experimentName varchar(64)
+    Declare @operatorUsername varchar(50)
     Declare @instrumentName varchar(64)
     Declare @workPackage varchar(50)
     Declare @DatasetType varchar(50)
     Declare @instrumentSettings varchar(1024)
-    Declare @wellplate varchar(64)
-    Declare @wellNum varchar(64)
+    Declare @wellplateName varchar(64)
+    Declare @wellNumber varchar(64)
     Declare @internalStandard varchar(64)
     Declare @comment varchar(512)
     Declare @eusProposalID varchar(10)
@@ -135,14 +136,14 @@ AS
 
         -- Lookup the information requred to create a new requested run
         --
-        SELECT @experimentNum = E.Experiment_Num,
-               @operPRN = DS.DS_Oper_PRN,
+        SELECT @experimentName = E.Experiment_Num,
+               @operatorUsername = DS.DS_Oper_PRN,
                @instrumentName = Inst.IN_name,
                @workPackage = RR.RDS_WorkPackage,
                @DatasetType = DTN.DST_name,                     -- Aka @msType
                @instrumentSettings = RR.RDS_instrument_setting,
-               @wellplate = RR.RDS_Well_Plate_Num,
-               @wellNum = RR.RDS_Well_Num,
+               @wellplateName = RR.RDS_Well_Plate_Num,
+               @wellNumber = RR.RDS_Well_Num,
                @internalStandard = RR.RDS_internal_standard,
                @comment = 'Automatically created by Dataset entry',
                @eusProposalID = RR.RDS_EUS_Proposal_ID,
@@ -179,13 +180,13 @@ AS
             ---------------------------------------------------
 
             SELECT @requestNameNew AS Request_Name_New,
-                   @experimentNum AS Experiment,
+                   @experimentName AS Experiment,
                    @instrumentName AS Instrument,
                    @workPackage AS WorkPackage,
                    @DatasetType AS Dataset_Type,
                    @instrumentSettings AS Instrument_Settings,
-                   @wellplate AS Well_Plate_Num,
-                   @wellNum AS Well_Num,
+                   @wellplateName AS Well_Plate_Num,
+                   @wellNumber AS Well_Num,
                    @internalStandard AS Internal_standard,
                    @comment AS [Comment],
                    @eusProposalID AS EUS_Proposal_ID,
@@ -246,18 +247,18 @@ AS
             Set @DatasetIDNew = SCOPE_IDENTITY()
 
             -- Create a requested run for the dataset
-            -- (code is from AddUpdateDataset)
+            -- (code is from add_update_dataset)
 
-            EXEC @myError = dbo.AddUpdateRequestedRun
+            EXEC @myError = dbo.add_update_requested_run
                                     @reqName = @requestNameNew,
-                                    @experimentNum = @experimentNum,
-                                    @requesterPRN = @operPRN,
+                                    @experimentName = @experimentName,
+                                    @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentName,
                                     @workPackage = @workPackage,
                                     @msType = @datasetType,
                                     @instrumentSettings = @instrumentSettings,
-                                    @wellplate = @wellplate,
-                                    @wellNum = @wellNum,
+                                    @wellplateName = @wellplateName,
+                                    @wellNumber = @wellNumber,
                                     @internalStandard = @internalStandard,
                                     @comment = @comment,
                                     @eusProposalID = @eusProposalID,
@@ -275,7 +276,7 @@ AS
             If @myError <> 0
             Begin
                 rollback
-                Exec PostLogEntry 'Error', @message, 'CloneDataset'
+                Exec post_log_entry 'Error', @message, 'clone_dataset'
                 Goto Done
             End
 
@@ -288,16 +289,16 @@ AS
             -- Possibly create a Dataset Archive task
             --
             If @CreateDatasetArchiveTask <> 0
-                execute AddArchiveDataset @DatasetIDNew
+                execute add_archive_dataset @DatasetIDNew
             Else
-                print 'You should manually create a dataset archive task using: execute AddArchiveDataset ' + Convert(varchar(12), @DatasetIDNew)
+                print 'You should manually create a dataset archive task using: execute add_archive_dataset ' + Convert(varchar(12), @DatasetIDNew)
 
             -- Finalize the transaction
             Commit
 
             Set @message = 'Created dataset ' + @DatasetNew + ' by cloning ' + @Dataset
 
-            Exec PostLogEntry 'Normal', @message, 'CloneDataset'
+            Exec post_log_entry 'Normal', @message, 'clone_dataset'
 
 
             -- Create a Capture job for the newly cloned dataset
@@ -502,7 +503,7 @@ AS
                 exec DMS_Capture.dbo.update_parameters_for_job @CaptureJobNew
 
                 Declare @jobMessage varchar(255) = 'Created capture task job ' + Convert(varchar(12), @CaptureJobNew) + ' for dataset ' + @DatasetNew + ' by cloning job ' + Convert(varchar(12), @CaptureJob)
-                Exec PostLogEntry 'Normal', @jobMessage, 'CloneDataset'
+                Exec post_log_entry 'Normal', @jobMessage, 'clone_dataset'
 
                 Set @message = @message + '; ' + @jobMessage
             End
@@ -516,8 +517,8 @@ AS
         If @@TranCount > 0
             Rollback
 
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'CloneDataset')
-                exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 0,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'clone_dataset')
+                exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 0,
                                         @ErrorNum = @myError output, @message = @message output
 
         Set @message = 'Exception: ' + @message
@@ -530,5 +531,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CloneDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[clone_dataset] TO [DDL_Viewer] AS [dbo]
 GO

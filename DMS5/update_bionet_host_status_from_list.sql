@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateBionetHostStatusFromList] ******/
+/****** Object:  StoredProcedure [dbo].[update_bionet_host_status_from_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateBionetHostStatusFromList]
+CREATE PROCEDURE [dbo].[update_bionet_host_status_from_list]
 /****************************************************
 **
 **  Desc:
@@ -14,7 +14,8 @@ CREATE PROCEDURE [dbo].[UpdateBionetHostStatusFromList]
 **  Date:   12/03/2015 mem - Initial version
 **          12/04/2015 mem - Now auto-removing ".bionet"
 **                         - Add support for including IP addresses, for example ltq_orb_3@192.168.30.78
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -57,7 +58,7 @@ AS
 
     INSERT INTO #Tmp_Hosts (Host)
     SELECT DISTINCT Value
-    FROM dbo.udfParseDelimitedList(@hostNames, ',', 'UpdateBionetHostStatusFromList')
+    FROM dbo.parse_delimited_list(@hostNames, ',', 'update_bionet_host_status_from_list')
     --
     SELECT @myRowCount = @@rowcount, @myError = @@error
 
@@ -162,7 +163,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateBionetHostStatusFromList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_bionet_host_status_from_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateBionetHostStatusFromList] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_bionet_host_status_from_list] TO [svc-dms] AS [dbo]
 GO

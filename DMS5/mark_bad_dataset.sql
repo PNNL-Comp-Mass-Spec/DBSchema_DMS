@@ -1,12 +1,12 @@
-/****** Object:  StoredProcedure [dbo].[MarkBadDataset] ******/
+/****** Object:  StoredProcedure [dbo].[mark_bad_dataset] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MarkBadDataset]
+CREATE PROCEDURE [dbo].[mark_bad_dataset]
 /****************************************************
 **  File:
-**  Name: MarkBadDataset
+**  Name: mark_bad_dataset
 **  Desc: Sets a bad dataset to No Interest, Inactive, NonPurgeable and adds comment
 **
 **  Return values: 0: success, otherwise, error code
@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[MarkBadDataset]
 **      - Comment to be appended to existing comment in dataset table
 **
 **  Auth:   dac
-**  Date:   8/4/2004
+**  Date:   08/04/2004
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
-    @datasetNum varchar(64),
+    @datasetName varchar(64),
     @comment varchar(512),
     @message varchar(512) output
 AS
@@ -39,7 +40,7 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    if LEN(@datasetNum) < 1
+    if LEN(@datasetName) < 1
     begin
         set @myError = 51010
         RAISERROR ('Dataset number was blank',
@@ -62,13 +63,13 @@ AS
         @curDSStateID = DS_state_ID,
         @curComment = DS_Comment
     FROM T_Dataset
-    WHERE (Dataset_Num = @datasetNum)
+    WHERE (Dataset_Num = @datasetName)
 
     -- verify a dataset was found
     --
     if @datasetID = 0
     begin
-        set @message = 'Dataset "' + @datasetNum + '" is not in database '
+        set @message = 'Dataset "' + @datasetName + '" is not in database '
         RAISERROR (@message, 10, 1)
         return 51004
     end
@@ -83,7 +84,7 @@ AS
         -- Start transaction
         --
         declare @transName varchar(32)
-        set @transName = 'MarkBadDataset'
+        set @transName = 'mark_bad_dataset'
         begin transaction @transName
         --
         UPDATE T_Dataset_Archive
@@ -95,21 +96,21 @@ AS
         --
         if @myError <> 0
             begin
-                set @message = 'Archive table update operation failed: "' + @datasetNum + '"'
+                set @message = 'Archive table update operation failed: "' + @datasetName + '"'
                 RAISERROR (@message, 10, 1)
                 rollback transaction @transName
                 return 51005
         end
         if @myRowCount < 1
             begin
-                set @message = 'Dataset not in archive table: "' + @datasetNum + '"'
+                set @message = 'Dataset not in archive table: "' + @datasetName + '"'
                 RAISERROR (@message, 10, 1)
                 rollback transaction @transName
                 return 51015
             end
         if @myRowCount > 1
             begin
-                set @message = 'Multiple records affected by archive update: "' + @datasetNum + '"'
+                set @message = 'Multiple records affected by archive update: "' + @datasetName + '"'
                 RAISERROR (@message, 10, 1)
                 rollback transaction @transName
                 return 51015
@@ -130,13 +131,13 @@ AS
                 DS_comment = @curComment + '; ' + @comment,
                 DS_rating = 1,
                 DS_State_ID = 4
-        WHERE (Dataset_Num = @datasetNum)
+        WHERE (Dataset_Num = @datasetName)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
-            set @message = 'Dataset update operation failed: "' + @datasetNum + '"'
+            set @message = 'Dataset update operation failed: "' + @datasetName + '"'
             RAISERROR (@message, 10, 1)
             rollback transaction @transName
             return 51006
@@ -148,7 +149,7 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[MarkBadDataset] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[mark_bad_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[MarkBadDataset] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[mark_bad_dataset] TO [Limited_Table_Write] AS [dbo]
 GO

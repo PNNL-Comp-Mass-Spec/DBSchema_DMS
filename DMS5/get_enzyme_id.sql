@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetEnzymeID] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_enzyme_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetEnzymeID]
+CREATE FUNCTION [dbo].[get_enzyme_id]
 /****************************************************
 **
 **  Desc: Gets enzymeID for given enzyme name
@@ -15,14 +15,15 @@ CREATE PROCEDURE [dbo].[GetEnzymeID]
 **  Auth:   jds
 **  Date:   08/25/2004
 **          08/03/2017 mem - Add Set NoCount On
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @enzymeName varchar(50) = " "
 )
+RETURNS int
 AS
-    Set NoCount On
-
+BEGIN
     Declare @enzymeID int = 0
 
     SELECT @enzymeID = Enzyme_ID
@@ -30,11 +31,12 @@ AS
     WHERE Enzyme_Name = @enzymeName
 
     return @enzymeID
+END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEnzymeID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_enzyme_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetEnzymeID] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_enzyme_id] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEnzymeID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_enzyme_id] TO [Limited_Table_Write] AS [dbo]
 GO

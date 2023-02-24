@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateMaterialContainers] ******/
+/****** Object:  StoredProcedure [dbo].[update_material_containers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateMaterialContainers]
+CREATE PROCEDURE [dbo].[update_material_containers]
 /****************************************************
 **
 **  Desc:
@@ -15,7 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateMaterialContainers]
 **
 **  Auth:   grk
 **  Date:   03/26/2008     - (ticket http://prismtrac.pnl.gov/trac/ticket/603)
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/17/2018 mem - Add mode 'unretire_container'
 **                         - Do not allow updating containers of type 'na'
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[UpdateMaterialContainers]
 **          07/07/2022 mem - Include container name in "container not empty" message
 **          10/22/2022 mem - Use an underscore to separate date and time in the auto-generated comment
 **          10/31/2022 mem - Use new column name id in views V_Material_Containers_List_Report and V_Material_Location_List_Report
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -43,7 +44,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateMaterialContainers', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_material_containers', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -94,7 +95,7 @@ AS
            [Type]
     FROM V_Material_Containers_List_Report
     WHERE id IN ( SELECT Item
-                   FROM dbo.MakeTableFromList ( @containerList ) )
+                   FROM dbo.make_table_from_list ( @containerList ) )
 
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -123,7 +124,7 @@ AS
     Begin
         If CharIndex(',', @containerList) > 1
         Begin
-            Set @message = 'Containers of type "na" cannot be updated by the website; contact a DMS admin (see UpdateMaterialContainers)'
+            Set @message = 'Containers of type "na" cannot be updated by the website; contact a DMS admin (see update_material_containers)'
         End
         Else
         Begin
@@ -132,7 +133,7 @@ AS
             Select @containerName = iName
             From @material_container_list
 
-            Set @message = 'Container "' + IsNull(@containerName, @containerList) + '" cannot be updated by the website; contact a DMS admin (see UpdateMaterialContainers)'
+            Set @message = 'Container "' + IsNull(@containerName, @containerList) + '" cannot be updated by the website; contact a DMS admin (see update_material_containers)'
         End
 
         return 51011
@@ -250,7 +251,7 @@ AS
     -- retire the contents
     If @mode = 'retire_container_and_contents' AND @nonEmptyContainerCount > 0
     Begin
-        exec @myError = UpdateMaterialItems
+        exec @myError = update_material_items
                 'retire_items',
                 @containerList,
                 'containers',
@@ -277,7 +278,7 @@ AS
      End
 
 /*
-select 'UpdateMaterialContainers' as Sproc, @mode as Mode, convert(char(22), @newValue) as Parameter, convert(char(12), @locID) as LocationID, @containerList as Containers
+select 'update_material_containers' as Sproc, @mode as Mode, convert(char(22), @newValue) as Parameter, convert(char(12), @locID) as LocationID, @containerList as Containers
 select * from @material_container_list
 return 0
 */
@@ -285,7 +286,7 @@ return 0
     -- start transaction
     ---------------------------------------------------
     --
-    Declare @transName varchar(32) = 'UpdateMaterialContainers'
+    Declare @transName varchar(32) = 'update_material_containers'
     Begin transaction @transName
 
     ---------------------------------------------------
@@ -367,9 +368,9 @@ return 0
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialContainers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_containers] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateMaterialContainers] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_material_containers] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateMaterialContainers] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_material_containers] TO [Limited_Table_Write] AS [dbo]
 GO

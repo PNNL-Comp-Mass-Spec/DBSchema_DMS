@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[udfParseDelimitedList] ******/
+/****** Object:  UserDefinedFunction [dbo].[parse_delimited_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[udfParseDelimitedList]
+CREATE FUNCTION [dbo].[parse_delimited_list]
 /****************************************************
 **
 **  Parses the text in @delimitedList and
@@ -27,6 +27,7 @@ CREATE FUNCTION [dbo].[udfParseDelimitedList]
 **          03/17/2017 mem - Add parameter @callingProcedure
 **                         - Add optional call to PostUsageLogEntry
 **          11/19/2018 mem - Add special handling if @delimeter is CR, LF, or CRLF
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ****************************************************/
 (
@@ -49,7 +50,7 @@ BEGIN
 
     Declare @value varchar(2048)
 
-    -- Declare @procedureNameForUsageLog varchar(255) = 'udfParseDelimitedList_' + @callingProcedure
+    -- Declare @procedureNameForUsageLog varchar(255) = 'parse_delimited_list_' + @callingProcedure
 
     -- Uncomment the following to log usage of this procedure to a file in C:\temp\
     -- Requirements for this to work:
@@ -195,5 +196,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[udfParseDelimitedList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_delimited_list] TO [DDL_Viewer] AS [dbo]
 GO

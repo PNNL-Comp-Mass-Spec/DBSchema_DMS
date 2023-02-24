@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RetireStaleLCColumns] ******/
+/****** Object:  StoredProcedure [dbo].[retire_stale_lc_columns] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RetireStaleLCColumns]
+CREATE PROCEDURE [dbo].[retire_stale_lc_columns]
 /****************************************************
 **
 **  Desc:
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[RetireStaleLCColumns]
 **
 **  Auth:   mem
 **  Date:   01/23/2015
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -156,8 +157,8 @@ AS
 
         If @myRowCount > 0
         Begin
-            Set @message = 'Retired ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowCount, ' LC column', ' LC columns') + ' that have not been used in at last ' + Cast(@UsedThresholdMonths as varchar(6)) + ' months'
-            exec PostLogEntry 'Normal', @message, 'RetireStaleLCColumns'
+            Set @message = 'Retired ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowCount, ' LC column', ' LC columns') + ' that have not been used in at last ' + Cast(@UsedThresholdMonths as varchar(6)) + ' months'
+            exec post_log_entry 'Normal', @message, 'retire_stale_lc_columns'
         End
 
     End
@@ -166,5 +167,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RetireStaleLCColumns] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[retire_stale_lc_columns] TO [DDL_Viewer] AS [dbo]
 GO

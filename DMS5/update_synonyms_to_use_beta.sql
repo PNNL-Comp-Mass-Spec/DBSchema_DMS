@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateSynonymsToUseBeta] ******/
+/****** Object:  StoredProcedure [dbo].[update_synonyms_to_use_beta] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateSynonymsToUseBeta]
+CREATE PROCEDURE [dbo].[update_synonyms_to_use_beta]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateSynonymsToUseBeta]
 **
 **  Auth:   mem
 **  Date:   04/30/2015 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -70,5 +71,5 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateSynonymsToUseBeta] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_synonyms_to_use_beta] TO [DDL_Viewer] AS [dbo]
 GO

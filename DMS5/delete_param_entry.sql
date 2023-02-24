@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteParamEntry] ******/
+/****** Object:  StoredProcedure [dbo].[delete_param_entry] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteParamEntry]
+CREATE PROCEDURE [dbo].[delete_param_entry]
 /****************************************************
 **
 **  Desc: Deletes given Sequest Param Entry from the T_Param_Entries
@@ -14,8 +14,9 @@ CREATE PROCEDURE [dbo].[DeleteParamEntry]
 **
 **  Auth:   kja
 **  Date:   07/22/2004
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -47,7 +48,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteParamEntry', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_param_entry', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -59,7 +60,7 @@ AS
 
     set @ParamEntryID = 0
     --
-    execute @ParamEntryID = GetParamEntryID @ParamFileID, @EntryType, @EntrySpecifier, @EntrySeqOrder
+    execute @ParamEntryID = get_param_entry_id @ParamFileID, @EntryType, @EntrySpecifier, @EntrySeqOrder
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -75,7 +76,7 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32)
-    set @transName = 'DeleteParamEntry'
+    set @transName = 'delete_param_entry'
     begin transaction @transName
 --  print 'start transaction' -- debug only
 
@@ -98,9 +99,9 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteParamEntry] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_param_entry] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteParamEntry] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_param_entry] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteParamEntry] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_param_entry] TO [Limited_Table_Write] AS [dbo]
 GO

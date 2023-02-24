@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateAnalysisJobRequest] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_analysis_job_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
+CREATE PROCEDURE [dbo].[add_update_analysis_job_request]
 /****************************************************
 **
 **  Desc:
@@ -16,13 +16,13 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          02/11/2006 grk - added validation for tool compatibility
 **          03/28/2006 grk - added protein collection fields
 **          04/04/2006 grk - increased sized of param file name
-**          04/04/2006 grk - modified to use ValidateAnalysisJobParameters
+**          04/04/2006 grk - modified to use validate_analysis_job_parameters
 **          04/10/2006 grk - widened size of list argument to 6000 characters
 **          04/11/2006 grk - modified logic to allow changing name of exising request
 **          08/31/2006 grk - restored apparently missing prior modification http://prismtrac.pnl.gov/trac/ticket/217
 **          10/16/2006 jds - added support for work package number
 **          10/16/2006 mem - updated to force @state to 'new' if @mode = 'add'
-**          11/13/2006 mem - Now calling ValidateProteinCollectionListForDatasets to validate @protCollNameList
+**          11/13/2006 mem - Now calling validate_protein_collection_list_for_datasets to validate @protCollNameList
 **          11/30/2006 mem - Added column Dataset_Type to #TD (Ticket:335)
 **          12/20/2006 mem - Added column DS_rating to #TD (Ticket:339)
 **          01/26/2007 mem - Switched to organism ID instead of organism name (Ticket:368)
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          10/11/2007 grk - Expand protein collection list size to 4000 characters (http://prismtrac.pnl.gov/trac/ticket/545)
 **          01/17/2008 grk - Modified error codes to help debugging DMS2.  Also had to add explicit NULL column attribute to #TD
 **          02/22/2008 mem - Updated to convert @comment to '' if null (Ticket:648, http://prismtrac.pnl.gov/trac/ticket/648)
-**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to ValidateAnalysisJobParameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          09/12/2008 mem - Now passing @paramFileName and @settingsFileName ByRef to validate_analysis_job_parameters (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          09/24/2008 grk - Increased size of comment argument (and column in database)(Ticket:692, http://prismtrac.pnl.gov/trac/ticket/692)
 **          12/02/2008 grk - Disallow editing unless in "New" state
 **          09/19/2009 grk - Added field to request admin review (Ticket #747, http://prismtrac.pnl.gov/trac/ticket/747)
@@ -38,9 +38,9 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          09/22/2009 grk - changed state "review_required" to "New (Review Required)"
 **          09/22/2009 mem - Now setting state to "New (Review Required)" if @State = 'new' and @adminReviewReqd='Yes'
 **          10/02/2009 mem - Revert to only allowing updates if the state is "New" or "New (Review Required)"
-**          02/12/2010 mem - Now assuring that rating is not -5 (note: when converting a job request to jobs, you can manually add datasets with a rating of -5; procedure AddAnalysisJobGroup will allow them to be included)
+**          02/12/2010 mem - Now assuring that rating is not -5 (note: when converting a job request to jobs, you can manually add datasets with a rating of -5; procedure add_analysis_job_group will allow them to be included)
 **          04/21/2010 grk - try-catch for error handling
-**          05/05/2010 mem - Now passing @requestorPRN to ValidateAnalysisJobParameters as input/output
+**          05/05/2010 mem - Now passing @requestorUsername to validate_analysis_job_parameters as input/output
 **          05/06/2010 mem - Expanded @settingsFileName to varchar(255)
 **          03/21/2011 mem - Expanded @datasets to varchar(max) and @requestName to varchar(128)
 **                         - Now using SCOPE_IDENTITY() to determine the ID of the newly added request
@@ -53,36 +53,36 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          09/25/2012 mem - Expanded @organismDBName and @organismName to varchar(128)
 **          11/05/2012 mem - Now auto-changing the settings file from FinniganDefSettings.xml to FinniganDefSettings_DeconMSN.xml if the request contains HMS% datasets
 **          11/05/2012 mem - Now disallowing mixing low res MS datasets with high res HMS dataset
-**          11/12/2012 mem - Moved dataset validation logic to ValidateAnalysisJobRequestDatasets
+**          11/12/2012 mem - Moved dataset validation logic to validate_analysis_job_request_datasets
 **          11/14/2012 mem - Now assuring that @toolName is properly capitalized
 **          11/20/2012 mem - Removed parameter @workPackage
 **          12/13/2013 mem - Updated @mode to support 'PreviewAdd'
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
-**          03/05/2013 mem - Added parameter @autoRemoveNotReleasedDatasets, which is passed to ValidateAnalysisJobParameters
+**          03/05/2013 mem - Added parameter @autoRemoveNotReleasedDatasets, which is passed to validate_analysis_job_parameters
 **          03/26/2013 mem - Added parameter @callingUser
 **          04/09/2013 mem - Now automatically updating the settings file to the MSConvert equivalent if processing QExactive data
 **          05/22/2013 mem - Now preventing an update of analysis job requests only if they have existing analysis jobs (previously would examine AJR_state in T_Analysis_Job_Request)
 **          06/10/2013 mem - Now filtering on Analysis_Tool when checking whether an HMS_AutoSupersede file exists for the given settings file
 **          03/28/2014 mem - Auto-changing @protCollOptionsList to "seq_direction=decoy,filetype=fasta" if the tool is MODa and the options start with "seq_direction=forward"
-**          03/30/2015 mem - Now passing @toolName to AutoUpdateSettingsFileToCentroid
+**          03/30/2015 mem - Now passing @toolName to auto_update_settings_file_to_centroid
 **                         - Now using T_Dataset_Info.ProfileScanCount_MSn to look for datasets with profile-mode MS/MS spectra
-**          04/08/2015 mem - Now passing @AutoUpdateSettingsFileToCentroided=0 to ValidateAnalysisJobParameters
+**          04/08/2015 mem - Now passing @autoUpdateSettingsFileToCentroided=0 to validate_analysis_job_parameters
 **          10/09/2015 mem - Now allowing the request name and comment to be updated even if a request has associated jobs
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          03/11/2016 mem - Disabled forcing use of MSConvert for QExactive datasets
-**          11/18/2016 mem - Log try/catch errors using PostLogEntry
-**          11/23/2016 mem - Include the request name when calling PostLogEntry from within the catch block
+**          11/18/2016 mem - Log try/catch errors using post_log_entry
+**          11/23/2016 mem - Include the request name when calling post_log_entry from within the catch block
 **          12/05/2016 mem - Exclude logging some try/catch errors
 **          12/16/2016 mem - Use @logErrors to toggle logging errors caught by the try/catch block
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobParameters
-**          05/23/2018 mem - Do not allow @requestorPRN to be the autouser (login H09090911)
-**          06/12/2018 mem - Send @maxLength to AppendToText
+**          12/06/2017 mem - Set @allowNewDatasets to 1 when calling validate_analysis_job_parameters
+**          05/23/2018 mem - Do not allow @requestorUsername to be the autouser (login H09090911)
+**          06/12/2018 mem - Send @maxLength to append_to_text
 **          04/17/2019 mem - Auto-change @protCollOptionsList to "seq_direction=forward,filetype=fasta" when running TopPIC
 **          04/23/2019 mem - Auto-change @protCollOptionsList to "seq_direction=decoy,filetype=fasta" when running MSFragger
 **          07/30/2019 mem - Store dataset info in T_Analysis_Job_Request_Datasets instead of AJR_datasets
-**                         - Call UpdateCachedJobRequestExistingJobs after creating / updating an analysis job request
+**                         - Call update_cached_job_request_existing_jobs after creating / updating an analysis job request
 **          05/28/2020 mem - Auto-update the settings file if the samples used TMTpro
 **          03/10/2021 mem - Add @dataPackageID and remove @adminReviewReqd
 **          05/28/2021 mem - Add @mode 'append', which can be be used to add additional datasets to an existing analysis job request, regardless of state
@@ -91,6 +91,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
 **          03/10/2022 mem - Replace spaces and tabs in the dataset list with commas
 **          05/23/2022 mem - Rename requester argument
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -103,7 +104,7 @@ CREATE PROCEDURE [dbo].[AddUpdateAnalysisJobRequest]
     @protCollOptionsList varchar(256),
     @organismName varchar(128),
     @organismDBName varchar(128) = 'na',        -- Legacy fasta file; typically 'na'
-    @requesterPRN varchar(32),
+    @requesterUsername varchar(32),
     @comment varchar(512) = null,
     @specialProcessing varchar(512) = null,
     @dataPackageID int = 0,
@@ -134,7 +135,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateAnalysisJobRequest', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_analysis_job_request', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -156,10 +157,10 @@ AS
     If @requestName = ''
         RAISERROR ('Cannot add: request name cannot be blank', 11, 4)
 
-    Set @requesterPRN = Ltrim(Rtrim(IsNull(@requesterPRN, '')))
+    Set @requesterUsername = Ltrim(Rtrim(IsNull(@requesterUsername, '')))
 
-    If @requesterPRN = 'H09090911' Or @requesterPRN = 'Autouser'
-        RAISERROR ('Cannot add: the "Requested by" PRN cannot be the Autouser', 11, 4)
+    If @requesterUsername = 'H09090911' Or @requesterUsername = 'Autouser'
+        RAISERROR ('Cannot add: the "Requested by" username cannot be the Autouser', 11, 4)
 
     Set @dataPackageID = IsNull(@dataPackageID, 0)
     If @dataPackageID < 0
@@ -250,7 +251,7 @@ AS
     ---------------------------------------------------
     -- Create temporary table to hold list of datasets
     -- This procedure populates column Dataset_Num
-    -- Procedure ValidateAnalysisJobRequestDatasets (called by ValidateAnalysisJobParameters) will populate the remaining columns
+    -- Procedure validate_analysis_job_request_datasets (called by validate_analysis_job_parameters) will populate the remaining columns
     ---------------------------------------------------
 
     CREATE TABLE #TD (
@@ -298,7 +299,7 @@ AS
         --
         INSERT INTO #TD (Dataset_Num)
         SELECT DISTINCT Item
-        FROM MakeTableFromList (@datasets)
+        FROM make_table_from_list (@datasets)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         Set @datasetCount = @myRowCount
@@ -335,7 +336,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- Create and populate the temporary table used by ValidateProteinCollectionListForDatasetTable
+    -- Create and populate the temporary table used by validate_protein_collection_list_for_dataset_table
     ---------------------------------------------------
     --
     CREATE TABLE #TmpDatasets (
@@ -364,7 +365,7 @@ AS
 
     ---------------------------------------------------
     -- Validate @protCollNameList
-    -- Note that ValidateProteinCollectionListForDatasetTable
+    -- Note that validate_protein_collection_list_for_dataset_table
     --  will populate @message with an explanatory note
     --  if @protCollNameList is updated
     ---------------------------------------------------
@@ -374,9 +375,9 @@ AS
     Set @result = 0
 
     Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
-    If Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList, 1) <> 'na'
+    If Len(@protCollNameList) > 0 And dbo.validate_na_parameter(@protCollNameList, 1) <> 'na'
     Begin
-        exec @result = ValidateProteinCollectionListForDatasetTable
+        exec @result = validate_protein_collection_list_for_dataset_table
                             @protCollNameList=@protCollNameList output,
                             @collectionCountAdded=@collectionCountAdded output,
                             @showMessages=1,
@@ -388,8 +389,8 @@ AS
 
     ---------------------------------------------------
     -- Validate job parameters
-    -- Note that ValidateAnalysisJobParameters calls ValidateAnalysisJobRequestDatasets
-    -- and that ValidateAnalysisJobRequestDatasets populates Dataset_ID, etc. in #TD
+    -- Note that validate_analysis_job_parameters calls validate_analysis_job_request_datasets
+    -- and that validate_analysis_job_request_datasets populates Dataset_ID, etc. in #TD
     ---------------------------------------------------
     --
     Declare @userID int
@@ -398,7 +399,7 @@ AS
     --
     Set @result = 0
     --
-    exec @result = ValidateAnalysisJobParameters
+    exec @result = validate_analysis_job_parameters
                             @toolName = @toolName,
                             @paramFileName = @paramFileName output,
                             @settingsFileName = @settingsFileName output,
@@ -406,7 +407,7 @@ AS
                             @organismName = @organismName,
                             @protCollNameList = @protCollNameList output,
                             @protCollOptionsList = @protCollOptionsList output,
-                            @ownerPRN = @requesterPRN output,
+                            @ownerUsername = @requesterUsername output,
                             @mode = '', -- blank validation mode to suppress dataset state checking
                             @userID = @userID output,
                             @analysisToolID = @analysisToolID output,
@@ -481,7 +482,7 @@ AS
             Set @settingsFileName = @AutoSupersedeName
 
             Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName + ' because one or more HMS datasets are included in this job request'
-            Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';', 512)
+            Set @message = dbo.append_to_text(@message, @MsgToAppend, 0, ';', 512)
         End
     End
     */
@@ -513,7 +514,7 @@ AS
     If @ProfileModeMSnDatasets > 0
     Begin
         -- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
-        Set @AutoSupersedeName = dbo.AutoUpdateSettingsFileToCentroid(@settingsFileName, @toolName)
+        Set @AutoSupersedeName = dbo.auto_update_settings_file_to_centroid(@settingsFileName, @toolName)
 
         If IsNull(@AutoSupersedeName, '') <> @settingsFileName
         Begin
@@ -525,7 +526,7 @@ AS
             Else
                 Set @MsgToAppend = @MsgToAppend + ' because one or more QExactive datasets are included in this job request'
 
-            Set @message = dbo.AppendToText(@message, @MsgToAppend, 0, ';', 512)
+            Set @message = dbo.append_to_text(@message, @MsgToAppend, 0, ';', 512)
         End
     End
 
@@ -603,7 +604,7 @@ AS
 
     If @mode = 'add'
     Begin
-        Declare @newRequestNum int
+        Declare @newRequestNumber int
 
         Begin Tran
 
@@ -651,11 +652,11 @@ AS
         If @myError <> 0
             RAISERROR ('Insert operation failed for T_Analysis_Job_Request', 11, 9)
         --
-        Set @newRequestNum = SCOPE_IDENTITY()
+        Set @newRequestNumber = SCOPE_IDENTITY()
 
         INSERT INTO T_Analysis_Job_Request_Datasets( Request_ID,
                                                      Dataset_ID )
-        SELECT @newRequestNum, #TD.Dataset_ID
+        SELECT @newRequestNumber, #TD.Dataset_ID
         FROM #TD
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -667,17 +668,17 @@ AS
 
         -- return ID of the newly created request
         --
-        Set @requestID = cast(@newRequestNum as varchar(32))
+        Set @requestID = cast(@newRequestNumber as varchar(32))
 
         If Len(@callingUser) > 0
         Begin
-            -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+            -- @callingUser is defined; call alter_event_log_entry_user or alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
             --
-            Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
+            Exec alter_event_log_entry_user 12, @requestID, @stateID, @callingUser
         End
 
-        Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+        Exec update_cached_job_request_existing_jobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
 
     End -- add mode
 
@@ -742,19 +743,19 @@ AS
 
         If Len(@callingUser) > 0
         Begin
-            -- @callingUser is defined; call AlterEventLogEntryUser or AlterEventLogEntryUserMultiID
+            -- @callingUser is defined; call alter_event_log_entry_user or alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
             --
-            Exec AlterEventLogEntryUser 12, @requestID, @stateID, @callingUser
+            Exec alter_event_log_entry_user 12, @requestID, @stateID, @callingUser
         End
 
-        Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+        Exec update_cached_job_request_existing_jobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
 
     End -- update mode
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -763,7 +764,7 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Request ' + @requestName
-            exec PostLogEntry 'Error', @logMessage, 'AddUpdateAnalysisJobRequest'
+            exec post_log_entry 'Error', @logMessage, 'add_update_analysis_job_request'
         End
 
     END CATCH
@@ -772,13 +773,13 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job_request] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job_request] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAnalysisJobRequest] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_analysis_job_request] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAnalysisJobRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job_request] TO [Limited_Table_Write] AS [dbo]
 GO

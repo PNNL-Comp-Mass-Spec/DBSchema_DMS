@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RequestPurgeTask] ******/
+/****** Object:  StoredProcedure [dbo].[request_purge_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RequestPurgeTask]
+CREATE PROCEDURE [dbo].[request_purge_task]
 /****************************************************
 **
 **  Desc:
@@ -17,14 +17,14 @@ CREATE PROCEDURE [dbo].[RequestPurgeTask]
 **      or on a series of servers (if @StorageServerName and/or @ServerDisk are blank)
 **      N is 10 if @infoOnly = 1; N is @infoOnly if @infoOnly is greater than 1
 **
-**      Note that PreviewPurgeTaskCandidates calls this procedure, sending a positive value for @infoOnly
+**      Note that preview_purge_task_candidates calls this procedure, sending a positive value for @infoOnly
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  If DatasetID is returned 0, no available dataset was found
 **
 **  Example syntax for Preview:
-**     exec RequestPurgeTask 'proto-9', @ServerDisk='g:\', @infoOnly = 1
+**     exec request_purge_task 'proto-9', @ServerDisk='g:\', @infoOnly = 1
 **
 **  Auth:   grk
 **  Date:   03/04/2003
@@ -48,15 +48,16 @@ CREATE PROCEDURE [dbo].[RequestPurgeTask]
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/02/2018 mem - Change the return code for "dataset not found" to 53000
 **          02/01/2023 mem - Use new view names
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @StorageServerName varchar(64),                    -- Storage server to use, for example 'proto-9'; if blank, then returns candidates for all storage servers; when blank, then @ServerDisk is ignored
-    @ServerDisk varchar(256),                        -- Disk on storage server to use, for example 'g:\'; if blank, then returns candidates for all drives on given server (or all servers if @StorageServerName is blank)
-    @ExcludeStageMD5RequiredDatasets tinyint = 1,    -- If 1, then excludes datasets with StageMD5_Required > 0
+    @storageServerName varchar(64),                    -- Storage server to use, for example 'proto-9'; if blank, then returns candidates for all storage servers; when blank, then @ServerDisk is ignored
+    @serverDisk varchar(256),                        -- Disk on storage server to use, for example 'g:\'; if blank, then returns candidates for all drives on given server (or all servers if @StorageServerName is blank)
+    @excludeStageMD5RequiredDatasets tinyint = 1,    -- If 1, then excludes datasets with StageMD5_Required > 0
     @message varchar(512) = '' output,
     @infoOnly int = 0,                                -- Set to positive number to preview the candidates; 1 will preview the first 10 candidates; values over 1 will return the specified number of candidates; Set to -1 to preview the Parameter table that would be returned if a single purge task candidate was chosen from #PD
-    @PreviewSql tinyint = 0
+    @previewSql tinyint = 0
 )
 AS
     set nocount on
@@ -389,8 +390,8 @@ AS
                DA.AS_State_Last_Affected AS Achive_State_Last_Affected,
                DA.AS_Purge_Holdoff_Date AS Purge_Holdoff_Date,
                DA.AS_Instrument_Data_Purged AS Instrument_Data_Purged,
-               dbo.udfCombinePaths(SPath.SP_vol_name_client, SPath.SP_path) AS Storage_Path_Client,
-               dbo.udfCombinePaths(SPath.SP_vol_name_Server, SPath.SP_path) AS Storage_Path_Server,
+               dbo.combine_paths(SPath.SP_vol_name_client, SPath.SP_path) AS Storage_Path_Client,
+               dbo.combine_paths(SPath.SP_vol_name_Server, SPath.SP_path) AS Storage_Path_Server,
                ArchPath.AP_archive_path AS Archive_Path_Unix,
                DS.DS_folder_name AS Dataset_Folder_Name,
                DFP.Instrument,
@@ -417,7 +418,7 @@ AS
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    Set @transName = 'RequestPurgeTask'
+    Set @transName = 'request_purge_task'
     Begin transaction @transName
 
     ---------------------------------------------------
@@ -556,15 +557,15 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_purge_task] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_purge_task] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_purge_task] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_purge_task] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RequestPurgeTask] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_purge_task] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[RequestPurgeTask] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_purge_task] TO [svc-dms] AS [dbo]
 GO

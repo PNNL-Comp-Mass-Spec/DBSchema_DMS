@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[FindExistingJobsForRequest] ******/
+/****** Object:  StoredProcedure [dbo].[find_existing_jobs_for_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[FindExistingJobsForRequest]
+CREATE PROCEDURE [dbo].[find_existing_jobs_for_request]
 /****************************************************
 **
 **  Desc:  Check how many existing jobs already exist that match the settings for the given job request
@@ -17,8 +17,9 @@ CREATE PROCEDURE [dbo].[FindExistingJobsForRequest]
 **          04/09/2008 mem - Now returning associated processor group, if applicable
 **          09/03/2008 mem - Fixed bug that returned Entered_By from T_Analysis_Job_Processor_Group instead of from T_Analysis_Job_Processor_Group_Associations
 **          05/28/2015 mem - Removed reference to T_Analysis_Job_Processor_Group
-**          07/30/2019 mem - After obtaining the actual matching jobs using GetRunRequestExistingJobListTab, compare to the cached values in T_Analysis_Job_Request_Existing_Jobs; call UpdateCachedJobRequestExistingJobs if a mismatch
-**          07/31/2019 mem - Use new function name, GetExistingJobsMatchingJobRequest
+**          07/30/2019 mem - After obtaining the actual matching jobs using GetRunRequestExistingJobListTab, compare to the cached values in T_Analysis_Job_Request_Existing_Jobs; call update_cached_job_request_existing_jobs if a mismatch
+**          07/31/2019 mem - Use new function name, get_existing_jobs_matching_job_request
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
 
     INSERT INTO #Tmp_ExistingJobs( Job )
     SELECT Job
-    FROM dbo.GetExistingJobsMatchingJobRequest ( @requestID )
+    FROM dbo.get_existing_jobs_matching_job_request ( @requestID )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -53,8 +54,8 @@ AS
 
     If @cachedCount <> @myRowCount
     Begin
-        Print 'Calling UpdateCachedJobRequestExistingJobs due to differing count'
-        Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+        Print 'Calling update_cached_job_request_existing_jobs due to differing count'
+        Exec update_cached_job_request_existing_jobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
     End
     Else
     Begin
@@ -66,8 +67,8 @@ AS
 
         If @misMatchCount > 0
         Begin
-            Print 'Calling UpdateCachedJobRequestExistingJobs due to differing jobs'
-            Exec UpdateCachedJobRequestExistingJobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
+            Print 'Calling update_cached_job_request_existing_jobs due to differing jobs'
+            Exec update_cached_job_request_existing_jobs @processingMode = 0, @requestId = @requestId, @infoOnly = 0
         End
     End
 
@@ -94,15 +95,15 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[FindExistingJobsForRequest] TO [DMSReader] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMSReader] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[FindExistingJobsForRequest] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_request] TO [Limited_Table_Write] AS [dbo]
 GO

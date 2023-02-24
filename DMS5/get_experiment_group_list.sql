@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetExperimentGroupList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_experiment_group_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetExperimentGroupList]
+CREATE FUNCTION [dbo].[get_experiment_group_list]
 /****************************************************
 **
 **  Desc:
@@ -14,10 +14,11 @@ CREATE FUNCTION [dbo].[GetExperimentGroupList]
 **
 **  Auth:   mem
 **  Date:   12/16/2011 mem
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ExperimentID int
+    @experimentID int
 )
 RETURNS varchar(1024)
 AS
@@ -41,5 +42,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetExperimentGroupList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_experiment_group_list] TO [DDL_Viewer] AS [dbo]
 GO

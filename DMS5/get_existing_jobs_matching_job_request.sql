@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetExistingJobsMatchingJobRequest] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_existing_jobs_matching_job_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetExistingJobsMatchingJobRequest]
+CREATE FUNCTION [dbo].[get_existing_jobs_matching_job_request]
 /****************************************************
 **
 **  Desc:
@@ -29,6 +29,7 @@ CREATE FUNCTION [dbo].[GetExistingJobsMatchingJobRequest]
 **          07/30/2019 mem - Get dataset ID from T_Analysis_Job_Request_Datasets
 **          07/31/2019 mem - Remove unused table from query join list
 **          06/30/2022 mem - Rename parameter file variable
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -126,5 +127,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetExistingJobsMatchingJobRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_existing_jobs_matching_job_request] TO [DDL_Viewer] AS [dbo]
 GO

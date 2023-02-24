@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetCampaignWorkPackageList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_campaign_work_package_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetCampaignWorkPackageList]
+CREATE FUNCTION [dbo].[get_campaign_work_package_list]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[GetCampaignWorkPackageList]
 **  Auth:   mem
 **  Date:   06/07/2019 mem - Initial version
 **          06/11/2022 mem - Exclude null values and empty strings from the list
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (

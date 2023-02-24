@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AckEmailAlerts] ******/
+/****** Object:  StoredProcedure [dbo].[ack_email_alerts] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AckEmailAlerts]
+CREATE PROCEDURE [dbo].[ack_email_alerts]
 /****************************************************
 **
 **  Desc:   Updates the state of alerts in T_Email_Alerts
@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[AckEmailAlerts]
 **
 **  Auth:   mem
 **  Date:   06/16/2018 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
 
     INSERT INTO #TmpAlertIDs( AlertID )
     SELECT VALUE
-    FROM dbo.udfParseDelimitedIntegerList ( @alertIDs, ',' )
+    FROM dbo.parse_delimited_integer_list ( @alertIDs, ',' )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -79,14 +80,14 @@ AS
         Set @alertCountUpdated = @myRowCount
 
         Set @message = 'Acknowledged ' + Cast(@alertCountUpdated As varchar(12)) + ' ' +
-                       dbo.CheckPlural(@alertCountUpdated, 'alert', 'alerts')  + ' in T_Email_Alerts'
+                       dbo.check_plural(@alertCountUpdated, 'alert', 'alerts')  + ' in T_Email_Alerts'
 
         If @alertCountUpdated < @alertCountToUpdate
         Begin
             Set @message = @message + '; one or more alerts were skipped since already acknowledged'
         End
 
-        Exec PostLogEntry 'Normal', @message, 'AckEmailAlerts'
+        Exec post_log_entry 'Normal', @message, 'ack_email_alerts'
 
     End
     Else
@@ -102,9 +103,9 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AckEmailAlerts] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[ack_email_alerts] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AckEmailAlerts] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[ack_email_alerts] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AckEmailAlerts] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[ack_email_alerts] TO [DMS_SP_User] AS [dbo]
 GO

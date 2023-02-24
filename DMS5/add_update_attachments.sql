@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateAttachments] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_attachments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateAttachments]
+CREATE PROCEDURE [dbo].[add_update_attachments]
 /****************************************************
 **
 **  Desc: Adds new or edits existing Attachments
@@ -16,21 +16,22 @@ CREATE PROCEDURE [dbo].[AddUpdateAttachments]
 **  Date:   03/24/2009
 **  Date:   07/22/2010 grk -- allowed update mode
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
-    @ID int output,
-    @AttachmentType varchar(24),
-    @AttachmentName varchar(128),
-    @AttachmentDescription varchar(1024),
-    @OwnerPRN varchar(24),
-    @Active varchar(8),
-    @Contents text,
-    @FileName varchar(128),
+    @id int output,
+    @attachmentType varchar(24),
+    @attachmentName varchar(128),
+    @attachmentDescription varchar(1024),
+    @ownerUsername varchar(24),
+    @active varchar(8),
+    @contents text,
+    @fileName varchar(128),
     @mode varchar(12) = 'add', -- or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -49,7 +50,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateAttachments', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_attachments', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -100,7 +101,7 @@ AS
             @AttachmentType,
             @AttachmentName,
             @AttachmentDescription,
-            @OwnerPRN,
+            @ownerUsername,
             @Active,
             @Contents,
             @FileName
@@ -134,7 +135,7 @@ AS
         SET Attachment_Type = @AttachmentType,
             Attachment_Name = @AttachmentName,
             Attachment_Description = @AttachmentDescription,
-            Owner_PRN = @OwnerPRN,
+            Owner_PRN = @ownerUsername,
             Active = @Active,
             Contents = @Contents,
             File_Name = @FileName
@@ -153,9 +154,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAttachments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_attachments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateAttachments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_attachments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateAttachments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_attachments] TO [Limited_Table_Write] AS [dbo]
 GO

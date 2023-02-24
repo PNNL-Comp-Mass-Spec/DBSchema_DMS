@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetProteinCollectionMemberDetail] ******/
+/****** Object:  StoredProcedure [dbo].[get_protein_collection_member_detail] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetProteinCollectionMemberDetail]
+CREATE PROCEDURE [dbo].[get_protein_collection_member_detail]
 /****************************************************
 **
 **  Desc:   Gets detailed information regarding a single protein in a protein collection
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[GetProteinCollectionMemberDetail]
 **  Auth:   mem
 **  Date:   06/27/2016 mem - Initial version
 **          08/03/2017 mem - Add Set NoCount On
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -136,7 +137,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -146,7 +147,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetProteinCollectionMemberDetail] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_protein_collection_member_detail] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetProteinCollectionMemberDetail] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_protein_collection_member_detail] TO [DMS2_SP_User] AS [dbo]
 GO

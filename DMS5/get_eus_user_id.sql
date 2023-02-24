@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetEUSUserID] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_eus_user_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetEUSUserID]
+CREATE FUNCTION [dbo].[get_eus_user_id]
 /****************************************************
 **
 **  Desc: Gets EUS User ID for given EUS User ID
@@ -13,14 +13,15 @@ CREATE PROCEDURE [dbo].[GetEUSUserID]
 **  Auth:   jds
 **  Date:   09/01/2006
 **          08/03/2017 mem - Add Set NoCount On
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @EUSUserID varchar(32) = " "
+    @eusUserID varchar(32) = " "
 )
+RETURNS int
 AS
-    Set NoCount On
-
+BEGIN
     Declare @tempEUSUserID varchar(32) = '0'
 
     SELECT @tempEUSUserID = PERSON_ID
@@ -28,9 +29,10 @@ AS
     WHERE PERSON_ID = @EUSUserID
 
     return @tempEUSUserID
+END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEUSUserID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_eus_user_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEUSUserID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_eus_user_id] TO [Limited_Table_Write] AS [dbo]
 GO

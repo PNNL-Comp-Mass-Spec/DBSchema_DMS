@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateRunInterval] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_run_interval] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
+CREATE PROCEDURE [dbo].[add_update_run_interval]
 /****************************************************
 **
 **  Desc:   Edits existing item in T_Run_Interval
@@ -16,27 +16,28 @@ CREATE PROCEDURE [dbo].[AddUpdateRunInterval]
 **          02/15/2012 grk - modified percentage parameters
 **          03/03/2012 grk - changed to embedded usage tags
 **          03/07/2012 mem - Now populating Last_Affected and Entered_By
-**          03/21/2012 grk - modified to handle modified ParseUsageText
+**          03/21/2012 grk - modified to handle modified parse_usage_text
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          04/28/2017 mem - Disable logging to T_Log_Entries when ParseUsageText reports an error
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          04/28/2017 mem - Disable logging to T_Log_Entries when parse_usage_text reports an error
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/02/2017 mem - @ID is no longer an output variable
 **                         - Add parameters @showDebug and @invalidUsage
-**                         - Pass @ID and @invalidUsage to ParseUsageText
+**                         - Pass @ID and @invalidUsage to parse_usage_text
 **          05/03/2019 mem - Update comments
 **          02/15/2022 mem - Update error messages and rename variables
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ID int,
+    @id int,
     @comment varchar(MAX),              -- Usage comment, e.g. 'User[100%], Proposal[49521], PropUser[50151]'
     @mode varchar(12) = 'update',       -- 'update' (note that 'add' is not supported)
     @message varchar(512) output,
     @callingUser varchar(128) = '',
     @showDebug tinyint = 0,
-    @invalidUsage tinyint = 0 output    -- Set to 1 if the usage text in @comment cannot be parsed (or if the total percentage is not 100); UpdateRunOpLog uses this to skip invalid entries
+    @invalidUsage tinyint = 0 output    -- Set to 1 if the usage text in @comment cannot be parsed (or if the total percentage is not 100); update_run_op_log uses this to skip invalid entries
 )
 AS
     Set XACT_ABORT, nocount on
@@ -66,7 +67,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateRunInterval', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_run_interval', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -83,27 +84,27 @@ AS
 
     ---------------------------------------------------
     -- Validate usage and comment
-    -- ParseUsageText looks for special usage tags in the comment and extracts that information, returning it as XML
+    -- parse_usage_text looks for special usage tags in the comment and extracts that information, returning it as XML
     --
     -- If @comment is 'User[100%], Proposal[49361], PropUser[50082] Extra information about interval'
-    -- after calling ParseUsageText, @cleanedComment will be 'Extra information about interval'
+    -- after calling parse_usage_text, @cleanedComment will be 'Extra information about interval'
     -- and @usageXML will be <u User="100" Proposal="49361" PropUser="50082" />
     --
-    -- If @comment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to ParseUsageText
+    -- If @comment only has 'User[100%], Proposal[49361], PropUser[50082]', then @cleanedComment will be empty after the call to parse_usage_text
     --
-    -- Since @validateTotal is set to 1, if the percentages do not add up to 100%, ParseUsageText will raise an error (and @usageXML will be null)
+    -- Since @validateTotal is set to 1, if the percentages do not add up to 100%, parse_usage_text will raise an error (and @usageXML will be null)
     ---------------------------------------------------
 
     DECLARE @usageXML XML
     DECLARE @cleanedComment VARCHAR(MAX) = @comment
 
     If @showDebug > 0
-        print 'Calling ParseUsageText'
+        print 'Calling parse_usage_text'
 
-    EXEC @myError = ParseUsageText @cleanedComment output, @usageXML output, @message output, @seq=@ID, @showDebug=@showDebug, @validateTotal = 1, @invalidUsage=@invalidUsage output
+    EXEC @myError = parse_usage_text @cleanedComment output, @usageXML output, @message output, @seq=@ID, @showDebug=@showDebug, @validateTotal = 1, @invalidUsage=@invalidUsage output
 
     If @showDebug > 0
-        print 'ParseUsageText returned ' + Cast(@myError as varchar(9))
+        print 'parse_usage_text returned ' + Cast(@myError as varchar(9))
 
     IF @myError <> 0
     Begin
@@ -114,7 +115,7 @@ AS
     End
 
     If @showDebug > 0
-        print '@myError is 0 after ParseUsageText'
+        print '@myError is 0 after parse_usage_text'
 
     Set @logErrors = 1
 
@@ -167,23 +168,23 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'AddUpdateRunInterval'
+            Exec post_log_entry 'Error', @message, 'add_update_run_interval'
     END CATCH
 
 Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateRunInterval] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_run_interval] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRunInterval] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_run_interval] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateRunInterval] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_run_interval] TO [DMS2_SP_User] AS [dbo]
 GO

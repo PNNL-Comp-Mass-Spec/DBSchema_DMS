@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetEMSLInstrumentUsageRollup] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_emsl_instrument_usage_rollup] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
+CREATE FUNCTION [dbo].[get_emsl_instrument_usage_rollup]
 /****************************************************
 **  Desc:
 **      Outputs contents of EMSL instrument usage report table as rollup
@@ -20,11 +20,12 @@ CREATE FUNCTION [dbo].[GetEMSLInstrumentUsageRollup]
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/17/2020 mem - Use Dataset_ID instead of ID
 **          03/17/2022 mem - Only return rows where Dataset_ID_Acq_Overlap is Null
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Year INT,
-    @Month INT
+    @year INT,
+    @month INT
 )
 RETURNS @T_Report_Output TABLE
     (
@@ -237,5 +238,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetEMSLInstrumentUsageRollup] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_emsl_instrument_usage_rollup] TO [DDL_Viewer] AS [dbo]
 GO

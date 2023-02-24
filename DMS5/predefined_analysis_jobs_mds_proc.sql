@@ -17,17 +17,18 @@ CREATE PROCEDURE [dbo].[predefined_analysis_jobs_mds_proc]
 **          03/28/2006 grk - added protein collection fields
 **          04/04/2006 grk - increased sized of param file name
 **          03/16/2007 mem - Replaced processor name with associated processor group (Ticket #388)
-**          04/11/2008 mem - Now passing @RaiseErrorMessages to EvaluatePredefinedAnalysisRules
+**          04/11/2008 mem - Now passing @RaiseErrorMessages to evaluate_predefined_analysis_rules
 **          07/22/2008 grk - Changed protein collection column names for final list report output
-**          02/09/2011 mem - Now passing @ExcludeDatasetsNotReleased and @CreateJobsForUnreviewedDatasets to EvaluatePredefinedAnalysisRules
+**          02/09/2011 mem - Now passing @ExcludeDatasetsNotReleased and @CreateJobsForUnreviewedDatasets to evaluate_predefined_analysis_rules
 **          02/16/2011 mem - Added support for Propagation Mode (aka Export Mode)
 **          02/20/2012 mem - Now using a temporary table to track the dataset names in @datasetList
 **          02/22/2012 mem - Switched to using a table-variable for dataset names (instead of a physical temporary table)
 **          05/03/2012 mem - Added support for the Special Processing field
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          06/30/2022 mem - Rename parameter file column
-**          11/09/2022 mem - Rename stored procedure from EvaluatePredefinedAnalysisRulesMDS to predefined_analysis_jobs_mds_proc
+**          11/09/2022 mem - Rename stored procedure from evaluate_predefined_analysis_rulesMDS to predefined_analysis_jobs_mds_proc
 **          01/26/2023 mem - Add predefine_id to the output table, remove Processor_Group, and change names to lowercase
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,8 +41,6 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @jobNum varchar(32)
-    Declare @jobID int
     Declare @DatasetName varchar(128)
     Declare @result int
 
@@ -50,7 +49,7 @@ AS
 
     ---------------------------------------------------
     -- Temporary job holding table to receive created jobs
-    -- This table is populated in EvaluatePredefinedAnalysisRules
+    -- This table is populated in evaluate_predefined_analysis_rules
     ---------------------------------------------------
 
     CREATE TABLE #JX (
@@ -64,7 +63,7 @@ AS
         organismName varchar(128),
         proteinCollectionList varchar(512),
         proteinOptionsList varchar(256),
-        ownerPRN varchar(128),
+        ownerUsername varchar(128),
         comment varchar(128),
         associatedProcessorGroup varchar(64),
         numJobs int,
@@ -95,7 +94,7 @@ AS
 
     INSERT INTO @tblDatasetsToProcess (Dataset)
     SELECT Value
-    FROM dbo.udfParseDelimitedList(@datasetList, ',', 'EvaluatePredefinedAnalysisRulesMDS')
+    FROM dbo.parse_delimited_list(@datasetList, ',', 'evaluate_predefined_analysis_rulesMDS')
     WHERE Len(Value) > 0
     ORDER BY Value
 
@@ -129,7 +128,7 @@ AS
             -- job holding table (#JX)
             ---------------------------------------------------
             set @message = ''
-            exec @result = EvaluatePredefinedAnalysisRules
+            exec @result = evaluate_predefined_analysis_rules
                                     @DatasetName,
                                     'Export Jobs',
                                     @message output,
@@ -162,7 +161,7 @@ AS
         proteinOptionsList AS protein_options,
         organismDBName AS organism_db_name,
         specialProcessing AS special_processing,
-        ownerPRN AS owner,
+        ownerUsername AS owner,
         CASE propagationMode WHEN 0 THEN 'Export' ELSE 'No Export' END AS export_mode
     FROM #JX
 

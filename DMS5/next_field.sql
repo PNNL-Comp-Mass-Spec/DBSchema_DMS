@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[NextField] ******/
+/****** Object:  StoredProcedure [dbo].[next_field] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[NextField]
+CREATE PROCEDURE [dbo].[next_field]
 /****************************************************
 **
 **  Desc: Parses off and returns next field from string.
@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[NextField]
 **  Date:   12/13/2000
 **          03/23/2004 grk - increased size of @line
 **          03/27/2009 mem - Expanded @line to varchar(6000)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -64,7 +65,7 @@ AS
     return @EOL
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[NextField] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[next_field] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[NextField] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[next_field] TO [Limited_Table_Write] AS [dbo]
 GO

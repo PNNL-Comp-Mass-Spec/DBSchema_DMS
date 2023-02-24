@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetPSMJobDefaults] ******/
+/****** Object:  StoredProcedure [dbo].[get_psm_job_defaults] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetPSMJobDefaults]
+CREATE PROCEDURE [dbo].[get_psm_job_defaults]
 /****************************************************
 **
 **  Desc: Parses the list of datasets to create a table of stats and to suggest
@@ -15,28 +15,29 @@ CREATE PROCEDURE [dbo].[GetPSMJobDefaults]
 **  Date:   11/14/2012 mem - Initial version
 **          11/20/2012 mem - Added 3 new parameters: organism name, protein collection name, and protein collection options
 **          01/11/2013 mem - Renamed MSGF-DB search tool to MSGFPlus
-**          03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to ValidateAnalysisJobRequestDatasets
+**          03/05/2013 mem - Now passing @AutoRemoveNotReleasedDatasets to validate_analysis_job_request_datasets
 **          09/03/2013 mem - Added iTRAQ8
-**          04/23/2015 mem - Now passing @toolName to ValidateAnalysisJobRequestDatasets
+**          04/23/2015 mem - Now passing @toolName to validate_analysis_job_request_datasets
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          03/18/2016 mem - Added TMT6 and TMT10
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/13/2017 mem - Exclude logging some try/catch errors
-**          12/06/2017 mem - Set @allowNewDatasets to 1 when calling ValidateAnalysisJobRequestDatasets
+**          12/06/2017 mem - Set @allowNewDatasets to 1 when calling validate_analysis_job_request_datasets
 **          06/04/2018 mem - Change default tool to MSGFPlus_MzML
 **          01/28/2020 mem - Use '%TMT1%' instead of '%TMT10' so we can match TMT10 and TMT11
 **          09/10/2020 mem - Add job types 'TMT Zero' and 'TMT 16-plex'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @datasets varchar(max) output,                -- Input/output parameter; comma-separated list of datasets; will be alphabetized after removing duplicates
-    @Metadata varchar(2048) output,                -- Output parameter; table of metadata with columns separated by colons and rows separated by vertical bars
+    @metadata varchar(2048) output,                -- Output parameter; table of metadata with columns separated by colons and rows separated by vertical bars
     @toolName varchar(64) output,
     @jobTypeName varchar(64) output,
     @jobTypeDesc varchar(255) output,
-    @DynMetOxEnabled tinyint output,
-    @StatCysAlkEnabled tinyint output,
-    @DynSTYPhosEnabled tinyint output,
+    @dynMetOxEnabled tinyint output,
+    @statCysAlkEnabled tinyint output,
+    @dynSTYPhosEnabled tinyint output,
     @organismName varchar(128) output,
     @protCollNameList varchar(1024) output,
     @protCollOptionsList varchar(256) output,
@@ -138,7 +139,7 @@ AS
         --
         INSERT INTO #TD ( Dataset_Num )
         SELECT DISTINCT Item
-        FROM MakeTableFromList ( @datasets )
+        FROM make_table_from_list ( @datasets )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -151,7 +152,7 @@ AS
         -- Validate the datasets in #TD
         ---------------------------------------------------
 
-        exec @result = ValidateAnalysisJobRequestDatasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName, @allowNewDatasets=1
+        exec @result = validate_analysis_job_request_datasets @message output, @AutoRemoveNotReleasedDatasets=1, @toolName=@toolName, @allowNewDatasets=1
 
         If @result <> 0
         Begin
@@ -238,10 +239,10 @@ AS
         FROM T_Organisms
         WHERE OG_name = @organismName AND IsNull(OG_organismDBName, 'na') <> 'na'
 
-        If Len(@protCollNameList) > 0 And dbo.ValidateNAParameter(@protCollNameList, 1) <> 'na'
+        If Len(@protCollNameList) > 0 And dbo.validate_na_parameter(@protCollNameList, 1) <> 'na'
         Begin
             -- Append the default contaminant collections
-            exec @result = ValidateProteinCollectionListForDatasets
+            exec @result = validate_protein_collection_list_for_datasets
                                 @datasets,
                                 @protCollNameList=@protCollNameList output,
                                 @ShowMessages=1
@@ -375,18 +376,18 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'GetPSMJobDefaults'
+            Exec post_log_entry 'Error', @message, 'get_psm_job_defaults'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetPSMJobDefaults] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_psm_job_defaults] TO [DDL_Viewer] AS [dbo]
 GO

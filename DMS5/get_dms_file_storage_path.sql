@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetDMSFileStoragePath] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_dms_file_storage_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetDMSFileStoragePath]
+CREATE FUNCTION [dbo].[get_dms_file_storage_path]
 /****************************************************
 **
 **  Desc:
@@ -13,11 +13,12 @@ CREATE FUNCTION [dbo].[GetDMSFileStoragePath]
 **
 **  Auth:   grk
 **  Date:   05/12/2010
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @campaign varchar(64),
-    @ID varchar(12),
+    @id varchar(12),
     @type varchar(32)
 )
 RETURNS varchar(512)
@@ -36,7 +37,7 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetDMSFileStoragePath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_dms_file_storage_path] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetDMSFileStoragePath] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_dms_file_storage_path] TO [DMS2_SP_User] AS [dbo]
 GO

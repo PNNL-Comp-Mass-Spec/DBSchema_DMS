@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateAnalysisJobRequestDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[validate_analysis_job_request_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateAnalysisJobRequestDatasets]
+CREATE PROCEDURE [dbo].[validate_analysis_job_request_datasets]
 /****************************************************
 **
 **  Desc:   Validates datasets in temporary table #TD
@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobRequestDatasets]
 **      Error code if a problem; @message will contain the error message
 **
 **  Auth:   mem
-**          11/12/2012 mem - Initial version (extracted code from AddUpdateAnalysisJobRequest and ValidateAnalysisJobParameters)
+**          11/12/2012 mem - Initial version (extracted code from add_update_analysis_job_request and validate_analysis_job_parameters)
 **          03/05/2013 mem - Added parameter @autoRemoveNotReleasedDatasets
 **          08/02/2013 mem - Tweaked message for "Not Released" datasets
 **          03/30/2015 mem - Tweak warning message grammar
@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[ValidateAnalysisJobRequestDatasets]
 **          03/10/2021 mem - Skip HMS vs. MS check when the tool is MaxQuant
 **          05/25/2021 mem - Add @allowNonReleasedDatasets
 **          08/26/2021 mem - Skip HMS vs. MS check when the tool is MSFragger
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -137,7 +138,7 @@ AS
         End
         Else
         Begin
-            set @message = 'Skipped ' + Convert(varchar(12), @NotReleasedCount) + ' "Not Released" ' + dbo.CheckPlural(@NotReleasedCount, 'dataset', 'datasets') + ': ' + @list
+            set @message = 'Skipped ' + Convert(varchar(12), @NotReleasedCount) + ' "Not Released" ' + dbo.check_plural(@NotReleasedCount, 'dataset', 'datasets') + ': ' + @list
 
             if @showDebugMessages <> 0
                 print @message
@@ -272,5 +273,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateAnalysisJobRequestDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_analysis_job_request_datasets] TO [DDL_Viewer] AS [dbo]
 GO

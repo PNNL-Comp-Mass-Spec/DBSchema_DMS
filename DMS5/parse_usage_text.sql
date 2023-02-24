@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ParseUsageText] ******/
+/****** Object:  StoredProcedure [dbo].[parse_usage_text] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ParseUsageText]
+CREATE PROCEDURE [dbo].[parse_usage_text]
 /****************************************************
 **
 **  Desc:
@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[ParseUsageText]
 **          08/29/2017 mem - Direct users to http://prismwiki.pnl.gov/wiki/Long_Interval_Notes
 **          05/25/2021 mem - Add support for usage types UserOnsite and UserRemote
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ CREATE PROCEDURE [dbo].[ParseUsageText]
     @seq int = -1,
     @showDebug tinyint = 0,
     @validateTotal tinyint = 1,         -- Raise an error (and do not update @comment or @usageXML) if the sum of the percentages is not 100
-    @invalidUsage tinyint = 0 output    -- Set to 1 if the usage text in @comment cannot be parsed; UpdateRunOpLog uses this to skip invalid entries (value passed back via AddUpdateRunInterval)
+    @invalidUsage tinyint = 0 output    -- Set to 1 if the usage text in @comment cannot be parsed; update_run_op_log uses this to skip invalid entries (value passed back via add_update_run_interval)
 )
 AS
     Set XACT_ABORT, nocount on
@@ -120,13 +121,13 @@ AS
         --
         INSERT INTO #TmpNonPercentageKeys (UsageKey)
         SELECT LTRIM(RTRIM(Item))
-        FROM dbo.MakeTableFromList(@nonPercentageKeys)
+        FROM dbo.make_table_from_list(@nonPercentageKeys)
 
         -- Add the percentage-based keys to #TmpUsageInfo
         --
         INSERT INTO #TmpUsageInfo (UsageKey)
         SELECT LTRIM(RTRIM(Item))
-        FROM dbo.MakeTableFromList(@usageKeys)
+        FROM dbo.make_table_from_list(@usageKeys)
 
         -- Add the non-percentage-based keys to #TmpUsageInfo
         --
@@ -320,7 +321,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        --EXEC FormatErrorMessage @message output, @myError output
+        --EXEC format_error_message @message output, @myError output
         Set @myError = ERROR_NUMBER()
         IF @myError = 50000
             Set @myError = ERROR_STATE()
@@ -328,11 +329,11 @@ AS
         Set @message = ERROR_MESSAGE() -- + ' (' + ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(12), ERROR_LINE()) + ')'
 
         If @logErrors > 0
-            Exec PostLogEntry 'Error', @message, 'ParseUsageText'
+            Exec post_log_entry 'Error', @message, 'parse_usage_text'
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ParseUsageText] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[parse_usage_text] TO [DDL_Viewer] AS [dbo]
 GO

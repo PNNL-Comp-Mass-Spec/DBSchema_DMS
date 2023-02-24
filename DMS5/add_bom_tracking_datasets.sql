@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddBOMTrackingDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[add_bom_tracking_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
+CREATE PROCEDURE [dbo].[add_bom_tracking_datasets]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/14/2022 mem - Assure that msg is not an empty string when @mode is 'debug'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2012, Battelle Memorial Institute
@@ -26,7 +27,7 @@ CREATE PROCEDURE [dbo].[AddBOMTrackingDatasets]
 (
     @month varchar(16) = '',                -- current month, if blank
     @year varchar(16) = '',                 -- current year, if blank
-    @mode varchar(12) = 'add',              -- 'add, 'info' (just show instrument names), or 'debug' (call AddBOMTrackingDataset and preview tracking datasets)
+    @mode varchar(12) = 'add',              -- 'add, 'info' (just show instrument names), or 'debug' (call add_bom_tracking_dataset and preview tracking datasets)
     @callingUser varchar(128)  = 'D3E154'   -- Ron Moore
 )
 AS
@@ -92,7 +93,7 @@ AS
 
                 If @mode in ('add', 'debug')
                 Begin --<b>
-                    EXEC @returnCode = AddBOMTrackingDataset
+                    EXEC @returnCode = add_bom_tracking_dataset
                                             @month,
                                             @year,
                                             @instrumentName,
@@ -102,7 +103,7 @@ AS
 
                     If @mode = 'debug' And Coalesce(@msg, '') = ''
                     Begin
-                        Set @msg = 'Called AddBOMTrackingDataset with @mode=''debug'''
+                        Set @msg = 'Called add_bom_tracking_dataset with @mode=''debug'''
                     End
                 End --<b>
 
@@ -121,16 +122,16 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message OUTPUT, @myError OUTPUT
-        Exec PostLogEntry 'Error', @message, 'AddBOMTrackingDatasets'
+        EXEC format_error_message @message OUTPUT, @myError OUTPUT
+        Exec post_log_entry 'Error', @message, 'add_bom_tracking_datasets'
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddBOMTrackingDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_bom_tracking_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddBOMTrackingDatasets] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_bom_tracking_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddBOMTrackingDatasets] TO [PNL\D3M578] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_bom_tracking_datasets] TO [PNL\D3M578] AS [dbo]
 GO

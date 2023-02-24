@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateLCCartRequestAssignments] ******/
+/****** Object:  StoredProcedure [dbo].[update_lc_cart_request_assignments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateLCCartRequestAssignments]
+CREATE PROCEDURE [dbo].[update_lc_cart_request_assignments]
 /****************************************************
 **
 **  Desc:
@@ -23,11 +23,12 @@ CREATE PROCEDURE [dbo].[UpdateLCCartRequestAssignments]
 **
 **  Auth:   grk
 **  Date:   03/10/2010
-**          09/02/2011 mem - Now calling PostUsageLogEntry
-**          11/07/2016 mem - Add optional logging via PostLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
+**          11/07/2016 mem - Add optional logging via post_log_entry
 **          02/27/2017 mem - Add support for cart config name
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateLCCartRequestAssignments', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_lc_cart_request_assignments', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -66,7 +67,7 @@ AS
     If @debugMode > 0
     Begin
         Set @debugMsg = Cast(@cartAssignmentList As varchar(4096))
-        exec PostLogEntry 'Debug', @debugMsg, 'UpdateLCCartRequestAssignments'
+        exec post_log_entry 'Debug', @debugMsg, 'update_lc_cart_request_assignments'
     End
 
     -----------------------------------------------------------
@@ -223,7 +224,7 @@ AS
         Else
             Set @debugMsg = 'Will update ' + Cast(@requestCountInXML - @myRowCount as varchar(9)) + ' of ' + Cast(@requestCountInXML as varchar(9)) + ' requests'
 
-        Exec PostLogEntry 'Debug', @debugMsg, 'UpdateLCCartRequestAssignments'
+        Exec post_log_entry 'Debug', @debugMsg, 'update_lc_cart_request_assignments'
 
     End
 
@@ -255,14 +256,14 @@ Done:
 
     Declare @UsageMessage varchar(512)
     Set @UsageMessage = Convert(varchar(12), @myRowCount) + ' requested runs updated'
-    Exec PostUsageLogEntry 'UpdateLCCartRequestAssignments', @UsageMessage
+    Exec post_usage_log_entry 'update_lc_cart_request_assignments', @UsageMessage
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_lc_cart_request_assignments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[UpdateLCCartRequestAssignments] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_lc_cart_request_assignments] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateLCCartRequestAssignments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_lc_cart_request_assignments] TO [Limited_Table_Write] AS [dbo]
 GO

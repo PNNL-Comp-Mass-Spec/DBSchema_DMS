@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEUSInstrumentsFromEUSImports] ******/
+/****** Object:  StoredProcedure [dbo].[update_eus_instruments_from_eus_imports] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEUSInstrumentsFromEUSImports]
+CREATE PROCEDURE [dbo].[update_eus_instruments_from_eus_imports]
 /****************************************************
 **
 **  Desc:   Updates information in T_EMSL_Instruments from EUS
@@ -13,9 +13,10 @@ CREATE PROCEDURE [dbo].[UpdateEUSInstrumentsFromEUSImports]
 **  Auth:   grk
 **  Date:   06/29/2011 grk - Initial version
 **          07/19/2011 grk - "Last_Affected"
-**          09/02/2011 mem - Now calling PostUsageLogEntry
+**          09/02/2011 mem - Now calling post_usage_log_entry
 **          03/27/2012 grk - Added EUS_Active_Sw and EUS_Primary_Instrument
 **          05/12/2021 mem - Use new NEXUS-based views
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -116,15 +117,15 @@ AS
             If @mergeDeleteCount > 0
                 Set @message = @message + '; ' + Convert(varchar(12), @mergeDeleteCount) + ' deleted'
 
-            Exec PostLogEntry 'Normal', @message, 'UpdateEUSInstrumentsFromEUSImports'
+            Exec post_log_entry 'Normal', @message, 'update_eus_instruments_from_eus_imports'
             Set @message = ''
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'UpdateEUSInstrumentsFromEUSImports')
-        exec LocalErrorHandler  @callingProcName, @currentLocation, @LogError = 1,
+        Set @callingProcName = IsNull(ERROR_PROCEDURE(), 'update_eus_instruments_from_eus_imports')
+        exec local_error_handler  @callingProcName, @currentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -139,10 +140,10 @@ Done:
     ---------------------------------------------------
 
     Declare @usageMessage varchar(512) = ''
-    Exec PostUsageLogEntry 'UpdateEUSInstrumentsFromEUSImports', @usageMessage
+    Exec post_usage_log_entry 'update_eus_instruments_from_eus_imports', @usageMessage
 
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateEUSInstrumentsFromEUSImports] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_eus_instruments_from_eus_imports] TO [DDL_Viewer] AS [dbo]
 GO

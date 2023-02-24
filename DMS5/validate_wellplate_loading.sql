@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ValidateWellplateLoading] ******/
+/****** Object:  StoredProcedure [dbo].[validate_wellplate_loading] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ValidateWellplateLoading]
+CREATE PROCEDURE [dbo].[validate_wellplate_loading]
 /****************************************************
 **
 **  Desc:
@@ -18,12 +18,13 @@ CREATE PROCEDURE [dbo].[ValidateWellplateLoading]
 **          11/30/2009 grk - fixed problem with filling last well causing error message
 **          12/01/2009 grk - modified to skip checking of existing well occupancy if @totalCount = 0
 **          05/16/2022 mem - Show example well numbers
-**          11/25/2022 mem - Rename parameter to @wellplate
+**          11/25/2022 mem - Rename parameter to @wellplateName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @wellplate varchar(64) output,
-    @wellNum varchar(8) output,
+    @wellplateName varchar(64) output,
+    @wellNumber varchar(8) output,
     @totalCount int,                    -- Number of consecutive wells to be filled
     @wellIndex int output,              -- index position of wellNum
     @message varchar(512) output
@@ -40,22 +41,22 @@ AS
 
     -- normalize values meaning 'empty' to null
     --
-    If @wellplate = '' Or @wellplate = 'na'
+    If @wellplateName = '' Or @wellplateName = 'na'
     begin
-        set @wellplate = null
+        set @wellplateName = null
     End
 
-    If @wellNum = '' Or @wellNum = 'na'
+    If @wellNumber = '' Or @wellNumber = 'na'
     begin
-        set @wellNum = null
+        set @wellNumber = null
     End
 
-    set @wellNum = UPPER(@wellNum)
+    set @wellNumber = UPPER(@wellNumber)
 
     -- Make sure that wellplate and well values are consistent
     -- with each other
     --
-    If (@wellNum is null And Not @wellplate is null) Or (Not @wellNum is null And @wellplate is null)
+    If (@wellNumber is null And Not @wellplateName is null) Or (Not @wellNumber is null And @wellplateName is null)
     begin
         set @message = 'Wellplate and well must either both be empty or both be set'
         return 51042
@@ -69,9 +70,9 @@ AS
 
     -- Check for overflow
     --
-    If Not @wellNum is null
+    If Not @wellNumber is null
     begin
-        set @wellIndex = dbo.GetWellIndex(@wellNum)
+        set @wellIndex = dbo.get_well_index(@wellNumber)
 
         If @wellIndex = 0
         begin
@@ -119,8 +120,8 @@ AS
         @wellList = CASE WHEN @wellList = '' THEN EX_well_num ELSE ', ' + EX_well_num END
     FROM T_Experiments
     WHERE
-        EX_wellplate_num = @wellplate AND
-        dbo.GetWellIndex(EX_well_num) IN (
+        EX_wellplate_num = @wellplateName AND
+        dbo.get_well_index(EX_well_num) IN (
             select wellIndex
             from @wells
         )
@@ -130,9 +131,9 @@ AS
         SET @wellList = SUBSTRING(@wellList, 0, 256)
 
         If @hits = 1
-            set @message = 'Well ' + @wellList + ' on wellplate "' + @wellplate + '" is currently filled'
+            set @message = 'Well ' + @wellList + ' on wellplate "' + @wellplateName + '" is currently filled'
         else
-            set @message = 'Wells ' + @wellList + ' on wellplate "' + @wellplate + '" are currently filled'
+            set @message = 'Wells ' + @wellList + ' on wellplate "' + @wellplateName + '" are currently filled'
 
         return 51045
     end
@@ -144,7 +145,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateWellplateLoading] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_wellplate_loading] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateWellplateLoading] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_wellplate_loading] TO [Limited_Table_Write] AS [dbo]
 GO

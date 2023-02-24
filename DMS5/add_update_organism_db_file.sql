@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateOrganismDBFile] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_organism_db_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateOrganismDBFile]
+CREATE PROCEDURE [dbo].[add_update_organism_db_file]
 /****************************************************
 **
 **  Desc: Adds new or edits existing Legacy Organism DB File in T_Organism_DB_File
@@ -15,10 +15,11 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganismDBFile]
 **  Auth:   mem
 **  Date:   01/24/2014 mem - Initial version
 **          01/15/2015 mem - Added parameter @fileSizeKB
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          03/31/2021 mem - Expand @organismName to varchar(128)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,7 +45,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateOrganismDBFile', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_organism_db_file', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -137,11 +138,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateOrganismDBFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_organism_db_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganismDBFile] TO [DMS_Analysis_Job_Runner] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_organism_db_file] TO [DMS_Analysis_Job_Runner] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganismDBFile] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_organism_db_file] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganismDBFile] TO [svc-dms] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_organism_db_file] TO [svc-dms] AS [dbo]
 GO

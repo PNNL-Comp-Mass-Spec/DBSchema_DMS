@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateSettingsFile] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_settings_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateSettingsFile]
+CREATE PROCEDURE [dbo].[add_update_settings_file]
 /****************************************************
 **
 **  Desc: Adds new or edits existing entity in T_Settings_Files table
@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[AddUpdateSettingsFile]
 **          03/30/2015 mem - Added parameters @hmsAutoSupersede and @msgfPlusAutoCentroid
 **          03/21/2016 mem - Update column Last_Updated
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          12/10/2018 mem - Rename parameters and make @settingsFileID an output parameter
 **          04/11/2022 mem - Check for existing settings file (by name) when @mode is 'add'
 **                         - Check for whitespace in @fileName
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2008, Battelle Memorial Institute
@@ -32,7 +33,7 @@ CREATE PROCEDURE [dbo].[AddUpdateSettingsFile]
     @active tinyint,
     @contents text,
     @hmsAutoSupersede varchar(255) = '',        -- Settings file name to use instead of this settings file if the dataset comes from a high res MS instrument
-    @msgfPlusAutoCentroid varchar(255) = '',    -- Settings file name to use instead of this settings file if MSGF+ reports that not enough spectra are centroided; see SP AutoResetFailedJobs
+    @msgfPlusAutoCentroid varchar(255) = '',    -- Settings file name to use instead of this settings file if MSGF+ reports that not enough spectra are centroided; see SP auto_reset_failed_jobs
     @mode varchar(12) = 'add',                  -- 'add' or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -53,7 +54,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateSettingsFile', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_settings_file', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -82,7 +83,7 @@ AS
         return 51006
     End
 
-    If dbo.udfWhitespaceChars(@fileName, 0) > 0
+    If dbo.whitespace_chars(@fileName, 0) > 0
     Begin
         If CharIndex(Char(9), @fileName) > 0
             RAISERROR ('Settings file name cannot contain tabs', 11, 116)
@@ -278,9 +279,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSettingsFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_settings_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateSettingsFile] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_settings_file] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateSettingsFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_settings_file] TO [Limited_Table_Write] AS [dbo]
 GO

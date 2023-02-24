@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PopulateInstrumentFilterTable] ******/
+/****** Object:  StoredProcedure [dbo].[populate_instrument_filter_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PopulateInstrumentFilterTable]
+CREATE PROCEDURE [dbo].[populate_instrument_filter_table]
 /****************************************************
 **
 **  Desc:   Populates temp table #Tmp_InstrumentFilter
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[PopulateInstrumentFilterTable]
 **  Return values: 0: success, otherwise, error code
 **
 **  Date:   07/22/2019 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -44,7 +45,7 @@ AS
 
         INSERT INTO #Tmp_MatchSpec (Match_Spec)
         SELECT DISTINCT Value
-        FROM dbo.udfParseDelimitedList(@instrumentFilterList, ',', 'PopulateInstrumentFilterTable')
+        FROM dbo.parse_delimited_list(@instrumentFilterList, ',', 'populate_instrument_filter_table')
         ORDER BY Value
 
         Declare @matchSpecID int = 0

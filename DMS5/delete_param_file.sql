@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[DeleteParamFile] ******/
+/****** Object:  StoredProcedure [dbo].[delete_param_file] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[DeleteParamFile]
+CREATE PROCEDURE [dbo].[delete_param_file]
 /****************************************************
 **
 **  Desc: Deletes given Sequest Param file from the T_Param_Files
@@ -14,12 +14,13 @@ CREATE PROCEDURE [dbo].[DeleteParamFile]
 **  Auth:   kja
 **  Date:   07/22/2004 mem
 **          02/12/2010 mem - Now updating @message when the parameter file is successfully deleted
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ParamFileName varchar(255),
+    @paramFileName varchar(255),
     @message varchar(512) output
 )
 AS
@@ -42,7 +43,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'DeleteParamFile', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'delete_param_file', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -75,7 +76,7 @@ AS
         return 51141
     End
 
-    execute @result = DeleteParamFileByID @ParamFileID, @msg output
+    execute @result = delete_param_file_by_id @ParamFileID, @msg output
 
     If @result = 0
     Begin
@@ -86,9 +87,9 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteParamFile] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_param_file] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[DeleteParamFile] TO [DMS_ParamFile_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[delete_param_file] TO [DMS_ParamFile_Admin] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[DeleteParamFile] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[delete_param_file] TO [Limited_Table_Write] AS [dbo]
 GO

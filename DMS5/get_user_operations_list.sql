@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetUserOperationsList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_user_operations_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetUserOperationsList]
+CREATE FUNCTION [dbo].[get_user_operations_list]
 /****************************************************
 **
 **  Desc: Builds delimited list of Operations for
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[GetUserOperationsList]
 **
 **  Auth:   jds
 **  Date:   12/13/2006
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -40,5 +41,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetUserOperationsList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_user_operations_list] TO [DDL_Viewer] AS [dbo]
 GO

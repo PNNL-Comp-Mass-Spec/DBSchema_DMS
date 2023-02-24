@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[RefreshCachedMTDBs] ******/
+/****** Object:  StoredProcedure [dbo].[refresh_cached_mtdbs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[RefreshCachedMTDBs]
+CREATE PROCEDURE [dbo].[refresh_cached_mtdbs]
 /****************************************************
 **
 **  Desc:   Updates the data in T_MTS_MT_DBs_Cached using MTS
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[RefreshCachedMTDBs]
 **  Date:   02/05/2010 mem - Initial Version
 **          10/15/2012 mem - Now updating Peptide_DB and Peptide_DB_Count
 **          02/23/2016 mem - Add set XACT_ABORT on
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -64,7 +65,7 @@ AS
 
         Set @CurrentLocation = 'Update T_MTS_Cached_Data_Status'
         --
-        Exec UpdateMTSCachedDataStatus 'T_MTS_MT_DBs_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = 0
+        Exec update_mts_cached_data_status 'T_MTS_MT_DBs_Cached', @IncrementRefreshCount = 0, @FullRefreshPerformed = @FullRefreshPerformed, @LastRefreshMinimumID = 0
 
 
 
@@ -127,7 +128,7 @@ AS
         if @myError <> 0
         begin
             set @message = 'Error merging S_MTS_MT_DBs with T_MTS_MT_DBs_Cached (ErrorID = ' + Convert(varchar(12), @myError) + ')'
-            execute PostLogEntry 'Error', @message, 'RefreshCachedMTDBs'
+            execute post_log_entry 'Error', @message, 'refresh_cached_mtdbs'
             goto Done
         end
 
@@ -152,7 +153,7 @@ AS
         Set @CurrentLocation = 'Update stats in T_MTS_Cached_Data_Status'
         --
         --
-        Exec UpdateMTSCachedDataStatus 'T_MTS_MT_DBs_Cached',
+        Exec update_mts_cached_data_status 'T_MTS_MT_DBs_Cached',
                                             @IncrementRefreshCount = 1,
                                             @InsertCountNew = @MergeInsertCount,
                                             @UpdateCountNew = @MergeUpdateCount,
@@ -163,8 +164,8 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'RefreshCachedMTDBs')
-        exec LocalErrorHandler  @CallingProcName, @CurrentLocation, @LogError = 1,
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'refresh_cached_mtdbs')
+        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
         Goto Done
     End Catch
@@ -173,7 +174,7 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTDBs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mtdbs] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[RefreshCachedMTDBs] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[refresh_cached_mtdbs] TO [Limited_Table_Write] AS [dbo]
 GO

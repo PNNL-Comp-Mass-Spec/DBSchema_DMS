@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[ValidateChars] ******/
+/****** Object:  UserDefinedFunction [dbo].[validate_chars] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[ValidateChars]
+CREATE FUNCTION [dbo].[validate_chars]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE FUNCTION [dbo].[ValidateChars]
 **  Auth:   grk
 **  Date:   04/30/2007 grk - Ticket #450
 **          02/13/2008 mem - Updated to check for @string containing a space (Ticket #602)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -61,5 +62,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ValidateChars] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[validate_chars] TO [DDL_Viewer] AS [dbo]
 GO

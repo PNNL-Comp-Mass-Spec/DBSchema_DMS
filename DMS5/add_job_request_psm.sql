@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddJobRequestPSM] ******/
+/****** Object:  StoredProcedure [dbo].[add_job_request_psm] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddJobRequestPSM]
+CREATE PROCEDURE [dbo].[add_job_request_psm]
 /****************************************************
 **
 **  Desc:
@@ -16,11 +16,12 @@ CREATE PROCEDURE [dbo].[AddJobRequestPSM]
 **  Date:   11/14/2012 grk - Initial release
 **          11/16/2012 grk - Added
 **          11/20/2012 grk - Added @organismName
-**          11/21/2012 mem - Now calling CreatePSMJobRequest
+**          11/21/2012 mem - Now calling create_psm_job_request
 **          12/13/2012 mem - Added support for @mode='preview'
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/23/2018 mem - Use a non-zero return code when @mode is 'preview'
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -28,15 +29,15 @@ CREATE PROCEDURE [dbo].[AddJobRequestPSM]
     @requestName varchar(128),
     @datasets varchar(max) output,
     @comment varchar(512),
-    @ownerPRN varchar(64),
+    @ownerUsername varchar(64),
     @organismName varchar(128),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
     @toolName varchar(64),
     @jobTypeName varchar(64),
-    @ModificationDynMetOx varchar(24),
-    @ModificationStatCysAlk varchar(24),
-    @ModificationDynSTYPhos varchar(24),
+    @modificationDynMetOx varchar(24),
+    @modificationStatCysAlk varchar(24),
+    @modificationDynSTYPhos varchar(24),
     @mode varchar(12) = 'add',            -- 'add', 'preview', or 'debug'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -80,7 +81,7 @@ AS
             SELECT @StatCysAlkEnabled = CASE WHEN @ModificationStatCysAlk = 'Yes'  THEN 1 ELSE 0 END
             SELECT @DynSTYPhosEnabled = CASE WHEN @ModificationDynSTYPhos = 'Yes'  THEN 1 ELSE 0 END
 
-            EXEC @myError = CreatePSMJobRequest
+            EXEC @myError = create_psm_job_request
                                 @requestID = @requestID output,
                                 @requestName = @requestName ,
                                 @datasets = @datasets output,
@@ -92,7 +93,7 @@ AS
                                 @StatCysAlkEnabled = @StatCysAlkEnabled,
                                 @DynSTYPhosEnabled = @DynSTYPhosEnabled,
                                 @comment = @comment ,
-                                @ownerPRN = @ownerPRN ,
+                                @ownerUsername = @ownerUsername ,
                                 @previewMode = @previewMode,
                                 @message = @message  output,
                                 @callingUser = @callingUser
@@ -101,13 +102,13 @@ AS
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'AddJobRequestPSM'
+        Exec post_log_entry 'Error', @message, 'add_job_request_psm'
     End Catch
 
     If @previewMode > 0
@@ -121,9 +122,9 @@ AS
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddJobRequestPSM] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_job_request_psm] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddJobRequestPSM] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_job_request_psm] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddJobRequestPSM] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_job_request_psm] TO [DMS2_SP_User] AS [dbo]
 GO

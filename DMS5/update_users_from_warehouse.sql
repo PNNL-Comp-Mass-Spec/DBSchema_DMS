@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateUsersFromWarehouse] ******/
+/****** Object:  StoredProcedure [dbo].[update_users_from_warehouse] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateUsersFromWarehouse]
+CREATE PROCEDURE [dbo].[update_users_from_warehouse]
 /****************************************************
 **
 **  Desc:   Updates user information in T_Users using linked server SQLSRVPROD02
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[UpdateUsersFromWarehouse]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          05/14/2016 mem - Add check for duplicate names
 **          08/22/2018 mem - Tabs to spaces
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -183,7 +184,7 @@ AS
         If @myRowCount > 0
         Begin
 
-            Set @message ='User update would result in ' + dbo.CheckPlural(@myRowCount, 'a duplicate name: ', 'duplicate names: ')
+            Set @message ='User update would result in ' + dbo.check_plural(@myRowCount, 'a duplicate name: ', 'duplicate names: ')
 
             SELECT @message = @message + IsNull(OldName, '??? Undefined ???')  + ' --> ' + IsNull(NewName, '??? Undefined ???') + ', '
             FROM #Tmp_NamesAfterUpdate
@@ -195,7 +196,7 @@ AS
             Set @message = Left(@message, Len(@message)-1)
 
             If @infoOnly = 0
-                Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
+                Exec post_log_entry 'Error', @message, 'update_users_from_warehouse'
             Else
                 SELECT @message as Warning
 
@@ -229,10 +230,10 @@ AS
 
                 If @myRowCount > 0
                 Begin
-                    Set @message = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.CheckPlural(@myRowCount, 'user', 'users') + ' using the PNNL Data Warehouse'
+                    Set @message = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'user', 'users') + ' using the PNNL Data Warehouse'
                     print @message
 
-                    Exec PostLogEntry 'Normal', @message, 'UpdateUsersFromWarehouse'
+                    Exec post_log_entry 'Normal', @message, 'update_users_from_warehouse'
                 End
 
             COMMIT TRANSACTION
@@ -281,7 +282,7 @@ AS
 
         If @infoOnly = 0 And @myRowCount > 0
         Begin
-            Set @message = dbo.CheckPlural(@myRowCount, 'User', 'Users') + ' not found in the Data Warehouse: '
+            Set @message = dbo.check_plural(@myRowCount, 'User', 'Users') + ' not found in the Data Warehouse: '
 
             SELECT @message = @message + IsNull(U.U_HID, '??? Undefined U_HID for ID=' + Convert(varchar(12), U.ID) + ' ???') + ', '
             FROM T_Users U
@@ -293,7 +294,7 @@ AS
             Set @message = RTrim(@message)
             Set @message = Left(@message, Len(@message)-1)
 
-            Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
+            Exec post_log_entry 'Error', @message, 'update_users_from_warehouse'
 
             DELETE FROM @tblUserProblems
         End
@@ -317,7 +318,7 @@ AS
 
         If @infoOnly = 0 And @myRowCount > 0
         Begin
-            Set @message = dbo.CheckPlural(@myRowCount, 'User', 'Users') + ' with mismatch between U_PRN in DMS and NetworkLogin in Warehouse: '
+            Set @message = dbo.check_plural(@myRowCount, 'User', 'Users') + ' with mismatch between U_PRN in DMS and NetworkLogin in Warehouse: '
 
             SELECT @message = @message + IsNull(U.U_PRN, '??? Undefined U_PRN for ID=' + Convert(varchar(12), U.ID) + ' ???') +
                               '<>' + IsNull(M.NetworkLogin, '??') + ', '
@@ -330,7 +331,7 @@ AS
             Set @message = RTrim(@message)
             Set @message = Left(@message, Len(@message)-1)
 
-            Exec PostLogEntry 'Error', @message, 'UpdateUsersFromWarehouse'
+            Exec post_log_entry 'Error', @message, 'update_users_from_warehouse'
 
             DELETE FROM @tblUserProblems
         End
@@ -357,7 +358,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         Declare @msg varchar(512) = ERROR_MESSAGE()
 
@@ -365,7 +366,7 @@ AS
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @msg, 'UpdateUsersFromWarehouse'
+        Exec post_log_entry 'Error', @msg, 'update_users_from_warehouse'
 
     END CATCH
 
@@ -373,7 +374,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUsersFromWarehouse] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_users_from_warehouse] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateUsersFromWarehouse] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_users_from_warehouse] TO [Limited_Table_Write] AS [dbo]
 GO

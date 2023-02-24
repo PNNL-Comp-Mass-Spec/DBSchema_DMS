@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetNextLocalSymbolID] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_next_local_symbol_id] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetNextLocalSymbolID]
+CREATE FUNCTION [dbo].[get_next_local_symbol_id]
 /****************************************************
 **
 **  Desc: Gets Next Available LocalSymbolID for a given paramFileID
@@ -14,14 +14,15 @@ CREATE PROCEDURE [dbo].[GetNextLocalSymbolID]
 **  Date:   08/10/2004
 **          10/01/2009 mem - Updated to jump from ID 3 to ID 9 for Sequest param files
 **          08/03/2017 mem - Add Set NoCount On
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ParamFileID int
+    @paramFileID int
 )
+RETURNS int
 AS
-    Set NoCount On
-
+BEGIN
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
@@ -94,9 +95,10 @@ AS
     End
 
     return @NextSymbolID
+END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNextLocalSymbolID] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_next_local_symbol_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetNextLocalSymbolID] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_next_local_symbol_id] TO [Limited_Table_Write] AS [dbo]
 GO

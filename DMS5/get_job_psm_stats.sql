@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetJobPSMStats] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_job_psm_stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetJobPSMStats]
+CREATE FUNCTION [dbo].[get_job_psm_stats]
 /****************************************************
 **
 **  Desc:
@@ -19,10 +19,11 @@ CREATE FUNCTION [dbo].[GetJobPSMStats]
 **          05/11/2012 mem - Now displaying FDR as a percentage
 **          01/17/2014 mem - Added support for MSGF_Threshold_Is_EValue = 1
 **          07/15/2020 mem - Report % PSMs without TMT or iTRAQ
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Job int
+    @job int
 )
 RETURNS varchar(2000)
 AS
@@ -56,5 +57,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetJobPSMStats] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_job_psm_stats] TO [DDL_Viewer] AS [dbo]
 GO

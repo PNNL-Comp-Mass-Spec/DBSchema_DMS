@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[MoveMaterialContainer] ******/
+/****** Object:  StoredProcedure [dbo].[move_material_container] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[MoveMaterialContainer]
+CREATE PROCEDURE [dbo].[move_material_container]
 /****************************************************
 **
 **  Desc:   Moves a container to a new location
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[MoveMaterialContainer]
 **  Date:   12/19/2018 mem - Initial release
 **          12/20/2018 mem - Include container name in warnings
 **          03/02/2022 mem - Compare current container location to @newLocation before validating @oldLocation
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'MoveMaterialContainer', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'move_material_container', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -153,7 +154,7 @@ AS
         Set @mode = 'Update'
     End
 
-    Exec @myError = AddUpdateMaterialContainer @container = @container
+    Exec @myError = add_update_material_container @container = @container
                                               ,@type = @containerType
                                               ,@location = @newLocation
                                               ,@comment = @containerComment

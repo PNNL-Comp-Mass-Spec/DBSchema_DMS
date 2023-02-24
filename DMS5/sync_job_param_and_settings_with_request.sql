@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SyncJobParamAndSettingsWithRequest] ******/
+/****** Object:  StoredProcedure [dbo].[sync_job_param_and_settings_with_request] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SyncJobParamAndSettingsWithRequest]
+CREATE PROCEDURE [dbo].[sync_job_param_and_settings_with_request]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[SyncJobParamAndSettingsWithRequest]
 **  Auth:   mem
 **  Date:   04/17/2014 mem - Initial version
 **          07/29/2022 mem - No longer filter out null parameter file or settings file names since neither column allows null values
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -184,7 +185,7 @@ AS
         Begin
             Set @message = 'Updated the parameter file name and/or settings file name for ' + Convert(varchar(12), @myRowCount) + ' job requests to match the actual jobs'
 
-            Exec PostLogEntry 'Normal', @message, 'SyncJobParamAndSettingsWithRequest'
+            Exec post_log_entry 'Normal', @message, 'sync_job_param_and_settings_with_request'
         End
 
     End
@@ -197,5 +198,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncJobParamAndSettingsWithRequest] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[sync_job_param_and_settings_with_request] TO [DDL_Viewer] AS [dbo]
 GO

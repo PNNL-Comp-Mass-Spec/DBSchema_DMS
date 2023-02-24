@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewChargeCode] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_charge_code] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewChargeCode]
+CREATE PROCEDURE [dbo].[add_new_charge_code]
 /****************************************************
 **
 **  Desc:
@@ -15,10 +15,11 @@ CREATE PROCEDURE [dbo].[AddNewChargeCode]
 **
 **  Auth:   mem
 **          08/13/2015 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @ChargeCodeList varchar(2000),
+    @chargeCodeList varchar(2000),
     @infoOnly tinyint = 0,
     @message varchar(512)='' output
 )
@@ -45,7 +46,7 @@ AS
     End
     Else
     Begin
-        exec UpdateChargeCodesFromWarehouse @infoOnly=@infoOnly, @updateAll=0, @ExplicitChargeCodeList=@ChargeCodeList, @message=@message output
+        exec update_charge_codes_from_warehouse @infoOnly=@infoOnly, @updateAll=0, @ExplicitChargeCodeList=@ChargeCodeList, @message=@message output
 
         if @message <> ''
             Print @message
@@ -58,5 +59,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewChargeCode] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_charge_code] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetFileAttachmentPath] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_file_attachment_path] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetFileAttachmentPath]
+CREATE FUNCTION [dbo].[get_file_attachment_path]
 /****************************************************
 **
 **  Desc:
@@ -47,6 +47,7 @@ CREATE FUNCTION [dbo].[GetFileAttachmentPath]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          02/24/2017 mem - Update capitalization and add comments
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -200,7 +201,7 @@ Begin
 End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFileAttachmentPath] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_file_attachment_path] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFileAttachmentPath] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_file_attachment_path] TO [DMS2_SP_User] AS [dbo]
 GO

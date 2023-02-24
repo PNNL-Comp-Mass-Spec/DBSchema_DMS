@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AutoDefineWPsForEUSRequestedRuns] ******/
+/****** Object:  StoredProcedure [dbo].[auto_define_wps_for_eus_requested_runs] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AutoDefineWPsForEUSRequestedRuns]
+CREATE PROCEDURE [dbo].[auto_define_wps_for_eus_requested_runs]
 /****************************************************
 **
 **  Desc:   Looks for completed requested runs that have
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[AutoDefineWPsForEUSRequestedRuns]
 **
 **  Auth:   mem
 **  Date:   01/29/2016 mem - Initial Version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -101,7 +102,7 @@ AS
         ELSE
         Begin
 
-            exec GetWPforEUSProposal @EUSProposal, @workPackage output, @monthsSearched output
+            exec get_wp_for_eus_proposal @EUSProposal, @workPackage output, @monthsSearched output
 
             If @workPackage <> 'none'
             Begin
@@ -228,7 +229,7 @@ AS
         Else
         Begin
 
-            Set @message = 'Changed the work package from none to ' + @workPackage + ' for ' + Cast(@requestedRunsToUpdate as varchar(12)) + ' requested ' + dbo.CheckPlural(@requestedRunsToUpdate, 'run', 'runs') + ' with EUS Proposal ' + @EUSProposal
+            Set @message = 'Changed the work package from none to ' + @workPackage + ' for ' + Cast(@requestedRunsToUpdate as varchar(12)) + ' requested ' + dbo.check_plural(@requestedRunsToUpdate, 'run', 'runs') + ' with EUS Proposal ' + @EUSProposal
 
             If @InfoOnly <> 0
                 PRINT @message
@@ -242,7 +243,7 @@ AS
                        ON RR.ID = U.RequestedRunID
                 WHERE U.EUSProposal = @EUSProposal
 
-                EXEC PostLogEntry 'Normal', @message, 'AutoDefineWPsForEUSRequestedRuns'
+                EXEC post_log_entry 'Normal', @message, 'auto_define_wps_for_eus_requested_runs'
 
             End
 
@@ -255,5 +256,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AutoDefineWPsForEUSRequestedRuns] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[auto_define_wps_for_eus_requested_runs] TO [DDL_Viewer] AS [dbo]
 GO

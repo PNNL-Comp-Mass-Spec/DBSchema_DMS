@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddUpdateOrganisms] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_organisms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
+CREATE PROCEDURE [dbo].[add_update_organisms]
 /****************************************************
 **
 **  Desc:
@@ -17,7 +17,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          01/12/2007 mem - Added validation that genus, species, and strain are not duplicated in T_Organisms
 **          10/16/2007 mem - Updated to allow genus, species, and strain to all be 'na' (Ticket #562)
 **          03/25/2008 mem - Added optional parameter @callingUser; if provided, then will populate field Entered_By with this name
-**          09/12/2008 mem - Updated to call ValidateNAParameter to validate genus, species, and strain (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
+**          09/12/2008 mem - Updated to call validate_na_parameter to validate genus, species, and strain (Ticket #688, http://prismtrac.pnl.gov/trac/ticket/688)
 **          09/09/2009 mem - No longer populating field OG_organismDBLocalPath
 **          11/20/2009 mem - Removed parameter @orgDBLocalPath
 **          12/03/2009 mem - Now making sure that @orgDBPath starts with two slashes and ends with one slash
@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          05/24/2013 mem - Added @newtIDList
 **          10/15/2014 mem - Removed @orgDBPath and added validation logic to @orgStorageLocation
 **          06/25/2015 mem - Now validating that the protein collection specified by @orgDBName exists
-**          09/10/2015 mem - Switch to using synonym S_MT_Main_RefreshCachedOrganisms
+**          09/10/2015 mem - Switch to using synonym s_mt_main_refresh_cached_organisms
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          02/26/2016 mem - Check for @orgName containing a space
 **          03/01/2016 mem - Added @ncbiTaxonomyID
@@ -40,9 +40,9 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          12/02/2016 mem - Assure that @orgName and @orgShortName do not have any spaces or commas
 **          02/06/2017 mem - Auto-update @newtIDList to match @ncbiTaxonomyID if @newtIDList is null or empty
-**          03/17/2017 mem - Pass this procedure's name to udfParseDelimitedList
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
-**          06/16/2017 mem - Restrict access using VerifySPAuthorized
+**          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/23/2017 mem - Check for the protein collection specified by @orgDBName being a valid name, but inactive
 **          04/09/2018 mem - Auto-define @orgStorageLocation if empty
@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[AddUpdateOrganisms]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Check for whitespace in @orgName
 **          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2005, Battelle Memorial Institute
@@ -103,7 +104,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'AddUpdateOrganisms', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'add_update_organisms', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -152,7 +153,7 @@ AS
         RAISERROR ('Organism Name cannot be blank', 11, 0)
     End
 
-    If dbo.udfWhitespaceChars(@orgName, 0) > 0
+    If dbo.whitespace_chars(@orgName, 0) > 0
     Begin
         If CharIndex(Char(9), @orgName) > 0
             RAISERROR ('Organism name cannot contain tabs', 11, 116)
@@ -174,7 +175,7 @@ AS
         FROM T_MiscPaths
         WHERE [Function] = 'DMSOrganismFiles'
 
-        Set @orgStorageLocation = dbo.udfCombinePaths(@orgDbPathBase, @orgName) + '\'
+        Set @orgStorageLocation = dbo.combine_paths(@orgDbPathBase, @orgName) + '\'
     End
 
     If Len(IsNull(@orgShortName, '')) > 0
@@ -223,7 +224,7 @@ AS
 
         INSERT INTO #NEWTIDs (NEWT_ID_Text)
         SELECT Cast(Value as varchar(24))
-        FROM dbo.udfParseDelimitedList(@newtIDList, ',', 'AddUpdateOrganisms')
+        FROM dbo.parse_delimited_list(@newtIDList, ',', 'add_update_organisms')
         WHERE IsNull(Value, '') <> ''
 
         -- Look for non-numeric values
@@ -289,7 +290,7 @@ AS
         -- Existing values are preserved if matches are not found
         ---------------------------------------------------
 
-        EXEC GetTaxonomyValueByTaxonomyID
+        EXEC get_taxonomy_value_by_taxonomy_id
                 @ncbiTaxonomyID,
                 @orgDomain=@orgDomain output,
                 @orgKingdom=@orgKingdom output,
@@ -314,7 +315,7 @@ AS
     --
     If @mode = 'add'
     Begin
-        execute @existingOrganismID = GetOrganismID @orgName
+        execute @existingOrganismID = get_organism_id @orgName
         If @existingOrganismID <> 0
         Begin
             Set @msg = 'Cannot add: Organism "' + @orgName + '" already in database '
@@ -353,9 +354,9 @@ AS
     --  then make sure all three are "na"
     ---------------------------------------------------
 
-    Set @orgGenus =   dbo.ValidateNAParameter(@orgGenus, 1)
-    Set @orgSpecies = dbo.ValidateNAParameter(@orgSpecies, 1)
-    Set @orgStrain =  dbo.ValidateNAParameter(@orgStrain, 1)
+    Set @orgGenus =   dbo.validate_na_parameter(@orgGenus, 1)
+    Set @orgSpecies = dbo.validate_na_parameter(@orgSpecies, 1)
+    Set @orgStrain =  dbo.validate_na_parameter(@orgStrain, 1)
 
     If @orgGenus   IN ('unknown', 'na', 'none') AND
        @orgSpecies IN ('unknown', 'na', 'none') AND
@@ -494,7 +495,7 @@ AS
 
         -- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
+            Exec alter_entered_by_user 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
 
     End -- add mode
 
@@ -537,13 +538,13 @@ AS
 
         -- If @callingUser is defined, then update Entered_By in T_Organisms_Change_History
         If Len(@callingUser) > 0
-            Exec AlterEnteredByUser 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
+            Exec alter_entered_by_user 'T_Organisms_Change_History', 'Organism_ID', @id, @callingUser
 
     End -- update mode
 
     End Try
     Begin Catch
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
@@ -557,25 +558,25 @@ AS
         -- Note that the table is auto-updated once per hour by a Sql Server Agent job running on ProteinSeqs
         -- This hourly update captures any changes manually made to table T_Organisms
 
-        Exec dbo.S_MT_Main_RefreshCachedOrganisms
+        Exec dbo.s_mt_main_refresh_cached_organisms
 
     End Try
     Begin Catch
         Declare @logMessage varchar(256)
-        EXEC FormatErrorMessage @message=@logMessage output, @myError=@myError output
+        EXEC format_error_message @message=@logMessage output, @myError=@myError output
 
-        exec PostLogEntry 'Error', @logMessage, 'AddUpdateOrganisms'
+        exec post_log_entry 'Error', @logMessage, 'add_update_organisms'
 
     End Catch
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateOrganisms] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_organisms] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS_Org_Database_Admin] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_organisms] TO [DMS_Org_Database_Admin] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[AddUpdateOrganisms] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_organisms] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddUpdateOrganisms] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_organisms] TO [Limited_Table_Write] AS [dbo]
 GO

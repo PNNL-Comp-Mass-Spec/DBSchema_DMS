@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[AddNewFreezer] ******/
+/****** Object:  StoredProcedure [dbo].[add_new_freezer] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[AddNewFreezer]
+CREATE PROCEDURE [dbo].[add_new_freezer]
 /****************************************************
 **
 **  Desc: Adds a new Freezer to T_Material_Locations
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[AddNewFreezer]
 **  Date:   04/22/2015 mem - Initial version
 **          03/31/2016 mem - Switch to using Freezer tags (and remove parameter @NewTagBase)
 **          11/13/2017 mem - Skip computed column Tag when copying data
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -175,7 +176,7 @@ AS
 
         Set @message = 'Added ' + Cast(@myRowCount as varchar(12)) + ' rows to T_Material_Locations by copying freezer_tag ' + @sourceFreezerTag
 
-        Exec PostLogEntry 'Normal', @message, 'AddNewFreezer'
+        Exec post_log_entry 'Normal', @message, 'add_new_freezer'
     End
 
     ---------------------------------------------------
@@ -186,5 +187,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[AddNewFreezer] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_new_freezer] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetMonthlyEMSLInstrumentUsageReport] ******/
+/****** Object:  StoredProcedure [dbo].[get_monthly_emsl_instrument_usage_report] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetMonthlyEMSLInstrumentUsageReport]
+CREATE PROCEDURE [dbo].[get_monthly_emsl_instrument_usage_report]
 /****************************************************
 **
 **  Desc:
@@ -19,8 +19,9 @@ CREATE PROCEDURE [dbo].[GetMonthlyEMSLInstrumentUsageReport]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/03/2019 mem - Add support for DMS instruments that share a single eusInstrumentId
-**          02/14/2022 mem - Add new columns to temporary table #ZR (to match data returned by GetMonthlyInstrumentUsageReport)
+**          02/14/2022 mem - Add new columns to temporary table #ZR (to match data returned by get_monthly_instrument_usage_report)
 **                         - Add @infoOnly parameter
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -29,7 +30,7 @@ CREATE PROCEDURE [dbo].[GetMonthlyEMSLInstrumentUsageReport]
     @year varchar(12),
     @month varchar(12),
     @message varchar(512) Output,
-    @infoOnly tinyint = 0                 -- When 1, show debug information.  When 2, do not actually call GetMonthlyInstrumentUsageReport
+    @infoOnly tinyint = 0                 -- When 1, show debug information.  When 2, do not actually call get_monthly_instrument_usage_report
 )
 AS
     Set XACT_ABORT, nocount on
@@ -157,13 +158,13 @@ AS
             Begin
                 If @infoOnly > 0
                 Begin
-                    Print 'EXEC GetMonthlyInstrumentUsageReport ' + @instrument + ', 0, ' + @year + ', ' + @month + ', ''report'', @message output'
+                    Print 'EXEC get_monthly_instrument_usage_report ' + @instrument + ', 0, ' + @year + ', ' + @month + ', ''report'', @message output'
                 End
 
                 If @infoOnly <= 1
                 Begin
                     INSERT INTO #ZR (Instrument, EMSL_Inst_ID, [Start], Type, [Minutes], Proposal, Usage, Users, Operator, Comment, [Year], [Month], ID)
-                    EXEC GetMonthlyInstrumentUsageReport @instrument, 0, @year, @month, 'report', @message output
+                    EXEC get_monthly_instrument_usage_report @instrument, 0, @year, @month, 'report', @message output
                 End
 
 
@@ -196,13 +197,13 @@ AS
             Begin
                 If @infoOnly > 0
                 Begin
-                    Print 'EXEC GetMonthlyInstrumentUsageReport '''', ' + Cast( @eusInstrumentId As Varchar(12)) + ', ' + @year + ', ' + @month + ', ''report'', @message output'
+                    Print 'EXEC get_monthly_instrument_usage_report '''', ' + Cast( @eusInstrumentId As Varchar(12)) + ', ' + @year + ', ' + @month + ', ''report'', @message output'
                 End
 
                 If @infoOnly <= 1
                 Begin
                     INSERT INTO #ZR (Instrument, EMSL_Inst_ID, [Start], Type, [Minutes], Proposal, Usage, Users, Operator, Comment, [Year], [Month], ID)
-                    EXEC GetMonthlyInstrumentUsageReport '', @eusInstrumentId, @year, @month, 'report', @message Output
+                    EXEC get_monthly_instrument_usage_report '', @eusInstrumentId, @year, @month, 'report', @message Output
                 End
             END
         END -- </a2>
@@ -226,13 +227,13 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'GetMonthlyEMSLInstrumentUsageReport'
+        Exec post_log_entry 'Error', @message, 'get_monthly_emsl_instrument_usage_report'
     END CATCH
 
     If @infoOnly <> 0 and @myError <> 0
@@ -241,5 +242,5 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetMonthlyEMSLInstrumentUsageReport] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_monthly_emsl_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
 GO

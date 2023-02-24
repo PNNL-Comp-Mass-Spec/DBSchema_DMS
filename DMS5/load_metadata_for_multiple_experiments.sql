@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[LoadMetadataForMultipleExperiments] ******/
+/****** Object:  StoredProcedure [dbo].[load_metadata_for_multiple_experiments] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[LoadMetadataForMultipleExperiments]
+CREATE PROCEDURE [dbo].[load_metadata_for_multiple_experiments]
 /****************************************************
 **
 **  Desc:
@@ -28,10 +28,11 @@ CREATE PROCEDURE [dbo].[LoadMetadataForMultipleExperiments]
 **  Date:   11/01/2006
 **          07/06/2022 mem - Use new aux info definition view name
 **          02/08/2023 bcg - Update to use V_Biomaterial_Metadata
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @Options varchar(256), -- ignore for now
+    @options varchar(256), -- ignore for now
     @message varchar(512) output
 )
 AS
@@ -236,7 +237,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleExperiments] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[load_metadata_for_multiple_experiments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[LoadMetadataForMultipleExperiments] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[load_metadata_for_multiple_experiments] TO [Limited_Table_Write] AS [dbo]
 GO

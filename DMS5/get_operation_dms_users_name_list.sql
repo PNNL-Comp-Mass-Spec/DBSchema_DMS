@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[GetOperationDMSUsersNameList] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_operation_dms_users_name_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[GetOperationDMSUsersNameList]
+CREATE FUNCTION [dbo].[get_operation_dms_users_name_list]
 /****************************************************
 **
 **  Desc: Builds delimited list of DMS users for the given Operation
@@ -13,10 +13,11 @@ CREATE FUNCTION [dbo].[GetOperationDMSUsersNameList]
 **  Auth:   jds
 **  Date:   12/11/2006 jds - Initial version
 **          06/28/2010 ??? - Now limiting to active users
-**          12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and PRN
+**          12/08/2014 mem - Now using Name_with_PRN to obtain each user's name and username
 **          11/17/2016 mem - Add parameter @formatAsTable
 **                         - Also change parameter @operationID to an integer
 **          08/24/2018 mem - Tabs to spaces
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -62,5 +63,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetOperationDMSUsersNameList] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_operation_dms_users_name_list] TO [DDL_Viewer] AS [dbo]
 GO

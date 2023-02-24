@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateEMSLInstrumentAcqOverlapData] ******/
+/****** Object:  StoredProcedure [dbo].[update_emsl_instrument_acq_overlap_data] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentAcqOverlapData]
+CREATE PROCEDURE [dbo].[update_emsl_instrument_acq_overlap_data]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[UpdateEMSLInstrumentAcqOverlapData]
 **
 **  Auth:   mem
 **  Date:   03/17/2022 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = VerifySPAuthorized 'UpdateEMSLInstrumentAcqOverlapData', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'update_emsl_instrument_acq_overlap_data', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -335,13 +336,13 @@ AS
     END TRY
     BEGIN CATCH
 
-        EXEC FormatErrorMessage @message output, @myError output
+        EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec PostLogEntry 'Error', @message, 'UpdateEMSLInstrumentAcqOverlapData'
+        Exec post_log_entry 'Error', @message, 'update_emsl_instrument_acq_overlap_data'
 
     END CATCH
 

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[PredefinedAnalysisDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[predefined_analysis_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[PredefinedAnalysisDatasets]
+CREATE PROCEDURE [dbo].[predefined_analysis_datasets]
 /****************************************************
 **
 **  Desc:   Shows datasets that satisfy a given predefined analysis rule
@@ -24,14 +24,15 @@ CREATE PROCEDURE [dbo].[PredefinedAnalysisDatasets]
 **          03/17/2017 mem - Include job, parameter file, settings file, etc. for the predefines that would run for the matching datasets
 **          04/21/2017 mem - Add AD_instrumentNameCriteria
 **          06/30/2022 mem - Rename parameter file argument
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @ruleID int,
     @message varchar(512)='' output,
-    @InfoOnly tinyint = 0,              -- When 1, then returns the count of the number of datasets, not the actual datasets
+    @infoOnly tinyint = 0,              -- When 1, then returns the count of the number of datasets, not the actual datasets
     @previewSql tinyint = 0,
-    @PopulateTempTable tinyint = 0      -- When 1, then populates table T_Tmp_PredefinedAnalysisDatasets with the results
+    @populateTempTable tinyint = 0      -- When 1, then populates table T_Tmp_PredefinedAnalysisDatasets with the results
 )
 AS
     set nocount on
@@ -54,7 +55,7 @@ AS
     Declare @labellingExclCriteria varchar(1024)
     Declare @datasetNameCriteria varchar(1024)
     Declare @datasetTypeCriteria varchar(64)
-    Declare @expCommentCriteria varchar(1024)
+    Declare @experimentCommentCriteria varchar(1024)
 
     Declare @separationTypeCriteria varchar(64)
     Declare @campaignExclCriteria varchar(128)
@@ -99,7 +100,7 @@ AS
         @labellingExclCriteria = AD_labellingExclCriteria,
         @datasetNameCriteria = AD_datasetNameCriteria,
         @datasetTypeCriteria = AD_datasetTypeCriteria,
-        @expCommentCriteria = AD_expCommentCriteria,
+        @experimentCommentCriteria = AD_expCommentCriteria,
         @separationTypeCriteria = AD_separationTypeCriteria,
         @campaignExclCriteria = AD_campaignExclCriteria,
         @experimentExclCriteria = AD_experimentExclCriteria,
@@ -123,7 +124,7 @@ AS
     print 'LabellingExcl: ' + @labellingExclCriteria
     print 'DatasetName: ' + @datasetNameCriteria
     print 'DatasetType: ' + @datasetTypeCriteria
-    print 'ExperimentComment: ' + @expCommentCriteria
+    print 'ExperimentComment: ' + @experimentCommentCriteria
     print 'SeparationType: ' + @separationTypeCriteria
     print 'CampaignExcl: ' + @campaignExclCriteria
     print 'ExperimentExcl: ' + @experimentExclCriteria
@@ -176,8 +177,8 @@ AS
     If @datasetTypeCriteria <> ''
         Set @SqlWhere = @SqlWhere + ' AND (Dataset_Type LIKE ''' + @datasetTypeCriteria + ''')'
 
-    If @expCommentCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (Experiment_Comment LIKE ''' + @expCommentCriteria + ''')'
+    If @experimentCommentCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (Experiment_Comment LIKE ''' + @experimentCommentCriteria + ''')'
 
 
     If @InfoOnly = 0
@@ -206,26 +207,26 @@ AS
         Set @S = @S +          ' COUNT(*) AS DatasetCount,'
         Set @S = @S +          ' MIN(DS_Date) AS Dataset_Date_Min, MAX(DS_Date) AS Dataset_Date_Max, '
 
-        Set @S = @S +          ' ''' + @instrumentClassCriteria + ''' AS InstrumentClassCriteria,'
-        Set @S = @S +          ' ''' + @instrumentNameCriteria +  ''' AS InstrumentNameCriteria,'
-        Set @S = @S +          ' ''' + @instrumentExclCriteria +  ''' AS InstrumentExclCriteria,'
+        Set @S = @S +          ' ''' + @instrumentClassCriteria +   ''' AS InstrumentClassCriteria,'
+        Set @S = @S +          ' ''' + @instrumentNameCriteria +    ''' AS InstrumentNameCriteria,'
+        Set @S = @S +          ' ''' + @instrumentExclCriteria +    ''' AS InstrumentExclCriteria,'
 
-        Set @S = @S +          ' ''' + @campaignNameCriteria +   ''' AS CampaignNameCriteria,'
-        Set @S = @S +          ' ''' + @campaignExclCriteria +   ''' AS CampaignExclCriteria,'
+        Set @S = @S +          ' ''' + @campaignNameCriteria +      ''' AS CampaignNameCriteria,'
+        Set @S = @S +          ' ''' + @campaignExclCriteria +      ''' AS CampaignExclCriteria,'
 
-        Set @S = @S +          ' ''' + @experimentNameCriteria + ''' AS ExperimentNameCriteria,'
-        Set @S = @S +          ' ''' + @experimentExclCriteria + ''' AS ExperimentExclCriteria,'
+        Set @S = @S +          ' ''' + @experimentNameCriteria +    ''' AS ExperimentNameCriteria,'
+        Set @S = @S +          ' ''' + @experimentExclCriteria +    ''' AS ExperimentExclCriteria,'
 
-        Set @S = @S +          ' ''' + @organismNameCriteria +   ''' AS OrganismNameCriteria,'
+        Set @S = @S +          ' ''' + @organismNameCriteria +      ''' AS OrganismNameCriteria,'
 
-        Set @S = @S +          ' ''' + @datasetNameCriteria +    ''' AS DatasetNameCriteria,'
-        Set @S = @S +          ' ''' + @datasetExclCriteria +    ''' AS DatasetExclCriteria,'
-        Set @S = @S +          ' ''' + @datasetTypeCriteria +    ''' AS DatasetTypeCriteria,'
+        Set @S = @S +          ' ''' + @datasetNameCriteria +       ''' AS DatasetNameCriteria,'
+        Set @S = @S +          ' ''' + @datasetExclCriteria +       ''' AS DatasetExclCriteria,'
+        Set @S = @S +          ' ''' + @datasetTypeCriteria +       ''' AS DatasetTypeCriteria,'
 
-        Set @S = @S +          ' ''' + @expCommentCriteria +     ''' AS ExpCommentCriteria,'
-        Set @S = @S +          ' ''' + @labellingInclCriteria +  ''' AS LabellingInclCriteria,'
-        Set @S = @S +          ' ''' + @labellingExclCriteria +  ''' AS LabellingExclCriteria,'
-        Set @S = @S +          ' ''' + @separationTypeCriteria + ''' AS SeparationTypeCriteria'
+        Set @S = @S +          ' ''' + @experimentCommentCriteria + ''' AS ExpCommentCriteria,'
+        Set @S = @S +          ' ''' + @labellingInclCriteria +     ''' AS LabellingInclCriteria,'
+        Set @S = @S +          ' ''' + @labellingExclCriteria +     ''' AS LabellingExclCriteria,'
+        Set @S = @S +          ' ''' + @separationTypeCriteria +    ''' AS SeparationTypeCriteria'
 
         Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'
         Set @S = @S + ' ' + @SqlWhere
@@ -253,11 +254,11 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[PredefinedAnalysisDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PredefinedAnalysisDatasets] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[predefined_analysis_datasets] TO [DMS_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[PredefinedAnalysisDatasets] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[predefined_analysis_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[PredefinedAnalysisDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_datasets] TO [Limited_Table_Write] AS [dbo]
 GO

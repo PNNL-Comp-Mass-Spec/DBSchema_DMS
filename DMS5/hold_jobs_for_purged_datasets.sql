@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[HoldJobsForPurgedDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[hold_jobs_for_purged_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[HoldJobsForPurgedDatasets]
+CREATE PROCEDURE [dbo].[hold_jobs_for_purged_datasets]
 /****************************************************
 **
 **  Desc:   Updates the job state to 8=Holding for jobs
@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[HoldJobsForPurgedDatasets]
 **  Auth:   mem
 **  Date:   05/15/2008 (Ticket #670)
 **          05/22/2008 mem - Now updating comment for any jobs that are set to state 8 (Ticket #670)
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @InfoOnly tinyint = 0,
+    @infoOnly tinyint = 0,
     @message varchar(512) = '' output
 )
 AS
@@ -100,9 +101,9 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[HoldJobsForPurgedDatasets] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[hold_jobs_for_purged_datasets] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[HoldJobsForPurgedDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[hold_jobs_for_purged_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[HoldJobsForPurgedDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[hold_jobs_for_purged_datasets] TO [Limited_Table_Write] AS [dbo]
 GO

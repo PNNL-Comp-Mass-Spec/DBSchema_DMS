@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateExperimentUsage] ******/
+/****** Object:  StoredProcedure [dbo].[update_experiment_usage] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateExperimentUsage]
+CREATE PROCEDURE [dbo].[update_experiment_usage]
 /****************************************************
 **
 **  Desc:   Updates Last_Used in T_Experiments
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateExperimentUsage]
 **
 **  Auth:   mem
 **  Date:   07/31/2015 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -110,7 +111,7 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        Print 'Updated Last_Used date for ' + Cast(@myRowCount as varchar(12)) + dbo.CheckPlural(@myRowcount, ' experiment',  ' experiments')
+        Print 'Updated Last_Used date for ' + Cast(@myRowCount as varchar(12)) + dbo.check_plural(@myRowcount, ' experiment',  ' experiments')
     End
 
     ---------------------------------------------------
@@ -121,5 +122,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateExperimentUsage] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_experiment_usage] TO [DDL_Viewer] AS [dbo]
 GO

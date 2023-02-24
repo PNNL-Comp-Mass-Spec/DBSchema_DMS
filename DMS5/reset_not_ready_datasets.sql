@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ResetNotReadyDatasets] ******/
+/****** Object:  StoredProcedure [dbo].[reset_not_ready_datasets] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ResetNotReadyDatasets]
+CREATE PROCEDURE [dbo].[reset_not_ready_datasets]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[ResetNotReadyDatasets]
 **  Date:   08/06/2003
 **          05/16/2007 mem - Updated to use DS_Last_Affected (Ticket:478)
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -68,7 +69,7 @@ Done:
     return
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetNotReadyDatasets] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_not_ready_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[ResetNotReadyDatasets] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_not_ready_datasets] TO [Limited_Table_Write] AS [dbo]
 GO

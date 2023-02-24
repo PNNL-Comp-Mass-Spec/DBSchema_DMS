@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[SyncWithDMS5] ******/
+/****** Object:  StoredProcedure [dbo].[sync_with_dms5] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[SyncWithDMS5]
+CREATE PROCEDURE [dbo].[sync_with_dms5]
 /****************************************************
 **
 **  Desc:   Synchronize data with database DMS5
@@ -13,7 +13,7 @@ CREATE PROCEDURE [dbo].[SyncWithDMS5]
 **  Date:   10/26/2015 mem - Initial version
 **          10/27/2015 mem - Add tables for @usersAndCampaigns, @chargeCodesAndEUS
 **          10/28/2015 mem - Add tables for @experiments, @datasets, and @jobs
-**          10/29/2015 mem - Now passing @tableName to SyncWithDMSShowStats
+**          10/29/2015 mem - Now passing @tableName to sync_with_dms_show_stats
 **          11/05/2015 mem - Remove IN_Max_Queued_Datasets and IN_Capture_Log_Level from T_Instrument_Name
 **          02/03/2016 mem - Added QCART, Keratin_2A, and Keratin_2C
 **          02/08/2016 mem - Added MS2_RepIon_All, MS2_RepIon_1Missing, MS2_RepIon_2Missing, MS2_RepIon_3Missing
@@ -29,12 +29,13 @@ CREATE PROCEDURE [dbo].[SyncWithDMS5]
 **          04/17/2020 mem - Rename columns in T_EMSL_Instrument_Usage_Report
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          07/29/2022 mem - Update logic now that settings file name cannot be null in T_Analysis_Job or T_Analysis_Job_Request
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @infoOnly tinyint = 1,
-    @DeleteExtras tinyint = 1,
-    @ShowUpdateDetails tinyint = 1,
+    @deleteExtras tinyint = 1,
+    @showUpdateDetails tinyint = 1,
     @instruments tinyint = 1,
     @parameters tinyint = 1,
     @usersAndCampaigns tinyint = 1,
@@ -147,7 +148,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Instrument_Class>
 
@@ -189,7 +190,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_DatasetTypeName>
 
@@ -238,7 +239,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Instrument_Group>
 
@@ -276,7 +277,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Instrument_Group_allowed_DS_Type>
 
@@ -340,7 +341,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
             ALTER TABLE T_Storage_Path CHECK CONSTRAINT FK_t_storage_path_T_Instrument_Name
 
@@ -446,7 +447,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Instrument_Name>
 
@@ -490,7 +491,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Param_File_Types>
 
@@ -564,7 +565,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Analysis_Tool>
 
@@ -602,7 +603,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Analysis_Tool_Allowed_Dataset_Type>
 
@@ -640,7 +641,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Analysis_Tool_Allowed_Instrument_Class>
 
@@ -696,7 +697,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Param_Files>
 
@@ -754,7 +755,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Param_Entries>
 
@@ -816,7 +817,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Mass_Correction_Factors>
 
@@ -876,7 +877,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Residues>
 
@@ -926,7 +927,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Param_File_Mass_Mods>
 
@@ -988,7 +989,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End -- </T_Settings_Files>
 
@@ -1061,7 +1062,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
         End
 
@@ -1106,7 +1107,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Research_Team_Membership'
@@ -1137,7 +1138,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Campaign'
@@ -1222,7 +1223,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Campaign_Tracking'
@@ -1291,7 +1292,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
     End -- </UsersAndCampaigns>
@@ -1384,7 +1385,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EUS_Users'
@@ -1428,7 +1429,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EUS_Proposal'
@@ -1480,7 +1481,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EUS_Proposal_Users'
@@ -1520,7 +1521,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EMSL_Instruments'
@@ -1577,7 +1578,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EMSL_Instrument_Allocation'
@@ -1622,7 +1623,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EMSL_Instrument_Usage_Report'
@@ -1699,7 +1700,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_EMSL_DMS_Instrument_Mapping'
@@ -1730,7 +1731,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Instrument_Group_Allocation_Tag'
@@ -1765,7 +1766,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Instrument_Allocation'
@@ -1812,7 +1813,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Instrument_Allocation_Updates'
@@ -1870,7 +1871,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
 
@@ -1910,7 +1911,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Enzymes'
@@ -1972,7 +1973,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         ALTER TABLE T_Material_Locations NOCHECK CONSTRAINT [FK_T_Material_Locations_T_Material_Freezers]
@@ -2017,7 +2018,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Material_Locations'
@@ -2073,7 +2074,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         ALTER TABLE T_Material_Locations WITH CHECK CHECK CONSTRAINT [FK_T_Material_Locations_T_Material_Freezers]
@@ -2130,7 +2131,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Sample_Prep_Request'
@@ -2325,7 +2326,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Sample_Submission'
@@ -2376,7 +2377,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Organisms'
@@ -2468,7 +2469,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
 
@@ -2551,7 +2552,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Reference_Compound'
@@ -2624,7 +2625,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Experiments'
@@ -2716,7 +2717,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Experiment_Cell_Cultures'
@@ -2747,7 +2748,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Experiment_Reference_Compounds'
@@ -2778,7 +2779,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Cached_Experiment_Components'
@@ -2821,7 +2822,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
     End -- </Experiments>
@@ -2864,7 +2865,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Secondary_Sep'
@@ -2905,7 +2906,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_LC_Column'
@@ -2967,7 +2968,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_LC_Cart'
@@ -3010,7 +3011,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Dataset'
@@ -3112,7 +3113,7 @@ AS
             WHEN NOT MATCHED BY TARGET THEN
                 INSERT([Dataset_Num], [DS_Oper_PRN], [DS_comment], [DS_created], [DS_instrument_name_ID], [DS_LC_column_ID], [DS_type_ID], [DS_wellplate_num], [DS_well_num], [DS_sec_sep], [DS_state_ID], [DS_Last_Affected], [DS_folder_name], [DS_storage_path_ID], [Exp_ID], [Dataset_ID], [DS_internal_standard_ID], [DS_rating], [DS_Comp_State], [DS_Compress_Date], [DS_PrepServerName], [Acq_Time_Start], [Acq_Time_End], [Scan_Count], [File_Size_Bytes], [File_Info_Last_Modified], [Interval_to_Next_DS], [DateSortKey], [DeconTools_Job_for_QC], [Capture_Subfolder])
                 VALUES(s.[Dataset_Num], s.[DS_Oper_PRN], s.[DS_comment], s.[DS_created], s.[DS_instrument_name_ID], s.[DS_LC_column_ID], s.[DS_type_ID], s.[DS_wellplate_num], s.[DS_well_num], s.[DS_sec_sep], s.[DS_state_ID], s.[DS_Last_Affected], s.[DS_folder_name], s.[DS_storage_path_ID], s.[Exp_ID], s.[Dataset_ID], s.[DS_internal_standard_ID], s.[DS_rating], s.[DS_Comp_State], s.[DS_Compress_Date], s.[DS_PrepServerName], s.[Acq_Time_Start], s.[Acq_Time_End], s.[Scan_Count], s.[File_Size_Bytes], s.[File_Info_Last_Modified], s.[Interval_to_Next_DS], s.[DateSortKey], s.[DeconTools_Job_for_QC], s.[Capture_Subfolder])
-            -- Delete using DeleteOldDataExperimentsJobsAndLogs
+            -- Delete using delete_old_data_experiments_jobs_and_logs
             -- WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
              Cast(Inserted.[Dataset_ID] as varchar(12)),
@@ -3130,7 +3131,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Dataset_Info'
@@ -3213,7 +3214,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Dataset_QC'
@@ -3377,7 +3378,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Archive_Path'
@@ -3434,7 +3435,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Dataset_Archive'
@@ -3518,7 +3519,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Prep_LC_Run_Dataset'
@@ -3551,7 +3552,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Requested_Run_Batches'
@@ -3619,7 +3620,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Requested_Run'
@@ -3761,7 +3762,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Requested_Run_EUS_Users'
@@ -3794,7 +3795,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Requested_Run_Status_History'
@@ -3856,7 +3857,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
     End -- </Datasets>
@@ -3899,7 +3900,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Predefined_Analysis'
@@ -4013,7 +4014,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Analysis_Job_Request'
@@ -4086,7 +4087,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Analysis_Job_ID'
@@ -4133,7 +4134,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Analysis_Job_Batches'
@@ -4174,7 +4175,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
         Set @tableName = 'T_Analysis_Job'
@@ -4290,7 +4291,7 @@ AS
             End
 
             If @myRowCount > 0
-                exec SyncWithDMSShowStats @tableName, @myRowCount, @ShowUpdateDetails
+                exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
         End
 
     End -- </Jobs>
@@ -4313,5 +4314,5 @@ Done:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[SyncWithDMS5] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[sync_with_dms5] TO [DDL_Viewer] AS [dbo]
 GO

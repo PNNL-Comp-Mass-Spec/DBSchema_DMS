@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[GetFactorCrosstabByBatch] ******/
+/****** Object:  StoredProcedure [dbo].[get_factor_crosstab_by_batch] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[GetFactorCrosstabByBatch]
+CREATE PROCEDURE [dbo].[get_factor_crosstab_by_batch]
 /****************************************************
 **
 **  Desc:
@@ -16,15 +16,16 @@ CREATE PROCEDURE [dbo].[GetFactorCrosstabByBatch]
 **          02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
 **          03/02/2010 grk - added status field to requested run
 **          03/17/2010 grk - added filtering for request name contains
-**          03/18/2010 grk - eliminated call to GetFactorCrosstabByFactorID
+**          03/18/2010 grk - eliminated call to get_factor_crosstab_by_factor_id
 **          02/17/2012 mem - Updated to delete data from #REQS only if @NameContains is not blank
 **          01/05/2023 mem - Use new column names in V_Requested_Run_Unified_List
 **          01/24/2023 mem - Use lowercase column names in @colList
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
-    @BatchID int,
-    @NameContains VARCHAR(48) = '',
+    @batchID int,
+    @nameContains VARCHAR(48) = '',
     @infoOnly tinyint = 0,
     @message varchar(512)='' OUTPUT
 )
@@ -64,7 +65,7 @@ AS
         --
         DECLARE @itemList VARCHAR(48)
         SET @itemList = CONVERT(varchar(12), @BatchID)
-        EXEC @myError = GetRequestedRunsFromItemList
+        EXEC @myError = get_requested_runs_from_item_list
                                 @itemList,
                                 'Batch_ID',
                                 @message OUTPUT
@@ -103,7 +104,7 @@ AS
     --
     DECLARE @FactorNameContains VARCHAR(48) = ''
     --
-    EXEC @myError = MakeFactorCrosstabSQL
+    EXEC @myError = make_factor_crosstab_sql
                         @colList,
                         @FactorNameContains,
                         @Sql OUTPUT,
@@ -125,9 +126,9 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByBatch] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_factor_crosstab_by_batch] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[GetFactorCrosstabByBatch] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_factor_crosstab_by_batch] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[GetFactorCrosstabByBatch] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_factor_crosstab_by_batch] TO [Limited_Table_Write] AS [dbo]
 GO

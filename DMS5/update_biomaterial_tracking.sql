@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCellCultureTracking] ******/
+/****** Object:  StoredProcedure [dbo].[update_biomaterial_tracking] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCellCultureTracking]
+CREATE PROCEDURE [dbo].[update_biomaterial_tracking]
 /****************************************************
 **
 **  Desc: Updates summary stats in T_Cell_Culture_Tracking
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[UpdateCellCultureTracking]
 **  Date:   10/20/2002
 **          11/15/2007 mem - Switched to Truncate Table for improved performance (Ticket:576)
 **          08/30/2018 mem - Use merge instead of truncate
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 AS
@@ -132,7 +133,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCellCultureTracking] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_biomaterial_tracking] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCellCultureTracking] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_biomaterial_tracking] TO [Limited_Table_Write] AS [dbo]
 GO

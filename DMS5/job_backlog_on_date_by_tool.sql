@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[JobBacklogOnDateByTool] ******/
+/****** Object:  UserDefinedFunction [dbo].[job_backlog_on_date_by_tool] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[JobBacklogOnDateByTool]
+CREATE FUNCTION [dbo].[job_backlog_on_date_by_tool]
 /****************************************************
 **
 **  Desc:
@@ -12,12 +12,13 @@ CREATE FUNCTION [dbo].[JobBacklogOnDateByTool]
 **  Auth:   grk
 **  Date:   01/21/2005
 **          01/22/2005 mem - Added two additional parameters
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
     @targDate datetime,
-    @AnalysisJobToolID int = 1,             -- 1 = Sequest, 2 = ICR-2LS, 13 = MASIC_Finnigan
-    @ProcessorNameFilter varchar(64) = '%'
+    @analysisJobToolID int = 1,             -- 1 = Sequest, 2 = ICR-2LS, 13 = MASIC_Finnigan
+    @processorNameFilter varchar(64) = '%'
 )
 RETURNS integer
 AS
@@ -37,5 +38,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[JobBacklogOnDateByTool] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[job_backlog_on_date_by_tool] TO [DDL_Viewer] AS [dbo]
 GO

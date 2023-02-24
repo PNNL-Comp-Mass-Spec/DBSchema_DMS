@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[CondenseIntegerListToRanges] ******/
+/****** Object:  StoredProcedure [dbo].[condense_integer_list_to_ranges] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CondenseIntegerListToRanges]
+CREATE PROCEDURE [dbo].[condense_integer_list_to_ranges]
 /****************************************************
 **
 **  Desc:
@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[CondenseIntegerListToRanges]
 **
 **  Auth:   mem
 **  Date:   07/01/2014 mem - Initial version
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -116,5 +117,5 @@ Done:
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[CondenseIntegerListToRanges] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[condense_integer_list_to_ranges] TO [DDL_Viewer] AS [dbo]
 GO

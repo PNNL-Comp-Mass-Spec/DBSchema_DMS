@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[UpdateCachedStatistics] ******/
+/****** Object:  StoredProcedure [dbo].[update_cached_statistics] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
+CREATE PROCEDURE [dbo].[update_cached_statistics]
 /****************************************************
 **
 **  Desc:
@@ -22,7 +22,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 **  Date:   11/04/2008 mem - Initial version (Ticket: #698)
 **          12/21/2009 mem - Add parameter @updateJobRequestStatistics
 **          10/20/2011 mem - Now considering analysis tool name when updated T_Param_Files and T_Settings_Files
-**          09/11/2012 mem - Now updating T_Protein_Collection_Usage by calling UpdateProteinCollectionUsage
+**          09/11/2012 mem - Now updating T_Protein_Collection_Usage by calling update_protein_collection_usage
 **          07/18/2016 mem - Now updating Job_Usage_Last_Year in T_Param_Files and T_Settings_Files
 **          02/23/2017 mem - Update dataset usage in T_LC_Cart_Configuration
 **          08/30/2018 mem - Tabs to spaces
@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[UpdateCachedStatistics]
 **                         - Update dataset usage in T_Cached_Instrument_Dataset_Type_Usage
 **                         - Add parameter @showRuntimeStats
 **                         - Only update counts if they change
+**          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
 (
@@ -292,7 +293,7 @@ AS
         --
         Set @startTime = GetDate()
 
-        Exec UpdateProteinCollectionUsage @message output
+        Exec update_protein_collection_usage @message output
 
         INSERT INTO #Tmp_Update_Stats( Task, Runtime_Seconds )
         SELECT 'Update usage counts for protein collections',
@@ -466,9 +467,9 @@ Done:
     return @myError
 
 GO
-GRANT EXECUTE ON [dbo].[UpdateCachedStatistics] TO [D3L243] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_cached_statistics] TO [D3L243] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_statistics] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[UpdateCachedStatistics] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_cached_statistics] TO [Limited_Table_Write] AS [dbo]
 GO
