@@ -7,11 +7,9 @@ CREATE FUNCTION [dbo].[get_fiscal_year_text_from_date]
 /****************************************************
 **
 **  Desc:
-**  Returns Fiscal year for given date
+**      Returns Fiscal year for given date
 **
-**  Return value: person
-**
-**  Parameters:
+**  Return value: Fiscal year description, e.g. FY_22
 **
 **  Auth:   grk
 **  Date:   07/18/2011
@@ -23,10 +21,11 @@ CREATE FUNCTION [dbo].[get_fiscal_year_text_from_date]
 )
 RETURNS VARCHAR(32)
 AS
-    BEGIN
-    DECLARE @yr Datetime = CASE WHEN DATEPART(mm, @RawDate) > 9 THEN DATEADD(YY, 1, @RawDate) ELSE @RawDate END
+BEGIN
+    DECLARE @yr Datetime = CASE WHEN DATEPART(month, @RawDate) > 9 THEN DATEADD(YEAR, 1, @RawDate) ELSE @RawDate END
     RETURN 'FY_' + RIGHT(CONVERT(VARCHAR(24), @yr, 101), 2)
-    END
+END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_fiscal_year_text_from_date] TO [DDL_Viewer] AS [dbo]
