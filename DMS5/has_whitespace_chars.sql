@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[whitespace_chars] ******/
+/****** Object:  UserDefinedFunction [dbo].[has_whitespace_chars] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[whitespace_chars]
+CREATE FUNCTION [dbo].[has_whitespace_chars]
 /****************************************************
 **  Checks for whitespace characters: CRLF, tab, and space
 **  Allows symbols and letters, including periods, dashes,
@@ -41,5 +41,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[whitespace_chars] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[has_whitespace_chars] TO [DDL_Viewer] AS [dbo]
 GO

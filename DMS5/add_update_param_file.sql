@@ -101,7 +101,7 @@ AS
         RAISERROR ('ParamFileType was null', 11, 1)
     End
 
-    If dbo.whitespace_chars(@paramFileName, 0) > 0
+    If dbo.has_whitespace_chars(@paramFileName, 0) > 0
     Begin
         If CharIndex(Char(9), @paramFileName) > 0
             RAISERROR ('Parameter file name cannot contain tabs', 11, 116)

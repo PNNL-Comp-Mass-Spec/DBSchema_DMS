@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[do_sample_submisson_operation] ******/
+/****** Object:  StoredProcedure [dbo].[do_sample_submission_operation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[do_sample_submisson_operation]
+CREATE PROCEDURE [dbo].[do_sample_submission_operation]
 /****************************************************
 **
 **  Desc:
@@ -45,7 +45,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'do_sample_submisson_operation', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'do_sample_submission_operation', @raiseError = 1
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -98,7 +98,7 @@ AS
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
 
-        Exec post_log_entry 'Error', @message, 'do_sample_submisson_operation'
+        Exec post_log_entry 'Error', @message, 'do_sample_submission_operation'
     END CATCH
 
     ---------------------------------------------------
@@ -112,15 +112,15 @@ AS
 
         Set @UsageMessage = @UsageMessage + '; user ' + IsNull(@callingUser, '??')
 
-        Exec post_usage_log_entry 'do_sample_submisson_operation', @UsageMessage, @MinimumUpdateInterval=2
+        Exec post_usage_log_entry 'do_sample_submission_operation', @UsageMessage, @MinimumUpdateInterval=2
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[do_sample_submisson_operation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_sample_submission_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[do_sample_submisson_operation] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[do_sample_submission_operation] TO [DMS2_SP_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[do_sample_submisson_operation] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[do_sample_submission_operation] TO [Limited_Table_Write] AS [dbo]
 GO

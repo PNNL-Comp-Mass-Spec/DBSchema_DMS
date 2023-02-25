@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[report_dataset_instrument_run_time] ******/
+/****** Object:  StoredProcedure [dbo].[report_dataset_instrument_runtime] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[report_dataset_instrument_run_time]
+CREATE PROCEDURE [dbo].[report_dataset_instrument_runtime]
 /****************************************************
 **
 **  Desc:
@@ -116,15 +116,15 @@ AS
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec post_log_entry 'Error', @message, 'report_dataset_instrument_run_time'
+        Exec post_log_entry 'Error', @message, 'report_dataset_instrument_runtime'
     END CATCH
 
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[report_dataset_instrument_run_time] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_dataset_instrument_runtime] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[report_dataset_instrument_run_time] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_dataset_instrument_runtime] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[report_dataset_instrument_run_time] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_dataset_instrument_runtime] TO [DMS2_SP_User] AS [dbo]
 GO

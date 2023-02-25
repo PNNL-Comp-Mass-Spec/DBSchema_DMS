@@ -8,7 +8,7 @@ CREATE FUNCTION [dbo].[get_dataset_priority]
 **
 **  Desc:
 **       Determines if the dataset name warrants preferential processing priority
-**       This procedure is used by AddNewDataset to auto-release QC_Shew datasets
+**       This procedure is used by add_new_dataset to auto-release QC_Shew datasets
 **
 **       If either the dataset name or the experiment name matches one of the
 **       filters below, the Interest_Rating is set to 5 (Released)

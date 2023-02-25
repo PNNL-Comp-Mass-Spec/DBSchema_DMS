@@ -83,7 +83,7 @@ AS
         return 51006
     End
 
-    If dbo.whitespace_chars(@fileName, 0) > 0
+    If dbo.has_whitespace_chars(@fileName, 0) > 0
     Begin
         If CharIndex(Char(9), @fileName) > 0
             RAISERROR ('Settings file name cannot contain tabs', 11, 116)

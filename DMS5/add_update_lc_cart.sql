@@ -63,7 +63,7 @@ AS
     Set @CartState = LTrim(RTrim(IsNull(@CartState, '')))
     Set @mode = IsNull(@mode, '')
 
-    If dbo.whitespace_chars(@CartName, 0) > 0
+    If dbo.has_whitespace_chars(@CartName, 0) > 0
     Begin
         If CharIndex(Char(9), @CartName) > 0
             RAISERROR ('LC Cart name cannot contain tabs', 11, 116)

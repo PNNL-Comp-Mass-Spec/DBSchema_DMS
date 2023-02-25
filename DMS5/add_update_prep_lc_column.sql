@@ -64,7 +64,7 @@ AS
         RAISERROR ('Column name was blank', 11, 1)
     End
 
-    If dbo.whitespace_chars(@ColumnName, 0) > 0
+    If dbo.has_whitespace_chars(@ColumnName, 0) > 0
     Begin
         If CharIndex(Char(9), @ColumnName) > 0
             RAISERROR ('Column name cannot contain tabs', 11, 116)

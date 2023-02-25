@@ -18,7 +18,7 @@ CREATE FUNCTION [dbo].[check_emsl_usage_item_validity]
 **          03/20/2013 mem - Changed from Call_Type to Proposal_Type
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/05/2016 mem - Add one day to the proposal end date
-**          03/17/2017 mem - Only call MakeTableFromList if @Users is a comma separated list
+**          03/17/2017 mem - Only call make_table_from_list if @Users is a comma separated list
 **          04/11/2017 mem - Update for new fields DMS_Inst_ID and Usage_Type
 **          04/17/2020 mem - Updated field name in T_EMSL_Instrument_Usage_Report
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
@@ -115,7 +115,7 @@ Begin
         If @Users Like '%,%'
         Begin
             SELECT @hits = COUNT(*)
-            FROM dbo.MakeTableFromList ( @Users )
+            FROM dbo.make_table_from_list ( @Users )
                  INNER JOIN ( SELECT Proposal_ID,
                                      Person_ID
                               FROM T_EUS_Proposal_Users

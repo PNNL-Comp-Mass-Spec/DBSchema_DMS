@@ -211,7 +211,7 @@ AS
     If Len(IsNull(@reason, '')) < 1
         RAISERROR ('The reason field is required', 11, 116)
 
-    If dbo.whitespace_chars(@requestName, 1) > 0
+    If dbo.has_whitespace_chars(@requestName, 1) > 0
     Begin
         -- Auto-replace CR, LF, or tabs with spaces
         If CharIndex(Char(10), @requestName) > 0

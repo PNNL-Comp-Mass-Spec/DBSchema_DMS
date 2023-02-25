@@ -153,7 +153,7 @@ AS
         RAISERROR ('Organism Name cannot be blank', 11, 0)
     End
 
-    If dbo.whitespace_chars(@orgName, 0) > 0
+    If dbo.has_whitespace_chars(@orgName, 0) > 0
     Begin
         If CharIndex(Char(9), @orgName) > 0
             RAISERROR ('Organism name cannot contain tabs', 11, 116)
