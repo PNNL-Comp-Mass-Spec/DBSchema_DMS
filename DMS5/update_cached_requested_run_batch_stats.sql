@@ -36,14 +36,10 @@ AS
     Declare @myRowCount int = 0
     Declare @myError int = 0
 
-    -- This runtimes are in milliseconds
+    -- These runtimes are in milliseconds
     Declare @runtimeStep1 int
     Declare @runtimeStep2 int
     Declare @runtimeStep3 int
-
-    -- Overall runtime, in seconds
-    Declare @runtimeSeconds Decimal(9,2)
-    Declare @runtimeMessage varchar(128)
 
     Declare @startTime datetime = GetDate();
 
@@ -89,9 +85,9 @@ AS
 
     CREATE TABLE #Tmp_BatchIDs (
         Batch_ID int not Null
-    )
+    );
 
-    CREATE INDEX #IX_BatchIDs On #Tmp_BatchIDs (Batch_ID)
+    CREATE UNIQUE INDEX #IX_BatchIDs On #Tmp_BatchIDs (Batch_ID);
 
     If @batchID > 0
     Begin
@@ -302,7 +298,7 @@ AS
 	    days_in_prep_queue int NULL,
 	    blocked int NULL,
 	    block_missing int NULL
-    )
+    );
 
     CREATE UNIQUE INDEX #IX_RequestedRunExperimentStats On #Tmp_RequestedRunExperimentStats (batch_id);
 
@@ -382,8 +378,11 @@ AS
 
     Set @runtimeStep3 = DateDiff(millisecond, @startTime, GetDate()) - @runtimeStep1 - @runtimeStep2
 
-    Set @runtimeSeconds = DateDiff(millisecond, @startTime, GetDate()) / 1000.0
 
+    -- Overall runtime, in seconds
+    Declare @runtimeSeconds Decimal(9,2) = DateDiff(millisecond, @startTime, GetDate()) / 1000.0
+
+    Declare @runtimeMessage varchar(128)
     Set @runtimeMessage = 'Step 1: ' + Cast(Cast(@runtimeStep1 / 1000.0 As Decimal(9,2)) As varchar(12)) + ' seconds; ' +
                           'Step 2: ' + Cast(Cast(@runtimeStep2 / 1000.0 As Decimal(9,2)) As varchar(12)) + ' seconds; ' +
                           'Step 3: ' + Cast(Cast(@runtimeStep3 / 1000.0 As Decimal(9,2)) As varchar(12)) + ' seconds'
@@ -399,7 +398,6 @@ AS
     End
 
     Return @myError
-
 
 
 GO
