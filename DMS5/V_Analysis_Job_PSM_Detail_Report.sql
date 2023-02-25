@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_Detail_Report]
 AS
 SELECT AJ.AJ_jobID AS job,
@@ -48,7 +47,7 @@ SELECT AJ.AJ_jobID AS job,
        AJ.AJ_settingsFileName AS settings_file,
        Org.OG_name AS organism,
        AJ.AJ_organismDBName AS organism_db,
-       dbo.GetFASTAFilePath(AJ.AJ_organismDBName, Org.OG_name) AS organism_db_storage_path,
+       dbo.get_fasta_file_path(AJ.AJ_organismDBName, Org.OG_name) AS organism_db_storage_path,
        AJ.AJ_proteinCollectionList AS protein_collection_list,
        AJ.AJ_proteinOptionsList AS protein_options_list,
        ASN.AJS_name AS state,
@@ -63,7 +62,7 @@ SELECT AJ.AJ_jobID AS job,
        AJ.AJ_priority AS priority,
        AJ.AJ_assignedProcessorName AS assigned_processor,
        AJ.AJ_Analysis_Manager_Error AS am_code,
-       dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) AS dem_code,
+       dbo.get_dem_code_string(AJ.AJ_Data_Extraction_Error) AS dem_code,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
@@ -107,7 +106,6 @@ FROM dbo.T_Analysis_Job AS AJ
        ON AJ.AJ_JobID = PSM.Job
 	 LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM
 	   ON PSM.Job = PhosphoPSM.Job
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_Detail_Report] TO [DDL_Viewer] AS [dbo]

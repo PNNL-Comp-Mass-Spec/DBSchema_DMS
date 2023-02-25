@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Entry]
 AS
 SELECT R.id,
@@ -13,7 +12,7 @@ SELECT R.id,
        R.description,
        R.analysis_specifications,
        R.comment,
-       dbo.GetDataAnalysisRequestBatchList(R.ID) As batch_ids,
+       dbo.get_data_analysis_request_batch_list(R.ID) As batch_ids,
        R.data_package_id,
        R.exp_group_id,
        R.work_package,

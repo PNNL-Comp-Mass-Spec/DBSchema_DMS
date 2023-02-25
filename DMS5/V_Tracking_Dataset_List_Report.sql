@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Tracking_Dataset_List_Report]
 AS
 SELECT DS.Dataset_Num AS dataset,
@@ -17,7 +16,7 @@ SELECT DS.Dataset_Num AS dataset,
        DS.DS_comment AS comment,
        EUT.Name AS emsl_usage_type,
        RR.RDS_EUS_Proposal_ID AS emsl_proposal_id,
-       dbo.GetRequestedRunEUSUsersList(RR.id, 'I') AS emsl_users_list
+       dbo.get_requested_run_eus_users_list(RR.id, 'I') AS emsl_users_list
 FROM T_Dataset DS
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID
@@ -32,7 +31,6 @@ FROM T_Dataset DS
      LEFT OUTER JOIN T_Users U
        ON DS.DS_Oper_PRN = U.U_PRN
 WHERE DTN.DST_name = 'Tracking'
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Tracking_Dataset_List_Report] TO [DDL_Viewer] AS [dbo]

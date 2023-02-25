@@ -23,7 +23,7 @@ GRANT VIEW DEFINITION ON [dbo].[T_Wellplates] TO [DDL_Viewer] AS [dbo]
 GO
 ALTER TABLE [dbo].[T_Wellplates] ADD  CONSTRAINT [DF_T_Wellplates_Created]  DEFAULT (getdate()) FOR [Created]
 GO
-ALTER TABLE [dbo].[T_Wellplates]  WITH CHECK ADD  CONSTRAINT [CK_T_Wellplates_WellPlateName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([WP_Well_Plate_Num],(1))=(0)))
+ALTER TABLE [dbo].[T_Wellplates]  WITH CHECK ADD  CONSTRAINT [CK_T_Wellplates_WellPlateName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([WP_Well_Plate_Num],(1))=(0)))
 GO
 ALTER TABLE [dbo].[T_Wellplates] CHECK CONSTRAINT [CK_T_Wellplates_WellPlateName_WhiteSpace]
 GO

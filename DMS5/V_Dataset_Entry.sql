@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_Entry]
 AS
 SELECT E.Experiment_Num AS experiment,
@@ -22,7 +21,7 @@ SELECT E.Experiment_Num AS experiment,
        IntStd.Name AS internal_standard,
        EUSUsage.Name AS eus_usage_type,
        RR.RDS_EUS_Proposal_ID AS eus_proposal_id,
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'I') AS eus_users,
+       dbo.get_requested_run_eus_users_list(RR.ID, 'I') AS eus_users,
        LCCart.Cart_Name AS lc_cart_name,
        CartConfig.Cart_Config_Name AS lc_cart_config,
        DS.Capture_Subfolder AS capture_subfolder,

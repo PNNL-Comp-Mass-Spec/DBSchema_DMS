@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Campaign_List_Report_2]
 AS
 SELECT C.Campaign_ID AS id,
        C.Campaign_Num AS campaign,
        C.CM_State AS state,
-       dbo.GetCampaignRolePerson(C.Campaign_ID, 'Technical Lead') AS technical_lead,
-       dbo.GetCampaignRolePerson(C.Campaign_ID, 'PI') AS pi,
-       dbo.GetCampaignRolePerson(C.Campaign_ID, 'Project Mgr') AS project_mgr,
+       dbo.get_campaign_role_person(C.Campaign_ID, 'Technical Lead') AS technical_lead,
+       dbo.get_campaign_role_person(C.Campaign_ID, 'PI') AS pi,
+       dbo.get_campaign_role_person(C.Campaign_ID, 'Project Mgr') AS project_mgr,
        C.CM_Project_Num AS project,
        C.CM_Description AS description,
        C.CM_created AS created,
@@ -33,7 +32,6 @@ FROM dbo.T_Campaign C
        ON C.CM_EUS_Usage_Type = EUT.ID
      LEFT OUTER JOIN dbo.T_Campaign_Tracking CT
        ON C.Campaign_ID = CT.C_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Campaign_List_Report_2] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Ops_Logs_List_Report]
 AS
 SELECT entered,
@@ -68,7 +67,7 @@ SELECT DS.Acq_Time_Start AS entered,
         RR.ID AS request,
         EUT.Name AS usage,
         RR.RDS_EUS_Proposal_ID AS proposal,
-        dbo.GetRequestedRunEUSUsersList(RR.id, 'I') AS emsl_user,
+        dbo.get_requested_run_eus_users_list(RR.id, 'I') AS emsl_user,
         DATEPART(YEAR, DS.Acq_Time_Start) AS year,
         DATEPART(MONTH, DS.Acq_Time_Start) AS month,
         DATEPART(DAY, DS.Acq_Time_Start) AS day
@@ -77,7 +76,6 @@ FROM T_EUS_UsageType EUT
         RIGHT OUTER JOIN T_Dataset DS
         INNER JOIN T_Instrument_Name ON DS.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID ON RR.DatasetID = DS.Dataset_ID
 WHERE   ( NOT ( DS.Acq_Time_Start IS NULL ))
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Ops_Logs_List_Report] TO [DDL_Viewer] AS [dbo]

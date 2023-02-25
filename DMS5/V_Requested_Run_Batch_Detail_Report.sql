@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_Batch_Detail_Report]
 AS
 SELECT RRB.id,
        RRB.Batch AS name,
        RRB.description,
-       dbo.GetBatchRequestedRunList(RRB.ID) AS requests,
+       dbo.get_batch_requested_run_list(RRB.ID) AS requests,
        ISNULL(FC.factor_count, 0) AS factors,
        U.Name_with_PRN AS owner,
        RRB.created,
@@ -18,7 +17,7 @@ SELECT RRB.id,
        RRB.Requested_Batch_Priority AS requested_batch_priority,
        RRB.Requested_Completion_Date AS requested_completion_date,
        RRB.Justification_for_High_Priority AS justification_for_high_priority,
-       dbo.GetBatchDatasetInstrumentList(RRB.ID) AS instrument_used,
+       dbo.get_batch_dataset_instrument_list(RRB.ID) AS instrument_used,
        RRB.Requested_Instrument AS instrument_group,
        RRB.comment,
        CASE WHEN RBS.separation_group_first = RBS.separation_group_last

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Protein_Collection_Name]
 AS
 SELECT LookupQ.name,
@@ -22,7 +21,7 @@ SELECT LookupQ.name,
             END AS usage_all_years,
        CASE WHEN LookupQ.Type IN ('Internal_standard', 'contaminant', 'old_contaminant')
             THEN NULL
-            Else SUBSTRING(CONVERT(varchar(32), dbo.GetDateWithoutTime(PCU.Most_Recently_Used), 120), 1, 10)
+            Else SUBSTRING(CONVERT(varchar(32), dbo.get_date_without_time(PCU.Most_Recently_Used), 120), 1, 10)
             END AS most_recent_usage,
        LookupQ.entries,
        LookupQ.organism_name,
@@ -49,7 +48,6 @@ FROM ( SELECT PC.Name,
        LEFT OUTER JOIN T_Protein_Collection_Usage PCU ON LookupQ.ID = PCU.Protein_Collection_ID
 GROUP BY LookupQ.Name, LookupQ.Type, LookupQ.Description, LookupQ.Entries, LookupQ.Organism_Name,
          LookupQ.ID, LookupQ.TypeSortOrder, PCU.Most_Recently_Used, PCU.Job_Usage_Count, PCU.Job_Usage_Count_Last12Months, Org.OG_organismDBName
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_Name] TO [DDL_Viewer] AS [dbo]

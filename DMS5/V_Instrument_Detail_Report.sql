@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Instrument_Detail_Report]
 AS
 SELECT InstName.Instrument_ID AS id,
@@ -26,7 +25,7 @@ SELECT InstName.Instrument_ID AS id,
        Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS scan_source,
        InstGroup.Allocation_Tag AS allocation_tag,
        InstName.Percent_EMSL_Owned AS percent_emsl_owned,
-       dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS allowed_dataset_types,
+       dbo.get_instrument_dataset_type_list(InstName.Instrument_ID) AS allowed_dataset_types,
        InstName.IN_Created AS created,
        DefineStorageYesNo.Description AS auto_define_storage,
        InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS auto_defined_storage_path_root,
@@ -79,7 +78,6 @@ AS
        ON InstName.Instrument_ID = EUSMapping.Instrument_ID
      LEFT OUTER JOIN V_Instrument_Tracked InstTracking
        ON InstName.IN_name = InstTracking.Name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Detail_Report] TO [DDL_Viewer] AS [dbo]

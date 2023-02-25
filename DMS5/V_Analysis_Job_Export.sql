@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_Export]
 AS
 SELECT AJ.AJ_jobID AS Job, DS.Dataset_Num AS Dataset, 
@@ -20,7 +19,7 @@ SELECT AJ.AJ_jobID AS Job, DS.Dataset_Num AS Dataset,
     AJ.AJ_proteinCollectionList AS ProteinCollectionList, 
     AJ.AJ_proteinOptionsList AS ProteinOptions, 
     DSArch.Archive_Path + '\' AS StoragePathClient, 
-    dbo.udfCombinePaths(SP.SP_vol_name_client, SP.SP_path) 
+    dbo.combine_paths(SP.SP_vol_name_client, SP.SP_path) 
     AS StoragePathServer, DS.DS_folder_name AS DatasetFolder, 
     AJ.AJ_resultsFolderName AS ResultsFolder, 
     DS.DS_sec_sep AS SeparationSysType, 

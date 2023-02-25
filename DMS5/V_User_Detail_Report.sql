@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_User_Detail_Report]
 AS
 SELECT U.U_PRN AS username,
@@ -13,7 +12,7 @@ SELECT U.U_PRN AS username,
        U.U_email AS email,
        U.U_Status AS user_status,
        U.U_update AS user_update,
-       dbo.GetUserOperationsList(U.ID) AS operations_list,
+       dbo.get_user_operations_list(U.ID) AS operations_list,
        U.U_comment AS comment,
        U.id,
        U.U_created AS created_dms,
@@ -36,7 +35,6 @@ FROM T_Users U
                        WHERE NOT EU.HID IS Null AND EU.Valid = 1
                      ) LookupQ
        ON LookupQ.HID = U.U_HID AND LookupQ.RowRank = 1
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_User_Detail_Report] TO [DDL_Viewer] AS [dbo]

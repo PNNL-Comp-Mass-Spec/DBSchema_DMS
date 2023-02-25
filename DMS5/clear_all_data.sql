@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[ClearAllData] ******/
+/****** Object:  StoredProcedure [dbo].[clear_all_data] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[ClearAllData]
+CREATE PROCEDURE [dbo].[clear_all_data]
 /****************************************************
 **
 **  Desc:
@@ -25,8 +25,8 @@ CREATE PROCEDURE [dbo].[ClearAllData]
 **
 *****************************************************/
 (
-    @ServerNameFailsafe varchar(64) = 'Pass in the name of the current server to confirm that you truly want to delete data',
-    @CurrentDateFailsafe varchar(64) = 'Enter the current date, in the format yyyy-mm-dd',
+    @serverNameFailsafe varchar(64) = 'Pass in the name of the current server to confirm that you truly want to delete data',
+    @currentDateFailsafe varchar(64) = 'Enter the current date, in the format yyyy-mm-dd',
     @infoOnly tinyint = 1,
     @message varchar(255) = '' output
 )
@@ -920,5 +920,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[ClearAllData] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[clear_all_data] TO [DDL_Viewer] AS [dbo]
 GO

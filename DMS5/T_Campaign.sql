@@ -77,7 +77,7 @@ REFERENCES [dbo].[T_Research_Team] ([ID])
 GO
 ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Research_Team]
 GO
-ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Campaign_Num],(1))=(0)))
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Campaign_Num],(1))=(0)))
 GO
 ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [CK_T_Campaign_CampaignName_WhiteSpace]
 GO

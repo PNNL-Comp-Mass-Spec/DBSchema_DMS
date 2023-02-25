@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex]
 AS
 -- Note: this view is intended to be used for retrieving information for a single dataset
@@ -32,7 +31,7 @@ SELECT DS.Dataset_Num AS dataset,
        DL.dataset_folder_path,
        DL.archive_folder_path,
        DL.myemsl_url,
-       dbo.GetMyEMSLTransactionIdURLs(DS.Dataset_ID) AS myemsl_upload_ids,
+       dbo.get_myemsl_transaction_id_urls(DS.Dataset_ID) AS myemsl_upload_ids,
        DFP.Dataset_URL AS data_folder_link,
        DL.QC_Link AS qc_link,
        DL.QC_2D AS qc_2d,
@@ -43,15 +42,15 @@ SELECT DS.Dataset_Num AS dataset,
        DL.QC_Metric_Stats AS qc_metric_stats,
        ISNULL(JobCountQ.jobs, 0) AS jobs,
        ISNULL(PSMJobsQ.jobs, 0) AS psm_jobs,
-       dbo.GetDatasetPMTaskCount(DS.Dataset_ID) AS peak_matching_results,
-       dbo.GetDatasetFactorCount(DS.Dataset_ID) AS factors,
-       dbo.GetDatasetPredefineJobCount (DS.Dataset_ID) AS predefines_triggered,
+       dbo.get_dataset_pm_task_count(DS.Dataset_ID) AS peak_matching_results,
+       dbo.get_dataset_factor_count(DS.Dataset_ID) AS factors,
+       dbo.get_dataset_predefine_job_count (DS.Dataset_ID) AS predefines_triggered,
        DS.Acq_Time_Start AS acquisition_start,
        DS.Acq_Time_End AS acquisition_end,
        RR.RDS_Run_Start AS run_start,
        RR.RDS_Run_Finish AS run_finish,
        DS.Scan_Count AS scan_count,
-       dbo.GetDatasetScanTypeList(DS.Dataset_ID) AS scan_types,
+       dbo.get_dataset_scan_type_list(DS.Dataset_ID) AS scan_types,
        DS.Acq_Length_Minutes AS acq_length,
        CONVERT(int, DS.File_Size_Bytes / 1024.0 / 1024.0) AS file_size_mb,
        DS.File_Info_Last_Modified AS file_info_updated,
@@ -70,7 +69,7 @@ SELECT DS.Dataset_Num AS dataset,
        EUT.Name AS eus_usage_type,
        RR.RDS_EUS_Proposal_ID AS eus_proposal,
        EPT.Proposal_Type_Name AS eus_proposal_type,
-       dbo.GetRequestedRunEUSUsersList(RR.id, 'V') AS eus_user,
+       dbo.get_requested_run_eus_users_list(RR.id, 'V') AS eus_user,
        TIS_1.Name AS predigest_int_std,
        TIS_2.Name AS postdigest_int_std,
        T_MyEMSLState.StateName AS myemsl_state
@@ -142,7 +141,6 @@ FROM S_V_BTO_ID_to_Name AS BTO
      LEFT OUTER JOIN T_Dataset_Files DF
        ON DF.Dataset_ID = DS.Dataset_ID AND
           DF.File_Size_Rank = 1
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Detail_Report_Ex] TO [DDL_Viewer] AS [dbo]

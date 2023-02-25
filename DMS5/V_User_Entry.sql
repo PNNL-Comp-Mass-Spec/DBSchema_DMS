@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_User_Entry]
 AS
 SELECT U_PRN AS username,
@@ -14,10 +13,9 @@ SELECT U_PRN AS username,
        U_email as email,
        U_Status AS user_status,
        U_update AS user_update,
-       dbo.GetUserOperationsList(ID) AS operations_list,
+       dbo.get_user_operations_list(ID) AS operations_list,
        U_comment AS comment
 FROM dbo.T_Users
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_User_Entry] TO [DDL_Viewer] AS [dbo]

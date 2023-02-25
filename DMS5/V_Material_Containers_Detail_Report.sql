@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Material_Containers_Detail_Report]
 AS
 SELECT container,
@@ -12,7 +11,7 @@ SELECT container,
        items,
        comment,
        freezer,
-       dbo.GetMaterialContainerCampaignList(Container_ID, Items) AS campaigns,
+       dbo.get_material_container_campaign_list(Container_ID, Items) AS campaigns,
        barcode,
        created,
        status,
@@ -66,7 +65,6 @@ FROM ( SELECT MC.Tag AS Container,
        GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, MC.Barcode, MC.Created, MC.Status,
                 MC.Researcher, ML.Freezer_Tag, TFA.Files, MC.ID
      ) ContainerQ
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_Detail_Report] TO [DDL_Viewer] AS [dbo]

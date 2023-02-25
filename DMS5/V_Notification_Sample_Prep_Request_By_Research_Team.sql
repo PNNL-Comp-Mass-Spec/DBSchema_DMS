@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Notification_Sample_Prep_Request_By_Research_Team] AS
 SELECT DISTINCT TNE.ID AS seq,
                 TET.Name AS event,
@@ -27,7 +26,7 @@ FROM T_Notification_Event TNE
        ON T_Sample_Prep_Request.State = T_Sample_Prep_Request_State_Name.State_ID
      INNER JOIN ( SELECT T_Campaign.Campaign_Num AS Campaign,
                          T_Users.U_Name AS Person,
-                         dbo.GetResearchTeamUserRoleList(SRTM.Team_ID, SRTM.User_ID) AS Person_Role,
+                         dbo.get_research_team_user_role_list(SRTM.Team_ID, SRTM.User_ID) AS Person_Role,
                          T_Users.U_PRN AS username
                   FROM T_Campaign
                        INNER JOIN T_Research_Team

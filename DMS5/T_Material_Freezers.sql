@@ -35,7 +35,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_T_Material_Freezers_Tag] ON [dbo].[T_Materi
 	[Freezer_Tag] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Material_Freezers]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Freezers_Tag_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Freezer_Tag],(0))=(0)))
+ALTER TABLE [dbo].[T_Material_Freezers]  WITH CHECK ADD  CONSTRAINT [CK_T_Material_Freezers_Tag_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Freezer_Tag],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Material_Freezers] CHECK CONSTRAINT [CK_T_Material_Freezers_Tag_WhiteSpace]
 GO

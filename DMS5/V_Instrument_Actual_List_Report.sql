@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Instrument_Actual_List_Report]
 AS
 SELECT UsageQ.fiscal_year,
@@ -61,7 +60,7 @@ FROM T_EUS_Proposal_State_Name
                TAC.LTQ_EMSL_Actual,
                TAC.GC_EMSL_Actual,
                TAC.QQQ_EMSL_Actual
-        FROM ( SELECT dbo.GetFYFromDate(TD.Acq_Time_Start) AS FY,
+        FROM ( SELECT dbo.get_fiscal_year_from_date(TD.Acq_Time_Start) AS FY,
                       TRR.RDS_EUS_Proposal_ID AS Proposal,
                       COUNT(DISTINCT C.Campaign_Num) AS Campaigns,
                       MIN(C.Campaign_Num) AS Campaign_First,
@@ -96,9 +95,9 @@ FROM T_EUS_Proposal_State_Name
                WHERE (TD.DS_rating > 1) AND
                      (TRR.RDS_EUS_UsageType NOT IN (10, 12, 13)) AND
                      (TD.DS_state_ID = 3) AND
-                     -- (TD.Acq_Time_Start >= dbo.GetFiscalYearStart(1)) AND
+                     -- (TD.Acq_Time_Start >= dbo.get_fiscal_year_start(1)) AND
                      TIN.IN_operations_role NOT IN ('Offsite', 'InSilico')
-               GROUP BY dbo.GetFYFromDate(TD.Acq_Time_Start),
+               GROUP BY dbo.get_fiscal_year_from_date(TD.Acq_Time_Start),
                         TRR.RDS_EUS_Proposal_ID
              ) TAC
 		     FULL OUTER JOIN (
@@ -118,7 +117,6 @@ FROM T_EUS_Proposal_State_Name
                   TAC.FY = TAL.Fiscal_Year
      ) UsageQ
        ON T_EUS_Proposals.PROPOSAL_ID = UsageQ.Proposal_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Actual_List_Report] TO [DDL_Viewer] AS [dbo]

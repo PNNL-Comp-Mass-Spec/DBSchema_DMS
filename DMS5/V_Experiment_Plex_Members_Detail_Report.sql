@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Experiment_Plex_Members_Detail_Report]
 AS
 SELECT PlexMembers.Plex_Exp_ID AS exp_id,
@@ -20,7 +19,7 @@ SELECT PlexMembers.Plex_Exp_ID AS exp_id,
        E.EX_sample_prep_request_ID AS request,
        E.EX_created AS plex_exp_created,
 	   BTO.Identifier AS tissue_id,
-       dbo.GetExperimentPlexMembers(PlexMembers.Plex_Exp_ID) AS plex_members,
+       dbo.get_experiment_plex_members(PlexMembers.Plex_Exp_ID) AS plex_members,
        ISNULL(DSCountQ.datasets, 0) AS datasets,
        DSCountQ.Most_Recent_Dataset AS most_recent_dataset,
        ISNULL(FC.factor_count, 0) AS factors,
@@ -73,6 +72,5 @@ Group By PlexMembers.Plex_Exp_ID,
        E.Ex_Material_Active,
        E.Last_Used,
        E.EX_Barcode
-
 
 GO

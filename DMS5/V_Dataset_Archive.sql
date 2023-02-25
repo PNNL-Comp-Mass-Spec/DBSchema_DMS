@@ -4,7 +4,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
 CREATE VIEW [dbo].[V_Dataset_Archive]
 AS
 SELECT DA.AS_Dataset_ID,
@@ -31,8 +30,8 @@ SELECT DA.AS_Dataset_ID,
        DA.Purge_Policy,
        DA.Purge_Priority,
        DA.MyEMSLState,       
-       ISNULL(dbo.udfCombinePaths(SPath.SP_vol_name_client, 
-              dbo.udfCombinePaths(SPath.SP_path, 
+       ISNULL(dbo.combine_paths(SPath.SP_vol_name_client, 
+              dbo.combine_paths(SPath.SP_path, 
                                   ISNULL(DS.DS_folder_name, DS.Dataset_Num))), '') AS Dataset_Folder_Path,
        AP.AP_archive_path,
        AP.AP_network_share_path,

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_Processor_Tool_Helper_List_Report]
 AS
 SELECT Tool.AJT_toolName AS name,
@@ -13,11 +12,10 @@ SELECT Tool.AJT_toolName AS name,
        Tool.AJT_extractionRequired AS extract_req,
        DSTypes.AllowedDatasetTypes AS allowed_ds_types
 FROM dbo.T_Analysis_Tool Tool
-     CROSS APPLY dbo.GetAnalysisToolAllowedDSTypeList ( Tool.AJT_toolID ) DSTypes
-     CROSS APPLY dbo.GetAnalysisToolAllowedInstClassList ( Tool.AJT_toolID ) InstClasses
+     CROSS APPLY dbo.get_analysis_tool_allowed_dataset_type_list ( Tool.AJT_toolID ) DSTypes
+     CROSS APPLY dbo.get_analysis_tool_allowed_inst_class_list ( Tool.AJT_toolID ) InstClasses
 WHERE (Tool.AJT_toolID > 0) AND
       (Tool.AJT_active = 1)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Processor_Tool_Helper_List_Report] TO [DDL_Viewer] AS [dbo]

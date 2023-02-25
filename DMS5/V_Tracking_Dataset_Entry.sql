@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Tracking_Dataset_Entry]
 AS
 SELECT DS.Dataset_Num AS dataset,
@@ -15,7 +14,7 @@ SELECT DS.Dataset_Num AS dataset,
        DS.DS_comment AS [comment],
        EUT.Name AS eus_usage_type,
        RR.RDS_EUS_Proposal_ID AS eus_proposal_id,
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'I') AS eus_users_list
+       dbo.get_requested_run_eus_users_list(RR.ID, 'I') AS eus_users_list
 FROM T_Dataset DS
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID

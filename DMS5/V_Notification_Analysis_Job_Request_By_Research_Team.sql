@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Notification_Analysis_Job_Request_By_Research_Team] AS
 SELECT DISTINCT TNE.ID AS seq,
                 TET.Name AS event,
@@ -29,7 +28,7 @@ FROM T_Notification_Event TNE
                          T_Dataset.Dataset_Num,
                          T_Campaign.Campaign_Num AS Campaign,
                          T_Users.U_Name AS Person,
-                         dbo.GetResearchTeamUserRoleList(SRTM.Team_ID, SRTM.User_ID) AS Person_Role,
+                         dbo.get_research_team_user_role_list(SRTM.Team_ID, SRTM.User_ID) AS Person_Role,
                          T_Users.U_PRN AS username
                   FROM T_Dataset
                        INNER JOIN T_Experiments

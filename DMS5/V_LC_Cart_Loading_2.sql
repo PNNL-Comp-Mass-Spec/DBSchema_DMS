@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW  V_LC_Cart_Loading_2
 AS
 SELECT
@@ -19,7 +18,7 @@ SELECT
   T_Requested_Run.RDS_Run_Order AS run_order,
   T_EUS_UsageType.Name AS emsl_usage_type,
   T_Requested_Run.RDS_EUS_Proposal_ID AS emsl_proposal_id,
-  dbo.GetRequestedRunEUSUsersList(T_Requested_Run.id, 'I') AS emsl_user_list
+  dbo.get_requested_run_eus_users_list(T_Requested_Run.id, 'I') AS emsl_user_list
 FROM
   T_Requested_Run
   INNER JOIN T_LC_Cart ON T_Requested_Run.RDS_Cart_ID = T_LC_Cart.ID
@@ -28,7 +27,6 @@ FROM
   INNER JOIN T_EUS_UsageType ON T_Requested_Run.RDS_EUS_UsageType = T_EUS_UsageType.ID
 WHERE
   ( T_Requested_Run.RDS_Status = 'Active' )
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LC_Cart_Loading_2] TO [DDL_Viewer] AS [dbo]

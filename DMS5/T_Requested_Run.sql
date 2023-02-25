@@ -284,7 +284,7 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Users]
 GO
-ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [CK_T_Requested_Run_RequestedRunName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([RDS_Name],(0))=(0)))
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [CK_T_Requested_Run_RequestedRunName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([RDS_Name],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [CK_T_Requested_Run_RequestedRunName_WhiteSpace]
 GO

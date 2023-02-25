@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS request,
@@ -50,7 +49,7 @@ SELECT RR.ID AS request,
        EPT.Proposal_Type_Name AS eus_proposal_type,
        CAST(EUP.Proposal_End_Date AS DATE) AS eus_proposal_end_date,
        PSN.Name AS eus_proposal_state,
-       dbo.GetRequestedRunEUSUsersList(RR.id, 'V') AS eus_user,
+       dbo.get_requested_run_eus_users_list(RR.id, 'V') AS eus_user,
        dbo.T_Attachments.Attachment_Name AS mrm_transition_list,
        RR.RDS_note AS note,
        RR.RDS_special_instructions AS special_instructions,
@@ -100,7 +99,6 @@ FROM dbo.T_DatasetTypeName AS DTN
        ON EUP.State_ID = PSN.ID
      LEFT OUTER JOIN T_Material_Locations ML
        ON RR.Location_ID = ML.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Detail_Report] TO [DDL_Viewer] AS [dbo]

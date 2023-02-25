@@ -65,7 +65,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 (
     @job int output,
     @scriptName varchar(64),
-    @datasetNum varchar(128) = 'na',
+    @datasetName varchar(128) = 'na',
     @priority int,
     @jobParam varchar(8000),             -- XML (as text)
     @comment varchar(512),
@@ -141,7 +141,7 @@ AS
         If @mode = 'update' AND @id = 0
             RAISERROR ('Cannot update nonexistent job %d', 11, 2, @job)
 
-        If @mode = 'update' AND @datasetNum <> 'Aggregation'
+        If @mode = 'update' AND @datasetName <> 'Aggregation'
             RAISERROR ('Currently only aggregation jobs can be updated; cannot update %d', 11, 4, @job)
 
         ---------------------------------------------------
@@ -332,7 +332,7 @@ AS
 
             exec make_local_job_in_broker
                     @scriptName,
-                    @datasetNum,
+                    @datasetName,
                     @priority,
                     @jobParamXML,
                     @comment,

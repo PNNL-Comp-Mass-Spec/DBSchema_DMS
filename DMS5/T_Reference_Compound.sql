@@ -137,7 +137,7 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Reference_Compound] CHECK CONSTRAINT [FK_T_Reference_Compound_T_Users]
 GO
-ALTER TABLE [dbo].[T_Reference_Compound]  WITH CHECK ADD  CONSTRAINT [CK_T_Reference_Compound_Name_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Compound_Name],(1))=(0)))
+ALTER TABLE [dbo].[T_Reference_Compound]  WITH CHECK ADD  CONSTRAINT [CK_T_Reference_Compound_Name_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Compound_Name],(1))=(0)))
 GO
 ALTER TABLE [dbo].[T_Reference_Compound] CHECK CONSTRAINT [CK_T_Reference_Compound_Name_WhiteSpace]
 GO

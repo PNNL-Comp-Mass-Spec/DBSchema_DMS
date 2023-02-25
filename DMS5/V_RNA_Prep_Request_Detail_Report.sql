@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_RNA_Prep_Request_Detail_Report]
 AS
 SELECT SPR.id,
@@ -28,11 +27,11 @@ SELECT SPR.id,
        -- Deprecated in August 2018: SPR.Project_Number AS project_number,
        SPR.EUS_UsageType AS eus_usage_type,
        SPR.EUS_Proposal_ID AS eus_proposal,
-       dbo.GetSamplePrepRequestEUSUsersList(SPR.id, 'V') As eus_user,
+       dbo.get_sample_prep_request_eus_users_list(SPR.id, 'V') As eus_user,
        SPR.Estimated_Completion AS estimated_completion,
        SN.State_Name AS state,
        SPR.created,
-       dbo.ExperimentsFromRequest(SPR.ID) AS experiments,
+       dbo.experiments_from_request(SPR.ID) AS experiments,
        UpdateCountQ.updates,
        CASE
        WHEN SPR.State <> 5 AND
@@ -52,7 +51,6 @@ FROM T_Sample_Prep_Request AS spr
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON SPR.Work_Package_Number = CC.Charge_Code
 WHERE SPR.Request_Type = 'RNA'
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_RNA_Prep_Request_Detail_Report] TO [DDL_Viewer] AS [dbo]

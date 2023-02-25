@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Analysis_Request_Detail_Report]
 AS
 SELECT R.id,
@@ -13,7 +12,7 @@ SELECT R.id,
        R.description,
        R.Analysis_Specifications As analysis_specifications,
        R.comment,
-       dbo.GetDataAnalysisRequestBatchList(R.ID) As requested_run_batch_ids,
+       dbo.get_data_analysis_request_batch_list(R.ID) As requested_run_batch_ids,
        R.Data_Package_ID As data_package,
        R.Exp_Group_ID As experiment_group,
        R.campaign,
@@ -61,7 +60,6 @@ FROM T_Data_Analysis_Request AS R
        ON EUP.Proposal_Type = EPT.Proposal_Type
      LEFT OUTER JOIN T_EUS_Proposal_State_Name PSN
        ON EUP.State_ID = PSN.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Analysis_Request_Detail_Report] TO [DDL_Viewer] AS [dbo]

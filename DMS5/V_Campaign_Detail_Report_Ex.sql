@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Campaign_Detail_Report_Ex]
 AS
 SELECT C.Campaign_Num AS campaign,
@@ -12,7 +11,7 @@ SELECT C.Campaign_Num AS campaign,
        RR.Name AS data_release_restrictions,
        C.CM_Description AS description,
        C.CM_comment AS comment,
-       dbo.GetResearchTeamMembershipList(C.CM_Research_Team) AS team_members,
+       dbo.get_research_team_membership_list(C.CM_Research_Team) AS team_members,
        RT.collaborators,
        C.CM_External_Links AS external_links,
        C.CM_EPR_List AS epr_list,
@@ -39,7 +38,7 @@ SELECT C.Campaign_Num AS campaign,
        CT.Job_Count AS analysis_jobs,
        CT.Job_Most_Recent AS most_recent_analysis_job,
 	   CT.Data_Package_Count AS data_packages,
-       dbo.GetCampaignWorkPackageList(C.Campaign_Num) AS work_packages
+       dbo.get_campaign_work_package_list(C.Campaign_Num) AS work_packages
 FROM T_Campaign AS C
      INNER JOIN T_Data_Release_Restrictions RR
        ON C.CM_Data_Release_Restrictions = RR.ID
@@ -49,7 +48,6 @@ FROM T_Campaign AS C
        ON C.CM_Research_Team = RT.ID
      LEFT OUTER JOIN T_Campaign_Tracking AS CT
        ON CT.C_ID = C.Campaign_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Campaign_Detail_Report_Ex] TO [DDL_Viewer] AS [dbo]

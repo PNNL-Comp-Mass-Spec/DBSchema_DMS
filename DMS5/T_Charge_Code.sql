@@ -121,7 +121,7 @@ AS
 	   Update(Activation_State)
 	Begin		
 		UPDATE T_Charge_Code
-		SET Activation_State = dbo.ChargeCodeActivationState(
+		SET Activation_State = dbo.charge_code_activation_state(
 		          inserted.Deactivated, 
 		          inserted.Charge_Code_State, 
 		          inserted.Usage_SamplePrep, 
@@ -131,8 +131,6 @@ AS
 		       ON CC.Charge_Code = inserted.Charge_Code
 
 	End
-
-
 
 GO
 ALTER TABLE [dbo].[T_Charge_Code] ENABLE TRIGGER [trig_u_Charge_Code]

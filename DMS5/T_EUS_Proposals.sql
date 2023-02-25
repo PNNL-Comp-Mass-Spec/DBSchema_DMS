@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_EUS_Proposals](
 	[Proposal_Start_Date] [datetime] NULL,
 	[Proposal_End_Date] [datetime] NULL,
 	[Last_Affected] [datetime] NULL,
-	[Numeric_ID]  AS ([dbo].[ExtractInteger]([Proposal_ID])) PERSISTED,
+	[Numeric_ID]  AS ([dbo].[Extract_Integer]([Proposal_ID])) PERSISTED,
 	[Proposal_ID_AutoSupersede] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_EUS_Proposals] PRIMARY KEY CLUSTERED 
 (
@@ -46,9 +46,9 @@ CREATE NONCLUSTERED INDEX [IX_T_EUS_Proposals_Type] ON [dbo].[T_EUS_Proposals]
 	[Proposal_Type] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF__T_EUS_Pro__PROPO__71A7CADF]  DEFAULT ('') FOR [Proposal_ID]
+ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_Proposal_ID]  DEFAULT ('') FOR [Proposal_ID]
 GO
-ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_State_ID]  DEFAULT (1) FOR [State_ID]
+ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_State_ID]  DEFAULT ((1)) FOR [State_ID]
 GO
 ALTER TABLE [dbo].[T_EUS_Proposals] ADD  CONSTRAINT [DF_T_EUS_Proposals_Import_Date]  DEFAULT (getdate()) FOR [Import_Date]
 GO

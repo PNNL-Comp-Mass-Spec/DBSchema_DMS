@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Organism_Detail_Report]
 AS
 SELECT O.Organism_ID AS id,
@@ -15,7 +14,7 @@ SELECT O.Organism_ID AS id,
        NCBI.Synonyms AS ncbi_synonyms,
        NCBI.Synonym_List AS ncbi_synonym_list,
        NEWT.Term_Name AS newt_name,
-       dbo.S_GetTaxIDTaxonomyList(NCBI_Taxonomy_ID, 0) AS taxonomy_list,
+       dbo.s_get_taxid_taxonomy_list(NCBI_Taxonomy_ID, 0) AS taxonomy_list,
        O.OG_Domain AS domain,
        O.OG_Kingdom AS kingdom,
        O.OG_Phylum AS phylum_or_division,

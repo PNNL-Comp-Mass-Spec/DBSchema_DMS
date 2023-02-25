@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_Detail_Report_2]
 AS
 SELECT AJ.AJ_jobID AS job,
@@ -24,7 +23,7 @@ SELECT AJ.AJ_jobID AS job,
        BTO.Tissue AS experiment_tissue,
        JobOrg.OG_name AS job_organism,
        AJ.AJ_organismDBName AS organism_db,
-       dbo.GetFASTAFilePath(AJ.AJ_organismDBName, JobOrg.OG_name) AS organism_db_storage_path,
+       dbo.get_fasta_file_path(AJ.AJ_organismDBName, JobOrg.OG_name) AS organism_db_storage_path,
        AJ.AJ_proteinCollectionList AS protein_collection_list,
        AJ.AJ_proteinOptionsList AS protein_options_list,
        CASE WHEN AJ.AJ_StateID = 2 THEN ASN.AJS_name + ': ' +
@@ -42,18 +41,18 @@ SELECT AJ.AJ_jobID AS job,
        AJ.AJ_comment AS comment,
        AJ.AJ_specialProcessing AS special_processing,
        CASE
-           WHEN AJ.AJ_Purged = 0 THEN dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
-           ELSE 'Purged: ' + dbo.udfCombinePaths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
+           WHEN AJ.AJ_Purged = 0 THEN dbo.combine_paths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
+           ELSE 'Purged: ' + dbo.combine_paths(DFP.Dataset_Folder_Path, AJ.AJ_resultsFolderName)
        END AS results_folder_path,
        CASE
            WHEN AJ.AJ_MyEMSLState > 0 OR ISNULL(DA.MyEmslState, 0) > 1 THEN ''
-           ELSE dbo.udfCombinePaths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName)
+           ELSE dbo.combine_paths(DFP.Archive_Folder_Path, AJ.AJ_resultsFolderName)
        END AS archive_results_folder_path,
        CASE
            WHEN AJ.AJ_Purged = 0 THEN DFP.Dataset_URL + AJ.AJ_resultsFolderName + '/'
            ELSE DFP.Dataset_URL
        END AS data_folder_link,
-       dbo.GetJobPSMStats(AJ.AJ_JobID) AS psm_stats,
+       dbo.get_job_psm_stats(AJ.AJ_JobID) AS psm_stats,
        ISNULL(MTSPT.PT_DB_Count, 0) AS mts_pt_db_count,
        ISNULL(MTSMT.MT_DB_Count, 0) AS mts_mt_db_count,
        ISNULL(PMTaskCountQ.PMTasks, 0) AS peak_matching_results,
@@ -64,7 +63,7 @@ SELECT AJ.AJ_jobID AS job,
        AJ.AJ_priority AS priority,
        AJ.AJ_assignedProcessorName AS assigned_processor,
        AJ.AJ_Analysis_Manager_Error AS am_code,
-       dbo.GetDEMCodeString(AJ.AJ_Data_Extraction_Error) AS dem_code,
+       dbo.get_dem_code_string(AJ.AJ_Data_Extraction_Error) AS dem_code,
        CASE AJ.AJ_propagationMode
            WHEN 0 THEN 'Export'
            ELSE 'No Export'
@@ -118,7 +117,6 @@ FROM S_V_BTO_ID_to_Name AS BTO
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
      LEFT OUTER JOIN T_Dataset_Archive AS DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Detail_Report_2] TO [DDL_Viewer] AS [dbo]

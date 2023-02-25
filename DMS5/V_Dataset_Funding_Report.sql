@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_Funding_Report]
 AS
 SELECT DS.Dataset_ID AS id,
@@ -22,8 +21,8 @@ SELECT DS.Dataset_ID AS id,
        RR.RDS_EUS_Proposal_ID AS emsl_proposal,
        RR.RDS_WorkPackage AS work_package,
        SPR.Work_Package_Number AS sample_prep_work_package,
-       dbo.GetProposalEUSUsersList(RR.rds_eus_proposal_id, 'N', 5) AS emsl_users,
-       dbo.GetProposalEUSUsersList(RR.rds_eus_proposal_id, 'I', 20) AS emsl_user_ids,
+       dbo.get_proposal_eus_users_list(RR.rds_eus_proposal_id, 'N', 5) AS emsl_users,
+       dbo.get_proposal_eus_users_list(RR.rds_eus_proposal_id, 'I', 20) AS emsl_user_ids,
        DTN.DST_name AS dataset_type,
        DS.DS_Oper_PRN AS operator,
        DS.Scan_Count AS scan_count,
@@ -50,7 +49,6 @@ FROM T_Sample_Prep_Request SPR RIGHT OUTER JOIN
     SPR.ID = Exp.EX_sample_prep_request_ID LEFT OUTER JOIN
     T_Requested_Run RR ON DS.Dataset_ID = RR.DatasetID
 WHERE (DS.DS_rating > 0) AND (DS.DS_state_ID = 3)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Funding_Report] TO [DDL_Viewer] AS [dbo]

@@ -34,7 +34,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 *****************************************************/
 (
     @scriptName varchar(64),
-    @datasetNum varchar(128) = 'na',
+    @datasetName varchar(128) = 'na',
     @priority int,
     @jobParamXML xml,
     @comment varchar(512),
@@ -178,7 +178,7 @@ AS
     ---------------------------------------------------
     --
     INSERT INTO #Jobs (Job, Priority, Script, State, Dataset, Dataset_ID, Results_Folder_Name)
-    VALUES (@job, @priority, @scriptName, 1, @datasetNum, @datasetID, NULL)
+    VALUES (@job, @priority, @scriptName, 1, @datasetName, @datasetID, NULL)
 
     ---------------------------------------------------
     -- Get results folder name (and store in #Jobs)
@@ -210,7 +210,7 @@ AS
     ---------------------------------------------------
     EXEC adjust_params_for_local_job
         @scriptName ,
-        @datasetNum ,
+        @datasetName ,
         @dataPackageID ,
         @jobParamXML OUTPUT,
         @message output
@@ -306,7 +306,7 @@ AS
                             Owner,
                             DataPkgID )
         VALUES(@job, @priority, @scriptName, 1,
-               @datasetNum, @datasetID, NULL,
+               @datasetName, @datasetID, NULL,
                @comment, NULL, @ownerUsername,
                IsNull(@dataPackageID, 0))
 

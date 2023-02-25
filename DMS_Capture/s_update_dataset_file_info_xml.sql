@@ -1,5 +1,5 @@
 /****** Object:  Synonym [dbo].[s_update_dataset_file_info_xml] ******/
-CREATE SYNONYM [dbo].[s_update_dataset_file_info_xml] FOR [DMS5].[dbo].[UpdateDatasetFileInfoXML]
+CREATE SYNONYM [dbo].[s_update_dataset_file_info_xml] FOR [DMS5].[dbo].[update_dataset_file_info_xml]
 GO
 GRANT VIEW DEFINITION ON [dbo].[s_update_dataset_file_info_xml] TO [DDL_Viewer] AS [dbo]
 GO

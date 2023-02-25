@@ -18,7 +18,7 @@ SELECT D.Dataset_ID AS Dataset_ID,
        AnTool.AJT_resultType AS Analysis_Result_Type,
        AJ.AJ_proteinCollectionList AS Protein_Collection_List,
        AJ.AJ_resultsFolderName AS Analysis_Job_Results_Folder,
-       dbo.udfCombinePaths(V_Dataset_Folder_Paths.Archive_Folder_Path, AJ.AJ_resultsFolderName) AS 
+       dbo.combine_paths(V_Dataset_Folder_Paths.Archive_Folder_Path, AJ.AJ_resultsFolderName) AS 
          Folder_Path_Aurora
 FROM T_Dataset D
      INNER JOIN T_Instrument_Name Inst

@@ -3,17 +3,16 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Campaign_Entry]
 AS
 SELECT C.Campaign_Num AS campaign,
        C.CM_Project_Num AS project,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'PI', 'PRN') AS pi_username,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Project Mgr', 'PRN') AS project_mgr,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Technical Lead', 'PRN') AS technical_lead,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Sample Preparation', 'PRN') AS sample_preparation_staff,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Dataset Acquisition', 'PRN') AS dataset_acquisition_staff,
-       dbo.GetCampaignRolePersonList(C.Campaign_ID, 'Informatics', 'PRN') AS informatics_staff,
+       dbo.get_campaign_role_person_list(C.Campaign_ID, 'PI', 'PRN') AS pi_username,
+       dbo.get_campaign_role_person_list(C.Campaign_ID, 'Project Mgr', 'PRN') AS project_mgr,
+       dbo.get_campaign_role_person_list(C.Campaign_ID, 'Technical Lead', 'PRN') AS technical_lead,
+       dbo.get_campaign_role_person_list(C.Campaign_ID, 'Sample Preparation', 'PRN') AS sample_preparation_staff,
+       dbo.get_campaign_role_person_list(C.Campaign_ID, 'Dataset Acquisition', 'PRN') AS dataset_acquisition_staff,
+       dbo.get_campaign_role_person_list(C.Campaign_ID, 'Informatics', 'PRN') AS informatics_staff,
        T_Research_Team.collaborators,
        C.CM_comment AS [comment],
        C.CM_State AS state,

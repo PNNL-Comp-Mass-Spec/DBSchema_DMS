@@ -217,7 +217,7 @@ ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [CK_T_Experiment_E
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [CK_T_Experiment_Exp_name_Not_Empty]
 GO
-ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Experiment_Num],(0))=(0)))
+ALTER TABLE [dbo].[T_Experiments]  WITH CHECK ADD  CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Experiment_Num],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Experiments] CHECK CONSTRAINT [CK_T_Experiments_ExperimentName_WhiteSpace]
 GO

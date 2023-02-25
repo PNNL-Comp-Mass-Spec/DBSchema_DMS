@@ -76,7 +76,7 @@ ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Name_Not_Emp
 GO
 ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_Name_Not_Empty]
 GO
-ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Name_Whitespace] CHECK  (([dbo].[udfWhitespaceChars]([U_Name],(1))=(0)))
+ALTER TABLE [dbo].[T_Users]  WITH CHECK ADD  CONSTRAINT [CK_T_Users_Name_Whitespace] CHECK  (([dbo].[has_whitespace_chars]([U_Name],(1))=(0)))
 GO
 ALTER TABLE [dbo].[T_Users] CHECK CONSTRAINT [CK_T_Users_Name_Whitespace]
 GO

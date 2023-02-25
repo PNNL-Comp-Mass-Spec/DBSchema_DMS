@@ -169,7 +169,7 @@ REFERENCES [dbo].[T_Sample_Prep_Request_Type_Name] ([Request_Type])
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [FK_T_Sample_Prep_Request_T_Sample_Prep_Request_Type_Name]
 GO
-ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Request_Name],(1))=(0)))
+ALTER TABLE [dbo].[T_Sample_Prep_Request]  WITH CHECK ADD  CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Request_Name],(1))=(0)))
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] CHECK CONSTRAINT [CK_T_Sample_Prep_Request_SamplePrepRequestName_WhiteSpace]
 GO
@@ -187,8 +187,8 @@ For Delete
 **
 **	Auth:	mem
 **	Date:	05/16/2008
-**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to get_user_login_without_domain
 **    
 *****************************************************/
 AS
@@ -201,7 +201,7 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	deleted.ID, 
-		   	dbo.GetUserLoginWithoutDomain('') + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
+		   	dbo.get_user_login_without_domain('') + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
 			deleted.state,
 			0 AS End_State_ID
 	FROM deleted
@@ -224,8 +224,8 @@ For Insert
 **
 **	Auth:	mem
 **	Date:	05/16/2008
-**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to get_user_login_without_domain
 **    
 *****************************************************/
 AS
@@ -240,7 +240,7 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	inserted.ID, 
-		   	dbo.GetUserLoginWithoutDomain(''),
+		   	dbo.get_user_login_without_domain(''),
 			0,
 			inserted.state
 	FROM inserted
@@ -254,7 +254,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Sample_Prep_Req] on [dbo].[T_Sample_Prep_Request]
 For Update
 /****************************************************
@@ -266,8 +265,8 @@ For Update
 **	Date:	01/01/2003
 **			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
 **			05/16/2008 mem - Fixed bug that was inserting the Beginning_State_ID and End_State_ID values backward
-**			11/08/2016 mem - Use GetUserLoginWithoutDomain to obtain the user's network login
-**			11/10/2016 mem - Pass '' to GetUserLoginWithoutDomain
+**			11/08/2016 mem - Use get_user_login_without_domain to obtain the user's network login
+**			11/10/2016 mem - Pass '' to get_user_login_without_domain
 **          06/15/2021 mem - Do not insert a row if the state is unchanged and current user is msdadmin
 **    
 *****************************************************/
@@ -281,14 +280,13 @@ AS
 			Beginning_State_ID, 
 			End_State_ID)
 	SELECT 	inserted.ID, 
-		   	dbo.GetUserLoginWithoutDomain(''),
+		   	dbo.get_user_login_without_domain(''),
 			deleted.state,
 			inserted.state
 	FROM deleted INNER JOIN inserted ON deleted.ID = inserted.ID
     WHERE inserted.state <> deleted.state Or
-          inserted.state = deleted.state And dbo.GetUserLoginWithoutDomain('') <> 'msdadmin'
+          inserted.state = deleted.state And dbo.get_user_login_without_domain('') <> 'msdadmin'
 	ORDER BY inserted.ID
-
 
 GO
 ALTER TABLE [dbo].[T_Sample_Prep_Request] ENABLE TRIGGER [trig_u_Sample_Prep_Req]

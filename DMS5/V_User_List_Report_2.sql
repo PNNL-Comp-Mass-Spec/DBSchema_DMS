@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_User_List_Report_2]
 AS
 -- Note that a few DMS Users have multiple EUS Person_ID values
@@ -14,7 +13,7 @@ SELECT U.id,
        U.U_HID AS hanford_id,
        U.U_Name AS name,
        U.U_Status AS status,
-       dbo.GetUserOperationsList(U.ID) AS operations_list,
+       dbo.get_user_operations_list(U.ID) AS operations_list,
        U.U_Comment AS comment,
        U.U_created AS created_dms,
        -- Obsolete: U.U_Payroll AS payroll,
@@ -27,7 +26,6 @@ FROM T_EUS_Site_Status ESS
        ON ESS.ID = EU.Site_Status
      RIGHT OUTER JOIN T_Users U
        ON EU.HID = U.U_HID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_User_List_Report_2] TO [DDL_Viewer] AS [dbo]

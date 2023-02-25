@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_LC_Cart_Loading]
 AS
 SELECT RR.ID AS Request,
@@ -16,7 +15,7 @@ SELECT RR.ID AS Request,
        RR.RDS_BatchID AS Batch,
        RR.RDS_Block AS [Block],
        RR.RDS_Run_Order AS [Run Order],
-       dbo.MergeTextThreeItems(RR.RDS_instrument_setting, RR.RDS_special_instructions, RR.RDS_comment) AS [Comment],
+       dbo.merge_text_three_items(RR.RDS_instrument_setting, RR.RDS_special_instructions, RR.RDS_comment) AS [Comment],
        E.Experiment_Num AS Experiment,
        RR.RDS_priority AS Priority,
        U.U_Name AS Requester,

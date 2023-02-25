@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Sample_Prep_Request_Detail_Report]
 AS
 SELECT SPR.id,
@@ -42,7 +41,7 @@ SELECT SPR.id,
        EPT.Proposal_Type_Name AS eus_proposal_type,
        CAST(EUP.Proposal_End_Date AS DATE) AS eus_proposal_end_date,
        PSN.Name AS eus_proposal_state,
-       dbo.GetSamplePrepRequestEUSUsersList(SPR.id, 'V') AS eus_user,
+       dbo.get_sample_prep_request_eus_users_list(SPR.id, 'V') AS eus_user,
        SPR.Requested_Personnel AS requested_personnel,
        SPR.Assigned_Personnel AS assigned_personnel,
        SPR.Estimated_Prep_Time_Days AS estimated_prep_time_days,
@@ -55,7 +54,7 @@ SELECT SPR.id,
        QT.complete_or_closed,
        QT.days_in_queue,
        Case When SPR.State In (0, 4, 5) Then Null Else QT.Days_In_State End As days_in_state,
-       dbo.ExperimentsFromRequest(SPR.ID) AS experiments,
+       dbo.experiments_from_request(SPR.ID) AS experiments,
        NU.updates,
        SPR.Biomaterial_Item_Count AS biomaterial_item_count,
        SPR.Experiment_Item_Count AS experiment_item_count,
@@ -92,7 +91,6 @@ FROM T_Sample_Prep_Request AS SPR
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON SPR.Tissue_ID = BTO.Identifier
 WHERE SPR.Request_Type = 'Default'
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Sample_Prep_Request_Detail_Report] TO [DDL_Viewer] AS [dbo]

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_Export_DataPkg]
 AS
 /*
@@ -15,7 +14,7 @@ SELECT AJ.AJ_jobID AS Job,
        AnalysisTool.AJT_toolName AS Tool,
        DS.Dataset_Num AS Dataset,
        DSArch.Archive_Path + '\' AS Archive_Storage_Path,
-       dbo.udfCombinePaths(SP.SP_vol_name_client, SP.SP_path) AS Server_Storage_Path,
+       dbo.combine_paths(SP.SP_vol_name_client, SP.SP_path) AS Server_Storage_Path,
        DS.DS_folder_name AS Dataset_Folder,
        AJ.AJ_resultsFolderName AS Results_Folder,
        AJ.AJ_datasetID AS Dataset_ID,

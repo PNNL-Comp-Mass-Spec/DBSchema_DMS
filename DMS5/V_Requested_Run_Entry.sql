@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_Entry]
 AS
 SELECT RR.ID AS request_id,
@@ -26,7 +25,7 @@ SELECT RR.ID AS request_id,
        RR.RDS_WorkPackage AS work_package,
        EUT.Name AS eus_usage_type,
        RR.RDS_EUS_Proposal_ID AS eus_proposal_id,
-       dbo.GetRequestedRunEUSUsersList(RR.ID, 'I') AS eus_users,
+       dbo.get_requested_run_eus_users_list(RR.ID, 'I') AS eus_users,
        ISNULL(dbo.T_Attachments.Attachment_Name, '') AS mrm_attachment,
        RR.RDS_internal_standard AS internal_standard,
        RR.RDS_Status AS state_name

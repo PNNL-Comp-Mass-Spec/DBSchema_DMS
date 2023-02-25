@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Instrument_Class_Detail_Report]
 AS
 SELECT IN_class AS instrument_class,
@@ -11,9 +10,8 @@ SELECT IN_class AS instrument_class,
        raw_data_type,
        -- Obsolete: requires_preparation,
        comment,
-       dbo.XmlToHTML(Params) AS params
+       dbo.xml_to_html(Params) AS params
 FROM dbo.T_Instrument_Class
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Class_Detail_Report] TO [DDL_Viewer] AS [dbo]

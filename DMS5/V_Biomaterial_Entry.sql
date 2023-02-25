@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Biomaterial_Entry]
 AS
 SELECT U.CC_Name AS [name],
@@ -15,7 +14,7 @@ SELECT U.CC_Name AS [name],
        U.CC_Comment AS comment,
        C.Campaign_Num AS campaign,
        MC.Tag AS container,
-       dbo.GetBiomaterialOrganismList(U.CC_ID) AS organism_list,
+       dbo.get_biomaterial_organism_list(U.CC_ID) AS organism_list,
        U.Mutation AS mutation,
        U.Plasmid AS plasmid,
        U.cell_line

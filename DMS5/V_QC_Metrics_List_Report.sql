@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_QC_Metrics_List_Report]
 AS
 SELECT DS.Dataset_Num AS dataset,
@@ -16,7 +15,7 @@ SELECT DS.Dataset_Num AS dataset,
        PM.task_database,
        AJ.AJ_parmFileName AS param_file,
        AJ.AJ_settingsFileName AS settings_file,
-       dbo.GetFactorList(RR.ID) AS factors,
+       dbo.get_factor_list(RR.ID) AS factors,
        Inst.IN_name AS instrument,
        PM.DMS_Job AS job,
        PM.tool_name,
@@ -86,7 +85,6 @@ FROM T_Dataset DS
 --       ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Storage_Path SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_QC_Metrics_List_Report] TO [DDL_Viewer] AS [dbo]

@@ -293,7 +293,7 @@ ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_Dataset_
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_Dataset_name_Not_Empty]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Dataset_Num],(0))=(0)))
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Dataset_Num],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [CK_T_Dataset_DatasetName_WhiteSpace]
 GO

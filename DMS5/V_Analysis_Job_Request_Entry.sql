@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_Request_Entry]
 AS
 SELECT AJR.AJR_requestID AS request_id,
@@ -15,7 +14,7 @@ SELECT AJR.AJR_requestID AS request_id,
        AJR.AJR_organismDBName AS organism_db_name,
        Org.OG_name AS organism_name,
        Case When IsNull(Data_Package_ID, 0) > 0 Then ''
-            Else dbo.GetJobRequestDatasetNameList(AJR.AJR_requestID)
+            Else dbo.get_job_request_dataset_name_list(AJR.AJR_requestID)
        End As datasets,
        AJR.data_package_id,
        AJR.AJR_comment AS comment,
@@ -31,7 +30,6 @@ FROM T_Analysis_Job_Request AS AJR
        ON AJR.AJR_requestor = U.ID
      INNER JOIN T_Organisms AS Org
        ON AJR.AJR_organism_ID = Org.Organism_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Request_Entry] TO [DDL_Viewer] AS [dbo]

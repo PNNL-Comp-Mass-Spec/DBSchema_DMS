@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Experiment_Entry]
 AS
 SELECT E.Experiment_Num AS experiment,
@@ -16,8 +15,8 @@ SELECT E.Experiment_Num AS experiment,
        Enz.Enzyme_Name AS enzyme_name,
        E.EX_lab_notebook_ref AS lab_notebook_ref,
        E.EX_comment AS [comment],
-       dbo.GetExpCellCultureList(E.Experiment_Num) AS biomaterial_list,
-       dbo.GetExpRefCompoundList(E.Experiment_Num) AS reference_compound_list,
+       dbo.get_exp_biomaterial_list(E.Experiment_Num) AS biomaterial_list,
+       dbo.get_exp_ref_compound_list(E.Experiment_Num) AS reference_compound_list,
        E.EX_Labelling AS labelling,
        E.EX_sample_prep_request_ID AS sample_prep_request,
        InstStd.Name AS internal_standard,

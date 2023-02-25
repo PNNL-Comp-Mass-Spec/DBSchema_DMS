@@ -3,16 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_Batch_Group_List_Report]
 AS
 SELECT BG.batch_group_id AS id,
        BG.batch_group AS name,
-       dbo.GetBatchGroupMemberList(BG.batch_group_id) AS batches,
+       dbo.get_batch_group_member_list(BG.batch_group_id) AS batches,
        StatsQ.requests,
        StatsQ.first_request,
        StatsQ.last_request,
-       dbo.GetBatchGroupInstrumentGroupList(BG.batch_group_id) AS instrument_group,
+       dbo.get_batch_group_instrument_group_list(BG.batch_group_id) AS instrument_group,
        BG.description,
        T_Users.U_Name AS owner,
        BG.created
@@ -30,7 +29,6 @@ FROM T_Requested_Run_Batch_Group BG
                  WHERE NOT RRB.batch_group_id IS NULL
                  GROUP BY RRB.batch_group_id ) StatsQ
        ON BG.batch_group_id = StatsQ.batch_group_id;
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_Group_List_Report] TO [DDL_Viewer] AS [dbo]

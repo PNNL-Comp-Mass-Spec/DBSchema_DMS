@@ -94,7 +94,7 @@ AS
                                                  Old_State_ID,
                                                  New_State_ID )
     SELECT deleted.ID,
-           dbo.GetUserLoginWithoutDomain('') + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
+           dbo.get_user_login_without_domain('') + '; ' + ISNULL(deleted.Request_Name, 'Unknown Request'),
            deleted.state,
            0 AS New_State_ID
     FROM deleted
@@ -130,7 +130,7 @@ AS
                                                  Old_State_ID,
                                                  New_State_ID )
     SELECT inserted.ID,
-           dbo.GetUserLoginWithoutDomain(''),
+           dbo.get_user_login_without_domain(''),
            0,
            inserted.state
     FROM inserted
@@ -164,7 +164,7 @@ AS
                                                  Old_State_ID,
                                                  New_State_ID )
     SELECT inserted.ID,
-           dbo.GetUserLoginWithoutDomain(''),
+           dbo.get_user_login_without_domain(''),
            deleted.state,
            inserted.state
     FROM deleted
@@ -172,7 +172,7 @@ AS
            ON deleted.ID = inserted.ID
     WHERE inserted.state <> deleted.state OR
           inserted.state = deleted.state AND
-          dbo.GetUserLoginWithoutDomain('') <> 'msdadmin'
+          dbo.get_user_login_without_domain('') <> 'msdadmin'
     ORDER BY inserted.ID
 
 GO

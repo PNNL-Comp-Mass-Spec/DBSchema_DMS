@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Run_Planning_Report]
 AS
 SELECT GroupQ.inst_group,
@@ -20,7 +19,7 @@ SELECT GroupQ.inst_group,
        End AS request_or_batch_name,
        RequestLookupQ.RDS_BatchID AS batch,
        GroupQ.Batch_Group_ID As batch_group,
-       Case When GroupQ.Batch_Group_ID > 0 Then dbo.GetBatchGroupMemberList(GroupQ.Batch_Group_ID) Else '' End As batches,
+       Case When GroupQ.Batch_Group_ID > 0 Then dbo.get_batch_group_member_list(GroupQ.Batch_Group_ID) Else '' End As batches,
        GroupQ.requester,
        DATEDIFF(DAY, GroupQ.date_created, GETDATE()) AS days_in_queue,
        GroupQ.days_in_prep_queue,
@@ -181,7 +180,6 @@ FROM ( SELECT Inst_Group,
         ON RequestLookupQ.RDS_EUS_UsageType = TEUT.ID
     -- LEFT OUTER JOIN T_Cached_Instrument_Usage_by_Proposal AS TAC
     --     ON TAC.IN_Group = GroupQ.Inst_Group AND TAC.EUS_Proposal_ID = GroupQ.Proposal
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Run_Planning_Report] TO [DDL_Viewer] AS [dbo]

@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Organisms](
 	[OG_name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Organism_ID] [int] IDENTITY(40,1) NOT NULL,
-	[OG_organismDBPath]  AS (case when isnull([OG_Storage_Location],'')='' then NULL else [dbo].[udfCombinePaths]([OG_Storage_Location],'FASTA\') end),
+	[OG_organismDBPath]  AS (case when isnull([OG_Storage_Location],'')='' then NULL else [dbo].[combine_paths]([OG_Storage_Location],'FASTA\') end),
 	[OG_organismDBName] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[OG_created] [datetime] NULL,
 	[OG_description] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -83,7 +83,7 @@ ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_Name
 GO
 ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_Name_NoSpaceOrComma]
 GO
-ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([OG_Name],(0))=(0)))
+ALTER TABLE [dbo].[T_Organisms]  WITH CHECK ADD  CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([OG_Name],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Organisms] CHECK CONSTRAINT [CK_T_Organisms_OrganismName_WhiteSpace]
 GO

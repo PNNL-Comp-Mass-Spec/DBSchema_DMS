@@ -119,9 +119,9 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [FK_T_Cell_Culture_T_Users]
 GO
-ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([CC_Name],(1))=(0)))
+ALTER TABLE [dbo].[T_Cell_Culture]  WITH CHECK ADD  CONSTRAINT [CK_T_Cell_Culture_Biomaterial_Name_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([CC_Name],(1))=(0)))
 GO
-ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [CK_T_Cell_Culture_CellCultureName_WhiteSpace]
+ALTER TABLE [dbo].[T_Cell_Culture] CHECK CONSTRAINT [CK_T_Cell_Culture_Biomaterial_Name_WhiteSpace]
 GO
 /****** Object:  Trigger [dbo].[trig_d_Cell_Culture] ******/
 SET ANSI_NULLS ON

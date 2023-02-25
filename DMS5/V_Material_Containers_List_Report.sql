@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Material_Containers_List_Report]
 AS
 SELECT container,
@@ -15,7 +14,7 @@ SELECT container,
        status,
        'New Biomaterial' AS action,
        created,
-       dbo.GetMaterialContainerCampaignList(id, Items) AS campaigns,
+       dbo.get_material_container_campaign_list(id, Items) AS campaigns,
        researcher,
        id
 FROM ( SELECT MC.Tag AS Container,
@@ -60,7 +59,6 @@ FROM ( SELECT MC.Tag AS Container,
        GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, MC.Created, MC.Status,
                 MC.ID, MC.Researcher, TFA.FileCount
      ) AS ContainerQ
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Containers_List_Report] TO [DDL_Viewer] AS [dbo]

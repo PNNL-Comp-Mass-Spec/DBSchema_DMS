@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Experiment_Detail_Report_Ex]
 AS
 SELECT E.Experiment_Num AS experiment,
@@ -25,7 +24,7 @@ SELECT E.Experiment_Num AS experiment,
         E.EX_Alkylation AS alkylated,
         E.EX_sample_prep_request_ID AS request,
 	   BTO.Identifier AS tissue_id,
-        dbo.GetExperimentGroupList(E.Exp_ID) AS experiment_groups,
+        dbo.get_experiment_group_list(E.Exp_ID) AS experiment_groups,
         ISNULL(DSCountQ.datasets, 0) AS datasets,
         DSCountQ.Most_Recent_Dataset AS most_recent_dataset,
         ISNULL(FC.factor_count, 0) AS factors,
@@ -79,7 +78,6 @@ FROM T_Experiments AS E
 	     ON E.EX_Tissue_ID = BTO.Identifier
         LEFT OUTER JOIN T_Cached_Experiment_Components CEC
           ON E.Exp_ID = CEC.Exp_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Experiment_Detail_Report_Ex] TO [DDL_Viewer] AS [dbo]

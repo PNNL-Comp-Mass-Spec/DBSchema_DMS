@@ -78,7 +78,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_u_T_Param_Entries] ON [dbo].[T_Param_Entries] 
 FOR UPDATE
 AS
@@ -125,14 +124,14 @@ AS
 		End -- </b>
 
 		-- Append the current time and username to the Entered_By field
-		-- Note that dbo.udfTimeStampText returns a timestamp 
+		-- Note that dbo.time_stamp_text returns a timestamp 
 		-- in the form: 2006-09-01 09:05:03
 
 		Declare @SepChar varchar(2)
 		set @SepChar = ' ('
 
 		Declare @UserInfo varchar(128)
-		Set @UserInfo = dbo.udfTimeStampText(@TimeStamp) + '; ' + LEFT(SYSTEM_USER,75)
+		Set @UserInfo = dbo.time_stamp_text(@TimeStamp) + '; ' + LEFT(SYSTEM_USER,75)
 		Set @UserInfo = IsNull(@UserInfo, '')
 
 		UPDATE T_Param_Entries
@@ -146,7 +145,6 @@ AS
 				) LookupQ ON T_Param_Entries.Param_Entry_ID = LookupQ.Param_Entry_ID
 
 	End -- </a>
-
 
 GO
 ALTER TABLE [dbo].[T_Param_Entries] ENABLE TRIGGER [trig_u_T_Param_Entries]

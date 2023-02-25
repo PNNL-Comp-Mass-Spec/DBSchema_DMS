@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[T_Research_Team](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Research_Team] TO [DDL_Viewer] AS [dbo]
 GO
-ALTER TABLE [dbo].[T_Research_Team]  WITH CHECK ADD  CONSTRAINT [CK_T_Research_Team_TeamName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Team],(1))=(0)))
+ALTER TABLE [dbo].[T_Research_Team]  WITH CHECK ADD  CONSTRAINT [CK_T_Research_Team_TeamName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Team],(1))=(0)))
 GO
 ALTER TABLE [dbo].[T_Research_Team] CHECK CONSTRAINT [CK_T_Research_Team_TeamName_WhiteSpace]
 GO

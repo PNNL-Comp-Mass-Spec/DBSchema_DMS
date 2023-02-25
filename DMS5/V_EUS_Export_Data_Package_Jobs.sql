@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_EUS_Export_Data_Package_Jobs]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
@@ -20,7 +19,7 @@ SELECT D.Dataset_ID AS Dataset_ID,
        AJ.AJ_proteinCollectionList AS Protein_Collection_List,
        DP.ID AS Data_Package_ID,
        DP.Name AS Data_Package_Name,
-       dbo.udfCombinePaths('\\aurora.emsl.pnl.gov\archive\prismarch\DataPkgs', DP.Storage_Path_Relative) AS 
+       dbo.combine_paths('\\aurora.emsl.pnl.gov\archive\prismarch\DataPkgs', DP.Storage_Path_Relative) AS 
          Data_Package_Path_Aurora
 FROM T_Dataset D
      INNER JOIN T_Instrument_Name Inst

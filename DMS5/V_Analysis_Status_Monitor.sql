@@ -6,9 +6,9 @@ GO
 CREATE VIEW dbo.V_Analysis_Status_Monitor
 AS
 SELECT     dbo.T_Analysis_Job_Processors.ID, dbo.T_Analysis_Job_Processors.Processor_Name AS Name, 
-                      dbo.GetAJProcessorAnalysisToolList(dbo.T_Analysis_Job_Processors.ID) AS Tools, 
-                      dbo.GetAJProcessorMembershipInGroupsList(dbo.T_Analysis_Job_Processors.ID, 1) AS EnabledGroups, 
-                      dbo.GetAJProcessorMembershipInGroupsList(dbo.T_Analysis_Job_Processors.ID, 0) AS DisabledGroups, 
+                      dbo.get_aj_processor_analysis_tool_list(dbo.T_Analysis_Job_Processors.ID) AS Tools, 
+                      dbo.get_aj_processor_membership_in_groups_list(dbo.T_Analysis_Job_Processors.ID, 1) AS EnabledGroups, 
+                      dbo.get_aj_processor_membership_in_groups_list(dbo.T_Analysis_Job_Processors.ID, 0) AS DisabledGroups, 
                       dbo.T_Analysis_Status_Monitor_Params.StatusFileNamePath, dbo.T_Analysis_Status_Monitor_Params.CheckBoxState, 
                       dbo.T_Analysis_Status_Monitor_Params.UseForStatusCheck
 FROM         dbo.T_Analysis_Job_Processors INNER JOIN

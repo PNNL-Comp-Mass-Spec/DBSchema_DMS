@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE VIEW [dbo].[V_Protein_Collection_List_Report]
 AS
 SELECT LookupQ.id,
@@ -31,7 +29,7 @@ SELECT LookupQ.id,
        END AS usage_all_years,
        CASE
            WHEN IntStandardOrContaminant > 0 THEN NULL
-           ELSE SUBSTRING(CONVERT(varchar(32), dbo.GetDateWithoutTime(PCU.Most_Recently_Used), 120), 1, 10)
+           ELSE SUBSTRING(CONVERT(varchar(32), dbo.get_date_without_time(PCU.Most_Recently_Used), 120), 1, 10)
        END AS most_recent_usage,
        LookupQ.Includes_Contaminants As includes_contaminants,
        LookupQ.FileSizeMB As file_size_mb,
@@ -80,7 +78,6 @@ GROUP BY LookupQ.ID, LookupQ.Name, LookupQ.Description, LookupQ.Organism_Name,
          PCU.Most_Recently_Used, LookupQ.Includes_Contaminants,
          LookupQ.FileSizeMB, LookupQ.[type], LookupQ.Source,
          LookupQ.IntStandardOrContaminant, Org.OG_organismDBName
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Protein_Collection_List_Report] TO [DDL_Viewer] AS [dbo]

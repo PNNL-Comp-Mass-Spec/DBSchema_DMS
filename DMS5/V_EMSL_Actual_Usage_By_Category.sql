@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW V_EMSL_Actual_Usage_By_Category as
-SELECT        dbo.GetFiscalYearFromDate(RunDate) AS FY, Proposal_ID, Category, SUM(Duration) / 60 AS Actual_Hours_Used
+SELECT        dbo.get_fiscal_year_text_from_date(RunDate) AS FY, Proposal_ID, Category, SUM(Duration) / 60 AS Actual_Hours_Used
 FROM            (SELECT        RunDate, Proposal_ID, Category, Duration
                           FROM            (SELECT        TRR.RDS_EUS_Proposal_ID AS Proposal_ID, TD.DS_instrument_name_ID, CASE WHEN TD.Acq_Time_End IS NULL 
                                                                               THEN TD.DS_created ELSE TD.Acq_Time_End END AS RunDate, TZ.Category, ISNULL(DATEDIFF(mi, TD.Acq_Time_Start, TD.Acq_Time_End), 
@@ -17,7 +17,8 @@ FROM            (SELECT        RunDate, Proposal_ID, Category, Duration
                                                                                                               T_EMSL_Instruments AS TEI ON TIM.EUS_Instrument_ID = TEI.EUS_Instrument_ID) AS TZ ON 
                                                                               TZ.DMS_Instrument_ID = TD.DS_instrument_name_ID
                                                     WHERE        (TRR.RDS_EUS_Proposal_ID IS NOT NULL) AND (TD.DS_state_ID = 3)) AS TX) AS TQ
-GROUP BY dbo.GetFiscalYearFromDate(RunDate), Proposal_ID, Category
+GROUP BY dbo.get_fiscal_year_text_from_date(RunDate), Proposal_ID, Category
+
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EMSL_Actual_Usage_By_Category] TO [DDL_Viewer] AS [dbo]
 GO

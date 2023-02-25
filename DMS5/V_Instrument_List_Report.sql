@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Instrument_List_Report]
 AS
 SELECT InstName.Instrument_ID AS id,
@@ -23,7 +22,7 @@ SELECT InstName.Instrument_ID AS id,
        S.Source AS assigned_source,
        DefineStorageYesNo.Description AS auto_define_storage,
        InstName.Auto_SP_Vol_Name_Client + InstName.Auto_SP_Path_Root AS auto_storage_path,
-       dbo.GetInstrumentDatasetTypeList(InstName.Instrument_ID) AS allowed_dataset_types,
+       dbo.get_instrument_dataset_type_list(InstName.Instrument_ID) AS allowed_dataset_types,
        InstName.IN_Created AS created,
        EUSMapping.EUS_Instrument_ID AS eus_instrument_id,
        EUSMapping.EUS_Display_Name AS eus_display_name,
@@ -66,7 +65,6 @@ AS
        ON InstName.Instrument_ID = EUSMapping.Instrument_ID
      LEFT OUTER JOIN V_Instrument_Tracked InstTracking
        ON InstName.IN_name = InstTracking.Name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Report] TO [DDL_Viewer] AS [dbo]

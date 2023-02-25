@@ -44,7 +44,7 @@ ALTER TABLE [dbo].[T_Prep_LC_Column] ADD  CONSTRAINT [DF_T_Prep_LC_Column_PC_Sta
 GO
 ALTER TABLE [dbo].[T_Prep_LC_Column] ADD  CONSTRAINT [DF_T_Prep_LC_Column_Created]  DEFAULT (getdate()) FOR [Created]
 GO
-ALTER TABLE [dbo].[T_Prep_LC_Column]  WITH CHECK ADD  CONSTRAINT [CK_T_Prep_LC_Column_ColumnName_WhiteSpace] CHECK  (([dbo].[udfWhitespaceChars]([Column_Name],(0))=(0)))
+ALTER TABLE [dbo].[T_Prep_LC_Column]  WITH CHECK ADD  CONSTRAINT [CK_T_Prep_LC_Column_ColumnName_WhiteSpace] CHECK  (([dbo].[has_whitespace_chars]([Column_Name],(0))=(0)))
 GO
 ALTER TABLE [dbo].[T_Prep_LC_Column] CHECK CONSTRAINT [CK_T_Prep_LC_Column_ColumnName_WhiteSpace]
 GO
