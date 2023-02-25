@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Cached_Requested_Run_Batch_Stats](
 	[Days_in_Prep_Queue] [int] NULL,
 	[Blocked] [int] NULL,
 	[Block_Missing] [int] NULL,
-	[Last_Affected] [datetime] NULL,
+	[Last_Affected] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Cached_Requested_Run_Batch_Stats] PRIMARY KEY CLUSTERED 
 (
 	[Batch_ID] ASC
