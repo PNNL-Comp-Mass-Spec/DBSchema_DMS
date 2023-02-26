@@ -2,7 +2,7 @@
 CREATE DATABASE [Ontology_Lookup]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'Ontology_Lookup', FILENAME = N'J:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 4032576KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
+( NAME = N'Ontology_Lookup', FILENAME = N'J:\SQLServerData\Ontology_Lookup.mdf' , SIZE = 5049344KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
 ( NAME = N'Ontology_Lookup_log', FILENAME = N'H:\SQLServerData\Ontology_Lookup_log.ldf' , SIZE = 273216KB , MAXSIZE = 2048GB , FILEGROWTH = 131072KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
