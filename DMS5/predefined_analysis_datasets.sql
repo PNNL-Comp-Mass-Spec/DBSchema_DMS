@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[predefined_analysis_datasets]
 **          04/21/2017 mem - Add AD_instrumentNameCriteria
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -183,18 +184,18 @@ AS
 
     If @InfoOnly = 0
     Begin
-        Set @S = @S + ' SELECT Dataset, ID,'
-        Set @S = @S +        ' InstrumentClass, Instrument,'
-        Set @S = @S +        ' Campaign, Experiment, Organism,'
-        Set @S = @S +        ' Experiment_Labelling As [Exp Labelling], Experiment_Comment As [Exp Comment],'
-        Set @S = @S +        ' Dataset_Comment As [DS Comment], Dataset_Type As [DS Type],'
-        Set @S = @S +        ' Rating As [DS Rating], Rating_Name AS Rating,'
-        Set @S = @S +        ' Separation_Type As [Sep Type],'
-        Set @S = @S +        ' ''' + @analysisToolName + ''' AS Tool,'
-        Set @S = @S +        ' ''' + @paramFileName + ''' AS [Parameter File],'
-        Set @S = @S +        ' ''' + @settingsFileName + ''' AS [Settings File],'
-        Set @S = @S +        ' ''' + @proteinCollectionList + ''' AS [Protein Collections],'
-        Set @S = @S +        ' ''' + @organismDBName + ''' AS [Legacy FASTA]'
+        Set @S = @S + ' SELECT Dataset AS dataset, ID AS id,'
+        Set @S = @S +        ' InstrumentClass AS instrument_class, Instrument AS instrument,'
+        Set @S = @S +        ' Campaign AS campaign, Experiment AS experiment, Organism AS organism,'
+        Set @S = @S +        ' Experiment_Labelling As exp_labelling, Experiment_Comment As exp_comment,'
+        Set @S = @S +        ' Dataset_Comment As ds_comment, Dataset_Type As ds_type,'
+        Set @S = @S +        ' Rating As ds_rating, Rating_Name AS rating,'
+        Set @S = @S +        ' Separation_Type As sep_type,'
+        Set @S = @S +        ' ''' + @analysisToolName + ''' AS tool,'
+        Set @S = @S +        ' ''' + @paramFileName + ''' AS parameter_file,'
+        Set @S = @S +        ' ''' + @settingsFileName + ''' AS settings_file,'
+        Set @S = @S +        ' ''' + @proteinCollectionList + ''' AS protein_collections,'
+        Set @S = @S +        ' ''' + @organismDBName + ''' AS legacy_fasta'
         If @PopulateTempTable <> 0
             Set @S = @S + ' INTO T_Tmp_PredefinedAnalysisDatasets'
         Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'

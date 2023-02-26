@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[get_protein_collection_member_detail]
 **  Date:   06/27/2016 mem - Initial version
 **          08/03/2017 mem - Add Set NoCount On
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -120,20 +121,19 @@ AS
         -- Return the result
         ---------------------------------------------------
         --
-        SELECT @proteinCollectionID AS Protein_Collection_ID,
-               @proteinName AS Protein_Name,
-               @description AS Description,
-               @formattedSequence AS Protein_Sequence,
-               @monoisotopicMass AS Monoisotopic_Mass,
-               @averageMass AS Average_Mass,
-               @residueCount AS Residue_Count,
-               @molecularFormula AS Molecular_Formula,
-               @proteinId AS Protein_ID,
-               @id AS Reference_ID,
-               @sha1Hash AS SHA1_Hash,
-               @memberId AS Member_ID,
-         @sortingIndex AS Sorting_Index
-
+        SELECT @proteinCollectionID AS protein_collection_id,
+               @proteinName AS protein_name,
+               @description AS description,
+               @formattedSequence AS protein_sequence,
+               @monoisotopicMass AS monoisotopic_mass,
+               @averageMass AS average_mass,
+               @residueCount AS residue_count,
+               @molecularFormula AS molecular_formula,
+               @proteinId AS protein_id,
+               @id AS reference_id,
+               @sha1Hash AS sha1_hash,
+               @memberId AS member_id,
+               @sortingIndex AS sorting_index
 
     END TRY
     BEGIN CATCH

@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[find_existing_jobs_for_request]
 **          07/30/2019 mem - After obtaining the actual matching jobs using GetRunRequestExistingJobListTab, compare to the cached values in T_Analysis_Job_Request_Existing_Jobs; call update_cached_job_request_existing_jobs if a mismatch
 **          07/31/2019 mem - Use new function name, get_existing_jobs_matching_job_request
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -72,15 +73,15 @@ AS
         End
     End
 
-    SELECT AJ.AJ_jobID AS Job,
-           ASN.AJS_name AS State,
-           AJ.AJ_priority AS Priority,
-           AJ.AJ_requestID AS Request,
-           AJ.AJ_created AS Created,
-           AJ.AJ_start AS Start,
-           AJ.AJ_finish AS Finish,
-           AJ.AJ_assignedProcessorName AS Processor,
-           DS.Dataset_Num AS Dataset
+    SELECT AJ.AJ_jobID AS job,
+           ASN.AJS_name AS state,
+           AJ.AJ_priority AS priority,
+           AJ.AJ_requestID AS request,
+           AJ.AJ_created AS created,
+           AJ.AJ_start AS start,
+           AJ.AJ_finish AS finish,
+           AJ.AJ_assignedProcessorName AS processor,
+           DS.Dataset_Num AS dataset
     FROM T_Analysis_Job_Request_Existing_Jobs AJR
          INNER JOIN dbo.T_Analysis_Job AJ
            ON AJR.Job = AJ.AJ_jobID

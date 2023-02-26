@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[get_monthly_instrument_usage_report]
 **          05/27/2022 mem - Do not log year or month conversion errors to the database
 **                         - Validate @year, @month, and @outputFormat
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -582,19 +583,19 @@ AS
 
             -- Output report rows
             SELECT
-                @instrument AS Instrument,
-                @eusInstrumentId AS EMSL_Inst_ID,
-                CONVERT(VARCHAR(32), [Start], 100) AS [Start],
-                [Type],
-                CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [Minutes],
-                Proposal,
-                [Usage],
-                Users,
-                Operator,
-                ISNULL(Comment, '') AS Comment,
-                @year AS [Year],
-                @month AS [Month],
-                #TR.Dataset_ID
+                @instrument AS instrument,
+                @eusInstrumentId AS emsl_inst_id,
+                CONVERT(VARCHAR(32), [Start], 100) AS [start],
+                [Type] AS type,
+                CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [minutes],
+                Proposal AS proposal,
+                [Usage] AS usage,
+                Users AS users,
+                Operator AS operator,
+                ISNULL(Comment, '') AS comment,
+                @year AS [year],
+                @month AS [month],
+                #TR.Dataset_ID AS dataset_id
              FROM #TR
              ORDER BY Start
         END
@@ -606,13 +607,13 @@ AS
             ---------------------------------------------------
 
             SELECT
-                CONVERT(VARCHAR(32), [Start], 100) AS [Start],
-                [Type],
-                CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [Minutes],
-                Proposal,
-                [Usage],
-                ISNULL(Comment, '') AS Comment,
-                Dataset_ID
+                CONVERT(VARCHAR(32), [Start], 100) AS start,
+                [Type] AS type,
+                CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS minutes,
+                Proposal AS proposal,
+                [Usage] AS usage,
+                ISNULL(Comment, '') AS comment,
+                Dataset_ID AS dataset_id
              FROM #TR ORDER BY Start
         END
 
@@ -623,11 +624,11 @@ AS
             ---------------------------------------------------
 
             SELECT
-                [Type],
-                [Minutes],
-                CONVERT(DECIMAL(10,1), CONVERT(FLOAT, [Minutes])/@minutesInMonth * 100.0) AS [Percentage],
-                [Usage],
-                Proposal
+                [Type] AS type,
+                [Minutes] AS minutes,
+                CONVERT(DECIMAL(10,1), CONVERT(FLOAT, [Minutes])/@minutesInMonth * 100.0) AS percentage,
+                [Usage] AS usage,
+                Proposal AS proposal
             FROM
             (
             SELECT
@@ -648,11 +649,11 @@ AS
             ---------------------------------------------------
 
             SELECT
-                @minutesInMonth AS 'Available',
-                SUM(Duration) AS Duration,
-                SUM([Interval]) AS [Interval],
-                SUM (Duration + INTERVAL) AS [Total],
-                CONVERT(DECIMAL(10,1), CONVERT(FLOAT, SUM (Duration + INTERVAL))/@minutesInMonth * 100.0) AS [Percentage]
+                @minutesInMonth AS available,
+                SUM(Duration) AS duration,
+                SUM([Interval]) AS [interval],
+                SUM (Duration + INTERVAL) AS [total],
+                CONVERT(DECIMAL(10,1), CONVERT(FLOAT, SUM (Duration + INTERVAL))/@minutesInMonth * 100.0) AS [percentage]
             FROM #TR
         END
 

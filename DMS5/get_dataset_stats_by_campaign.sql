@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[get_dataset_stats_by_campaign]
 **          06/10/2019 mem - Add parameters @excludeQCAndBlankWithoutWP, @campaignNameExclude, and @instrumentBuilding
 **          03/24/2020 mem - Add parameter @excludeAllQCAndBlank
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -232,16 +233,16 @@ AS
         -- Return the results
         -----------------------------------------
         --
-        SELECT Campaign,
-               WorkPackage AS [Work Package],
-               FractionEMSLFunded * 100 As [Pct EMSL Funded],
-               RuntimeHours AS [Runtime Hours],
-               Datasets,
-               Building,
-               Instrument,
-               RequestMin AS [Request Min],
-               RequestMax AS [Request Max],
-               Cast(RuntimeHours / @totalRuntimeHours * 100 AS decimal(9, 3)) AS [Pct Total Runtime]
+        SELECT Campaign AS campaign,
+               WorkPackage AS work_package,
+               FractionEMSLFunded * 100 As pct_emsl_funded,
+               RuntimeHours AS runtime_hours,
+               Datasets AS datasets,
+               Building AS building,
+               Instrument AS instrument,
+               RequestMin AS request_min,
+               RequestMax AS request_max,
+               Cast(RuntimeHours / @totalRuntimeHours * 100 AS decimal(9, 3)) AS pct_total_runtime
         FROM #Tmp_CampaignDatasetStats
         ORDER BY RuntimeHours DESC
 

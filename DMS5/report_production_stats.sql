@@ -49,6 +49,7 @@ CREATE PROCEDURE [dbo].[report_production_stats]
 **          10/12/2022 mem - Add @showDebug
 **                         - No longer use Fraction_EMSL_Funded from t_campaign to determine EMSL funding status
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case and no special characters
 **
 *****************************************************/
 (
@@ -327,44 +328,44 @@ AS
     ---------------------------------------------------
 
     SELECT
-        Instrument,
-        [Total] AS [Total Datasets],
-        @daysInRange AS [Days in range],
-        Convert(decimal(5,1), [Total]/@daysInRange) AS [Datasets per day],
-        [Blank] AS [Blank Datasets],
-        [QC] AS [QC Datasets],
-        -- [TS] as [Troubleshooting],
-        [Bad] as [Bad Datasets],
-        [Study Specific] AS [Study Specific Datasets],
-        Convert(decimal(5,1), [Study Specific] / @daysInRange) AS [Study Specific Datasets per day],
-        [EF Study Specific] AS [EMSL-Funded Study Specific Datasets],
-        Convert(decimal(5,1), [EF Study Specific] / @daysInRange) AS [EF Study Specific Datasets per day],
+        Instrument AS instrument,
+        [Total] AS total_datasets,
+        @daysInRange AS days_in_range,
+        Convert(decimal(5,1), [Total]/@daysInRange) AS datasets_per_day,
+        [Blank] AS blank_datasets,
+        [QC] AS qc_datasets,
+        -- [TS] as troubleshooting,
+        [Bad] as bad_datasets,
+        [Study Specific] AS study_specific_datasets,
+        Convert(decimal(5,1), [Study Specific] / @daysInRange) AS study_specific_datasets_per_day,
+        [EF Study Specific] AS emsl_funded_study_specific_datasets,
+        Convert(decimal(5,1), [EF Study Specific] / @daysInRange) AS ef_study_specific_datasets_per_day,
 
-        Convert(decimal(5,1), [Total_AcqTimeDays]) AS [Total AcqTimeDays],
-        Convert(decimal(5,1), [Study_Specific_AcqTimeDays]) AS [Study Specific AcqTimeDays],
-        Convert(decimal(5,1), [EF_Total_AcqTimeDays]) AS [EF Total AcqTimeDays],
-        Convert(decimal(5,1), [EF_Study_Specific_AcqTimeDays]) AS [EF Study Specific AcqTimeDays],
-        Convert(decimal(5,1), [Hours_AcqTime_per_Day]) as [Hours AcqTime per Day],
+        Convert(decimal(5,1), [Total_AcqTimeDays]) AS total_acq_time_days,
+        Convert(decimal(5,1), [Study_Specific_AcqTimeDays]) AS study_specific_acq_time_days,
+        Convert(decimal(5,1), [EF_Total_AcqTimeDays]) AS ef_total_acq_time_days,
+        Convert(decimal(5,1), [EF_Study_Specific_AcqTimeDays]) AS ef_study_specific_acq_time_days,
+        Convert(decimal(5,1), [Hours_AcqTime_per_Day]) as hours_acq_time_per_day,
 
-        Instrument AS [Inst.],
-        Percent_EMSL_Owned AS [% Inst EMSL Owned],
+        Instrument AS inst_,
+        Percent_EMSL_Owned AS pct_inst_emsl_owned,
 
         -- EMSL Funded Counts:
-        Convert(float, Convert(decimal(9,2), [EF_Total])) AS [EF Total Datasets],
-        Convert(decimal(5,1), [EF_Total]/@daysInRange) AS [EF Datasets per day],
-        -- Convert(float, Convert(decimal(9,2), [EF_Blank])) AS [EF Blank Datasets],
-        -- Convert(float, Convert(decimal(9,2), [EF_QC])) AS [EF QC Datasets],
-        -- Convert(float, Convert(decimal(9,2), [EF_Bad])) as [EF Bad Datasets],
+        Convert(float, Convert(decimal(9,2), [EF_Total])) AS ef_total_datasets,
+        Convert(decimal(5,1), [EF_Total]/@daysInRange) AS ef_datasets_per_day,
+        -- Convert(float, Convert(decimal(9,2), [EF_Blank])) AS ef_blank_datasets,
+        -- Convert(float, Convert(decimal(9,2), [EF_QC])) AS ef_qc_datasets,
+        -- Convert(float, Convert(decimal(9,2), [EF_Bad])) as ef_bad_datasets,
 
-        Convert(decimal(5,1), ([Blank] * 100.0 / [Total])) AS [% Blank Datasets],
-        Convert(decimal(5,1), ([QC] * 100.0 / [Total])) AS [% QC Datasets],
-        Convert(decimal(5,1), ([Bad] * 100.0 / [Total])) AS [% Bad Datasets],
-        -- Convert(decimal(5,1), ([Reruns] * 100.0 / [Total])) AS [% Reruns],
-        Convert(decimal(5,1), ([Study Specific] * 100.0 / [Total])) AS [% Study Specific Datasets],
-        CASE WHEN [Total] > 0 THEN Convert(decimal(5,1), [EF Study Specific] * 100.0 / [Total]) ELSE NULL END AS [% EF Study Specific Datasets],
-        CASE WHEN [Total_AcqTimeDays] > 0 THEN Convert(decimal(5,1), [EF_Total_AcqTimeDays] * 100.0 / [Total_AcqTimeDays]) ELSE NULL END AS [% EF Study Specific by AcqTime],
+        Convert(decimal(5,1), ([Blank] * 100.0 / [Total])) AS pct_blank_datasets,
+        Convert(decimal(5,1), ([QC] * 100.0 / [Total])) AS pct_qc_datasets,
+        Convert(decimal(5,1), ([Bad] * 100.0 / [Total])) AS pct_bad_datasets,
+        -- Convert(decimal(5,1), ([Reruns] * 100.0 / [Total])) AS pct_reruns,
+        Convert(decimal(5,1), ([Study Specific] * 100.0 / [Total])) AS pct_study_specific_datasets,
+        CASE WHEN [Total] > 0 THEN Convert(decimal(5,1), [EF Study Specific] * 100.0 / [Total]) ELSE NULL END AS pct_ef_study_specific_datasets,
+        CASE WHEN [Total_AcqTimeDays] > 0 THEN Convert(decimal(5,1), [EF_Total_AcqTimeDays] * 100.0 / [Total_AcqTimeDays]) ELSE NULL END AS pct_ef_study_specific_by_acq_time,
 
-        Instrument AS [Inst]
+        Instrument AS inst
     FROM (
         SELECT Instrument, Percent_EMSL_Owned,
             [Total], [Bad], [Blank], [QC],

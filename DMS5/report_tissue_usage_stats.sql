@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[report_tissue_usage_stats]
 **  Auth:   mem
 **  Date:   07/23/2019 mem - Initial version
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -160,35 +161,35 @@ AS
 
         If Not Exists (Select * From #Tmp_InstrumentFilter)
         Begin
-            SELECT '' AS Tissue_ID,
-                   '' AS Tissue,
-                   0 AS Experiments,
-                   0 AS Datasets,
-                   0 AS Instruments,
-                   'Warning' AS Instrument_First,
-                   'No instruments matched the instrument name filter' AS Instrument_Last,
-                   @nullDate AS Dataset_Acq_Time_Min,
-                   @nullDate AS Dataset_Acq_Time_Max,
-                   '' AS Organism_First,
-                   '' AS Organism_Last,
-                   '' AS Campaign_First,
-                   '' AS Campaign_Last
+            SELECT '' AS tissue_id,
+                   '' AS tissue,
+                   0 AS experiments,
+                   0 AS datasets,
+                   0 AS instruments,
+                   'Warning' AS instrument_first,
+                   'No instruments matched the instrument name filter' AS instrument_last,
+                   @nullDate AS dataset_acq_time_min,
+                   @nullDate AS dataset_acq_time_max,
+                   '' AS organism_first,
+                   '' AS organism_last,
+                   '' AS campaign_first,
+                   '' AS campaign_last
         End
         Else
         Begin
-            SELECT E.EX_Tissue_ID AS Tissue_ID,
-                   BTO.Tissue AS Tissue,
-                   Count(DISTINCT E.Exp_ID) AS Experiments,
-                   Count(DISTINCT D.Dataset_ID) AS Datasets,
-                   Count(DISTINCT InstName.Instrument_ID) AS Instruments,
-                   Min(InstName.IN_name) AS Instrument_First,
-                   Max(InstName.IN_name) AS Instrument_Last,
-                   Min(ISNULL(D.Acq_Time_Start, D.DS_created)) AS Dataset_Acq_Time_Min,
-                   Max(ISNULL(D.Acq_Time_Start, D.DS_created)) AS Dataset_Acq_Time_Max,
-                   Min(Org.OG_name) AS Organism_First,
-                   Max(Org.OG_name) AS Organism_Last,
-                   Min(C.Campaign_Num) AS Campaign_First,
-                   Max(C.Campaign_Num) AS Campaign_Last
+            SELECT E.EX_Tissue_ID AS tissue_id,
+                   BTO.Tissue AS tissue,
+                   Count(DISTINCT E.Exp_ID) AS experiments,
+                   Count(DISTINCT D.Dataset_ID) AS datasets,
+                   Count(DISTINCT InstName.Instrument_ID) AS instruments,
+                   Min(InstName.IN_name) AS instrument_first,
+                   Max(InstName.IN_name) AS instrument_last,
+                   Min(ISNULL(D.Acq_Time_Start, D.DS_created)) AS dataset_acq_time_min,
+                   Max(ISNULL(D.Acq_Time_Start, D.DS_created)) AS dataset_acq_time_max,
+                   Min(Org.OG_name) AS organism_first,
+                   Max(Org.OG_name) AS organism_last,
+                   Min(C.Campaign_Num) AS campaign_first,
+                   Max(C.Campaign_Num) AS campaign_last
             FROM T_Dataset D
                  INNER JOIN T_Experiments E
                    ON E.Exp_ID = D.Exp_ID
@@ -216,15 +217,15 @@ AS
     Begin
         -- Use experiment creation time for the date filter
 
-        SELECT E.EX_Tissue_ID AS Tissue_ID,
-               BTO.Tissue,
-               Count(E.Exp_ID) AS Experiments,
-               Min(E.EX_created) AS Exp_Created_Min,
-               Max(E.EX_created) AS Exp_Created_Max,
-               Min(Org.OG_name) AS Organism_First,
-               Max(Org.OG_name) AS Organism_Last,
-               Min(C.Campaign_Num) AS Campaign_First,
-               Max(C.Campaign_Num) AS Campaign_Last
+        SELECT E.EX_Tissue_ID AS tissue_id,
+               BTO.Tissue AS tissue,
+               Count(E.Exp_ID) AS experiments,
+               Min(E.EX_created) AS exp_created_min,
+               Max(E.EX_created) AS exp_created_max,
+               Min(Org.OG_name) AS organism_first,
+               Max(Org.OG_name) AS organism_last,
+               Min(C.Campaign_Num) AS campaign_first,
+               Max(C.Campaign_Num) AS campaign_last
         FROM T_Experiments E
              INNER JOIN #Tmp_CampaignFilter CampaignFilter
                ON E.EX_campaign_ID = CampaignFilter.Campaign_ID

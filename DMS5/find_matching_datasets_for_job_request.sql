@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[find_matching_datasets_for_job_request]
 **          06/09/2017 mem - Add support for state 13 (inactive)
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2023 bcg - Update output table column names to lower-case
 **
 *****************************************************/
 (
@@ -74,8 +75,8 @@ AS
             dataset varchar(128)
         )
         --
-        insert into @requestDatasets(dataset)
-        select Item from dbo.make_table_from_list(@datasetList)
+        INSERT INTO @requestDatasets(dataset)
+        SELECT Item FROM dbo.make_table_from_list(@datasetList)
 
         ---------------------------------------------------
         -- get list of datasets that have jobs that match
@@ -83,24 +84,24 @@ AS
         ---------------------------------------------------
         --
         Declare @matchingJobDatasets Table (
-            Dataset varchar(128),
-            Jobs int,
-            New int,
-            Busy int,
-            Complete int,
-            Failed int,
-            Holding int
+            dataset varchar(128),
+            jobs int,
+            new int,
+            busy int,
+            complete int,
+            failed int,
+            holding int
         )
         --
-        INSERT INTO @matchingJobDatasets(Dataset, Jobs, New, Busy, Complete, Failed, Holding)
+        INSERT INTO @matchingJobDatasets(dataset, jobs, new, busy, complete, failed, holding)
         SELECT
-            DS.Dataset_Num AS Dataset,
-            COUNT(*) as Jobs,
-            SUM(CASE WHEN AJ.AJ_StateID IN (1) THEN 1 ELSE 0 END) AS New,
-            SUM(CASE WHEN AJ.AJ_StateID IN (2, 3, 9, 10, 11, 16, 17) THEN 1 ELSE 0 END) AS Busy,
-            SUM(CASE WHEN AJ.AJ_StateID IN (4, 14) THEN 1 ELSE 0 END) AS Complete,
-            SUM(CASE WHEN AJ.AJ_StateID IN (5, 6, 7, 12, 13, 15, 18, 99) THEN 1 ELSE 0 END) AS Failed,
-            SUM(CASE WHEN AJ.AJ_StateID IN (8) THEN 1 ELSE 0 END) AS Holding
+            DS.Dataset_Num AS dataset,
+            COUNT(*) as jobs,
+            SUM(CASE WHEN AJ.AJ_StateID IN (1) THEN 1 ELSE 0 END) AS new,
+            SUM(CASE WHEN AJ.AJ_StateID IN (2, 3, 9, 10, 11, 16, 17) THEN 1 ELSE 0 END) AS busy,
+            SUM(CASE WHEN AJ.AJ_StateID IN (4, 14) THEN 1 ELSE 0 END) AS complete,
+            SUM(CASE WHEN AJ.AJ_StateID IN (5, 6, 7, 12, 13, 15, 18, 99) THEN 1 ELSE 0 END) AS failed,
+            SUM(CASE WHEN AJ.AJ_StateID IN (8) THEN 1 ELSE 0 END) AS holding
         FROM
             T_Dataset DS INNER JOIN
             T_Analysis_Job AJ ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
@@ -126,12 +127,12 @@ AS
         -- output
         ---------------------------------------------------
 
-        select '' as Sel, Dataset, Jobs, New, Busy, Complete, Failed, Holding
-        from @matchingJobDatasets
-        union
-        select '' as Sel, dataset as Dataset, 0 as Jobs, 0 as New, 0 as Busy, 0 as Complete, 0 as Failed, 0 as Holding
-        from @requestDatasets
-        where not dataset in (select dataset from @matchingJobDatasets)
+        SELECT '' AS sel, dataset, jobs, new, busy, complete, failed, holding
+        FROM @matchingJobDatasets
+        UNION
+        SELECT '' AS Sel, dataset AS dataset, 0 AS jobs, 0 AS new, 0 AS busy, 0 AS complete, 0 AS failed, 0 AS holding
+        FROM @requestDatasets
+        WHERE NOT dataset IN (SELECT dataset FROM @matchingJobDatasets)
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_matching_datasets_for_job_request] TO [DDL_Viewer] AS [dbo]
