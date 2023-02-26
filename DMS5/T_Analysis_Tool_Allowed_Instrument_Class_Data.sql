@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool_Allowed_Instrument_Class] ******/
-/****** RowCount: 221 ******/
+/****** RowCount: 224 ******/
 /****** Columns: Analysis_Tool_ID, Instrument_Class, Comment ******/
 INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (1,'Finnigan_Ion_Trap','')
 INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (1,'LTQ_FT','')
@@ -222,3 +222,6 @@ INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (90,'Sciex_TripleT
 INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (91,'Agilent_TOF_V2','')
 INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (91,'Finnigan_Ion_Trap','')
 INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (91,'LTQ_FT','')
+INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (92,'Agilent_TOF_V2','')
+INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (92,'Finnigan_Ion_Trap','')
+INSERT INTO [T_Analysis_Tool_Allowed_Instrument_Class] VALUES (92,'LTQ_FT','')

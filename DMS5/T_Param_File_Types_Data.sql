@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Param_File_Types] ******/
-/****** RowCount: 35 ******/
+/****** RowCount: 36 ******/
 /****** Columns: Param_File_Type_ID, Param_File_Type, Primary_Tool_ID ******/
 INSERT INTO [T_Param_File_Types] VALUES (1,'(none)',0)
 INSERT INTO [T_Param_File_Types] VALUES (1000,'Sequest',1)
@@ -36,3 +36,4 @@ INSERT INTO [T_Param_File_Types] VALUES (1031,'TopFD',82)
 INSERT INTO [T_Param_File_Types] VALUES (1032,'TopPIC',83)
 INSERT INTO [T_Param_File_Types] VALUES (1033,'MSFragger',88)
 INSERT INTO [T_Param_File_Types] VALUES (1034,'MaxQuant',91)
+INSERT INTO [T_Param_File_Types] VALUES (1035,'DIA-NN',92)

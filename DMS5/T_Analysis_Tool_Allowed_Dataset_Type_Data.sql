@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool_Allowed_Dataset_Type] ******/
-/****** RowCount: 1345 ******/
+/****** RowCount: 1370 ******/
 /****** Columns: Analysis_Tool_ID, Dataset_Type, Comment ******/
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (1,'HMS-CID/ETD-HMSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (1,'HMS-CID/ETD-MSn','')
