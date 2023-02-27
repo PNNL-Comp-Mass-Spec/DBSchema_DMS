@@ -115,6 +115,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          08/22/2022 mem - Do not log EUS Usage validation errors to T_Log_Entries
 **          11/25/2022 mem - Rename parameter to @wellplateName
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Use new argument name, @requestName
 **
 *****************************************************/
 (
@@ -161,7 +162,7 @@ AS
     Declare @debugMsg varchar(512)
     Declare @logErrors tinyint = 0
 
-    Declare @reqName varchar(128)
+    Declare @requestName varchar(128)
     Declare @reqRunInstSettings varchar(512)
     Declare @reqRunComment varchar(1024)
     Declare @reqRunInternalStandard varchar(50)
@@ -1294,7 +1295,7 @@ AS
                 EXEC get_wp_for_eus_proposal @eusProposalID, @workPackage OUTPUT
             End
 
-            Set @reqName = 'AutoReq_' + @datasetName
+            Set @requestName = 'AutoReq_' + @datasetName
 
             If @logDebugMessages > 0
             Begin
@@ -1302,7 +1303,7 @@ AS
             End
 
             EXEC @result = dbo.add_update_requested_run
-                                    @reqName = @reqName,
+                                    @requestName = @requestName,
                                     @experimentName = @experimentName,
                                     @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentName,
@@ -1472,7 +1473,7 @@ AS
         -- Lookup the Requested Run info for this dataset
         --
         SELECT @requestID = RR.ID,
-               @reqName = RR.RDS_Name,
+               @requestName = RR.RDS_Name,
                @reqRunInstSettings = RR.RDS_instrument_setting,
                @workPackage = RR.RDS_WorkPackage,
                @wellplateName = RR.RDS_Well_Plate_Num,
@@ -1539,7 +1540,7 @@ AS
             Set @runOrder = IsNull(@runOrder, 0)
 
             EXEC @result = dbo.add_update_requested_run
-                                    @reqName = @reqName,
+                                    @requestName = @requestName,
                                     @experimentName = @experimentName,
                                     @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentName,
@@ -1656,6 +1657,7 @@ AS
     End CATCH
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_dataset] TO [DDL_Viewer] AS [dbo]

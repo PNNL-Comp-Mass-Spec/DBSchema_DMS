@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[add_requested_runs]
 **          02/14/2023 mem - Use new parameter names for validate_requested_run_batch_params
 **          02/17/2023 mem - Use new parameter name when calling add_update_requested_run_batch
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Use new argument name, @requestName
 **
 *****************************************************/
 (
@@ -295,9 +296,9 @@ AS
     -- a new requested run for each one
     ---------------------------------------------------
 
-    Declare @reqName varchar(64)
-    Declare @reqNameFirst varchar(64) = ''
-    Declare @reqNameLast varchar(64) = ''
+    Declare @requestName varchar(64)
+    Declare @requestNameFirst varchar(64) = ''
+    Declare @requestNameLast varchar(64) = ''
 
     Declare @request int
     Declare @experimentName varchar(64)
@@ -341,15 +342,15 @@ AS
         Else
         Begin
             Set @message = ''
-            Set @reqName = @experimentName + @suffix
+            Set @requestName = @experimentName + @suffix
 
             If @count = 0
-                Set @reqNameFirst = @reqName
+                Set @requestNameFirst = @requestName
             Else
-                Set @reqNameLast = @reqName
+                Set @requestNameLast = @requestName
 
             EXEC @myError = dbo.add_update_requested_run
-                                    @reqName = @reqName,
+                                    @requestName = @requestName,
                                     @experimentName = @experimentName,
                                     @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentGroupToUse,
@@ -404,7 +405,7 @@ AS
 
     If @mode = 'PreviewAdd'
     Begin
-        Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs (' + @reqNameFirst + ' to ' + @reqNameLast + ')'
+        Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs (' + @requestNameFirst + ' to ' + @requestNameLast + ')'
 
         If @resolvedInstrumentInfo = ''
             Set @message = @message + ' with instrument group ' + @instrumentGroupToUse + ', run type ' + @msType + ', and separation group ' + @separationGroup
@@ -473,6 +474,7 @@ AS
     END CATCH
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_runs] TO [DDL_Viewer] AS [dbo]

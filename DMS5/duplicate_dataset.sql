@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[duplicate_dataset]
 **          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
 **          11/25/2022 mem - Rename variable and update call to add_update_requested_run to use new parameter name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Use new argument name, @requestName
 **
 *****************************************************/
 (
@@ -41,7 +42,7 @@ AS
     Declare @workPackage varchar(12) = 'none'
 
     Declare @sourceDatasetRequestID int
-    Declare @reqName varchar(128)
+    Declare @requestName varchar(128)
     Declare @experimentName varchar(64)
     Declare @instrumentName varchar(64)
     Declare @instrumentSettings Varchar(1024)
@@ -347,10 +348,10 @@ AS
         -- Create a requested run
         ---------------------------------------------------
         --
-        Set @reqName = 'AutoReq_' + @newDataset
+        Set @requestName = 'AutoReq_' + @newDataset
 
         EXEC @myError = dbo.add_update_requested_run
-                                @reqName = @reqName,
+                                @requestName = @requestName,
                                 @experimentName = @experimentName,
                                 @requesterUsername = @operatorUsername,
                                 @instrumentName = @instrumentName,
@@ -416,5 +417,6 @@ AS
 Done:
 
     return @myError
+
 
 GO

@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[clone_dataset]
 **          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
 **          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Use new argument name, @requestName
 **
 *****************************************************/
 (
@@ -250,7 +251,7 @@ AS
             -- (code is from add_update_dataset)
 
             EXEC @myError = dbo.add_update_requested_run
-                                    @reqName = @requestNameNew,
+                                    @requestName = @requestNameNew,
                                     @experimentName = @experimentName,
                                     @requesterUsername = @operatorUsername,
                                     @instrumentName = @instrumentName,
@@ -529,6 +530,7 @@ AS
 Done:
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[clone_dataset] TO [DDL_Viewer] AS [dbo]

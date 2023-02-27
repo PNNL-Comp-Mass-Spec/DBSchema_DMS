@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[add_missing_requested_run]
 **          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          01/05/2023 mem - Use new column name in V_Dataset_Detail_Report_Ex
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Use new argument name, @requestName
 **
 *****************************************************/
 (
@@ -122,8 +123,8 @@ AS
     Begin
         -- Create the request
 
-        declare @reqName varchar(128)
-        Set @reqName = 'AutoReq_' + @Dataset
+        declare @requestName varchar(128)
+        Set @requestName = 'AutoReq_' + @Dataset
 
         Declare @workPackage varchar(50) = 'none'
         EXEC get_wp_for_eus_proposal @eusProposalID, @workPackage OUTPUT
@@ -131,7 +132,7 @@ AS
         DECLARE @result int
 
         EXEC @result = dbo.add_update_requested_run
-                                @reqName = @reqName,
+                                @requestName = @requestName,
                                 @experimentName = @experimentName,
                                 @requesterUsername = @operatorUsername,
                                 @instrumentName = @instrumentName,
@@ -190,6 +191,7 @@ Done:
         print @message
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_missing_requested_run] TO [DDL_Viewer] AS [dbo]

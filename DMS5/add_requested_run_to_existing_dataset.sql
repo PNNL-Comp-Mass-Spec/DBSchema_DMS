@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_to_existing_dataset]
 **          05/23/2022 mem - Rename @requestorUsername to @requesterUsername when calling add_update_requested_run
 **          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Use new argument name, @requestName
 **
 *****************************************************/
 (
@@ -125,20 +126,20 @@ AS
     -- Parameters for creating requested run
     ---------------------------------------------------
 
-    Declare @reqName varchar(128) = 'AutoReq_' + @dName
+    Declare @requestName varchar(128) = 'AutoReq_' + @dName
     Declare @checkForDuplicates tinyint = 1
     Declare @iteration int = 1
 
     While @checkForDuplicates > 0
     Begin
         If @showDebugStatements > 0
-            Print 'Looking for existing requested run named ' + @reqName
+            Print 'Looking for existing requested run named ' + @requestName
 
-        If Exists (SELECT * FROM T_Requested_Run WHERE RDS_Name = @reqName)
+        If Exists (SELECT * FROM T_Requested_Run WHERE RDS_Name = @requestName)
         Begin
             -- Requested run already exists; bump up @iteration and try again
             Set @iteration = @iteration + 1
-            Set @reqName = 'AutoReq' + Cast(@iteration as varchar(5)) + '_' + @dName
+            Set @requestName = 'AutoReq' + Cast(@iteration as varchar(5)) + '_' + @dName
         End
         Else
         Begin
@@ -253,7 +254,7 @@ AS
     Begin
         Set @addUpdateMode = 'check-add'
 
-        Print 'Request_Name: ' + @reqName
+        Print 'Request_Name: ' + @requestName
         Print 'Experiment: ' + @experimentName
         Print 'RequesterUsername: ' + @requesterUsername
         Print 'InstrumentName: ' + @instrumentName
@@ -284,7 +285,7 @@ AS
         Print 'Calling add_update_requested_run with mode ' + @addUpdateMode
 
     EXEC @myError = dbo.add_update_requested_run
-                            @reqName = @reqName,
+                            @requestName = @requestName,
                             @experimentName = @experimentName,
                             @requesterUsername = @requesterUsername,
                             @instrumentName = @instrumentName,
@@ -356,6 +357,7 @@ AS
     End CATCH
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_run_to_existing_dataset] TO [DDL_Viewer] AS [dbo]
