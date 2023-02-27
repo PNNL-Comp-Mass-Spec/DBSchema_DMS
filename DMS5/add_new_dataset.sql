@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[add_new_dataset]
 /****************************************************
 **
@@ -50,6 +51,7 @@ CREATE PROCEDURE [dbo].[add_new_dataset]
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          11/25/2022 mem - Rename variable and use new parameter name when calling add_update_dataset
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/27/2023 mem - Show parsed values when mode is 'check_add' or 'check_update'
 **
 *****************************************************/
 (
@@ -74,6 +76,8 @@ AS
 
     Declare @runStartDate datetime
     Declare @runFinishDate datetime
+
+    Declare @logMessage Varchar(1024)
 
     Set @message = ''
     Set @logDebugMessages = IsNull(@logDebugMessages, 0)
@@ -126,9 +130,10 @@ AS
     -- Convert @xmlDoc to XML
     ---------------------------------------------------
 
+    Set @xmlDoc = Coalesce(@xmlDoc, '')
     Declare @xml xml = Convert(xml, @xmlDoc)
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Populate parameter table from XML parameter description
     ---------------------------------------------------
 
@@ -151,10 +156,14 @@ AS
     ---------------------------------------------------
     -- Trap 'parse_only' mode here
     ---------------------------------------------------
+    --
     If @mode = 'parse_only'
     Begin
-        --
+        -- Show the contents of the temporary table
         SELECT CONVERT(char(24), paramName) AS Name, paramValue FROM #TPAR
+
+        -- The 'parse_only' mode stops after #TPAR has been populated using the XML
+        -- Use mode 'check_add' to also call add_update_dataset to validate the metadata
         goto DONE
     End
 
@@ -186,9 +195,9 @@ AS
     SELECT    @datasetCreatorUsername  = paramValue FROM #TPAR WHERE paramName IN ('DS Creator (PRN)', 'DS Creator (Username)')
 
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Check for QC or Blank datasets
-     ---------------------------------------------------
+    ---------------------------------------------------
 
     If dbo.get_dataset_priority(@datasetName) > 0 OR
        dbo.get_dataset_priority(@experimentName) > 0 OR
@@ -208,10 +217,10 @@ AS
         End
     End
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Possibly auto-define the experiment
-     ---------------------------------------------------
-     --
+    ---------------------------------------------------
+    --
     If @experimentName = ''
     Begin
         If @datasetName Like 'Blank%'
@@ -222,19 +231,19 @@ AS
 
     End
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Possibly auto-define the @emslUsageType
-     ---------------------------------------------------
-     --
+    ---------------------------------------------------
+    --
     If @emslUsageType = ''
     Begin
         If @datasetName Like 'Blank%' OR @datasetName Like 'QC_Shew%'
             Set @emslUsageType = 'MAINTENANCE'
     End
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Establish default parameters
-     ---------------------------------------------------
+    ---------------------------------------------------
 
     Set @internalStandards  = 'none'
     Set @addUpdateTimeStamp = GetDate()
@@ -297,11 +306,25 @@ AS
                         @workPackage,
                         @mode,
                         @message output,
-                        @captureSubfolder=@captureSubdirectory,
-                        @lcCartConfig=@lcCartConfig,
-                        @logDebugMessages=@logDebugMessages
+                        @captureSubfolder = @captureSubdirectory,
+                        @lcCartConfig = @lcCartConfig,
+                        @logDebugMessages = @logDebugMessages
+
     If @myError <> 0
     Begin
+        -- Uncomment to log the XML to the T_Log_Entries
+        --
+        /*
+        If @mode = 'add'
+        Begin
+            Set @logMessage = 'Error adding new dataset: ' + @message + '; ' + @xmlDoc
+
+            Exec post_log_entry @type = 'Error',
+                                @message = @logMessage,
+                                @postedBy = 'add_new_dataset'
+        End
+        */
+
         RAISERROR (@message, 10, 1)
         return 51032
     End
@@ -309,9 +332,36 @@ AS
     ---------------------------------------------------
     -- Trap 'check' modes here
     ---------------------------------------------------
-    If @mode = 'check_add' OR @mode = 'check_update'
-        goto DONE
 
+    If @mode = 'check_add' OR @mode = 'check_update'
+    Begin
+        -- Show the parsed values
+
+        print 'DatasetName: ' + @datasetName
+        print 'ExperimentName: ' + @experimentName
+        print 'InstrumentName: ' + @instrumentName
+        print 'CaptureSubdirectory: ' + @captureSubdirectory
+        print 'SeparationType: ' + @separationType
+        print 'LcCartName: ' + @lcCartName
+        print 'LcCartConfig: ' + @lcCartConfig
+        print 'LcColumn: ' + @lcColumn
+        print 'WellplateName: ' + @wellplateName
+        print 'WellNumber: ' + @wellNumber
+        print 'DatasetType: ' + @datasetType
+        print 'OperatorUsername: ' + @operatorUsername
+        print 'Comment: ' + @comment
+        print 'InterestRating: ' + @interestRating
+        print 'RequestID: ' + Cast(@requestID As varchar(12))
+        print 'WorkPackage: ' + @workPackage
+        print 'EmslUsageType: ' + @emslUsageType
+        print 'EmslProposalID: ' + @emslProposalID
+        print 'EmslUsersList: ' + @emslUsersList
+        print 'RunStart: ' + @runStart
+        print 'RunFinish: ' + @runFinish
+        print 'DatasetCreatorUsername: ' + @datasetCreatorUsername
+
+        goto DONE
+    End
 
     ---------------------------------------------------
     -- It's possible that @requestID got updated by add_update_dataset
@@ -321,13 +371,13 @@ AS
     -- First use Dataset Name to lookup the Dataset ID
     --
     Set @datasetId = 0
-    --
+
     SELECT @datasetId = Dataset_ID
     FROM T_Dataset
     WHERE (Dataset_Num = @datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error trying to resolve dataset ID'
@@ -347,13 +397,13 @@ AS
     ---------------------------------------------------
 
     Set @existingRequestID = 0
-    --
+
     SELECT @existingRequestID = ID
     FROM T_Requested_Run
     WHERE DatasetID = @datasetId
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error trying to resolve request ID'
@@ -365,7 +415,7 @@ AS
         Set @requestID = @existingRequestID
 
     If Len(@datasetCreatorUsername) > 0
-    Begin -- <a>
+    Begin
         ---------------------------------------------------
         -- Update T_Event_Log to reflect @datasetCreatorUsername creating this dataset
         ---------------------------------------------------
@@ -378,7 +428,7 @@ AS
               Target_Type = 4 AND
               Entered Between @addUpdateTimeStamp AND DateAdd(minute, 1, @addUpdateTimeStamp)
 
-    End -- </a>
+    End
 
 
     ---------------------------------------------------
