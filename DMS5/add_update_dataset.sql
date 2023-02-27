@@ -116,6 +116,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          11/25/2022 mem - Rename parameter to @wellplateName
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
+**                         - Use calling user name for the dataset creator user
 **
 *****************************************************/
 (
@@ -1083,7 +1084,12 @@ AS
 
         End -- </b2>
 
-        Declare @dsCreatorUsername varchar(256) = suser_sname()
+        Declare @dsCreatorUsername varchar(256)
+
+        If @callingUser = ''
+            Set @dsCreatorUsername = suser_sname()
+        Else
+            Set @dsCreatorUsername = @callingUser        
 
         Declare @run_Start varchar(10) = ''
         Declare @run_Finish varchar(10) = ''
