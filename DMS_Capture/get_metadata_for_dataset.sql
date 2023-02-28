@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[get_metadata_for_dataset]
 **          02/09/2023 bcg - Update column name for S_DMS_V_DatasetFullDetails
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **                         - Rename/update several entries in the output XML (Cell_Culture to Biomaterial, PRN to Username, Num to Name)
+**          02/27/2023 mem - Capitalize XML element names
 **
 *****************************************************/
 (
@@ -121,41 +122,41 @@ AS
         Return 20000
     End
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_created', CONVERT(varchar(32), @datasetCreated, 120))
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_Created', CONVERT(varchar(32), @datasetCreated, 120))
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_ID', CAST(@datasetId AS varchar(12)))
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Instrument_name', @instrumentName)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_comment', @datasetComment)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Instrument_Name', @instrumentName)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_Comment', @datasetComment)
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_sec_sep', @datasetSecSep)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_Sec_Sep', @datasetSecSep)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_LC_Cart_Name', @lcCartName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_LC_Cart_Config', @lcCartConfig)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_LC_Column', @lcColumn)
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_well_number', @datasetWellNumber)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Dataset_Well_Number', @datasetWellNumber)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Name', @experimentName)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_researcher_username', @experimentResearcherUsername)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Researcher_Username', @experimentResearcherUsername)
 
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Reason', @experimentReason)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Biomaterial', @cellCultureList)
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_organism_name', @organismName)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_comment', @experimentComment)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_sample_concentration', @experimentSampleConc)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Organism_Name', @organismName)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Comment', @experimentComment)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Sample_Concentration', @experimentSampleConc)
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_sample_labelling', @experimentLabelling)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Sample_Labelling', @experimentLabelling)
 
     If @labellingReporterMzMin > 0
     Begin
-        INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_labelling_reporter_mz_min', Cast(@labellingReporterMzMin As varchar(19)))
-        INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_labelling_reporter_mz_max', Cast(@labellingReporterMzMax As varchar(19)))
+        INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Labelling_Reporter_Mz_Min', Cast(@labellingReporterMzMin As varchar(19)))
+        INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Labelling_Reporter_Mz_Max', Cast(@labellingReporterMzMax As varchar(19)))
     End
 
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_lab_notebook_ref', @labNotebook)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Experiment_Lab_Notebook_Ref', @labNotebook)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_Name', @campaignName)
     INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_Project_Name', @campaignProject)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_comment', @campaignComment)
-    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_created', CONVERT(VARCHAR(32), @campaignCreated, 120))
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_Comment', @campaignComment)
+    INSERT INTO #ParamTab ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Meta_Campaign_Created', CONVERT(VARCHAR(32), @campaignCreated, 120))
 
     ---------------------------------------------------
     -- Insert auxiliary metadata for the dataset's experiment
@@ -168,6 +169,7 @@ AS
     ORDER BY [Name]
 
     Return 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_metadata_for_dataset] TO [DDL_Viewer] AS [dbo]
