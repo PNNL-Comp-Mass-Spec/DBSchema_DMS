@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[update_job_step_memory_usage]
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/28/2023 mem - Use XML element names that start with 'MSGFPlus'
 **
 *****************************************************/
 (
@@ -66,9 +67,9 @@ AS
 
 
     INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
-    SELECT 'MSGFDB', xmlNode.value('@Value', 'varchar(64)') AS MemoryRequiredMB
+    SELECT 'MSGFPlus', xmlNode.value('@Value', 'varchar(64)') AS MemoryRequiredMB
     FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
-    WHERE  xmlNode.exist('.[@Name="MSGFDBJavaMemorySize"]') = 1
+    WHERE  xmlNode.exist('.[@Name="MSGFPlusJavaMemorySize"]') = 1
 
 
     INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
@@ -127,6 +128,7 @@ AS
     --
 Done:
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_job_step_memory_usage] TO [DDL_Viewer] AS [dbo]
