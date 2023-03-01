@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 /****************************************************
 **
@@ -86,6 +87,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 **          11/08/2021 mem - Allow instrument class 'Data_Folders' and dataset type 'DataFiles' (both used by instrument 'DMS_Pipeline_Data') to apply to all analysis tools
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/28/2023 mem - Update warning message to use MSGFPlus
 **
 *****************************************************/
 (
@@ -686,7 +688,7 @@ AS
                     @paramFileName Like '%[_]Tryp[_]%'
                 )
                 Begin
-                    Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFDB_Tryp_) or is partially tryptic but has no dynamic mods (MSGFDB_PartTryp_NoMods)'
+                    Set @message = 'Legacy fasta file "' + @organismDBName + '" is very large (' + @SizeDescription + '); you must choose a parameter file that is fully tryptic (MSGFPlus_Tryp_) or is partially tryptic but has no dynamic mods (MSGFPlus_PartTryp_NoMods)'
                     Set @result = 65350
 
                     If @showDebugMessages <> 0
@@ -806,6 +808,7 @@ AS
         print @message
 
     return @result
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_analysis_job_parameters] TO [DDL_Viewer] AS [dbo]

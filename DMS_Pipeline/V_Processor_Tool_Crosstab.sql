@@ -23,7 +23,7 @@ SELECT PivotData.processor_name,
        IsNull([MSXML_Gen], '') AS [MSXML_Gen],
        IsNull([MSMSSpectraPreprocessor], '') AS [MSMSSpectraPreprocessor],
        IsNull([MSGF], '') AS [MSGF],
-       IsNull([MSGFDB], '') AS [MSGFDB],
+       IsNull([MSGFPlus], '') AS [MSGFPlus],
        IsNull([MSDeconv], '') AS [MSDeconv],
        IsNull([MSAlign], '') AS [MSAlign],
        ISNULL([DTA_Split], '') AS [DTA_Split]
@@ -46,7 +46,7 @@ FROM ( SELECT LP.Processor_Name,
              FOR Tool_Name
              IN ( [DTA_Gen], [DTA_Split], [DataExtractor], [Results_Transfer], [Sequest], [XTandem], [Inspect],
              [InspectResultsAssembly], [Decon2LS], [Decon2LS_V2], [MASIC_Finnigan], [MASIC_Agilent],
-             [MSXML_Gen], [MSMSSpectraPreprocessor], [MSGF], [MSGFDB], [MSDeconv], [MSAlign] )
+             [MSXML_Gen], [MSMSSpectraPreprocessor], [MSGF], [MSGFPlus], [MSDeconv], [MSAlign] )
            ) AS PivotData
 
 
