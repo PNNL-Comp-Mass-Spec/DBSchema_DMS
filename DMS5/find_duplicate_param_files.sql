@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[find_duplicate_param_files]
 **          07/11/2014 mem - Optimized execution speed by adding #Tmp_MassModCounts
 **                         - Updated default value for @ParamFileTypeList
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/28/2023 mem - Use renamed parameter file type, 'MSGFPlus'
 **
 *****************************************************/
 (
     @paramFileNameFilter varchar(256) = '',                 -- One or more param file name specifiers, separated by commas (filters can contain % wildcards)
-    @paramFileTypeList varchar(64) = 'MSGFDB',              -- Other options are Sequest or XTandem
+    @paramFileTypeList varchar(64) = 'MSGFPlus',            -- Other options are MaxQuant, MSFragger, or XTandem
     @ignoreParentMassType tinyint = 1,                      -- Ignores 'ParentMassType' differences in T_Param_Entries
     @considerInsignificantParameters tinyint = 0,
     @checkValidOnly tinyint = 1,
@@ -724,6 +725,7 @@ Done:
 
     --
     Return @myError
+
 
 GO
 GRANT EXECUTE ON [dbo].[find_duplicate_param_files] TO [D3L243] AS [dbo]

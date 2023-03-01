@@ -111,6 +111,7 @@ CREATE PROCEDURE [dbo].[store_param_file_mass_mods]
 **          09/07/2021 mem - Add support for dynamic N-terminal TMT mods in MSFragger (notated with n^)
 **          02/23/2023 mem - Add support for DIA-NN
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/28/2023 mem - Use renamed parameter file type, 'MSGFPlus'
 **
 *****************************************************/
 (
@@ -119,7 +120,7 @@ CREATE PROCEDURE [dbo].[store_param_file_mass_mods]
     @infoOnly tinyint = 0,       -- 1 to print @row, 2 to show #Tmp_Residues for each modification
     @replaceExisting tinyint = 0,
     @validateUnimod tinyint = 1,
-    @paramFileType varchar(50) = '',    -- MSGFDB, DIA-NN, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFDB (aka MS-GF+)
+    @paramFileType varchar(50) = '',    -- MSGFPlus, DIA-NN, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFPlus (aka MS-GF+)
     @message varchar(512) = '' OUTPUT
 )
 AS
@@ -166,7 +167,7 @@ AS
         Set @validateOnly = 1
         If @paramFileType = ''
         Begin
-            Set @paramFileType = 'MSGFDB'
+            Set @paramFileType = 'MSGFPlus'
         End
     End
     Else
@@ -211,9 +212,9 @@ AS
         End
     End
 
-    If Not @paramFileType In ('MSGFDB', 'DIA-NN', 'TopPIC', 'MSFragger', 'MaxQuant')
+    If Not @paramFileType In ('MSGFPlus', 'DIA-NN', 'TopPIC', 'MSFragger', 'MaxQuant')
     Begin
-        Set @paramFileType = 'MSGFDB'
+        Set @paramFileType = 'MSGFPlus'
     End
 
     -----------------------------------------
@@ -653,7 +654,7 @@ AS
 
                         Set @validRow = 1
 
-                        If @paramFileType In ('MSGFDB', 'TopPIC') And @rowCount < 5
+                        If @paramFileType In ('MSGFPlus', 'TopPIC') And @rowCount < 5
                         Begin
                             Set @validRow = 0
 
@@ -751,17 +752,17 @@ AS
 
                             DELETE FROM #Tmp_Residues
 
-                            If @paramFileType In ('MSGFDB', 'DIA-NN', 'TopPIC')
+                            If @paramFileType In ('MSGFPlus', 'DIA-NN', 'TopPIC')
                             Begin
                                 -----------------------------------------
                                 -- Determine the modification name (preferably UniMod name, but could also be a mass correction tag name)
                                 -----------------------------------------
 
-                                If @paramFileType In ('MSGFDB', 'TopPIC')
+                                If @paramFileType In ('MSGFPlus', 'TopPIC')
                                 Begin
                                     SELECT @modName = LTrim(RTrim(Value))
                                     FROM #Tmp_ModDef
-                                    WHERE @paramFileType = 'MSGFDB'  And EntryID = 5 Or
+                                    WHERE @paramFileType = 'MSGFPlus'  And EntryID = 5 Or
                                           @paramFileType = 'TopPIC' And EntryID = 1
 
                                     -- Auto change Glu->pyro-Glu to Dehydrated
@@ -880,10 +881,10 @@ AS
                                 --
                                 SELECT @location = LTrim(RTrim(Value))
                                 FROM #Tmp_ModDef
-                                WHERE @paramFileType = 'MSGFDB' And EntryID = 4 Or
+                                WHERE @paramFileType = 'MSGFPlus' And EntryID = 4 Or
                                       @paramFileType = 'TopPIC' And EntryID = 4
 
-                                If @paramFileType = 'MSGFDB' And @location Not In ('any', 'N-term', 'C-term', 'Prot-N-term', 'Prot-C-term')
+                                If @paramFileType = 'MSGFPlus' And @location Not In ('any', 'N-term', 'C-term', 'Prot-N-term', 'Prot-C-term')
                                 Begin
                                     Set @message = 'Invalid location "' + @location + '"; should be "any", "N-term", "C-term", "Prot-N-term", or "Prot-C-term"; see row: ' + @row
                                     Set @myError = 53008
@@ -940,7 +941,7 @@ AS
                                 --
                                 SELECT @field = LTrim(RTrim(Value))
                                 FROM #Tmp_ModDef
-                                WHERE EntryID = 2 And @paramFileType In ('MSGFDB') Or
+                                WHERE EntryID = 2 And @paramFileType In ('MSGFPlus') Or
                                       EntryID = 3 And @paramFileType In ('DIA-NN', 'TopPIC')
 
                                 If @field = 'any'
@@ -1375,6 +1376,7 @@ Done:
 
     --
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[store_param_file_mass_mods] TO [DDL_Viewer] AS [dbo]
