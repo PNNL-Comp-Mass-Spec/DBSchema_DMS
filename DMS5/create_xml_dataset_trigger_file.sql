@@ -122,8 +122,6 @@ set nocount on
     Declare @captureSubdirectory Varchar(255)
     Declare @charPos Int
 
-    Select case when '..\ProteomicsData2\20230223_DV_S-604_S_4499_hotplate60C' Like '..\%\%' Then 'yes' else 'no' end
-
     If @capture_Subfolder Like '..\%\%'
     Begin
         -- Find the second backslash
@@ -286,7 +284,6 @@ Done:
     End
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[create_xml_dataset_trigger_file] TO [DDL_Viewer] AS [dbo]
