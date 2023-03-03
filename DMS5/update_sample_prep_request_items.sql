@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[update_sample_prep_request_items]
 **          07/08/2022 mem - Change Item_ID from text to integer
 **                         - No longer clear the Created column for existing items
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -163,7 +164,7 @@ AS
         FROM    dbo.T_Sample_Prep_Request SPR
                 INNER JOIN dbo.T_Experiments E ON SPR.ID = E.EX_sample_prep_request_ID
                 INNER JOIN dbo.T_Dataset DS ON E.Exp_ID = DS.Exp_ID
-                INNER JOIN T_DatasetStateName DSN ON DS.DS_state_ID = DSN.Dataset_state_ID
+                INNER JOIN T_Dataset_State_Name DSN ON DS.DS_state_ID = DSN.Dataset_state_ID
         WHERE SPR.ID = @samplePrepRequestID
 
         -- HPLC Runs - Reference to sample prep request IDs in comma delimited list in text field

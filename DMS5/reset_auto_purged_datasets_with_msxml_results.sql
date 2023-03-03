@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[reset_auto_purged_datasets_with_msxml_results]
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -83,7 +84,7 @@ AS
                    ON DS.Dataset_ID = U.Dataset_ID
                  INNER JOIN T_Dataset_Archive DA
                    ON DS.Dataset_ID = DA.AS_Dataset_ID
-                 INNER JOIN T_DatasetArchiveStateName DASN
+                 INNER JOIN T_Dataset_Archive_State_Name DASN
                    ON DA.AS_state_ID = DASN.DASN_StateID
             ORDER BY DS.DS_Created Desc
             --

@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[auto_update_dataset_rating_via_qc_metrics]
 **  Date:   10/18/2012
 **          01/16/2014 mem - Added parameter @ExperimentExclusion
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ AS
            ON DS.Exp_ID = E.Exp_ID
          INNER JOIN T_Campaign C
            ON E.EX_campaign_ID = C.Campaign_ID
-         INNER JOIN T_DatasetTypeName DTN
+         INNER JOIN T_Dataset_Type_Name DTN
            ON DS.DS_type_ID = DTN.DST_Type_ID
     WHERE DS.DS_rating = 5 AND
           DQC.P_2A < @ThresholdP_2A AND      -- Number of tryptic peptides; total spectra count
@@ -109,7 +110,7 @@ AS
                ON DS.Exp_ID = E.Exp_ID
              INNER JOIN T_Campaign C
                ON E.EX_campaign_ID = C.Campaign_ID
-             INNER JOIN T_DatasetTypeName DTN
+             INNER JOIN T_Dataset_Type_Name DTN
                ON DS.DS_type_ID = DTN.DST_Type_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

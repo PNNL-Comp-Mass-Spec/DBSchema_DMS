@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[clone_dataset]
 **          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -157,7 +158,7 @@ AS
                ON DS.Exp_ID = E.Exp_ID
              INNER JOIN T_Instrument_Name Inst
                ON DS.DS_instrument_name_ID = Inst.Instrument_ID
-             INNER JOIN T_DatasetTypeName DTN
+             INNER JOIN T_Dataset_Type_Name DTN
                ON DS.DS_type_ID = DTN.DST_Type_ID
              INNER JOIN T_EUS_UsageType EUT
                ON RR.RDS_EUS_UsageType = EUT.ID

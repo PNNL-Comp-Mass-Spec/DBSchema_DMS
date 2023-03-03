@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[duplicate_dataset]
 **          11/25/2022 mem - Rename variable and update call to add_update_requested_run to use new parameter name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -175,7 +176,7 @@ AS
            @eusProposalID = RR.RDS_EUS_Proposal_ID,
            @eusUsageType = EUT.[Name]
     FROM T_Requested_Run AS RR
-         INNER JOIN T_DatasetTypeName AS DTN
+         INNER JOIN T_Dataset_Type_Name AS DTN
            ON RR.RDS_type_ID = DTN.DST_Type_ID
          INNER JOIN T_EUS_UsageType AS EUT
            ON RR.RDS_EUS_UsageType = EUT.ID

@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 **                         - Validate the instrument group for modes 'instrumentGroup' and 'assignedInstrument'
 **          01/15/2023 mem - Fix variable usage typo
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -304,7 +305,7 @@ AS
 
             SELECT @newDatasetType = DST_name,
                    @newDatasetTypeID = DST_Type_ID
-            FROM T_DatasetTypeName
+            FROM T_Dataset_Type_Name
             WHERE (DST_name = @newDatasetType)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount

@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_fractions]
 **          10/13/2022 mem - Fix bug calling lookup_eus_from_experiment_sample_prep
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -178,14 +179,14 @@ AS
 
     SELECT @sourceRequestName = RR.RDS_Name,
            @instrumentGroup = RR.RDS_instrument_group,
-           @msType = T_DatasetTypeName.DST_name,
+           @msType = T_Dataset_Type_Name.DST_name,
            @experimentID = RR.Exp_ID,
            @sourceSeparationGroup = RR.RDS_Sec_Sep,
            @sourceStatus = RR.RDS_Status,
            @sourceRequestBatchID = IsNull(RR.RDS_BatchID, 0),
            @sourceCreated = RR.RDS_created
-    FROM T_Requested_Run RR INNER JOIN T_DatasetTypeName
-           ON RR.RDS_type_ID = T_DatasetTypeName.DST_Type_ID
+    FROM T_Requested_Run RR INNER JOIN T_Dataset_Type_Name
+           ON RR.RDS_type_ID = T_Dataset_Type_Name.DST_Type_ID
     WHERE RR.ID = @sourceRequestID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

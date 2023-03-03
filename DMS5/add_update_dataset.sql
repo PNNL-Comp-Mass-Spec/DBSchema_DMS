@@ -117,6 +117,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
 **                         - Use calling user name for the dataset creator user
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -660,7 +661,7 @@ AS
 
             -- Update @msType
             SELECT @msType = DST_name
-            FROM T_DatasetTypeName
+            FROM T_Dataset_Type_Name
             WHERE DST_Type_ID = @datasetTypeID
         End
         Else
@@ -724,7 +725,7 @@ AS
 
             -- Update @msType
             SELECT @msType = DST_name
-            FROM T_DatasetTypeName
+            FROM T_Dataset_Type_Name
             WHERE DST_Type_ID = @datasetTypeID
 
             If @msTypeOld = 'GC-MS' And @msType = 'EI-HMS'
@@ -1089,7 +1090,7 @@ AS
         If @callingUser = ''
             Set @dsCreatorUsername = suser_sname()
         Else
-            Set @dsCreatorUsername = @callingUser        
+            Set @dsCreatorUsername = @callingUser
 
         Declare @run_Start varchar(10) = ''
         Declare @run_Finish varchar(10) = ''

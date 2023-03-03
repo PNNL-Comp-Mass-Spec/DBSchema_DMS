@@ -33,8 +33,10 @@ CREATE PROCEDURE [dbo].[validate_dataset_type]
 **          05/26/2021 mem - Add support for low res HCD
 **          07/01/2021 mem - Auto-switch from HMS-CID-MSn to HMS-MSn
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
+
 (
     @datasetID int,
     @message varchar(255) = '' output,
@@ -99,7 +101,7 @@ AS
     SELECT @dataset = Dataset_Num,
            @currentDatasetType = DST.DST_name
     FROM T_Dataset DS
-         LEFT OUTER JOIN T_DatasetTypeName DST
+         LEFT OUTER JOIN T_Dataset_Type_Name DST
            ON DS.DS_type_ID = DST.DST_Type_ID
     WHERE (DS.Dataset_ID = @datasetID)
     --
@@ -653,7 +655,7 @@ FixDSType:
         Set @newDSTypeID = 0
 
         SELECT @newDSTypeID = DST_Type_ID
-        FROM T_DatasetTypeName
+        FROM T_Dataset_Type_Name
         WHERE (DST_name = @newDatasetType)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

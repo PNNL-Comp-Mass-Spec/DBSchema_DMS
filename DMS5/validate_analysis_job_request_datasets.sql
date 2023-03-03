@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_request_datasets]
 **          05/25/2021 mem - Add @allowNonReleasedDatasets
 **          08/26/2021 mem - Skip HMS vs. MS check when the tool is MSFragger
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -75,7 +76,7 @@ AS
         #TD.IN_class = T_Instrument_Class.IN_class,
         #TD.DS_state_ID = T_Dataset.DS_state_ID,
         #TD.AS_state_ID = isnull(T_Dataset_Archive.AS_state_ID, 0),
-        #TD.Dataset_Type = T_DatasetTypeName.DST_name,
+        #TD.Dataset_Type = T_Dataset_Type_Name.DST_name,
         #TD.DS_rating = T_Dataset.DS_Rating
     FROM #TD
          INNER JOIN T_Dataset
@@ -84,8 +85,8 @@ AS
            ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
          INNER JOIN T_Instrument_Class
            ON T_Instrument_Name.IN_class = T_Instrument_Class.IN_class
-         INNER JOIN T_DatasetTypeName
-           ON T_DatasetTypeName.DST_Type_ID = T_Dataset.DS_type_ID
+         INNER JOIN T_Dataset_Type_Name
+           ON T_Dataset_Type_Name.DST_Type_ID = T_Dataset.DS_type_ID
          LEFT OUTER JOIN T_Dataset_Archive
            ON T_Dataset.Dataset_ID = T_Dataset_Archive.AS_Dataset_ID
     --

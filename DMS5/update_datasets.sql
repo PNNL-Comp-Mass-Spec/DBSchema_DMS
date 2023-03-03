@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[update_datasets]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -192,7 +193,7 @@ AS
     begin
         --
         SELECT @stateID = Dataset_state_ID
-        FROM  T_DatasetStateName
+        FROM  T_Dataset_State_Name
         WHERE (DSS_name = @state)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -223,7 +224,7 @@ AS
     begin
         --
         SELECT @ratingID = DRN_state_ID
-        FROM  T_DatasetRatingName
+        FROM  T_Dataset_Rating_Name
         WHERE (DRN_name = @rating)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

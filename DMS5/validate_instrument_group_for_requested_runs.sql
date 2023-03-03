@@ -18,8 +18,10 @@ CREATE PROCEDURE [dbo].[validate_instrument_group_for_requested_runs]
 **  Auth:   mem
 **  Date:   01/13/2023 mem - Initial version (code refactored code from update_requested_run_assignments)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
+
 (
     @requestedRunIDList varchar(max),
     @instrumentGroup varchar(64),
@@ -111,7 +113,7 @@ AS
              ) AS RequestQ
              INNER JOIN T_Requested_Run RR
                ON RequestQ.RequestID = RR.ID
-             INNER JOIN T_DatasetTypeName DST
+             INNER JOIN T_Dataset_Type_Name DST
                ON RR.RDS_type_ID = DST.DST_Type_ID
         GROUP BY DST.DST_Name, DST.DST_Type_ID
         --

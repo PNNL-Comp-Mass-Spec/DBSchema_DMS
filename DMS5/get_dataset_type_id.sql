@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[get_dataset_type_id]
 **          09/02/2010 mem - Expand @datasetType to varchar(50)
 **          08/03/2017 mem - Add Set NoCount On
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -28,11 +29,12 @@ BEGIN
     Declare @datasetTypeID int = 0
 
     SELECT @datasetTypeID = DST_Type_ID
-    FROM T_DatasetTypeName
+    FROM T_Dataset_Type_Name
     WHERE DST_name = @datasetType
 
     return @datasetTypeID
 END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_dataset_type_id] TO [DDL_Viewer] AS [dbo]

@@ -19,6 +19,7 @@ CREATE FUNCTION [dbo].[get_instrument_run_datasets]
 **          09/04/2010 grk - initial release
 **          02/15/2012 mem - Now using T_Dataset.Acq_Length_Minutes
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -138,8 +139,8 @@ AS
 
         UPDATE @TX
         SET
-            State = T_DatasetStateName.DSS_name,
-            Rating = T_DatasetRatingName.DRN_name ,
+            State = T_Dataset_State_Name.DSS_name,
+            Rating = T_Dataset_Rating_Name.DRN_name ,
             LC_Column = 'C:' + T_LC_Column.SC_Column_Number ,
             Request = T_Requested_Run.ID ,
             Work_Package = T_Requested_Run.RDS_WorkPackage  ,
@@ -147,8 +148,8 @@ AS
             EUS_Usage = T_EUS_UsageType.Name
         FROM @TX T
         INNER JOIN T_Dataset ON T.ID = dbo.T_Dataset.Dataset_ID
-        INNER JOIN T_DatasetStateName ON T_Dataset.DS_state_ID = T_DatasetStateName.Dataset_state_ID
-        INNER JOIN T_DatasetRatingName ON T_Dataset.DS_rating = T_DatasetRatingName.DRN_state_ID
+        INNER JOIN T_Dataset_State_Name ON T_Dataset.DS_state_ID = T_Dataset_State_Name.Dataset_state_ID
+        INNER JOIN T_Dataset_Rating_Name ON T_Dataset.DS_rating = T_Dataset_Rating_Name.DRN_state_ID
         INNER JOIN T_LC_Column ON T_Dataset.DS_LC_column_ID = T_LC_Column.ID
         LEFT OUTER JOIN T_Requested_Run ON T_Dataset.Dataset_ID = T_Requested_Run.DatasetID
         INNER JOIN T_EUS_UsageType ON dbo.T_Requested_Run.RDS_EUS_UsageType = dbo.T_EUS_UsageType.ID

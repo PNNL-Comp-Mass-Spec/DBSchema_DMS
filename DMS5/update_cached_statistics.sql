@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[update_cached_statistics]
 **                         - Add parameter @showRuntimeStats
 **                         - Only update counts if they change
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -203,7 +204,7 @@ AS
                                 FROM T_Dataset DS
                                      INNER JOIN T_Instrument_Name InstName
                                        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                                     INNER JOIN T_DatasetTypeName DTN
+                                     INNER JOIN T_Dataset_Type_Name DTN
                                        ON DS.DS_type_ID = DTN.DST_Type_ID
                                 GROUP BY InstName.IN_Group, DTN.DST_name
                               ) StatsQ
@@ -272,7 +273,7 @@ AS
                                 FROM T_Dataset DS
                                      INNER JOIN T_Instrument_Name InstName
                                        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                                     INNER JOIN T_DatasetTypeName DTN
+                                     INNER JOIN T_Dataset_Type_Name DTN
                                        ON DS.DS_type_ID = DTN.DST_Type_ID
                                 GROUP BY InstName.Instrument_ID, DTN.DST_name
                               ) StatsQ

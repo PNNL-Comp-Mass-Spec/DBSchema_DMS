@@ -22,7 +22,7 @@ CREATE PROCEDURE [dbo].[add_new_dataset]
 **  Auth:   grk
 **          05/04/2007 grk - Ticket #434
 **          10/02/2007 grk - Automatically release QC datasets (http://prismtrac.pnl.gov/trac/ticket/540)
-**          10/02/2007 mem - Updated to query T_DatasetRatingName for rating 5=Released
+**          10/02/2007 mem - Updated to query T_Dataset_Rating_Name for rating 5=Released
 **          10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
 **          01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
 **          02/13/2008 mem - Increased size of @datasetName to varchar(128) (Ticket #602)
@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[add_new_dataset]
 **          11/25/2022 mem - Rename variable and use new parameter name when calling add_update_dataset
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Show parsed values when mode is 'check_add' or 'check_update'
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -207,12 +208,12 @@ AS
         Begin
             -- Auto set interest rating to 5
             -- Initially set @interestRating to the text 'Released' but then query
-            -- T_DatasetRatingName for rating 5 in case the rating name has changed
+            -- T_Dataset_Rating_Name for rating 5 in case the rating name has changed
 
             Set @interestRating = 'Released'
 
             SELECT @interestRating = DRN_name
-            FROM T_DatasetRatingName
+            FROM T_Dataset_Rating_Name
             WHERE (DRN_state_ID = 5)
         End
     End

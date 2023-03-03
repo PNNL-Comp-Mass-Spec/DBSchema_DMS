@@ -43,6 +43,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_to_existing_dataset]
 **          11/25/2022 mem - Update call to add_update_requested_run to use new parameter name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -174,7 +175,7 @@ AS
     FROM T_Dataset AS TD
          INNER JOIN T_Instrument_Name AS InstName
            ON TD.DS_instrument_name_ID = InstName.Instrument_ID
-         INNER JOIN T_DatasetTypeName AS DTN
+         INNER JOIN T_Dataset_Type_Name AS DTN
            ON TD.DS_type_ID = DTN.DST_Type_ID
          INNER JOIN T_Experiments AS E
            ON TD.Exp_ID = E.Exp_ID

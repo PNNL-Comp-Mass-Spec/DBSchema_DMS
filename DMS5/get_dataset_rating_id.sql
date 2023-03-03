@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[get_dataset_rating_id]
 **  Date:   01/26/2001
 **          08/03/2017 mem - Add set nocount on
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -25,11 +26,12 @@ BEGIN
     declare @datasetRatingID int = 0
 
     SELECT @datasetRatingID = DRN_state_ID
-    FROM T_DatasetRatingName
+    FROM T_Dataset_Rating_Name
     WHERE DRN_name = @datasetRatingName
 
     return @datasetRatingID
 END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_dataset_rating_id] TO [DDL_Viewer] AS [dbo]

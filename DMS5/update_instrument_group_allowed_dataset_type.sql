@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[update_instrument_group_allowed_dataset_type]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -62,7 +63,7 @@ AS
     IF NOT EXISTS ( SELECT * FROM T_Instrument_Group WHERE IN_Group = @InstrumentGroup )
         RAISERROR ('Instrument group "%s" is not valid', 11, 12, @InstrumentGroup)
 
-    IF NOT EXISTS ( SELECT * FROM T_DatasetTypeName WHERE DST_Name = @DatasetType )
+    IF NOT EXISTS ( SELECT * FROM T_Dataset_Type_Name WHERE DST_Name = @DatasetType )
         RAISERROR ('Dataset type "%s" is not valid', 11, 12, @DatasetType)
 
     ---------------------------------------------------
@@ -70,7 +71,7 @@ AS
     ---------------------------------------------------
 
     SELECT @DatasetType = DST_Name
-    FROM T_DatasetTypeName
+    FROM T_Dataset_Type_Name
     WHERE DST_Name = @DatasetType
 
     ---------------------------------------------------

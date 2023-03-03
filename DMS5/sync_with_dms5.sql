@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[sync_with_dms5]
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          07/29/2022 mem - Update logic now that settings file name cannot be null in T_Analysis_Job or T_Analysis_Job_Request
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -153,14 +154,14 @@ AS
         End -- </T_Instrument_Class>
 
 
-        Set @tableName = 'T_DatasetTypeName'
+        Set @tableName = 'T_Dataset_Type_Name'
         Print 'Updating ' + @tableName
         If @infoOnly = 0
         Begin
             DELETE FROM #Tmp_SummaryOfChanges
 
-            MERGE [dbo].[T_DatasetTypeName] AS t
-            USING (SELECT * FROM [DMS5].[dbo].[T_DatasetTypeName]) as s
+            MERGE [dbo].[T_Dataset_Type_Name] AS t
+            USING (SELECT * FROM [DMS5].[dbo].[T_Dataset_Type_Name]) as s
             ON ( t.[DST_Type_ID] = s.[DST_Type_ID])
             WHEN MATCHED AND (
                 t.[DST_name] <> s.[DST_name] OR
@@ -192,7 +193,7 @@ AS
             If @myRowCount > 0
                 exec sync_with_dms_show_stats @tableName, @myRowCount, @ShowUpdateDetails
 
-        End -- </T_DatasetTypeName>
+        End -- </T_Dataset_Type_Name>
 
 
         Set @tableName = 'T_Instrument_Group'

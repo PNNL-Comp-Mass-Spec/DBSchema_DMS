@@ -21,6 +21,7 @@ CREATE FUNCTION [dbo].[get_dataset_instrument_runtime]
 **          05/16/2022 mem - Add renamed proposal type 'Resource Owner'
 **          05/18/2022 mem - Treat additional proposal types as not EMSL funded
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -316,8 +317,8 @@ AS
                 T_Dataset DS ON T.ID = DS.Dataset_ID INNER JOIN
                 T_Experiments E ON DS.Exp_ID = E.Exp_ID INNER JOIN
                 T_Campaign C ON E.EX_campaign_ID = C.Campaign_ID INNER JOIN
-                T_DatasetStateName DSN ON DS.DS_state_ID = DSN.Dataset_state_ID INNER JOIN
-                T_DatasetRatingName DRN ON DS.DS_rating = DRN.DRN_state_ID INNER JOIN
+                T_Dataset_State_Name DSN ON DS.DS_state_ID = DSN.Dataset_state_ID INNER JOIN
+                T_Dataset_Rating_Name DRN ON DS.DS_rating = DRN.DRN_state_ID INNER JOIN
                 T_LC_Column LC ON DS.DS_LC_column_ID = LC.ID LEFT OUTER JOIN
                 T_Requested_Run RR ON DS.Dataset_ID = RR.DatasetID LEFT OUTER JOIN
                 T_EUS_UsageType EUT ON RR.RDS_EUS_UsageType = EUT.ID LEFT OUTER JOIN
@@ -351,6 +352,7 @@ AS
 
     RETURN
     END
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_dataset_instrument_runtime] TO [DDL_Viewer] AS [dbo]

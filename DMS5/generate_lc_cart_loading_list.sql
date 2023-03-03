@@ -21,9 +21,8 @@ CREATE PROCEDURE [dbo].[generate_lc_cart_loading_list]
 **          08/27/2007 grk - add ability to start columns with a blank (Ticket #517)
 **          09/17/2009 grk - added check for requests that don't have column assignments
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
     @lcCartName varchar(128),
@@ -322,7 +321,7 @@ AS
         @DSTypeForBlanks = DSType.DST_Name,
         @MatchCount = COUNT(*)
     FROM T_Requested_Run RR INNER JOIN
-         T_DatasetTypeName DSType ON RR.RDS_type_ID = DSType.DST_Type_ID INNER JOIN
+         T_Dataset_Type_Name DSType ON RR.RDS_type_ID = DSType.DST_Type_ID INNER JOIN
          #XF ON RR.ID = #XF.request
     GROUP BY DSType.DST_Name
     ORDER BY COUNT(*) DESC
@@ -365,7 +364,7 @@ AS
     FROM T_Experiments E INNER JOIN
          T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID INNER JOIN
          T_EUS_UsageType EUT ON RR.RDS_EUS_UsageType = EUT.ID INNER JOIN
-         T_DatasetTypeName DSType ON RR.RDS_type_ID = DSType.DST_Type_ID RIGHT OUTER JOIN
+         T_Dataset_Type_Name DSType ON RR.RDS_type_ID = DSType.DST_Type_ID RIGHT OUTER JOIN
          #XF ON RR.ID = #XF.request
     ORDER BY #XF.seq
 

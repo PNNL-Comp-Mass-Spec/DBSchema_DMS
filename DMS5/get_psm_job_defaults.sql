@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[get_psm_job_defaults]
 **          01/28/2020 mem - Use '%TMT1%' instead of '%TMT10' so we can match TMT10 and TMT11
 **          09/10/2020 mem - Add job types 'TMT Zero' and 'TMT 16-plex'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -181,7 +182,7 @@ AS
         INSERT INTO #T_Tmp_DatasetTypeStats (Dataset_Type, Description, DatasetCount)
         SELECT DTN.DST_name, DTN.DST_Description, COUNT(*) AS DatasetCount
         FROM #TD
-             INNER JOIN T_DatasetTypeName DTN
+             INNER JOIN T_Dataset_Type_Name DTN
                ON #TD.Dataset_Type = DTN.DST_Name
         GROUP BY DTN.DST_name, DTN.DST_Description
         ORDER BY DTN.DST_name

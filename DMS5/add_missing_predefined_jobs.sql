@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[add_missing_predefined_jobs]
 **          03/25/2020 mem - Add parameter @datasetIDFilterList and add support for @infoOnly = 2
 **          11/28/2022 mem - Always log an error if schedule_predefined_analysis_jobs has a non-zero return code
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -157,7 +158,7 @@ AS
     INSERT INTO #Tmp_DatasetsToProcess( Dataset_ID, Process_Dataset )
     SELECT DISTINCT DS.Dataset_ID, 1 AS Process_Dataset
     FROM T_Dataset DS
-         INNER JOIN T_DatasetTypeName DSType
+         INNER JOIN T_Dataset_Type_Name DSType
            ON DSType.DST_Type_ID = DS.DS_type_ID
          INNER JOIN T_Instrument_Name InstName
            ON DS.DS_instrument_name_ID = InstName.Instrument_ID

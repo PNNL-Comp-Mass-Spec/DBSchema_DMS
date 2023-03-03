@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[update_dataset_dispositions]
 **          08/01/2017 mem - Use THROW if not authorized
 **          10/23/2021 mem - Use a semicolon when appending to an existing dataset comment
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2023 mem - Use renamed table names
 **
 *****************************************************/
 (
@@ -87,7 +88,7 @@ AS
     set @ratingID = 0
     --
     SELECT @ratingID = DRN_state_ID
-    FROM  T_DatasetRatingName
+    FROM  T_Dataset_Rating_Name
     WHERE (DRN_name = @rating)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -233,7 +234,7 @@ AS
                 @curComment = D.Comment,
                 @curDatasetStateName = DSN.DSS_name
             FROM #TDS AS D INNER JOIN
-                 dbo.T_DatasetStateName DSN ON D.State = DSN.Dataset_state_ID
+                 dbo.T_Dataset_State_Name DSN ON D.State = DSN.Dataset_state_ID
             WHERE D.DatasetID > @prevDatasetID
             ORDER BY D.DatasetID
             --
