@@ -58,7 +58,7 @@ SELECT RR.ID AS request,
            ELSE CC.activation_state
        END AS wp_activation_state
 FROM T_Requested_Run AS RR
-     INNER JOIN T_DatasetTypeName AS DTN
+     INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users AS U
        ON RR.RDS_Requestor_PRN = U.U_PRN
@@ -92,7 +92,6 @@ FROM T_Requested_Run AS RR
        ON EUP.State_ID = PSN.ID
      LEFT OUTER JOIN T_Material_Locations ML
        ON RR.Location_ID = ML.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_List_Report_2] TO [DDL_Viewer] AS [dbo]

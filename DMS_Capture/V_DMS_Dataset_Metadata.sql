@@ -36,7 +36,7 @@ SELECT DS.Dataset_Num AS Dataset,
 FROM S_DMS_T_Dataset AS DS
      INNER JOIN S_DMS_T_Instrument_Name AS TIN
        ON DS.DS_instrument_name_ID = TIN.Instrument_ID
-     INNER JOIN S_DMS_T_DatasetTypeName AS TDT
+     INNER JOIN S_DMS_T_Dataset_Type_Name AS TDT
        ON DS.DS_type_ID = TDT.DST_Type_ID
      INNER JOIN S_DMS_t_storage_path AS TSrc
        ON TIN.IN_source_path_ID = TSrc.SP_path_ID
@@ -56,6 +56,7 @@ FROM S_DMS_T_Dataset AS DS
        ON EUSProposalUser.Proposal_ID = RR.RDS_EUS_Proposal_ID And
           DS.DS_Oper_PRN = EUSProposalUser.Username And 
           EUSProposalUser.Valid_EUS_ID > 0
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Metadata] TO [DDL_Viewer] AS [dbo]

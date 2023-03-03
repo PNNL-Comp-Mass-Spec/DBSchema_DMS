@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Run_Planning_Report]
 AS
 SELECT GroupQ.inst_group,
@@ -123,7 +124,7 @@ FROM ( SELECT Inst_Group,
                         ELSE 0
                     END AS Blocked,
                     SG.Fraction_Count As Fraction_Count
-             FROM T_DatasetTypeName AS DTN
+             FROM T_Dataset_Type_Name AS DTN
                  INNER JOIN T_Requested_Run AS RR
                      ON DTN.DST_Type_ID = RR.RDS_type_ID
                  INNER JOIN T_Users AS U

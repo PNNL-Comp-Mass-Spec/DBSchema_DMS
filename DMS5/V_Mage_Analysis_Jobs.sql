@@ -54,14 +54,13 @@ FROM T_Analysis_Job AJ
        ON E.EX_campaign_ID = C.Campaign_ID
      INNER JOIN T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN T_DatasetRatingName DR
+     INNER JOIN T_Dataset_Rating_Name DR
        ON DS.DS_rating = DR.DRN_state_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN V_Dataset_Folder_Paths DFP
        ON DS.Dataset_ID = DFP.Dataset_ID
 WHERE AJ.AJ_StateID IN (4,7,14)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Analysis_Jobs] TO [DDL_Viewer] AS [dbo]

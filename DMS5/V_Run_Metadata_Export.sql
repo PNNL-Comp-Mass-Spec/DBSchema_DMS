@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE view [dbo].[V_Run_Metadata_Export] as
+CREATE VIEW [dbo].[V_Run_Metadata_Export] as
 SELECT DS.Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
        Inst.IN_name AS Instrument,
@@ -31,11 +31,11 @@ SELECT DS.Dataset_ID AS ID,
        DS.DS_comment AS [Comment],
        SPath.SP_vol_name_client + SPath.SP_path AS Storage
 FROM T_Dataset DS
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
      INNER JOIN T_Instrument_Name Inst
        ON DS.DS_instrument_name_ID = Inst.Instrument_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID
@@ -43,7 +43,7 @@ FROM T_Dataset DS
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
      INNER JOIN T_Users U
        ON DS.DS_Oper_PRN = U.U_PRN
-     INNER JOIN T_DatasetRatingName DRN
+     INNER JOIN T_Dataset_Rating_Name DRN
        ON DS.DS_rating = DRN.DRN_state_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
@@ -55,8 +55,6 @@ FROM T_Dataset DS
        ON DS.Dataset_ID = RR.DatasetID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
-  
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Run_Metadata_Export] TO [DDL_Viewer] AS [dbo]

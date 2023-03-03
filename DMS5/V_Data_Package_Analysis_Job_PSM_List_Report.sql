@@ -72,7 +72,7 @@ FROM dbo.S_V_Data_Package_Analysis_Jobs_Export DPJ
        ON DAP.Dataset_ID = DS.Dataset_ID
      INNER JOIN dbo.T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN dbo.T_DatasetRatingName AS DR
+     INNER JOIN dbo.T_Dataset_Rating_Name AS DR
        ON DS.DS_rating = DR.DRN_state_ID
      INNER JOIN dbo.T_Organisms AS Org
        ON AJ.AJ_organismID = Org.Organism_ID
@@ -92,6 +92,5 @@ WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR
                                       AJT_resultType = 'Gly_ID' )
-
 
 GO

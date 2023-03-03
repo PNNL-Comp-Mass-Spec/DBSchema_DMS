@@ -31,12 +31,11 @@ FROM dbo.T_Dataset AS DS
         INNER JOIN dbo.T_Instrument_Name ON DS.DS_instrument_name_ID = dbo.T_Instrument_Name.Instrument_ID
         INNER JOIN dbo.T_Experiments AS E ON DS.Exp_ID = E.Exp_ID
         INNER JOIN dbo.T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID
-        INNER JOIN dbo.T_DatasetStateName AS DSN ON DS.DS_state_ID = DSN.Dataset_state_ID
-        INNER JOIN dbo.T_DatasetRatingName AS DRN ON DS.DS_rating = DRN.DRN_state_ID
+        INNER JOIN dbo.T_Dataset_State_Name AS DSN ON DS.DS_state_ID = DSN.Dataset_state_ID
+        INNER JOIN dbo.T_Dataset_Rating_Name AS DRN ON DS.DS_rating = DRN.DRN_state_ID
         INNER JOIN dbo.T_LC_Column AS LC ON DS.DS_LC_column_ID = LC.ID
         LEFT OUTER JOIN dbo.T_Requested_Run AS RR ON DS.Dataset_ID = RR.DatasetID
         INNER JOIN dbo.T_EUS_UsageType AS EUT ON RR.RDS_EUS_UsageType = EUT.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Run_Tracking_List_Report] TO [DDL_Viewer] AS [dbo]

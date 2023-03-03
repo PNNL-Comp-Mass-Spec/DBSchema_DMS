@@ -4,8 +4,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_MyEMSL_Supplemental_Metadata] 
-AS 
+CREATE VIEW [dbo].[V_MyEMSL_Supplemental_Metadata]
+AS
 SELECT DS.Dataset_ID AS [omics.dms.dataset_id],
        DS.Dataset_Num AS [omics.dms.dataset_name],
        E.Exp_ID AS [omics.dms.experiment_id],
@@ -26,12 +26,11 @@ FROM dbo.T_Campaign AS C
        ON C.Campaign_ID = E.EX_campaign_ID
      LEFT OUTER JOIN dbo.T_Dataset AS DS
        ON E.Exp_ID = DS.Exp_ID
-     LEFT OUTER JOIN dbo.T_DatasetTypeName AS DTN
+     LEFT OUTER JOIN dbo.T_Dataset_Type_Name AS DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN dbo.T_Requested_Run AS RR
        ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN dbo.T_Organisms AS Org
        ON E.EX_organism_ID = Org.Organism_ID
-
 
 GO

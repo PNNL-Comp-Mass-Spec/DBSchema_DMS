@@ -17,7 +17,7 @@ SELECT InstName.IN_name AS Instrument,
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN dbo.T_DatasetTypeName DTN
+     INNER JOIN dbo.T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN dbo.T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID

@@ -13,9 +13,8 @@ SELECT GT.Dataset_Type AS dataset_type,
        GT.Comment AS usage_for_this_group,
        GT.IN_Group AS instrument_group
 FROM T_Instrument_Group_Allowed_DS_Type GT
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON GT.Dataset_Type = DTN.DST_name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Group_Allowed_Dataset_Type] TO [DDL_Viewer] AS [dbo]

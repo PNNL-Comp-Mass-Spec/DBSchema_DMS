@@ -16,15 +16,14 @@ SELECT EL.event_id,
 FROM T_Event_Log EL
      INNER JOIN T_Dataset
        ON EL.Target_ID = T_Dataset.Dataset_ID
-     INNER JOIN T_DatasetStateName S1
+     INNER JOIN T_Dataset_State_Name S1
        ON EL.Target_State = S1.Dataset_state_ID
-     INNER JOIN T_DatasetStateName S2
+     INNER JOIN T_Dataset_State_Name S2
        ON EL.Prev_Target_State = S2.Dataset_state_ID
      INNER JOIN T_Instrument_Name
        ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
 WHERE EL.Target_Type = 4 AND
       EL.Entered > DateAdd(day, -4, GetDate())
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Event_Log_Dataset_List] TO [DDL_Viewer] AS [dbo]

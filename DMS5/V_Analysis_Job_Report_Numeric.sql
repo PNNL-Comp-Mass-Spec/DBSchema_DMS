@@ -29,7 +29,7 @@ SELECT AJ.AJ_jobID AS job,
        AJ.AJ_requestID AS request,
        Spath.SP_machine_name AS storage_server,
        DSR.DRN_name AS dataset_rating
-FROM T_DatasetRatingName DSR
+FROM T_Dataset_Rating_Name DSR
      INNER JOIN T_Analysis_Job AJ
                 INNER JOIN T_Dataset DS
                   ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -42,7 +42,6 @@ FROM T_DatasetRatingName DSR
                 INNER JOIN T_Instrument_Name InstName
                   ON DS.DS_instrument_name_ID = InstName.Instrument_ID
        ON DSR.DRN_state_ID = DS.DS_rating
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Report_Numeric] TO [DDL_Viewer] AS [dbo]

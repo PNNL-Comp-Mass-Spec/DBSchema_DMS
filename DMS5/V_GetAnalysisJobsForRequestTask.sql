@@ -12,7 +12,7 @@ SELECT AJ.AJ_jobID AS Job,
        AJ.AJ_analysisToolID AS AnalysisToolID,
        DS.Dataset_Num AS Dataset,
        AJ.AJ_datasetID AS DatasetID,
-       DASN.DASN_StateName AS ArchiveState,
+       DASN.archive_state AS ArchiveState,
        AUSN.AUS_name AS ArchiveUpdateState
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
@@ -21,14 +21,13 @@ FROM dbo.T_Analysis_Job AS AJ
        ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
      INNER JOIN dbo.T_Dataset_Archive AS DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
-     INNER JOIN dbo.T_DatasetArchiveStateName AS DASN
-       ON DA.AS_state_ID = DASN.DASN_StateID
+     INNER JOIN dbo.T_Dataset_Archive_State_Name AS DASN
+       ON DA.AS_state_ID = DASN.archive_state_id
      INNER JOIN dbo.T_Archive_Update_State_Name AS AUSN
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
 WHERE (AJ.AJ_StateID = 1) AND
       (NOT (DA.AS_state_ID IN (2, 7, 8))) AND
       (DA.AS_update_state_ID <> 3)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_GetAnalysisJobsForRequestTask] TO [DDL_Viewer] AS [dbo]

@@ -26,7 +26,7 @@ SELECT RR.ID AS Request_ID,
        RR.RDS_Blocking_Factor AS Blocking_Factor,
        RR.RDS_priority AS Priority,
        LC.Cart_Name AS [LC Cart]
-FROM T_DatasetTypeName DTN
+FROM T_Dataset_Type_Name DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users U
@@ -37,7 +37,6 @@ FROM T_DatasetTypeName DTN
        ON RR.RDS_EUS_UsageType = EUT.ID
      INNER JOIN T_LC_Cart LC
        ON RR.RDS_Cart_ID = LC.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Find_Requested_Run] TO [DDL_Viewer] AS [dbo]

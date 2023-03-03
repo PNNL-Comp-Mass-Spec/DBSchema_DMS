@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Instrument_Group_List_Report]
 AS
 SELECT I.IN_Group AS instrument_group,
@@ -16,7 +17,7 @@ SELECT I.IN_Group AS instrument_group,
        dbo.get_instrument_group_membership_list(I.in_group, 0, 0) AS instruments,
        dbo.get_instrument_group_dataset_type_list(I.in_group, ', ') AS allowed_dataset_types
 FROM dbo.T_Instrument_Group I
-     LEFT OUTER JOIN dbo.T_DatasetTypeName DT
+     LEFT OUTER JOIN dbo.T_Dataset_Type_Name DT
        ON I.Default_Dataset_Type = DT.DST_Type_ID
 
 GO

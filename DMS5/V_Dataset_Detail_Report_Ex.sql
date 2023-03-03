@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex]
 AS
 -- Note: this view is intended to be used for retrieving information for a single dataset
@@ -58,7 +59,7 @@ SELECT DS.Dataset_Num AS dataset,
        DF.File_Hash AS sha1_hash,
        DS.DS_folder_name AS folder_name,
        DS.Capture_Subfolder AS capture_subfolder,
-       TDASN.DASN_StateName AS archive_state,
+       TDASN.archive_state,
        DA.AS_state_Last_Affected AS archive_state_last_affected,
        AUSN.AUS_name AS archive_update_state,
        DA.AS_update_state_Last_Affected AS archive_update_state_last_affected,
@@ -75,17 +76,17 @@ SELECT DS.Dataset_Num AS dataset,
        T_MyEMSLState.StateName AS myemsl_state
 FROM S_V_BTO_ID_to_Name AS BTO
      RIGHT OUTER JOIN T_Dataset AS DS
-                      INNER JOIN T_DatasetStateName AS TDSN
+                      INNER JOIN T_Dataset_State_Name AS TDSN
                         ON DS.DS_state_ID = TDSN.Dataset_state_ID
                       INNER JOIN T_Instrument_Name AS TIN
                         ON DS.DS_instrument_name_ID = TIN.Instrument_ID
-                      INNER JOIN T_DatasetTypeName AS DST
+                      INNER JOIN T_Dataset_Type_Name AS DST
                         ON DS.DS_type_ID = DST.DST_Type_ID
                       INNER JOIN T_Experiments AS E
                         ON DS.Exp_ID = E.Exp_ID
                       INNER JOIN T_Users AS U
                         ON DS.DS_Oper_PRN = U.U_PRN
-                      INNER JOIN T_DatasetRatingName AS TDRN
+                      INNER JOIN T_Dataset_Rating_Name AS TDRN
                         ON DS.DS_rating = TDRN.DRN_state_ID
                       INNER JOIN T_LC_Column AS LCCol
                         ON DS.DS_LC_column_ID = LCCol.ID
@@ -132,8 +133,8 @@ FROM S_V_BTO_ID_to_Name AS BTO
        ON RR.RDS_EUS_UsageType = EUT.ID
      LEFT OUTER JOIN V_Charge_Code_Status AS CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
-     LEFT OUTER JOIN T_DatasetArchiveStateName AS TDASN
-       ON DA.AS_state_ID = TDASN.DASN_StateID
+     LEFT OUTER JOIN T_Dataset_Archive_State_Name AS TDASN
+       ON DA.AS_state_ID = TDASN.archive_state_id
      LEFT OUTER JOIN T_Archive_Update_State_Name AS AUSN
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
      LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig

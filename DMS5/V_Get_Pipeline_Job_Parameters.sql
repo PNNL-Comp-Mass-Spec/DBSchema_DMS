@@ -43,11 +43,10 @@ FROM
 	INNER JOIN dbo.T_Analysis_Tool AS Tool ON AJ.AJ_analysisToolID = Tool.AJT_toolID
 	INNER JOIN dbo.T_Instrument_Name AS InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
 	INNER JOIN dbo.T_Instrument_Class AS InstClass ON InstName.IN_class = InstClass.IN_class
-	INNER JOIN dbo.T_DatasetTypeName DTN ON DS.DS_type_ID = DTN.DST_Type_ID
+	INNER JOIN dbo.T_Dataset_Type_Name DTN ON DS.DS_type_ID = DTN.DST_Type_ID
 	INNER JOIN dbo.T_Experiments Ex ON DS.Exp_ID = Ex.Exp_ID
 	LEFT OUTER JOIN dbo.T_Dataset_Archive AS DSArch ON DS.Dataset_ID = DSArch.AS_Dataset_ID
 	LEFT OUTER JOIN dbo.T_Archive_Path AS ArchPath ON DSArch.AS_storage_path_ID = ArchPath.AP_path_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Get_Pipeline_Job_Parameters] TO [DDL_Viewer] AS [dbo]

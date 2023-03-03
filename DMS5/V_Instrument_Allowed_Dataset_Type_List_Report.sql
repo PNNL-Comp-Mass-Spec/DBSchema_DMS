@@ -12,9 +12,8 @@ SELECT 'Edit' AS sel,
        DTN.DST_Description AS type_description,
        IGADT.Comment AS usage_for_this_group
 FROM T_Instrument_Group_Allowed_DS_Type IGADT
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON IGADT.Dataset_Type = DTN.DST_name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Allowed_Dataset_Type_List_Report] TO [DDL_Viewer] AS [dbo]

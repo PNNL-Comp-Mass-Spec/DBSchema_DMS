@@ -131,9 +131,8 @@ FROM T_Dataset_QC DQC
        ON DQC.Dataset_ID = DS.Dataset_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN T_DatasetRatingName DRN
+     INNER JOIN T_Dataset_Rating_Name DRN
        ON DS.DS_rating = DRN.DRN_state_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Metrics_Export] TO [DDL_Viewer] AS [dbo]

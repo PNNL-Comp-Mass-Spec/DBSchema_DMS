@@ -18,7 +18,7 @@ SELECT RR.ID AS request,
        DTN.DST_name AS type,
        RR.RDS_Well_Plate_Num AS wellplate,
        RR.RDS_Well_Num AS well
-FROM T_DatasetTypeName DTN
+FROM T_Dataset_Type_Name DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users U
@@ -26,7 +26,6 @@ FROM T_DatasetTypeName DTN
      INNER JOIN T_Experiments E
        ON RR.Exp_ID = E.Exp_ID
 WHERE RR.DatasetID Is Null
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Helper_List_Report] TO [DDL_Viewer] AS [dbo]

@@ -37,9 +37,8 @@ FROM V_Mage_Analysis_Jobs VMA
        ON VMA.Dataset_ID = DS.Dataset_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Data_Package_Analysis_Jobs] TO [DDL_Viewer] AS [dbo]

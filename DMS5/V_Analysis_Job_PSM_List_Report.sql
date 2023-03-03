@@ -66,7 +66,7 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
         RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
         INNER JOIN dbo.T_Dataset AS DS ON AJ.AJ_datasetID = DS.Dataset_ID
         INNER JOIN dbo.T_Storage_Path SPath ON DS.DS_storage_path_ID = SPath.SP_path_ID
-        INNER JOIN dbo.T_DatasetRatingName AS DR ON DS.DS_rating = DR.DRN_state_ID
+        INNER JOIN dbo.T_Dataset_Rating_Name AS DR ON DS.DS_rating = DR.DRN_state_ID
         INNER JOIN dbo.T_Organisms AS Org ON AJ.AJ_organismID = Org.Organism_ID
         INNER JOIN dbo.T_Analysis_Tool AS AnalysisTool ON AJ.AJ_analysisToolID = AnalysisTool.AJT_toolID
         INNER JOIN dbo.T_Instrument_Name AS InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
@@ -78,7 +78,6 @@ WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR
 								      AJT_resultType = 'Gly_ID')
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [DDL_Viewer] AS [dbo]

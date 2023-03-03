@@ -38,14 +38,14 @@ SELECT DS.dataset_id,
        DS.file_info_last_modified,
        DS.dataset_num,
 	   DS.DateSortKey AS date_sort_key
-FROM T_DatasetStateName DSN
+FROM T_Dataset_State_Name DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN T_DatasetRatingName DSRating
+     INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_Experiments Exp
        ON DS.Exp_ID = Exp.Exp_ID

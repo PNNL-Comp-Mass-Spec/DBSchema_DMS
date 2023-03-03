@@ -23,13 +23,12 @@ SELECT RR.ID AS Request_ID,
 FROM dbo.T_Requested_Run RR
      INNER JOIN dbo.T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
-     INNER JOIN dbo.T_DatasetTypeName DTN
+     INNER JOIN dbo.T_Dataset_Type_Name DTN
        ON RR.RDS_type_ID = DTN.DST_Type_ID
      INNER JOIN dbo.T_Experiments E
        ON RR.Exp_ID = E.Exp_ID
      INNER JOIN dbo.T_Campaign
        ON E.EX_campaign_ID = dbo.T_Campaign.Campaign_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Find_Scheduled_Run_History] TO [DDL_Viewer] AS [dbo]

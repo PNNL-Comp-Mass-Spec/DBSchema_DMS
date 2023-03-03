@@ -43,13 +43,13 @@ FROM T_Dataset DS
        ON DS.Exp_ID = E.Exp_ID
      INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      INNER JOIN T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID

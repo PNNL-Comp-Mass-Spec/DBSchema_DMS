@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Requested_Run_Entry]
 AS
 SELECT RR.ID AS request_id,
@@ -30,7 +31,7 @@ SELECT RR.ID AS request_id,
        RR.RDS_internal_standard AS internal_standard,
        RR.RDS_Status AS state_name
 FROM T_Requested_Run AS RR
-     INNER JOIN T_DatasetTypeName AS DTN
+     INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN dbo.T_Experiments E
        ON RR.Exp_ID = E.Exp_ID

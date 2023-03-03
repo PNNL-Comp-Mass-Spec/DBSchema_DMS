@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Dataset_Entry]
 AS
 SELECT E.Experiment_Num AS experiment,
@@ -29,11 +30,11 @@ SELECT E.Experiment_Num AS experiment,
 FROM T_Dataset DS
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Instrument_Name Inst
        ON DS.DS_instrument_name_ID = Inst.Instrument_ID
-     INNER JOIN T_DatasetRatingName DSRating
+     INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_LC_Column LCCol
        ON DS.DS_LC_column_ID = LCCol.ID

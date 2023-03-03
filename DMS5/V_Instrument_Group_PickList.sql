@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Instrument_Group_PickList] As
 SELECT Instrument_Group,
        Usage,
@@ -11,9 +12,9 @@ SELECT Instrument_Group,
        Allowed_Dataset_Types,
        Sample_Prep_Visible,
        Requested_Run_Visible,
-       CASE WHEN Instruments = '' 
-       THEN Instrument_Group + ' (no active instruments)' 
-       ELSE Instrument_Group + ' (' + Instruments + ')' 
+       CASE WHEN Instruments = ''
+       THEN Instrument_Group + ' (no active instruments)'
+       ELSE Instrument_Group + ' (' + Instruments + ')'
        END As Instrument_Group_and_Instruments
 From (  SELECT I.IN_Group AS Instrument_Group,
                I.Usage,
@@ -23,7 +24,7 @@ From (  SELECT I.IN_Group AS Instrument_Group,
                I.Sample_Prep_Visible,
                I.Requested_Run_Visible
         FROM dbo.T_Instrument_Group I
-             LEFT OUTER JOIN dbo.T_DatasetTypeName DT
+             LEFT OUTER JOIN dbo.T_Dataset_Type_Name DT
                ON I.Default_Dataset_Type = DT.DST_Type_ID
         WHERE I.Active > 0
     ) LookupQ

@@ -37,7 +37,7 @@ SELECT RR.ID - 800000 AS Request,       -- Adjusted Request ID
        RR.Vialing_Conc,
        RR.Vialing_Vol,
        RR.ID As RequestID               -- Actual Request ID
-FROM T_DatasetTypeName DTN
+FROM T_Dataset_Type_Name DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users U
@@ -51,7 +51,6 @@ FROM T_DatasetTypeName DTN
      LEFT OUTER JOIN T_Active_Requested_Run_Cached_EUS_Users RRCU
        ON RR.ID = RRCU.Request_ID
 WHERE (RR.RDS_Status = 'Active')
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Scheduled_Run_Export] TO [DDL_Viewer] AS [dbo]

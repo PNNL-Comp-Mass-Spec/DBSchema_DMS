@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Requested_Run_Detail_Report]
 AS
 SELECT RR.ID AS request,
@@ -58,7 +59,7 @@ SELECT RR.ID AS request,
                 CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for wp_activation_state
            Else CC.activation_state
        End AS wp_activation_state
-FROM dbo.T_DatasetTypeName AS DTN
+FROM dbo.T_Dataset_Type_Name AS DTN
      INNER JOIN dbo.T_Requested_Run AS RR
                 INNER JOIN dbo.T_Experiments AS E
                   ON RR.Exp_ID = E.Exp_ID

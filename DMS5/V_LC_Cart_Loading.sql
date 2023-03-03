@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_LC_Cart_Loading]
 AS
 SELECT RR.ID AS Request,
@@ -27,7 +28,7 @@ FROM dbo.T_Requested_Run AS RR
        ON RR.Exp_ID = E.Exp_ID
      INNER JOIN dbo.T_LC_Cart AS LCCart
        ON RR.RDS_Cart_ID = LCCart.ID
-     INNER JOIN dbo.T_DatasetTypeName AS DTN
+     INNER JOIN dbo.T_Dataset_Type_Name AS DTN
        ON RR.RDS_type_ID = DTN.DST_Type_ID
 
 GO

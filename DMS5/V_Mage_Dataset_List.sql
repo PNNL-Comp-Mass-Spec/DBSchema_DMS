@@ -25,9 +25,9 @@ SELECT DS.Dataset_ID AS Dataset_ID,
        DTN.DST_name AS [Type],              -- Included for compatibility with older versions of Mage
        DTN.DST_name AS [Dataset Type]       -- Included for compatibility with older versions of Mage
 FROM T_Dataset DS
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
@@ -41,7 +41,6 @@ FROM T_Dataset DS
        ON DS.Dataset_ID = DFP.Dataset_ID
      LEFT OUTER JOIN T_Dataset_Archive DA
        ON DS.Dataset_ID = DA.AS_Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Mage_Dataset_List] TO [DDL_Viewer] AS [dbo]

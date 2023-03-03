@@ -39,19 +39,19 @@ SELECT DS.Dataset_ID AS id,
        -- Deprecated to improve performance: EPT.Proposal_Type_Name AS proposal_type,
        RR.RDS_WorkPackage AS work_package,
        -- Deprecated: RR.RDS_Requestor_PRN AS requester,
-       -- Deprecated: DASN.DASN_StateName AS archive_state,
+       -- Deprecated: DASN.archive_state,
        -- Deprecated: T_YesNo.Description AS inst_data_purged,
        Org.OG_name AS organism,
        BTO.tissue,
        DS.DateSortKey AS date_sort_key
-FROM T_DatasetStateName DSN
+FROM T_Dataset_State_Name DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Cached_Dataset_Instruments DSInst
        ON DS.Dataset_ID = DSInst.Dataset_ID
-     INNER JOIN T_DatasetRatingName DSRating
+     INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_Experiments E
        ON DS.Exp_ID = E.Exp_ID
@@ -75,16 +75,15 @@ FROM T_DatasetStateName DSN
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
-     LEFT OUTER JOIN T_DatasetArchiveStateName DASN
+     LEFT OUTER JOIN T_Dataset_Archive_State_Name DASN
                      INNER JOIN T_Dataset_Archive DA
-                       ON DASN.DASN_StateID = DA.AS_state_ID
+                       ON DASN.archive_state_id = DA.AS_state_ID
                      INNER JOIN T_YesNo
                        ON DA.AS_instrument_data_purged = T_YesNo.Flag
        ON DS.Dataset_ID = DA.AS_Dataset_ID
        */
      LEFT OUTER JOIN S_V_BTO_ID_to_Name AS BTO
        ON BTO.Identifier = E.EX_Tissue_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_List_Report_2] TO [DDL_Viewer] AS [dbo]

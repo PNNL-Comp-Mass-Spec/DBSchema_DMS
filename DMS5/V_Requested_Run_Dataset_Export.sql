@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE VIEW [dbo].[V_Requested_Run_Dataset_Export] 
+CREATE VIEW [dbo].[V_Requested_Run_Dataset_Export]
 AS
 -- MyEMSL uses this view
 SELECT RR.ID AS Request_ID,
@@ -34,7 +34,7 @@ SELECT RR.ID AS Request_ID,
        EPT.Abbreviation AS EUS_Proposal_Type,
        RR.Updated As Updated
 FROM T_Requested_Run AS RR
-     INNER JOIN T_DatasetTypeName AS DTN
+     INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users AS U
        ON RR.RDS_Requestor_PRN = U.U_PRN
@@ -50,9 +50,9 @@ FROM T_Requested_Run AS RR
        ON RR.DatasetID = DS.Dataset_ID
      INNER JOIN T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     LEFT OUTER JOIN T_EUS_Proposals AS EUP 
+     LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
-     LEFT OUTER JOIN T_EUS_Proposal_Type EPT 
+     LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
 
 GO

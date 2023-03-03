@@ -52,7 +52,7 @@ SELECT DS.Dataset_ID AS id,
          END) AS elution_time_max,
        CONVERT(decimal(9,1), DS.File_Size_Bytes / 1024.0 / 1024.0) AS file_size_mb
 FROM dbo.T_Dataset DS
-     INNER JOIN dbo.T_DatasetTypeName DTN
+     INNER JOIN dbo.T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
@@ -65,7 +65,6 @@ GROUP BY DS.Dataset_ID, DS.Dataset_Num, InstName.IN_name, DTN.DST_name,
          DSInfo.Scan_Types,
 		 DSInfo.ProfileScanCount_MS, DSInfo.ProfileScanCount_MSn,
 		 DSInfo.CentroidScanCount_MS, DSInfo.CentroidScanCount_MSn
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scans_Detail_Report] TO [DDL_Viewer] AS [dbo]

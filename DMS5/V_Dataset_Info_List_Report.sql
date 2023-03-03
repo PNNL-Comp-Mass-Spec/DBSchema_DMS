@@ -39,14 +39,14 @@ SELECT DS.Dataset_ID AS id,
        DS.DS_comment AS comment,
        DS.DS_created AS created,
        DSInfo.Last_Affected AS dsinfo_updated
-FROM T_DatasetStateName DSN
+FROM T_Dataset_State_Name DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN T_DatasetRatingName DSRating
+     INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
@@ -54,7 +54,6 @@ FROM T_DatasetStateName DSN
        ON DS.Dataset_ID = DSInfo.Dataset_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Info_List_Report] TO [DDL_Viewer] AS [dbo]

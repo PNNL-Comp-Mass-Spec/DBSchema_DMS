@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_QC_Metrics_List_Report]
 AS
 SELECT DS.Dataset_Num AS dataset,
@@ -75,13 +76,13 @@ FROM T_Dataset DS
 --       ON DS.Dataset_ID = DSInfo.Dataset_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
-     INNER JOIN T_DatasetRatingName DSRating
+     INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON DSN.Dataset_state_ID = DS.DS_state_ID
      LEFT OUTER JOIN T_Requested_Run RR
        ON DS.Dataset_ID = RR.DatasetID
---     INNER JOIN T_DatasetTypeName DTN
+--     INNER JOIN T_Dataset_Type_Name DTN
 --       ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Storage_Path SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID

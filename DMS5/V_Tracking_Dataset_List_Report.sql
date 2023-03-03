@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Tracking_Dataset_List_Report]
 AS
 SELECT DS.Dataset_Num AS dataset,
@@ -26,7 +27,7 @@ FROM T_Dataset DS
        ON RR.DatasetID = DS.Dataset_ID
      INNER JOIN T_EUS_UsageType EUT
        ON RR.RDS_EUS_UsageType = EUT.ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN T_Users U
        ON DS.DS_Oper_PRN = U.U_PRN

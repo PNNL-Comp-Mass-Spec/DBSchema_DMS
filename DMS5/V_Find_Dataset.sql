@@ -26,14 +26,14 @@ SELECT DS.Dataset_ID AS ID,
        RRH.RDS_Blocking_Factor AS [Blocking Factor],
        RRH.RDS_Block AS [Block],
        RRH.RDS_Run_Order AS [Run Order]
-FROM dbo.T_DatasetStateName AS DSN
+FROM dbo.T_Dataset_State_Name AS DSN
      INNER JOIN dbo.T_Dataset AS DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN dbo.T_DatasetTypeName AS DTN
+     INNER JOIN dbo.T_Dataset_Type_Name AS DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN dbo.T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN dbo.T_DatasetRatingName AS DSRating
+     INNER JOIN dbo.T_Dataset_Rating_Name AS DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN dbo.T_Experiments AS Exp
        ON DS.Exp_ID = Exp.Exp_ID
@@ -45,7 +45,6 @@ FROM dbo.T_DatasetStateName AS DSN
        ON DS.DS_LC_column_ID = LC.ID
      LEFT OUTER JOIN dbo.T_Requested_Run AS RRH
        ON DS.Dataset_ID = RRH.DatasetID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Find_Dataset] TO [DDL_Viewer] AS [dbo]

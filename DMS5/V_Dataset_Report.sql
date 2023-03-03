@@ -23,14 +23,14 @@ SELECT DS.Dataset_Num AS dataset,
        RR.ID AS request,
 	   RR.RDS_BatchID AS batch,
        ISNULL(SPath.SP_vol_name_client + SPath.SP_path + ISNULL(DS.ds_folder_name, DS.Dataset_Num), '') AS dataset_folder_path
-FROM dbo.T_DatasetStateName AS DSN
+FROM dbo.T_Dataset_State_Name AS DSN
      INNER JOIN dbo.T_Dataset AS DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN dbo.T_DatasetTypeName AS DTN
+     INNER JOIN dbo.T_Dataset_Type_Name AS DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN dbo.T_Instrument_Name AS InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN dbo.T_DatasetRatingName AS DSR
+     INNER JOIN dbo.T_Dataset_Rating_Name AS DSR
        ON DS.DS_rating = DSR.DRN_state_ID
      INNER JOIN dbo.T_Experiments AS E
        ON DS.Exp_ID = E.Exp_ID
@@ -42,7 +42,6 @@ FROM dbo.T_DatasetStateName AS DSN
        ON DS.Dataset_ID = RR.DatasetID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path AS DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Report] TO [DDL_Viewer] AS [dbo]

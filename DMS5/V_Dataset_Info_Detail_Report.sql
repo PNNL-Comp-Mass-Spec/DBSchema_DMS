@@ -58,14 +58,14 @@ SELECT DS.Dataset_Num AS dataset,
        SPath.SP_URL_HTTPS + ISNULL(DS.ds_folder_name, DS.Dataset_Num) + '/' AS data_folder_link,
        SPath.SP_URL_HTTPS + ISNULL(DS.ds_folder_name, DS.Dataset_Num) + '/QC/index.html' AS qc_link,
        DSInfo.Last_Affected AS dsinfo_updated
-FROM T_DatasetStateName DSN
+FROM T_Dataset_State_Name DSN
      INNER JOIN T_Dataset DS
        ON DSN.Dataset_state_ID = DS.DS_state_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-     INNER JOIN T_DatasetRatingName DSRating
+     INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_LC_Column LC
        ON DS.DS_LC_column_ID = LC.ID
@@ -87,7 +87,6 @@ FROM T_DatasetStateName DSN
        ON DSA.AS_Dataset_ID = DS.Dataset_ID
      LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DAP
        ON DS.Dataset_ID = DAP.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Info_Detail_Report] TO [DDL_Viewer] AS [dbo]

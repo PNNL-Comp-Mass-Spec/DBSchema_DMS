@@ -10,7 +10,7 @@ SELECT DA.AS_Dataset_ID AS ID,
        DS.Dataset_Num AS Dataset,
        InstName.IN_name AS Instrument,
        DS.DS_created AS Created,
-       DASN.DASN_StateName AS State,
+       DASN.archive_state AS State,
        AUS.AUS_name AS [Update],
        DA.AS_datetime AS entered,
        DA.AS_last_update AS Last_Update,
@@ -21,8 +21,8 @@ SELECT DA.AS_Dataset_ID AS ID,
 FROM dbo.T_Dataset_Archive DA
      INNER JOIN dbo.T_Dataset DS
        ON DA.AS_Dataset_ID = DS.Dataset_ID
-     INNER JOIN dbo.T_DatasetArchiveStateName DASN
-       ON DA.AS_state_ID = DASN.DASN_StateID
+     INNER JOIN dbo.T_Dataset_Archive_State_Name DASN
+       ON DA.AS_state_ID = DASN.archive_state_id
      INNER JOIN dbo.T_Archive_Path APath
        ON DA.AS_storage_path_ID = APath.AP_path_ID
      INNER JOIN dbo.T_Instrument_Name InstName

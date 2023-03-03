@@ -38,18 +38,18 @@ FROM T_Campaign C
      INNER JOIN T_Dataset D
                 INNER JOIN T_Instrument_Name Inst
                   ON D.DS_instrument_name_ID = Inst.Instrument_ID
-                INNER JOIN T_DatasetTypeName DTN
+                INNER JOIN T_Dataset_Type_Name DTN
                   ON D.DS_type_ID = DTN.DST_Type_ID
                 INNER JOIN T_Users U_DS_Operator
                   ON D.DS_Oper_PRN = U_DS_Operator.U_PRN
-                INNER JOIN T_DatasetRatingName DRN
+                INNER JOIN T_Dataset_Rating_Name DRN
                   ON D.DS_rating = DRN.DRN_state_ID
                 INNER JOIN T_Experiments E
                   ON D.Exp_ID = E.Exp_ID
                 INNER JOIN T_Users U_Ex_Researcher
                   ON E.EX_researcher_PRN = U_Ex_Researcher.U_PRN
                 INNER JOIN T_Organisms O
-                  ON E.EX_organism_ID = O.Organism_ID              
+                  ON E.EX_organism_ID = O.Organism_ID
        ON C.Campaign_ID = E.EX_campaign_ID
      LEFT OUTER JOIN T_Users U_TechLead
        ON C.CM_Technical_Lead = U_TechLead.U_PRN

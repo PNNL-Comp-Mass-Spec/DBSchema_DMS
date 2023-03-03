@@ -29,15 +29,14 @@ FROM dbo.T_Dataset DS
        ON DS.Exp_ID = E.Exp_ID
      INNER JOIN dbo.T_Campaign C
        ON E.EX_campaign_ID = C.Campaign_ID
-     INNER JOIN dbo.T_DatasetTypeName DSTypeName
+     INNER JOIN dbo.T_Dataset_Type_Name DSTypeName
        ON DS.DS_type_ID = DSTypeName.DST_Type_ID
      INNER JOIN dbo.T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID
-     INNER JOIN T_DatasetRatingName DRN
+     INNER JOIN T_Dataset_Rating_Name DRN
        ON DS.DS_rating = DRN.DRN_state_ID
      LEFT OUTER JOIN dbo.T_Secondary_Sep SepType
        ON DS.DS_sec_sep = SepType.SS_name
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Predefined_Analysis_Dataset_Info] TO [DDL_Viewer] AS [dbo]

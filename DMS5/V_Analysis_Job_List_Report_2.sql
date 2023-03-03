@@ -47,7 +47,7 @@ FROM T_Analysis_Job AJ
        ON AJ.AJ_datasetID = DS.Dataset_ID
      INNER JOIN T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
-     INNER JOIN T_DatasetRatingName DR
+     INNER JOIN T_Dataset_Rating_Name DR
        ON DS.DS_rating = DR.DRN_state_ID
      INNER JOIN T_Organisms JobOrg
        ON AJ.AJ_organismID = JobOrg.Organism_ID
@@ -63,7 +63,6 @@ FROM T_Analysis_Job AJ
        ON DS.Dataset_ID = DFP.Dataset_ID
      LEFT OUTER JOIN S_V_BTO_ID_to_Name BTO
        ON BTO.Identifier = E.EX_Tissue_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_List_Report_2] TO [DDL_Viewer] AS [dbo]

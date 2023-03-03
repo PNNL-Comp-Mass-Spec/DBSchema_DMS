@@ -18,7 +18,7 @@ FROM T_Campaign C
        ON C.Campaign_ID = E.EX_campaign_ID
      INNER JOIN T_Dataset DS
        ON E.Exp_ID = DS.Exp_ID
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
      LEFT OUTER JOIN T_Cached_Experiment_Components CCE
        ON E.Exp_ID = CCE.Exp_ID
@@ -27,7 +27,6 @@ FROM T_Campaign C
                        FROM T_Analysis_Job
                        GROUP BY AJ_datasetID ) JobsPerDataset
        ON JobsPerDataset.ID = DS.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Tracking_Ex] TO [DDL_Viewer] AS [dbo]

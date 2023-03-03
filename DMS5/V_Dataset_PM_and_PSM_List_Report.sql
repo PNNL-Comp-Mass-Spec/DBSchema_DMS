@@ -44,15 +44,14 @@ FROM V_MTS_PM_Results_List_Report PM
        ON PM.Dataset_ID = DFP.Dataset_ID
      INNER JOIN T_Dataset DS
        ON PM.Dataset_ID = DS.Dataset_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
-     INNER JOIN T_DatasetRatingName DR
+     INNER JOIN T_Dataset_Rating_Name DR
        ON DS.DS_rating = DR.DRN_state_ID
      LEFT OUTER JOIN V_Dataset_QC_Metrics QCM
        ON PM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_Analysis_Job_PSM_List_Report PSM
        ON PSM.Dataset_ID = PM.Dataset_ID AND PSM.State_ID NOT IN (5, 14)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PM_and_PSM_List_Report] TO [DDL_Viewer] AS [dbo]

@@ -16,9 +16,8 @@ SELECT
 	I.allocation_tag,
 	ISNULL(DT.DST_name, '') AS default_dataset_type_name
 FROM T_Instrument_Group I
-     LEFT OUTER JOIN dbo.T_DatasetTypeName DT
+     LEFT OUTER JOIN dbo.T_Dataset_Type_Name DT
        ON I.Default_Dataset_Type = DT.DST_Type_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Group_Entry] TO [DDL_Viewer] AS [dbo]

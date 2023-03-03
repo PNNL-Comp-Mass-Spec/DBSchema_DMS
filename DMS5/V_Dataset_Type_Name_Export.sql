@@ -7,7 +7,6 @@ GO
 CREATE VIEW V_Dataset_Type_Name_Export
 AS
 SELECT DST_Type_ID As Dataset_Type_ID, DST_name As Dataset_Type, DST_Description As Description, DST_Active As Active
-FROM T_DatasetTypeName
-
+FROM T_Dataset_Type_Name
 
 GO

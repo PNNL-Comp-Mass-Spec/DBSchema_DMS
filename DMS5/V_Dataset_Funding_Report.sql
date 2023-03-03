@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Dataset_Funding_Report]
 AS
 SELECT DS.Dataset_ID AS id,
@@ -39,11 +40,11 @@ SELECT DS.Dataset_ID AS id,
        InstName.IN_operations_role AS instrument_ops_role,
        InstName.IN_class AS instrument_class
 FROM T_Sample_Prep_Request SPR RIGHT OUTER JOIN
-    T_DatasetStateName DSN INNER JOIN
+    T_Dataset_State_Name DSN INNER JOIN
     T_Dataset DS ON DSN.Dataset_state_ID = DS.DS_state_ID INNER JOIN
-    T_DatasetTypeName DTN ON DS.DS_type_ID = DTN.DST_Type_ID INNER JOIN
+    T_Dataset_Type_Name DTN ON DS.DS_type_ID = DTN.DST_Type_ID INNER JOIN
     T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID INNER JOIN
-    T_DatasetRatingName DSRating ON DS.DS_rating = DSRating.DRN_state_ID INNER JOIN
+    T_Dataset_Rating_Name DSRating ON DS.DS_rating = DSRating.DRN_state_ID INNER JOIN
     T_Experiments Exp ON DS.Exp_ID = Exp.Exp_ID INNER JOIN
     T_Campaign C ON Exp.EX_campaign_ID = C.Campaign_ID ON
     SPR.ID = Exp.EX_sample_prep_request_ID LEFT OUTER JOIN

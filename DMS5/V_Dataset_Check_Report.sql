@@ -14,14 +14,13 @@ SELECT DS.dataset_id,
        SPath.SP_machine_name AS storage,
        InstName.IN_name AS instrument
 FROM dbo.T_Dataset DS
-     INNER JOIN dbo.T_DatasetStateName DSN
+     INNER JOIN dbo.T_Dataset_State_Name DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
      INNER JOIN dbo.t_storage_path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
      INNER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
 WHERE DS.DS_created >= DateAdd(DAY, -120, GetDate())
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Check_Report] TO [DDL_Viewer] AS [dbo]

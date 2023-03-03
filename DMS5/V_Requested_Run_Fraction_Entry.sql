@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_Requested_Run_Fraction_Entry]
 AS
 SELECT RR.ID AS source_request_id,
@@ -26,7 +27,7 @@ SELECT RR.ID AS source_request_id,
        dbo.get_requested_run_eus_users_list(RR.ID, 'I') AS eus_user,
        ISNULL(dbo.T_Attachments.Attachment_Name, '') AS mrm_attachment
 FROM T_Requested_Run AS RR
-     INNER JOIN T_DatasetTypeName AS DTN
+     INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN dbo.T_Experiments E
        ON RR.Exp_ID = E.Exp_ID

@@ -43,7 +43,7 @@ SELECT EL.Event_ID,
                        END
            WHEN 4 THEN DSSN.DSS_name
            WHEN 5 THEN AJSN.AJS_name
-           WHEN 6 THEN DASN.DASN_StateName
+           WHEN 6 THEN DASN.archive_state
            WHEN 7 THEN AUSN.AUS_name
            WHEN 8 THEN DSRN.DRN_name
            WHEN 9 THEN '% EMSL Funded'
@@ -56,17 +56,17 @@ SELECT EL.Event_ID,
        EL.Entered,
        EL.Entered_By
 FROM dbo.T_Event_Log EL
-     LEFT OUTER JOIN DMS5.dbo.T_DatasetRatingName DSRN
+     LEFT OUTER JOIN DMS5.dbo.T_Dataset_Rating_Name DSRN
        ON EL.Target_State = DSRN.DRN_state_ID AND
           EL.Target_Type = 8
-     LEFT OUTER JOIN DMS5.dbo.T_DatasetStateName DSSN
+     LEFT OUTER JOIN DMS5.dbo.T_Dataset_State_Name DSSN
        ON EL.Target_State = DSSN.Dataset_state_ID AND
           EL.Target_Type = 4
      LEFT OUTER JOIN DMS5.dbo.T_Archive_Update_State_Name AUSN
        ON EL.Target_State = AUSN.AUS_stateID AND
           EL.Target_Type = 7
-     LEFT OUTER JOIN DMS5.dbo.T_DatasetArchiveStateName DASN
-       ON EL.Target_State = DASN.DASN_StateID AND
+     LEFT OUTER JOIN DMS5.dbo.T_Dataset_Archive_State_Name DASN
+       ON EL.Target_State = DASN.archive_state_id AND
           EL.Target_Type = 6
      LEFT OUTER JOIN DMS5.dbo.T_Analysis_State_Name AJSN
        ON EL.Target_State = AJSN.AJS_stateID AND
@@ -80,7 +80,6 @@ FROM dbo.T_Event_Log EL
      LEFT OUTER JOIN DMS5.dbo.T_Analysis_Job_Request_State AJRS
        ON EL.Target_State = AJRS.ID AND
           EL.Target_Type = 12
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Event_Log] TO [DDL_Viewer] AS [dbo]

@@ -11,16 +11,15 @@ SELECT DS.Dataset_Num AS Dataset,
 	   DS.DS_created AS Created,
 	   DS.Dataset_ID AS ID,
 	   DSN.DSS_name AS State,
-	   Inst.IN_name AS Instrument       
+	   Inst.IN_name AS Instrument
 FROM T_Dataset DS
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON DS.DS_state_ID = DSN.Dataset_state_ID
      INNER JOIN T_Instrument_Name Inst
-       ON DS.DS_instrument_name_ID = Inst.Instrument_ID    
+       ON DS.DS_instrument_name_ID = Inst.Instrument_ID
      INNER JOIN T_Experiments E
-       ON DS.Exp_ID = E.Exp_ID     
+       ON DS.Exp_ID = E.Exp_ID
 WHERE E.Experiment_Num <> 'Tracking'
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_LCMSNet_Dataset_Export] TO [DDL_Viewer] AS [dbo]

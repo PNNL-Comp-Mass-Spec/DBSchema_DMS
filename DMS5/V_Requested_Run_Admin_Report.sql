@@ -44,7 +44,7 @@ SELECT RR.ID AS request,
            ELSE CC.activation_state
        END AS wp_activation_state
 FROM T_Requested_Run AS RR
-     INNER JOIN T_DatasetTypeName AS DTN
+     INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users AS U
        ON RR.RDS_Requestor_PRN = U.U_PRN
@@ -64,7 +64,6 @@ FROM T_Requested_Run AS RR
        ON RR.ID = QT.Requested_Run_ID
      LEFT OUTER JOIN V_Charge_Code_Status CC
        ON RR.RDS_WorkPackage = CC.Charge_Code
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Admin_Report] TO [DDL_Viewer] AS [dbo]

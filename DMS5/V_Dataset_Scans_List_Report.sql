@@ -26,7 +26,7 @@ SELECT DS.Dataset_ID AS id,
 	   DSInfo.CentroidScanCount_MSn AS centroid_scan_count_msn,
        DST.Entry_ID AS scan_type_entry_id
 FROM dbo.T_Dataset DS
-     INNER JOIN dbo.T_DatasetTypeName DTN
+     INNER JOIN dbo.T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      INNER JOIN dbo.T_Instrument_Name InstName
        ON DS.DS_instrument_name_ID = InstName.Instrument_ID
@@ -34,7 +34,6 @@ FROM dbo.T_Dataset DS
        ON DS.Dataset_ID = DSInfo.Dataset_ID
      INNER JOIN dbo.T_Dataset_ScanTypes DST
        ON DS.Dataset_ID = DST.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Scans_List_Report] TO [DDL_Viewer] AS [dbo]

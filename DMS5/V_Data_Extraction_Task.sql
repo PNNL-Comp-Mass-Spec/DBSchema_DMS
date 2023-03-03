@@ -27,13 +27,13 @@ SELECT CONVERT(varchar(32), A.AJ_jobID) AS TaskNum,
        A.AJ_assignedProcessorName AS AssignedProcessor,
        A.AJ_resultsFolderName AS ResultsFolderName,
        T.AJT_resultType AS toolResultType,
-       DAS.DASN_StateName AS ArchiveState
+       DAS.archive_state AS ArchiveState
 FROM T_Analysis_Job A
      INNER JOIN T_Dataset D
        ON A.AJ_datasetID = D.Dataset_ID
      INNER JOIN T_Organisms O
        ON A.AJ_organismID = O.Organism_ID
-     INNER JOIN t_storage_path S
+     INNER JOIN T_Storage_Path S
        ON D.DS_storage_path_ID = S.SP_path_ID
      INNER JOIN T_Analysis_Tool T
        ON A.AJ_analysisToolID = T.AJT_toolID
@@ -41,10 +41,8 @@ FROM T_Analysis_Job A
        ON D.DS_instrument_name_ID = I.Instrument_ID
      INNER JOIN T_Dataset_Archive DA
        ON A.AJ_DatasetID = DA.AS_Dataset_ID
-     INNER JOIN T_DatasetArchiveStateName DAS
-       ON DA.AS_state_ID = DAS.DASN_StateID
-
-
+     INNER JOIN T_Dataset_Archive_State_Name DAS
+       ON DA.AS_state_ID = DAS.archive_state_id
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Extraction_Task] TO [DDL_Viewer] AS [dbo]

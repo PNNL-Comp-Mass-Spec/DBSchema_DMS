@@ -21,7 +21,7 @@ FROM ( SELECT DSN.Dataset_state_ID AS State,
               Instrument.IN_class AS Instrument_Class,
               COUNT(*) AS Dataset_Count
        FROM dbo.T_Dataset DS
-            INNER JOIN dbo.T_DatasetStateName DSN
+            INNER JOIN dbo.T_Dataset_State_Name DSN
               ON DS.DS_state_ID = DSN.Dataset_state_ID
             INNER JOIN dbo.T_Instrument_Name Instrument
               ON DS.DS_instrument_name_ID = Instrument.Instrument_ID
@@ -29,9 +29,8 @@ FROM ( SELECT DSN.Dataset_state_ID AS State,
        GROUP BY DSN.Dataset_state_ID, DSN.DSS_name, Instrument.IN_class ) AS SourceTable
      PIVOT ( SUM(Dataset_Count)
              FOR Instrument_Class
-             IN ( [BRUKERFTMS], [Finnigan_Ion_Trap], [LTQ_FT], [Thermo_Exactive], [Triple_Quad], 
+             IN ( [BRUKERFTMS], [Finnigan_Ion_Trap], [LTQ_FT], [Thermo_Exactive], [Triple_Quad],
              [Finnigan_FTICR], [IMS_Agilent_TOF_UIMF], [IMS_Agilent_TOF_DotD] ) ) AS PivotData
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Stats_Recent_Crosstab] TO [DDL_Viewer] AS [dbo]

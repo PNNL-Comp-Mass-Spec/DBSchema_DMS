@@ -26,54 +26,54 @@ SELECT EL.Event_ID,
        END AS Target,
        EL.Target_ID,
        EL.Target_State,
-       CASE 
-           WHEN EL.Target_Type In (1, 2, 3, 13) THEN 
+       CASE
+           WHEN EL.Target_Type In (1, 2, 3, 13) THEN
                        CASE Target_State
                            WHEN 1 THEN 'Created'
                            WHEN 0 THEN 'Deleted'
                            ELSE NULL
                        END
-           WHEN EL.Target_Type = 4 THEN 
+           WHEN EL.Target_Type = 4 THEN
                 CASE WHEN EL.Target_State = 0 And EL.Prev_Target_State > 0 THEN 'Deleted'
                      ELSE DSSN.DSS_name
                 END
-           WHEN EL.Target_Type = 5 THEN 
+           WHEN EL.Target_Type = 5 THEN
                 CASE WHEN EL.Target_State = 0 And EL.Prev_Target_State > 0 THEN 'Deleted'
                      ELSE AJSN.AJS_name
-                END            
-           WHEN EL.Target_Type = 6 THEN 
+                END
+           WHEN EL.Target_Type = 6 THEN
                 CASE WHEN EL.Target_State = 0 And EL.Prev_Target_State > 0 THEN 'Deleted'
-                     ELSE DASN.DASN_StateName
-                END            
+                     ELSE DASN.archive_state
+                END
            WHEN EL.Target_Type = 7 THEN AUSN.AUS_name
            WHEN EL.Target_Type = 8 THEN DSRN.DRN_name
            WHEN EL.Target_Type = 9 THEN '% EMSL Funded'
            WHEN EL.Target_Type = 10 THEN DRR.Name
-           WHEN EL.Target_Type = 11 THEN 
+           WHEN EL.Target_Type = 11 THEN
                 CASE WHEN EL.Target_State = 0 And EL.Prev_Target_State > 0 THEN 'Deleted'
                      ELSE RRSN.State_Name
-                END           
-           WHEN EL.Target_Type = 12 THEN 
+                END
+           WHEN EL.Target_Type = 12 THEN
                 CASE WHEN EL.Target_State = 0 And EL.Prev_Target_State > 0 THEN 'Deleted'
                      ELSE AJRS.StateName
-                END             
+                END
            ELSE NULL
        END AS State_Name,
        EL.Prev_Target_State,
        EL.Entered,
        EL.Entered_By
 FROM dbo.T_Event_Log EL
-     LEFT OUTER JOIN dbo.T_DatasetRatingName DSRN
+     LEFT OUTER JOIN dbo.T_Dataset_Rating_Name DSRN
        ON EL.Target_State = DSRN.DRN_state_ID AND
           EL.Target_Type = 8
-     LEFT OUTER JOIN dbo.T_DatasetStateName DSSN
+     LEFT OUTER JOIN dbo.T_Dataset_State_Name DSSN
        ON EL.Target_State = DSSN.Dataset_state_ID AND
           EL.Target_Type = 4
      LEFT OUTER JOIN dbo.T_Archive_Update_State_Name AUSN
        ON EL.Target_State = AUSN.AUS_stateID AND
           EL.Target_Type = 7
-     LEFT OUTER JOIN dbo.T_DatasetArchiveStateName DASN
-       ON EL.Target_State = DASN.DASN_StateID AND
+     LEFT OUTER JOIN dbo.T_Dataset_Archive_State_Name DASN
+       ON EL.Target_State = DASN.archive_state_id AND
           EL.Target_Type = 6
      LEFT OUTER JOIN dbo.T_Analysis_State_Name AJSN
        ON EL.Target_State = AJSN.AJS_stateID AND

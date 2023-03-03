@@ -55,13 +55,12 @@ FROM V_Data_Package_Analysis_Job_PSM_List_Report PSM
        ON PSM.Dataset_ID = DFP.Dataset_ID
      INNER JOIN T_Dataset DS
        ON PSM.Dataset_ID = DS.Dataset_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
      LEFT OUTER JOIN V_Dataset_QC_Metrics QCM
        ON PSM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
 WHERE PSM.State_ID NOT IN (5, 14)
-
 
 GO

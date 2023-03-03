@@ -23,18 +23,17 @@ SELECT DS.Dataset_ID AS id,
 FROM T_LC_Cart AS LCC
      INNER JOIN T_Requested_Run AS RRH
        ON LCC.ID = RRH.RDS_Cart_ID
-     RIGHT OUTER JOIN T_DatasetStateName AS DSN
+     RIGHT OUTER JOIN T_Dataset_State_Name AS DSN
                       INNER JOIN T_Dataset AS DS
                         ON DSN.Dataset_state_ID = DS.DS_state_ID
                       INNER JOIN T_Instrument_Name AS InstName
                         ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                      INNER JOIN T_DatasetRatingName AS DRN
+                      INNER JOIN T_Dataset_Rating_Name AS DRN
                         ON DS.DS_rating = DRN.DRN_state_ID
        ON RRH.DatasetID = DS.Dataset_ID
      INNER JOIN t_storage_path AS SPath
        ON SPath.SP_path_ID = DS.DS_storage_path_ID
 WHERE (DS.DS_rating = -10)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_Disposition] TO [DDL_Viewer] AS [dbo]

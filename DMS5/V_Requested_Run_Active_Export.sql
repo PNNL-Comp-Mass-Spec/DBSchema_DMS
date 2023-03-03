@@ -47,7 +47,7 @@ SELECT RR.ID AS Request,
        RR.RDS_BatchID AS Batch,
        RR.Vialing_Conc,
        RR.Vialing_Vol
-FROM T_DatasetTypeName DTN
+FROM T_Dataset_Type_Name DTN
      INNER JOIN T_Requested_Run RR
        ON DTN.DST_Type_ID = RR.RDS_type_ID
      INNER JOIN T_Users U
@@ -61,6 +61,5 @@ FROM T_DatasetTypeName DTN
      LEFT OUTER JOIN T_Active_Requested_Run_Cached_EUS_Users RRCU
        ON RR.ID = RRCU.Request_ID
 WHERE (RR.RDS_Status = 'Active')
-
 
 GO

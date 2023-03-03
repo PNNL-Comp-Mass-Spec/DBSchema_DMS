@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE VIEW [dbo].[V_EUS_Export_Data_Package_Jobs]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
@@ -19,16 +20,16 @@ SELECT D.Dataset_ID AS Dataset_ID,
        AJ.AJ_proteinCollectionList AS Protein_Collection_List,
        DP.ID AS Data_Package_ID,
        DP.Name AS Data_Package_Name,
-       dbo.combine_paths('\\aurora.emsl.pnl.gov\archive\prismarch\DataPkgs', DP.Storage_Path_Relative) AS 
+       dbo.combine_paths('\\aurora.emsl.pnl.gov\archive\prismarch\DataPkgs', DP.Storage_Path_Relative) AS
          Data_Package_Path_Aurora
 FROM T_Dataset D
      INNER JOIN T_Instrument_Name Inst
        ON D.DS_instrument_name_ID = Inst.Instrument_ID
-     INNER JOIN T_DatasetTypeName DTN
+     INNER JOIN T_Dataset_Type_Name DTN
        ON D.DS_type_ID = DTN.DST_Type_ID
-     INNER JOIN T_DatasetStateName DSN
+     INNER JOIN T_Dataset_State_Name DSN
        ON D.DS_state_ID = DSN.Dataset_state_ID
-     INNER JOIN T_DatasetRatingName DRN
+     INNER JOIN T_Dataset_Rating_Name DRN
        ON D.DS_rating = DRN.DRN_state_ID
      INNER JOIN T_Experiments E
        ON D.Exp_ID = E.Exp_ID
@@ -43,7 +44,6 @@ FROM T_Dataset D
      INNER JOIN S_V_Data_Package_Export DP
        ON DP.ID = DPJ.Data_Package_ID
 WHERE (AJ.AJ_StateID = 4)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_Data_Package_Jobs] TO [DDL_Viewer] AS [dbo]
