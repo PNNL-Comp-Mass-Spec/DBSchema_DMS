@@ -32,10 +32,10 @@ ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Sa
 GO
 ALTER TABLE [dbo].[T_Instrument_Group] ADD  CONSTRAINT [DF_T_Instrument_Group_Requested_Run_Visible]  DEFAULT ((1)) FOR [Requested_Run_Visible]
 GO
-ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_T_DatasetTypeName] FOREIGN KEY([Default_Dataset_Type])
-REFERENCES [dbo].[T_DatasetTypeName] ([DST_Type_ID])
+ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_T_Dataset_Type_Name] FOREIGN KEY([Default_Dataset_Type])
+REFERENCES [dbo].[T_Dataset_Type_Name] ([DST_Type_ID])
 GO
-ALTER TABLE [dbo].[T_Instrument_Group] CHECK CONSTRAINT [FK_T_Instrument_Group_T_DatasetTypeName]
+ALTER TABLE [dbo].[T_Instrument_Group] CHECK CONSTRAINT [FK_T_Instrument_Group_T_Dataset_Type_Name]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_T_Instrument_Group_Allocation_Tag] FOREIGN KEY([Allocation_Tag])
 REFERENCES [dbo].[T_Instrument_Group_Allocation_Tag] ([Allocation_Tag])

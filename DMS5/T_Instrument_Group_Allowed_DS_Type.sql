@@ -25,11 +25,11 @@ ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Ins
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] ADD  CONSTRAINT [DF_T_Instrument_Group_Allowed_DS_Type_Dataset_Usage_Last_Year]  DEFAULT ((0)) FOR [Dataset_Usage_Last_Year]
 GO
-ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_DatasetTypeName_Dataset_Type] FOREIGN KEY([Dataset_Type])
-REFERENCES [dbo].[T_DatasetTypeName] ([DST_name])
+ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_Dataset_Type_Name_Dataset_Type] FOREIGN KEY([Dataset_Type])
+REFERENCES [dbo].[T_Dataset_Type_Name] ([DST_name])
 ON UPDATE CASCADE
 GO
-ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] CHECK CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_DatasetTypeName_Dataset_Type]
+ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type] CHECK CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_Dataset_Type_Name_Dataset_Type]
 GO
 ALTER TABLE [dbo].[T_Instrument_Group_Allowed_DS_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Group_Allowed_DS_Type_T_Instrument_Group_IN_Group] FOREIGN KEY([IN_Group])
 REFERENCES [dbo].[T_Instrument_Group] ([IN_Group])

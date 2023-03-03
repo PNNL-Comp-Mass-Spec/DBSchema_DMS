@@ -111,10 +111,10 @@ REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset]
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName] FOREIGN KEY([AS_state_ID])
-REFERENCES [dbo].[T_DatasetArchiveStateName] ([DASN_StateID])
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset_Archive_State_Name] FOREIGN KEY([AS_state_ID])
+REFERENCES [dbo].[T_Dataset_Archive_State_Name] ([archive_state_id])
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_DatasetArchiveStateName]
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset_Archive_State_Name]
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState] FOREIGN KEY([MyEMSLState])
 REFERENCES [dbo].[T_MyEMSLState] ([MyEMSLState])

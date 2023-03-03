@@ -230,21 +230,21 @@ ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DS_PrepServerName]  
 GO
 ALTER TABLE [dbo].[T_Dataset] ADD  CONSTRAINT [DF_T_Dataset_DateSortKey]  DEFAULT (getdate()) FOR [DateSortKey]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetRatingName] FOREIGN KEY([DS_rating])
-REFERENCES [dbo].[T_DatasetRatingName] ([DRN_state_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Dataset_Rating_Name] FOREIGN KEY([DS_rating])
+REFERENCES [dbo].[T_Dataset_Rating_Name] ([DRN_state_ID])
 GO
-ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetRatingName]
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Dataset_Rating_Name]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetStateName] FOREIGN KEY([DS_state_ID])
-REFERENCES [dbo].[T_DatasetStateName] ([Dataset_state_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Dataset_State_Name] FOREIGN KEY([DS_state_ID])
+REFERENCES [dbo].[T_Dataset_State_Name] ([Dataset_state_ID])
 GO
-ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetStateName]
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Dataset_State_Name]
 GO
-ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_DatasetTypeName] FOREIGN KEY([DS_type_ID])
-REFERENCES [dbo].[T_DatasetTypeName] ([DST_Type_ID])
+ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Dataset_Type_Name] FOREIGN KEY([DS_type_ID])
+REFERENCES [dbo].[T_Dataset_Type_Name] ([DST_Type_ID])
 ON UPDATE CASCADE
 GO
-ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_DatasetTypeName]
+ALTER TABLE [dbo].[T_Dataset] CHECK CONSTRAINT [FK_T_Dataset_T_Dataset_Type_Name]
 GO
 ALTER TABLE [dbo].[T_Dataset]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_T_Experiments] FOREIGN KEY([Exp_ID])
 REFERENCES [dbo].[T_Experiments] ([Exp_ID])

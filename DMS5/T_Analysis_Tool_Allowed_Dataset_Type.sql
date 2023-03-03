@@ -25,9 +25,9 @@ ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_Analysis_Tool]
 GO
-ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_DatasetTypeName] FOREIGN KEY([Dataset_Type])
-REFERENCES [dbo].[T_DatasetTypeName] ([DST_name])
+ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type]  WITH CHECK ADD  CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_Dataset_Type_Name] FOREIGN KEY([Dataset_Type])
+REFERENCES [dbo].[T_Dataset_Type_Name] ([DST_name])
 ON UPDATE CASCADE
 GO
-ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_DatasetTypeName]
+ALTER TABLE [dbo].[T_Analysis_Tool_Allowed_Dataset_Type] CHECK CONSTRAINT [FK_T_Analysis_Tool_Allowed_Dataset_Type_T_Dataset_Type_Name]
 GO

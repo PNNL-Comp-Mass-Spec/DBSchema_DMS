@@ -222,10 +222,10 @@ REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Dataset]
 GO
-ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName] FOREIGN KEY([RDS_type_ID])
-REFERENCES [dbo].[T_DatasetTypeName] ([DST_Type_ID])
+ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_Dataset_Type_Name] FOREIGN KEY([RDS_type_ID])
+REFERENCES [dbo].[T_Dataset_Type_Name] ([DST_Type_ID])
 GO
-ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_DatasetTypeName]
+ALTER TABLE [dbo].[T_Requested_Run] CHECK CONSTRAINT [FK_T_Requested_Run_T_Dataset_Type_Name]
 GO
 ALTER TABLE [dbo].[T_Requested_Run]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_T_EUS_Proposals] FOREIGN KEY([RDS_EUS_Proposal_ID])
 REFERENCES [dbo].[T_EUS_Proposals] ([Proposal_ID])

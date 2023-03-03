@@ -31,7 +31,7 @@ GO
 ALTER TABLE [dbo].[T_Cached_Instrument_Dataset_Type_Usage] ADD  CONSTRAINT [DF_T_Cached_Instrument_Dataset_Type_Usage_Dataset_Usage_Last_Year]  DEFAULT ((0)) FOR [Dataset_Usage_Last_Year]
 GO
 ALTER TABLE [dbo].[T_Cached_Instrument_Dataset_Type_Usage]  WITH CHECK ADD  CONSTRAINT [FK_T_Cached_Instrument_Dataset_Type_Usage_T_Dataset_Type_Name] FOREIGN KEY([Dataset_Type])
-REFERENCES [dbo].[T_DatasetTypeName] ([DST_name])
+REFERENCES [dbo].[T_Dataset_Type_Name] ([DST_name])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Cached_Instrument_Dataset_Type_Usage] CHECK CONSTRAINT [FK_T_Cached_Instrument_Dataset_Type_Usage_T_Dataset_Type_Name]
