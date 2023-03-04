@@ -32,7 +32,7 @@ CREATE PROCEDURE [dbo].[verify_update_enabled]
     @stepName varchar(64) = 'PMT_Tag_DB_Update',
     @callingFunctionDescription varchar(128) = 'Unknown',
     @allowPausing tinyint = 0,                          -- Set to 1 to allow pausing if Execution_State is 2 or 3
-    @post_log_entryIfDisabled tinyint = 1,
+    @postLogEntryIfDisabled tinyint = 1,
     @minimumHealthUpdateIntervalSeconds int = 5,        -- Minimum interval between updating the Last_Query fields
     @updateEnabled tinyint = 0 output,
     @message varchar(255) = '' output
@@ -252,7 +252,7 @@ AS
     Begin
         Set @message = 'Processing step ' + @StepName + ' is disabled in MT_Main; aborting processing (called by ' + @CallingFunctionDescription + ')'
 
-        If @post_log_entryIfDisabled = 1
+        If @postLogEntryIfDisabled = 1
         Begin
             -- Post a warning to the log, but limit to one posting every hour
             EXEC post_log_entry 'Warning', @message, 'verify_update_enabled', 1
