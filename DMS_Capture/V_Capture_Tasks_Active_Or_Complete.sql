@@ -1,9 +1,9 @@
-/****** Object:  View [dbo].[V_Capture_Jobs_Active_Or_Complete] ******/
+/****** Object:  View [dbo].[V_Capture_Tasks_Active_Or_Complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_Capture_Jobs_Active_Or_Complete]
+CREATE VIEW [dbo].[V_Capture_Tasks_Active_Or_Complete]
 AS
 SELECT J.Job,
        J.Priority,
@@ -34,6 +34,7 @@ GROUP BY J.Job, J.Priority, J.Script, J.[State], JSN.Name,
          J.Instrument_Class, J.Results_Folder_Name, J.Imported,
          J.Start, J.Finish
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Capture_Jobs_Active_Or_Complete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Tasks_Active_Or_Complete] TO [DDL_Viewer] AS [dbo]
 GO
