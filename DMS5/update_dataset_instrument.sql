@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[update_dataset_instrument]
 **  Date:   04/30/2019 mem - Initial Version
 **          01/05/2023 mem - Use new column names in V_Storage_List_Report
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new synonym names and T_Task tables
 **
 *****************************************************/
 (
@@ -95,7 +96,7 @@ AS
     -- Find the capture job for this dataset
     SELECT @captureJob = Job,
            @stepState = State
-    FROM S_V_Capture_Job_Steps
+    FROM S_V_Capture_Task_Steps
     WHERE Dataset_ID = @datasetId AND
             Tool = 'DatasetCapture'
     --
@@ -171,7 +172,7 @@ AS
         WHERE ID = @datasetId
 
         SELECT *
-        FROM S_V_Capture_Job_Steps
+        FROM S_V_Capture_Task_Steps
         WHERE Job = @captureJob And
               Tool = 'DatasetCapture'
 

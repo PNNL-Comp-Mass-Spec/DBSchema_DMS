@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[validate_job_dataset_states]
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/01/2023 mem - Use new synonym names
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new synonym name
 **
 *****************************************************/
 (
@@ -63,7 +64,7 @@ AS
         SELECT DS.Dataset_ID, DS.DS_state_ID, PipelineQ.NewState
         FROM T_Dataset DS
              INNER JOIN ( SELECT Dataset_ID, State AS NewState
-                          FROM S_V_Capture_Jobs_Active_Or_Complete
+                          FROM S_V_Capture_Tasks_Active_Or_Complete
                           WHERE Script = 'DatasetCapture' AND
                                 State = 3 AND
                                 Finish < DateAdd(Hour, -1, GetDate())

@@ -21,7 +21,7 @@ CREATE PROCEDURE [dbo].[do_dataset_operation]
 **          08/19/2010 grk - try-catch for error handling
 **          05/25/2011 mem - Fixed bug that reported "mode was unrecognized" for valid modes
 **                         - Removed 'restore' mode
-**          01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Jobs_Active_Or_Complete
+**          01/12/2012 mem - Now preventing deletion if @mode is 'delete' and the dataset exists in S_V_Capture_Tasks_Active_Or_Complete
 **          11/14/2013 mem - Now preventing reset if the first step of dataset capture succeeded
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          01/10/2017 mem - Add @mode 'createjobs' which adds the dataset to T_Predefined_Analysis_Scheduling_Queue so that default jobs will be created
@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[do_dataset_operation]
 **          11/16/2018 mem - Pass @infoOnly to delete_dataset
 **          02/01/2023 mem - Use new synonym names
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new synonym names
 **
 *****************************************************/
 (
@@ -192,13 +193,13 @@ AS
         -- Verify that the dataset does not have an active or completed capture job
         ---------------------------------------------------
 
-        If Exists (SELECT * FROM S_V_Capture_Jobs_Active_Or_Complete WHERE Dataset_ID = @datasetID And State <= 2)
+        If Exists (SELECT * FROM S_V_Capture_Tasks_Active_Or_Complete WHERE Dataset_ID = @datasetID And State <= 2)
         Begin
             set @msg = 'Dataset "' + @datasetName + '" is being processed by the DMS_Capture database; unable to delete'
             RAISERROR (@msg, 11, 3)
         End
 
-        If Exists (SELECT * FROM S_V_Capture_Jobs_Active_Or_Complete WHERE Dataset_ID = @datasetID And State > 2)
+        If Exists (SELECT * FROM S_V_Capture_Tasks_Active_Or_Complete WHERE Dataset_ID = @datasetID And State > 2)
         Begin
             set @msg = 'Dataset "' + @datasetName + '" has been processed by the DMS_Capture database; unable to delete'
             RAISERROR (@msg, 11, 3)
@@ -238,12 +239,12 @@ AS
         End
 
         -- Do not allow a reset if the dataset succeeded the first step of capture
-        If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (1,2,4,5))
+        If Exists (SELECT * FROM S_V_Capture_Task_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State IN (1,2,4,5))
         Begin
             Declare @allowReset tinyint = 0
 
-            If Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetIntegrity' AND State = 6) AND
-               Exists (SELECT * FROM S_V_Capture_Job_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State = 5)
+            If Exists (SELECT * FROM S_V_Capture_Task_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetIntegrity' AND State = 6) AND
+               Exists (SELECT * FROM S_V_Capture_Task_Steps WHERE Dataset_ID = @datasetID AND Tool = 'DatasetCapture' AND State = 5)
             Begin
                 -- Do allow a reset if the DatasetIntegrity step failed and if we haven't already retried capture of this dataset once
                 set @msg = 'Retrying capture of dataset ' + @datasetName + ' at user request (dataset was captured, but DatasetIntegrity failed)'
