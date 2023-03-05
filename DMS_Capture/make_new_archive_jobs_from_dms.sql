@@ -7,8 +7,7 @@ CREATE PROCEDURE [dbo].[make_new_archive_jobs_from_dms]
 /****************************************************
 **
 **  Desc:   Add dataset archive jobs from DMS
-**          for datsets that are in archive “New” state that aren’t
-**          already in table.
+**          for datsets that are in archive 'New' state that aren't already in table
 **
 **  Auth:   grk
 **  Date:   01/08/2010 grk - Initial release
