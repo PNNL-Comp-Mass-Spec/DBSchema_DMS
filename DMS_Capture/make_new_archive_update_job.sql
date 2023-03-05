@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[make_new_archive_update_job]
 **          06/27/2019 mem - Default job priority is now 4; higher priority is now 3
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -108,7 +109,7 @@ AS
     Set @JobID = 0
 
     SELECT @JobID = Job
-    FROM T_Jobs
+    FROM T_Tasks
     WHERE (Script = 'ArchiveUpdate') AND
           (Dataset_ID = @DatasetID) AND
           (ISNULL(Results_Folder_Name, '') = @resultsDirectoryName) AND
@@ -150,7 +151,7 @@ AS
     Else
     Begin
 
-        INSERT INTO T_Jobs( Script,
+        INSERT INTO T_Tasks( Script,
                             Dataset,
                             Dataset_ID,
                             Results_Folder_Name,

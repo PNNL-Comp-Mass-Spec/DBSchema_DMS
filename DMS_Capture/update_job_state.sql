@@ -27,7 +27,7 @@ CREATE PROCEDURE [dbo].[update_job_state]
 **
 **    New,Busy,Resuming   One or more steps busy                      In Progress
 **
-**    Failed              All steps complete (or skipped)             Complete, though only if max Job Step completion time is greater than Finish time in T_Jobs
+**    Failed              All steps complete (or skipped)             Complete, though only if max Job Step completion time is greater than Finish time in T_Tasks
 **
 **    Failed              All steps waiting/enabled/In Progress       In Progress
 **
@@ -41,10 +41,10 @@ CREATE PROCEDURE [dbo].[update_job_state]
 **          01/14/2010 grk - Removed path ID fields
 **          05/04/2010 grk - Bypass DMS if dataset ID = 0
 **          05/08/2010 grk - Update DMS sample prep if dataset ID = 0
-**          05/05/2011 mem - Now updating job state from Failed to Complete if all job steps are now complete and at least one of the job steps finished later than the Finish time in T_Jobs
+**          05/05/2011 mem - Now updating job state from Failed to Complete if all job steps are now complete and at least one of the job steps finished later than the Finish time in T_Tasks
 **          11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
 **          01/16/2012 mem - Added overflow checks when using DateDiff to compute @ProcessingTimeMinutes
-**          11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Jobs
+**          11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Tasks
 **          11/11/2014 mem - Now looking for jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
 **          11/04/2016 mem - Now looking for jobs that are failed, yet should be listed as in progress
 **                         - Only call copy_job_to_history if the new job state is 3 or 5 and if not changing the state from 5 to 2
@@ -55,6 +55,7 @@ CREATE PROCEDURE [dbo].[update_job_state]
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -188,13 +189,13 @@ AS
                     WHEN JS.State IN (3, 5, 13) THEN 1
                     Else 0
                     End) AS FinishedOrSkipped
-            FROM T_Job_Steps JS
-                 INNER JOIN T_Jobs J
+            FROM T_Task_Steps JS
+                 INNER JOIN T_Tasks J
                    ON JS.Job = J.Job
             WHERE (J.State IN (1,2,5,20))    -- Current job state: New, in progress, failed, or resuming
             GROUP BY JS.Job, J.State
            ) AS JS_Stats
-           INNER JOIN T_Jobs AS J
+           INNER JOIN T_Tasks AS J
              ON JS_Stats.Job = J.Job
     ) UpdateQ
     WHERE UpdateQ.OldState <> UpdateQ.NewState
@@ -227,7 +228,7 @@ AS
            J.Dataset_ID,
            J.Script,
            J.Storage_Server
-    FROM T_Jobs J
+    FROM T_Tasks J
          INNER JOIN V_DMS_Dataset_Archive_Status DAS
            ON J.Dataset_ID = DAS.Dataset_ID
          LEFT OUTER JOIN #Tmp_ChangedJobs TargetTable
@@ -262,10 +263,10 @@ AS
            Dataset_ID,
            Script,
            Storage_Server
-    FROM T_Jobs
+    FROM T_Tasks
     WHERE State = 5 AND
-          (Job IN ( SELECT Job FROM T_Job_Steps WHERE State IN (2, 3, 4, 5, 13))) AND
-          (NOT Job IN (SELECT Job FROM T_Job_Steps WHERE State = 6)) AND
+          (Job IN ( SELECT Job FROM T_Task_Steps WHERE State IN (2, 3, 4, 5, 13))) AND
+          (NOT Job IN (SELECT Job FROM T_Task_Steps WHERE State = 6)) AND
           (NOT Job In (SELECT Job FROM #Tmp_ChangedJobs))
      --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -325,7 +326,7 @@ AS
             /*
             SELECT @StartMin = Min(Start),
                    @FinishMax = Max(Finish)
-            FROM T_Job_Steps
+            FROM T_Task_Steps
             WHERE (Job = @job)
              --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -334,7 +335,7 @@ AS
             -- Update @StartMin
             -- Note that if no steps have started yet, then @StartMin will be Null
             SELECT @StartMin = Min(Start)
-            FROM T_Job_Steps
+            FROM T_Task_Steps
             WHERE (Job = @job) AND Not Start Is Null
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -342,7 +343,7 @@ AS
             -- Update @FinishMax
             -- Note that if no steps have finished yet, then @FinishMax will be Null
             SELECT @FinishMax = Max(Finish)
-            FROM T_Job_Steps
+            FROM T_Task_Steps
             WHERE (Job = @job) AND Not Finish Is Null
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -357,9 +358,9 @@ AS
             ---------------------------------------------------
             /*
             SELECT @ProcessingTimeMinutes = SUM(SecondsElapsedMax) / 60.0
-            FROM ( SELECT Step_Tool,
+            FROM ( SELECT Tool,
                           MAX(ISNULL(SecondsElapsed1, 0) + ISNULL(SecondsElapsed2, 0)) AS SecondsElapsedMax
-                   FROM ( SELECT Step_Tool,
+                   FROM ( SELECT Tool,
                                  CASE
                                      WHEN ABS(DATEDIFF(HOUR, start, finish)) > 100000 THEN 360000000
                                      ELSE DATEDIFF(SECOND, Start, Finish)
@@ -373,10 +374,10 @@ AS
                                             END
                                      ELSE NULL
                                  END AS SecondsElapsed2
-                          FROM T_Job_Steps
+                          FROM T_Task_Steps
                           WHERE (Job = @job)
                           ) StatsQ
-                   GROUP BY Step_Tool
+                   GROUP BY Tool
                    ) StepToolQ
              --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -398,7 +399,7 @@ AS
                         ELSE Src.Finish
                         END
                 FROM #Tmp_ChangedJobs Target
-                     INNER JOIN T_Jobs Src
+                     INNER JOIN T_Tasks Src
                        ON Target.Job = Src.Job
                 WHERE Target.Job = @job
                  --
@@ -411,7 +412,7 @@ AS
                 -- Update local job state and timestamp (If appropriate)
                 ---------------------------------------------------
                 --
-                UPDATE T_Jobs
+                UPDATE T_Tasks
                 Set
                     State = @newJobStateInBroker,
                     Start =
@@ -432,7 +433,7 @@ AS
             ---------------------------------------------------
             -- Make changes to DMS if we are enabled to do so
             -- update_dms_dataset_state will also call update_dms_file_info_xml to push the data into T_Dataset_Info
-            -- If a duplicate dataset is found, update_dms_dataset_state will change this job's state to 14 in T_Jobs
+            -- If a duplicate dataset is found, update_dms_dataset_state will change this job's state to 14 in T_Tasks
             ---------------------------------------------------
             --
             If @bypassDMS = 0 AND @datasetID <> 0

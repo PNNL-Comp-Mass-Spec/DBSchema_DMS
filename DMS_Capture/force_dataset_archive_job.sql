@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[force_dataset_archive_job]
 **  Auth:   grk
 **  Date:   01/22/2010
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
         @dataset = Dataset,
         @datasetID = Dataset_ID
     FROM
-        T_Jobs
+        T_Tasks
     WHERE
         Job = @job
     --
@@ -76,7 +77,7 @@ AS
     SELECT
       @hit = Job
     FROM
-      T_Jobs
+      T_Tasks
     WHERE
       Dataset_ID = @datasetID
       AND Script = 'DatasetArchive'
@@ -111,7 +112,7 @@ AS
     -- create DatasetArchive job
     ---------------------------------------------------
     --
-    INSERT  INTO T_Jobs (
+    INSERT  INTO T_Tasks (
         Script,
         Dataset,
         Dataset_ID,

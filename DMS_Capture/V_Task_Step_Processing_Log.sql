@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Task_Step_Processing_Log]
 AS
-With RankQ (Job, Step, JobStart, JSLRank) AS 
+With RankQ (Job, Step, JobStart, JSLRank) AS
   (SELECT Job, Step, Entered AS JobStart, Row_Number() OVER (Partition BY Job, Step ORDER BY Entered) AS JSLRank
-   FROM T_Job_Step_Processing_Log
+   FROM T_Task_Step_Processing_Log
   )
 SELECT JSPL.job,
        JSPL.step,
@@ -16,22 +15,22 @@ SELECT JSPL.job,
        JSPL.entered,
        JSE.Entered AS entered_state,
        JSE.target_state,
-       '\\' + LP.Machine + '\DMS_Programs\CaptureTaskManager' + 
+       '\\' + LP.Machine + '\DMS_Programs\CaptureTaskManager' +
          CASE
                     WHEN JSPL.Processor LIKE '%[-_][1-9]' THEN RIGHT(JSPL.Processor, 2)
                     ELSE ''
-                END + '\Logs\CapTaskMan_' + 
+                END + '\Logs\CapTaskMan_' +
          CASE
              WHEN Month(JSPL.Entered) < 10 THEN '0' + CONVERT(varchar(2), Month(JSPL.Entered))
              ELSE CONVERT(varchar(2), Month(JSPL.Entered))
-         END + '-' + 
+         END + '-' +
          CASE
              WHEN Day(JSPL.Entered) < 10 THEN '0' + CONVERT(varchar(2), Day(JSPL.Entered))
              ELSE CONVERT(varchar(2), Day(JSPL.Entered))
-         END + '-' + 
+         END + '-' +
          CONVERT(varchar(4), YEAR(JSPL.Entered)) + '.txt' AS log_file_path
-FROM T_Job_Step_Processing_Log JSPL
-     INNER JOIN T_Job_Step_Events JSE
+FROM T_Task_Step_Processing_Log JSPL
+     INNER JOIN T_Task_Step_Events JSE
        ON JSPL.Job = JSE.Job AND
           JSPL.Step = JSE.Step AND
           JSE.Entered >= DateAdd(second, -1, JSPL.Entered)
@@ -40,7 +39,6 @@ FROM T_Job_Step_Processing_Log JSPL
      INNER JOIN T_Local_Processors LP
        ON JSPL.Processor = LP.Processor_Name
 WHERE JSE.Entered < IsNull(NextJSPL.JobStart, GETDATE()) AND JSE.Target_State NOT IN (0,1,2)
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Task_Step_Processing_Log] TO [DDL_Viewer] AS [dbo]

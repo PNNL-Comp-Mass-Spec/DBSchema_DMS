@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **  Auth:   grk
 **          05/03/2010 grk - Initial release
 **          05/25/2011 mem - Updated call to create_steps_for_job and removed Priority from #Job_Steps
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/17/2019 mem - Switch from folder to directory
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -189,9 +190,9 @@ AS
 
         begin transaction @transName
 
-        -- move_jobs_to_main_tables sproc assumes that T_Jobs table entry is already there
+        -- move_jobs_to_main_tables sproc assumes that T_Tasks table entry is already there
         --
-        INSERT INTO T_Jobs
+        INSERT INTO T_Tasks
             (
               Priority,
               Script,
@@ -214,7 +215,7 @@ AS
               NULL
             )
 
-        set @job = IDENT_CURRENT('T_Jobs')
+        set @job = IDENT_CURRENT('T_Tasks')
 
         UPDATE #Jobs  SET Job = @Job
         UPDATE #Job_Steps  SET Job = @Job

@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 **  Auth:   mem
 **          04/17/2014 mem - Initial release
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ AS
     Declare @mgrList varchar(max)
 
     SELECT @mgrList = Coalesce(@mgrList + ',', '') + Processor
-    FROM T_Job_Steps
+    FROM T_Task_Steps
     WHERE (State = 4)
     ORDER BY Processor
     --

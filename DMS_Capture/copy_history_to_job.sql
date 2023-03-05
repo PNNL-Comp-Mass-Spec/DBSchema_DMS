@@ -15,15 +15,16 @@ CREATE PROCEDURE [dbo].[copy_history_to_job]
 **
 **  Auth:   grk
 **  Date:   02/06/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
-**          05/25/2011 mem - Removed priority column from T_Job_Steps
+**          05/25/2011 mem - Removed priority column from T_Task_Steps
 **          03/12/2012 mem - Added column Tool_Version_ID
-**          03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Jobs
-**                         - Fixed bug finding most recent successful job in T_Jobs_History
+**          03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Tasks
+**                         - Fixed bug finding most recent successful job in T_Tasks_History
 **          08/27/2013 mem - Now calling update_parameters_for_job
 **          10/21/2013 mem - Added @AssignNewJobNumber
-**          03/10/2015 mem - Added T_Job_Step_Dependencies_History
-**          03/10/2015 mem - Now updating T_Job_Steps.Dependencies if it doesn't match the dependent steps listed in T_Job_Step_Dependencies
+**          03/10/2015 mem - Added T_Task_Step_Dependencies_History
+**          03/10/2015 mem - Now updating T_Task_Steps.Dependencies if it doesn't match the dependent steps listed in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -59,10 +60,10 @@ AS
     -- Bail if job already exists in main tables
     ---------------------------------------------------
     --
-    if exists (select * from T_Jobs where Job = @job)
+    if exists (select * from T_Tasks where Job = @job)
     begin
         If @debugMode <> 0
-            Print 'Already exists in T_Jobs; aborting'
+            Print 'Already exists in T_Tasks; aborting'
 
         GOTO Done
     end
@@ -75,7 +76,7 @@ AS
     --
     -- find most recent successful historic job
     SELECT @dateStamp = MAX(Saved)
-    FROM T_Jobs_History
+    FROM T_Tasks_History
     WHERE Job = @job AND State = 3
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -88,19 +89,19 @@ AS
 
     If @dateStamp Is Null
     Begin
-        Print 'No successful jobs found in T_Jobs_History for job ' + Cast(@job as varchar(12)) + '; will look for a failed job'
+        Print 'No successful jobs found in T_Tasks_History for job ' + Cast(@job as varchar(12)) + '; will look for a failed job'
 
         -- Find most recent historic job, regardless of job state
         --
         SELECT @dateStamp = MAX(Saved)
-        FROM T_Jobs_History
+        FROM T_Tasks_History
         WHERE Job = @job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount = 0
         Begin
-            Select 'Job not found in T_Jobs_History: ' + Cast(@job as varchar(12)) AS Warning
+            Select 'Job not found in T_Tasks_History: ' + Cast(@job as varchar(12)) AS Warning
             Goto Done
         End
 
@@ -121,18 +122,18 @@ AS
     If @AssignNewJobNumber = 0
     Begin
 
-        set identity_insert dbo.T_Jobs ON
+        set identity_insert dbo.T_Tasks ON
 
         If @debugMode <> 0
-            Print 'Insert into T_Jobs from T_Jobs_History for ' + @JobDateDescription
+            Print 'Insert into T_Tasks from T_Tasks_History for ' + @JobDateDescription
 
-        INSERT INTO T_Jobs (Job, Priority, Script, State,
+        INSERT INTO T_Tasks (Job, Priority, Script, State,
                             Dataset, Dataset_ID, Results_Folder_Name,
                             Imported, Start, Finish )
         SELECT Job, Priority, Script, State,
                Dataset, Dataset_ID, Results_Folder_Name,
                Imported, Start, Finish
-        FROM T_Jobs_History
+        FROM T_Tasks_History
         WHERE Job = @job AND
               Saved = @dateStamp
         --
@@ -141,15 +142,15 @@ AS
         if @myError <> 0
         begin
             rollback transaction @transName
-            set @message = 'Error inserting into T_Jobs for ' + @JobDateDescription
+            set @message = 'Error inserting into T_Tasks for ' + @JobDateDescription
             goto Done
         end
 
-        set identity_insert dbo.T_Jobs OFF
+        set identity_insert dbo.T_Tasks OFF
 
         If @myRowCount = 0
         Begin
-            set @message = 'No rows were added to T_Jobs from T_Jobs_History for ' + @JobDateDescription
+            set @message = 'No rows were added to T_Tasks from T_Tasks_History for ' + @JobDateDescription
             print @message
             rollback transaction @transName
             goto Done
@@ -161,15 +162,15 @@ AS
     Begin
 
         If @debugMode <> 0
-            Print 'Insert into T_Jobs from T_Jobs_History for ' + @JobDateDescription + '; assign a new job number'
+            Print 'Insert into T_Tasks from T_Tasks_History for ' + @JobDateDescription + '; assign a new job number'
 
-        INSERT INTO T_Jobs( Priority, Script, State,
+        INSERT INTO T_Tasks( Priority, Script, State,
                             Dataset, Dataset_ID, Results_Folder_Name,
                             Imported, Start, Finish )
         SELECT Priority, Script, State,
                Dataset, Dataset_ID, Results_Folder_Name,
                GetDate(), Start, Finish
-        FROM T_Jobs_History
+        FROM T_Tasks_History
         WHERE Job = @job AND
               Saved = @dateStamp
         --
@@ -196,10 +197,10 @@ AS
     -- copy steps
     ---------------------------------------------------
     --
-    INSERT INTO T_Job_Steps (
+    INSERT INTO T_Task_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         State,
         Input_Folder_Name,
         Output_Folder_Name,
@@ -214,8 +215,8 @@ AS
     )
     SELECT
         @NewJob AS Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         State,
         Input_Folder_Name,
         Output_Folder_Name,
@@ -228,7 +229,7 @@ AS
         Evaluation_Code,
         Evaluation_Message
     FROM
-        T_Job_Steps_History
+        T_Task_Steps_History
     WHERE
         Job = @job AND
         Saved = @dateStamp
@@ -243,12 +244,12 @@ AS
     end
 
     If @debugMode <> 0
-        Print 'Inserted ' + Cast(@myRowCount as varchar(12)) + ' steps into T_Job_Steps for ' + @JobDateDescription
+        Print 'Inserted ' + Cast(@myRowCount as varchar(12)) + ' steps into T_Task_Steps for ' + @JobDateDescription
 
     -- Change any waiting or enabled steps to state 7 (holding)
     -- This is a safety feature to avoid job steps from starting inadvertently
     --
-    UPDATE T_Job_Steps
+    UPDATE T_Task_Steps
     SET State = 7
     WHERE Job = @NewJob AND
           State IN (1, 2)
@@ -259,7 +260,7 @@ AS
     -- copy parameters
     ---------------------------------------------------
     --
-    INSERT INTO T_Job_Parameters (
+    INSERT INTO T_Task_Parameters (
         Job,
         Parameters
     )
@@ -267,7 +268,7 @@ AS
         @NewJob AS Job,
         Parameters
     FROM
-        T_Job_Parameters_History
+        T_Task_Parameters_History
     WHERE
         Job = @job AND
         Saved = @dateStamp
@@ -282,20 +283,20 @@ AS
     end
 
     If @debugMode <> 0
-        Print 'Inserted ' + Cast(@myRowCount as varchar(12)) + ' row into T_Job_Parameters for ' + @JobDateDescription
+        Print 'Inserted ' + Cast(@myRowCount as varchar(12)) + ' row into T_Task_Parameters for ' + @JobDateDescription
 
     ---------------------------------------------------
     -- Copy job step dependencies
     ---------------------------------------------------
     --
-    -- First delete any extra steps for this job that are in T_Job_Step_Dependencies
+    -- First delete any extra steps for this job that are in T_Task_Step_Dependencies
     --
-    DELETE T_Job_Step_Dependencies
-    FROM T_Job_Step_Dependencies Target
-         LEFT OUTER JOIN T_Job_Step_Dependencies_History Source
+    DELETE T_Task_Step_Dependencies
+    FROM T_Task_Step_Dependencies Target
+         LEFT OUTER JOIN T_Task_Step_Dependencies_History Source
            ON Target.Job = Source.Job AND
-              Target.Step_Number = Source.Step_Number AND
-              Target.Target_Step_Number = Source.Target_Step_Number
+              Target.Step = Source.Step AND
+              Target.Target_Step = Source.Target_Step
     WHERE Target.Job = @NewJob AND
           Source.Job IS NULL
     --
@@ -308,9 +309,9 @@ AS
         goto Done
     end
 
-    -- Check whether this job has entries in T_Job_Step_Dependencies_History
+    -- Check whether this job has entries in T_Task_Step_Dependencies_History
     --
-    If Not Exists (Select * From T_Job_Step_Dependencies_History Where Job = @job)
+    If Not Exists (Select * From T_Task_Step_Dependencies_History Where Job = @job)
     Begin
         -- Job did not have cached dependencies
         -- Look for a job that used the same script
@@ -318,12 +319,12 @@ AS
         Declare @SimilarJob int = 0
 
         SELECT @SimilarJob = MIN(H.Job)
-        FROM T_Job_Step_Dependencies_History H
+        FROM T_Task_Step_Dependencies_History H
              INNER JOIN ( SELECT Job
-                          FROM T_Jobs_History
+                          FROM T_Tasks_History
                           WHERE Job > @job AND
                                 Script = ( SELECT Script
-                                           FROM T_Jobs_History
+                                           FROM T_Tasks_History
                                            WHERE Job = @job AND
                                                  Most_Recent_Entry = 1 )
                          ) SimilarJobQ
@@ -334,18 +335,18 @@ AS
         If @myRowCount > 0
         Begin
             If @debugMode <> 0
-                print 'Insert Into T_Job_Step_Dependencies using model job ' + Cast(@SimilarJob as varchar(12))
+                print 'Insert Into T_Task_Step_Dependencies using model job ' + Cast(@SimilarJob as varchar(12))
 
-            INSERT INTO T_Job_Step_Dependencies(Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+            INSERT INTO T_Task_Step_Dependencies(Job, Step, Target_Step, Condition_Test, Test_Value,
                                                 Evaluated, Triggered, Enable_Only)
-            SELECT @NewJob As Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, 0 AS Evaluated, 0 AS Triggered, Enable_Only
-            FROM T_Job_Step_Dependencies_History H
+            SELECT @NewJob As Job, Step, Target_Step, Condition_Test, Test_Value, 0 AS Evaluated, 0 AS Triggered, Enable_Only
+            FROM T_Task_Step_Dependencies_History H
             WHERE Job = @SimilarJob
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @debugMode <> 0
-                print 'Added ' + cast(@myRowCount as varchar(12)) + ' rows to T_Job_Step_Dependencies for ' + @JobDateDescription + ' using model job ' + Cast(@SimilarJob as varchar(12))
+                print 'Added ' + cast(@myRowCount as varchar(12)) + ' rows to T_Task_Step_Dependencies for ' + @JobDateDescription + ' using model job ' + Cast(@SimilarJob as varchar(12))
 
         End
         Else
@@ -356,24 +357,24 @@ AS
             If @debugMode <> 0
                 print 'Create default dependencies for job ' + Cast(@NewJob as varchar(12))
 
-            INSERT INTO T_Job_Step_Dependencies( Job,
-                                                 Step_Number,
-                                     Target_Step_Number,
+            INSERT INTO T_Task_Step_Dependencies( Job,
+                                                 Step,
+                                                 Target_Step,
                                                  Evaluated,
                                                  Triggered,
                                                  Enable_Only )
             SELECT Job,
-                   Step_Number,
-                   Step_Number - 1 AS Target_Step,
+                   Step,
+                   Step - 1 AS Target_Step,
                    0 AS Evaluated,
                    0 AS Triggered,
                    0 AS Enable_Only
-            FROM T_Job_Steps
+            FROM T_Task_Steps
             WHERE (Job = @NewJob) AND
-                  (Step_Number > 1)
+                  (Step > 1)
 
             If @debugMode <> 0
-                print 'Added ' + cast(@myRowCount as varchar(12)) + ' rows to T_Job_Step_Dependencies'
+                print 'Added ' + cast(@myRowCount as varchar(12)) + ' rows to T_Task_Step_Dependencies'
         End
 
     End
@@ -381,19 +382,19 @@ AS
     Begin
 
         If @debugMode <> 0
-            print 'Insert into T_Job_Step_Dependencies using T_Job_Step_Dependencies_History for ' + @JobDateDescription
+            print 'Insert into T_Task_Step_Dependencies using T_Task_Step_Dependencies_History for ' + @JobDateDescription
 
         -- Now add/update the job step dependencies
         --
-        MERGE T_Job_Step_Dependencies AS target
-        USING ( SELECT @NewJob AS Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+        MERGE T_Task_Step_Dependencies AS target
+        USING ( SELECT @NewJob AS Job, Step, Target_Step, Condition_Test, Test_Value,
                        Evaluated, Triggered, Enable_Only
-                FROM T_Job_Step_Dependencies_History
+                FROM T_Task_Step_Dependencies_History
                 WHERE Job = @job
-            ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+            ) AS Source (Job, Step, Target_Step, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
             ON (target.Job = source.Job And
-                target.Step_Number = source.Step_Number And
-                target.Target_Step_Number = source.Target_Step_Number)
+                target.Step = source.Step And
+                target.Target_Step = source.Target_Step)
         WHEN Matched THEN
             UPDATE Set
                 Condition_Test = source.Condition_Test,
@@ -402,9 +403,9 @@ AS
                 Triggered = source.Triggered,
                 Enable_Only = source.Enable_Only
         WHEN Not Matched THEN
-            INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+            INSERT (Job, Step, Target_Step, Condition_Test, Test_Value,
                     Evaluated, Triggered, Enable_Only)
-            VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value,
+            VALUES (source.Job, source.Step, source.Target_Step, source.Condition_Test, source.Test_Value,
                     source.Evaluated, source.Triggered, source.Enable_Only)
         ;
         --
@@ -415,16 +416,16 @@ AS
     commit transaction @transName
 
     ---------------------------------------------------
-    -- Manually create the job parameters if they were not present in T_Job_Parameters
+    -- Manually create the job parameters if they were not present in T_Task_Parameters
     ---------------------------------------------------
 
-    If Not Exists (SELECT * FROM T_Job_Parameters WHERE Job = @NewJob)
+    If Not Exists (SELECT * FROM T_Task_Parameters WHERE Job = @NewJob)
     Begin
         exec update_parameters_for_job @NewJob
     End
 
     ---------------------------------------------------
-    -- Make sure Storage_Server is up-to-date in T_Jobs
+    -- Make sure Storage_Server is up-to-date in T_Tasks
     ---------------------------------------------------
     --
     Declare @jobList varchar(max) = Cast(@NewJob as varchar(12))
@@ -432,19 +433,19 @@ AS
     exec update_parameters_for_job @jobList
 
     ---------------------------------------------------
-    -- Make sure the Dependencies column is up-to-date in T_Job_Steps
+    -- Make sure the Dependencies column is up-to-date in T_Task_Steps
     ---------------------------------------------------
     --
-    UPDATE T_Job_Steps
+    UPDATE T_Task_Steps
     SET Dependencies = T.dependencies
-    FROM T_Job_Steps JS
-         INNER JOIN ( SELECT Step_Number,
+    FROM T_Task_Steps JS
+         INNER JOIN ( SELECT Step,
                              COUNT(*) AS dependencies
-                      FROM T_Job_Step_Dependencies
+                      FROM T_Task_Step_Dependencies
                       WHERE (Job = @NewJob)
-                      GROUP BY Step_Number
+                      GROUP BY Step
                     ) T
-           ON T.Step_Number = JS.Step_Number
+           ON T.Step = JS.Step
     WHERE (JS.Job = @NewJob) AND
           T.Dependencies > JS.Dependencies
     --

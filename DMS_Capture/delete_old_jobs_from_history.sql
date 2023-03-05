@@ -7,13 +7,14 @@ CREATE PROCEDURE [dbo].[delete_old_jobs_from_history]
 /****************************************************
 **
 **  Desc:   Delete jobs over three years old from
-**          T_Jobs_History, T_Job_Steps_History, T_Job_Step_Dependencies_History, and T_Job_Parameters_History
+**          T_Tasks_History, T_Task_Steps_History, T_Task_Step_Dependencies_History, and T_Task_Parameters_History
 **
 **          However, assure that at least 250,000 jobs are retained
 **
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -66,7 +67,7 @@ AS
 
     INSERT INTO #Tmp_JobsToDelete( Job, Saved )
     SELECT Job, Saved
-    FROM T_Jobs_History
+    FROM T_Tasks_History
     WHERE Saved < @dateThreshold
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -80,11 +81,11 @@ AS
     End
 
     ---------------------------------------------------
-    -- Assure that 250,000 rows will remain in T_Jobs_History
+    -- Assure that 250,000 rows will remain in T_Tasks_History
     ---------------------------------------------------
 
     SELECT @currentJobCount = Count(*)
-    FROM T_Jobs_History
+    FROM T_Tasks_History
 
     If @currentJobCount - @jobCountToDelete < @jobHistoryMinimumCount
     Begin
@@ -100,7 +101,7 @@ AS
 
         Set @message = 'Removed ' + Cast(@myRowCount As Varchar(12)) +
                        ' rows from #Tmp_JobsToDelete to assure that ' +
-                       Cast(@jobHistoryMinimumCount As Varchar(12)) + ' rows remain in T_Jobs_History'
+                       Cast(@jobHistoryMinimumCount As Varchar(12)) + ' rows remain in T_Tasks_History'
 
         Print @message
 
@@ -138,16 +139,16 @@ AS
     End
     Else
     Begin
-        Delete From T_Job_Steps_History
+        Delete From T_Task_Steps_History
         Where Job In (Select Job From #Tmp_JobsToDelete)
 
-        Delete From T_Job_Step_Dependencies_History
+        Delete From T_Task_Step_Dependencies_History
         Where Job In (Select Job From #Tmp_JobsToDelete)
 
-        Delete From T_Job_Parameters_History
+        Delete From T_Task_Parameters_History
         Where Job In (Select Job From #Tmp_JobsToDelete)
 
-        Delete From T_Jobs_History
+        Delete From T_Tasks_History
         Where Job In (Select Job From #Tmp_JobsToDelete)
     End
 

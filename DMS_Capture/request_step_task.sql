@@ -28,14 +28,14 @@ CREATE PROCEDURE [dbo].[request_step_task]
 **          01/20/2010 grk - Added logic for instrument/processor assignment
 **          02/01/2010 grk - Added instrumentation for more logging of reject requests
 **          03/12/2010 grk - Fixed problem with inadvertent throttling of step tools that aren't subject to it
-**          03/21/2011 mem - Switched T_Jobs.State test from State IN (1,2) to State < 100
-**          04/12/2011 mem - Now making an entry in T_Job_Step_Processing_Log for each job step assigned
+**          03/21/2011 mem - Switched T_Tasks.State test from State IN (1,2) to State < 100
+**          04/12/2011 mem - Now making an entry in T_Task_Step_Processing_Log for each job step assigned
 **          05/18/2011 mem - No longer making an entry in T_Job_Request_Log for every request
 **                         - Now showing the top @JobCountToPreview candidate steps when @infoOnly is > 0
 **          07/26/2012 mem - Added parameter @serverPerspectiveEnabled
 **          09/17/2012 mem - Now returning metadata for step tool DatasetQuality instead of step tool DatasetInfo
 **          02/25/2013 mem - Now returning the Machine name when @infoOnly > 0
-**          09/24/2014 mem - Removed reference to Machine in T_Job_Steps
+**          09/24/2014 mem - Removed reference to Machine in T_Task_Steps
 **          11/05/2015 mem - Consider column Enabled when checking T_Processor_Instrument for @processorName
 **          01/11/2016 mem - When looking for running capture jobs for each instrument, now ignoring job steps that started over 18 hours ago
 **          01/27/2017 mem - Show additional information when @infoOnly > 0
@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[request_step_task]
 **          06/12/2018 mem - Update code formatting
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -267,10 +268,10 @@ AS
            COUNT(*) AS Captures_In_Progress,
            J.Max_Simultaneous_Captures,
            Available_Capacity = J.Max_Simultaneous_Captures - COUNT(*)
-    FROM T_Job_Steps JS
+    FROM T_Task_Steps JS
          INNER JOIN T_Step_Tools Tools
-           ON JS.Step_Tool = Tools.Name
-         INNER JOIN T_Jobs J
+           ON JS.Tool = Tools.Name
+         INNER JOIN T_Tasks J
            ON JS.Job = J.Job
     WHERE JS.State = 4 AND
           Tools.Instrument_Capacity_Limited = 'Y' AND
@@ -383,15 +384,15 @@ AS
                                         Step_Tool,
                                         Tool_Priority )
     SELECT TOP ( @CandidateJobStepsToRetrieve ) J.Job,
-                                                JS.Step_Number,
+                                                JS.Step,
                                                 J.Priority,
-                                                JS.Step_Tool,
+                                                JS.Tool,
                                                 APT.Tool_Priority
-    FROM T_Job_Steps JS
-         INNER JOIN dbo.T_Jobs J
+    FROM T_Task_Steps JS
+         INNER JOIN dbo.T_Tasks J
            ON JS.Job = J.Job
          INNER JOIN #AvailableProcessorTools APT
-           ON JS.Step_Tool = APT.Tool_Name
+           ON JS.Tool = APT.Tool_Name
          LEFT OUTER JOIN #InstrumentProcessor IP
            ON IP.Instrument = J.Instrument
          LEFT OUTER JOIN #InstrumentLoading IL
@@ -401,12 +402,12 @@ AS
           APT.Bionet_OK = 'Y' AND
           J.State < 100 AND
           NOT (APT.Only_On_Storage_Server = 'Y' AND Storage_Server <> @machine) AND
-          NOT (@excludeCaptureTasks = 1 AND JS.Step_Tool = 'DatasetCapture') AND
+          NOT (@excludeCaptureTasks = 1 AND JS.Tool = 'DatasetCapture') AND
           (APT.Instrument_Capacity_Limited = 'N'  OR (NOT ISNULL(IL.Available_Capacity, 1) < 1)) AND
           (APT.Processor_Assignment_Applies = 'N' OR (
              (@processorIsAssigned > 0 AND ISNULL(IP.Assigned_To_This_Processor, 0) > 0) OR
              (@processorIsAssigned = 0 AND ISNULL(IP.Assigned_To_Any_Processor,  0) = 0)))
-    ORDER BY APT.Tool_Priority, J.Priority, J.Job, JS.Step_Number
+    ORDER BY APT.Tool_Priority, J.Priority, J.Job, JS.Step
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -452,12 +453,12 @@ AS
     Declare @stepTool varchar(64)
     --
     SELECT TOP 1 @jobNumber = TJS.Job,
-                 @stepNumber = TJS.Step_Number,
-                 @stepTool = TJS.Step_Tool
-    FROM T_Job_Steps TJS WITH ( HOLDLOCK )
+                 @stepNumber = TJS.Step,
+                 @stepTool = TJS.Tool
+    FROM T_Task_Steps TJS WITH ( HOLDLOCK )
          INNER JOIN #Tmp_CandidateJobSteps CJS
        ON CJS.Job = TJS.Job AND
-              CJS.Step_Number = TJS.Step_Number
+          CJS.Step_Number = TJS.Step
     WHERE TJS.State = 2
     ORDER BY Seq
     --
@@ -481,13 +482,13 @@ AS
     --
     If @jobAssigned = 1 AND @infoOnly = 0
     Begin --<e>
-        UPDATE T_Job_Steps
+        UPDATE T_Task_Steps
         Set State = 4,
             Processor = @processorName,
             Start = GETDATE(),
             Finish = NULL
         WHERE Job = @jobNumber AND
-              Step_Number = @stepNumber
+              Step = @stepNumber
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -519,10 +520,10 @@ AS
         If @infoOnly = 0
         Begin
             ---------------------------------------------------
-            -- Add entry to T_Job_Step_Processing_Log
+            -- Add entry to T_Task_Step_Processing_Log
             ---------------------------------------------------
 
-            INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor)
+            INSERT INTO T_Task_Step_Processing_Log (Job, Step, Processor)
             VALUES (@jobNumber, @stepNumber, @processorName)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -580,7 +581,7 @@ AS
                    Step_Tool,
                    J.Dataset
             FROM #Tmp_CandidateJobSteps CJS
-                 INNER JOIN T_Jobs J
+                 INNER JOIN T_Tasks J
                    ON CJS.Job = J.Job
         End
         Else

@@ -13,9 +13,10 @@ CREATE PROCEDURE [dbo].[remove_selected_jobs]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  09/12/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/12/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -62,14 +63,14 @@ AS
         -- delete job dependencies
         ---------------------------------------------------
         --
-        DELETE FROM T_Job_Step_Dependencies
+        DELETE FROM T_Task_Step_Dependencies
         WHERE (Job IN (SELECT Job FROM #SJL))
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
          --
         if @myError <> 0
         begin
-            set @message = 'Error deleting T_Job_Step_Dependencies'
+            set @message = 'Error deleting T_Task_Step_Dependencies'
             goto Done
         end
 
@@ -77,14 +78,14 @@ AS
         -- delete job parameters
         ---------------------------------------------------
         --
-        DELETE FROM T_Job_Parameters
+        DELETE FROM T_Task_Parameters
         WHERE Job IN (SELECT Job FROM #SJL)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
          --
         if @myError <> 0
         begin
-            set @message = 'Error deleting T_Job_Parameters'
+            set @message = 'Error deleting T_Task_Parameters'
             goto Done
         end
 
@@ -92,19 +93,19 @@ AS
         -- delete job steps
         ---------------------------------------------------
         --
-        DELETE FROM T_Job_Steps
+        DELETE FROM T_Task_Steps
         WHERE Job IN (SELECT Job FROM #SJL)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
          --
         if @myError <> 0
         begin
-            set @message = 'Error deleting T_Job_Steps'
+            set @message = 'Error deleting T_Task_Steps'
             goto Done
         end
 
         ---------------------------------------------------
-        -- Delete entries in T_Jobs
+        -- Delete entries in T_Tasks
         ---------------------------------------------------
         --
         If @LogDeletions <> 0
@@ -135,18 +136,18 @@ AS
                 Else
                 Begin -- <d>
 
-                    DELETE FROM T_Jobs
+                    DELETE FROM T_Tasks
                     WHERE Job = @Job
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
                     --
                     if @myError <> 0
                     begin
-                        set @message = 'Error deleting job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
+                        set @message = 'Error deleting job ' + Convert(varchar(17), @Job) + ' from T_Tasks'
                         goto Done
                     end
 
-                    Set @message = 'Deleted job ' + Convert(varchar(17), @Job) + ' from T_Jobs'
+                    Set @message = 'Deleted job ' + Convert(varchar(17), @Job) + ' from T_Tasks'
                     Exec post_log_entry 'Normal', @message, 'remove_selected_jobs'
 
                 End -- </d>
@@ -161,14 +162,14 @@ AS
             -- Delete in bulk
             ---------------------------------------------------
 
-            DELETE FROM T_Jobs
+            DELETE FROM T_Tasks
             WHERE Job IN (SELECT Job FROM #SJL)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             if @myError <> 0
             begin
-                set @message = 'Error deleting T_Jobs'
+                set @message = 'Error deleting T_Tasks'
                 goto Done
             end
 

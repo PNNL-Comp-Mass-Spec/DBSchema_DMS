@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[retry_myemsl_upload]
 /****************************************************
 **
-**  Desc:   Resets the DatasetArchive and ArchiveUpdate steps in T_Job_Steps for the
+**  Desc:   Resets the DatasetArchive and ArchiveUpdate steps in T_Task_Steps for the
 **          specified jobs, but only if the ArchiveVerify step is failed
 **
 **          Useful for jobs with Completion message error submitting ingest job
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[retry_myemsl_upload]
 **          02/06/2018 mem - Exclude logging some try/catch errors
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (

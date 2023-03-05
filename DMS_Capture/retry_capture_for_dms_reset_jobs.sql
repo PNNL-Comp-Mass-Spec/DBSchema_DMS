@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[retry_capture_for_dms_reset_jobs]
 **          08/16/2017 mem - For jobs with error Error running OpenChrom, only reset the DatasetIntegrity step
 **          02/02/2023 bcg - Changed from V_Jobs and V_Job_Steps to V_Tasks and V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -47,9 +48,9 @@ AS
     INSERT INTO #SJL (Job, ResetFailedStepsOnly)
     SELECT DISTINCT J.Job, 0
     FROM V_DMS_Get_New_Datasets NewDS
-         INNER JOIN T_Jobs J
+         INNER JOIN T_Tasks J
            ON NewDS.Dataset_ID = J.Dataset_ID
-         INNER JOIN T_Job_Steps JS
+         INNER JOIN T_Task_Steps JS
            ON J.Job = JS.Job
     WHERE (J.Script IN ('IMSDatasetCapture', 'DatasetCapture')) AND
           (J.State = 5) AND
@@ -85,9 +86,9 @@ AS
     UPDATE #SJL
     SET ResetFailedStepsOnly = 1
     WHERE Job IN ( SELECT Job
-                   FROM T_Job_Steps
+                   FROM T_Task_Steps
                    WHERE State = 6 AND
-                         Step_Tool = 'DatasetIntegrity' AND
+                         Tool = 'DatasetIntegrity' AND
                          Completion_Message = 'Error running OpenChrom' AND
                          Job IN ( SELECT Job FROM #SJL ) )
 
@@ -118,10 +119,10 @@ AS
 
         -- First reset job steps for jobs in #SJL with ResetFailedStepsOnly = 1
         --
-        UPDATE T_Job_Steps
+        UPDATE T_Task_Steps
         SET State = 2
         WHERE State = 6 AND
-              Step_Tool = 'DatasetIntegrity' AND
+              Tool = 'DatasetIntegrity' AND
               Completion_Message = 'Error running OpenChrom' AND
               Job IN ( SELECT Job
                        FROM #SJL
@@ -133,7 +134,7 @@ AS
         IF Exists (SELECT * FROM #SJL)
         Begin
             -- Next reset entirely any jobs remaining in #SJL
-            UPDATE T_Job_Steps
+            UPDATE T_Task_Steps
             SET State = 6
             WHERE State = 5 AND Job IN (SELECT Job FROM #SJL)
 

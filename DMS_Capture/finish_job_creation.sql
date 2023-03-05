@@ -18,9 +18,10 @@ CREATE PROCEDURE [dbo].[finish_job_creation]
 **          03/06/2009 grk - added code for: Special="Job_Results"
 **          07/31/2009 mem - Now filtering by job in the subquery that looks for job steps with flag Special="Job_Results" (necessary when #Job_Steps contains more than one job)
 **          04/08/2011 mem - Now skipping the 'ImsDeMultiplex' step for datasets that end in '_inverse'
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (

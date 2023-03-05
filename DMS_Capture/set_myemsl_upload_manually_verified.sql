@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[set_myemsl_upload_manually_verified]
 **          07/13/2017 mem - Pass both StatusNumList and StatusURIList to set_myemsl_upload_verified
 **          01/07/2023 mem - Use new column names in view
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -66,17 +67,17 @@ AS
 
     SELECT TOP 1
            @DatasetID = J.Dataset_ID,
-           @Step = JS.Step_Number,
-           @Tool = JS.Step_Tool,
+           @Step = JS.Step,
+           @Tool = JS.Tool,
            @State = JS.State,
            @outputFolderName = JS.Output_Folder_Name
-    FROM T_Jobs J
-         INNER JOIN T_Job_Steps JS
+    FROM T_Tasks J
+         INNER JOIN T_Task_Steps JS
            ON JS.Job = J.Job
     WHERE J.Job = @Job AND
-          JS.Step_Tool IN ('ArchiveVerify', 'ArchiveStatusCheck') AND
+          JS.Tool IN ('ArchiveVerify', 'ArchiveStatusCheck') AND
           JS.State <> 5
-    ORDER BY JS.Step_Number
+    ORDER BY JS.Step
 
     If IsNull(@Step, 0) = 0
     Begin
@@ -106,27 +107,27 @@ AS
     If @infoOnly = 1
     Begin
         SELECT Job,
-               Step_Number,
-               Step_Tool,
+               Step,
+               Tool,
                State,
                5 AS NewState,
                'Manually verified that files were successfully uploaded' AS Evaluation_Message
-        FROM T_Job_Steps
+        FROM T_Task_Steps
         WHERE (Job = @job) AND
-              (Step_Number = @Step)
+              (Step = @Step)
 
     End
     Else
     Begin
 
-        UPDATE T_Job_Steps
+        UPDATE T_Task_Steps
         SET State = 5,
             Completion_Code = 0,
             Completion_Message = '',
             Evaluation_Code = 0,
             Evaluation_Message = 'Manually verified that files were successfully uploaded'
         WHERE (Job = @job) AND
-              (Step_Number = @Step) AND
+              (Step = @Step) AND
               State IN (2, 6)
 
         Set @myRowCount = @@RowCount

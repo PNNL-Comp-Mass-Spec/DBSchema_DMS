@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[preview_request_step_task]
 **          07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into request_step_task
 **          02/03/2023 bcg - Use the synonym for Manager_Control.V_Mgr_Params instead of a local view wrapping the synonym
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -58,13 +59,13 @@ AS
                             @JobCountToPreview=@JobCountToPreview,
                             @serverPerspectiveEnabled=@serverPerspectiveEnabled
 
-    If Exists (Select * FROM T_Jobs WHERE Job = @JobNumber)
+    If Exists (Select * FROM T_Tasks WHERE Job = @JobNumber)
         SELECT @jobNumber AS JobNumber,
                Dataset,
                @ProcessorName AS Processor,
                @parameters AS Parameters,
                @message AS Message
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE Job = @JobNumber
     Else
         SELECT @message as Message

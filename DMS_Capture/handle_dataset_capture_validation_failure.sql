@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[handle_dataset_capture_validation_failure]
 **          11/02/2020 mem - Fix bug validating the dataset name
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -68,7 +69,7 @@ AS
         Set @datasetID = Convert(int, @datasetNameOrID)
 
         SELECT @datasetName = Dataset
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE Dataset_ID = @datasetID AND
               Script IN ('DatasetCapture', 'IMSDatasetCapture')
 
@@ -89,7 +90,7 @@ AS
         Set @datasetName = @datasetNameOrID
 
         SELECT @datasetID = Dataset_ID
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE Dataset = @datasetName AND
               Script IN ('DatasetCapture', 'IMSDatasetCapture')
 
@@ -105,7 +106,7 @@ AS
     Begin
         -- Make sure the DatasetCapture job has failed
         SELECT @captureJob = Job
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE Dataset_ID = @datasetID AND
               Script IN ('DatasetCapture', 'IMSDatasetCapture') AND
               State = 5
@@ -125,7 +126,7 @@ AS
         If @infoOnly <> 0
         Begin
             SELECT 'Mark dataset as bad: ' + @comment as Message, *
-            FROM T_Jobs
+            FROM T_Tasks
             WHERE Dataset_ID = @datasetID AND
                   Script IN ('DatasetCapture', 'IMSDatasetCapture') AND
                   State = 5
@@ -144,7 +145,7 @@ AS
                 EXEC @myError = s_set_capture_task_complete @datasetName, 101, @message OUTPUT, @failureMessage = @message
 
                 -- Fail out the job with state 14 (Failed, Ignore Job Step States)
-                UPDATE T_Jobs
+                UPDATE T_Tasks
                 SET State = 14
                 WHERE Job = @captureJob
                 --
@@ -153,7 +154,7 @@ AS
                 Goto Done
             End
 
-            UPDATE T_Jobs
+            UPDATE T_Tasks
             SET State = 101
             WHERE Job = @captureJob
             --
@@ -161,7 +162,7 @@ AS
 
             If @myRowCount = 0
             Begin
-                Set @message = 'Unable to update job ' + Cast(@captureJob As varchar(12)) + 'in T_Jobs for dataset ' + @datasetName
+                Set @message = 'Unable to update job ' + Cast(@captureJob As varchar(12)) + 'in T_Tasks for dataset ' + @datasetName
                 Set @myError = 50003
                 Print @message
             End

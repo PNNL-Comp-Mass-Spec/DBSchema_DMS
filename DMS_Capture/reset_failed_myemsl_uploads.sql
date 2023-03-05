@@ -24,12 +24,13 @@ CREATE PROCEDURE [dbo].[reset_failed_myemsl_uploads]
 **          03/07/2018 mem - Do not reset the same job/subfolder ingest task more than once
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
     @infoOnly tinyint = 0,                      -- 1 to preview the changes
     @maxJobsToReset int = 0,
-    @jobListOverride varchar(4000) = '',        -- Comma-separated list of jobs to reset.  Jobs must have a failed step in T_Job_Steps
+    @jobListOverride varchar(4000) = '',        -- Comma-separated list of jobs to reset.  Jobs must have a failed step in T_Task_Steps
     @resetHoldoffMinutes real = 15,             -- Holdoff time to apply to column Finish
     @message varchar(4000) = '' output
 )
@@ -186,12 +187,12 @@ AS
 
         UPDATE #Tmp_FailedJobs
         SET SkipReset = 2,
-            SkipReason = JS.Step_Tool + ' tool is in state 7 (holding)'
+            SkipReason = JS.Tool + ' tool is in state 7 (holding)'
         FROM #Tmp_FailedJobs Target
-             INNER JOIN T_Job_Steps JS
+             INNER JOIN T_Task_Steps JS
                ON Target.Job = JS.Job AND
                   Target.Subfolder = JS.Output_Folder_Name
-        WHERE JS.Step_Tool IN ('ArchiveUpdate', 'DatasetArchive') AND
+        WHERE JS.Tool IN ('ArchiveUpdate', 'DatasetArchive') AND
               JS.State = 7
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

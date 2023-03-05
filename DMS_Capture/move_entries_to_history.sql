@@ -10,7 +10,7 @@ CREATE PROCEDURE [dbo].[move_entries_to_history]
 **          historic log DB (insert and then delete)
 **        Moves entries older than @intervalDays days
 **
-**        In addition, purges old data in T_Job_Parameters_History
+**        In addition, purges old data in T_Task_Parameters_History
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[move_entries_to_history]
 **          10/04/2011 mem - Removed @DBName parameter
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     --
     begin transaction @transName
 
-    INSERT INTO DMSHistoricLogCapture.dbo.T_Job_Events(
+    INSERT INTO DMSHistoricLogCapture.dbo.T_Task_Events(
                                                         Event_ID,
                                                         Job,
                                                         Target_State,
@@ -61,27 +62,27 @@ AS
            Prev_Target_State,
            Entered,
            Entered_By
-    FROM T_Job_Events
+    FROM T_Task_Events
     WHERE Entered < @cutoffDateTime
     ORDER BY Event_ID
     --
     if @@error <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Insert was unsuccessful for historic log entry table from T_Job_Events',
+        RAISERROR ('Insert was unsuccessful for historic log entry table from T_Task_Events',
             10, 1)
         return 51180
     end
 
     -- Remove the old entries
     --
-    DELETE FROM T_Job_Events
+    DELETE FROM T_Task_Events
     WHERE Entered < @cutoffDateTime
     --
     if @@error <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Delete was unsuccessful for T_Job_Events',
+        RAISERROR ('Delete was unsuccessful for T_Task_Events',
             10, 1)
         return 51181
     end
@@ -95,7 +96,7 @@ AS
     --
     begin transaction @transName
 
-    INSERT INTO DMSHistoricLogCapture.dbo.T_Job_Step_Events(
+    INSERT INTO DMSHistoricLogCapture.dbo.T_Task_Step_Events(
                                                         Event_ID,
                                                         Job,
                                                         Step,
@@ -110,27 +111,27 @@ AS
            Prev_Target_State,
            Entered,
            Entered_By
-    FROM T_Job_Step_Events
+    FROM T_Task_Step_Events
     WHERE Entered < @cutoffDateTime
     ORDER BY Event_ID
     --
     if @@error <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Insert was unsuccessful for historic log entry table from T_Job_Step_Events',
+        RAISERROR ('Insert was unsuccessful for historic log entry table from T_Task_Step_Events',
             10, 1)
         return 51180
     end
 
     -- Remove the old entries
     --
-    DELETE FROM T_Job_Step_Events
+    DELETE FROM T_Task_Step_Events
     WHERE Entered < @cutoffDateTime
     --
     if @@error <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Delete was unsuccessful for T_Job_Step_Events',
+        RAISERROR ('Delete was unsuccessful for T_Task_Step_Events',
             10, 1)
         return 51181
     end
@@ -157,27 +158,27 @@ AS
            Processor,
            Entered,
            Entered_By
-    FROM T_Job_Step_Processing_Log
+    FROM T_Task_Step_Processing_Log
     WHERE Entered < @cutoffDateTime
     ORDER BY Event_ID
     --
     if @@error <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Insert was unsuccessful for historic log entry table from T_Job_Step_Processing_Log',
+        RAISERROR ('Insert was unsuccessful for historic log entry table from T_Task_Step_Processing_Log',
             10, 1)
         return 51180
     end
 
     -- Remove the old entries
     --
-    DELETE FROM T_Job_Step_Processing_Log
+    DELETE FROM T_Task_Step_Processing_Log
     WHERE Entered < @cutoffDateTime
     --
     if @@error <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Delete was unsuccessful for T_Job_Step_Processing_Log',
+        RAISERROR ('Delete was unsuccessful for T_Task_Step_Processing_Log',
             10, 1)
         return 51181
     end
@@ -234,14 +235,14 @@ AS
 
 
     ----------------------------------------------------------
-    -- Delete old entries in T_Job_Parameters_History
+    -- Delete old entries in T_Task_Parameters_History
     -- Note that this data is intentionally not copied to the historic log DB
     --   because it is very easy to re-generate (use update_parameters_for_job)
     ----------------------------------------------------------
     --
     begin transaction @transName
 
-    DELETE FROM T_Job_Parameters_History
+    DELETE FROM T_Task_Parameters_History
     WHERE Saved < @cutoffDateTime
     --
     if @@error <> 0

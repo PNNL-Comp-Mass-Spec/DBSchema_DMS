@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[request_step_task_explanation]
 **          01/20/2010 grk - Added logic for instrument/processor assignment
 **          01/27/2017 mem - Clarify some descriptions
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
   (
@@ -51,7 +52,7 @@ AS
       Candidate CHAR(1) NULL
     )
 
-  INSERT  INTO #CandidateJobSteps
+  INSERT INTO #CandidateJobSteps
           ( Job,
             Step_Number,
             Job_Priority,
@@ -64,10 +65,10 @@ AS
             Retry_Holdoff_OK
           )
          SELECT
-            T_Jobs.Job,
-            Step_Number,
-            T_Jobs.Priority,
-            Step_Tool,
+            T_Tasks.Job,
+            Step,
+            T_Tasks.Priority,
+            Tool,
             Tool_Priority,
             Bionet_OK,
             CASE WHEN ( Only_On_Storage_Server = 'Y' ) AND ( Storage_Server <> @machine ) THEN 'N' ELSE 'Y' END AS Server_OK,
@@ -82,19 +83,19 @@ AS
                 )
             ) THEN 'Y' ELSE 'N' END
             AS Assignment_OK,
-            CASE WHEN GETDATE() > dbo.T_Job_Steps.Next_Try THEN 'Y' ELSE 'N' END AS Retry_Holdoff_OK
+            CASE WHEN GETDATE() > dbo.T_Task_Steps.Next_Try THEN 'Y' ELSE 'N' END AS Retry_Holdoff_OK
           FROM
-            T_Job_Steps
-            INNER JOIN dbo.T_Jobs ON T_Job_Steps.Job = T_Jobs.Job
+            T_Task_Steps
+            INNER JOIN dbo.T_Tasks ON T_Task_Steps.Job = T_Tasks.Job
             INNER JOIN #AvailableProcessorTools ON Step_Tool = Tool_Name
-            LEFT OUTER JOIN #InstrumentProcessor ON #InstrumentProcessor.Instrument = T_Jobs.Instrument
-            LEFT OUTER JOIN #InstrumentLoading ON #InstrumentLoading.Instrument = T_Jobs.Instrument
+            LEFT OUTER JOIN #InstrumentProcessor ON #InstrumentProcessor.Instrument = T_Tasks.Instrument
+            LEFT OUTER JOIN #InstrumentLoading ON #InstrumentLoading.Instrument = T_Tasks.Instrument
           WHERE
-            T_Job_Steps.State = 2
-            AND T_Jobs.State IN (1,2)
+            T_Task_Steps.State = 2
+            AND T_Tasks.State IN (1,2)
           ORDER BY
-            T_Jobs.Job,
-            Step_Number
+            T_Tasks.Job,
+            Step
 
 
     ---------------------------------------------------
@@ -160,7 +161,7 @@ AS
         CONVERT(VARCHAR(12), #CandidateJobSteps.Job) AS Job,
         CONVERT(VARCHAR(6), Step_Number) AS Step,
         CONVERT(VARCHAR(24), Step_Tool) AS Tool,
-        CONVERT(VARCHAR(20), T_Jobs.Instrument) AS Instrument,
+        CONVERT(VARCHAR(20), T_Tasks.Instrument) AS Instrument,
         ISNULL(Candidate, 'N') AS Candidate,
 
         Bionet_OK,
@@ -177,10 +178,10 @@ AS
         CONVERT(VARCHAR(8), Number_Of_Retries) AS Number_Of_Retries,
         CONVERT(VARCHAR(8), Tool_Priority) AS Tool_Pri,
         CONVERT(VARCHAR(8), Job_Priority) AS Job_Pri,
-        T_Jobs.Dataset
+        T_Tasks.Dataset
     FROM
         #CandidateJobSteps
-        INNER JOIN dbo.T_Jobs ON T_Jobs.Job = #CandidateJobSteps.Job
+        INNER JOIN dbo.T_Tasks ON T_Tasks.Job = #CandidateJobSteps.Job
         LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Step_Tool
 
 GO

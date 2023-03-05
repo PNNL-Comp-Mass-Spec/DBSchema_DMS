@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[make_new_ims_demux_job]
 **  Date:   08/29/2012 mem - Initial version
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -75,8 +76,8 @@ AS
     Set @JobID = 0
 
     SELECT @JobID = JS.Job
-    FROM T_Job_Steps JS INNER JOIN T_Jobs J ON JS.Job = J.Job
-    WHERE (J.Dataset_ID = @DatasetID) AND (JS.Step_Tool = 'IMSDemultiplex') AND (JS.State IN (1, 2, 4))
+    FROM T_Task_Steps JS INNER JOIN T_Tasks J ON JS.Job = J.Job
+    WHERE (J.Dataset_ID = @DatasetID) AND (JS.Tool = 'IMSDemultiplex') AND (JS.State IN (1, 2, 4))
 
     If @JobID > 0
     Begin
@@ -101,7 +102,7 @@ AS
     Else
     Begin
 
-        INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
+        INSERT INTO T_Tasks (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
         SELECT
             'IMSDemultiplex' AS Script,
             @DatasetName AS Dataset,

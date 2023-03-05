@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          08/28/2022 mem - When validating @mode = 'update', use state 3 for complete
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -73,21 +74,21 @@ AS
         SELECT
             @id = Job ,
             @state = State
-        FROM dbo.T_Jobs
+        FROM dbo.T_Tasks
         WHERE Job = @job
 
         IF @mode = 'update' AND @id = 0
-        Begin
+        Begin;
             Set @errorMsg = 'Cannot update nonexistent job ' + Cast(@job as varchar(9));
             THROW 51001, @errorMsg, 1;
-        End
+        End;
 
         IF @mode = 'update' AND NOT @state IN (1, 3, 5, 100) -- new, complete, failed, hold
-        Begin
-        Set @errorMsg = 'Cannot update job ' + Cast(@job as varchar(9)) +
-                        ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 3, 5, or 100';
+        Begin;
+            Set @errorMsg = 'Cannot update job ' + Cast(@job as varchar(9)) +
+                            ' in state ' + Cast(@state as varchar(9)) + '; must be 1, 3, 5, or 100';
             THROW 51002, @errorMsg, 1;
-        End
+        End;
 
         ---------------------------------------------------
         -- verify parameters
@@ -105,13 +106,13 @@ AS
 
             -- update job and params
             --
-            UPDATE   dbo.T_Jobs
+            UPDATE   dbo.T_Tasks
             SET      Priority = @priority ,
                     Comment = @comment ,
                     State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (update_job_state will handle final job state update)
             WHERE    Job = @job
 
-            UPDATE   dbo.T_Job_Parameters
+            UPDATE   dbo.T_Task_Parameters
             SET      Parameters = CONVERT(XML, @jobParam)
             WHERE    job = @job
             COMMIT

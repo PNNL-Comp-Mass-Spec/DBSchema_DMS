@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[make_new_archive_jobs_from_dms]
 **          06/13/2018 mem - Remove unused parameter @debugMode
 **          06/27/2019 mem - Changed priority to 3 (since default job priority is now 4)
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -95,7 +96,7 @@ AS
         If @infoOnly = 0
         Begin -- <InsertQuery>
 
-            INSERT INTO T_Jobs (Script,
+            INSERT INTO T_Tasks (Script,
                                 [Comment],
                                 Dataset,
                                 Dataset_ID,
@@ -106,7 +107,7 @@ AS
                    Src.Dataset_ID,
                    3 AS Priority
             FROM V_DMS_Get_New_Archive_Datasets Src
-                 LEFT OUTER JOIN T_Jobs Target
+                 LEFT OUTER JOIN T_Tasks Target
                    ON Src.Dataset_ID = Target.Dataset_ID AND
                       Target.Script = 'DatasetArchive'
             WHERE Target.Dataset_ID IS NULL
@@ -129,7 +130,7 @@ AS
                    Src.Dataset_ID,
                    3 AS Priority
             FROM V_DMS_Get_New_Archive_Datasets Src
-                 LEFT OUTER JOIN T_Jobs Target
+                 LEFT OUTER JOIN T_Tasks Target
                    ON Src.Dataset_ID = Target.Dataset_ID AND
                       Target.Script = 'DatasetArchive'
             WHERE Target.Dataset_ID IS NULL

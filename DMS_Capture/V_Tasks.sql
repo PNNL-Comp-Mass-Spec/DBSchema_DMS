@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Tasks]
 AS
 SELECT J.job,
@@ -25,10 +24,9 @@ SELECT J.job,
        J.transfer_folder_path,
        J.comment,
 	   J.capture_subfolder
-FROM T_Jobs J
-     INNER JOIN T_Job_State_Name JSN
+FROM T_Tasks J
+     INNER JOIN T_Task_State_Name JSN
        ON J.State = JSN.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Tasks] TO [DDL_Viewer] AS [dbo]

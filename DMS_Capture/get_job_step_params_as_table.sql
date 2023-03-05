@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_as_table]
 **
 **  Desc:   Get job step parameters for given job step
 **
-**  Note: Data comes from table T_Job_Parameters in the DMS_Capture DB, not from DMS5
+**  Note: Data comes from table T_Task_Parameters in the DMS_Capture DB, not from DMS5
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_as_table]
 **          05/05/2010 mem - Initial release
 **          02/12/2020 mem - Add argument @paramName, which can be used to filter the results
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (

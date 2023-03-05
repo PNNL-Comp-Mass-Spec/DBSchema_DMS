@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[delete_orphaned_jobs]
 **          05/22/2019 mem - Initial version
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
 
     INSERT INTO #Tmp_JobsToDelete ( Job, HasDependencies )
     SELECT J.Job, 0
-    FROM T_Jobs J
+    FROM T_Tasks J
          LEFT OUTER JOIN S_DMS_T_Dataset DS
            ON J.Dataset_ID = DS.Dataset_ID
     WHERE J.State = 0 AND
@@ -50,25 +51,25 @@ AS
           DS.Dataset_ID IS NULL
 
     ---------------------------------------------------
-    -- Remove any jobs that have data in T_Job_Steps, T_Job_Step_Dependencies, or T_Job_Parameters
+    -- Remove any jobs that have data in T_Task_Steps, T_Task_Step_Dependencies, or T_Task_Parameters
     ---------------------------------------------------
 
     UPDATE #Tmp_JobsToDelete
     SET HasDependencies = 1
     FROM #Tmp_JobsToDelete Target
-         INNER JOIN T_Job_Steps JS
+         INNER JOIN T_Task_Steps JS
            ON Target.Job = JS.Job
 
     UPDATE #Tmp_JobsToDelete
     SET HasDependencies = 1
     FROM #Tmp_JobsToDelete Target
-         INNER JOIN T_Job_Step_Dependencies D
+         INNER JOIN T_Task_Step_Dependencies D
            ON Target.Job = D.Job
 
     UPDATE #Tmp_JobsToDelete
     SET HasDependencies = 1
     FROM #Tmp_JobsToDelete Target
-         INNER JOIN T_Job_Parameters P
+         INNER JOIN T_Task_Parameters P
            ON Target.Job = P.Job
 
     If @infoOnly > 0
@@ -118,12 +119,12 @@ AS
                 SELECT @dataset = Dataset,
                        @datasetId = Dataset_ID,
                        @scriptName = Script
-                FROM T_Jobs
+                FROM T_Tasks
                 WHERE Job = @job
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                DELETE FROM T_Jobs
+                DELETE FROM T_Tasks
                 WHERE Job = @job
 
                 Set @logMessage = 'Deleted orphaned ' + @scriptName + ' job ' + Cast(@job As Varchar(12)) + ' for dataset ' + @dataset + ' since no longer defined in DMS'

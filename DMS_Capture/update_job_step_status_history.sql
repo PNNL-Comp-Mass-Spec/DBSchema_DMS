@@ -7,9 +7,9 @@ CREATE PROCEDURE [dbo].[update_job_step_status_history]
 /****************************************************
 **
 **  Desc:
-**      Appends new entries to T_Job_Step_Status_History,
+**      Appends new entries to T_Task_Step_Status_History,
 **      summarizing the number of job steps in each state
-**      in T_Job_Steps
+**      in T_Task_Steps
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,11 +18,12 @@ CREATE PROCEDURE [dbo].[update_job_step_status_history]
 **  Auth:   mem
 **  Date:   02/05/2016 - Initial version (copied from the DMS_Pipeline DB)
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
-    @minimumTimeIntervalMinutes integer = 60,                       -- Set this to 0 to force the addition of new data to T_Job_Step_Status_History
-    @minimumTimeIntervalMinutesForIdenticalStats integer = 355,     -- This controls how often identical stats will get added to T_Job_Step_Status_History
+    @minimumTimeIntervalMinutes integer = 60,                       -- Set this to 0 to force the addition of new data to T_Task_Step_Status_History
+    @minimumTimeIntervalMinutesForIdenticalStats integer = 355,     -- This controls how often identical stats will get added to T_Task_Step_Status_History
     @message varchar(128) = '' OUTPUT,
     @infoOnly tinyint = 0
 )
@@ -69,7 +70,7 @@ AS
     -----------------------------------------------------
     --
     SELECT @MostRecentPostingTime = MAX(Posting_Time)
-    FROM T_Job_Step_Status_History
+    FROM T_Task_Step_Status_History
     --
     SELECT @myError = @@error, @myRowCount = @@RowCount
 
@@ -91,9 +92,9 @@ AS
         -- Compute the new stats
         -----------------------------------------------------
         INSERT INTO #TmpJobStepStatusHistory  (Posting_Time, Step_Tool, State, Step_Count)
-        SELECT GetDate() as Posting_Time, Step_Tool, State, COUNT(*) AS Step_Count
-        FROM T_Job_Steps
-        GROUP BY Step_Tool, State
+        SELECT GetDate() as Posting_Time, Tool, State, COUNT(*) AS Step_Count
+        FROM T_Task_Steps
+        GROUP BY Tool, State
         --
         SELECT @myError = @@error, @myRowCount = @@RowCount
 
@@ -109,7 +110,7 @@ AS
              INNER JOIN ( SELECT Step_Tool,
                                  State,
                                  Step_Count
-                          FROM T_Job_Step_Status_History
+                          FROM T_Task_Step_Status_History
                           WHERE Posting_Time = @MostRecentPostingTime
                         ) RecentStats
                ON NewStats.Step_Tool = RecentStats.Step_Tool AND
@@ -122,7 +123,7 @@ AS
         Begin
             -----------------------------------------------------
             -- All of the stats match
-            -- Only make new entries to T_Job_Step_Status_History if @MinimumTimeIntervalMinutesForIdenticalStats minutes have elapsed
+            -- Only make new entries to T_Task_Step_Status_History if @MinimumTimeIntervalMinutesForIdenticalStats minutes have elapsed
             -----------------------------------------------------
 
             Set @TimeIntervalIdenticalStatsMinutes = DateDiff(second, @MostRecentPostingTime, GetDate()) / 60.0
@@ -142,7 +143,7 @@ AS
                 ORDER BY Step_Tool, State
             Else
             Begin
-                INSERT INTO T_Job_Step_Status_History  (Posting_Time, Step_Tool, State, Step_Count)
+                INSERT INTO T_Task_Step_Status_History  (Posting_Time, Step_Tool, State, Step_Count)
                 SELECT Posting_Time, Step_Tool, State, Step_Count
                 FROM #TmpJobStepStatusHistory
                 ORDER BY Step_Tool, State

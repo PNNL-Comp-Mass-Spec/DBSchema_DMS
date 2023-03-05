@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params]
 /****************************************************
 **
 **  Desc:   Populate a temporary table with job step parameters for given job step
-**          Data comes from tables T_Jobs, T_Job_Steps, and T_Job_Parameters in the DMS_Capture DB, not from DMS5
+**          Data comes from tables T_Tasks, T_Task_Steps, and T_Task_Parameters in the DMS_Capture DB, not from DMS5
 **
 **  The calling procedure must create this temporary table:
 **
@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params]
 **          06/12/2018 mem - Now calling get_metadata_for_dataset
 **          05/17/2019 mem - Switch from folder to directory
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -67,15 +68,15 @@ AS
     -- Get basic job step parameters
     ---------------------------------------------------
     --
-    SELECT @stepTool = Step_Tool,
+    SELECT @stepTool = Tool,
            @inputDirectoryName = Input_Folder_Name,
            @outputDirectoryName = Output_Folder_Name,
            @resultsDirectoryName = Results_Folder_Name
-    FROM T_Job_Steps
-         INNER JOIN T_Jobs
-           ON T_Job_Steps.Job = T_Jobs.Job
-    WHERE T_Job_Steps.Job = @jobNumber AND
-          Step_Number = @stepNumber
+    FROM T_Task_Steps
+         INNER JOIN T_Tasks
+           ON T_Task_Steps.Job = T_Tasks.Job
+    WHERE T_Task_Steps.Job = @jobNumber AND
+          Step = @stepNumber
 
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -149,9 +150,9 @@ AS
         xmlNode.value('@Name', 'nvarchar(256)') Name,
         xmlNode.value('@Value', 'nvarchar(4000)') Value
     FROM
-        T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+        T_Task_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
     WHERE
-        T_Job_Parameters.Job = @jobNumber AND
+        T_Task_Parameters.Job = @jobNumber AND
         ((xmlNode.value('@Step', 'nvarchar(128)') IS NULL) OR (xmlNode.value('@Step', 'nvarchar(128)') = @stepNumber))
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -170,7 +171,7 @@ AS
     Begin
         Declare @dataset varchar(128) = ''
         SELECT @dataset = Dataset
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE Job = @jobNumber
 
         EXEC get_metadata_for_dataset @dataset

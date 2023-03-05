@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_dms_archive_reqd]
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -69,7 +70,7 @@ AS
     --
     IF @infoOnly = 0
     BEGIN
-        INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Comment)
+        INSERT INTO T_Tasks (Script, Dataset, Dataset_ID, Comment)
         SELECT DISTINCT
           'DatasetArchive' AS Script,
           Dataset,

@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[make_new_dataset_source_file_rename_job]
 **          09/09/2022 mem - Fix typo in message
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -71,9 +72,9 @@ AS
     Set @JobID = 0
 
     SELECT @JobID = Job
-    FROM T_Jobs
+    FROM T_Tasks
     WHERE (Script = 'SourceFileRename') AND
-          (T_Jobs.Dataset_ID = @DatasetID) AND
+          (T_Tasks.Dataset_ID = @DatasetID) AND
           (State < 3)
 
     If @JobID > 0
@@ -99,7 +100,7 @@ AS
     Else
     Begin
 
-        INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
+        INSERT INTO T_Tasks (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
         SELECT
             'SourceFileRename' AS Script,
             @DatasetName AS Dataset,

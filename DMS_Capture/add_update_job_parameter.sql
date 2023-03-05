@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[add_update_job_parameter]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -58,11 +59,11 @@ AS
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     ---------------------------------------------------
-    -- Lookup the current parameters stored in T_Job_Parameters for this job
+    -- Lookup the current parameters stored in T_Task_Parameters for this job
     ---------------------------------------------------
     --
     SELECT @paramsXML = Parameters
-    FROM T_Job_Parameters
+    FROM T_Task_Parameters
     WHERE Job = @Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -71,7 +72,7 @@ AS
         Set @ExistingParamsFound = 1
     Else
     Begin
-        Set @message = 'Warning: job not found in T_Job_Parameters'
+        Set @message = 'Warning: job not found in T_Task_Parameters'
         If @infoOnly <> 0
             print @message
         Set @paramsXML = ''
@@ -87,13 +88,13 @@ AS
     If @infoOnly = 0
     Begin
         ---------------------------------------------------
-        -- Update T_Job_Parameters
+        -- Update T_Task_Parameters
         -- Note: Ordering by Section name but not by parameter name
         ---------------------------------------------------
         --
         If @ExistingParamsFound = 1
         Begin
-            UPDATE T_Job_Parameters
+            UPDATE T_Task_Parameters
             SET Parameters = @paramsXML
             WHERE Job = @Job
             --
@@ -101,7 +102,7 @@ AS
         End
         Else
         Begin
-            INSERT INTO T_Job_Parameters( Job, Parameters )
+            INSERT INTO T_Task_Parameters( Job, Parameters )
             SELECT @job, @paramsXML
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -109,7 +110,7 @@ AS
 
         if @myError <> 0
         begin
-            set @message = 'Error storing parameters in T_Job_Parameters for job ' + Convert(varchar(12), @Job)
+            set @message = 'Error storing parameters in T_Task_Parameters for job ' + Convert(varchar(12), @Job)
         end
     End
 

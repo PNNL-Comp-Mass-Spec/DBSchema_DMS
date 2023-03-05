@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[make_new_automatic_jobs]
 **          01/26/2017 mem - Add support for column Enabled in T_Automatic_Jobs
 **          01/29/2021 mem - Remove unused parameters
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ AS
     -- In particular, after a DatasetArchive job finishes, create new SourceFileRename and MyEMSLVerify jobs
     -- (since that relationship is defined in T_Automatic_Jobs)
 
-    INSERT INTO T_Jobs
+    INSERT INTO T_Tasks
             ( Script,
               Dataset,
               Dataset_ID,
@@ -46,13 +47,13 @@ AS
            J.Dataset,
            J.Dataset_ID,
            'Created from Job ' + CONVERT(varchar(12), J.Job) AS [Comment]
-    FROM T_Jobs AS J
+    FROM T_Tasks AS J
          INNER JOIN T_Automatic_Jobs AJ
            ON J.Script = AJ.Script_For_Completed_Job AND
               AJ.Enabled = 1
     WHERE (J.State = 3) AND
           NOT EXISTS ( SELECT *
-                       FROM dbo.T_Jobs
+                       FROM dbo.T_Tasks
                        WHERE Script = Script_For_New_Job AND
                              Dataset = J.Dataset )
 

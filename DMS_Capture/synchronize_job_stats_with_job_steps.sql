@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[synchronize_job_stats_with_job_steps]
 **          03/10/2014 mem - Fix logic related to @CompletedJobsOnly
 **          09/30/2022 mem - Fix bug that used the wrong state_id for completed tasks
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -53,16 +54,16 @@ AS
 
     INSERT INTO #TmpJobsToUpdate ( Job )
     SELECT J.job
-    FROM T_Jobs J
-         INNER JOIN T_Job_Steps JS
+    FROM T_Tasks J
+         INNER JOIN T_Task_Steps JS
            ON J.Job = JS.Job
     WHERE (J.State = 3 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
           J.Finish < JS.Finish
     GROUP BY J.job
     UNION
     SELECT J.Job
-    FROM T_Jobs J
-         INNER JOIN T_Job_Steps JS
+    FROM T_Tasks J
+         INNER JOIN T_Task_Steps JS
            ON J.Job = JS.Job
     WHERE (J.State = 3 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
           J.Start > JS.Start
@@ -76,8 +77,8 @@ AS
          INNER JOIN ( SELECT J.Job,
                              MIN(JS.Start) AS Step_Start,
                              MAX(JS.Finish) AS Step_Finish
-                      FROM T_Jobs J
-                           INNER JOIN T_Job_Steps JS
+                      FROM T_Tasks J
+                           INNER JOIN T_Task_Steps JS
                              ON J.Job = JS.Job
                       WHERE J.Job IN ( SELECT Job
                                        FROM #TmpJobsToUpdate )
@@ -93,7 +94,7 @@ AS
                J.Finish,
                JTU.StartNew,
                JTU.FinishNew
-        FROM T_Jobs J
+        FROM T_Tasks J
              INNER JOIN #TmpJobsToUpdate JTU
                ON J.Job = JTU.Job
     Else
@@ -102,10 +103,10 @@ AS
         -- Update the Start/Finish times
         ---------------------------------------------------
 
-        UPDATE T_Jobs
+        UPDATE T_Tasks
         SET Start = JTU.StartNew,
             Finish = JTU.FinishNew
-        FROM T_Jobs J
+        FROM T_Tasks J
              INNER JOIN #TmpJobsToUpdate JTU
                ON J.Job = JTU.Job
     End

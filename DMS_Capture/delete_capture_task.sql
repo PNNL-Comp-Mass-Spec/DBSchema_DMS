@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[delete_capture_task]
 /****************************************************
 **
 **  Desc:
-**      Deletes the given job from T_Jobs and T_Job_Steps
+**      Deletes the given job from T_Tasks and T_Task_Steps
 **      This procedure is called by DeleteAnalysisJob in DMS5
 **
 **  Return values: 0: success, otherwise, error code
@@ -15,10 +15,11 @@ CREATE PROCEDURE [dbo].[delete_capture_task]
 **  Auth:   mem
 **          09/12/2009 mem - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          09/11/2012 mem - Renamed from DeleteJob to delete_capture_task
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -41,11 +42,11 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'delete_capture_task', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
-    declare @transName varchar(32) = 'DeleteBrokerJob'
+    Declare @transName varchar(32) = 'DeleteBrokerJob'
 
     begin transaction @transName
 
@@ -53,14 +54,14 @@ AS
     -- Delete the job dependencies
     ---------------------------------------------------
     --
-    DELETE FROM T_Job_Step_Dependencies
+    DELETE FROM T_Task_Step_Dependencies
     WHERE Job = @jobID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
         --
     if @myError <> 0
     begin
-        set @message = 'Error deleting T_Job_Step_Dependencies'
+        set @message = 'Error deleting T_Task_Step_Dependencies'
         goto Done
     end
 
@@ -68,14 +69,14 @@ AS
     -- Delete the job parameters
     ---------------------------------------------------
     --
-    DELETE FROM T_Job_Parameters
+    DELETE FROM T_Task_Parameters
     WHERE Job = @jobID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
         --
     if @myError <> 0
     begin
-        set @message = 'Error deleting T_Job_Parameters'
+        set @message = 'Error deleting T_Task_Parameters'
         goto Done
     end
 
@@ -83,7 +84,7 @@ AS
     -- Delete the job steps
     ---------------------------------------------------
     --
-    DELETE FROM T_Job_Steps
+    DELETE FROM T_Task_Steps
     WHERE Job = @jobID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -99,7 +100,7 @@ AS
     -- Delete the job
     ---------------------------------------------------
     --
-    DELETE FROM T_Jobs
+    DELETE FROM T_Tasks
     WHERE Job = @jobID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

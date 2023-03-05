@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[update_missed_myemsl_state_values]
 **          03/25/2014 mem - Changed log message type to be a warning
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -106,7 +107,7 @@ AS
 
             -- Reset skipped ArchiveVerify steps for the affected datasets
             --
-            UPDATE T_Job_Steps
+            UPDATE T_Task_Steps
             SET State = 2
             WHERE Job IN ( SELECT M.Job
                            FROM T_MyEMSL_Uploads M
@@ -114,7 +115,7 @@ AS
                                   ON M.Dataset_ID = U.EntityID
                            WHERE M.ErrorCode = 0 ) AND
                   State = 3 AND
-                  Step_Tool IN ('ArchiveVerify', 'ArchiveStatusCheck')
+                  Tool IN ('ArchiveVerify', 'ArchiveStatusCheck')
 
 
         End

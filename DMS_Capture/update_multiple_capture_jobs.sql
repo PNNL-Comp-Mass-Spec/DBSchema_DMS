@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[update_multiple_capture_jobs]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -53,19 +54,19 @@ AS
     Exec @authorized = verify_sp_authorized 'update_multiple_capture_jobs', @raiseError = 1;
 
     If @authorized = 0
-    Begin
-        Throw 51000, 'Access denied', 1;
-    End
+    Begin;
+        THROW 51000, 'Access denied', 1;
+    End;
 
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
 
     if IsNull(@JobList, '') = ''
-    begin
+    Begin;
         set @message = 'Job list is empty';
         THROW 51001, @message, 1;
-    end
+    End;
 
     Set @Mode = IsNull(@mode, '')
 
@@ -170,7 +171,7 @@ AS
         begin transaction @transName
 
         UPDATE
-          T_Jobs
+          T_Tasks
         SET
           State = 100
         WHERE
@@ -196,7 +197,7 @@ AS
         begin transaction @transName
 
         UPDATE
-          T_Jobs
+          T_Tasks
         SET
           State = 101
         WHERE
@@ -222,7 +223,7 @@ AS
         begin transaction @transName
 
         UPDATE
-          T_Jobs
+          T_Tasks
         SET
           State = 1
         WHERE

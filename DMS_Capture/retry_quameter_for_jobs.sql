@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[retry_quameter_for_jobs]
 /****************************************************
 **
-**  Desc:   Resets failed DatasetQuality step in T_Job_Steps for the specified jobs
+**  Desc:   Resets failed DatasetQuality step in T_Task_Steps for the specified jobs
 **
 **          Useful for jobs where Quameter encountered an error
 **
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[retry_quameter_for_jobs]
 **          07/22/2019 mem - When @infoOnly is 0, return a table listing the jobs that were reset
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (

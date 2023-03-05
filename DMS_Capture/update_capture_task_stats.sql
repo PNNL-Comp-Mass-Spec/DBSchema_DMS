@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[update_capture_task_stats]
 **  Auth:   mem
 **  Date:   05/29/2022 mem - Initial version
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ AS
            IsNull(InstName.In_Name, '') AS Instrument,
            YEAR(JH.Start) AS [Year],
            COUNT(*) AS Jobs
-    FROM T_Jobs_History JH
+    FROM T_Tasks_History JH
          LEFT OUTER JOIN S_DMS_T_Dataset DS
            ON JH.Dataset_ID = DS.Dataset_ID
          LEFT OUTER JOIN S_DMS_T_Instrument_Name InstName
@@ -82,7 +83,7 @@ AS
     ---------------------------------------------------
     -- Update cached stats in T_Capture_Task_Stats
     --
-    -- Since old jobs get deleted from T_Jobs_History,
+    -- Since old jobs get deleted from T_Tasks_History,
     -- assure that the maximum value is used for each row
     ---------------------------------------------------
 

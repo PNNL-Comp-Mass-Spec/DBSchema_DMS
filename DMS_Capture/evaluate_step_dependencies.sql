@@ -14,11 +14,12 @@ CREATE PROCEDURE [dbo].[evaluate_step_dependencies]
 **
 **  Auth:   grk
 **  Date:   09/05/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
 **          09/23/2022 mem - Remove unnecesary Else
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -86,20 +87,20 @@ AS
         Enable_Only
     )
     SELECT JS.Job,
-           JSD.Step_Number AS DependentStep,
-           JS.Step_Number AS TargetStep,
+           JSD.Step AS DependentStep,
+           JS.Step AS TargetStep,
            JS.State AS TargetState,
            JS.Completion_Code AS TargetCompletionCode,
            JSD.Condition_Test,
            JSD.Test_Value,
            JSD.Enable_Only
-    FROM T_Job_Step_Dependencies JSD
-         INNER JOIN T_Job_Steps JS
-           ON JSD.Target_Step_Number = JS.Step_Number AND
+    FROM T_Task_Step_Dependencies JSD
+         INNER JOIN T_Task_Steps JS
+           ON JSD.Target_Step = JS.Step AND
               JSD.Job = JS.Job
-         INNER JOIN T_Job_Steps AS JS_B
+         INNER JOIN T_Task_Steps AS JS_B
            ON JSD.Job = JS_B.Job AND
-              JSD.Step_Number = JS_B.Step_Number
+              JSD.Step = JS_B.Step
     WHERE (JSD.Evaluated = 0) AND
           (JS.State IN (3, 5, 13)) AND
           (JS_B.State = 1)
@@ -202,8 +203,8 @@ AS
                 set @actualValue = -1
                 --
                 SELECT @actualValue = Signature
-                FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @dependentStep
+                FROM T_Task_Steps
+                WHERE Job = @job AND Step = @dependentStep
                 --
                 if @actualValue = -1
                 begin
@@ -231,8 +232,8 @@ AS
                 --
                 SELECT
                     @actualValue = State
-                FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep
+                FROM T_Task_Steps
+                WHERE Job = @job AND Step = @targetStep
                 --
                 if @actualValue = -1
                 begin
@@ -257,8 +258,8 @@ AS
                 --
                 SELECT
                     @targetCompletionMessage = Completion_Message
-                FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep
+                FROM T_Task_Steps
+                WHERE Job = @job AND Step = @targetStep
                 --
                 if @targetCompletionMessage like '%' + @testValue + '%'
                     set @Triggered = 1
@@ -277,8 +278,8 @@ AS
                 Declare @outputDirectoryName varchar(128) = ''
                 --
                 SELECT @outputDirectoryName = Output_Folder_Name
-                FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep
+                FROM T_Task_Steps
+                WHERE Job = @job AND Step = @targetStep
                   --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
@@ -288,9 +289,9 @@ AS
                     goto Done
                 end
                 --
-                UPDATE T_Job_Steps
+                UPDATE T_Task_Steps
                 SET Input_Folder_Name = @outputDirectoryName
-                WHERE Job = @job AND Step_Number = @dependentStep
+                WHERE Job = @job AND Step = @dependentStep
                   --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
@@ -305,12 +306,12 @@ AS
             -- update state of dependency
             ---------------------------------------------------
             --
-            UPDATE T_Job_Step_Dependencies
+            UPDATE T_Task_Step_Dependencies
             SET Evaluated = 1,
                 Triggered = @Triggered
             WHERE Job = @job AND
-                  Step_Number = @dependentStep AND
-                  Target_Step_Number = @targetStep
+                  Step = @dependentStep AND
+                  Target_Step = @targetStep
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --

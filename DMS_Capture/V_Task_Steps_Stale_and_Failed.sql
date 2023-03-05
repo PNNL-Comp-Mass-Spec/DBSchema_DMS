@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Task_Steps_Stale_and_Failed] 
+CREATE VIEW [dbo].[V_Task_Steps_Stale_and_Failed]
 AS
 SELECT warning_message,
        dataset,
@@ -38,7 +37,7 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND DATEDIFF(hour, JS.Start, GetDate()) >
                   WHEN JS.State = 4 THEN 'Stale'
                   ELSE CASE WHEN FailedJobQ.Job IS NULL OR JS.State = 6
                        THEN JS.state_name
-                       ELSE JS.state_name + ' (Failed in T_Jobs)'
+                       ELSE JS.state_name + ' (Failed in T_Tasks)'
                        END
               END AS state_name,
               JS.start,
@@ -55,16 +54,16 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND DATEDIFF(hour, JS.Start, GetDate()) >
                 -- Look for jobs that are failed and started within the last 14 days
                 -- The subquery is used to find the highest step state for each job
 				SELECT Job,
-				       Step_Number AS Step
+				       Step AS Step
 				FROM ( SELECT JS.Job,
-				              JS.Step_Number,
+				              JS.Step,
 				              JS.State AS StepState,
 				              Row_Number() OVER ( PARTITION BY J.Job ORDER BY JS.State DESC ) AS RowRank
-				       FROM dbo.T_Jobs J
-				            INNER JOIN dbo.T_Job_Steps JS
+				       FROM dbo.T_Tasks J
+				            INNER JOIN dbo.T_Task_Steps JS
 				              ON J.Job = JS.Job
 				       WHERE (J.State = 5) AND
-				             (J.Start >= DATEADD(day, -14, GETDATE())) 
+				             (J.Start >= DATEADD(day, -14, GETDATE()))
 				     ) LookupQ
 				WHERE RowRank = 1
             ) FailedJobQ ON JS.Job = FailedJobQ.Job AND JS.Step = FailedJobQ.Step
@@ -72,7 +71,6 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND DATEDIFF(hour, JS.Start, GetDate()) >
               ON JS.Processor = LP.Processor_Name
    ) DataQ
 WHERE Warning_Message <> ''
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Task_Steps_Stale_and_Failed] TO [DDL_Viewer] AS [dbo]

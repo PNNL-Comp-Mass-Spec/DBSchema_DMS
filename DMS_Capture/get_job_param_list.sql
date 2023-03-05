@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[get_job_param_list]
 **  Auth:   grk
 **  Date:   01/27/2010
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -32,7 +33,7 @@ AS
         SELECT
             @list = '<pre>' + CONVERT(VARCHAR(8000), Parameters) + '</pre>'
         FROM
-            T_Job_Parameters
+            T_Task_Parameters
         WHERE
             Job = @job
 
@@ -52,9 +53,9 @@ AS
                 xmlNode.value('@Name', 'nvarchar(256)') as param,
                 xmlNode.value('@Value', 'nvarchar(4000)') AS val
             FROM
-                T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+                T_Task_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
             WHERE
-                T_Job_Parameters.Job = @job
+                T_Task_Parameters.Job = @job
         ) AS T
 */
         RETURN @list

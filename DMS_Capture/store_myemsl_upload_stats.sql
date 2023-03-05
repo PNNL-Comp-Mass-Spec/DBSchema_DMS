@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[store_myemsl_upload_stats]
 **          06/15/2017 mem - Add support for status URLs of the form https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1305088
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -79,12 +80,12 @@ AS
     Set @infoOnly = IsNull(@infoOnly, 0)
 
     ---------------------------------------------------
-    -- Make sure @Job is defined in T_Jobs
+    -- Make sure @Job is defined in T_Tasks
     ---------------------------------------------------
 
-    IF NOT EXISTS (SELECT * FROM T_Jobs where Job = @Job)
+    IF NOT EXISTS (SELECT * FROM T_Tasks where Job = @Job)
     Begin
-        Set @message = 'Job not found in T_Jobs: ' + CONVERT(varchar(12), @Job)
+        Set @message = 'Job not found in T_Tasks: ' + CONVERT(varchar(12), @Job)
         If @infoOnly <> 0
             Print @message
         return 50000

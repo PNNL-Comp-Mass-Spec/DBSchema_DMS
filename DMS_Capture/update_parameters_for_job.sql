@@ -16,11 +16,11 @@ CREATE PROCEDURE [dbo].[update_parameters_for_job]
 **  Date:   12/16/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/14/2010 grk - removed path ID fields
 **          01/28/2010 grk - modified to use create_parameters_for_job, and to take list of jobs
-**          04/13/2010 mem - Fixed bug that didn't properly update T_Job_Parameters when #Job_Parameters contains multiple jobs (because @jobList contained multiple jobs)
-**                         - Added support for jobs being present in T_Jobs but not present in T_Job_Parameters
+**          04/13/2010 mem - Fixed bug that didn't properly update T_Task_Parameters when #Job_Parameters contains multiple jobs (because @jobList contained multiple jobs)
+**                         - Added support for jobs being present in T_Tasks but not present in T_Task_Parameters
 **          05/18/2011 mem - Updated @jobList to varchar(max)
-**          09/17/2012 mem - Now updating Storage_Server in T_Jobs if it differs from V_DMS_Capture_Job_Parameters
-**          08/27/2013 mem - Now updating 4 fields in T_Jobs if they are null (which will be the case if a job was copied from T_Jobs_History to T_Jobs yet the job had no parameters in T_Job_Parameters_History)
+**          09/17/2012 mem - Now updating Storage_Server in T_Tasks if it differs from V_DMS_Capture_Job_Parameters
+**          08/27/2013 mem - Now updating 4 fields in T_Tasks if they are null (which will be the case if a job was copied from T_Tasks_History to T_Tasks yet the job had no parameters in T_Task_Parameters_History)
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          06/01/2015 mem - Changed update logic for Capture_Subfolder to pull from DMS5 _unless_ the value in DMS5 is null
 **          03/24/2016 mem - Switch to using parse_delimited_integer_list to parse the list of jobs
@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[update_parameters_for_job]
 **          05/17/2019 mem - Switch from folder to directory
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -52,9 +53,9 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'update_parameters_for_job', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     -----------------------------------------------------------
     -- Parse the job list
@@ -72,15 +73,15 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
 
-    -- Update values in T_Jobs
+    -- Update values in T_Tasks
 
-    UPDATE T_Jobs
+    UPDATE T_Tasks
     SET Storage_Server = IsNull(VDD.Storage_Server_Name, J.Storage_Server),
         Instrument = IsNull(VDD.Instrument_Name, J.Instrument),
         Instrument_Class = IsNull(VDD.Instrument_Class, J.Instrument_Class),
         Max_Simultaneous_Captures = IsNull(VDD.Max_Simultaneous_Captures, J.Max_Simultaneous_Captures),
         Capture_Subfolder = IsNull(VDD.Capture_Subfolder, J.Capture_Subfolder)
-    FROM T_Jobs J
+    FROM T_Tasks J
          INNER JOIN V_DMS_Get_Dataset_Definition AS VDD
            ON J.Dataset_ID = VDD.Dataset_ID
          INNER JOIN #Tmp_Jobs
@@ -133,7 +134,7 @@ AS
            J.Instrument_Class,
            J.Max_Simultaneous_Captures,
            J.Capture_Subfolder
-    FROM T_Jobs J
+    FROM T_Tasks J
          INNER JOIN #Tmp_Jobs
            ON J.Job = #Tmp_Jobs.Job
 
@@ -151,16 +152,16 @@ AS
 
     IF @DebugMode = 0
     Begin
-        -- Update the Storage Server stored in T_Jobs if it differs from V_DMS_Dataset_Metadata
+        -- Update the Storage Server stored in T_Tasks if it differs from V_DMS_Dataset_Metadata
         --
-        UPDATE T_Jobs
+        UPDATE T_Tasks
         SET Storage_Server = DS.Storage_Server_Name
-        FROM T_Jobs
+        FROM T_Tasks
                 INNER JOIN V_DMS_Dataset_Metadata DS
-                ON T_Jobs.Dataset_ID = DS.Dataset_ID
+                ON T_Tasks.Dataset_ID = DS.Dataset_ID
                 INNER JOIN #Jobs
-                ON #Jobs.Job = T_Jobs.Job
-        WHERE IsNull(DS.Storage_Server_Name, '') <> '' AND IsNull(T_Jobs.Storage_Server, '') <> DS.Storage_Server_Name
+                ON #Jobs.Job = T_Tasks.Job
+        WHERE IsNull(DS.Storage_Server_Name, '') <> '' AND IsNull(T_Tasks.Storage_Server, '') <> DS.Storage_Server_Name
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     End
@@ -222,7 +223,7 @@ AS
     end --<a>
 
     ---------------------------------------------------
-    -- replace params in T_Job_Parameters (or output debug message)
+    -- replace params in T_Task_Parameters (or output debug message)
     ---------------------------------------------------
     --
     IF @DebugMode > 0
@@ -235,11 +236,11 @@ AS
     END
     ELSE
     BEGIN
-        -- Update existing jobs in T_Job_Parameters
+        -- Update existing jobs in T_Task_Parameters
         --
-        UPDATE T_Job_Parameters
+        UPDATE T_Task_Parameters
         SET Parameters = Source.Parameters
-        FROM T_Job_Parameters Target
+        FROM T_Task_Parameters Target
              INNER JOIN #Job_Parameters Source
                ON Target.Job = Source.Job
         --
@@ -248,14 +249,14 @@ AS
 
         -- Add any missing jobs
         --
-        INSERT INTO T_Job_Parameters( Job,
+        INSERT INTO T_Task_Parameters( Job,
                                       Parameters )
         SELECT Source.Job,
                Source.Parameters
         FROM #Job_Parameters Source
-             LEFT OUTER JOIN T_Job_Parameters
-               ON Source.Job = T_Job_Parameters.Job
-        WHERE T_Job_Parameters.Job IS NULL
+             LEFT OUTER JOIN T_Task_Parameters
+               ON Source.Job = T_Task_Parameters.Job
+        WHERE T_Task_Parameters.Job IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 

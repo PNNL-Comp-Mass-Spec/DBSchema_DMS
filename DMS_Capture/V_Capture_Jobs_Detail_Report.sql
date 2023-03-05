@@ -22,8 +22,8 @@ SELECT J.job,
        J.comment,
 	   J.capture_subfolder,
        dbo.get_job_param_list(J.Job) AS parameters
-FROM dbo.T_Jobs AS J
-     INNER JOIN dbo.T_Job_State_Name AS JSN
+FROM dbo.T_Tasks AS J
+     INNER JOIN dbo.T_Task_State_Name AS JSN
        ON J.State = JSN.ID
 
 GO

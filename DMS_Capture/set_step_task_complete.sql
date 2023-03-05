@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[set_step_task_complete]
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          08/21/2020 mem - Set @HoldoffIntervalMinutes to 60 (or higher) if @retryCount is 0
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -86,17 +87,17 @@ AS
            @retryCount = JS.Retry_Count,
            @holdoffIntervalMinutes = JS.Holdoff_Interval_Minutes,
            @nextTry = JS.Next_Try,
-           @stepTool = JS.Step_Tool,
+           @stepTool = JS.Tool,
            @outputFolderName = JS.Output_Folder_Name,
            @datasetID = J.Dataset_ID,
            @datasetName = J.Dataset
-    FROM T_Job_Steps JS
+    FROM T_Task_Steps JS
          INNER JOIN T_Local_Processors LP
            ON LP.Processor_Name = JS.Processor
-         INNER JOIN T_Jobs J
+         INNER JOIN T_Tasks J
            ON JS.Job = J.Job
     WHERE (JS.Job = @job) AND
-          (JS.Step_Number = @step)
+          (JS.Step = @step)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -209,7 +210,7 @@ AS
     -- Update job step
     ---------------------------------------------------
     --
-    UPDATE T_Job_Steps
+    UPDATE T_Task_Steps
     SET    State = @newStepState,
            Finish = Getdate(),
            Completion_Code = @completionCode,
@@ -220,7 +221,7 @@ AS
            Holdoff_Interval_Minutes = @HoldoffIntervalMinutes,
            Next_Try = @nextTry
     WHERE  (Job = @job)
-    AND (Step_Number = @step)
+    AND (Step = @step)
      --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -237,7 +238,7 @@ AS
         -- If @evaluationCode = 7, we uploaded data to MyEMSL, but there were no new files to upload, so there is nothing to verify
         -- In either case, skip the ArchiveVerify and ArchiveStatusCheck steps for this job (if they exist)
 
-        UPDATE T_Job_Steps
+        UPDATE T_Task_Steps
         SET State = 3,
             Completion_Code = 0,
             Completion_Message = '',
@@ -249,7 +250,7 @@ AS
                   ELSE 'Skipped for unknown reason'
               END
         WHERE Job = @job AND
-              Step_Tool IN ('ArchiveVerify', 'ArchiveStatusCheck') AND
+              Tool IN ('ArchiveVerify', 'ArchiveStatusCheck') AND
               NOT State IN (4, 5, 7)
 
     End

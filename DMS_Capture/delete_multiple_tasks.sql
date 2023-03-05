@@ -15,13 +15,14 @@ CREATE PROCEDURE [dbo].[delete_multiple_tasks]
 **  Auth:   grk
 **  Date:   06/03/2010 grk - Initial release
 **          09/11/2012 mem - Renamed from DeleteMultipleJobs to delete_multiple_tasks
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          03/24/2016 mem - Switch to using parse_delimited_integer_list to parse the list of jobs
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -42,9 +43,9 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'delete_multiple_tasks', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     BEGIN TRY
 
@@ -72,28 +73,28 @@ AS
         -- Delete job dependencies
         ---------------------------------------------------
         --
-        DELETE FROM T_Job_Step_Dependencies
+        DELETE FROM T_Task_Step_Dependencies
         WHERE (Job IN (SELECT Job FROM #JOBS))
 
         ---------------------------------------------------
         -- delete job parameters
         ---------------------------------------------------
         --
-        DELETE FROM T_Job_Parameters
+        DELETE FROM T_Task_Parameters
         WHERE Job IN (SELECT Job FROM #JOBS)
 
         ---------------------------------------------------
         -- Delete job steps
         ---------------------------------------------------
         --
-        DELETE FROM T_Job_Steps
+        DELETE FROM T_Task_Steps
         WHERE Job IN (SELECT Job FROM #JOBS)
 
         ---------------------------------------------------
         -- Delete jobs
         ---------------------------------------------------
         --
-        DELETE FROM T_Jobs
+        DELETE FROM T_Tasks
         WHERE Job IN (SELECT Job FROM #JOBS)
 
         ---------------------------------------------------

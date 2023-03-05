@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[report_manager_idle]
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -77,7 +78,7 @@ AS
     -- If there are multiple job steps, @jobNumber will only track one of the jobs
     --
     SELECT TOP 1 @jobNumber = Job
-    FROM T_Job_Steps
+    FROM T_Task_Steps
     WHERE Processor = @managerName AND State = 4
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -101,7 +102,7 @@ AS
     Begin
         -- Change task state back to 2=Enabled
         --
-        UPDATE T_Job_Steps
+        UPDATE T_Task_Steps
         SET State = 2
         WHERE Processor = @managerName AND State = 4
         --

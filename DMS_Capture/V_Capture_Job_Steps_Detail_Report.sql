@@ -7,10 +7,10 @@ CREATE VIEW V_Capture_Job_Steps_Detail_Report
 AS
 SELECT JS.Job_Plus_Step AS id,
        JS.job,
-       JS.Step_Number AS step,
+       JS.Step AS step,
        J.dataset,
        S.script,
-       JS.Step_Tool AS tool,
+       JS.Tool AS tool,
        SSN.Name AS step_state,
        JSN.Name AS job_state_b,
        JS.State AS state_id,
@@ -29,16 +29,15 @@ SELECT JS.Job_Plus_Step AS id,
        J.Transfer_Folder_Path AS transfer_folder_path,
        JS.Next_Try AS next_try,
        JS.Retry_Count AS retry_count
-FROM dbo.T_Job_Steps AS JS
-     INNER JOIN dbo.T_Job_Step_State_Name AS SSN
+FROM dbo.T_Task_Steps AS JS
+     INNER JOIN dbo.T_Task_Step_State_Name AS SSN
        ON JS.State = SSN.ID
-     INNER JOIN dbo.T_Jobs AS J
+     INNER JOIN dbo.T_Tasks AS J
        ON JS.Job = J.Job
-     INNER JOIN dbo.T_Job_State_Name AS JSN
+     INNER JOIN dbo.T_Task_State_Name AS JSN
        ON J.State = JSN.ID
      INNER JOIN dbo.T_Scripts AS S
        ON J.Script = S.Script
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Capture_Job_Steps_Detail_Report] TO [DDL_Viewer] AS [dbo]

@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_analysis_broker]
 **                         - Now using T_Default_SP_Params to get default input params from database table
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -186,10 +187,10 @@ AS
     SET No_Dataset_Archive = 1
     WHERE #AUJobs.AJ_Finish >= DATEADD(dd, -1 * @timeWindowToRequireExisingDatasetArchiveJob, GETDATE()) AND
           NOT EXISTS ( SELECT Dataset_ID
-                       FROM T_Jobs
+                       FROM T_Tasks
                        WHERE (Script = 'DatasetArchive') AND
                              (State = 3) AND
-                             (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID)
+                             (T_Tasks.Dataset_ID = #AUJobs.Dataset_ID)
                      )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -210,10 +211,10 @@ AS
     WHERE
     EXISTS (
         SELECT Dataset
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE (Script = 'ArchiveUpdate') AND
-              (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID) AND
-              (ISNULL(T_Jobs.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name) AND
+              (T_Tasks.Dataset_ID = #AUJobs.Dataset_ID) AND
+              (ISNULL(T_Tasks.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name) AND
               (State <> 3)
     )
     --
@@ -237,12 +238,12 @@ AS
     WHERE
     EXISTS (
         SELECT Dataset
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE (Script = 'ArchiveUpdate') AND
-              (T_Jobs.Dataset_ID = #AUJobs.Dataset_ID) AND
-              (ISNULL(T_Jobs.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name) AND
+              (T_Tasks.Dataset_ID = #AUJobs.Dataset_ID) AND
+              (ISNULL(T_Tasks.Results_Folder_Name, '') = #AUJobs.Results_Folder_Name) AND
               (State = 3) AND
-              (T_Jobs.Finish > #AUJobs.AJ_Finish)
+              (T_Tasks.Finish > #AUJobs.AJ_Finish)
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -283,7 +284,7 @@ AS
         -- analysis broker results transfer steps
         ---------------------------------------------------
         --
-        INSERT INTO T_Jobs (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
+        INSERT INTO T_Tasks (Script, Dataset, Dataset_ID, Results_Folder_Name, Comment)
         SELECT DISTINCT 'ArchiveUpdate' AS Script,
                         Dataset,
                         Dataset_ID,

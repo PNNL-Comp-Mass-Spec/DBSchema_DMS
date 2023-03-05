@@ -6,17 +6,18 @@ GO
 CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
 /****************************************************
 **
-**  Desc:   Updates T_Jobs, T_Job_Parameters, and T_Job_Steps
+**  Desc:   Updates T_Tasks, T_Task_Parameters, and T_Task_Steps
 **
 **  Return values: 0: success, otherwise, error code
 **
 **
 **  Auth:   grk
 **  Date:   02/06/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
-**          05/25/2011 mem - Removed priority column from T_Job_Steps
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          05/25/2011 mem - Removed priority column from T_Task_Steps
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -51,10 +52,10 @@ goto Done
     -- replace job parameters
     ---------------------------------------------------
     --
-    UPDATE T_Job_Parameters
-        SET T_Job_Parameters.Parameters = #Job_Parameters.Parameters
-    FROM T_Job_Parameters INNER JOIN
-    #Job_Parameters ON #Job_Parameters.Job = T_Job_Parameters.Job
+    UPDATE T_Task_Parameters
+    SET T_Task_Parameters.Parameters = #Job_Parameters.Parameters
+    FROM T_Task_Parameters INNER JOIN
+    #Job_Parameters ON #Job_Parameters.Job = T_Task_Parameters.Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -69,15 +70,15 @@ goto Done
     -- update job
     ---------------------------------------------------
     --
-    UPDATE T_Jobs
+    UPDATE T_Tasks
     SET
         Priority = #Jobs.Priority,
         State = #Jobs.State,
         Imported = Getdate(),
         Start = Getdate(),
         Finish = NULL
-    FROM T_Jobs INNER JOIN
-    #Jobs ON #Jobs.Job = T_Jobs.Job
+    FROM T_Tasks INNER JOIN
+    #Jobs ON #Jobs.Job = T_Tasks.Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -92,10 +93,10 @@ goto Done
     -- add steps for job that currently aren't in main tables
     ---------------------------------------------------
 
-    INSERT INTO T_Job_Steps (
+    INSERT INTO T_Task_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Dependencies,
         State,
@@ -121,10 +122,10 @@ goto Done
     WHERE NOT EXISTS
     (
         SELECT *
-        FROM T_Job_Steps
+        FROM T_Task_Steps
         WHERE
-            T_Job_Steps.Job = #Job_Steps.Job and
-            T_Job_Steps.Step_Number = #Job_Steps.Step_Number
+            T_Task_Steps.Job = #Job_Steps.Job and
+            T_Task_Steps.Step = #Job_Steps.Step_Number
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -141,10 +142,10 @@ goto Done
     -- in main tables
     ---------------------------------------------------
 
-    INSERT INTO T_Job_Step_Dependencies (
+    INSERT INTO T_Task_Step_Dependencies (
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only
@@ -160,10 +161,10 @@ goto Done
     WHERE NOT EXISTS
     (
         SELECT *
-        FROM T_Job_Step_Dependencies
+        FROM T_Task_Step_Dependencies
         WHERE
-            T_Job_Step_Dependencies.Job = #Job_Step_Dependencies.Job and
-            T_Job_Step_Dependencies.Step_Number = #Job_Step_Dependencies.Step_Number
+            T_Task_Step_Dependencies.Job = #Job_Step_Dependencies.Job and
+            T_Task_Step_Dependencies.Step = #Job_Step_Dependencies.Step_Number
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

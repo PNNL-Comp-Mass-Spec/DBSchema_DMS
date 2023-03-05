@@ -19,11 +19,12 @@ CREATE PROCEDURE [dbo].[create_job_steps]
 **          01/14/2010 grk - Removed path ID fields
 **          05/25/2011 mem - Updated call to create_steps_for_job
 **          04/09/2013 mem - Added additional comments
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          09/17/2015 mem - Added parameter @infoOnly
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -194,7 +195,7 @@ AS
                 VDD.Max_Simultaneous_Captures,
                 VDD.Capture_Subfolder As Capture_Subdirectory
             FROM
-                T_Jobs TJ
+                T_Tasks TJ
                 INNER JOIN V_DMS_Get_Dataset_Definition AS VDD ON TJ.Dataset_ID = VDD.Dataset_ID
             WHERE
                 TJ.State = 0
@@ -228,7 +229,7 @@ AS
             Dataset_ID,
             NULL
           FROM
-            T_Jobs
+            T_Tasks
           WHERE
             Job = @existingJob
             --
@@ -236,7 +237,7 @@ AS
 
             If @myRowCount = 0
             begin
-                set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Jobs; unable to continue debugging'
+                set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Tasks; unable to continue debugging'
                 set @myError = 50000
                 goto Done
             end

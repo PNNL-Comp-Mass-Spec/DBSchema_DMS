@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
 /****************************************************
 **
-**  Desc:   Resets entries in T_Job_Steps and T_Job_Step_Dependencies for the given jobs
+**  Desc:   Resets entries in T_Task_Steps and T_Task_Step_Dependencies for the given jobs
 **          for which the job steps that are complete yet depend a job step that is enabled,
 **          in progress, or completed after the given job step finished
 **
@@ -14,14 +14,15 @@ CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
 **          05/19/2011 mem - Initial version
 **          05/23/2011 mem - Now checking for target steps having state 0 or 1 in addition to 2 or 4
 **          03/12/2012 mem - Now updating Tool_Version_ID when resetting job steps
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**          11/18/2014 mem - Add a table alias for T_Job_Step_Dependencies
-**          04/24/2015 mem - Now updating State in T_Jobs
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
+**          11/18/2014 mem - Add a table alias for T_Task_Step_Dependencies
+**          04/24/2015 mem - Now updating State in T_Tasks
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          07/10/2017 mem - Clear Completion_Code, Completion_Message, Evaluation_Code, & Evaluation_Message when resetting a job step
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -88,14 +89,14 @@ AS
         --
         INSERT INTO #Tmp_JobStepsToReset( Job, Step )
         SELECT DISTINCT JS.Job,
-                        JS.Step_Number
-        FROM T_Job_Steps JS
-             INNER JOIN T_Job_Step_Dependencies JSD
+                        JS.Step
+        FROM T_Task_Steps JS
+             INNER JOIN T_Task_Step_Dependencies JSD
                ON JS.Job = JSD.Job AND
-                  JS.Step_Number = JSD.Step_Number
-             INNER JOIN T_Job_Steps JS_Target
+                  JS.Step = JSD.Step
+             INNER JOIN T_Task_Steps JS_Target
                ON JSD.Job = JS_Target.Job AND
-                  JSD.Target_Step_Number = JS_Target.Step_Number
+                  JSD.Target_Step = JS_Target.Step
         WHERE JS.State >= 2 AND
               JS.State <> 3 AND
               JS.Job IN ( SELECT Job
@@ -118,35 +119,35 @@ AS
 
             -- Reset evaluated to 0 for the affected steps
             --
-            UPDATE T_Job_Step_Dependencies
+            UPDATE T_Task_Step_Dependencies
             SET Evaluated = 0, Triggered = 0
-            FROM T_Job_Step_Dependencies JSD
+            FROM T_Task_Step_Dependencies JSD
                 INNER JOIN #Tmp_JobStepsToReset JR
                 ON JSD.Job = JR.Job AND
-                    JSD.Step_Number = JR.Step
+                    JSD.Step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             -- Update the Job Steps to state Waiting
             --
-            UPDATE T_Job_Steps
+            UPDATE T_Task_Steps
             SET State = 1,                  -- 1=waiting
                 Tool_Version_ID = 1,        -- 1=Unknown
                 Completion_Code = 0,
                 Completion_Message = Null,
                 Evaluation_Code = Null,
                 Evaluation_Message = Null
-            FROM T_Job_Steps JS
+            FROM T_Task_Steps JS
                  INNER JOIN #Tmp_JobStepsToReset JR
                    ON JS.Job = JR.Job AND
-                      JS.Step_Number = JR.Step
+                      JS.Step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             -- Update the job state from failed to running
-            UPDATE T_Jobs
+            UPDATE T_Tasks
             SET State = 2
-            FROM T_Jobs J
+            FROM T_Tasks J
                  INNER JOIN #Tmp_JobStepsToReset JR
                    ON J.Job = JR.Job
             WHERE J.State = 5

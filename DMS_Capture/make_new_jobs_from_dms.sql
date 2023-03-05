@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_dms]
 **          06/27/2019 mem - Use get_dataset_capture_priority to determine capture job priority using dataset name and instrument group
 **          02/03/2023 bcg - Update column names for V_DMS_Get_New_Datasets
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -111,7 +112,7 @@ AS
         If @infoOnly = 0
         Begin -- <InsertQuery>
 
-            INSERT INTO T_Jobs( Script,
+            INSERT INTO T_Tasks( Script,
                                 [Comment],
                                 Dataset,
                                 Dataset_ID,
@@ -125,7 +126,7 @@ AS
                    Src.Dataset_ID,
                    dbo.get_dataset_capture_priority(Src.Dataset, Src.Instrument_Group)
             FROM V_DMS_Get_New_Datasets Src
-                 LEFT OUTER JOIN T_Jobs Target
+                 LEFT OUTER JOIN T_Tasks Target
                    ON Src.Dataset_ID = Target.Dataset_ID
             WHERE Target.Dataset_ID IS NULL
             --
@@ -150,7 +151,7 @@ AS
                    Src.Dataset_ID,
                    dbo.get_dataset_capture_priority(Src.Dataset, Src.Instrument_Group) As Priority
             FROM V_DMS_Get_New_Datasets Src
-                 LEFT OUTER JOIN T_Jobs Target
+                 LEFT OUTER JOIN T_Tasks Target
                    ON Src.Dataset_ID = Target.Dataset_ID
             WHERE Target.Dataset_ID IS NULL
             --

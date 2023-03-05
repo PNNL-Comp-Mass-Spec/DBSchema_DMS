@@ -14,12 +14,13 @@ CREATE PROCEDURE [dbo].[copy_job_to_history]
 **
 **  Auth:   grk
 **  Date:   09/12/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          05/25/2011 mem - Removed priority column from T_Job_Steps
+**          05/25/2011 mem - Removed priority column from T_Task_Steps
 **          03/12/2012 mem - Now copying column Tool_Version_ID
-**          03/10/2015 mem - Added T_Job_Step_Dependencies_History
+**          03/10/2015 mem - Added T_Task_Step_Dependencies_History
 **          03/22/2016 mem - Update @message when cannot copy a job
 **          11/04/2016 mem - Return a more detailed error message in @message
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -56,7 +57,7 @@ AS
     --
     If not @JobState in (3,5)
     Begin
-        Set @message = 'Job state must be 3 or 5 to be copied to T_Jobs_History (this is not an error)'
+        Set @message = 'Job state must be 3 or 5 to be copied to T_Tasks_History (this is not an error)'
         goto Done
     End
 
@@ -83,7 +84,7 @@ AS
     -- copy jobs
     ---------------------------------------------------
     --
-    INSERT INTO T_Jobs_History (
+    INSERT INTO T_Tasks_History (
         Job,
         Priority,
         Script,
@@ -109,7 +110,7 @@ AS
         Finish,
         @saveTime
     FROM
-      T_Jobs
+      T_Tasks
     WHERE  Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -117,7 +118,7 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @message = 'Error inserting into T_Jobs_History'
+        set @message = 'Error inserting into T_Tasks_History'
         goto Done
     end
 
@@ -125,10 +126,10 @@ AS
     -- copy steps
     ---------------------------------------------------
     --
-    INSERT INTO T_Job_Steps_History (
+    INSERT INTO T_Task_Steps_History (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         State,
         Input_Folder_Name,
         Output_Folder_Name,
@@ -144,8 +145,8 @@ AS
     )
     SELECT
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         State,
         Input_Folder_Name,
         Output_Folder_Name,
@@ -159,7 +160,7 @@ AS
         @saveTime,
         Tool_Version_ID
     FROM
-      T_Job_Steps
+      T_Task_Steps
     WHERE  Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -167,7 +168,7 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @message = 'Error inserting into T_Job_Steps_History'
+        set @message = 'Error inserting into T_Task_Steps_History'
         goto Done
     end
 
@@ -175,7 +176,7 @@ AS
     -- copy parameters
     ---------------------------------------------------
     --
-    INSERT INTO T_Job_Parameters_History (
+    INSERT INTO T_Task_Parameters_History (
         Job,
         Parameters,
         Saved
@@ -185,7 +186,7 @@ AS
         Parameters,
         @saveTime
     FROM
-        T_Job_Parameters
+        T_Task_Parameters
     WHERE
         Job = @job
     --
@@ -194,7 +195,7 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @message = 'Error inserting into T_Job_Parameters_History'
+        set @message = 'Error inserting into T_Task_Parameters_History'
         goto Done
     end
 
@@ -202,13 +203,13 @@ AS
     -- Copy job step dependencies
     ---------------------------------------------------
     --
-    -- First delete any extra steps for this job that are in T_Job_Step_Dependencies_History
-    DELETE T_Job_Step_Dependencies_History
-    FROM T_Job_Step_Dependencies_History Target
-         LEFT OUTER JOIN T_Job_Step_Dependencies Source
+    -- First delete any extra steps for this job that are in T_Task_Step_Dependencies_History
+    DELETE T_Task_Step_Dependencies_History
+    FROM T_Task_Step_Dependencies_History Target
+         LEFT OUTER JOIN T_Task_Step_Dependencies Source
            ON Target.Job = Source.Job AND
-              Target.Step_Number = Source.Step_Number AND
-              Target.Target_Step_Number = Source.Target_Step_Number
+              Target.Step = Source.Step AND
+              Target.Target_Step = Source.Target_Step
     WHERE Target.Job = @job AND
           Source.Job IS NULL
     --
@@ -217,21 +218,21 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @message = 'Error deleting extra steps from T_Job_Step_Dependencies_History'
+        set @message = 'Error deleting extra steps from T_Task_Step_Dependencies_History'
         goto Done
     end
 
     -- Now add/update the job step dependencies
     --
-    MERGE T_Job_Step_Dependencies_History AS target
-    USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+    MERGE T_Task_Step_Dependencies_History AS target
+    USING ( SELECT Job, Step, Target_Step, Condition_Test, Test_Value,
                    Evaluated, Triggered, Enable_Only
-            FROM T_Job_Step_Dependencies
+            FROM T_Task_Step_Dependencies
             WHERE Job = @job
-          ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+          ) AS Source (Job, Step, Target_Step, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
            ON (target.Job = source.Job And
-               target.Step_Number = source.Step_Number And
-               target.Target_Step_Number = source.Target_Step_Number)
+               target.Step = source.Step And
+               target.Target_Step = source.Target_Step)
     WHEN Matched THEN
         UPDATE Set
             Condition_Test = source.Condition_Test,
@@ -241,9 +242,9 @@ AS
             Enable_Only = source.Enable_Only,
             Saved = @saveTime
     WHEN Not Matched THEN
-        INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+        INSERT (Job, Step, Target_Step, Condition_Test, Test_Value,
                 Evaluated, Triggered, Enable_Only, Saved)
-        VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value,
+        VALUES (source.Job, source.Step, source.Target_Step, source.Condition_Test, source.Test_Value,
                 source.Evaluated, source.Triggered, source.Enable_Only, @saveTime)
     ;
     --
@@ -252,7 +253,7 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @message = 'Error inserting into T_Job_Step_Dependencies_History'
+        set @message = 'Error inserting into T_Task_Step_Dependencies_History'
         goto Done
     end
 

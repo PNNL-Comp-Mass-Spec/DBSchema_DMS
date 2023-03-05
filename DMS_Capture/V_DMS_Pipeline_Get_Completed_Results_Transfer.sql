@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_DMS_Pipeline_Get_Completed_Results_Transfer]
 AS
 SELECT JS.Finish,

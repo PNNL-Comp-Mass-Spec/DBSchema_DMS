@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[remove_old_jobs]
 **          06/21/2010 mem - Increased retention to 60 days for successful jobs
 **                         - Now removing jobs with state Complete, Inactive, or Ignore
 **          03/10/2014 mem - Added call to synchronize_job_stats_with_job_steps
-**          01/23/2017 mem - Assure that jobs exist in the history before deleting from T_Jobs
+**          01/23/2017 mem - Assure that jobs exist in the history before deleting from T_Tasks
 **          08/17/2021 mem - When looking for completed or inactive jobs, use the Start time if Finish is null
 **                         - Also look for jobs with state 14 = Failed, Ignore Job Step States
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ AS
 
         INSERT INTO #SJL (Job, State)
         SELECT Job, State
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE State IN (3, 4, 101) And    -- Complete, Inactive, or Ignore
               IsNull(Finish, Start) < @cutoffDateTimeForSuccess
          --
@@ -103,7 +104,7 @@ AS
             -- Remove any jobs that have failed, in progress, or holding job steps
             DELETE #SJL
             FROM #SJL INNER JOIN
-                 T_Job_Steps JS ON #SJL.Job = JS.Job
+                 T_Task_Steps JS ON #SJL.Job = JS.Job
             WHERE NOT JS.State IN (4, 6, 7)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -128,7 +129,7 @@ AS
         INSERT INTO #SJL (Job, State)
         SELECT Job,
                State
-        FROM T_Jobs
+        FROM T_Tasks
         WHERE State In (5, 14) AND            -- Failed
               IsNull(Finish, Start) < @cutoffDateTimeForFail
         --
@@ -143,14 +144,14 @@ AS
 
     ---------------------------------------------------
     -- Make sure the jobs to be deleted exist
-    -- in T_Jobs_History and T_Job_Steps_History
+    -- in T_Tasks_History and T_Task_Steps_History
     ---------------------------------------------------
 
     INSERT INTO #TmpJobsNotInHistory (Job, State)
     SELECT #SJL.Job,
            #SJL.State
     FROM #SJL
-         LEFT OUTER JOIN T_Jobs_History JH
+         LEFT OUTER JOIN T_Tasks_History JH
            ON #SJL.Job = JH.Job
     WHERE JH.Job IS NULL
      --
@@ -166,7 +167,7 @@ AS
         UPDATE #TmpJobsNotInHistory
         SET JobFinish = Coalesce(J.Finish, J.Start, GetDate())
         FROM #TmpJobsNotInHistory Target
-             INNER JOIN T_Jobs J
+             INNER JOIN T_Tasks J
                ON Target.Job = J.Job
 
         While @Continue > 0

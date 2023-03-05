@@ -16,10 +16,11 @@ CREATE PROCEDURE [dbo].[create_steps_for_job]
 **
 **  Auth:   grk
 **  Date:   09/05/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          05/25/2011 mem - Removed @priority parameter and removed priority column from T_Job_Steps
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          05/25/2011 mem - Removed @priority parameter and removed priority column from T_Task_Steps
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (

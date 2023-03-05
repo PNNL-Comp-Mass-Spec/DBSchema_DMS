@@ -18,12 +18,13 @@ CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
 **  Auth:   grk
 **  Date:   02/06/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/720)
 **          01/14/2010 grk - removed path ID fields
-**          05/25/2011 mem - Removed priority column from T_Job_Steps
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
+**          05/25/2011 mem - Removed priority column from T_Task_Steps
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          09/17/2015 mem - Added parameter @DebugMode
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -65,7 +66,7 @@ AS
 
     begin transaction @transName
 
-    UPDATE T_Jobs
+    UPDATE T_Tasks
     SET [State] = #Jobs.[State],
         Results_Folder_Name = #Jobs.Results_Directory_Name,
         Storage_Server = #Jobs.Storage_Server,
@@ -73,7 +74,7 @@ AS
         Instrument_Class = #Jobs.Instrument_Class,
         Max_Simultaneous_Captures = #Jobs.Max_Simultaneous_Captures,
         Capture_Subfolder = #Jobs.Capture_Subdirectory
-    FROM T_Jobs Target
+    FROM T_Tasks Target
          INNER JOIN #Jobs
            ON Target.Job = #Jobs.Job
 
@@ -87,10 +88,10 @@ AS
         goto Done
     end
 
-    INSERT INTO T_Job_Steps (
+    INSERT INTO T_Task_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Dependencies,
         State,
@@ -123,10 +124,10 @@ AS
         goto Done
     end
 
-    INSERT INTO T_Job_Step_Dependencies (
+    INSERT INTO T_Task_Step_Dependencies (
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only
@@ -149,7 +150,7 @@ AS
         goto Done
     end
 
-    INSERT INTO T_Job_Parameters (
+    INSERT INTO T_Task_Parameters (
         Job,
         Parameters
     )

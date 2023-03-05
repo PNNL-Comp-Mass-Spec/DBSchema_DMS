@@ -19,10 +19,11 @@ CREATE PROCEDURE [dbo].[update_dependent_steps]
 **
 **  Auth:   grk
 **  Date:   09/05/2009 -- initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          05/25/2011 mem - Now using the Priority column from T_Jobs
-**          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
-**          03/10/2015 mem - Now updating T_Job_Steps.Dependencies if the dependency count listed is lower than that defined in T_Job_Step_Dependencies
+**          05/25/2011 mem - Now using the Priority column from T_Tasks
+**          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
+**          03/10/2015 mem - Now updating T_Task_Steps.Dependencies if the dependency count listed is lower than that defined in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -108,22 +109,22 @@ AS
     CREATE INDEX [IX_StepList_ProcessingOrder] ON #T_Tmp_Steplist (ProcessingOrder, Job)
 
     ---------------------------------------------------
-    -- Bump up the value for Dependencies in T_Job_Steps if it is too low
-    -- This will happen if new rows are manually added to T_Job_Step_Dependencies
+    -- Bump up the value for Dependencies in T_Task_Steps if it is too low
+    -- This will happen if new rows are manually added to T_Task_Step_Dependencies
     ---------------------------------------------------
     --
-    UPDATE T_Job_Steps
+    UPDATE T_Task_Steps
     SET Dependencies = CompareQ.Actual_Dependencies
-    FROM T_Job_Steps JS
+    FROM T_Task_Steps JS
          INNER JOIN ( SELECT Job,
-                             Step_Number,
+                             Step,
                              COUNT(*) AS Actual_Dependencies
-                      FROM T_Job_Step_Dependencies
-                      WHERE Job IN ( SELECT Job FROM T_Job_Steps WHERE State = 1 )
-                      GROUP BY Job, Step_Number
+                      FROM T_Task_Step_Dependencies
+                      WHERE Job IN ( SELECT Job FROM T_Task_Steps WHERE State = 1 )
+                      GROUP BY Job, Step
                     ) CompareQ
            ON JS.Job = CompareQ.Job AND
-              JS.Step_Number = CompareQ.Step_Number AND
+              JS.Step = CompareQ.Step AND
               JS.Dependencies < CompareQ.Actual_Dependencies
     WHERE JS.State = 1
     --
@@ -131,7 +132,7 @@ AS
     --
     if @myError <> 0
     begin
-        set @message = 'Error updating T_Job_Steps.Dependencies'
+        set @message = 'Error updating T_Task_Steps.Dependencies'
         goto Done
     end
 
@@ -142,22 +143,22 @@ AS
     --
     INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Output_Folder_Name)
     SELECT JSD.Job,
-           JSD.Step_Number AS Step,
-           JS.Step_Tool AS Tool,
+           JSD.Step AS Step,
+           JS.Tool AS Tool,
            J.Priority,
            JS.Dependencies AS Total,
            SUM(JSD.Evaluated) AS Evaluated,
            SUM(JSD.Triggered) AS Triggered,
            Output_Folder_Name
-    FROM T_Job_Steps JS
-         INNER JOIN T_Job_Step_Dependencies JSD
+    FROM T_Task_Steps JS
+         INNER JOIN T_Task_Step_Dependencies JSD
            ON JSD.Job = JS.Job AND
-              JSD.Step_Number = JS.Step_Number
-         INNER JOIN T_Jobs J
+              JSD.Step = JS.Step
+         INNER JOIN T_Tasks J
            ON JS.Job = J.Job
     WHERE (JS.State = 1)
-    GROUP BY JSD.Job, JSD.Step_Number, JS.Dependencies,
-             J.Priority, JS.Step_Tool, JS.Output_Folder_Name
+    GROUP BY JSD.Job, JSD.Step, JS.Dependencies,
+             J.Priority, JS.Tool, JS.Output_Folder_Name
     HAVING JS.Dependencies = SUM(JSD.Evaluated)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -177,15 +178,15 @@ AS
     --
     INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Output_Folder_Name)
     SELECT JS.Job,
-           JS.Step_Number AS Step,
-           JS.Step_Tool AS Tool,
+           JS.Step AS Step,
+           JS.Tool AS Tool,
            J.Priority,
            JS.Dependencies AS Total,            -- This will always be zero in this query
            0 AS Evaluated,
            0 AS Triggered,
            JS.Output_Folder_Name
-    FROM T_Job_Steps JS
-         INNER JOIN T_Jobs J
+    FROM T_Task_Steps JS
+         INNER JOIN T_Tasks J
            ON JS.Job = J.Job
     WHERE JS.State = 1 AND
           JS.Dependencies = 0
@@ -289,7 +290,7 @@ AS
                 SELECT
                     @Dataset = Dataset,
                     @DatasetID = Dataset_ID
-                FROM T_Jobs
+                FROM T_Tasks
                 WHERE Job = @job
 
                 ---------------------------------------------------
@@ -330,7 +331,7 @@ AS
                             @numCompleted = ISNULL(SUM(CASE WHEN State = 5 THEN 1 ELSE 0 END), 0),
                             @numPending   = ISNULL(SUM(CASE WHEN State in (2,4) THEN 1 ELSE 0 END), 0)
                         FROM
-                            T_Job_Steps
+                            T_Task_Steps
                         WHERE
                             Output_Folder_Name = @outputFolderName AND
                             NOT Output_Folder_Name IS NULL AND
@@ -338,13 +339,13 @@ AS
 
                         if @numCompleted = 0
                         Begin
-                            -- Also check T_Job_Steps_History for completed, matching shared results steps
-                            -- Old, completed jobs are removed from T_Jobs after a set number of days, meaning it's possible
-                            --  that the only record of a completed, matching shared results step will be in T_Job_Steps_History
+                            -- Also check T_Task_Steps_History for completed, matching shared results steps
+                            -- Old, completed jobs are removed from T_Tasks after a set number of days, meaning it's possible
+                            --  that the only record of a completed, matching shared results step will be in T_Task_Steps_History
                             SELECT
                                 @numCompleted = COUNT(*)
                             FROM
-                                T_Job_Steps_History
+                                T_Task_Steps_History
                             WHERE
                                 Output_Folder_Name = @outputFolderName AND
                                 NOT Output_Folder_Name IS NULL AND
@@ -395,16 +396,16 @@ AS
                     ---------------------------------------------------
                     --
                     If @infoOnly <> 0
-                        Print 'Update State in T_Job_Steps for job ' + Convert(varchar(12), @Job) + ', step ' + convert(varchar(12), @Step) + ' from 1 to ' + Convert(varchar(12), @newState)
+                        Print 'Update State in T_Task_Steps for job ' + Convert(varchar(12), @Job) + ', step ' + convert(varchar(12), @Step) + ' from 1 to ' + Convert(varchar(12), @newState)
                     Else
                     Begin
-                        UPDATE T_Job_Steps
+                        UPDATE T_Task_Steps
                         SET
                             State = @newState,
                             Output_Folder_Name = CASE WHEN (@newState = 3 AND ISNULL(Input_Folder_Name, '') <> '') THEN Input_Folder_Name ELSE Output_Folder_Name END
                         WHERE
                             Job = @Job AND
-                            Step_Number = @Step
+                            Step = @Step
                             And State = 1       -- Assure that we only update steps in state 1=waiting
                         --
                         SELECT @myError = @@error, @myRowCount = @@rowcount

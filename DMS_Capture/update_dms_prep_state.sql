@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[update_dms_prep_state]
 **  Auth:   grk
 **  Date:   05/08/2010 grk - Initial Veresion
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -43,9 +44,9 @@ AS
         SELECT
             @prepLCID = CONVERT(INT, xmlNode.value('@Value', 'nvarchar(128)'))
         FROM
-            T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+            T_Task_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
         WHERE
-            T_Job_Parameters.Job = @job AND
+            T_Task_Parameters.Job = @job AND
             (xmlNode.value('@Name', 'nvarchar(128)') = 'ID')
 
         DECLARE @storagePathID INT
@@ -53,9 +54,9 @@ AS
         SELECT
             @storagePathID = CONVERT(INT, xmlNode.value('@Value', 'nvarchar(128)'))
         FROM
-            T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
+            T_Task_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
         WHERE
-            T_Job_Parameters.Job = @job AND
+            T_Task_Parameters.Job = @job AND
             (xmlNode.value('@Name', 'nvarchar(128)') = 'Storage_Path_ID')
 
         IF @newJobStateInBroker = 3
