@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[add_update_local_job_in_broker] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_local_task_in_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
+CREATE PROCEDURE [dbo].[add_update_local_task_in_broker]
 /****************************************************
 **
 **  Desc:
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          08/28/2022 mem - When validating @mode = 'update', use state 3 for complete
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**                         - Rename procedure to differentiate from DMS_Pipeline
 **
 *****************************************************/
 (
@@ -57,7 +58,7 @@ AS
         ---------------------------------------------------
 
         Declare @authorized tinyint = 0
-        Exec @authorized = verify_sp_authorized 'add_update_local_job_in_broker', @raiseError = 1;
+        Exec @authorized = verify_sp_authorized 'add_update_local_task_in_broker', @raiseError = 1;
         If @authorized = 0
         Begin;
             THROW 51000, 'Access denied', 1;
@@ -153,13 +154,14 @@ AS
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec post_log_entry 'Error', @message, 'add_update_local_job_in_broker'
+        Exec post_log_entry 'Error', @message, 'add_update_local_task_in_broker'
     END CATCH
 
     return @myError
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[add_update_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_local_task_in_broker] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_local_job_in_broker] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[add_update_local_task_in_broker] TO [DMS_SP_User] AS [dbo]
 GO

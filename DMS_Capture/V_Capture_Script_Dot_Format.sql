@@ -1,10 +1,9 @@
-/****** Object:  View [dbo].[V_Script_Dot_Format] ******/
+/****** Object:  View [dbo].[V_Capture_Script_Dot_Format] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW V_Script_Dot_Format
+CREATE VIEW [dbo].[V_Capture_Script_Dot_Format]
 AS
 SELECT
 	script,
@@ -44,7 +43,6 @@ FROM
 		T_Scripts CROSS APPLY Contents.nodes('//Depends_On') AS R(xmlNode)
 ) TD
 
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[V_Script_Dot_Format] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[V_Capture_Script_Dot_Format] TO [DDL_Viewer] AS [dbo]
 GO
