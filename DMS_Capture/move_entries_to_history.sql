@@ -19,7 +19,7 @@ CREATE PROCEDURE [dbo].[move_entries_to_history]
 **          10/04/2011 mem - Removed @DBName parameter
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          03/04/2023 mem - Use new T_Task tables
+**          03/05/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -145,7 +145,7 @@ AS
     --
     begin transaction @transName
 
-    INSERT INTO DMSHistoricLogCapture.dbo.T_Job_Step_Processing_Log(
+    INSERT INTO DMSHistoricLogCapture.dbo.T_Task_Step_Processing_Log(
                                                         Event_ID,
                                                         Job,
                                                         Step,
