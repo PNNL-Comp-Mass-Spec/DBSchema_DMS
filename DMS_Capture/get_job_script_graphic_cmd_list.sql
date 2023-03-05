@@ -10,6 +10,7 @@ CREATE FUNCTION [dbo].[get_job_script_graphic_cmd_list]
 **  Auth:   grk
 **  Date:   09/08/2009
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/05/2023 mem - Use new view name
 **
 ****************************************************/
 (
@@ -22,7 +23,7 @@ AS
         SET @s = ''
         --
         SELECT @s = @s + line
-        FROM dbo.V_Script_Dot_Format
+        FROM dbo.V_Capture_Script_Dot_Format
         WHERE Script = @script
         ORDER BY seq
         --
