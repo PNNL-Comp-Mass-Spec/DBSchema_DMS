@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          07/21/2022 mem - Move misplaced 'cd ..' and add missing 'rem'
 **          10/10/2022 mem - Add @newRequestedRunID; if defined (and active), associate the dataset with this Request ID and use it to update the dataset's experiment
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -422,14 +423,14 @@ AS
 
     INSERT INTO @jobsToUpdate (Job)
     SELECT Job
-    FROM DMS_Capture.dbo.T_Jobs
+    FROM DMS_Capture.dbo.T_Tasks
     WHERE dataset = @datasetNameOld
     ORDER BY Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     SELECT Job AS Capture_Job, Script, State, Dataset, @datasetNameNew as Dataset_Name_New, Dataset_ID, Imported
-    FROM DMS_Capture.dbo.T_Jobs
+    FROM DMS_Capture.dbo.T_Tasks
     WHERE Job In (Select Job from @jobsToUpdate)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -465,7 +466,7 @@ AS
             exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
             exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
 
-            UPDATE DMS_Capture.dbo.T_Jobs
+            UPDATE DMS_Capture.dbo.T_Tasks
             Set Dataset = @datasetNameNew
             WHERE Job = @job
             --

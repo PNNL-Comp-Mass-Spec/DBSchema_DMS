@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[clone_dataset]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
 **          03/02/2023 mem - Use renamed table names
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -310,7 +311,7 @@ AS
             Declare @dateStamp datetime
 
             SELECT @CaptureJob = MAX(Job)
-            FROM DMS_Capture.dbo.T_Jobs
+            FROM DMS_Capture.dbo.T_Tasks
             WHERE Dataset = @Dataset AND Script LIKE '%capture%'
             --
             Select @myRowCount = @@RowCount, @myError = @@Error
@@ -321,7 +322,7 @@ AS
                 -- Job not found; examine T_Jobs_History
                 SELECT TOP 1 @CaptureJob = Job,
                              @dateStamp = Saved
-                FROM DMS_Capture.dbo.T_Jobs_History
+                FROM DMS_Capture.dbo.T_Tasks_History
                 WHERE Dataset = @Dataset AND
                       Script LIKE '%capture%'
                 ORDER BY Saved DESC
@@ -336,21 +337,21 @@ AS
                 End
 
 
-                INSERT INTO DMS_Capture.dbo.T_Jobs (Priority, Script, State,
-                                    Dataset, Dataset_ID, Results_Folder_Name,
-                                    Imported, Start, Finish)
+                INSERT INTO DMS_Capture.dbo.T_Tasks (Priority, Script, State,
+                                                     Dataset, Dataset_ID, Results_Folder_Name,
+                                                     Imported, Start, Finish)
                 SELECT Priority,
-                        Script,
-                        3 AS State,
-                        @DatasetNew AS Dataset,
-                        @DatasetIDNew AS Dataset_ID,
-                        '' AS Results_Folder_Name,
-                        GetDate() AS Imported,
-                        GetDate() AS Start,
-                        GetDate() AS Finish
-                FROM DMS_Capture.dbo.T_Jobs_History
+                       Script,
+                       3 AS State,
+                       @DatasetNew AS Dataset,
+                       @DatasetIDNew AS Dataset_ID,
+                       '' AS Results_Folder_Name,
+                       GetDate() AS Imported,
+                       GetDate() AS Start,
+                       GetDate() AS Finish
+                FROM DMS_Capture.dbo.T_Tasks_History
                 WHERE Job = @CaptureJob AND
-                        Saved = @dateStamp
+                      Saved = @dateStamp
                 --
                 Select @myRowCount = @@RowCount, @myError = @@Error
 
@@ -359,26 +360,26 @@ AS
                 If @CaptureJobNew > 0
                 Begin -- <d1>
 
-                    INSERT INTO DMS_Capture.dbo.T_Job_Steps( Job,
-                                                Step_Number,
-                                                Step_Tool,
-                                                State,
-                                                Input_Folder_Name,
-                                                Output_Folder_Name,
-                                                Processor,
-                                                Start,
-                                                Finish,
-                                                Tool_Version_ID,
-                                                Completion_Code,
-                                                Completion_Message,
-                                                Evaluation_Code,
-                                                Evaluation_Message,
-                                                Holdoff_Interval_Minutes,
-                                                Next_Try,
-                                                Retry_Count )
+                    INSERT INTO DMS_Capture.dbo.T_Task_Steps( Job,
+                                                              Step,
+                                                              Tool,
+                                                              State,
+                                                              Input_Folder_Name,
+                                                              Output_Folder_Name,
+                                                              Processor,
+                                                              Start,
+                                                              Finish,
+                                                              Tool_Version_ID,
+                                                              Completion_Code,
+                                                              Completion_Message,
+                                                              Evaluation_Code,
+                                                              Evaluation_Message,
+                                                              Holdoff_Interval_Minutes,
+                                                              Next_Try,
+                                                              Retry_Count )
                     SELECT @CaptureJobNew AS Job,
-                           Step_Number,
-                           Step_Tool,
+                           Step,
+                           Tool,
                            Case When State Not In (3,5,7) Then 7 Else State End As State,
                            Input_Folder_Name,
                            Output_Folder_Name,
@@ -393,9 +394,9 @@ AS
                            0 AS Holdoff_Interval_Minutes,
                            GetDate() AS Next_Try,
                            0 AS Retry_Count
-                    FROM DMS_Capture.dbo.T_Job_Steps_History
+                    FROM DMS_Capture.dbo.T_Task_Steps_History
                     WHERE Job = @CaptureJob AND
-                            Saved = @dateStamp
+                          Saved = @dateStamp
                     --
                     Select @myRowCount = @@RowCount, @myError = @@Error
 
@@ -405,10 +406,10 @@ AS
             End -- </c1>
             Else
             Begin -- <c2>
-                INSERT INTO DMS_Capture.dbo.T_Jobs (Priority, Script, State,
-                                    Dataset, Dataset_ID, Storage_Server, Instrument, Instrument_Class,
-                                    Max_Simultaneous_Captures,
-                                    Imported, Start, Finish, Archive_Busy, Comment)
+                INSERT INTO DMS_Capture.dbo.T_Tasks (Priority, Script, State,
+                                                     Dataset, Dataset_ID, Storage_Server, Instrument, Instrument_Class,
+                                                     Max_Simultaneous_Captures,
+                                                     Imported, Start, Finish, Archive_Busy, Comment)
                 SELECT Priority,
                        Script,
                        State,
@@ -423,7 +424,7 @@ AS
                        GetDate() AS Finish,
                        0 AS Archive_Busy,
                        'Cloned from dataset ' + @Dataset AS [Comment]
-                FROM DMS_Capture.dbo.T_Jobs
+                FROM DMS_Capture.dbo.T_Tasks
                 WHERE Dataset = @Dataset AND
                       Script LIKE '%capture%'
                 --
@@ -434,28 +435,28 @@ AS
                 If @CaptureJobNew > 0
                 Begin -- <d2>
 
-                    INSERT INTO DMS_Capture.dbo.T_Job_Steps( Job,
-                                                             Step_Number,
-                                                             Step_Tool,
-                                                             CPU_Load,
-                                                             Dependencies,
-                                                             State,
-                                                             Input_Folder_Name,
-                                                             Output_Folder_Name,
-                                                             Processor,
-                                                             Start,
-                                                             Finish,
-                                                             Tool_Version_ID,
-                                                             Completion_Code,
-                                                             Completion_Message,
-                                                             Evaluation_Code,
-                                                             Evaluation_Message,
-                                                             Holdoff_Interval_Minutes,
-                                                             Next_Try,
-                                                             Retry_Count )
+                    INSERT INTO DMS_Capture.dbo.T_Task_Steps( Job,
+                                                              Step,
+                                                              Tool,
+                                                              CPU_Load,
+                                                              Dependencies,
+                                                              State,
+                                                              Input_Folder_Name,
+                                                              Output_Folder_Name,
+                                                              Processor,
+                                                              Start,
+                                                              Finish,
+                                                              Tool_Version_ID,
+                                                              Completion_Code,
+                                                              Completion_Message,
+                                                              Evaluation_Code,
+                                                              Evaluation_Message,
+                                                              Holdoff_Interval_Minutes,
+                                                              Next_Try,
+                                                              Retry_Count )
                     SELECT @CaptureJobNew AS Job,
-                           Step_Number,
-                           Step_Tool,
+                           Step,
+                           Tool,
                            CPU_Load,
                            Dependencies,
                            Case When State Not In (3,5,7) Then 7 Else State End As State,
@@ -472,24 +473,24 @@ AS
                            Holdoff_Interval_Minutes,
                            GetDate() AS Next_Try,
                            Retry_Count
-                    FROM DMS_Capture.dbo.T_Job_Steps
+                    FROM DMS_Capture.dbo.T_Task_Steps
                     WHERE Job = @CaptureJob
                     --
                     Select @myRowCount = @@RowCount, @myError = @@Error
 
 
-                    INSERT INTO DMS_Capture.dbo.T_Job_Step_Dependencies (Job, Step_Number, Target_Step_Number,
-                                                                         Condition_Test, Test_Value, Evaluated,
-                                                                         Triggered, Enable_Only)
+                    INSERT INTO DMS_Capture.dbo.T_Task_Step_Dependencies (Job, Step, Target_Step,
+                                                                          Condition_Test, Test_Value, Evaluated,
+                                                                          Triggered, Enable_Only)
                     SELECT @CaptureJobNew AS Job,
-                           Step_Number,
-                           Target_Step_Number,
+                           Step,
+                           Target_Step,
                            Condition_Test,
                            Test_Value,
                            Evaluated,
                            Triggered,
                            Enable_Only
-                    FROM DMS_Capture.dbo.T_Job_Step_Dependencies
+                    FROM DMS_Capture.dbo.T_Task_Step_Dependencies
                     WHERE Job = @CaptureJob
                     --
                     Select @myRowCount = @@RowCount, @myError = @@Error
@@ -531,7 +532,6 @@ AS
 Done:
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[clone_dataset] TO [DDL_Viewer] AS [dbo]

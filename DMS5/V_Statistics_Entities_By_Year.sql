@@ -73,7 +73,7 @@ FROM (SELECT YEAR(AJ_start) AS Year,
       SELECT YEAR(Start) AS Year,
              'Capture Task Step Tool Started' AS Item,
              COUNT(*) AS Items
-      FROM DMS_Capture.dbo.T_Job_Steps_History
+      FROM DMS_Capture.dbo.T_Task_Steps_History
       WHERE (NOT (Start IS NULL))
       GROUP BY YEAR(Start)
      ) AS SourceTable
@@ -90,7 +90,6 @@ FROM (SELECT YEAR(AJ_start) AS Year,
                   [Capture_Task_Step_Tool_Started]
                  )
      ) AS PivotData
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Statistics_Entities_By_Year] TO [DDL_Viewer] AS [dbo]

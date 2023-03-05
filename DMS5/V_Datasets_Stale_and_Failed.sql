@@ -8,11 +8,12 @@ CREATE VIEW [dbo].[V_Datasets_Stale_and_Failed]
 AS
 WITH JobStepStatus (Dataset_ID, ActiveSteps, ActiveArchiveStatusSteps)
 AS (
-	SELECT J.Dataset_ID, COUNT(*) AS ActiveSteps, SUM(CASE WHEN JS.Step_Tool IN ('ArchiveStatusCheck', 'ArchiveVerify')
-	   THEN 1 ELSE 0 END) AS ActiveArchiveStatusSteps
-	FROM DMS_Capture.dbo.T_Job_Steps JS INNER JOIN
-	   DMS_Capture.dbo.T_Jobs J ON JS.Job = J.Job INNER JOIN
-	   T_Dataset_Archive DA ON J.Dataset_ID = DA.AS_Dataset_ID
+	SELECT J.Dataset_ID,
+	       COUNT(*) AS ActiveSteps,
+	       SUM(CASE WHEN JS.Tool IN ('ArchiveStatusCheck', 'ArchiveVerify') THEN 1 ELSE 0 END) AS ActiveArchiveStatusSteps
+	FROM DMS_Capture.dbo.T_Task_Steps JS INNER JOIN
+	     DMS_Capture.dbo.T_Tasks J ON JS.Job = J.Job INNER JOIN
+	     T_Dataset_Archive DA ON J.Dataset_ID = DA.AS_Dataset_ID
 	WHERE (DA.AS_state_ID IN (2, 7, 12)) AND (JS.State NOT IN (3, 5))
 	GROUP BY J.Dataset_ID
 )

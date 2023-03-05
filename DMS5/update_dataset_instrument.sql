@@ -214,7 +214,7 @@ AS
     If @deleteCaptureJob = 0
     Begin
 
-        Update DMS_Capture.dbo.T_Jobs
+        Update DMS_Capture.dbo.T_Tasks
         Set Storage_Server = @storageServerNew,
             Instrument = @instrumentNameNew,
             Instrument_Class = @instrumentClassNew
@@ -225,7 +225,7 @@ AS
         If @myError <> 0
         Begin
             Rollback Tran @instrumentUpdateTran
-            Set @message = 'Error updating job ' + Cast(@captureJob As Varchar(12)) + ' in DMS_Capture.dbo.T_Jobs; aborting'
+            Set @message = 'Error updating job ' + Cast(@captureJob As Varchar(12)) + ' in DMS_Capture.dbo.T_Tasks; aborting'
             Goto Done
         End
 
@@ -233,7 +233,7 @@ AS
     End
     Else
     Begin
-        Delete DMS_Capture.dbo.T_Jobs
+        Delete DMS_Capture.dbo.T_Tasks
         Where Job = @captureJob And Dataset_ID = @datasetId
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -241,7 +241,7 @@ AS
         If @myError <> 0
         Begin
             Rollback Tran @instrumentUpdateTran
-            Set @message = 'Error deleting job ' + Cast(@captureJob As Varchar(12)) + ' in DMS_Capture.dbo.T_Jobs; aborting'
+            Set @message = 'Error deleting job ' + Cast(@captureJob As Varchar(12)) + ' in DMS_Capture.dbo.T_Tasks; aborting'
             Goto Done
         End
 

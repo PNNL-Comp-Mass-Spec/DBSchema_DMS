@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[delete_dataset]
 **          05/08/2013 mem - No longer passing @wellplateName and @wellNumber to unconsume_scheduled_run
 **          08/31/2016 mem - Delete failed capture jobs for the dataset
 **          10/27/2016 mem - Update T_Log_Entries in DMS_Capture
-**          01/23/2017 mem - Delete jobs from DMS_Capture.dbo.T_Jobs
+**          01/23/2017 mem - Delete jobs from DMS_Capture.dbo.T_Tasks
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/08/2018 mem - Update T_Dataset_Files
@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[delete_dataset]
 **          04/17/2019 mem - Delete rows in T_Cached_Dataset_Instruments
 **          11/02/2021 mem - Show the full path to the dataset directory at the console
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
 (
@@ -162,10 +163,10 @@ AS
         FROM T_Dataset_Files
         WHERE Dataset_ID = @datasetID
 
-        If Exists (SELECT * FROM DMS_Capture.dbo.T_Jobs WHERE Dataset_ID = @datasetID AND State = 5)
+        If Exists (SELECT * FROM DMS_Capture.dbo.T_Tasks WHERE Dataset_ID = @datasetID AND State = 5)
         Begin
             SELECT 'To be deleted' AS [Action], *
-            FROM DMS_Capture.dbo.T_Jobs
+            FROM DMS_Capture.dbo.T_Tasks
             WHERE Dataset_ID = @datasetID And State = 5
         End
 
@@ -176,11 +177,11 @@ AS
             WHERE Dataset_ID = @datasetID
         End
 
-        SELECT 'To be deleted' AS [Action], Jobs.*
-        FROM DMS_Capture.dbo.T_Jobs Jobs
-             INNER JOIN DMS_Capture.dbo.T_Jobs_History History
-               ON Jobs.Job = History.Job
-        WHERE Jobs.Dataset_ID = @datasetID AND
+        SELECT 'To be deleted' AS [Action], Tasks.*
+        FROM DMS_Capture.dbo.T_Tasks Tasks
+             INNER JOIN DMS_Capture.dbo.T_Tasks_History History
+               ON Tasks.Job = History.Job
+        WHERE Tasks.Dataset_ID = @datasetID AND
               NOT History.Job IS NULL
 
         SELECT 'To be deleted' AS [Action], *
@@ -326,7 +327,7 @@ AS
     -- Delete any failed jobs in the DMS_Capture database
     ---------------------------------------------------
     --
-    DELETE FROM DMS_Capture.dbo.T_Jobs
+    DELETE FROM DMS_Capture.dbo.T_Tasks
     WHERE Dataset_ID = @datasetID AND State = 5
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -334,7 +335,7 @@ AS
     If @myError <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
+        RAISERROR ('Delete from DMS_Capture.dbo.T_Tasks was unsuccessful for dataset', 10, 1)
         return 51135
     end
 
@@ -352,19 +353,20 @@ AS
     If @myError <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Delete from DMS_Capture.dbo.T_Jobs was unsuccessful for dataset', 10, 1)
+        RAISERROR ('Delete from DMS_Capture.dbo.T_Tasks was unsuccessful for dataset', 10, 1)
         return 51136
     end
 
     ---------------------------------------------------
-    -- Remove jobs from T_Jobs in DMS_Capture
+    -- Remove jobs from T_Tasks in DMS_Capture,
+    -- but only delete if the capture task job is in T_Tasks_History
     ---------------------------------------------------
     --
-    DELETE DMS_Capture.dbo.T_Jobs
-    FROM DMS_Capture.dbo.T_Jobs Jobs
-         INNER JOIN DMS_Capture.dbo.T_Jobs_History History
-           ON Jobs.Job = History.Job
-    WHERE Jobs.Dataset_ID = @datasetID AND
+    DELETE DMS_Capture.dbo.T_Tasks
+    FROM DMS_Capture.dbo.T_Tasks Tasks
+         INNER JOIN DMS_Capture.dbo.T_Tasks_History History
+           ON Tasks.Job = History.Job
+    WHERE Tasks.Dataset_ID = @datasetID AND
           NOT History.Job IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
