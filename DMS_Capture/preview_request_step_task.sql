@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[preview_request_step_task]
 **          02/03/2023 bcg - Use the synonym for Manager_Control.V_Mgr_Params instead of a local view wrapping the synonym
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/06/2023 bcg - Rename the synonym used to access Manager_Control.V_Mgr_Params
 **
 *****************************************************/
 (
@@ -41,7 +42,7 @@ AS
 
     -- Lookup the value for "perspective" for this manager in the manager control DB
     SELECT @perspective = Parameter_Value
-    FROM s_mgr_params
+    FROM s_mc_v_mgr_params
     WHERE (Manager_Name = @processorName) AND (Parameter_Name = 'perspective')
 
     If IsNull(@perspective, '') = ''

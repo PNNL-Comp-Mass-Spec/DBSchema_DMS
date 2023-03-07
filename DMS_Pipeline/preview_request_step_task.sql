@@ -12,10 +12,11 @@ CREATE PROCEDURE [dbo].[preview_request_step_task]
 **          12/05/2008 mem
 **          01/15/2009 mem - Updated to only display the job info if a job is assigned (Ticket #716, http://prismtrac.pnl.gov/trac/ticket/716)
 **          08/23/2010 mem - Added parameter @infoOnly
-**          05/18/2017 mem - Call s_get_default_remote_info_for_manager to retrieve the @remoteInfo XML for @processorName
+**          05/18/2017 mem - Call s_mc_get_default_remote_info_for_manager to retrieve the @remoteInfo XML for @processorName
 **                           Pass this to request_step_task_xml
-**                           (s_get_default_remote_info_for_manager is a synonym for the stored procedure in the Manager_Control DB)
+**                           (s_mc_get_default_remote_info_for_manager is a synonym for the stored procedure in the Manager_Control DB)
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/06/2023 bcg - Rename the synonym used to access Manager_Control.get_default_remote_info_for_manager
 **
 *****************************************************/
 (
@@ -40,7 +41,7 @@ AS
 
     Declare @remoteInfo varchar(900)
 
-    Exec s_get_default_remote_info_for_manager @processorName, @remoteInfoXML = @remoteInfo output
+    Exec s_mc_get_default_remote_info_for_manager @processorName, @remoteInfoXML = @remoteInfo output
 
     Exec request_step_task_xml @processorName,
                             @jobNumber = @jobNumber output,

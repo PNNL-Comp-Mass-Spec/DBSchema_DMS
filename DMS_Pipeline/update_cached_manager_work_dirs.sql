@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[update_cached_manager_work_dirs]
 **          02/17/2020 mem - Update the Mgr_Name column in S_Manager_Control_V_MgrWorkDir
 **          01/30/2023 mem - Use new synonym name with renamed columns
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/06/2023 bcg - Rename the synonym used to access Manager_Control.V_Mgr_Work_Dir
 **
 *****************************************************/
 (
@@ -54,7 +55,7 @@ AS
 
         ---------------------------------------------------
         -- Populate a temporary table with the new information
-        -- Data in S_Manager_Control_V_Mgr_Work_Dir will be of the form
+        -- Data in s_mc_v_mgr_work_dir will be of the form
         -- \\ServerName\C$\DMS_WorkDir1
         ---------------------------------------------------
         --
@@ -62,7 +63,7 @@ AS
         SELECT ID,
                Processor_Name,
                Replace(MgrWorkDirs.Work_Dir_Admin_Share, '\\ServerName\', '\\' + Machine + '\') AS MgrWorkDir
-        FROM S_Manager_Control_V_Mgr_Work_Dir MgrWorkDirs
+        FROM s_mc_v_mgr_work_dir MgrWorkDirs
              INNER JOIN T_Local_Processors LP
                ON MgrWorkDirs.Mgr_Name = LP.Processor_Name
         --
