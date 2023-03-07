@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 **          04/17/2014 mem - Initial release
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/06/2023 bcg - Use a synonym to access the Manager_Control database
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ AS
     Else
     Begin
         Print 'Calling set_manager_update_required for ' + Convert(varchar(12), @mgrCount) + ' managers'
-        Exec @myError = ProteinSeqs.Manager_Control.dbo.set_manager_update_required @mgrList, @showTable=1
+        Exec @myError = s_mc_set_manager_update_required @mgrList, @showTable=1
     End
 
     ---------------------------------------------------

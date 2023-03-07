@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/06/2023 bcg - Use a synonym to access the Manager_Control database
 **
 *****************************************************/
 (
@@ -65,7 +66,7 @@ AS
     Else
     Begin
         Print 'Calling set_manager_update_required for ' + Convert(varchar(12), @mgrCount) + ' managers'
-        Exec @myError = ProteinSeqs.Manager_Control.dbo.set_manager_update_required @mgrList, @showTable=1
+        Exec @myError = s_mc_set_manager_update_required @mgrList, @showTable=1
     End
 
     ---------------------------------------------------

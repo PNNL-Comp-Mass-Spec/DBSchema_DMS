@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[reset_failed_managers]
 **  Auth:   12/02/2014 mem - Initial version
 **          03/29/2019 mem - Add parameter @resetAllWithError
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/06/2023 bcg - Use a synonym to access the Manager_Control database
 **
 *****************************************************/
 (
@@ -77,7 +78,7 @@ AS
         -- Call the manager control database procedure
         -----------------------------------------------------------
         --
-        exec @myError = ProteinSeqs.Manager_Control.dbo.set_manager_error_cleanup_mode @ManagerList, @CleanupMode=1, @showTable=1, @infoOnly=@infoOnly
+        exec @myError = s_mc_set_manager_error_cleanup_mode @ManagerList, @CleanupMode=1, @showTable=1, @infoOnly=@infoOnly
 
     End
 
