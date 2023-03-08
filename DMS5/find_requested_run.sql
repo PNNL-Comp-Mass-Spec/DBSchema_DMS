@@ -1,4 +1,4 @@
-/****** Object:  StoredProcedure [dbo].[Find_Requested_Run] ******/
+/****** Object:  StoredProcedure [dbo].[find_requested_run] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[find_requested_run]
 **
 **  Auth:   grk
 **  Date:   05/15/2006
-**          12/20/2006 mem - Now querying V_find_requested_run using dynamic SQL (Ticket #349)
+**          12/20/2006 mem - Now querying V_Find_Requested_Run using dynamic SQL (Ticket #349)
 **          04/27/2007 grk - Added LC Cart field and dropped some never-used fields (Ticket #447)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
@@ -113,7 +113,7 @@ AS
     ---------------------------------------------------
     -- Construct the query
     ---------------------------------------------------
-    Set @S = ' SELECT * FROM V_find_requested_run'
+    Set @S = ' SELECT * FROM V_Find_Requested_Run'
     Set @W = ''
     If Len(@RequestID) > 0
         Set @W = @W + ' AND ([Request_ID] = ' + Convert(varchar(19), @iRequestID) + ' )'
@@ -171,11 +171,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[Find_Requested_Run] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_requested_run] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Find_Requested_Run] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_requested_run] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Find_Requested_Run] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_requested_run] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Find_Requested_Run] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_requested_run] TO [Limited_Table_Write] AS [dbo]
 GO

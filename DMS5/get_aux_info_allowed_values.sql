@@ -1,4 +1,4 @@
-/****** Object:  UserDefinedFunction [dbo].[Get_Aux_Info_Allowed_Values] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_aux_info_allowed_values] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -38,7 +38,7 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[Get_Aux_Info_Allowed_Values] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_aux_info_allowed_values] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Get_Aux_Info_Allowed_Values] TO [DMS2_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[get_aux_info_allowed_values] TO [DMS2_SP_User] AS [dbo]
 GO

@@ -1,4 +1,4 @@
-/****** Object:  StoredProcedure [dbo].[Find_Scheduled_Run_History] ******/
+/****** Object:  StoredProcedure [dbo].[find_scheduled_run_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER OFF
@@ -16,7 +16,7 @@ CREATE PROCEDURE [dbo].[find_scheduled_run_history]
 **
 **  Auth:   grk
 **  Date:   05/15/2006
-**          12/20/2006 mem - Now querying V_find_scheduled_run_history using dynamic SQL (Ticket #349)
+**          12/20/2006 mem - Now querying V_Find_Scheduled_Run_History using dynamic SQL (Ticket #349)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 ** Pacific Northwest National Laboratory, Richland, WA
@@ -115,7 +115,7 @@ AS
     ---------------------------------------------------
     -- Construct the query
     ---------------------------------------------------
-    Set @S = ' SELECT * FROM V_find_scheduled_run_history'
+    Set @S = ' SELECT * FROM V_Find_Scheduled_Run_History'
 
     Set @W = ''
     If Len(@RequestID) > 0
@@ -178,11 +178,11 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[Find_Scheduled_Run_History] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_scheduled_run_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Find_Scheduled_Run_History] TO [DMS_Guest] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_scheduled_run_history] TO [DMS_Guest] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Find_Scheduled_Run_History] TO [DMS_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[find_scheduled_run_history] TO [DMS_User] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Find_Scheduled_Run_History] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[find_scheduled_run_history] TO [Limited_Table_Write] AS [dbo]
 GO
