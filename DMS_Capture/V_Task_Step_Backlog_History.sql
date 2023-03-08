@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW [dbo].[V_Task_Step_Backlog_History]
 AS
-SELECT Step_Tool As Tool,
+SELECT step_tool,
        posting_time,
        SUM(Step_Count) AS backlog_count
 FROM dbo.T_Task_Step_Status_History
