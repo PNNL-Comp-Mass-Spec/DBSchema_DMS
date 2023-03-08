@@ -12,14 +12,13 @@ CREATE PROCEDURE [dbo].[request_step_task_explanation]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   grk
 **  Date:   09/07/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/20/2010 grk - Added logic for instrument/processor assignment
 **          01/27/2017 mem - Clarify some descriptions
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
   (
@@ -40,9 +39,9 @@ AS
     (
       Seq SMALLINT IDENTITY(1, 1) NOT NULL,
       Job INT,
-      Step_Number INT,
+      Step INT,
       Job_Priority INT,
-      Step_Tool VARCHAR(64),
+      Tool VARCHAR(64),
       Tool_Priority INT,
       Server_OK CHAR(1),
       Bionet_OK CHAR(1),
@@ -54,9 +53,9 @@ AS
 
   INSERT INTO #CandidateJobSteps
           ( Job,
-            Step_Number,
+            Step,
             Job_Priority,
-            Step_Tool,
+            Tool,
             Tool_Priority,
             Bionet_OK,
             Server_OK,
@@ -87,7 +86,7 @@ AS
           FROM
             T_Task_Steps
             INNER JOIN dbo.T_Tasks ON T_Task_Steps.Job = T_Tasks.Job
-            INNER JOIN #AvailableProcessorTools ON Step_Tool = Tool_Name
+            INNER JOIN #AvailableProcessorTools ON Tool = Tool_Name
             LEFT OUTER JOIN #InstrumentProcessor ON #InstrumentProcessor.Instrument = T_Tasks.Instrument
             LEFT OUTER JOIN #InstrumentLoading ON #InstrumentLoading.Instrument = T_Tasks.Instrument
           WHERE
@@ -110,7 +109,7 @@ AS
     FROM
         #CandidateJobSteps
     INNER JOIN #Tmp_CandidateJobSteps ON #CandidateJobSteps.Job = #Tmp_CandidateJobSteps.Job
-                                       AND #CandidateJobSteps.Step_Number = #Tmp_CandidateJobSteps.Step_Number
+                                       AND #CandidateJobSteps.Step = #Tmp_CandidateJobSteps.Step
 
 
     ---------------------------------------------------
@@ -158,31 +157,31 @@ AS
     SELECT 'Candidate job steps (#CandidateJobSteps) that could be assigned to this processor, but may be excluded due to a Bionet, Storage Server, Instrument Capacity, or Instrument Lock rule' AS [Section]
 
     SELECT
-        CONVERT(VARCHAR(12), #CandidateJobSteps.Job) AS Job,
-        CONVERT(VARCHAR(6), Step_Number) AS Step,
-        CONVERT(VARCHAR(24), Step_Tool) AS Tool,
+        CONVERT(VARCHAR(12), CJS.Job) AS Job,
+        CONVERT(VARCHAR(6),  CJS.Step) AS Step,
+        CONVERT(VARCHAR(24), CJS.Tool) AS Tool,
         CONVERT(VARCHAR(20), T_Tasks.Instrument) AS Instrument,
-        ISNULL(Candidate, 'N') AS Candidate,
+        ISNULL(CJS.Candidate, 'N') AS Candidate,
 
-        Bionet_OK,
-        Server_OK,
-        Instrument_OK,
-        Assignment_OK,
-        Retry_Holdoff_OK,
+        CJS.Bionet_OK,
+        CJS.Server_OK,
+        CJS.Instrument_OK,
+        CJS.Assignment_OK,
+        CJS.Retry_Holdoff_OK,
 
-        Bionet_Required,
-        Only_On_Storage_Server,
-        Instrument_Capacity_Limited,
-        Processor_Assignment_Applies,
-        CONVERT(VARCHAR(8), Holdoff_Interval_Minutes) AS Holdoff_Interval_Minutes,
-        CONVERT(VARCHAR(8), Number_Of_Retries) AS Number_Of_Retries,
-        CONVERT(VARCHAR(8), Tool_Priority) AS Tool_Pri,
-        CONVERT(VARCHAR(8), Job_Priority) AS Job_Pri,
+        CJS.Bionet_Required,
+        CJS.Only_On_Storage_Server,
+        CJS.Instrument_Capacity_Limited,
+        CJS.Processor_Assignment_Applies,
+        CONVERT(VARCHAR(8), CJS.Holdoff_Interval_Minutes) AS Holdoff_Interval_Minutes,
+        CONVERT(VARCHAR(8), CJS.Number_Of_Retries) AS Number_Of_Retries,
+        CONVERT(VARCHAR(8), CJS.Tool_Priority) AS Tool_Pri,
+        CONVERT(VARCHAR(8), CJS.Job_Priority) AS Job_Pri,
         T_Tasks.Dataset
     FROM
-        #CandidateJobSteps
-        INNER JOIN dbo.T_Tasks ON T_Tasks.Job = #CandidateJobSteps.Job
-        LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Step_Tool
+        #CandidateJobSteps CJS
+        INNER JOIN dbo.T_Tasks ON T_Tasks.Job = CJS.Job
+        LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Tool
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[request_step_task_explanation] TO [DDL_Viewer] AS [dbo]

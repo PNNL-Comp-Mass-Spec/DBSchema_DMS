@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
 (
@@ -103,8 +104,8 @@ AS
     )
     SELECT
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Dependencies,
         State,
@@ -134,8 +135,8 @@ AS
     )
     SELECT
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only

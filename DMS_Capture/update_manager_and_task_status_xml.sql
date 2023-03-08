@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 **          08/01/2017 mem - Use THROW if not authorized
 **          09/19/2018 mem - Add parameter @logProcessorNames
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/07/2023 mem - Rename column in temporary table
 **
 *****************************************************/
 (
@@ -98,7 +99,7 @@ AS
             Free_Memory_MB varchar(50), -- real
             Process_ID varchar(50), -- int
             Most_Recent_Error_Message varchar(1024),
-            Step_Tool varchar(128),
+            Tool varchar(128),
             Task_Status varchar(50),
             Duration_Minutes varchar(50), -- real
             Progress varchar(50), -- real
@@ -128,7 +129,7 @@ AS
                           Free_Memory_MB,
                           Process_ID,
                           Most_Recent_Error_Message,
-                          Step_Tool,
+                          Tool,
                           Task_Status,
                           Duration_Minutes,
                           Progress,
@@ -152,7 +153,7 @@ AS
             xmlNode.value('data((Manager/ProcessID)[1])', 'nvarchar(50)') Process_ID,
             xmlNode.value('data((Manager/RecentErrorMessages/ErrMsg)[1])', 'nvarchar(50)') Most_Recent_Error_Message,
 
-            xmlNode.value('data((Task/Tool)[1])', 'nvarchar(128)') Step_Tool,
+            xmlNode.value('data((Task/Tool)[1])', 'nvarchar(128)') Tool,
             xmlNode.value('data((Task/Status)[1])', 'nvarchar(50)') Task_Status,
             xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(50)') Duration_Minutes, -- needs minutes/hours conversion
             xmlNode.value('data((Task/Progress)[1])', 'nvarchar(50)') Progress,
@@ -264,7 +265,7 @@ AS
             CPU_Utilization = Try_Cast(Src.CPU_Utilization as real),
             Free_Memory_MB = Try_Cast(Src.Free_Memory_MB as real),
             Process_ID = Try_Cast(Src.Process_ID as int),
-            Step_Tool = Src.Step_Tool,
+            Step_Tool = Src.Tool,
             Task_Status = Src.Task_Status,
             Duration_Hours = Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
             Progress = Coalesce(Try_Cast(Src.Progress AS real), 0),
@@ -336,7 +337,7 @@ AS
                Try_Cast(Src.Free_Memory_MB as real),
                Try_Cast(Src.Process_ID as int),
                Src.Most_Recent_Error_Message,
-               Src.Step_Tool,
+               Src.Tool,
                Src.Task_Status,
                Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
                Coalesce(Try_Cast(Src.Progress AS real), 0),

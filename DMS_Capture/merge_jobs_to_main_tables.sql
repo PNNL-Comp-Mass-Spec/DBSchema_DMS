@@ -10,7 +10,6 @@ CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**
 **  Auth:   grk
 **  Date:   02/06/2009 grk - initial release  (http://prismtrac.pnl.gov/trac/ticket/720)
 **          05/25/2011 mem - Removed priority column from T_Task_Steps
@@ -18,6 +17,7 @@ CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
 **          05/17/2019 mem - Switch from folder to directory
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
 (
@@ -108,8 +108,8 @@ goto Done
     )
     SELECT
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Dependencies,
         State,
@@ -125,7 +125,7 @@ goto Done
         FROM T_Task_Steps
         WHERE
             T_Task_Steps.Job = #Job_Steps.Job and
-            T_Task_Steps.Step = #Job_Steps.Step_Number
+            T_Task_Steps.Step = #Job_Steps.Step
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -152,8 +152,8 @@ goto Done
     )
     SELECT
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only
@@ -164,7 +164,7 @@ goto Done
         FROM T_Task_Step_Dependencies
         WHERE
             T_Task_Step_Dependencies.Job = #Job_Step_Dependencies.Job and
-            T_Task_Step_Dependencies.Step = #Job_Step_Dependencies.Step_Number
+            T_Task_Step_Dependencies.Step = #Job_Step_Dependencies.Step
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

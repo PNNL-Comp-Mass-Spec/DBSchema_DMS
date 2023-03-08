@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[finish_job_creation]
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
 (
@@ -47,14 +48,14 @@ AS
         #Job_Steps INNER JOIN
         (
             SELECT
-              Step_Number,
+              Step,
               COUNT(*) AS dependencies
             FROM
               #Job_Step_Dependencies
             WHERE    (Job = @job)
-            GROUP BY Step_Number
+            GROUP BY Step
         ) AS T
-        ON T.Step_Number = #Job_Steps.Step_Number
+        ON T.Step = #Job_Steps.Step
     WHERE #Job_Steps.Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -104,7 +105,7 @@ AS
             FROM #Job_Steps
             WHERE Job = @job AND
                   Special_Instructions = 'Job_Results'
-            ORDER BY Step_Number
+            ORDER BY Step
         ) LookupQ ON #Jobs.Job = LookupQ.Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -121,7 +122,7 @@ AS
          INNER JOIN #Jobs J
            ON JS.Job = J.Job
     WHERE J.Dataset LIKE '%[_]inverse' AND
-          JS.Step_Tool = 'ImsDeMultiplex'
+          JS.Tool = 'ImsDeMultiplex'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 

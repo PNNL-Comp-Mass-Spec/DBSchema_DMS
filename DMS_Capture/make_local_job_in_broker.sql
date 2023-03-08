@@ -11,7 +11,6 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**
 **  Auth:   grk
 **          05/03/2010 grk - Initial release
 **          05/25/2011 mem - Updated call to create_steps_for_job and removed Priority from #Job_Steps
@@ -22,6 +21,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          05/17/2019 mem - Switch from folder to directory
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
 (
@@ -71,8 +71,8 @@ AS
 
     CREATE TABLE #Job_Steps (
         [Job] int NOT NULL,
-        [Step_Number] int NOT NULL,
-        [Step_Tool] varchar(64) NOT NULL,
+        [Step] int NOT NULL,
+        [Tool] varchar(64) NOT NULL,
         [CPU_Load] [smallint] NULL,
         [Dependencies] tinyint NULL ,
         [Filter_Version] smallint NULL,
@@ -86,18 +86,18 @@ AS
         Retry_Count smallint NOT NULL
     )
 
---    CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step_Number)
+--    CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step)
 
     CREATE TABLE #Job_Step_Dependencies (
         [Job] int NOT NULL,
-        [Step_Number] int NOT NULL,
-        [Target_Step_Number] int NOT NULL,
+        [Step] int NOT NULL,
+        [Target_Step] int NOT NULL,
         [Condition_Test] varchar(50) NULL,
         [Test_Value] varchar(256) NULL,
         [Enable_Only] tinyint NULL
     )
 
---    CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step_Number)
+--    CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step)
 
     CREATE TABLE #Job_Parameters (
         [Job] int NOT NULL,

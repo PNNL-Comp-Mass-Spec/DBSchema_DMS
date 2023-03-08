@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[request_step_task]
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
 (
@@ -367,9 +368,9 @@ AS
     (
         Seq smallint IDENTITY(1, 1) NOT NULL,
         Job int,
-        Step_Number int,
+        Step int,
         Job_Priority int,
-        Step_Tool varchar(64),
+        Tool varchar(64),
         Tool_Priority int
     )
 
@@ -379,9 +380,9 @@ AS
     ---------------------------------------------------
     --
     INSERT INTO #Tmp_CandidateJobSteps( Job,
-                                        Step_Number,
+                                        Step,
                                         Job_Priority,
-                                        Step_Tool,
+                                        Tool,
                                         Tool_Priority )
     SELECT TOP ( @CandidateJobStepsToRetrieve ) J.Job,
                                                 JS.Step,
@@ -458,7 +459,7 @@ AS
     FROM T_Task_Steps TJS WITH ( HOLDLOCK )
          INNER JOIN #Tmp_CandidateJobSteps CJS
        ON CJS.Job = TJS.Job AND
-          CJS.Step_Number = TJS.Step
+          CJS.Step = TJS.Step
     WHERE TJS.State = 2
     ORDER BY Seq
     --
@@ -577,8 +578,8 @@ AS
                    Tool_Priority,
                    Job_Priority,
                    CJS.Job,
-                   Step_Number,
-                   Step_Tool,
+                   Step,
+                   Tool,
                    J.Dataset
             FROM #Tmp_CandidateJobSteps CJS
                  INNER JOIN T_Tasks J

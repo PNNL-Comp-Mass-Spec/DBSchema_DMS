@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[create_steps_for_job]
 **          05/17/2019 mem - Switch from folder to directory in temp tables
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/07/2023 mem - Rename columns in temporary table
 **
 *****************************************************/
 (
@@ -43,8 +44,8 @@ AS
     --
     INSERT INTO #Job_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
 --        CPU_Load,
         Dependencies,
         State,
@@ -55,8 +56,8 @@ AS
     )
     SELECT
         @job AS Job,
-        TS.Step_Number,
-        TS.Step_Tool,
+        TS.Step,
+        TS.Tool,
 --        CPU_Load,
         0 AS Dependencies,
         1 AS State,
@@ -67,13 +68,13 @@ AS
     FROM
         (
             SELECT
-                xmlNode.value('@Number', 'nvarchar(128)') Step_Number,
-                xmlNode.value('@Tool', 'nvarchar(128)') Step_Tool,
+                xmlNode.value('@Number', 'nvarchar(128)') Step,
+                xmlNode.value('@Tool', 'nvarchar(128)') Tool,
                 xmlNode.value('@Special', 'nvarchar(128)') Special_Instructions
             FROM
                 @scriptXML.nodes('//Step') AS R(xmlNode)
         ) TS INNER JOIN
-        T_Step_Tools ON TS.Step_Tool = T_Step_Tools.Name
+        T_Step_Tools ON TS.Tool = T_Step_Tools.Name
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -89,16 +90,16 @@ AS
     --
     INSERT INTO #Job_Step_Dependencies
     (
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only,
         Job
     )
     SELECT
-        xmlNode.value('../@Number', 'nvarchar(24)') Step_Number,
-        xmlNode.value('@Step_Number', 'nvarchar(24)') Target_Step_Number,
+        xmlNode.value('../@Number', 'nvarchar(24)') Step,
+        xmlNode.value('@Step_Number', 'nvarchar(24)') Target_Step,
         xmlNode.value('@Test', 'nvarchar(128)') Condition_Test,
         xmlNode.value('@Value', 'nvarchar(256)') Test_Value,
         isnull(xmlNode.value('@Enable_Only', 'nvarchar(24)'), 0) Enable_Only,
