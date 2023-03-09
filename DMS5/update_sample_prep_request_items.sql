@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[update_sample_prep_request_items]
 **                         - No longer clear the Created column for existing items
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          03/08/2023 mem - Use new column name Sample_Prep_Requests in T_Prep_LC_Run
 **
 *****************************************************/
 (
@@ -180,8 +181,8 @@ AS
                             CONVERT(INT, TL.Item) AS SPR_ID,
                             LCRun.Created
                   FROM      T_Prep_LC_Run LCRun
-                            CROSS APPLY dbo.make_table_from_list(LCRun.SamplePrepRequest) TL
-                  WHERE     SamplePrepRequest LIKE '%' + CONVERT(VARCHAR(12), @samplePrepRequestID)
+                            CROSS APPLY dbo.make_table_from_list(LCRun.Sample_Prep_Requests) TL
+                  WHERE     Sample_Prep_Requests LIKE '%' + CONVERT(VARCHAR(12), @samplePrepRequestID)
                             + '%'
                 ) TX
         WHERE   TX.SPR_ID = @samplePrepRequestID
@@ -325,6 +326,7 @@ AS
     -- Exit
     ---------------------------------------------------
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_sample_prep_request_items] TO [DDL_Viewer] AS [dbo]
