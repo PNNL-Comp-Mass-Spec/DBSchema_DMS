@@ -19,10 +19,10 @@ SELECT  id,
         sample_type,
         number_of_runs,
         instrument_pressure,
-        SamplePrepRequest AS sample_prep_request,
+        sample_prep_requests,
         quality_control,
         dbo.get_hplc_run_dataset_list(ID, 'name') AS datasets
-FROM    T_Prep_LC_Run
+FROM T_Prep_LC_Run
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Prep_LC_Run_Entry] TO [DDL_Viewer] AS [dbo]

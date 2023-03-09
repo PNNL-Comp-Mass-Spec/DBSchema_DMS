@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Prep_LC_Run_List_Report]
 AS
 SELECT id,
@@ -18,7 +17,8 @@ SELECT id,
        OperatorPRN AS operator_username,
        Digestion_Method AS digestion_method,
        Sample_Type AS sample_type,
-       SamplePrepRequest AS sample_prep_request,
+       Sample_Prep_Requests AS sample_prep_requests,
+       Sample_Prep_Work_Packages As work_packages,
        Number_Of_Runs AS number_of_runs,
        Instrument_Pressure AS instrument_pressure
 FROM T_Prep_LC_Run
