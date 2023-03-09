@@ -24,6 +24,9 @@ CREATE PROCEDURE [dbo].[add_update_prep_lc_run]
 **          06/06/2022 mem - Only validate @id if updating an existing item
 **          11/18/2022 mem - Rename parameter to @prepRunName
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/08/2023 mem - Rename parameter to @samplePrepRequests
+**                         - Use new column name Sample_Prep_Requests in T_Prep_LC_Run
+**                         - Update work package(s) in column Sample_Prep_Work_Packages
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -40,7 +43,7 @@ CREATE PROCEDURE [dbo].[add_update_prep_lc_run]
     @operatorUsername varchar(50),
     @digestionMethod varchar(128),
     @sampleType varchar(64),
-    @samplePrepRequest varchar(1024),    -- Typically a single sample prep request ID, but can also be a comma separated list (or blank)
+    @samplePrepRequests varchar(1024),    -- Typically a single sample prep request ID, but can also be a comma separated list (or blank)
     @numberOfRuns varchar(12),
     @instrumentPressure varchar(32),
     @qualityControl varchar(2048),
@@ -56,9 +59,10 @@ AS
     Declare @myRowCount int = 0
 
     Declare @itemCount Int
-    Declare @integerCount int
-    Declare @tmp int = 0
+    Declare @existingId int = 0
 
+    Declare @invalidIDs varchar(1024)
+    
     set @message = ''
 
     ---------------------------------------------------
@@ -79,30 +83,52 @@ AS
     ---------------------------------------------------
 
     Set @id = IsNull(@ID, 0)
-    Set @samplePrepRequest = Ltrim(Rtrim(IsNull(@samplePrepRequest, '')))
+    Set @samplePrepRequests = Ltrim(Rtrim(IsNull(@samplePrepRequests, '')))
 
     If @mode = 'update' And @id <= 0
     Begin
         RAISERROR ('Prep LC run ID must be a positive integer', 11, 7)
     End
 
-    -- Assure that @samplePrepRequest is a comma separated list of integers (or an empty string)
-    If @samplePrepRequest Like '%;%'
+    -- Assure that @samplePrepRequests is a comma separated list of integers (or an empty string)
+    If @samplePrepRequests Like '%;%'
     Begin
-        Set @samplePrepRequest = Replace(@samplePrepRequest, ';', ',')
+        Set @samplePrepRequests = Replace(@samplePrepRequests, ';', ',')
     End
 
-    If Len(@samplePrepRequest) > 0
+    CREATE TABLE #Tmp_SamplePrepRequests (
+        Prep_Request_ID Int Not Null
+    )
+
+    If Len(@samplePrepRequests) > 0
     Begin
-        SELECT @itemCount = Count(*)
-        FROM dbo.make_table_from_list ( @samplePrepRequest )
+        SELECT @itemCount = Count(Distinct Item)
+        FROM dbo.make_table_from_list ( @samplePrepRequests )
 
-        SELECT @integerCount = Count(*)
-        FROM dbo.parse_delimited_integer_list ( @samplePrepRequest, ',' )
+        INSERT INTO #Tmp_SamplePrepRequests (Prep_Request_ID)
+        SELECT Distinct Value
+        FROM dbo.parse_delimited_integer_list ( @samplePrepRequests, ',' )
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        If @itemCount = 0 Or @itemCount <> @integerCount
+        If @itemCount = 0 Or @itemCount <> @myRowCount
         Begin
             Set @message = 'The sample prep request list should be one or more sample prep request IDs (integers), separated by commas'
+            RAISERROR (@message, 11, 7)
+        End
+
+        Set @invalidIDs = Null
+
+        SELECT @invalidIDs = Coalesce(@invalidIDs + ', ' + Cast(Prep_Request_ID AS varchar(12)), 
+                                      Cast(Prep_Request_ID AS varchar(12)))
+        FROM #Tmp_SamplePrepRequests NewIDs
+             LEFT OUTER JOIN T_Sample_Prep_Request SPR
+               ON NewIDs.Prep_Request_ID = SPR.ID
+        WHERE SPR.ID IS NULL
+
+        If Coalesce(@invalidIDs, '') <> ''
+        Begin
+            Set @message = 'Invalid sample prep request ID(s): ' + @invalidIDs
             RAISERROR (@message, 11, 7)
         End
     End
@@ -113,18 +139,18 @@ AS
 
     If @mode = 'update'
     Begin
-        SELECT @tmp = ID
+        SELECT @existingId = ID
         FROM  T_Prep_LC_Run
         WHERE ID = @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        If @myError <> 0 OR @tmp = 0
+        If @myError <> 0 OR @existingId = 0
             RAISERROR ('No entry could be found in database for update', 11, 7)
     End
 
     ---------------------------------------------------
-    -- resolve dataset list
+    -- Resolve dataset list
     ---------------------------------------------------
 
     CREATE TABLE #DSL (
@@ -163,7 +189,7 @@ AS
             OperatorPRN,
             Digestion_Method,
             Sample_Type,
-            SamplePrepRequest,
+            Sample_Prep_Requests,
             Number_Of_Runs,
             Instrument_Pressure,
             Quality_Control
@@ -178,7 +204,7 @@ AS
             @operatorUsername,
             @digestionMethod,
             @sampleType,
-            @samplePrepRequest,
+            @samplePrepRequests,
             @numberOfRuns,
             @instrumentPressure,
             @qualityControl
@@ -212,15 +238,15 @@ AS
         UPDATE T_Prep_LC_Run
         SET Prep_Run_Name = @prepRunName,
             Instrument = @instrument,
-            TYPE = @type,
+            Type = @type,
             LC_Column = @lcColumn,
             LC_Column_2 = @lcColumn2,
-            COMMENT = @comment,
+            Comment = @comment,
             Guard_Column = @guardColumn,
             OperatorPRN = @operatorUsername,
             Digestion_Method = @digestionMethod,
             Sample_Type = @sampleType,
-            SamplePrepRequest = @samplePrepRequest,
+            Sample_Prep_Requests = @samplePrepRequests,
             Number_Of_Runs = @numberOfRuns,
             Instrument_Pressure = @instrumentPressure,
             Quality_Control = @qualityControl
@@ -246,6 +272,9 @@ AS
         Commit transaction @transName
     End -- update mode
 
+    -- Update the work package list
+    Exec update_prep_lc_run_work_package_list @id
+
     END TRY
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
@@ -256,6 +285,7 @@ AS
     END Catch
 
     return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_prep_lc_run] TO [DDL_Viewer] AS [dbo]
