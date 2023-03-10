@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[update_actual_cpu_loading]
 **          01/05/2016 mem - Check for load values over 255
 **          05/26/2017 mem - Ignore jobs running remotely
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -53,12 +54,12 @@ AS
                                  New_CPU_Load )
     SELECT PS.Processor_Name,
            JS.Job,
-           JS.Step_Number,
+           JS.Step,
            Round(PS.ProgRunner_CoreUsage, 0) AS New_CPU_Load
     FROM T_Processor_Status PS
          INNER JOIN T_Job_Steps JS
            ON PS.Job = JS.Job AND
-              PS.Job_Step = JS.Step_Number AND
+              PS.Job_Step = JS.Step AND
               PS.Processor_Name = JS.Processor
     WHERE JS.State = 4 AND
           IsNull(JS.Remote_Info_ID, 0) <= 1 AND
@@ -112,7 +113,7 @@ AS
             FROM @PendingUpdates U
                  INNER JOIN T_Job_Steps JS
                    ON U.Job = JS.Job AND
-                      U.Step = JS.Step_Number AND
+                      U.Step = JS.Step AND
                       U.Processor_Name = JS.Processor
             WHERE JS.Actual_CPU_Load <> U.New_CPU_Load OR
                   JS.Actual_CPU_Load IS NULL

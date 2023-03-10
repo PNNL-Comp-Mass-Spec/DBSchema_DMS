@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[copy_runtime_metadata_from_history]
 **          11/14/2022 mem - Fix bug referencing the wrong column
 **          02/06/2023 bcg - Update after view column rename
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -95,19 +96,19 @@ AS
     -- First look for jobs with a Finish date after the Start date of the corresponding Results_Transfer step
     --
     INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
-    SELECT JS.Job, JS.Step_Number
+    SELECT JS.Job, JS.Step
     FROM #Tmp_Jobs
          INNER JOIN T_Job_Steps JS
            ON #Tmp_Jobs.Job = JS.Job
-         INNER JOIN ( SELECT Job, Step_Number, Start, Input_Folder_Name
+         INNER JOIN ( SELECT Job, Step, Start, Input_Folder_Name
                       FROM T_Job_Steps
-                      WHERE (Step_Tool In ('Results_Transfer', 'Results_Cleanup'))
+                      WHERE (Tool In ('Results_Transfer', 'Results_Cleanup'))
                     ) FilterQ
            ON JS.Job = FilterQ.Job AND
               JS.Output_Folder_Name = FilterQ.Input_Folder_Name AND
               JS.Finish > FilterQ.Start AND
-              JS.Step_Number < FilterQ.Step_Number
-    WHERE Not JS.Step_Tool  In ('Results_Transfer', 'Results_Cleanup')
+              JS.Step < FilterQ.Step
+    WHERE Not JS.Tool  In ('Results_Transfer', 'Results_Cleanup')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -116,20 +117,20 @@ AS
     -- but which started after their corresponding Results_Transfer step
     --
     INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
-    SELECT JS.Job, JS.Step_Number
+    SELECT JS.Job, JS.Step
     FROM #Tmp_Jobs
          INNER JOIN T_Job_Steps JS
            ON #Tmp_Jobs.Job = JS.Job
-         INNER JOIN ( SELECT Job, Step_Number, Start, Input_Folder_Name
+         INNER JOIN ( SELECT Job, Step, Start, Input_Folder_Name
                       FROM T_Job_Steps
-                      WHERE (Step_Tool In ('Results_Transfer', 'Results_Cleanup'))
+                      WHERE (Tool In ('Results_Transfer', 'Results_Cleanup'))
                     ) FilterQ
            ON JS.Job = FilterQ.Job AND
               JS.Output_Folder_Name = FilterQ.Input_Folder_Name AND
       JS.Finish Is Null AND
               JS.Start > FilterQ.Start AND
-              JS.Step_Number < FilterQ.Step_Number
-    WHERE Not JS.Step_Tool In ('Results_Transfer', 'Results_Cleanup')
+              JS.Step < FilterQ.Step
+    WHERE Not JS.Tool In ('Results_Transfer', 'Results_Cleanup')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -137,11 +138,11 @@ AS
     -- Look for PRIDE_Converter job steps
     --
     INSERT INTO #Tmp_JobStepsToUpdate( Job, Step )
-    SELECT JS.Job, JS.Step_Number
+    SELECT JS.Job, JS.Step
     FROM #Tmp_Jobs
          INNER JOIN T_Job_Steps JS
            ON #Tmp_Jobs.Job = JS.Job
-    WHERE JS.Step_Tool = 'PRIDE_Converter'
+    WHERE JS.Tool = 'PRIDE_Converter'
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -177,17 +178,18 @@ AS
         Invalid = 1
     FROM #Tmp_Jobs
          INNER JOIN (  SELECT JS.Job,
-                             JS.Step_Number AS Step,
-                             JS.Start, JS.Finish,
+                             JS.Step,
+                             JS.Start, 
+                             JS.Finish,
                              JSH.Start AS Start_History,
                              JSH.Finish AS Finish_History
                       FROM T_Job_Steps JS
                            INNER JOIN T_Job_Steps_History JSH
                              ON JS.Job = JSH.Job AND
-                                JS.Step_Number = JSH.Step_Number AND
+                                JS.Step = JSH.Step AND
                                 JSH.Most_Recent_Entry = 1
                       WHERE JS.Job IN (Select DISTINCT Job FROM #Tmp_JobStepsToUpdate) AND
-                            JS.Step_Tool In ('Results_Transfer', 'Results_Cleanup') AND
+                            JS.Tool In ('Results_Transfer', 'Results_Cleanup') AND
                             (JSH.Start <> JS.Start OR JSH.Finish <> JS.Finish)
                    ) InvalidQ
            ON #Tmp_Jobs.Job = InvalidQ.Job
@@ -228,10 +230,10 @@ AS
                ON J.Job = JSU.Job
              INNER JOIN T_Job_Steps JS
                ON JS.Job = JSU.Job AND
-                  JSU.Step = JS.Step_Number
+                  JSU.Step = JS.Step
              INNER JOIN T_Job_Steps_History JSH
                ON JS.Job = JSH.Job AND
-                  JS.Step_Number = JSH.Step_Number AND
+                  JS.Step = JSH.Step AND
                   JSH.Most_Recent_Entry = 1
         WHERE J.Invalid = 0
         --
@@ -306,7 +308,7 @@ AS
               JSU.Step = JS.Step
          INNER JOIN T_Job_Steps_History JSH
            ON JS.Job = JSH.Job AND
-              JS.Step = JSH.Step_Number AND
+              JS.Step = JSH.Step AND
               JSH.Most_Recent_Entry = 1
          RIGHT OUTER JOIN #Tmp_Jobs J
            ON J.Job = JSU.Job

@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[copy_history_to_job]
 **          01/19/2018 mem - Add Runtime_Minutes
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -180,8 +181,8 @@ AS
     --
     INSERT INTO T_Job_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Actual_CPU_Load,
         Memory_Usage_MB,
@@ -203,8 +204,8 @@ AS
         Remote_Finish
     )
     SELECT H.Job,
-           H.Step_Number,
-           H.Step_Tool,
+           H.Step,
+           H.Tool,
            ST.CPU_Load,
            ST.CPU_Load,
            H.Memory_Usage_MB,
@@ -226,7 +227,7 @@ AS
            H.Remote_Finish
     FROM T_Job_Steps_History H
          INNER JOIN T_Step_Tools ST
-           ON H.Step_Tool = ST.Name
+           ON H.Tool = ST.Name
     WHERE H.Job = @job AND
           H.Saved = @dateStamp
     --
@@ -281,8 +282,8 @@ AS
     FROM T_Job_Step_Dependencies Target
          LEFT OUTER JOIN T_Job_Step_Dependencies_History Source
            ON Target.Job = Source.Job AND
-              Target.Step_Number = Source.Step_Number AND
-              Target.Target_Step_Number = Source.Target_Step_Number
+              Target.Step = Source.Step AND
+              Target.Target_Step = Source.Target_Step
     WHERE Target.Job = @job AND
           Source.Job IS NULL
     --
@@ -322,16 +323,16 @@ AS
         Begin
 
             INSERT INTO T_Job_Step_Dependencies( Job,
-                                                 Step_Number,
-                                                 Target_Step_Number,
+                                                 Step,
+                                                 Target_Step,
                                                  Condition_Test,
                                                  Test_Value,
                                                  Evaluated,
                                                  Triggered,
                                                  Enable_Only )
             SELECT @job AS Job,
-                   Step_Number,
-                   Target_Step_Number,
+                   Step,
+                   Target_Step,
                    Condition_Test,
                    Test_Value,
                    0 AS Evaluated,
@@ -347,20 +348,20 @@ AS
             -- Create default dependencenies
 
             INSERT INTO T_Job_Step_Dependencies( Job,
-                                                 Step_Number,
-                                                 Target_Step_Number,
+                                                 Step,
+                                                 Target_Step,
                                                  Evaluated,
                                                  Triggered,
                                                  Enable_Only )
             SELECT Job,
-                   Step_Number,
-                   Step_Number - 1 AS Target_Step,
+                   Step,
+                   Step - 1 AS Target_Step,
                    0 AS Evaluated,
                    0 AS Triggered,
                    0 AS Enable_Only
             FROM T_Job_Steps
             WHERE (Job = @job) AND
-                  (Step_Number > 1)
+                  (Step > 1)
         End
 
     End
@@ -370,14 +371,14 @@ AS
         -- Now add/update the job step dependencies
         --
         MERGE T_Job_Step_Dependencies AS target
-        USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+        USING ( SELECT Job, Step, Target_Step, Condition_Test, Test_Value,
                        Evaluated, Triggered, Enable_Only
                 FROM T_Job_Step_Dependencies_History
                 WHERE Job = @job
-            ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+            ) AS Source (Job, Step, Target_Step, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
             ON (target.Job = source.Job And
-                target.Step_Number = source.Step_Number And
-                target.Target_Step_Number = source.Target_Step_Number)
+                target.Step = source.Step And
+                target.Target_Step = source.Target_Step)
         WHEN Matched THEN
             UPDATE Set
                 Condition_Test = source.Condition_Test,
@@ -386,9 +387,9 @@ AS
                 Triggered = source.Triggered,
                 Enable_Only = source.Enable_Only
         WHEN Not Matched THEN
-            INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+            INSERT (Job, Step, Target_Step, Condition_Test, Test_Value,
                     Evaluated, Triggered, Enable_Only)
-            VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value,
+            VALUES (source.Job, source.Step, source.Target_Step, source.Condition_Test, source.Test_Value,
                     source.Evaluated, source.Triggered, source.Enable_Only)
         ;
          --
@@ -417,13 +418,13 @@ AS
     UPDATE T_Job_Steps
     SET Dependencies = T.dependencies
     FROM T_Job_Steps JS
-         INNER JOIN ( SELECT Step_Number,
+         INNER JOIN ( SELECT Step,
                              COUNT(*) AS dependencies
                       FROM T_Job_Step_Dependencies
                       WHERE (Job = @job)
-                      GROUP BY Step_Number
+                      GROUP BY Step
                     ) T
-           ON T.Step_Number = JS.Step_Number
+           ON T.Step = JS.Step
     WHERE (JS.Job = @job) AND
           T.Dependencies > JS.Dependencies
     --

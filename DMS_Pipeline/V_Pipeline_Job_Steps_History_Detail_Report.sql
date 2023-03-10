@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Pipeline_Job_Steps_History_Detail_Report]
 AS
 SELECT JS.JobStepSavedCombo AS id,
        JS.job,
-       JS.Step_Number AS step,
+       JS.Step AS step,
        J.dataset,
        J.script,
-       JS.Step_Tool AS tool,
+       JS.Tool AS tool,
        SSN.Name AS step_state,
        JSN.Name AS job_state_b,
        JS.State AS state_id,
@@ -55,7 +54,6 @@ FROM dbo.T_Job_Steps_History AS JS
      LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
 WHERE Most_Recent_Entry = 1
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Job_Steps_History_Detail_Report] TO [DDL_Viewer] AS [dbo]

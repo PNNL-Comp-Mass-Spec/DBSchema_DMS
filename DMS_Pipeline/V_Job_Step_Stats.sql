@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Job_Step_Stats]
 AS
 SELECT J.Dataset,
@@ -21,7 +20,7 @@ SELECT J.Dataset,
        SUM(StepToolQ.Step_Count_Completed) AS Step_Count_Completed,
        SUM(StepToolQ.Step_Count_Failed) AS Step_Count_Failed
 FROM ( SELECT Job,
-              Step_Tool,
+              Tool,
               MAX(ISNULL(SecondsElapsed1, 0) + ISNULL(SecondsElapsed2, 0)) AS SecondsElapsedMax,
               SUM(ISNULL(SecondsElapsed1, 0) + ISNULL(SecondsElapsed2, 0)) AS SecondsElapsedTotal,
               COUNT(*) AS JobSteps,
@@ -30,30 +29,30 @@ FROM ( SELECT Job,
               SUM(CASE WHEN state = 6          THEN 1 ELSE 0 END) AS Step_Count_Failed,
               SUM(CASE WHEN state IN (1, 2, 7) THEN 1 ELSE 0 END) AS Step_Count_Pending
 	   FROM (SELECT Job,
-					Step_Tool,
+					Tool,
 					State,
 					DATEDIFF(SECOND, Start, Finish) AS SecondsElapsed1,
 					CASE
-						WHEN NOT Start IS NULL AND Finish IS NULL 
+						WHEN NOT Start IS NULL AND Finish IS NULL
 						THEN DATEDIFF(SECOND, Start, getdate())
 						ELSE NULL
 					END AS SecondsElapsed2
 			 FROM T_Job_Steps JS
 			 UNION
 			 SELECT Job,
-					Step_Tool,
+					Tool,
 					State,
 					DATEDIFF(SECOND, Start, Finish) AS SecondsElapsed1,
 					CASE
-						WHEN NOT Start IS NULL AND Finish IS NULL 
+						WHEN NOT Start IS NULL AND Finish IS NULL
 						THEN DATEDIFF(SECOND, Start, getdate())
 						ELSE NULL
 					END AS SecondsElapsed2
 			 FROM T_Job_Steps_History JSH
 			 WHERE NOT Job IN ( SELECT Job
-								FROM T_Job_Steps ) 
+								FROM T_Job_Steps )
 			) StatsQ
-       GROUP BY Job, Step_Tool 
+       GROUP BY Job, Tool
      ) StepToolQ
      INNER JOIN T_Jobs J
        ON StepToolQ.Job = J.Job

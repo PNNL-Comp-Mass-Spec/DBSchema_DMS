@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
 **          09/14/2015 mem - Added parameter @DebugMode
 **          11/18/2015 mem - Add Actual_CPU_Load
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -86,8 +87,8 @@ AS
 
     INSERT INTO T_Job_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Actual_CPU_Load,
         Memory_Usage_MB,
@@ -101,8 +102,8 @@ AS
     )
     SELECT
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         CPU_Load,
         Memory_Usage_MB,
@@ -126,16 +127,16 @@ AS
 
     INSERT INTO T_Job_Step_Dependencies (
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only
     )
     SELECT
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only

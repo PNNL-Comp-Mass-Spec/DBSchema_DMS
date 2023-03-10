@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[update_job_step_status_history]
 **  Auth:   mem
 **  Date:   12/05/2008
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -49,7 +50,7 @@ AS
 
     CREATE TABLE #TmpJobStepStatusHistory (
         Posting_Time datetime NOT NULL,
-        Step_Tool varchar(64) NOT NULL,
+        Tool varchar(64) NOT NULL,
         State tinyint NOT NULL,
         Step_Count int NOT NULL
     )
@@ -90,10 +91,10 @@ AS
         -----------------------------------------------------
         -- Compute the new stats
         -----------------------------------------------------
-        INSERT INTO #TmpJobStepStatusHistory  (Posting_Time, Step_Tool, State, Step_Count)
-        SELECT GetDate() as Posting_Time, Step_Tool, State, COUNT(*) AS Step_Count
+        INSERT INTO #TmpJobStepStatusHistory  (Posting_Time, Tool, State, Step_Count)
+        SELECT GetDate() as Posting_Time, Tool, State, COUNT(*) AS Step_Count
         FROM T_Job_Steps
-        GROUP BY Step_Tool, State
+        GROUP BY Tool, State
         --
         SELECT @myError = @@error, @myRowCount = @@RowCount
 
@@ -112,7 +113,7 @@ AS
                           FROM T_Job_Step_Status_History
                           WHERE Posting_Time = @MostRecentPostingTime
                         ) RecentStats
-               ON NewStats.Step_Tool = RecentStats.Step_Tool AND
+               ON NewStats.Tool = RecentStats.Step_Tool AND
                   NewStats.State = RecentStats.State AND
                   NewStats.Step_Count = RecentStats.Step_Count
         --
@@ -137,15 +138,15 @@ AS
         If @UpdateTable = 1
         Begin
             If @InfoOnly <> 0
-                SELECT Posting_Time, Step_Tool, State, Step_Count
+                SELECT Posting_Time, Tool, State, Step_Count
                 FROM #TmpJobStepStatusHistory
-                ORDER BY Step_Tool, State
+                ORDER BY Tool, State
             Else
             Begin
                 INSERT INTO T_Job_Step_Status_History  (Posting_Time, Step_Tool, State, Step_Count)
-                SELECT Posting_Time, Step_Tool, State, Step_Count
+                SELECT Posting_Time, Tool, State, Step_Count
                 FROM #TmpJobStepStatusHistory
-                ORDER BY Step_Tool, State
+                ORDER BY Tool, State
                 --
                 SELECT @myError = @@error, @myRowCount = @@RowCount
 

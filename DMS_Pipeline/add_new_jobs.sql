@@ -74,6 +74,7 @@ CREATE PROCEDURE [dbo].[add_new_jobs]
 **          03/30/2018 mem - Add support for job step states 9=Running_Remote, 10=Holding_Staging, and 16=Failed_Remote
 **          02/01/2023 mem - Use new view name
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -727,7 +728,7 @@ AS
         FROM T_Job_Step_Dependencies JSD INNER JOIN
             T_Job_Steps JS ON
             JSD.Job = JS.Job AND
-            JSD.Step_Number = JS.Step_Number
+            JSD.Step = JS.Step
         WHERE
             JS.State = 1 AND            -- 1=Waiting
             JS.Job IN (SELECT Job From #Tmp_JobsToResumeOrReset)

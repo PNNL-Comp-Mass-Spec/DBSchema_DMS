@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[get_job_step_input_folder]
 **  Auth:   mem
 **  Date:   02/02/2017 mem - Initial release
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -48,17 +49,17 @@ AS
     ---------------------------------------------------
     --
     SELECT TOP 1 @inputFolderName = Input_Folder_Name,
-                 @stepToolMatch = Step_Tool
+                 @stepToolMatch = Tool
     FROM T_Job_Steps JS
          INNER JOIN T_Step_Tools Tools
-           ON JS.Step_Tool = Tools.Name
-    WHERE NOT Step_Tool IN ('Results_Transfer') AND
+           ON JS.Tool = Tools.Name
+    WHERE NOT Tool IN ('Results_Transfer') AND
           Job = @job AND
           (@jobStep <= 0 OR
-           Step_Number = @jobStep) AND
+           Step = @jobStep) AND
           (@stepToolFilter = '' OR
-           Step_Tool = @stepToolFilter)
-    ORDER BY Tools.Primary_Step_Tool DESC, Step_Number DESC
+           Tool = @stepToolFilter)
+    ORDER BY Tools.Primary_Step_Tool DESC, Step DESC
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -66,17 +67,17 @@ AS
     Begin
         -- No match; try T_Job_Steps_History
         SELECT TOP 1 @inputFolderName = Input_Folder_Name,
-                     @stepToolMatch = Step_Tool
+                     @stepToolMatch = Tool
         FROM T_Job_Steps_History JS
              INNER JOIN T_Step_Tools Tools
-               ON JS.Step_Tool = Tools.Name
-        WHERE NOT Step_Tool IN ('Results_Transfer') AND
+               ON JS.Tool = Tools.Name
+        WHERE NOT Tool IN ('Results_Transfer') AND
               Job = @job AND
               (@jobStep <= 0 OR
-               Step_Number = @jobStep) AND
+               Step = @jobStep) AND
               (@stepToolFilter = '' OR
-               Step_Tool = @stepToolFilter)
-        ORDER BY Tools.Primary_Step_Tool DESC, Step_Number DESC
+               Tool = @stepToolFilter)
+        ORDER BY Tools.Primary_Step_Tool DESC, Step DESC
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 

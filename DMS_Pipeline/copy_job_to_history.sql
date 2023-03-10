@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[copy_job_to_history]
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **          08/17/2021 mem - Fix typo in argument @saveTimeOverride
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -143,8 +144,8 @@ AS
     --
     INSERT INTO T_Job_Steps_History (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         Memory_Usage_MB,
         Shared_Result_Version,
         Signature,
@@ -166,8 +167,8 @@ AS
     )
     SELECT
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         Memory_Usage_MB,
         Shared_Result_Version,
         Signature,
@@ -229,8 +230,8 @@ AS
     FROM T_Job_Step_Dependencies_History Target
          LEFT OUTER JOIN T_Job_Step_Dependencies Source
            ON Target.Job = Source.Job AND
-              Target.Step_Number = Source.Step_Number AND
-              Target.Target_Step_Number = Source.Target_Step_Number
+              Target.Step = Source.Step AND
+              Target.Target_Step = Source.Target_Step
     WHERE Target.Job = @job AND
           Source.Job IS NULL
     --
@@ -246,14 +247,14 @@ AS
     -- Now add/update the job step dependencies
     --
     MERGE T_Job_Step_Dependencies_History AS target
-    USING ( SELECT Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+    USING ( SELECT Job, Step, Target_Step, Condition_Test, Test_Value,
                    Evaluated, Triggered, Enable_Only
             FROM T_Job_Step_Dependencies
             WHERE Job = @job
-          ) AS Source (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
+          ) AS Source (Job, Step, Target_Step, Condition_Test, Test_Value, Evaluated, Triggered, Enable_Only)
            ON (target.Job = source.Job And
-               target.Step_Number = source.Step_Number And
-               target.Target_Step_Number = source.Target_Step_Number)
+               target.Step = source.Step And
+               target.Target_Step = source.Target_Step)
     WHEN Matched THEN
         UPDATE Set
             Condition_Test = source.Condition_Test,
@@ -263,9 +264,9 @@ AS
             Enable_Only = source.Enable_Only,
             Saved = @saveTime
     WHEN Not Matched THEN
-        INSERT (Job, Step_Number, Target_Step_Number, Condition_Test, Test_Value,
+        INSERT (Job, Step, Target_Step, Condition_Test, Test_Value,
                 Evaluated, Triggered, Enable_Only, Saved)
-        VALUES (source.Job, source.Step_Number, source.Target_Step_Number, source.Condition_Test, source.Test_Value,
+        VALUES (source.Job, source.Step, source.Target_Step, source.Condition_Test, source.Test_Value,
                 source.Evaluated, source.Triggered, source.Enable_Only, @saveTime)
     ;
     --

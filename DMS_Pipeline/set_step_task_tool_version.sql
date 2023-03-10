@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[set_step_task_tool_version]
 **          08/01/2017 mem - Use THROW if not authorized
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -103,7 +104,7 @@ AS
         UPDATE T_Job_Steps
         SET Tool_Version_ID = 1
         WHERE Job = @job AND
-              Step_Number = @step AND
+              Step = @step AND
               Tool_Version_ID IS NULL
     End
     Else
@@ -114,7 +115,7 @@ AS
             UPDATE T_Job_Steps
             SET Tool_Version_ID = @ToolVersionID
             WHERE Job = @job AND
-                  Step_Number = @step
+                  Step = @step
 
             UPDATE T_Step_Tool_Versions
             SET Most_Recent_Job = @Job,

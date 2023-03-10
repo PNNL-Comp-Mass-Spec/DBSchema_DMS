@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Job_Steps_History_Export]
 AS
 SELECT JS.job,
        J.dataset,
        J.dataset_id,
-       JS.step_number as step,
+       JS.Step as step,
        J.script,
-       JS.Step_Tool AS tool,
+       JS.Tool AS tool,
        SSN.Name AS state_name,
        JS.state,
        JS.start,
@@ -37,12 +36,11 @@ FROM dbo.T_Job_Steps_History JS
      INNER JOIN dbo.T_Job_Step_State_Name SSN
        ON JS.State = SSN.ID
      INNER JOIN dbo.T_Jobs_History J
-       ON JS.Job = J.Job And 
+       ON JS.Job = J.Job And
           JS.Saved = J.Saved
      LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
 WHERE J.Most_Recent_Entry = 1
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Job_Steps_History_Export] TO [DDL_Viewer] AS [dbo]

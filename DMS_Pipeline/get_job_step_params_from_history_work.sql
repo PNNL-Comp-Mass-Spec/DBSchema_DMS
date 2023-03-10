@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_from_history_work]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps_History
 **
 *****************************************************/
 (
@@ -60,13 +61,13 @@ AS
     ---------------------------------------------------
     --
     SELECT
-        @stepTool = Step_Tool,
+        @stepTool = Tool,
         @inputFolderName = Input_Folder_Name,
         @outputFolderName = Output_Folder_Name
     FROM  T_Job_Steps_History
     WHERE
         Job = @jobNumber AND
-        Step_Number = @stepNumber AND
+        Step = @stepNumber AND
         Most_Recent_Entry = 1
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -113,7 +114,7 @@ AS
           (Shared_Result_Version > 0) AND
           (State IN (3, 5)) AND
           Most_Recent_Entry = 1
-    ORDER BY Step_Number
+    ORDER BY Step
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -134,21 +135,21 @@ AS
     DECLARE @stepOutputFolderName VARCHAR(128) = ''
     DECLARE @stepInputFolderName VARCHAR(128) = ''
 
-    SELECT  @stepOutputFolderName = 'Step_' + CONVERT(VARCHAR(6), TJS.Step_Number)
+    SELECT  @stepOutputFolderName = 'Step_' + CONVERT(VARCHAR(6), TJS.Step)
             + '_' + TST.Tag
     FROM    T_Job_Steps_History TJS
-            INNER JOIN T_Step_Tools TST ON TJS.Step_Tool = TST.Name
+            INNER JOIN T_Step_Tools TST ON TJS.Tool = TST.Name
     WHERE   TJS.Job = @jobNumber AND
-            TJS.Step_Number = @stepNumber AND
+            TJS.Step = @stepNumber AND
             TJS.Most_Recent_Entry = 1
 
 
     SELECT  @stepInputFolderName = 'Step_'
-            + CONVERT(VARCHAR(6), TJS.Step_Number) + '_NotDefined'
+            + CONVERT(VARCHAR(6), TJS.Step) + '_NotDefined'
     FROM  T_Job_Steps_History AS TJS
-            INNER JOIN T_Step_Tools AS TST ON TJS.Step_Tool = TST.Name
+            INNER JOIN T_Step_Tools AS TST ON TJS.Tool = TST.Name
     WHERE   ( TJS.Job = @jobNumber ) AND
-            ( TJS.Step_Number = @stepNumber ) AND
+            ( TJS.Step = @stepNumber ) AND
             TJS.Most_Recent_Entry = 1
 
     ---------------------------------------------------

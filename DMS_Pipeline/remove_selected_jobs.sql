@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[remove_selected_jobs]
 **          06/16/2014 mem - Now disabling trigger trig_ud_T_Job_Steps when deleting rows from T_Job_Steps
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -80,10 +81,10 @@ AS
             TS.Output_Folder_Name
         FROM
             T_Job_Steps AS DS INNER JOIN
-            T_Job_Step_Dependencies AS JSD ON DS.Job = JSD.Job AND DS.Step_Number = JSD.Step_Number INNER JOIN
-            T_Job_Steps AS TS ON JSD.Job = TS.Job AND JSD.Target_Step_Number = TS.Step_Number
+            T_Job_Step_Dependencies AS JSD ON DS.Job = JSD.Job AND DS.Step = JSD.Step INNER JOIN
+            T_Job_Steps AS TS ON JSD.Job = TS.Job AND JSD.Target_Step = TS.Step
         WHERE
-            DS.Step_Tool = 'Results_Transfer' AND
+            DS.Tool = 'Results_Transfer' AND
             DS.State = 5 AND
             TS.Shared_Result_Version > 0 AND
             NOT TS.Output_Folder_Name IN (SELECT Results_Name FROM T_Shared_Results) AND
@@ -207,7 +208,7 @@ AS
 
         End -- </b1>
         Else
-        Begin -- <b2>
+        Begin; -- <b2>
 
             ---------------------------------------------------
             -- Delete in bulk
@@ -231,7 +232,7 @@ AS
 
             Enable Trigger trig_ud_T_Jobs ON T_Jobs;
 
-        End -- </b2>
+        End; -- </b2>
     End -- </a>
 
     ---------------------------------------------------

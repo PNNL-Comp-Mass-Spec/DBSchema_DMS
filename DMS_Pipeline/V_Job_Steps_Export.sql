@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Job_Steps_Export]
 AS
 SELECT JS.Job,
        J.Dataset,
        J.Dataset_ID,
-       JS.Step_Number AS Step,
+       JS.Step,
        J.Script,
-       JS.Step_Tool AS Tool,
+       JS.Tool,
        SSN.Name AS State_Name,
        JS.State,
        JS.Start,

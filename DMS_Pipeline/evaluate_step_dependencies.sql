@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[evaluate_step_dependencies]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          03/30/2018 mem - Rename variables and reformat queries
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -90,8 +91,8 @@ AS
         Enable_Only
     )
     SELECT JS.Job,
-           JSD.Step_Number AS DependentStep,
-           JS.Step_Number AS TargetStep,
+           JSD.Step AS DependentStep,
+           JS.Step AS TargetStep,
            JS.State AS TargetState,
            JS.Completion_Code AS TargetCompletionCode,
            JSD.Condition_Test,
@@ -99,11 +100,11 @@ AS
            JSD.Enable_Only
     FROM T_Job_Step_Dependencies JSD
          INNER JOIN T_Job_Steps JS
-           ON JSD.Target_Step_Number = JS.Step_Number AND
+           ON JSD.Target_Step = JS.Step AND
               JSD.Job = JS.Job
          INNER JOIN T_Job_Steps AS JS_B
            ON JSD.Job = JS_B.Job AND
-              JSD.Step_Number = JS_B.Step_Number
+              JSD.Step = JS_B.Step
     WHERE (JSD.Evaluated = 0) AND
           (JS.State IN (3, 5)) AND
           (JS_B.State = 1)
@@ -221,7 +222,7 @@ AS
                 SELECT @actualValue = Signature
                 FROM T_Job_Steps
                 WHERE Job = @job AND
-                      Step_Number = @dependentStep
+                      Step = @dependentStep
                 --
                 If @actualValue = -1
                 Begin
@@ -248,7 +249,7 @@ AS
                 SELECT @actualValue = State
                 FROM T_Job_Steps
                 WHERE Job = @job AND
-                      Step_Number = @targetStep
+                      Step = @targetStep
                 --
                 If @actualValue = -1
                 Begin
@@ -274,7 +275,7 @@ AS
                 SELECT @targetCompletionMessage = Completion_Message
                 FROM T_Job_Steps
                 WHERE Job = @job AND
-                      Step_Number = @targetStep
+                      Step = @targetStep
                 --
                 If @targetCompletionMessage like '%' + @testValue + '%'
                     set @Triggered = 1
@@ -295,7 +296,7 @@ AS
                 --
                 SELECT @outputFolderName = Output_Folder_Name
                 FROM T_Job_Steps
-                WHERE Job = @job AND Step_Number = @targetStep
+                WHERE Job = @job AND Step = @targetStep
                   --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
@@ -311,7 +312,7 @@ AS
                     UPDATE T_Job_Steps
                     SET Input_Folder_Name = @outputFolderName
                     WHERE Job = @job AND
-                          Step_Number = @dependentStep
+                          Step = @dependentStep
                   --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
@@ -333,8 +334,8 @@ AS
                 SET Evaluated = 1,
                     Triggered = @Triggered
                 WHERE Job = @job AND
-                      Step_Number = @dependentStep AND
-                      Target_Step_Number = @targetStep
+                      Step = @dependentStep AND
+                      Target_Step = @targetStep
               --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --

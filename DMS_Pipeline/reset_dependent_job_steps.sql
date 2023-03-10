@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
 **          05/13/2017 mem - Treat state 9 (Running_Remote) as "In progress"
 **          03/22/2021 mem - Do not reset steps in state 7 (Holding)
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -87,15 +88,15 @@ AS
         --
         INSERT INTO #Tmp_JobStepsToReset( Job, Step )
         SELECT DISTINCT JS.Job,
-                        JS.Step_Number
+                        JS.Step
         FROM T_Job_Steps JS
              INNER JOIN T_Job_Step_Dependencies
                ON JS.Job = T_Job_Step_Dependencies.Job AND
-                  JS.Step_Number = T_Job_Step_Dependencies.Step_Number
+                  JS.Step = T_Job_Step_Dependencies.Step
              INNER JOIN T_Job_Steps JS_Target
                ON T_Job_Step_Dependencies.Job = JS_Target.Job
                   AND
-                  T_Job_Step_Dependencies.Target_Step_Number = JS_Target.Step_Number
+                  T_Job_Step_Dependencies.Target_Step = JS_Target.Step
         WHERE JS.State >= 2 AND
               JS.State Not In (3, 7) AND
               JS.Job IN ( SELECT Job
@@ -123,7 +124,7 @@ AS
             FROM T_Job_Step_Dependencies JSD
                 INNER JOIN #Tmp_JobStepsToReset JR
                 ON JSD.Job = JR.Job AND
-                    JSD.Step_Number = JR.Step
+                    JSD.Step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -137,7 +138,7 @@ AS
             FROM T_Job_Steps JS
                  INNER JOIN #Tmp_JobStepsToReset JR
                    ON JS.Job = JR.Job AND
-                      JS.Step_Number = JR.Step
+                      JS.Step = JR.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 

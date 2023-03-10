@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Job_Steps]
 AS
 SELECT  JS.Job,
@@ -18,8 +17,8 @@ SELECT  JS.Job,
         JS.RunTime_Minutes,
         DATEDIFF(minute, PS.Status_Date, GetDate()) AS Last_CPU_Status_Minutes,
         CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) THEN JS.Remote_Progress
-             WHEN JS.State = 4 THEN PS.Progress 
-             WHEN JS.State IN (3, 5) THEN 100             
+             WHEN JS.State = 4 THEN PS.Progress
+             WHEN JS.State IN (3, 5) THEN 100
              ELSE 0 END AS Job_Progress,
         CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) AND JS.Remote_Progress > 0
                                                               THEN CONVERT(DECIMAL(9,2), JS.RunTime_Minutes / (JS.Remote_Progress / 100.0) / 60.0)
@@ -61,8 +60,8 @@ SELECT  JS.Job,
         JS.Dataset_ID,
         JS.DataPkgID AS Data_Pkg_ID,
         JS.Transfer_Folder_Path,
-        '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' + 
-            CASE WHEN JS.Processor LIKE '%-[1-9]' 
+        '\\' + LP.Machine + '\DMS_Programs\AnalysisToolManager' +
+            CASE WHEN JS.Processor LIKE '%-[1-9]'
             THEN RIGHT(JS.Processor, 1)
             ELSE ''
             END + '\Logs\' AS Log_File_Path
@@ -71,9 +70,9 @@ FROM (
            J.Dataset,
            J.Dataset_ID,
            J.DataPkgID,
-           JS.Step_Number AS Step,
+           JS.Step,
            S.Script,
-           JS.Step_Tool AS Tool,
+           JS.Tool,
            SSN.Name AS State_Name,
            JS.State,
            CASE WHEN JS.State <> 4 AND NOT JS.Remote_Start IS NULL
@@ -86,7 +85,7 @@ FROM (
            END AS Finish,
            CASE WHEN (JS.State = 9 OR JS.Retry_Count > 0) AND NOT JS.Remote_Start IS NULL
                 THEN CONVERT(decimal(9, 1), DATEDIFF(second, JS.Remote_Start, ISNULL(JS.Remote_Finish, GetDate())) / 60.0)
-                ELSE CONVERT(decimal(9, 1), DATEDIFF(second, JS.Start,        ISNULL(JS.Finish, GetDate())) / 60.0) 
+                ELSE CONVERT(decimal(9, 1), DATEDIFF(second, JS.Start,        ISNULL(JS.Finish, GetDate())) / 60.0)
            END AS RunTime_Minutes,
            JS.Processor,
            JS.Input_Folder_Name AS Input_Folder,
@@ -104,7 +103,7 @@ FROM (
            JS.Next_Try,
            JS.Retry_Count,
            JS.Remote_Info_ID,
-           RI.Remote_Info,        
+           RI.Remote_Info,
            JS.Remote_Timestamp,
            JS.Remote_Start,
            JS.Remote_Finish,
@@ -119,9 +118,9 @@ FROM (
            ON JS.Job = J.Job
          INNER JOIN dbo.T_Scripts S
            ON J.Script = S.Script
-         LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV 
+         LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
            ON JS.Tool_Version_ID = STV.Tool_Version_ID
-         LEFT OUTER JOIN dbo.T_Remote_Info RI 
+         LEFT OUTER JOIN dbo.T_Remote_Info RI
            ON JS.Remote_Info_ID = RI.Remote_Info_ID
     ) JS
     LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS

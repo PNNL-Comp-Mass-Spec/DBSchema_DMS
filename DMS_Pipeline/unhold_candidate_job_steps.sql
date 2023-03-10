@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[unhold_candidate_job_steps]
 **          04/24/2014 mem - Added parameter @MaxCandidatesPlusJobs
 **          05/13/2017 mem - Add step state 9 (Running_Remote)
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -51,12 +52,12 @@ AS
     SELECT @CandidateSteps = COUNT(*)
     FROM dbo.T_Job_Steps
     WHERE State IN (2, 9) AND
-          Step_Tool = @StepTool
+          Tool = @StepTool
 
     SELECT @CandidatesPlusRunning = COUNT(*)
     FROM dbo.T_Job_Steps
     WHERE State In (2, 4, 9) AND
-          Step_Tool = @StepTool
+          Tool = @StepTool
 
     -----------------------------------------------------------
     -- Compute the number of jobs that need to be released (un-held)
@@ -78,13 +79,13 @@ AS
         SET State = 2
         FROM T_Job_Steps
              INNER JOIN ( SELECT TOP ( @JobsToRelease ) Job,
-                                                        Step_Number
+                                                        Step
                           FROM dbo.T_Job_Steps
                           WHERE state = 7 AND
-                                step_tool = @StepTool
+                                Tool = @StepTool
                           ORDER BY Job ) ReleaseQ
                ON T_Job_Steps.Job = ReleaseQ.Job AND
-                  T_Job_Steps.Step_Number = ReleaseQ.Step_Number
+                  T_Job_Steps.Step = ReleaseQ.Step
         WHERE T_Job_Steps.State = 7
         --
         set @myRowCount = @@RowCount

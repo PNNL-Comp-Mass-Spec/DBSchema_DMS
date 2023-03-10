@@ -55,11 +55,11 @@ CREATE PROCEDURE [dbo].[request_step_task_xml]
 **          10/12/2009 mem - Now treating enabled states <= 0 as disabled for processor tool groups
 **          03/03/2010 mem - Added parameters @throttleByStartTime and @maxStepNumToThrottle
 **          03/10/2010 mem - Fixed bug that ignored @maxStepNumToThrottle when updating #Tmp_CandidateJobSteps
-**          08/20/2010 mem - No longer ordering by Step_Number Descending prior to job number; this caused problems choosing the next appropriate Sequest job since Sequest_DTARefinery jobs run Sequest as step 4 while normal Sequest jobs run Sequest as step 3
-**                         - Sort order is now: Association_Type, Tool_Priority, Job Priority, Favor Results_Transfer steps, Job, Step_Number
+**          08/20/2010 mem - No longer ordering by Step Descending prior to job number; this caused problems choosing the next appropriate Sequest job since Sequest_DTARefinery jobs run Sequest as step 4 while normal Sequest jobs run Sequest as step 3
+**                         - Sort order is now: Association_Type, Tool_Priority, Job Priority, Favor Results_Transfer steps, Job, Step
 **          09/09/2010 mem - Bumped @maxStepNumToThrottle up to 10
 **                         - Added parameter @throttleAllStepTools, defaulting to 0 (meaning we will not throttle Sequest or Results_Transfer steps)
-**          09/29/2010 mem - Tweaked throttling logic to move the Step_Tool exclusion test to the outer WHERE clause
+**          09/29/2010 mem - Tweaked throttling logic to move the Tool exclusion test to the outer WHERE clause
 **          06/09/2011 mem - Added parameter @logSPUsage, which posts a log entry to T_SP_Usage if non-zero
 **          10/17/2011 mem - Now considering Memory_Usage_MB
 **          11/01/2011 mem - Changed @HoldoffWindowMinutes from 7 to 3 minutes
@@ -97,6 +97,7 @@ CREATE PROCEDURE [dbo].[request_step_task_xml]
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/06/2023 bcg - Update after view column rename
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -486,10 +487,10 @@ AS
     Create Table #Tmp_CandidateJobSteps (
         Seq smallint IDENTITY(1,1) NOT NULL,
         Job int,
-        Step_Number int,
+        Step int,
         State int,
         Job_Priority int,
-        Step_Tool varchar(64),
+        Tool varchar(64),
         Tool_Priority tinyint,
         Max_Job_Priority tinyint,
         Memory_Usage_MB int,
@@ -524,10 +525,10 @@ AS
         --
         INSERT INTO #Tmp_CandidateJobSteps (
             Job,
-            Step_Number,
+            Step,
             State,
             Job_Priority,
-            Step_Tool,
+            Tool,
             Tool_Priority,
             Memory_Usage_MB,
             Storage_Server,
@@ -538,10 +539,10 @@ AS
         )
         SELECT TOP (@CandidateJobStepsToRetrieve)
             JS.Job,
-            JS.Step_Number,
+            JS.Step,
             JS.State,
             J.Priority AS Job_Priority,
-            JS.Step_Tool,
+            JS.Tool,
             1 As Tool_Priority,
             JS.Memory_Usage_MB,
             J.Storage_Server,
@@ -585,14 +586,14 @@ AS
                                 PTGD.Enabled > 0 AND
                                 PTGD.Tool_Name = 'Results_Transfer'
              ) TP
-               ON JS.Step_Tool = 'Results_Transfer' AND
+               ON JS.Tool = 'Results_Transfer' AND
                   TP.Machine = IsNull(J.Storage_Server, TP.Machine)        -- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
         WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoOnly > 0)
         ORDER BY
             Association_Type,
             J.Priority,        -- Job_Priority
             Job,
-            Step_Number
+            Step
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -602,10 +603,10 @@ AS
             --
             INSERT INTO #Tmp_CandidateJobSteps (
                 Job,
-                Step_Number,
+                Step,
                 State,
                 Job_Priority,
-                Step_Tool,
+                Tool,
                 Tool_Priority,
                 Memory_Usage_MB,
                 Storage_Server,
@@ -616,10 +617,10 @@ AS
             )
             SELECT TOP (@CandidateJobStepsToRetrieve)
                 JS.Job,
-                JS.Step_Number,
+                JS.Step,
                 JS.State,
                 J.Priority AS Job_Priority,
-                JS.Step_Tool,
+                JS.Tool,
                 1 As Tool_Priority,
                 JS.Memory_Usage_MB,
                 J.Storage_Server,
@@ -657,14 +658,14 @@ AS
                                   PTGD.Enabled > 0 AND
                                   PTGD.Tool_Name = 'Results_Transfer'
                 ) TP
-                ON JS.Step_Tool = 'Results_Transfer' AND
+                ON JS.Tool = 'Results_Transfer' AND
                     TP.Machine <> J.Storage_Server
                WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoOnly > 0)
             ORDER BY
                 Association_Type,
                 J.Priority,        -- Job_Priority
                 Job,
-                Step_Number
+                Step
         End
 
     End
@@ -687,10 +688,10 @@ AS
         --
         INSERT INTO #Tmp_CandidateJobSteps (
             Job,
-            Step_Number,
+            Step,
             State,
             Job_Priority,
-            Step_Tool,
+            Tool,
             Tool_Priority,
             Memory_Usage_MB,
             Storage_Server,
@@ -701,10 +702,10 @@ AS
         )
         SELECT TOP (@CandidateJobStepsToRetrieve)
             JS.Job,
-            JS.Step_Number,
+            JS.Step,
             JS.State,
             J.Priority AS Job_Priority,
-            JS.Step_Tool,
+            JS.Tool,
             TP.Tool_Priority,
             JS.Memory_Usage_MB,
             J.Storage_Server,
@@ -715,7 +716,7 @@ AS
                                                ELSE TP.CPU_Load END)
                     -- No processing load available on machine
                     THEN 101
-                WHEN (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1)
+                WHEN (Tool = 'Results_Transfer' AND J.Archive_Busy = 1)
                     -- Transfer tool steps for jobs that are in the midst of an archive operation
                     THEN 102
                 WHEN (TP.Memory_Available < JS.Memory_Usage_MB)
@@ -801,20 +802,20 @@ AS
                                 PTGD.Enabled > 0 AND
                                 PTGD.Tool_Name <> 'Results_Transfer'        -- Candidate Result_Transfer steps were found above
              ) TP
-               ON TP.Tool_Name = JS.Step_Tool
+               ON TP.Tool_Name = JS.Tool
         WHERE (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
               J.Priority <= TP.Max_Job_Priority AND
               (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
-              NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
+              NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step)
         ORDER BY
             Association_Type,
             Tool_Priority,
             J.Priority,        -- Job_Priority
-            CASE WHEN Step_Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
+            CASE WHEN Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
                  ELSE 0
             END DESC,
             Job,
-            Step_Number
+            Step
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
     End -- </UseBigBang>
@@ -851,10 +852,10 @@ AS
             -- Processor does not do general processing
             INSERT INTO #Tmp_CandidateJobSteps (
                 Job,
-                Step_Number,
+                Step,
                 State,
                 Job_Priority,
-                Step_Tool,
+                Tool,
                 Tool_Priority,
                 Storage_Server,
                 Dataset_ID,
@@ -864,10 +865,10 @@ AS
             )
             SELECT TOP (@CandidateJobStepsToRetrieve)
                 JS.Job,
-                Step_Number,
+                Step,
                 State,
                 J.Priority AS Job_Priority,
-                Step_Tool,
+                Tool,
                 Tool_Priority,
                 J.Storage_Server,
                 J.Dataset_ID,
@@ -906,24 +907,24 @@ AS
                 LP.Processor_Name = @processorName AND
                 PTGD.Tool_Name <> 'Results_Transfer'        -- Candidate Result_Transfer steps were found above
                             ) TP
-                   ON TP.Tool_Name = JS.Step_Tool
+                   ON TP.Tool_Name = JS.Tool
             WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
                   GETDATE() > JS.Next_Try AND
                   (JS.State = 2 OR JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
                   TP.Memory_Available >= JS.Memory_Usage_MB AND
-                  NOT (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
-                  NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number) AND
+                  NOT (Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
+                  NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step) AND
                   -- Exclusively associated steps ('Exclusive Association', aka Association_Type=1):
                   -- (Processor_GP = 0 AND Tool_GP = 'N' AND JS.Job IN (SELECT Job FROM T_Local_Job_Processors WHERE Processor = Processor_Name AND General_Processing = 0))
             ORDER BY
                 Association_Type,
                 Tool_Priority,
                 J.Priority,    -- Job_Priority
-                CASE WHEN Step_Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
+                CASE WHEN Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
                     ELSE 0
                 END DESC,
                 Job,
-                Step_Number
+                Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -935,10 +936,10 @@ AS
             -- Processor does do general processing
             INSERT INTO #Tmp_CandidateJobSteps (
                 Job,
-                Step_Number,
+                Step,
                 State,
                 Job_Priority,
-                Step_Tool,
+                Tool,
                 Tool_Priority,
                 Storage_Server,
                 Dataset_ID,
@@ -948,10 +949,10 @@ AS
             )
             SELECT TOP (@CandidateJobStepsToRetrieve)
                 JS.Job,
-                Step_Number,
+                Step,
                 State,
                 J.Priority AS Job_Priority,
-                Step_Tool,
+                Tool,
                 Tool_Priority,
                 J.Storage_Server,
                 J.Dataset_ID,
@@ -1015,14 +1016,14 @@ AS
                                     LP.Processor_Name = @processorName AND
                                     PTGD.Tool_Name <> 'Results_Transfer'            -- Candidate Result_Transfer steps were found above
                             ) TP
-                   ON TP.Tool_Name = JS.Step_Tool
+                   ON TP.Tool_Name = JS.Tool
             WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 Or @remoteInfoID > 1 Then -50 ELSE TP.CPU_Load END) AND
                   J.Priority <= TP.Max_Job_Priority AND
                   (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
                   (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
                   TP.Memory_Available >= JS.Memory_Usage_MB AND
-                  NOT (Step_Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
-                  NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step_Number)
+                  NOT (Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
+                  NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step)
                     /*
                     ** To improve query speed remove the Case Statement above and uncomment the following series of tests
                     AND
@@ -1048,11 +1049,11 @@ AS
                 Association_Type,
                 Tool_Priority,
                 J.Priority,        -- Job_Priority
-                CASE WHEN Step_Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
+                CASE WHEN Tool = 'Results_Transfer' Then 10    -- Give Results_Transfer steps priority so that they run first and are grouped by Job
                     ELSE 0
                 END DESC,
                 Job,
-                Step_Number
+                Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -1106,15 +1107,15 @@ AS
                                     INNER JOIN T_Jobs
                                         ON JS.Job = T_Jobs.Job
                                 WHERE (JS.Start >= DATEADD(MINUTE, -@HoldoffWindowMinutes, GETDATE())) AND
-                                      (JS.Step_Number <= @maxStepNumToThrottle) AND
+                                      (JS.Step <= @maxStepNumToThrottle) AND
                                       (JS.State = 4)
                                 GROUP BY T_Jobs.Storage_Server
                             ) LookupQ
                         WHERE (Running_Steps_Recently_Started >= @MaxSimultaneousJobCount)
                         ) ServerQ
             ON ServerQ.Storage_Server = CJS.Storage_Server
-        WHERE CJS.Step_Number <= @maxStepNumToThrottle AND
-              (NOT Step_Tool IN ('Sequest', 'Results_Transfer') OR @throttleAllStepTools > 0)
+        WHERE CJS.Step <= @maxStepNumToThrottle AND
+              (NOT Tool IN ('Sequest', 'Results_Transfer') OR @throttleAllStepTools > 0)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -1246,12 +1247,12 @@ AS
 
     SELECT TOP 1
         @jobNumber =  JS.Job,
-        @stepNumber = JS.Step_Number,
+        @stepNumber = JS.Step,
         @machine = CJS.Machine,
         @jobIsRunningRemote = CASE WHEN JS.State = 9 THEN 1 ELSE 0 END
     FROM
         T_Job_Steps JS WITH (HOLDLOCK) INNER JOIN
-        #Tmp_CandidateJobSteps CJS ON CJS.Job = JS.Job AND CJS.Step_Number = JS.Step_Number
+        #Tmp_CandidateJobSteps CJS ON CJS.Job = JS.Job AND CJS.Step = JS.Step
     WHERE JS.State IN (2, 9) And CJS.Association_Type <= @AssociationTypeIgnoreThreshold
     ORDER BY Seq
       --
@@ -1320,7 +1321,7 @@ AS
             Evaluation_Code =    CASE WHEN Evaluation_Code Is Null THEN Null ELSE 0 END,
             Evaluation_Message = CASE WHEN Evaluation_Code Is Null THEN Null ELSE '' END
         WHERE Job = @jobNumber AND
-              Step_Number = @stepNumber
+              Step = @stepNumber
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -1351,7 +1352,7 @@ AS
              INNER JOIN ( SELECT LP.Machine,
                                  SUM(CASE
                                          WHEN @jobIsRunningRemote > 0 AND
-                                              JS.Step_Number = @stepNumber THEN 0
+                                              JS.Step = @stepNumber THEN 0
                                          WHEN Tools.Uses_All_Cores > 0 AND
                                               JS.Actual_CPU_Load = JS.CPU_Load THEN IsNull(M.Total_CPUs, JS.CPU_Load)
                                          ELSE JS.Actual_CPU_Load
@@ -1360,7 +1361,7 @@ AS
                                INNER JOIN T_Local_Processors LP
                                  ON JS.Processor = LP.Processor_Name
                                INNER JOIN T_Step_Tools Tools
-                                 ON Tools.Name = JS.Step_Tool
+                                 ON Tools.Name = JS.Tool
                                INNER JOIN T_Machines M
                                  ON LP.Machine = M.Machine
                           WHERE LP.Machine = @machine AND
@@ -1461,9 +1462,9 @@ AS
                CJS.Tool_Priority,
                CJS.Job_Priority,
                CJS.Job,
-               CJS.Step_Number As Step,
+               CJS.Step,
                CJS.State,
-               CJS.Step_Tool,
+               CJS.Tool,
                J.Dataset,
                JS.Next_Try,
                JS.Remote_Info_ID,
@@ -1473,7 +1474,7 @@ AS
              INNER JOIN T_Jobs J
                ON CJS.Job = J.Job
              INNER JOIN T_Job_Steps JS
-               ON CJS.Job = JS.Job AND CJS.Step_Number = JS.Step_Number
+               ON CJS.Job = JS.Job AND CJS.Step = JS.Step
         ORDER BY Seq
     End
 

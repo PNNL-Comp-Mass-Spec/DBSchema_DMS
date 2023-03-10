@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[auto_fix_failed_jobs]
 **          03/30/2018 mem - Reset MSGF+ steps with "Timeout expired"
 **          06/05/2018 mem - Add support for Formularity
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -55,9 +56,9 @@ AS
     DELETE FROM #Tmp_JobsToFix
 
     INSERT INTO #Tmp_JobsToFix (Job, Step)
-    SELECT Job, Step_Number
+    SELECT Job, Step
     FROM T_Job_Steps
-    WHERE Step_Tool = 'Bruker_DA_Export' AND
+    WHERE Tool = 'Bruker_DA_Export' AND
           State IN (6, 16) AND
           Completion_Message = 'No spectra were exported'
     --
@@ -102,9 +103,9 @@ AS
 
     INSERT INTO #Tmp_JobsToFix( Job, Step )
     SELECT Job,
-           Step_Number
+           Step
     FROM T_Job_Steps
-    WHERE Step_Tool In ('Formularity', 'NOMSI') AND
+    WHERE Tool In ('Formularity', 'NOMSI') AND
           State IN (6, 16) AND
           Completion_Message = 'No peaks found'
     --
@@ -151,7 +152,7 @@ AS
             FROM T_Job_Steps Target
                  INNER JOIN #Tmp_JobsToFix F
                    ON Target.Job = F.Job AND
-                      Target.Step_Number = F.Step
+                      Target.Step = F.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -168,9 +169,9 @@ AS
     DELETE FROM #Tmp_JobsToFix
 
     INSERT INTO #Tmp_JobsToFix (Job, Step)
-    SELECT Job, Step_Number
+    SELECT Job, Step
     FROM T_Job_Steps
-    WHERE Step_Tool = 'MSGFPlus' AND
+    WHERE Tool = 'MSGFPlus' AND
           State IN (6, 16) AND
           (Completion_Message LIKE '%Cannot run BuildSA since less than % MB of free memory%' OR
            Completion_Message LIKE '%Timeout expired%')
@@ -209,7 +210,7 @@ AS
             FROM T_Job_Steps Target
                  INNER JOIN #Tmp_JobsToFix F
                    ON Target.Job = F.Job AND
-                      Target.Step_Number = F.Step
+                      Target.Step = F.Step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 

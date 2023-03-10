@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE  VIEW [dbo].[V_Job_Steps_Active] 
+CREATE VIEW [dbo].[V_Job_Steps_Active]
 AS
 SELECT Job,
        Step,
@@ -47,22 +46,22 @@ FROM ( SELECT JS.Job,
               JS.Priority,
               JSN.Name AS Job_State_Name
        FROM V_Job_Steps JS
-            INNER JOIN dbo.T_Jobs J 
+            INNER JOIN dbo.T_Jobs J
               ON JS.Job = J.Job
-            INNER JOIN dbo.T_Job_State_Name JSN 
+            INNER JOIN dbo.T_Job_State_Name JSN
               ON J.State = JSN.ID
             LEFT OUTER JOIN (
 				SELECT Job,
-				       Step_Number AS Step
+				       Step
 				FROM ( SELECT JS.Job,
-				              JS.Step_Number,
+				              JS.Step,
 				              JS.State AS StepState,
 				              Row_Number() OVER ( PARTITION BY J.Job ORDER BY JS.State DESC ) AS RowRank
 				       FROM dbo.T_Jobs J
 				            INNER JOIN dbo.T_Job_Steps JS
 				              ON J.Job = JS.Job
 				       WHERE (J.State = 5) AND
-				             (J.Start >= DATEADD(day, -21, GETDATE())) 
+				             (J.Start >= DATEADD(day, -21, GETDATE()))
 				     ) LookupQ
 				WHERE RowRank = 1
             ) FailedJobQ ON JS.Job = FailedJobQ.Job AND JS.Step = FailedJobQ.Step

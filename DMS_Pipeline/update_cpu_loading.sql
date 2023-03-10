@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[update_cpu_loading]
 **          11/18/2015 mem - Now using Actual_CPU_Load
 **          05/26/2017 mem - Consider Remote_Info_ID when determining CPU and memory usage
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ AS
                                   IsNull(JS.Remote_Info_ID, 0) AS Remote_Info_ID
                            FROM T_Job_Steps JS WITH ( READUNCOMMITTED )
                                 INNER JOIN T_Step_Tools Tools
-                                  ON Tools.Name = JS.Step_Tool ) JobStepsQ
+                                  ON Tools.Name = JS.Tool ) JobStepsQ
            ON LP.Processor_Name = JobStepsQ.Processor
     GROUP BY M.Machine
     --

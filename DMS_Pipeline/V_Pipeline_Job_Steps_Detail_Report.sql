@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Pipeline_Job_Steps_Detail_Report]
 AS
 SELECT JS.Job_Plus_Step AS id,
        JS.job,
-       JS.Step_Number AS step,
+       JS.Step AS step,
        J.dataset,
        J.script,
-       JS.Step_Tool AS tool,
+       JS.Tool AS tool,
        SSN.Name AS step_state,
        JSN.Name AS job_state_b,
        JS.State AS state_id,
@@ -27,7 +26,7 @@ SELECT JS.Job_Plus_Step AS id,
             WHEN JS.State = 5 THEN 'Complete'
             ELSE 'Not started'
        END AS job_progress,
-       CASE WHEN JS.State = 4 AND JS.Step_Tool = 'XTandem' THEN 0      -- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
+       CASE WHEN JS.State = 4 AND JS.Tool = 'XTandem' THEN 0      -- We cannot predict runtime for X!Tandem jobs since progress is not properly reported
             WHEN (JS.State = 9 Or JS.Remote_Info_ID > 1) AND IsNull(JS.remote_progress, 0) > 0 THEN
                CONVERT(DECIMAL(9,2), DATEDIFF(second, JS.remote_start, ISNULL(JS.remote_finish, GetDate())) /
                                           (JS.Remote_Progress / 100.0) / 60.0 / 60.0)
@@ -69,7 +68,7 @@ FROM dbo.T_Job_Steps AS JS
        ON J.State = JSN.ID
      INNER JOIN V_Job_Steps2 AS JS2
        ON JS.Job = JS2.Job AND
-          JS.Step_Number = JS2.Step
+          JS.Step = JS2.Step
      LEFT OUTER JOIN dbo.T_Step_Tool_Versions STV
        ON JS.Tool_Version_ID = STV.Tool_Version_ID
      LEFT OUTER JOIN dbo.T_Processor_Status (READUNCOMMITTED) PS

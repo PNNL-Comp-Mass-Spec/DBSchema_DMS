@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[reset_aggregation_job]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/12/2017 mem - Update Next_Try and Remote_Info_ID
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -145,10 +146,10 @@ AS
         If @InfoOnly <> 0
         Begin
             -- Show job steps
-            SELECT Job, Step_Number, Output_Folder_Name as Output_Folder_Old, @resultsFolderName as Output_Folder_New
+            SELECT Job, Step, Output_Folder_Name as Output_Folder_Old, @resultsFolderName as Output_Folder_New
             FROM T_Job_Steps
             WHERE Job = @Job And (State <> 1 OR Input_Folder_Name Like @FolderLikeClause OR  Output_Folder_Name Like @FolderLikeClause)
-            ORDER BY Step_Number
+            ORDER BY Step
 
             -- Show dependencies
             SELECT *,
@@ -159,7 +160,7 @@ AS
                     END AS Message
             FROM T_Job_Step_Dependencies
             WHERE (Job = @Job)
-            ORDER BY Step_Number
+            ORDER BY Step
 
         End
         Else
@@ -203,13 +204,13 @@ AS
         Begin
             -- Show job steps that would be reset
             SELECT Job,
-                   Step_Number,
+                   Step,
                    State AS State_Current,
                    1 AS State_New
             FROM T_Job_Steps
             WHERE Job = @Job AND
                   State IN (6, 7)
-            ORDER BY Step_Number
+            ORDER BY Step
 
             -- Show dependencies
             SELECT *,
@@ -221,10 +222,10 @@ AS
                    END AS Message
             FROM T_Job_Step_Dependencies JSD
                  INNER JOIN T_Job_Steps JS
-                   ON JSD.Step_Number = JS.Step_Number AND
+                   ON JSD.Step = JS.Step AND
                       JSD.Job = JS.Job
             WHERE JSD.Job = @Job
-            ORDER BY JSD.Step_Number
+            ORDER BY JSD.Step
 
         End
         Else
@@ -239,7 +240,7 @@ AS
             FROM T_Job_Step_Dependencies JSD
                  INNER JOIN T_Job_Steps JS
                    ON JSD.Job = JS.Job AND
-                      JSD.Step_Number = JS.Step_Number
+                      JSD.Step = JS.Step
             WHERE JSD.Job = @Job AND
                   JS.State IN (6, 7)
 

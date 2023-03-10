@@ -38,6 +38,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_work]
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **          07/27/2022 mem - Move check for missing ToolName parameter to after adding job parameters using T_Job_Parameters
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -78,7 +79,7 @@ AS
     ---------------------------------------------------
     --
     SELECT
-        @stepTool = Step_Tool,
+        @stepTool = Tool,
         @inputFolderName = Input_Folder_Name,
         @outputFolderName = Output_Folder_Name,
         @remoteInfoId = Remote_Info_ID,
@@ -86,7 +87,7 @@ AS
     FROM T_Job_Steps
     WHERE
         Job = @jobNumber AND
-        Step_Number = @stepNumber
+        Step = @stepNumber
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -143,7 +144,7 @@ AS
     WHERE (Job = @jobNumber) AND
           (Shared_Result_Version > 0) AND
           (State IN (3, 5))
-    ORDER BY Step_Number
+    ORDER BY Step
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -167,25 +168,25 @@ AS
     Declare @paramFileStoragePath varchar(256) = ''
     Declare @CpuLoad int = 1
 
-    SELECT @stepOutputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step_Number) + '_' + ST.Tag,
+    SELECT @stepOutputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step) + '_' + ST.Tag,
            @paramFileStoragePath = ST.Param_File_Storage_Path,
            @CpuLoad = JS.CPU_Load
     FROM T_Job_Steps JS
          INNER JOIN T_Step_Tools ST
-           ON JS.Step_Tool = ST.Name
+           ON JS.Tool = ST.Name
     WHERE JS.Job = @jobNumber AND
-          JS.Step_Number = @stepNumber
+          JS.Step = @stepNumber
 
 
-    SELECT @stepInputFolderName = 'Step_' + CONVERT(varchar(6), TSD.Target_Step_Number) + '_' + ST.Tag
+    SELECT @stepInputFolderName = 'Step_' + CONVERT(varchar(6), TSD.Target_Step) + '_' + ST.Tag
     FROM T_Job_Step_Dependencies AS TSD
          INNER JOIN T_Job_Steps AS JS
            ON TSD.Job = JS.Job AND
-              TSD.Target_Step_Number = JS.Step_Number
+              TSD.Target_Step = JS.Step
          INNER JOIN T_Step_Tools AS ST
-           ON JS.Step_Tool = ST.Name
+           ON JS.Tool = ST.Name
     WHERE (TSD.Job = @jobNumber) AND
-          (TSD.Step_Number = @stepNumber) AND
+          (TSD.Step = @stepNumber) AND
           TSD.Enable_Only = 0
 
     ---------------------------------------------------

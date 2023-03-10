@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[update_job_in_main_tables]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          11/18/2015 mem - Add Actual_CPU_Load
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -95,10 +96,10 @@ AS
     FROM T_Job_Step_Dependencies JSD
          INNER JOIN T_Job_Steps JS
            ON JSD.Job = JS.Job AND
-              JSD.Step_Number = JS.Step_Number
+              JSD.Step = JS.Step
          INNER JOIN #Job_Steps
            ON JS.Job = #Job_Steps.Job AND
-              JS.Step_Number = #Job_Steps.Step_Number
+              JS.Step = #Job_Steps.Step
     WHERE JS.State <> 5         -- 5 = Complete
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -115,7 +116,7 @@ AS
     FROM T_Job_Steps JS
          INNER JOIN #Job_Steps
            ON JS.Job = #Job_Steps.Job AND
-              JS.Step_Number = #Job_Steps.Step_Number
+              JS.Step = #Job_Steps.Step
     WHERE JS.State <> 5         -- 5 = Complete
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -133,8 +134,8 @@ AS
 
     INSERT INTO T_Job_Steps (
         Job,
-        Step_Number,
-        Step_Tool,
+        Step,
+        Tool,
         CPU_Load,
         Actual_CPU_Load,
         Memory_Usage_MB,
@@ -148,8 +149,8 @@ AS
     )
     SELECT
         Src.Job,
-        Src.Step_Number,
-        Src.Step_Tool,
+        Src.Step,
+        Src.Tool,
         Src.CPU_Load,
         Src.CPU_Load,
         Src.Memory_Usage_MB,
@@ -163,7 +164,7 @@ AS
     FROM #Job_Steps Src
          LEFT OUTER JOIN T_Job_Steps JS
            ON JS.Job = Src.Job AND
-              JS.Step_Number = Src.Step_Number
+              JS.Step = Src.Step
     WHERE JS.Job Is Null
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -182,23 +183,23 @@ AS
 
     INSERT INTO T_Job_Step_Dependencies (
         Job,
-        Step_Number,
-        Target_Step_Number,
+        Step,
+        Target_Step,
         Condition_Test,
         Test_Value,
         Enable_Only
     )
     SELECT
         Src.Job,
-        Src.Step_Number,
-        Src.Target_Step_Number,
+        Src.Step,
+        Src.Target_Step,
         Src.Condition_Test,
         Src.Test_Value,
         Src.Enable_Only
     FROM #Job_Step_Dependencies Src
          LEFT OUTER JOIN T_Job_Step_Dependencies JSD
            ON JSD.Job = Src.Job AND
-              JSD.Step_Number = Src.Step_Number
+              JSD.Step = Src.Step
     WHERE JSD.Job IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

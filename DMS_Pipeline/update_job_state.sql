@@ -104,6 +104,7 @@ CREATE PROCEDURE [dbo].[update_job_state]
 **          03/12/2021 mem - Expand @comment to varchar(1024)
 **          02/06/2023 bcg - Update column names from views
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -435,11 +436,11 @@ AS
             --
             If @NewDMSJobState = 4        -- Complete
             Begin
-                If Exists ( SELECT Step_Number
+                If Exists ( SELECT Step
                             FROM T_Job_Steps
                             WHERE Job = @job AND
                                   Completion_Message LIKE '%No results above threshold%' AND
-                                  Step_Tool = 'DataExtractor' )
+                                  Tool = 'DataExtractor' )
                     Set @NewDMSJobState = 14
             End
 
@@ -450,11 +451,11 @@ AS
             --
             If @NewDMSJobState = 4        -- Complete
             Begin
-                If Exists ( SELECT Step_Number
+                If Exists ( SELECT Step
                             FROM T_Job_Steps
                             WHERE Job = @job AND
                                   Completion_Message LIKE '%No results in DeconTools Isos file%' AND
-                                  Step_Tool LIKE 'Decon%' )
+                                  Tool LIKE 'Decon%' )
                     Set @NewDMSJobState = 14
             End
 

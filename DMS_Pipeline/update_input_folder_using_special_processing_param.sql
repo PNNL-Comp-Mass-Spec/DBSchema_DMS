@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[update_input_folder_using_special_processing_param]
 **          04/04/2011 mem - Updated to use the Special_Processing param instead of the job comment
 **          07/13/2012 mem - Now determining job parameters with additional items if SourceJob2 is defined: SourceJob2, SourceJob2Dataset, SourceJob2FolderPath, and SourceJob2FolderPathArchive
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -126,11 +127,11 @@ AS
             -- that have Special_Instructions = 'ExtractSourceJobFromComment'
             --
             INSERT INTO #Tmp_Source_Job_Folders (Job, Step)
-            SELECT @Job, Step_Number
+            SELECT @Job, Step
             FROM (
                 SELECT
-                    xmlNode.value('@Number', 'nvarchar(128)') Step_Number,
-                    xmlNode.value('@Tool', 'nvarchar(128)') Step_Tool,
+                    xmlNode.value('@Number', 'nvarchar(128)') Step,
+                    xmlNode.value('@Tool', 'nvarchar(128)') Tool,
                     xmlNode.value('@Special', 'nvarchar(128)') Special_Instructions
                 FROM
                     @scriptXML.nodes('//Step') AS R(xmlNode)
@@ -165,7 +166,7 @@ AS
             FROM T_Job_Steps JS
                  INNER JOIN #Tmp_Source_Job_Folders SJF
                    ON JS.Job = SJF.Job AND
-                      JS.Step_Number = SJF.Step
+                      JS.Step = SJF.Step
             WHERE IsNull(SJF.SourceJobResultsFolder, '') <> ''
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount

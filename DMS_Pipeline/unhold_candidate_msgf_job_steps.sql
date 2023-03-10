@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[unhold_candidate_msgf_job_steps]
 **  Date:   12/20/2011 mem - Initial version
 **          05/12/2017 mem - Update Tool_Version_ID, Next_Try, and Remote_Info_ID
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -53,7 +54,7 @@ AS
     SELECT @CandidateSteps = COUNT(*)
     FROM dbo.T_Job_Steps
     WHERE state = 2 AND
-          step_tool = @StepTool
+          Tool = @StepTool
 
     -----------------------------------------------------------
     -- Compute the number of jobs that need to be released (un-held)
@@ -74,19 +75,19 @@ AS
             Remote_Info_ID = 1          -- 1=Unknown
         FROM T_Job_Steps
              INNER JOIN ( SELECT TOP ( @JobsToRelease ) JS_MSGF.Job,
-                                                        JS_MSGF.Step_Number
+                                                        JS_MSGF.Step
                           FROM T_Job_Steps JS_MSGF
                                INNER JOIN T_Job_Steps ExtractQ
                                  ON JS_MSGF.Job = ExtractQ.Job
                                     AND
-                                    ExtractQ.Step_Tool = 'DataExtractor'
+                                    ExtractQ.Tool = 'DataExtractor'
                           WHERE (JS_MSGF.State = 7) AND
-                                (JS_MSGF.Step_Tool = @StepTool) AND
+                                (JS_MSGF.Tool = @StepTool) AND
                                 (ExtractQ.State = 5) AND
                                 (ExtractQ.Tool_Version_ID >= 82)
                           ORDER BY Job DESC ) ReleaseQ
                ON T_Job_Steps.Job = ReleaseQ.Job AND
-                  T_Job_Steps.Step_Number = ReleaseQ.Step_Number
+                  T_Job_Steps.Step = ReleaseQ.Step
         WHERE T_Job_Steps.State = 7
         --
         set @myRowCount = @@RowCount

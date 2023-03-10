@@ -3,8 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Job_Steps_Stale_and_Failed] 
+CREATE VIEW [dbo].[V_Job_Steps_Stale_and_Failed]
 AS
 SELECT Warning_Message,
        Job,
@@ -59,16 +58,16 @@ FROM ( SELECT  CASE WHEN (JS.State = 4 AND JS.Last_CPU_Status_Minutes >= 4*60 ) 
                 -- Look for jobs that are failed and started within the last 14 days
                 -- The subquery is used to find the highest step state for each job
 				SELECT Job,
-				       Step_Number AS Step
+				       Step
 				FROM ( SELECT JS.Job,
-				              JS.Step_Number,
+				              JS.Step,
 				              JS.State AS StepState,
 				              Row_Number() OVER ( PARTITION BY J.Job ORDER BY JS.State DESC ) AS RowRank
 				       FROM dbo.T_Jobs J
 				            INNER JOIN dbo.T_Job_Steps JS
 				              ON J.Job = JS.Job
 				       WHERE (J.State = 5) AND
-				             (J.Start >= DATEADD(day, -14, GETDATE())) 
+				             (J.Start >= DATEADD(day, -14, GETDATE()))
 				     ) LookupQ
 				WHERE RowRank = 1
             ) FailedJobQ ON JS.Job = FailedJobQ.Job AND JS.Step = FailedJobQ.Step

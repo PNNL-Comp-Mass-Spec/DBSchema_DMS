@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Machine_Status_Last_24_Hours]
 AS
 SELECT StatusQ.*,
@@ -27,14 +26,13 @@ FROM ( SELECT PTG.Group_Name,
 
      LEFT OUTER JOIN ( SELECT LP.Machine,
                               COUNT(*) AS JobCount,
-                              MIN(Step_Tool) AS Step_Tool_First,
-                              MAX(Step_Tool) AS Step_Tool_Last
+                              MIN(Tool) AS Step_Tool_First,
+                              MAX(Tool) AS Step_Tool_Last
                        FROM T_Local_Processors LP
                             INNER JOIN T_Job_Steps JS
                               ON JS.Processor = LP.Processor_Name
                        WHERE JS.State = 4
                        GROUP BY LP.Machine ) ActiveToolQ
        ON StatusQ.Machine = ActiveToolQ.Machine
-
 
 GO

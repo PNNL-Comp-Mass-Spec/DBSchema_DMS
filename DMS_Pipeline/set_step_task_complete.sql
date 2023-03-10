@@ -56,6 +56,7 @@ CREATE PROCEDURE [dbo].[set_step_task_complete]
 **          09/21/2021 mem - Add support for completion code 23 (CLOSEOUT_RESET_JOB_STEP)
 **          08/26/2022 mem - Use new column name in T_Log_Entries
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps
 **
 *****************************************************/
 (
@@ -100,7 +101,7 @@ AS
     -- This table variable tracks step tools that should be skipped when a job step reports NO_DATA
     ---------------------------------------------------
 
-    Declare @stepToolsToSkip table (Step_Tool varchar(64))
+    Declare @stepToolsToSkip table (Tool varchar(64))
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -133,17 +134,17 @@ AS
            @memoryUsageMB = IsNull(JS.Memory_Usage_MB, 0),
            @state = JS.State,
            @jobStepsProcessor = JS.Processor,
-           @stepTool = JS.Step_Tool,
+           @stepTool = JS.Tool,
            @retryCount = JS.Retry_Count
     FROM T_Job_Steps JS
          INNER JOIN T_Local_Processors LP
            ON LP.Processor_Name = JS.Processor
          INNER JOIN T_Step_Tools Tools
-           ON Tools.Name = JS.Step_Tool
+           ON Tools.Name = JS.Tool
          LEFT OUTER JOIN T_Machines M
            ON LP.Machine = M.Machine
     WHERE JS.Job = @job AND
-          JS.Step_Number = @step
+          JS.Step = @step
      --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -255,7 +256,7 @@ AS
                 -- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
                 Set @stepState = 5 -- Complete
 
-                INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('LCMSFeatureFinder')
+                INSERT INTO @stepToolsToSkip(Tool) VALUES ('LCMSFeatureFinder')
 
                 Set @message = 'Warning, ' + @jobStepDescription + ' has no results in the DeconTools _isos.csv file; either it is a bad dataset or analysis parameters are incorrect'
                 Exec post_log_entry 'Error', @message, 'set_step_task_complete'
@@ -266,7 +267,7 @@ AS
                 -- Treat "No_data" results for the DataExtractor as a completed job step but skip later job steps that match certain tools
                 Set @stepState = 5 -- Complete
 
-                INSERT INTO @stepToolsToSkip(Step_Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
+                INSERT INTO @stepToolsToSkip(Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
 
                 Set @message = 'Warning, ' + @jobStepDescription + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
                 Exec post_log_entry 'Error', @message, 'set_step_task_complete'
@@ -350,7 +351,7 @@ AS
            Remote_Start = @remoteStart,
            Remote_Finish = @remoteFinish
     WHERE Job = @job AND
-          Step_Number = @step
+          Step = @step
      --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -399,7 +400,7 @@ AS
             UPDATE T_Job_Steps
             SET Remote_Info_ID = 1
             WHERE Job = @job AND
-                Step_Number = @step AND
+                Step = @step AND
                 Remote_Info_ID IS NULL
         End
         Else
@@ -409,7 +410,7 @@ AS
             SET Remote_Info_ID = @remoteInfoID,
                 Remote_Progress = CASE WHEN @stepState = 5 THEN 100 ELSE Remote_Progress END
             WHERE Job = @job AND
-                  Step_Number = @step
+                  Step = @step
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -432,12 +433,12 @@ AS
 
         Declare @SharedResultStep int = -1
 
-        SELECT TOP 1 @SharedResultStep = Step_Number
+        SELECT TOP 1 @SharedResultStep = Step
         FROM T_Job_Steps
         WHERE Job = @job AND
-              Step_Number < @step AND
-              Step_Tool IN (SELECT [Name] FROM T_Step_Tools WHERE Shared_Result_Version > 0)
-        ORDER BY Step_Number DESC
+              Step < @step AND
+              Tool IN (SELECT [Name] FROM T_Step_Tools WHERE Shared_Result_Version > 0)
+        ORDER BY Step DESC
 
         If IsNull(@SharedResultStep, -1) < 0
         Begin
@@ -467,7 +468,7 @@ AS
             SET State = 7,        -- Holding
                 Completion_Message = dbo.append_to_text(Completion_Message, @message, 0, '; ', 256)
             WHERE Job = @job AND
-                  Step_Number = @step
+                  Step = @step
 
             Set @message = 'Step ' + Cast(@step as varchar(12)) + ' in job ' + Cast(@job as varchar(12)) + ' ' +
                            @message + '; will not reset step ' + Cast(@SharedResultStep as varchar(12)) +
@@ -488,20 +489,20 @@ AS
             Next_Try = GetDate(),
             Remote_Info_ID = 1          -- 1=Unknown
         WHERE Job = @job AND
-              Step_Number = @SharedResultStep And
+              Step = @SharedResultStep And
               Not State IN (4, 9)       -- Do not reset the step if it is already running
 
         UPDATE T_Job_Step_Dependencies
         SET Evaluated = 0,
             Triggered = 0
         WHERE Job = @job AND
-              Step_Number = @step
+              Step = @step
 
         UPDATE T_Job_Step_Dependencies
         SET Evaluated = 0,
             Triggered = 0
         WHERE Job = @job AND
-              Target_Step_Number = @SharedResultStep
+              Target_Step = @SharedResultStep
 
     End
 
@@ -513,22 +514,22 @@ AS
         Declare @newTargetStep int = -1
         Declare @nextStep int = -1
 
-        SELECT @newTargetStep = Target_Step_Number
+        SELECT @newTargetStep = Target_Step
         FROM T_Job_Step_Dependencies
         WHERE Job = @job AND
-              Step_Number = @step
+              Step = @step
 
-        SELECT @nextStep = Step_Number
+        SELECT @nextStep = Step
         FROM T_Job_Step_Dependencies
         WHERE Job = @job AND
-              Target_Step_Number = @step AND
+              Target_Step = @step AND
               ISNULL(Condition_Test, '') <> 'Target_Skipped'
 
         If @newTargetStep > -1 And @newTargetStep > -1
         Begin
             UPDATE T_Job_Step_Dependencies
-            SET Target_Step_Number = @newTargetStep
-            WHERE Job = @job AND Step_Number = @nextStep
+            SET Target_Step = @newTargetStep
+            WHERE Job = @job AND Step = @nextStep
 
             set @message = 'Updated job step dependencies for job ' + Cast(@job as varchar(9)) + ' since step ' + Cast(@step as varchar(9)) + ' has been skipped'
             exec post_log_entry 'Normal', @message, 'set_step_task_complete'
@@ -544,7 +545,7 @@ AS
         SET State = 3
         FROM T_Job_Steps JS
              INNER JOIN @stepToolsToSkip ToolsToSkip
-               ON JS.Step_Tool = ToolsToSkip.Step_Tool
+               ON JS.Tool = ToolsToSkip.Tool
         WHERE JS.Job = @job AND
               JS.State = 1
 

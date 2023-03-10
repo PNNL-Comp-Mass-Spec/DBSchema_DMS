@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[update_dependent_steps]
 **          03/10/2022 mem - Clear the completion code and completion message when skipping a job step
 **                         - Check for a job step with shared results being repeatedly skipped, then reset, then skipped again
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
 **
 *****************************************************/
 (
@@ -106,14 +107,14 @@ AS
     SET Dependencies = CompareQ.Actual_Dependencies
     FROM T_Job_Steps JS
          INNER JOIN ( SELECT Job,
-                             Step_Number,
+                             Step,
                              COUNT(*) AS Actual_Dependencies
                       FROM T_Job_Step_Dependencies
                       WHERE Job IN ( SELECT Job FROM T_Job_Steps WHERE State = 1 )
-                      GROUP BY Job, Step_Number
+                      GROUP BY Job, Step
                     ) CompareQ
            ON JS.Job = CompareQ.Job AND
-              JS.Step_Number = CompareQ.Step_Number AND
+              JS.Step = CompareQ.Step AND
               JS.Dependencies < CompareQ.Actual_Dependencies
     WHERE JS.State = 1
     --
@@ -133,8 +134,8 @@ AS
     INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name,
                                  Completion_Code, Completion_Message, Evaluation_Code, Evaluation_Message)
     SELECT JSD.Job AS Job,
-           JSD.Step_Number AS Step,
-           JS.Step_Tool AS Tool,
+           JSD.Step,
+           JS.Tool,
            J.Priority,
            JS.Dependencies AS Total,
            SUM(JSD.Evaluated) AS Evaluated,
@@ -149,13 +150,13 @@ AS
     FROM T_Job_Steps JS
          INNER JOIN T_Job_Step_Dependencies JSD
            ON JSD.Job = JS.Job AND
-              JSD.Step_Number = JS.Step_Number
+              JSD.Step = JS.Step
          INNER JOIN T_Jobs J
            ON JS.Job = J.Job
     WHERE JS.State = 1
-    GROUP BY JSD.Job, JSD.Step_Number, JS.Dependencies,
+    GROUP BY JSD.Job, JSD.Step, JS.Dependencies,
              JS.Shared_Result_Version, JS.Signature,
-             J.Priority, JS.Step_Tool, JS.Output_Folder_Name,
+             J.Priority, JS.Tool, JS.Output_Folder_Name,
              JS.Completion_Code, JS.Completion_Message,
              JS.Evaluation_Code, JS.Evaluation_Message
     HAVING JS.Dependencies = SUM(JSD.Evaluated)
@@ -180,8 +181,8 @@ AS
     INSERT INTO #T_Tmp_Steplist (Job, Step, Tool, Priority, Total, Evaluated, Triggered, Shared, Signature, Output_Folder_Name,
                                 Completion_Code, Completion_Message, Evaluation_Code, Evaluation_Message)
     SELECT JS.Job,
-           JS.Step_Number AS Step,
-           JS.Step_Tool AS Tool,
+           JS.Step,
+           JS.Tool,
            J.Priority,
            JS.Dependencies AS Total,            -- This will always be zero in this query
            0 AS Evaluated,
@@ -515,10 +516,10 @@ AS
                             Output_Folder_Name =
                               CASE WHEN (@newState = 3 AND
                                         ISNULL(Input_Folder_Name, '') <> '' AND
-                                        Step_Tool NOT IN ( SELECT [Name]
-                                                           FROM T_Step_Tools
-                                                           WHERE Shared_Result_Version > 0 AND
-                                                                 Disable_Output_Folder_Name_Override_on_Skip > 0 )
+                                        Tool NOT IN ( SELECT [Name]
+                                                      FROM T_Step_Tools
+                                                      WHERE Shared_Result_Version > 0 AND
+                                                            Disable_Output_Folder_Name_Override_on_Skip > 0 )
                                         ) THEN Input_Folder_Name
                                    ELSE Output_Folder_Name
                               End,
@@ -526,7 +527,7 @@ AS
                               Completion_Message = '',
                               Evaluation_Message = @newEvaluationMessage
                         WHERE Job = @job AND
-                              Step_Number = @step AND
+                              Step = @step AND
                               State = 1       -- Assure that we only update steps in state 1=waiting
                         --
                         SELECT @myError = @@error, @myRowCount = @@rowcount

@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Step_Dependencies]
 AS
 SELECT JSD.Job,
-       JSD.Step_Number AS Step,
-       JS.Step_Tool,
-       JSD.Target_Step_Number AS Target_Step,
+       JSD.Step,
+       JS.Tool,
+       JSD.Target_Step AS Target_Step,
        JSD.Condition_Test,
        JSD.Test_Value,
        JSD.Evaluated,
@@ -19,7 +18,7 @@ SELECT JSD.Job,
 FROM dbo.T_Job_Step_Dependencies JSD
      INNER JOIN dbo.T_Job_Steps JS
        ON JSD.Job = JS.Job AND
-          JSD.Step_Number = JS.Step_Number
+          JSD.Step = JS.Step
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Step_Dependencies] TO [DDL_Viewer] AS [dbo]
