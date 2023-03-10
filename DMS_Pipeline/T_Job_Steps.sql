@@ -5,8 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Job_Steps](
 	[Job] [int] NOT NULL,
-	[Step_Number] [int] NOT NULL,
-	[Step_Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Step] [int] NOT NULL,
+	[Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[CPU_Load] [tinyint] NULL,
 	[Actual_CPU_Load] [tinyint] NULL,
 	[Dependencies] [tinyint] NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Completion_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluation_Code] [int] NULL,
 	[Evaluation_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Job_Plus_Step]  AS ((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0))) PERSISTED,
+	[Job_Plus_Step]  AS ((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step],(0))) PERSISTED,
 	[Tool_Version_ID] [int] NULL,
 	[Memory_Usage_MB] [int] NULL,
 	[Next_Try] [datetime] NOT NULL,
@@ -32,12 +32,12 @@ CREATE TABLE [dbo].[T_Job_Steps](
 	[Remote_Start] [smalldatetime] NULL,
 	[Remote_Finish] [smalldatetime] NULL,
 	[Remote_Progress] [real] NULL,
-	[Step]  AS ([Step_Number]),
-	[Tool]  AS ([Step_Tool]),
+	[Step_Number]  AS ([Step]),
+	[Step_Tool]  AS ([Tool]),
  CONSTRAINT [PK_T_Job_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,
-	[Step_Number] ASC
+	[Step] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
@@ -77,7 +77,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Dependencies_State_include_Job_Step] O
 	[Dependencies] ASC,
 	[State] ASC
 )
-INCLUDE([Job],[Step_Number]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE([Job],[Step]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
@@ -100,7 +100,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_State_include_Job_Step_CompletionCode]
 (
 	[State] ASC
 )
-INCLUDE([Job],[Step_Number],[Completion_Code]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE([Job],[Step],[Completion_Code]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 
@@ -110,11 +110,11 @@ CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_State_Job_Step_Dep_Shared_Results_Ver_
 (
 	[State] ASC,
 	[Job] ASC,
-	[Step_Number] ASC,
+	[Step] ASC,
 	[Dependencies] ASC,
 	[Shared_Result_Version] ASC,
 	[Signature] ASC,
-	[Step_Tool] ASC
+	[Tool] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
@@ -123,7 +123,7 @@ GO
 /****** Object:  Index [IX_T_Job_Steps_StepTool_State] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_StepTool_State] ON [dbo].[T_Job_Steps]
 (
-	[Step_Tool] ASC,
+	[Tool] ASC,
 	[State] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
@@ -133,11 +133,11 @@ GO
 /****** Object:  Index [IX_T_Job_Steps_Tool_State_Next_Try_include_Job_Step_Memory] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_Tool_State_Next_Try_include_Job_Step_Memory] ON [dbo].[T_Job_Steps]
 (
-	[Step_Tool] ASC,
+	[Tool] ASC,
 	[State] ASC,
 	[Next_Try] ASC
 )
-INCLUDE([Job],[Step_Number],[Memory_Usage_MB],[Remote_Info_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+INCLUDE([Job],[Step],[Memory_Usage_MB],[Remote_Info_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ADD  CONSTRAINT [DF_T_Job_Steps_Dependencies]  DEFAULT ((0)) FOR [Dependencies]
 GO
@@ -179,7 +179,7 @@ REFERENCES [dbo].[T_Step_Tool_Versions] ([Tool_Version_ID])
 GO
 ALTER TABLE [dbo].[T_Job_Steps] CHECK CONSTRAINT [FK_T_Job_Steps_T_Step_Tool_Versions]
 GO
-ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Step_Tools] FOREIGN KEY([Step_Tool])
+ALTER TABLE [dbo].[T_Job_Steps]  WITH CHECK ADD  CONSTRAINT [FK_T_Job_Steps_T_Step_Tools] FOREIGN KEY([Tool])
 REFERENCES [dbo].[T_Step_Tools] ([Name])
 ON UPDATE CASCADE
 GO
@@ -192,6 +192,16 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TRIGGER [dbo].[trig_d_Job_Steps] ON [dbo].[T_Job_Steps] 
 FOR DELETE
+/****************************************************
+**
+**	Desc:
+**		Add new rows to T_Job_Step_Events for deleted task steps
+**
+**	Auth:	grk
+**	Date:	12/04/2008 grk - Initial version
+**          03/09/2023 mem - Use new column names
+**
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return
@@ -200,9 +210,9 @@ AS
 
 	INSERT INTO T_Job_Step_Events
 		(Job, Step, Target_State, Prev_Target_State)
-	SELECT deleted.Job, deleted.Step_Number, 0 as New_State, deleted.State as Old_State
+	SELECT deleted.Job, deleted.Step, 0 as New_State, deleted.State as Old_State
 	FROM deleted
-	ORDER BY deleted.Job, deleted.Step_Number
+	ORDER BY deleted.Job, deleted.Step
 
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ENABLE TRIGGER [trig_d_Job_Steps]
@@ -214,6 +224,16 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TRIGGER [dbo].[trig_i_Job_Steps] ON [dbo].[T_Job_Steps] 
 FOR INSERT
+/****************************************************
+**
+**	Desc:
+**		Add new rows to T_Job_Step_Events for inserted task steps
+**
+**	Auth:	grk
+**	Date:	12/04/2008 grk - Initial version
+**          03/09/2023 mem - Use new column names
+**
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return
@@ -222,9 +242,9 @@ AS
 
 	INSERT INTO T_Job_Step_Events
 		(Job, Step, Target_State, Prev_Target_State)
-	SELECT     inserted.Job, inserted.Step_Number as Step, inserted.State as New_State, 0 as Old_State
+	SELECT     inserted.Job, inserted.Step as Step, inserted.State as New_State, 0 as Old_State
 	FROM inserted
-	ORDER BY inserted.Job, inserted.Step_Number
+	ORDER BY inserted.Job, inserted.Step
 
 GO
 ALTER TABLE [dbo].[T_Job_Steps] ENABLE TRIGGER [trig_i_Job_Steps]
@@ -235,7 +255,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TRIGGER [dbo].[trig_u_Job_Steps] ON [dbo].[T_Job_Steps] 
-FOR UPDATE
+FOR Update
+/****************************************************
+**
+**	Desc:
+**		Add new rows to T_Job_Step_Events for updated task steps
+**
+**	Auth:	grk
+**	Date:	12/04/2008 grk - Initial version
+**          03/09/2023 mem - Use new column names
+**
+*****************************************************/
 AS
 	If @@RowCount = 0
 		Return
@@ -246,11 +276,11 @@ AS
 	Begin
 		INSERT INTO T_Job_Step_Events
 			(Job, Step, Target_State, Prev_Target_State)
-		SELECT     inserted.Job, inserted.Step_Number as Step, inserted.State as New_State, deleted.State as Old_State
+		SELECT     inserted.Job, inserted.Step as Step, inserted.State as New_State, deleted.State as Old_State
 		FROM deleted INNER JOIN inserted
 		       ON deleted.Job = inserted.Job AND
-		          deleted.Step_Number = inserted.Step_Number
-		ORDER BY inserted.Job, inserted.Step_Number
+		          deleted.Step = inserted.Step
+		ORDER BY inserted.Job, inserted.Step
 	
 	End
 

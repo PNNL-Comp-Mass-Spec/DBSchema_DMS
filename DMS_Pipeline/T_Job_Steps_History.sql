@@ -5,9 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Job] [int] NOT NULL,
-	[Step_Number] [int] NOT NULL,
-	[Priority] [int] NULL,
-	[Step_Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Step] [int] NOT NULL,
+	[Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Shared_Result_Version] [smallint] NULL,
 	[Signature] [int] NULL,
 	[State] [tinyint] NULL,
@@ -21,7 +20,7 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
 	[Evaluation_Code] [int] NULL,
 	[Evaluation_Message] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Saved] [datetime] NOT NULL,
-	[JobStepSavedCombo]  AS ((((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step_Number],(0)))+'.')+CONVERT([varchar](32),[Saved],(126))) PERSISTED,
+	[JobStepSavedCombo]  AS ((((CONVERT([varchar](12),[Job],(0))+'.')+CONVERT([varchar](6),[Step],(0)))+'.')+CONVERT([varchar](32),[Saved],(126))) PERSISTED,
 	[Most_Recent_Entry] [tinyint] NOT NULL,
 	[Tool_Version_ID] [int] NULL,
 	[Memory_Usage_MB] [int] NULL,
@@ -31,7 +30,7 @@ CREATE TABLE [dbo].[T_Job_Steps_History](
  CONSTRAINT [PK_T_Job_Steps_History] PRIMARY KEY NONCLUSTERED 
 (
 	[Job] ASC,
-	[Step_Number] ASC,
+	[Step] ASC,
 	[Saved] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
@@ -43,7 +42,7 @@ GO
 CREATE CLUSTERED INDEX [IX_T_Job_Steps_History_Job_Step] ON [dbo].[T_Job_Steps_History]
 (
 	[Job] ASC,
-	[Step_Number] ASC
+	[Step] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
 /****** Object:  Index [IX_T_Job_Steps_History_Finish] ******/
@@ -89,7 +88,7 @@ GO
 /****** Object:  Index [IX_T_Job_Steps_History_Step_Tool_Start] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Job_Steps_History_Step_Tool_Start] ON [dbo].[T_Job_Steps_History]
 (
-	[Step_Tool] ASC,
+	[Tool] ASC,
 	[Start] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
@@ -108,8 +107,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_d_T_Job_Steps_History] on [dbo].[T_Job_Steps_History]
-For Delete
+CREATE TRIGGER [dbo].[trig_d_T_Job_Steps_History] ON [dbo].[T_Job_Steps_History]
+FOR DELETE
 /****************************************************
 **
 **	Desc: 
@@ -117,6 +116,7 @@ For Delete
 **
 **	Auth:	mem
 **	Date:	01/25/2011
+**          03/09/2023 mem - Use new column names
 **    
 *****************************************************/
 AS
@@ -128,15 +128,15 @@ AS
 	UPDATE T_Job_Steps_History
 	SET Most_Recent_Entry = CASE WHEN SaveRank = 1 THEN 1 ELSE 0 END
 	FROM ( SELECT Job,
-	              Step_Number,
+	              Step,
 	              Saved,
-	              Row_Number() OVER ( PARTITION BY Job, Step_Number ORDER BY Saved DESC ) AS SaveRank
+	              Row_Number() OVER ( PARTITION BY Job, Step ORDER BY Saved DESC ) AS SaveRank
 	       FROM T_Job_Steps_History
 	       WHERE Job IN (SELECT Job FROM deleted)
 	     ) LookupQ
 	     INNER JOIN T_Job_Steps_History Target
 	       ON LookupQ.Job = Target.Job AND
-	          LookupQ.Step_Number = Target.Step_Number AND
+	          LookupQ.Step = Target.Step AND
 	          LookupQ.Saved = Target.Saved
 
 GO
@@ -147,8 +147,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_iu_T_Job_Steps_History] on [dbo].[T_Job_Steps_History]
-For Insert, Update
+CREATE TRIGGER [dbo].[trig_iu_T_Job_Steps_History] ON [dbo].[T_Job_Steps_History]
+FOR INSERT, UPDATE
 /****************************************************
 **
 **	Desc: 
@@ -156,6 +156,7 @@ For Insert, Update
 **
 **	Auth:	mem
 **	Date:	01/25/2011
+**          03/09/2023 mem - Use new column names
 **    
 *****************************************************/
 AS
@@ -169,15 +170,15 @@ AS
 		UPDATE T_Job_Steps_History
 		SET Most_Recent_Entry = CASE WHEN SaveRank = 1 THEN 1 ELSE 0 END
 		FROM ( SELECT Job,
-		              Step_Number,
+		              Step,
 		              Saved,
-		              Row_Number() OVER ( PARTITION BY Job, Step_Number ORDER BY Saved DESC ) AS SaveRank
+		              Row_Number() OVER ( PARTITION BY Job, Step ORDER BY Saved DESC ) AS SaveRank
 		       FROM T_Job_Steps_History
 		       WHERE Job IN (SELECT Job FROM inserted)
 		     ) LookupQ
 		     INNER JOIN T_Job_Steps_History Target
 		       ON LookupQ.Job = Target.Job AND
-		          LookupQ.Step_Number = Target.Step_Number AND
+		          LookupQ.Step = Target.Step AND
 		          LookupQ.Saved = Target.Saved
 	End
 

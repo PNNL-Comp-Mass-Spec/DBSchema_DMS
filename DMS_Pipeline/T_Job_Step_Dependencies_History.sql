@@ -5,8 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Job_Step_Dependencies_History](
 	[Job] [int] NOT NULL,
-	[Step_Number] [int] NOT NULL,
-	[Target_Step_Number] [int] NOT NULL,
+	[Step] [int] NOT NULL,
+	[Target_Step] [int] NOT NULL,
 	[Condition_Test] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Test_Value] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Evaluated] [tinyint] NOT NULL,
@@ -17,8 +17,8 @@ CREATE TABLE [dbo].[T_Job_Step_Dependencies_History](
  CONSTRAINT [PK_T_Job_Step_Dependencies_History] PRIMARY KEY NONCLUSTERED 
 (
 	[Job] ASC,
-	[Step_Number] ASC,
-	[Target_Step_Number] ASC
+	[Step] ASC,
+	[Target_Step] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 ) ON [PRIMARY]
 
@@ -35,7 +35,7 @@ GO
 CREATE NONCLUSTERED INDEX [IX_T_Job_Step_Dependencies_History_Job_Step_Eval_Triggered] ON [dbo].[T_Job_Step_Dependencies_History]
 (
 	[Job] ASC,
-	[Step_Number] ASC
+	[Step] ASC
 )
 INCLUDE([Evaluated],[Triggered]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
