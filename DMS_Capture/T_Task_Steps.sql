@@ -26,7 +26,7 @@ CREATE TABLE [dbo].[T_Task_Steps](
 	[Tool_Version_ID] [int] NULL,
 	[Step_Number]  AS ([Step]),
 	[Step_Tool]  AS ([Tool]),
- CONSTRAINT [PK_T_Task_Steps] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_T_Task_Steps] PRIMARY KEY CLUSTERED
 (
 	[Job] ASC,
 	[Step] ASC
@@ -150,10 +150,10 @@ FOR DELETE
 /****************************************************
 **
 **	Desc:
-**		Add new rows to T_Task_Events for deleted task steps
+**		Add new rows to T_Task_Step_Events for deleted task steps
 **
 **	Auth:	grk
-**	Date:	09/15/2009 mem - Initial version
+**	Date:	09/15/2009 grk - Initial version
 **          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
@@ -182,10 +182,10 @@ FOR INSERT
 /****************************************************
 **
 **	Desc:
-**		Add new rows to T_Task_Events for inserted task steps
+**		Add new rows to T_Task_Step_Events for inserted task steps
 **
 **	Auth:	grk
-**	Date:	09/15/2009 mem - Initial version
+**	Date:	09/15/2009 grk - Initial version
 **          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
@@ -210,14 +210,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TRIGGER trig_u_T_Task_Steps ON T_Task_Steps
-FOR Update
+FOR UPDATE
 /****************************************************
 **
 **	Desc:
-**		Add new rows to T_Task_Events for updated task steps
+**		Add new rows to T_Task_Step_Events for updated task steps
 **
 **	Auth:	grk
-**	Date:	09/15/2009 mem - Initial version
+**	Date:	09/15/2009 grk - Initial version
 **          03/04/2023 mem - Use new T_Task tables
 **
 *****************************************************/
