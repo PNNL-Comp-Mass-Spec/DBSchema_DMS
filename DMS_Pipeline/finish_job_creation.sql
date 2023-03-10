@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[finish_job_creation]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          02/13/2023 mem - Update Special="Job_Results" comment to mention ProMex
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -45,13 +46,13 @@ AS
     UPDATE #Job_Steps
     SET Dependencies = T.dependencies
     FROM #Job_Steps
-         INNER JOIN ( SELECT Step_Number,
+         INNER JOIN ( SELECT Step,
                              COUNT(*) AS dependencies
                       FROM #Job_Step_Dependencies
                       WHERE (Job = @job)
-                      GROUP BY Step_Number
+                      GROUP BY Step
                     ) AS T
-           ON T.Step_Number = #Job_Steps.Step_Number
+           ON T.Step = #Job_Steps.Step
     WHERE #Job_Steps.Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -102,7 +103,7 @@ AS
             FROM #Job_Steps
             WHERE Job = @job AND
                   Special_Instructions = 'Job_Results'
-            ORDER BY Step_Number
+            ORDER BY Step
         ) TZ ON #Jobs.Job = TZ.Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

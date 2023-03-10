@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[create_job_steps]
 **          02/13/2023 mem - Show contents of temp table #Jobs when @debugMode is 1
 **                         - Add results folder name comment regarding Special="Job_Results"
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -102,8 +103,8 @@ AS
 
     CREATE TABLE #Job_Steps (
         [Job] int NOT NULL,
-        [Step_Number] int NOT NULL,
-        [Step_Tool] varchar(64) NOT NULL,
+        [Step] int NOT NULL,
+        [Tool] varchar(64) NOT NULL,
         [CPU_Load] [smallint] NULL,
         [Memory_Usage_MB] [int] NULL,
         [Dependencies] tinyint NULL ,
@@ -117,18 +118,18 @@ AS
         Special_Instructions varchar(128) NULL
     )
 
-    CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step_Number)
+    CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step)
 
     CREATE TABLE #Job_Step_Dependencies (
         [Job] int NOT NULL,
-        [Step_Number] int NOT NULL,
-        [Target_Step_Number] int NOT NULL,
+        [Step] int NOT NULL,
+        [Target_Step] int NOT NULL,
         [Condition_Test] varchar(50) NULL,
         [Test_Value] varchar(256) NULL,
         [Enable_Only] tinyint NULL
     )
 
-    CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step_Number)
+    CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step)
 
 
     CREATE TABLE #Job_Parameters (
@@ -481,7 +482,7 @@ AS
                 -- <JobScript Name="ProMex">
                 -- <Step Number="1" Tool="PBF_Gen"/>
                 -- <Step Number="2" Tool="ProMex" Special="Job_Results">
-                -- <Depends_On Step_Number="1"/>
+                -- <Depends_On Step="1"/>
                 -- </Step>
 
                 If @debugMode <> 0

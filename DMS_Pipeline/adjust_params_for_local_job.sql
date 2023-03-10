@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[adjust_params_for_local_job]
 **          06/16/2016 mem - Move data package transfer folder path logic to add_update_transfer_paths_in_params_using_data_pkg
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -113,7 +114,7 @@ AS
             -- (in the future, we may want to be more selective about which steps are not updated)
             UPDATE #Job_Steps
             SET Input_Folder_Name = @sourceResultsFolder
-            WHERE NOT Step_Tool IN ('Results_Transfer')
+            WHERE NOT Tool IN ('Results_Transfer')
         END
 
         IF @dataset <> ''

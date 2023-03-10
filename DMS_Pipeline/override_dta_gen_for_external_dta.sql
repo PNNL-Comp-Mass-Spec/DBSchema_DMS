@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[override_dta_gen_for_external_dta]
 **          04/15/2009 grk - Modified to maintain shared results for imported DTA (Ticket #733, http://prismtrac.pnl.gov/trac/ticket/733)
 **          03/21/2011 mem - Rearranged logic to remove Goto
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -59,14 +60,14 @@ AS
         ---------------------------------------------------
 
         UPDATE #Job_Steps
-        SET State = CASE WHEN Step_Tool = 'DTA_Gen'
+        SET State = CASE WHEN Tool = 'DTA_Gen'
                          THEN 5
                          ELSE State
                     END,
             Processor = 'Internal',
             Output_Folder_Name = @externalDTAFolderName,
             Input_Folder_Name = 'External'
-        WHERE Step_Tool IN ('DTA_Gen', 'DTA_Import') AND
+        WHERE Tool IN ('DTA_Gen', 'DTA_Import') AND
               Job = @Job
 
     End

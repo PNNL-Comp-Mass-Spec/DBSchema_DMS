@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[create_signatures_for_job_steps]
 /****************************************************
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE [dbo].[create_signatures_for_job_steps]
 **          03/02/2022 mem - Rename parameter @datasetID to @datasetOrDataPackageId
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -40,17 +42,17 @@ AS
     --
     Declare @Job_Parameters table (
         [Job] int,
-        [Step_Number] int,
+        [Step] int,
         [Section] varchar(128),
         [Name] varchar(128),
         [Value] varchar(2000)        -- Warning: if this field is larger than varchar(2000), the creation of @s via string concatenation later in this SP will result in corrupted strings (MEM 01/13/2009)
     )
     --
     INSERT INTO @Job_Parameters
-        (Job, Step_Number, [Section], [Name], Value)
+        (Job, Step, [Section], [Name], Value)
     SELECT
         xmlNode.value('@Job', 'varchar(64)') As Job,
-        xmlNode.value('@Step_Number', 'varchar(64)') As Step_Number,
+        xmlNode.value('@Step_Number', 'varchar(64)') As Step,
         xmlNode.value('@Section', 'varchar(128)') As [Section],
         xmlNode.value('@Name', 'varchar(128)') As [Name],
         xmlNode.value('@Value', 'varchar(2000)') As [Value]         -- If the value is over 2000 characters long, it will be truncated; that's OK
@@ -89,14 +91,14 @@ AS
         --
         Set @curStep = 0
         --
-        SELECT TOP 1 @curStep = Step_Number,
-                     @stepTool = Step_Tool,
+        SELECT TOP 1 @curStep = Step,
+                     @stepTool = Step,
                      @shared = Shared_Result_Version
         FROM #Job_Steps
         WHERE Job = @job AND
               (Shared_Result_Version + Filter_Version) > 0 AND
-              Step_Number > @prevStep
-        ORDER BY Step_Number
+              Step > @prevStep
+        ORDER BY Step
 
 
         -- If none found, done, otherwise process
@@ -128,7 +130,7 @@ AS
                 FROM   T_Step_Tools CROSS APPLY
                        Parameter_Template.nodes('//section') As R(xmlNode)
                 WHERE  [Name] = @stepTool AND
-                       ((Step_Number is null) OR (Step_Number = @curStep))
+                       ((Step is null) OR (Step = @curStep))
             )
             ORDER BY [Section], [Name]
             --
@@ -179,7 +181,7 @@ AS
                                          ELSE Output_Folder_Name
                                      END
             WHERE Job = @job AND
-                  Step_Number = @curStep
+                  Step = @curStep
 
         End --<b>
     End --<a>

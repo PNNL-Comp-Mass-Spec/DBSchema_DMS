@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          03/02/2022 mem - Require that data package ID is non-zero for MaxQuant and MSFragger jobs
 **                         - Pass data package ID to create_signatures_for_job_steps
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -78,8 +79,8 @@ AS
 
     CREATE TABLE #Job_Steps (
         [Job] int NOT NULL,
-        [Step_Number] int NOT NULL,
-        [Step_Tool] varchar(64) NOT NULL,
+        [Step] int NOT NULL,
+        [Tool] varchar(64) NOT NULL,
         [CPU_Load] [smallint] NULL,
         [Memory_Usage_MB] int NULL,
         [Dependencies] tinyint NULL ,
@@ -95,8 +96,8 @@ AS
 
     CREATE TABLE #Job_Step_Dependencies (
         [Job] int NOT NULL,
-        [Step_Number] int NOT NULL,
-        [Target_Step_Number] int NOT NULL,
+        [Step] int NOT NULL,
+        [Target_Step] int NOT NULL,
         [Condition_Test] varchar(50) NULL,
         [Test_Value] varchar(256) NULL,
         [Enable_Only] tinyint NULL
@@ -270,12 +271,12 @@ AS
     UPDATE #Job_Steps
     SET Dependencies = T.dependencies
     FROM #Job_Steps
-         INNER JOIN ( SELECT Step_Number,
+         INNER JOIN ( SELECT Step,
                              COUNT(*) AS dependencies
                       FROM #Job_Step_Dependencies
                       WHERE (Job = @job)
-                      GROUP BY Step_Number ) AS T
-           ON T.Step_Number = #Job_Steps.Step_Number
+                      GROUP BY Step ) AS T
+           ON T.Step = #Job_Steps.Step
     WHERE #Job_Steps.Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

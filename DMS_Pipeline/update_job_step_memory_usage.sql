@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[update_job_step_memory_usage]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/28/2023 mem - Use XML element names that start with 'MSGFPlus'
+**          03/09/2023 mem - Use new column names in temporary tables
 **
 *****************************************************/
 (
@@ -42,14 +43,14 @@ AS
 
     Declare @MemorySettings AS Table (
         UniqueID int IDENTITY (1,1),
-        Step_Tool varchar(64),
+        Tool varchar(64),
         MemoryRequiredMB varchar(64)
     )
 
     /*
     -- Could use this query to populate @MemorySettings
     -- However, this turns out to be more expensive than running 4 separate queries against @paramsXML with a specific XPath filter
-    INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
+    INSERT INTO @MemorySettings (Tool, MemoryRequiredMB)
     SELECT REPLACE(Name, 'JavaMemorySize', '') AS Name, Value
     FROM (
         SELECT
@@ -60,25 +61,25 @@ AS
     WHERE Name like '%JavaMemorySize'
     */
 
-    INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
+    INSERT INTO @MemorySettings (Tool, MemoryRequiredMB)
     SELECT 'MSGF', xmlNode.value('@Value', 'varchar(64)') AS MemoryRequiredMB
     FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="MSGFJavaMemorySize"]') = 1
 
 
-    INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
+    INSERT INTO @MemorySettings (Tool, MemoryRequiredMB)
     SELECT 'MSGFPlus', xmlNode.value('@Value', 'varchar(64)') AS MemoryRequiredMB
     FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="MSGFPlusJavaMemorySize"]') = 1
 
 
-    INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
+    INSERT INTO @MemorySettings (Tool, MemoryRequiredMB)
     SELECT 'MSDeconv', xmlNode.value('@Value', 'varchar(64)') AS MemoryRequiredMB
     FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="MSDeconvJavaMemorySize"]') = 1
 
 
-    INSERT INTO @MemorySettings (Step_Tool, MemoryRequiredMB)
+    INSERT INTO @MemorySettings (Tool, MemoryRequiredMB)
     SELECT 'MSAlign', xmlNode.value('@Value', 'varchar(64)') AS MemoryRequiredMB
     FROM   @paramsXML.nodes('//Param') AS R(xmlNode)
     WHERE  xmlNode.exist('.[@Name="MSAlignJavaMemorySize"]') = 1
@@ -95,7 +96,7 @@ AS
         While @Continue <> 0
         Begin -- <b>
             SELECT TOP 1 @CurrentID = UniqueID,
-                         @StepTool = Step_Tool,
+                         @StepTool = Tool,
                          @MemoryRequiredMB = MemoryRequiredMB
             FROM @MemorySettings
             WHERE UniqueID > @CurrentID
@@ -113,7 +114,7 @@ AS
                 Begin -- <d>
                     UPDATE #Job_Steps
                     SET Memory_Usage_MB = @ValMemoryRequiredMB
-                    WHERE Step_Tool = @StepTool AND
+                    WHERE Tool = @StepTool AND
                           Job = @Job
 
                 End -- </d>
@@ -128,7 +129,6 @@ AS
     --
 Done:
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_job_step_memory_usage] TO [DDL_Viewer] AS [dbo]

@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[cross_check_job_parameters]
 **          03/11/2009 mem - Now including Old/New step tool and Old/New Signatures if differences are found (Ticket #725, http://prismtrac.pnl.gov/trac/ticket/725)
 **          01/06/2011 mem - Added parameter @IgnoreSignatureMismatch
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/09/2023 mem - Use new column names in temporary table
 **
 *****************************************************/
 (
@@ -43,27 +44,27 @@ AS
     --
     SELECT @message = @message +
         CASE WHEN (OJS.Shared_Result_Version = NJS.Shared_Result_Version) THEN '' ELSE
-            ' step ' + CONVERT(varchar(12), OJS.Step_Number) + ' Shared_Result_Version ' +
+            ' step ' + CONVERT(varchar(12), OJS.Step) + ' Shared_Result_Version ' +
             '(' + CONVERT(varchar(12), OJS.Shared_Result_Version) + '|' + CONVERT(varchar(12), NJS.Shared_Result_Version) + ');'
             END +
 
-        CASE WHEN (OJS.Step_Tool = NJS.Step_Tool) THEN '' ELSE
-            ' step ' + CONVERT(varchar(12), OJS.Step_Number) + ' Step_Tool ' +
-            '(' + CONVERT(varchar(12), OJS.Step_Tool) + '|' + CONVERT(varchar(12), NJS.Step_Tool) + ');'
+        CASE WHEN (OJS.Tool = NJS.Tool) THEN '' ELSE
+            ' step ' + CONVERT(varchar(12), OJS.Step) + ' Tool ' +
+            '(' + CONVERT(varchar(12), OJS.Tool) + '|' + CONVERT(varchar(12), NJS.Tool) + ');'
             END +
 
         CASE WHEN (OJS.Signature = NJS.Signature ) OR @IgnoreSignatureMismatch > 0 THEN '' ELSE
-            ' step ' + CONVERT(varchar(12), OJS.Step_Number)  + ' Signature ' +
+            ' step ' + CONVERT(varchar(12), OJS.Step)  + ' Signature ' +
             '(' + CONVERT(varchar(12), OJS.Signature) + '|' + CONVERT(varchar(12), NJS.Signature) + ');'
             END
 
         -- CASE WHEN (OJS.Output_Folder_Name = NJS.Output_Folder_Name) THEN '' ELSE
-        --  ' step ' + CONVERT(varchar(12), OJS.Step_Number) + ' Output_Folder_Name;'  END
+        --  ' step ' + CONVERT(varchar(12), OJS.Step) + ' Output_Folder_Name;'  END
 
     FROM T_Job_Steps OJS
          INNER JOIN #Job_Steps NJS
            ON OJS.Job = NJS.Job AND
-              OJS.Step_Number = NJS.Step_Number
+              OJS.Step = NJS.Step
     WHERE ((NOT (OJS.Signature IS NULL)) OR
            (NOT (NJS.Signature IS NULL)))
 
