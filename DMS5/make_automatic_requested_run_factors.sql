@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[make_automatic_requested_run_factors]
 /****************************************************
 **
 **  Desc:
-**      Create reqeusted run factors from metadata values
+**      Create requested run factors from metadata values
 **
 **  Auth:   grk
 **  Date:   03/23/2010 grk - initial release
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[make_automatic_requested_run_factors]
 **          11/10/2016 mem - Pass '' to get_user_login_without_domain
 **          06/10/2022 mem - Exit the procedure if @batchID is 0 or null
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/10/2023 mem - Call update_cached_requested_run_batch_stats to update T_Cached_Requested_Run_Batch_Stats
 **
 *****************************************************/
 (
@@ -86,6 +87,9 @@ AS
                             @message OUTPUT,
                             @callingUser
 
+    -- Update cached data in T_Cached_Requested_Run_Batch_Stats
+    Exec update_cached_requested_run_batch_stats @batchID, @fullRefresh = 0
+    
     RETURN @myError
 
 GO

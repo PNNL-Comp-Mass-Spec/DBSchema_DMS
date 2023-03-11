@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_batch_parameters]
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          02/11/2023 mem - Update the usage message sent to post_usage_log_entry
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/10/2023 mem - Call update_cached_requested_run_batch_stats to update T_Cached_Requested_Run_Batch_Stats
 **
 *****************************************************/
 (
@@ -291,6 +292,14 @@ AS
                                           '; see requested runs ' + @requestedRunList
 
                         exec post_log_entry 'Warning', @logMessage, 'update_requested_run_batch_parameters'
+                    End
+
+                    -- Update cached data in T_Cached_Requested_Run_Batch_Stats
+                    Exec update_cached_requested_run_batch_stats @minBatchID, @fullRefresh = 0
+
+                    If @maxBatchID <> @minBatchID
+                    Begin
+                        Exec update_cached_requested_run_batch_stats @maxBatchID, @fullRefresh = 0
                     End
                 End
             End
