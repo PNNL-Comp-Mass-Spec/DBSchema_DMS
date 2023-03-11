@@ -7,7 +7,12 @@ CREATE PROCEDURE [dbo].[make_automatic_requested_run_factors]
 /****************************************************
 **
 **  Desc:
-**      Create requested run factors from metadata values
+**      Adds/updates factors named Actual_Run_Order for the requested runs in the given batch
+**      The values for the factors are 1, 2, 3, etc., ordered by the acquisition time values for the datasets associated with the requested runs
+**      Requested runs without a dataset will not have an Actual_Run_Order factor added
+**
+**  Arguments:
+**    @mode     Unused parameter (proposed to be 'all' or 'actual_run_order', but in reality this procedure always calls update_requested_run_factors with f="Actual_Run_Order" defined by dataset acquisition times)
 **
 **  Auth:   grk
 **  Date:   03/23/2010 grk - initial release
@@ -20,7 +25,7 @@ CREATE PROCEDURE [dbo].[make_automatic_requested_run_factors]
 *****************************************************/
 (
     @batchID int,
-    @mode varchar(32) = 'all', -- 'all', 'actual_run_order'
+    @mode varchar(32) = 'actual_run_order',     -- 'all', 'actual_run_order'
     @message varchar(512) OUTPUT,
     @callingUser varchar(128) = ''
 )
@@ -42,15 +47,15 @@ AS
 
     -----------------------------------------------------------
     -- Make factor list for actual run order
-    -- FUTURE: mode = 'actual_run_order' or 'all'
+    -- FUTURE: support 'actual_run_order' or 'all' for @mode
     -----------------------------------------------------------
 
     CREATE TABLE #REQ (
-        Request INT,
-        Seq INT IDENTITY(1,1) NOT NULL
+        Request int,
+        Actual_Run_Order int IDENTITY(1,1) NOT NULL
     )
 
-    INSERT INTO #REQ( Request )
+    INSERT INTO #REQ ( Request )
     SELECT T_Requested_Run.ID
     FROM T_Requested_Run
          INNER JOIN T_Dataset
@@ -64,7 +69,7 @@ AS
         '<r ' +
         'i="' + CONVERT(VARCHAR(12), Request) + '" ' +
         'f="Actual_Run_Order" ' +
-        'v="' + CONVERT(VARCHAR(12), Seq) + '" ' +
+        'v="' + CONVERT(VARCHAR(12), Actual_Run_Order) + '" ' +
         '/>'
     FROM #REQ
 
