@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 52 ******/
+/****** RowCount: 54 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag, Sample_Prep_Visible, Requested_Run_Visible, Target_Instrument_Group ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('21T','Research','',1,1,'FT',1,1,null)
@@ -12,6 +12,8 @@ INSERT INTO [T_Instrument_Group] VALUES ('Agilent_QQQ','MRM','',1,9,'QQQ',1,1,nu
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF_V2','Research','',1,3,'TOF',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Altis','MRM','',0,9,'QQQ',0,0,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Ascend','LC-HMS with MS/MS','',1,13,'ORB',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Ascend_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,13,'ORB',0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_Amazon_Ion_Trap','Research','',0,3,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_FTMS','Research','',1,1,'FT',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_QTOF','Research','',0,5,'TOF',0,0,null)
