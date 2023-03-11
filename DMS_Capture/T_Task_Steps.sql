@@ -26,7 +26,7 @@ CREATE TABLE [dbo].[T_Task_Steps](
 	[Tool_Version_ID] [int] NULL,
 	[Step_Number]  AS ([Step]),
 	[Step_Tool]  AS ([Tool]),
- CONSTRAINT [PK_T_Task_Steps] PRIMARY KEY CLUSTERED
+ CONSTRAINT [PK_T_Task_Steps] PRIMARY KEY CLUSTERED 
 (
 	[Job] ASC,
 	[Step] ASC
@@ -169,6 +169,7 @@ AS
 	FROM deleted
 	ORDER BY deleted.Job, deleted.Step
 
+
 GO
 ALTER TABLE [dbo].[T_Task_Steps] ENABLE TRIGGER [trig_d_T_Task_Steps]
 GO
@@ -200,6 +201,7 @@ AS
 	SELECT inserted.Job, inserted.Step as Step, inserted.State as New_State, 0 as Old_State
 	FROM inserted
 	ORDER BY inserted.Job, inserted.Step
+
 
 GO
 ALTER TABLE [dbo].[T_Task_Steps] ENABLE TRIGGER [trig_i_T_Task_Steps]
@@ -238,6 +240,7 @@ AS
 		ORDER BY inserted.Job, inserted.Step
 
 	End
+
 
 GO
 ALTER TABLE [dbo].[T_Task_Steps] ENABLE TRIGGER [trig_u_T_Task_Steps]
