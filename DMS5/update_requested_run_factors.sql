@@ -30,12 +30,14 @@ CREATE PROCEDURE [dbo].[update_requested_run_factors]
 **      <r i="OpSaliva_009_b_7Mar11_Phoenix_11-01-20" f="Factor2" v="Bb" />
 **
 **
-**      XML coming from stored procedure make_automatic_requested_run_factors will look like the following
+**      XML coming from stored procedure Make_Automatic_Requested_Run_Factors will look like the following
 **      - Here, the identifier is RequestID
 **
-**      <r i="193911" f="Factor1" v="Aa" />
-**      <r i="194113" f="Factor1" v="Bb" />
-**      <r i="205898" f="Factor2" v="Aa" />
+**      <r i="1197727" f="Actual_Run_Order" v="1" />
+**      <r i="1197728" f="Actual_Run_Order" v="2" />
+**      <r i="1197725" f="Actual_Run_Order" v="3" />
+**      <r i="1197726" f="Actual_Run_Order" v="4" />
+**      <r i="1197722" f="Actual_Run_Order" v="5" />
 **
 **
 **      One other supported format uses DatasetID
