@@ -7,38 +7,40 @@ CREATE PROCEDURE [dbo].[get_signature]
 /****************************************************
 **
 **  Desc:
-**    Get signature for given input string
+**    Get signature ID for given input string
 **
-**    Input string is hashed to pattern, and stored in table
+**    Input string is hashed to pattern, and stored in table T_Signatures
 **    Signature is integer reference to pattern
-**
-**  Return values: signature: otherwise, 0
 **
 **  Auth:   grk
 **  Date:   08/22/2008 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/666)
 **          03/22/2011 mem - Now populating String, Entered, and Last_Used in T_Signatures
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **                         - Replace call to function bin2hex with CONVERT(varchar, varbinary value, 2)
+**          03/13/2023 mem - Restore behavior of the SHA-1 hash being 32 characters long
 **
 *****************************************************/
 (
     @s varchar(max)
 )
 AS
-    declare @pattern varchar(32)
-    declare @reference int
+    Declare @pattern varchar(32)
+    Declare @reference int
 
-    set @reference = 0
-
-    ---------------------------------------------------
-    -- convert string to hash
-    ---------------------------------------------------
-
-    -- CONVERT(varchar, varbinary, 2): convert varbinary to hex string (uppercase), '2' means 'no 0x prefix'
-    set @pattern = CONVERT(varchar, HashBytes('SHA1', @s), 2)
+    Set @reference = 0
 
     ---------------------------------------------------
-    -- is it already in table?
+    -- Convert @s to hash (upper case hex string)
+    --
+    -- Use HashBytes() to get the full SHA-1 hash, as a varbinary
+    -- Use Convert() to convert to text, truncating to only use the first 32 characters
+    -- The '2' sent to Convert() means 'no 0x prefix'
+    ---------------------------------------------------
+
+    Set @pattern = CONVERT(varchar(32), HashBytes('SHA1', @s), 2)
+
+    ---------------------------------------------------
+    -- Is it already in the signatures table?
     ---------------------------------------------------
     --
     SELECT @reference = Reference
@@ -59,7 +61,7 @@ AS
         VALUES(@pattern, @s, GetDate(), GetDate())
 
         ---------------------------------------------------
-        -- get Reference for newly-inserted Pattern
+        -- Get Reference for newly-inserted Pattern
         ---------------------------------------------------
         --
         SELECT @reference = Reference
