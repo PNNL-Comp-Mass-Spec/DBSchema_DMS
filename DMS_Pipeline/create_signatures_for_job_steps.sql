@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[create_signatures_for_job_steps]
 /****************************************************
 **
@@ -19,6 +18,7 @@ CREATE PROCEDURE [dbo].[create_signatures_for_job_steps]
 **          04/11/2022 mem - Expand Section and Name to varchar(128)
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in temporary tables
+**          03/13/2023 mem - Fix bug retrieving step tool name from #Job_Steps
 **
 *****************************************************/
 (
@@ -87,12 +87,13 @@ AS
     --
     While @continue = 1
     Begin --<a>
-        -- get next step that requires signature
+
+        -- Get next step that requires signature
         --
         Set @curStep = 0
         --
         SELECT TOP 1 @curStep = Step,
-                     @stepTool = Step,
+                     @stepTool = Tool,
                      @shared = Shared_Result_Version
         FROM #Job_Steps
         WHERE Job = @job AND
@@ -108,19 +109,21 @@ AS
         End
         Else
         Begin --<b>
+
             Set @prevStep = @curStep
+
             ---------------------------------------------------
-            -- get signature for step
-            -- rollup parameter names and values for sections
+            -- Get signature for step
+            --
+            -- Rollup parameter names and values for sections
             -- associated with step's step tool into single string
             --
-            -- to allow for more than one instance of a tool
-            -- in a single script, look at parameters in sections
-            -- that either are not locked to any step
+            -- To allow for more than one instance of a tool in a single script,
+            -- look at parameters in sections that either are not locked to any step
             -- (step number is null) or are locked to the current step
             --
             Set @signature = 0
-            --
+
             Declare @s varchar(max) = ''
             --
             SELECT @s = @s + [Name] + '=' + [Value] + ';'
@@ -135,7 +138,7 @@ AS
             ORDER BY [Section], [Name]
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            --
+
             If @myError <> 0
             Begin
                 Set @message = 'Error forming global signature string'
@@ -144,8 +147,9 @@ AS
 
             If @myRowCount > 0
             Begin --<c>
+
                 ---------------------------------------------------
-                -- get signature for rolled-up parameter string
+                -- Get signature for rolled-up parameter string
                 --
                 exec @signature = get_signature @s
                 --
@@ -166,7 +170,7 @@ AS
             End
 
             ---------------------------------------------------
-            -- calculate shared folder name
+            -- Calculate shared folder name
             --
             Declare @sharedResultsFolderName varchar(256)
             Set @sharedResultsFolderName = @stepTool + '_' + convert(varchar(12), @shared) + '_' + convert(varchar(12), @signature) + '_' + convert(varchar(12), @datasetOrDataPackageId)
