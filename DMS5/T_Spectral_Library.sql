@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Spectral_Library](
 	[Created] [datetime] NOT NULL,
 	[Source_Job] [int] NULL,
 	[Comment] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Server_Share] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Storage_Path] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Protein_Collection_List] [varchar](2000) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Organism_DB_File] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Fragment_Ion_Mz_Min] [real] NOT NULL,
@@ -60,7 +60,7 @@ ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Cr
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Comment]  DEFAULT ('') FOR [Comment]
 GO
-ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Server_Share]  DEFAULT ('') FOR [Server_Share]
+ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Server_Share]  DEFAULT ('') FOR [Storage_Path]
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Protein_Collection_List]  DEFAULT ('na') FOR [Protein_Collection_List]
 GO
