@@ -4,7 +4,7 @@ CREATE DATABASE [DMSHistoricLogPipeline]
  ON  PRIMARY 
 ( NAME = N'DMSHistLogPipeline_dat', FILENAME = N'J:\SQLServerData\DMSHistoricLogPipeline.mdf' , SIZE = 14736640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 262144KB )
  LOG ON 
-( NAME = N'DMSHistLogPipeline_log', FILENAME = N'H:\SQLServerData\DMSHistoricLogPipeline_log.ldf' , SIZE = 8207104KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
+( NAME = N'DMSHistLogPipeline_log', FILENAME = N'H:\SQLServerData\DMSHistoricLogPipeline_log.ldf' , SIZE = 15040KB , MAXSIZE = UNLIMITED, FILEGROWTH = 10%)
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
