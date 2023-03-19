@@ -7,6 +7,7 @@ CREATE TABLE [dbo].[T_Spectral_Library](
 	[Library_ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Library_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Library_State_ID] [int] NOT NULL,
+	[Last_Affected] [datetime] NOT NULL,
 	[Library_Type_ID] [int] NOT NULL,
 	[Created] [datetime] NOT NULL,
 	[Source_Job] [int] NULL,
@@ -55,6 +56,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Spectral_Library_Settings_Hash] ON [dbo].[T_Spec
 	[Settings_Hash] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_State_Last_Affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Created]  DEFAULT (getdate()) FOR [Created]
 GO
@@ -107,4 +109,37 @@ ALTER TABLE [dbo].[T_Spectral_Library]  WITH CHECK ADD  CONSTRAINT [FK_T_Spectra
 REFERENCES [dbo].[T_Spectral_Library_Type] ([Library_Type_ID])
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] CHECK CONSTRAINT [FK_T_Spectral_Library_T_Spectral_Library_Type]
+GO
+/****** Object:  Trigger [dbo].[trig_u_T_Spectral_Library] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_u_T_Spectral_Library] ON [dbo].[T_Spectral_Library] 
+FOR UPDATE
+AS
+/****************************************************
+**
+**	Desc: 
+**		Updates Last_Affected if the State changes
+**
+**	Auth:	mem
+**	Date:	03/18/2023 mem - Initial version
+**    
+*****************************************************/
+	
+	If @@RowCount = 0
+		Return
+
+	If Update(Library_State_ID)
+	Begin
+		UPDATE T_Spectral_Library
+		SET Last_Affected = GetDate()
+		FROM T_Spectral_Library INNER JOIN 
+			 inserted ON T_Spectral_Library.Library_ID = inserted.Library_ID
+	End
+
+
+GO
+ALTER TABLE [dbo].[T_Spectral_Library] ENABLE TRIGGER [trig_u_T_Spectral_Library]
 GO
