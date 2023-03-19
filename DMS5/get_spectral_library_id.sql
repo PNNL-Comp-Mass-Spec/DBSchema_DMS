@@ -9,51 +9,53 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **  Desc:
 **      Looks for an existing entry in T_Spectral_Library that matches the specified settings
 **      If found, returns the spectral library ID and state
-**      If not found, and if @allow_add_new = 1, adds a new row to T_Spectral_Library
+**      If not found, and if @allowAddNew = 1, adds a new row to T_Spectral_Library
 **
 **  Returns:
-**    Spectral library ID, state, name, and storage path (server share), using output parameters @library_id, @library_state_id, @library_name, and @storage_path
+**    Spectral library ID, state, name, and storage path (server share), using output parameters @libraryId, @libraryStateId, @libraryName, and @storagePath
 **
 **  Auth:   mem
 **  Date:   03/17/2023 mem - Initial Release
+**          03/18/2023 mem - Rename parameters
 **
 *****************************************************/
 (
-    @allow_add_new tinyint,
-    @dms_source_job int = 0,
-    @protein_collection_list varchar(2000) = '',
-    @organism_db_file varchar(128) = '',
-    @fragment_ion_mz_min real = 0,
-    @fragment_ion_mz_max real = 0,
-    @trim_n_terminal_met tinyint = 0,
-    @cleavage_specificity varchar(64) = '',
-    @missed_cleavages int = 0,
-    @peptide_length_min tinyint = 0,
-    @peptide_length_max tinyint = 0,
-    @precursor_mz_min real = 0,
-    @precursor_mz_max real = 0,
-    @precursor_charge_min tinyint = 0,
-    @precursor_charge_max tinyint = 0,
-    @static_cys_carbamidomethyl tinyint = 0,
-    @static_mods varchar(512) = '',
-    @dynamic_mods varchar(512) = '',
-    @max_dynamic_mods tinyint = 0,
+    @allowAddNew tinyint,
+    @dmsSourceJob int = 0,
+    @proteinCollectionList varchar(2000) = '',
+    @organismDbFile varchar(128) = '',
+    @fragmentIonMzMin real = 0,
+    @fragmentIonMzMax real = 0,
+    @trimNTerminalMet tinyint = 0,
+    @cleavageSpecificity varchar(64) = '',
+    @missedCleavages int = 0,
+    @peptideLengthMin tinyint = 0,
+    @peptideLengthMax tinyint = 0,
+    @precursorMzMin real = 0,
+    @precursorMzMax real = 0,
+    @precursorChargeMin tinyint = 0,
+    @precursorChargeMax tinyint = 0,
+    @staticCysCarbamidomethyl tinyint = 0,
+    @staticMods varchar(512) = '',
+    @dynamicMods varchar(512) = '',
+    @maxDynamicMods tinyint = 0,
     @infoOnly tinyint = 0,
-    @library_id int = 0 output,
-    @library_state_id int = 0 output,
-    @library_name varchar(255) = '' output,
-    @storage_path varchar(255) = '' output,
+    @libraryId int = 0 output,
+    @libraryStateId int = 0 output,
+    @libraryName varchar(255) = '' output,
+    @storagePath varchar(255) = '' output,
+    @sourceJobShouldMakeLibrary tinyint = 0 output,
     @message varchar(255) = '' Output,
-    @return_code varchar(64) = '' Output
+    @returnCode varchar(64) = '' Output
 )
 As
 Begin
     Declare @myRowCount int = 0
     Declare @myError int = 0
-    
+
     -- Default library name, without the suffix '.predicted.speclib'
-    Declare @default_library_name varchar(255)
-    Declare @library_name_hash Varchar(64)
+    Declare @defaultLibraryName varchar(255)
+    Declare @libraryNameHash varchar(64)
 
     Declare @hash varchar(64)
     Declare @default_storage_path Varchar(255)

@@ -19,27 +19,28 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
 **  Auth:   mem
 **  Date:   03/15/2023 mem - Initial Release
 **          03/16/2023 mem - Use lowercase variable names
+**          03/18/2023 mem - Rename parameters
 **
 *****************************************************/
 (
-    @library_id int,
-    @protein_collection_list varchar(2000) = '',
-    @organism_db_file varchar(128) = '',
-    @fragment_ion_mz_min real = 0,
-    @fragment_ion_mz_max real = 0,
-    @trim_n_terminal_met tinyint = 0,
-    @cleavage_specificity varchar(64) = '',
-    @missed_cleavages int = 0,
-    @peptide_length_min tinyint = 0,
-    @peptide_length_max tinyint = 0,
-    @precursor_mz_min real = 0,
-    @precursor_mz_max real = 0,
-    @precursor_charge_min tinyint = 0,
-    @precursor_charge_max tinyint = 0,
-    @static_cys_carbamidomethyl tinyint = 0,
-    @static_mods varchar(512) = '',
-    @dynamic_mods varchar(512) = '',
-    @max_dynamic_mods tinyint = 0,
+    @libraryId int,
+    @proteinCollectionList varchar(2000) = '',
+    @organismDbFile varchar(128) = '',
+    @fragmentIonMzMin real = 0,
+    @fragmentIonMzMax real = 0,
+    @trimNTerminalMet tinyint = 0,
+    @cleavageSpecificity varchar(64) = '',
+    @missedCleavages int = 0,
+    @peptideLengthMin tinyint = 0,
+    @peptideLengthMax tinyint = 0,
+    @precursorMzMin real = 0,
+    @precursorMzMax real = 0,
+    @precursorChargeMin tinyint = 0,
+    @precursorChargeMax tinyint = 0,
+    @staticCysCarbamidomethyl tinyint = 0,
+    @staticMods varchar(512) = '',
+    @dynamicMods varchar(512) = '',
+    @maxDynamicMods tinyint = 0,
     @hash varchar(64) = '' Output,
     @settings varchar(4000) = '' Output
 )
@@ -54,35 +55,35 @@ Begin
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @library_id = Coalesce(@library_id, 0);
+    Set @libraryId = Coalesce(@libraryId, 0);
 
-    If @library_id > 0
+    If @libraryId > 0
     Begin
-        SELECT @protein_collection_list = Protein_Collection_List,
-               @organism_db_file = Organism_DB_File,
-               @fragment_ion_mz_min = Fragment_Ion_Mz_Min,
-               @fragment_ion_mz_max = Fragment_Ion_Mz_Max,
-               @trim_n_terminal_met = Trim_N_Terminal_Met,
-               @cleavage_specificity = Cleavage_Specificity,
-               @missed_cleavages = Missed_Cleavages,
-               @peptide_length_min = Peptide_Length_Min,
-               @peptide_length_max = Peptide_Length_Max,
-               @precursor_mz_min = Precursor_Mz_Min,
-               @precursor_mz_max = Precursor_Mz_Max,
-               @precursor_charge_min = Precursor_Charge_Min,
-               @precursor_charge_max = Precursor_Charge_Max,
-               @static_cys_carbamidomethyl = Static_Cys_Carbamidomethyl,
-               @static_mods = Static_Mods,
-               @dynamic_mods = Dynamic_Mods,
-               @max_dynamic_mods = Max_Dynamic_Mods
+        SELECT @proteinCollectionList = Protein_Collection_List,
+               @organismDbFile = Organism_DB_File,
+               @fragmentIonMzMin = Fragment_Ion_Mz_Min,
+               @fragmentIonMzMax = Fragment_Ion_Mz_Max,
+               @trimNTerminalMet = Trim_N_Terminal_Met,
+               @cleavageSpecificity = Cleavage_Specificity,
+               @missedCleavages = Missed_Cleavages,
+               @peptideLengthMin = Peptide_Length_Min,
+               @peptideLengthMax = Peptide_Length_Max,
+               @precursorMzMin = Precursor_Mz_Min,
+               @precursorMzMax = Precursor_Mz_Max,
+               @precursorChargeMin = Precursor_Charge_Min,
+               @precursorChargeMax = Precursor_Charge_Max,
+               @staticCysCarbamidomethyl = Static_Cys_Carbamidomethyl,
+               @staticMods = Static_Mods,
+               @dynamicMods = Dynamic_Mods,
+               @maxDynamicMods = Max_Dynamic_Mods
         FROM T_Spectral_Library
-        WHERE Library_ID = @library_id;
+        WHERE Library_ID = @libraryId;
         --
         Select @myRowCount = @@RowCount, @myError = @@Error
 
         If @myRowCount = 0
         Begin
-            Set @message = 'Spectral library ID not found in T_Spectral_Library: ' + Cast(@library_id As varchar(12));
+            Set @message = 'Spectral library ID not found in T_Spectral_Library: ' + Cast(@libraryId As varchar(12));
             RAISERROR (@message, 10, 1)
 
             Set @hash = ''
@@ -92,50 +93,50 @@ Begin
     End
     Else
     Begin
-        Set @protein_collection_list = Coalesce(@protein_collection_list, '');
-        Set @organism_db_file = Coalesce(@organism_db_file, '');
-        Set @fragment_ion_mz_min = Coalesce(@fragment_ion_mz_min, 0);
-        Set @fragment_ion_mz_max = Coalesce(@fragment_ion_mz_max, 0);
-        Set @trim_n_terminal_met = Coalesce(@trim_n_terminal_met, 0);
-        Set @cleavage_specificity = Coalesce(@cleavage_specificity, '');
-        Set @missed_cleavages = Coalesce(@missed_cleavages, 0);
-        Set @peptide_length_min = Coalesce(@peptide_length_min, 0);
-        Set @peptide_length_max = Coalesce(@peptide_length_max, 0);
-        Set @precursor_mz_min = Coalesce(@precursor_mz_min, 0);
-        Set @precursor_mz_max = Coalesce(@precursor_mz_max, 0);
-        Set @precursor_charge_min = Coalesce(@precursor_charge_min, 0);
-        Set @precursor_charge_max = Coalesce(@precursor_charge_max, 0);
-        Set @static_cys_carbamidomethyl = Coalesce(@static_cys_carbamidomethyl, 0);
-        Set @static_mods = Coalesce(@static_mods, '');
-        Set @dynamic_mods = Coalesce(@dynamic_mods, '');
-        Set @max_dynamic_mods = Coalesce(@max_dynamic_mods, 0);
+        Set @proteinCollectionList = Coalesce(@proteinCollectionList, '');
+        Set @organismDbFile = Coalesce(@organismDbFile, '');
+        Set @fragmentIonMzMin = Coalesce(@fragmentIonMzMin, 0);
+        Set @fragmentIonMzMax = Coalesce(@fragmentIonMzMax, 0);
+        Set @trimNTerminalMet = Coalesce(@trimNTerminalMet, 0);
+        Set @cleavageSpecificity = Coalesce(@cleavageSpecificity, '');
+        Set @missedCleavages = Coalesce(@missedCleavages, 0);
+        Set @peptideLengthMin = Coalesce(@peptideLengthMin, 0);
+        Set @peptideLengthMax = Coalesce(@peptideLengthMax, 0);
+        Set @precursorMzMin = Coalesce(@precursorMzMin, 0);
+        Set @precursorMzMax = Coalesce(@precursorMzMax, 0);
+        Set @precursorChargeMin = Coalesce(@precursorChargeMin, 0);
+        Set @precursorChargeMax = Coalesce(@precursorChargeMax, 0);
+        Set @staticCysCarbamidomethyl = Coalesce(@staticCysCarbamidomethyl, 0);
+        Set @staticMods = Coalesce(@staticMods, '');
+        Set @dynamicMods = Coalesce(@dynamicMods, '');
+        Set @maxDynamicMods = Coalesce(@maxDynamicMods, 0);
     End
 
     -- Remove any spaces in the static and dynamic mods
-    Set @static_mods = Replace(@static_mods, ' ', '');
-    Set @dynamic_mods = Replace(@dynamic_mods, ' ', '');
+    Set @staticMods = Replace(@staticMods, ' ', '');
+    Set @dynamicMods = Replace(@dynamicMods, ' ', '');
 
     ---------------------------------------------------
     -- Store the options in @settings
     ---------------------------------------------------
 
-    Set @settings = @protein_collection_list + '_' +
-                    @organism_db_file + '_' +
-                    Cast(@fragment_ion_mz_min As varchar(24)) + '_' +
-                    Cast(@fragment_ion_mz_max As varchar(24)) + '_' +
-                    Cast(@trim_n_terminal_met As varchar(24)) + '_' +
-                    Cast(@cleavage_specificity As varchar(24)) + '_' +
-                    Cast(@missed_cleavages As varchar(24)) + '_' +
-                    Cast(@peptide_length_min As varchar(24)) + '_' +
-                    Cast(@peptide_length_max As varchar(24)) + '_' +
-                    Cast(@precursor_mz_min As varchar(24)) + '_' +
-                    Cast(@precursor_mz_max As varchar(24)) + '_' +
-                    Cast(@precursor_charge_min As varchar(24)) + '_' +
-                    Cast(@precursor_charge_max As varchar(24)) + '_' +
-                    Cast(@static_cys_carbamidomethyl As varchar(24)) + '_' +
-                    @static_mods + '_' +
-                    @dynamic_mods + '_' +
-                    Cast(@max_dynamic_mods As varchar(24)) + '_'
+    Set @settings = @proteinCollectionList + '_' +
+                    @organismDbFile + '_' +
+                    Cast(@fragmentIonMzMin As varchar(24)) + '_' +
+                    Cast(@fragmentIonMzMax As varchar(24)) + '_' +
+                    Cast(@trimNTerminalMet As varchar(24)) + '_' +
+                    Cast(@cleavageSpecificity As varchar(24)) + '_' +
+                    Cast(@missedCleavages As varchar(24)) + '_' +
+                    Cast(@peptideLengthMin As varchar(24)) + '_' +
+                    Cast(@peptideLengthMax As varchar(24)) + '_' +
+                    Cast(@precursorMzMin As varchar(24)) + '_' +
+                    Cast(@precursorMzMax As varchar(24)) + '_' +
+                    Cast(@precursorChargeMin As varchar(24)) + '_' +
+                    Cast(@precursorChargeMax As varchar(24)) + '_' +
+                    Cast(@staticCysCarbamidomethyl As varchar(24)) + '_' +
+                    @staticMods + '_' +
+                    @dynamicMods + '_' +
+                    Cast(@maxDynamicMods As varchar(24)) + '_'
 
     ---------------------------------------------------
     -- Convert @settings to a SHA-1 hash (upper case hex string)
@@ -149,6 +150,5 @@ Begin
 
     Return 0
 END
-
 
 GO
