@@ -22,6 +22,7 @@ CREATE FUNCTION [dbo].[get_dataset_instrument_runtime]
 **          05/18/2022 mem - Treat additional proposal types as not EMSL funded
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          03/20/2023 mem - Treat proposal types 'Capacity' and 'Staff Time' as EMSL funded
 **
 *****************************************************/
 (
@@ -118,7 +119,7 @@ AS
         -- Check arguments
         ---------------------------------------------------
 
-        IF ISNULL(@startInterval, 0) = 0 OR ISNULL(@endInterval, 0) = 0 OR ISNULL(@instrument, '') = ''
+        IF ISNULL(@startInterval, 0) = 0 OR ISNULL(@endInterval, 0) = 0 OR Coalesce(@instrument, '') = ''
         Begin
             INSERT  INTO @TX
             (
@@ -308,9 +309,12 @@ AS
                 -- Fraction_EMSL_Funded = C.CM_Fraction_EMSL_Funded,   -- Campaign based estimation of fraction EMSL funded; this has been replaced by the following case statement
                 Fraction_EMSL_Funded =
                    CASE
-                   WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY')
-                        IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 0
-                   ELSE 1
+                   WHEN Coalesce(EUP.Proposal_Type, 'PROPRIETARY')
+                        IN ('Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner') THEN 0  -- Not EMSL Funded
+                   ELSE 1             -- EMSL Funded:
+                                      -- 'Exploratory Research', 'FICUS JGI-EMSL', 'FICUS Research', 'Intramural S&T',
+                                      -- 'Large-Scale EMSL Research', 'Limited Scope', 'Science Area Research',
+                                      -- 'Capacity', 'Staff Time'
                    END,
                 Campaign_Proposals = C.CM_EUS_Proposal_List
             FROM @TX T INNER JOIN
@@ -352,7 +356,6 @@ AS
 
     RETURN
     END
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_dataset_instrument_runtime] TO [DDL_Viewer] AS [dbo]

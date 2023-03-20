@@ -51,6 +51,7 @@ CREATE PROCEDURE [dbo].[report_production_stats]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/25/2023 bcg - Update output table column names to lower-case and no special characters
 **          03/17/2023 mem - Add @includeProposalType
+**          03/20/2023 mem - Treat proposal types 'Capacity' and 'Staff Time' as EMSL funded
 **
 *****************************************************/
 (
@@ -246,8 +247,11 @@ AS
                RR.ID,
                CASE
                    WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY')
-                        IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 0
-                   ELSE 1
+                        IN ('Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner') THEN 0  -- Not EMSL Funded
+                   ELSE 1             -- EMSL Funded:
+                                      -- 'Exploratory Research', 'FICUS JGI-EMSL', 'FICUS Research', 'Intramural S&T',
+                                      -- 'Large-Scale EMSL Research', 'Limited Scope', 'Science Area Research',
+                                      -- 'Capacity', 'Staff Time'
                END AS EMSL_Funded,
                EUP.Proposal_Type
         FROM T_Dataset D
@@ -281,8 +285,11 @@ AS
                RR.ID,
                CASE
                    WHEN IsNull(EUP.Proposal_Type, 'PROPRIETARY')
-                        IN ('Capacity', 'Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner', 'Staff Time') THEN 0
-                   ELSE 1
+                        IN ('Partner', 'Proprietary', 'Proprietary Public', 'Proprietary_Public', 'Resource Owner') THEN 0  -- Not EMSL Funded
+                   ELSE 1             -- EMSL Funded:
+                                      -- 'Exploratory Research', 'FICUS JGI-EMSL', 'FICUS Research', 'Intramural S&T',
+                                      -- 'Large-Scale EMSL Research', 'Limited Scope', 'Science Area Research',
+                                      -- 'Capacity', 'Staff Time'
                END AS EMSL_Funded,
                EUP.Proposal_Type
         FROM T_Dataset D
@@ -358,7 +365,7 @@ AS
             Convert(decimal(5,1), [EF_Study_Specific_AcqTimeDays]) AS ef_study_specific_acq_time_days,
             Convert(decimal(5,1), [Hours_AcqTime_per_Day]) as hours_acq_time_per_day,
 
-            Instrument AS inst_,
+            Instrument AS inst_,                        -- The website will show this column as "Inst."
             Percent_EMSL_Owned AS pct_inst_emsl_owned,
 
             -- EMSL Funded Counts:
@@ -507,7 +514,7 @@ AS
             Convert(decimal(5,1), [EF_Study_Specific_AcqTimeDays]) AS ef_study_specific_acq_time_days,
             Convert(decimal(5,1), [Hours_AcqTime_per_Day]) as hours_acq_time_per_day,
 
-            Instrument AS inst_,
+            Instrument AS inst_,                        -- The website will show this column as "Inst."
             Percent_EMSL_Owned AS pct_inst_emsl_owned,
 
             -- EMSL Funded Counts:
