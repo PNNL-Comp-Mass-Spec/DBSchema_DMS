@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **                         - Add output parameter @sourceJobShouldMakeLibrary
 **                         - Append organism name to the storage path
 **                         - Assign the source job to the spectral library if it has state 1 and @allowAddNew is enabled
+**          03/19/2023 mem - Truncate protein collection lists to 110 characters
 **
 *****************************************************/
 (
@@ -133,7 +134,7 @@ Begin
 
         ---------------------------------------------------
         -- Create the default name for the spectral library, using either the protein collection list or the organism DB file name
-        -- If the default name is over 175 characters long, truncate to the first 175 characters and append the SHA-1 hash of the full name.
+        -- If the default name is over 110 characters long, truncate to the first 110 characters and append the SHA-1 hash of the full name.
         ---------------------------------------------------
 
         If dbo.validate_na_parameter(@proteinCollectionList, 1) <> 'na'
@@ -197,7 +198,7 @@ Begin
             -- Replace commas with underscores
             Set @defaultLibraryName = Replace(@defaultLibraryName, ',', '_')
 
-            If Len(@defaultLibraryName) > 175
+            If Len(@defaultLibraryName) > 110
             Begin
                 ---------------------------------------------------
                 -- Convert @defaultLibraryName to a SHA-1 hash (upper case hex string)
@@ -209,9 +210,9 @@ Begin
 
                 Set @libraryNameHash = CONVERT(varchar(64), HashBytes('SHA1', @defaultLibraryName), 2)
 
-                -- Truncate the library name to 175 characters, then append an underscore and the first 8 characters of the hash
+                -- Truncate the library name to 110 characters, then append an underscore and the first 8 characters of the hash
                 --
-                Set @defaultLibraryName = Substring(@defaultLibraryName, 1, 175)
+                Set @defaultLibraryName = Substring(@defaultLibraryName, 1, 110)
 
                 If Right(@defaultLibraryName, 1) <> '_'
                 Begin
