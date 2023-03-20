@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **                         - Append organism name to the storage path
 **                         - Assign the source job to the spectral library if it has state 1 and @allowAddNew is enabled
 **          03/19/2023 mem - Truncate protein collection lists to 110 characters
+**                         - Remove the extension from legacy FASTA file names
 **
 *****************************************************/
 (
@@ -64,8 +65,10 @@ Begin
     Declare @hash varchar(64)
     Declare @defaultStoragePath varchar(255)
 
-    Declare @commaPosition Int
-    Declare @proteinCollection Varchar(255)
+    Declare @commaPosition int
+    Declare @periodLocation int
+
+    Declare @proteinCollection varchar(255)
     Declare @organism varchar(128)
 
     Declare @libraryTypeId int
@@ -76,7 +79,7 @@ Begin
 
     Declare @actualSourceJob int
 
-    Declare @logMessage Varchar(1024)
+    Declare @logMessage varchar(1024)
 
     BEGIN TRY
         ---------------------------------------------------
@@ -168,6 +171,28 @@ Begin
         Else If dbo.validate_na_parameter(@organismDbFile, 1) <> 'na'
         Begin
             Set @defaultLibraryName = @organismDbFile
+
+            -- Remove the extension (which should be .fasta)
+            If @defaultLibraryName Like '%.fasta'
+            Begin
+                Set @defaultLibraryName = Left(@defaultLibraryName, Len(@defaultLibraryName) - Len('.fasta'))
+            End
+            Else If @defaultLibraryName Like '%.faa'
+            Begin
+                Set @defaultLibraryName = Left(@defaultLibraryName, Len(@defaultLibraryName) - Len('.faa'))
+            End
+            Else
+            Begin
+                -- Find the position of the last period
+                Set @periodLocation = CharIndex('.', Reverse(@defaultLibraryName))
+
+                If @periodLocation > 0
+                Begin
+                    Set @periodLocation = Len(@defaultLibraryName) - @periodLocation
+
+                    Set @defaultLibraryName = Left(@defaultLibraryName, @periodLocation)
+                End
+            End
 
             -- Lookup the organism for @organismDbFile
 
@@ -329,7 +354,7 @@ Begin
                     Else
                     Begin
                         Set @message = 'Found existing spectral library ID ' + Cast(@libraryId As varchar(12)) +
-                                       ' with state 1; tried to associated with source job ' + Cast(@dmsSourceJob as varchar(12)) +
+                                       ' with state 1; tried to associate with source job ' + Cast(@dmsSourceJob as varchar(12)) +
                                        ' but library is actually associated with job ' + Cast(@actualSourceJob As varchar(12)) +
                                        ': ' + @libraryName
                     End
@@ -528,7 +553,6 @@ Begin
         Return 5206;
 
     END CATCH
-
 END
 
 GO
