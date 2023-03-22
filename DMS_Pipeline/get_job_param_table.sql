@@ -41,6 +41,8 @@ CREATE PROCEDURE [dbo].[get_job_param_table]
 **                         - Remove check for DataImportFolder in the Special_Processing field
 **          02/01/2023 mem - Use new column names
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/21/2023 mem - Add job parameter DatasetName
+**                         - Capitalize parameter LegacyFastaFileName
 **
 *****************************************************/
 (
@@ -78,8 +80,9 @@ AS
     SELECT NULL as Step_Number, 'JobParameters' as [Section], TP.Name, TP.Value
     FROM
     (
-        SELECT
-          CAST(Dataset As varchar(4000))                        AS DatasetNum,
+        Select
+          CAST(Dataset As varchar(4000))                        AS DatasetName,
+          CAST(Dataset As varchar(4000))                        AS DatasetNum,              -- ToDo: Remove this after all analysis managers support DatasetName
           CAST(Dataset_ID As varchar(4000))                     AS DatasetID,
           CAST(Dataset_Folder_Name As varchar(4000))            AS DatasetFolderName,
           CAST(Archive_Folder_Path As varchar(4000))            AS DatasetArchivePath,
@@ -90,7 +93,7 @@ AS
           CAST(Settings_File_Name As varchar(4000))             AS SettingsFileName,
           CAST(Special_Processing As varchar(4000))             AS Special_Processing,
           CAST(Param_File_Storage_Path As varchar(4000))        AS ParamFileStoragePath,     -- Storage path for the primary tool of the script
-          CAST(Organism_DB_Name As varchar(4000))               AS legacyFastaFileName,
+          CAST(Organism_DB_Name As varchar(4000))               AS LegacyFastaFileName,
           CAST(Protein_Collection_List As varchar(4000))        AS ProteinCollectionList,
           CAST(Protein_Options_List As varchar(4000))           AS ProteinOptions,
           CAST(Instrument_Class As varchar(4000))               AS InstClass,
@@ -108,7 +111,8 @@ AS
         WHERE Job = @job
     ) TD
     UNPIVOT (Value For [Name] In (
-        DatasetNum,
+        DatasetName,
+        DatasetNum,             -- ToDo: Remove this after all analysis managers support DatasetName
         DatasetID,
         DatasetFolderName,
         DatasetStoragePath,
@@ -119,7 +123,7 @@ AS
         SettingsFileName,
         Special_Processing,
         ParamFileStoragePath,
-        legacyFastaFileName,
+        LegacyFastaFileName,
         ProteinCollectionList,
         ProteinOptions,
         InstClass,
@@ -143,7 +147,7 @@ AS
     --
     UPDATE #T_Tmp_ParamTab
     SET [Section] = 'PeptideSearch'
-    WHERE [Name] in ('ParamFileName', 'ParamFileStoragePath', 'OrganismName',  'legacyFastaFileName',  'ProteinCollectionList',  'ProteinOptions')
+    WHERE [Name] in ('ParamFileName', 'ParamFileStoragePath', 'OrganismName',  'LegacyFastaFileName',  'ProteinCollectionList',  'ProteinOptions')
 
     ---------------------------------------------------
     -- Possibly override the settings file name
