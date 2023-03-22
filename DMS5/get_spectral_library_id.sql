@@ -556,3 +556,5 @@ Begin
 END
 
 GO
+GRANT EXECUTE ON [dbo].[get_spectral_library_id] TO [DMSWebUser] AS [dbo]
+GO
