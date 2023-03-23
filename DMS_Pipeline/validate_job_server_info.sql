@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[validate_job_server_info]
 **          11/14/2011 mem - Updated to support Dataset Name being blank
 **          12/21/2016 mem - Use job parameter DatasetFolderName when constructing the transfer folder path
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename job parameter to DatasetName
 **
 *****************************************************/
 (
@@ -62,9 +63,10 @@ AS
         FROM dbo.get_job_param_table_local ( @Job )
         WHERE [Name] = 'transferFolderPath'
 
-        SELECT @Dataset = [Value]
+        SELECT TOP 1 @Dataset = [Value]
         FROM dbo.get_job_param_table_local ( @Job )
-        WHERE [Name] = 'DatasetNum'
+        WHERE [Name] IN ('DatasetName', 'DatasetNum')
+        ORDER BY [Name]
 
         SELECT @DatasetFolderName = [Value]
         FROM dbo.get_job_param_table_local ( @Job )
@@ -99,9 +101,10 @@ AS
         FROM @Job_Parameters
         WHERE [Name] = 'transferFolderPath'
 
-        SELECT @Dataset = Value
+        SELECT TOP 1 @Dataset = Value
         FROM @Job_Parameters
-        WHERE [Name] = 'DatasetNum'
+        WHERE [Name] IN ('DatasetName', 'DatasetNum')
+        ORDER BY [Name]
 
         SELECT @DatasetFolderName = Value
         FROM @Job_Parameters

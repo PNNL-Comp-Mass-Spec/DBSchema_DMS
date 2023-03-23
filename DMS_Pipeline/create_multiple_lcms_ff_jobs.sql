@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[create_multiple_lcms_ff_jobs]
 **          11/24/2010 mem - Now grabbing dataset name from T_Jobs_History (if not found in T_Jobs)
 **          01/09/2012 mem - Now passing @ownerUsername to add_update_local_job_in_broker
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename variable
 **
 *****************************************************/
 (
@@ -132,7 +133,7 @@ AS
     Set @myError = 0
 
     Declare @RC int,
-            @datasetNum varchar(128),
+            @datasetName varchar(128),
             @newJob int,
             @Job int,
             @priority int,
@@ -144,7 +145,7 @@ AS
 
     While @Continue = 1 And @myError = 0
     Begin
-        SELECT TOP 1 @refJob = Job, @datasetNum = Dataset
+        SELECT TOP 1 @refJob = Job, @datasetName = Dataset
         FROM #Tmp_JobsToLoad
         WHERE Job > @refJob
         ORDER BY Job
@@ -173,7 +174,7 @@ AS
             exec @myError = add_update_local_job_in_broker
                             @Job = @Job OUTPUT,
                             @scriptName = @ScriptName,
-                            @datasetNum = @datasetNum,
+                            @datasetName = @datasetName,
                             @priority = 1,
                             @jobParam = @jobParam,
                             @comment = 'Automatic Job creation',

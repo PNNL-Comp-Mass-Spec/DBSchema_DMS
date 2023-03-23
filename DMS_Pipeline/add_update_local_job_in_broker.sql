@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **
 **          <Param Section="JobParameters" Name="CreateMzMLFiles" Value="False" />
 **          <Param Section="JobParameters" Name="CacheFolderRootPath" Value="\\protoapps\MaxQuant_Staging" />        (or \\proto-9\MSFragger_Staging)
-**          <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
+**          <Param Section="JobParameters" Name="DatasetName" Value="Aggregation" />
 **          <Param Section="PeptideSearch" Name="ParamFileName" Value="MaxQuant_Tryp_Stat_CysAlk_Dyn_MetOx_NTermAcet_20ppmParTol.xml" />
 **          <Param Section="PeptideSearch" Name="ParamFileStoragePath" Value="\\gigasax\DMS_Parameter_Files\MaxQuant" />
 **          <Param Section="PeptideSearch" Name="OrganismName" Value="Homo_Sapiens" />
@@ -60,6 +60,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
 **          07/01/2022 mem - Update parameter names in comments
 **          08/25/2022 mem - Use new column name in T_Log_Entries
+**          03/22/2023 mem - Rename job parameter to DatasetName
 **
 *****************************************************/
 (

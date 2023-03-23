@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[adjust_params_for_local_job]
 **          04/11/2022 mem - Use varchar(4000) when populating temp table #PARAMS using @jobParamXML
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in temporary tables
+**          03/22/2023 mem - Rename job parameter to DatasetName
 **
 *****************************************************/
 (
@@ -60,7 +61,7 @@ AS
 
     ---------------------------------------------------
     -- If this job has a 'DataPackageID' defined, update parameters
-    --     'CacheFolderPath'
+    --   'CacheFolderPath'
     --   'transferFolderPath'
     --   'DataPackagePath'
     ---------------------------------------------------
@@ -71,7 +72,7 @@ AS
     ---------------------------------------------------
     -- If this job has a 'SourceJob' parameter, update parameters
     --     'DatasetArchivePath'
-    --     'DatasetNum'
+    --     'DatasetName'
     --     'RawDataType'
     --     'DatasetStoragePath'
     --     'transferFolderPath'
@@ -121,6 +122,7 @@ AS
         BEGIN
             DELETE FROM #PARAMS
             WHERE Name IN ('DatasetArchivePath',
+                           'DatasetName',
                            'DatasetNum',
                            'RawDataType',
                            'DatasetStoragePath',
@@ -132,7 +134,7 @@ AS
             INSERT INTO #PARAMS ( Section, Name, Value )
             SELECT 'JobParameters', 'DatasetArchivePath', @archiveFolderPath
             UNION
-            SELECT 'JobParameters', 'DatasetNum', @dataset
+            SELECT 'JobParameters', 'DatasetName', @dataset
             UNION
             SELECT 'JobParameters', 'RawDataType', @rawDataType
             UNION
