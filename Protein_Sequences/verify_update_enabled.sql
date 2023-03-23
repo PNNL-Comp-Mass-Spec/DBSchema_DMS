@@ -17,8 +17,6 @@ CREATE PROCEDURE [dbo].[verify_update_enabled]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   03/10/2006
 **          03/11/2006 mem - Now populating the Last_Query fields and added support for pausing

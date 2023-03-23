@@ -8,10 +8,6 @@ CREATE PROCEDURE [dbo].[get_shared_protein_ids]
 **
 **  Desc: Shows the shared Protein_IDs for two collections
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   04/16/2004
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres

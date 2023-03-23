@@ -10,8 +10,6 @@ CREATE FUNCTION [dbo].[check_plural]
 **
 **  Return value: error message
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   03/05/2013 mem - Initial release
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres

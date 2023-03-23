@@ -12,8 +12,6 @@ CREATE PROCEDURE [dbo].[reindex_database]
 **
 **  Return values: 0:  success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   10/11/2007
 **          10/30/2007 mem - Now calling verify_update_enabled

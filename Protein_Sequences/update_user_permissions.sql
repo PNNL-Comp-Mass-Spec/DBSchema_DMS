@@ -10,8 +10,6 @@ CREATE PROCEDURE [dbo].[update_user_permissions]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   12/13/2004
 **          01/27/2005 mem - Added MTS_DB_Dev and MTS_DB_Lite

@@ -15,8 +15,6 @@ CREATE PROCEDURE [dbo].[clear_all_data]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   08/20/2015 mem - Initial release
 **

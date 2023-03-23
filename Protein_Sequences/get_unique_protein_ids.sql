@@ -10,10 +10,6 @@ CREATE PROCEDURE [dbo].[get_unique_protein_ids]
 **
 **  Return table
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   04/16/2004
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres

@@ -11,8 +11,6 @@ CREATE PROCEDURE [dbo].[update_cached_protein_collection_members]
 **          By default, only adds new protein collections
 **          Set @updateAll to 1 to force an update of all protein collections
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   06/24/2016 mem - Initial release
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres

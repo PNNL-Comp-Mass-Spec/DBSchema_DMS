@@ -11,8 +11,6 @@ CREATE PROCEDURE [dbo].[rebuild_fragmented_indices]
 **
 **  Return values: 0:  success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   11/12/2007
 **          10/15/2012 mem - Added spaces prior to printing debug messages
