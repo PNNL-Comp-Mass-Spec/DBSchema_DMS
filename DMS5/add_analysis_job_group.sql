@@ -425,7 +425,9 @@ AS
     --
     Declare @result int = 0
     Declare @warning varchar(255) = ''
-    --
+
+    Set @organismName = Ltrim(Rtrim(@organismName))
+
     exec @result = validate_analysis_job_parameters
                             @toolName = @toolName,
                             @paramFileName = @paramFileName output,

@@ -88,6 +88,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/28/2023 mem - Update warning message to use MSGFPlus
 **          03/22/2023 mem - Rename column in temp table
+**                         - Trim trailing whitespace from output parameters
 **
 *****************************************************/
 (
@@ -132,6 +133,17 @@ AS
     Declare @settingsFileRequired tinyint = 0
     Declare @paramFileRequired tinyint = 0
     Declare @allowNonReleasedDatasets Tinyint = 0
+
+    ---------------------------------------------------
+    -- Trim whitespace from input/output parameters
+    ---------------------------------------------------
+
+    Set @paramFileName       = LTrim(RTrim(@paramFileName))
+    Set @settingsFileName    = LTrim(RTrim(@settingsFileName))
+    Set @organismDBName      = LTrim(RTrim(@organismDBName))
+    Set @protCollNameList    = LTrim(RTrim(@protCollNameList))
+    Set @protCollOptionsList = LTrim(RTrim(@protCollOptionsList))
+    Set @ownerUsername       = LTrim(RTrim(@ownerUsername))
 
     ---------------------------------------------------
     -- Validate the datasets in #TD
@@ -362,8 +374,8 @@ AS
     -- Make sure settings for which 'na' is acceptable truly have lowercase 'na' and not 'NA' or 'n/a'
     ---------------------------------------------------
     --
-    Set @settingsFileName =    dbo.validate_na_parameter(@settingsFileName, 1)
-    Set @paramFileName =        dbo.validate_na_parameter(@paramFileName, 1)
+    Set @settingsFileName = dbo.validate_na_parameter(@settingsFileName, 1)
+    Set @paramFileName =    dbo.validate_na_parameter(@paramFileName, 1)
 
     ---------------------------------------------------
     -- Check for settings file or parameter file being 'na' when not allowed
@@ -809,7 +821,6 @@ AS
         print @message
 
     return @result
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_analysis_job_parameters] TO [DDL_Viewer] AS [dbo]
