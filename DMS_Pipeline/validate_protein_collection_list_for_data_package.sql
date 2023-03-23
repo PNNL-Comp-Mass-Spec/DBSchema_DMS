@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_list_for_data_package]
 **                         - Rename the XML job parameters argument and make it an input/output argument
 **                         - Add argument @debugMode
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename column in temp table
 **
 *****************************************************/
 (
@@ -43,7 +44,7 @@ AS
     ---------------------------------------------------
     --
     CREATE TABLE #TmpDatasets (
-        Dataset_Num varchar(128),
+        Dataset_Name varchar(128),
     )
 
     ---------------------------------------------------
@@ -66,7 +67,7 @@ AS
     -- Populate the table
     ---------------------------------------------------
     --
-    INSERT INTO #TmpDatasets (Dataset_Num)
+    INSERT INTO #TmpDatasets (Dataset_Name)
     SELECT Dataset
     FROM dbo.S_Data_Package_Datasets
     WHERE Data_Package_ID = @dataPackageID

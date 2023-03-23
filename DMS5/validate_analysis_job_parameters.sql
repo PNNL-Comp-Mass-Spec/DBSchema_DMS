@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 /****************************************************
 **
@@ -16,7 +15,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 **  This stored procedure will call validate_analysis_job_request_datasets to populate the remaining columns
 **
 **  CREATE TABLE #TD (
-**      Dataset_Num varchar(128),
+**      Dataset_Name varchar(128),
 **      Dataset_ID int NULL,
 **      IN_class varchar(64) NULL,
 **      DS_state_ID int NULL,
@@ -88,6 +87,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/28/2023 mem - Update warning message to use MSGFPlus
+**          03/22/2023 mem - Rename column in temp table
 **
 *****************************************************/
 (
@@ -266,6 +266,7 @@ AS
     ---------------------------------------------------
     --
     execute @organismID = get_organism_id @organismName
+
     If @organismID = 0
     Begin
         Set @message = 'Could not find entry in database for organism "' + @organismName + '"'
@@ -285,8 +286,8 @@ AS
     --
     SELECT @datasetList = @datasetList +
                           CASE WHEN @datasetList = ''
-                               THEN Dataset_Num
-                               ELSE ', ' + Dataset_Num
+                               THEN Dataset_Name
+                               ELSE ', ' + Dataset_Name
                           END
     FROM #TD
     WHERE IN_class <> 'Data_Folders' And
@@ -326,8 +327,8 @@ AS
     --
     SELECT @datasetList = @datasetList +
                           CASE WHEN @datasetList = ''
-                               THEN Dataset_Num
-                               ELSE ', ' + Dataset_Num
+                               THEN Dataset_Name
+                               ELSE ', ' + Dataset_Name
                           END
     FROM #TD
     WHERE Dataset_Type <> 'DataFiles' And

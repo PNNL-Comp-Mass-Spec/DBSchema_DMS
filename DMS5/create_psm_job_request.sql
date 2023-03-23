@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[create_psm_job_request]
 **          06/06/2022 mem - Use new argument name when calling add_update_analysis_job_request
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename column in temp table
 **
 *****************************************************/
 (
@@ -145,7 +146,7 @@ AS
         ---------------------------------------------------
 
         CREATE TABLE #TD (
-            Dataset_Num varchar(128),
+            Dataset_Name varchar(128),
             Dataset_ID int NULL,
             IN_class varchar(64) NULL,
             DS_state_ID int NULL,
@@ -166,9 +167,9 @@ AS
         -- Remove any duplicates that may be present
         ---------------------------------------------------
         --
-        INSERT INTO #TD ( Dataset_Num )
+        INSERT INTO #TD (Dataset_Name)
         SELECT DISTINCT Item
-        FROM make_table_from_list ( @datasets )
+        FROM make_table_from_list (@datasets)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -197,9 +198,9 @@ AS
         --
         Set @datasets = ''
 
-        SELECT @datasets = @datasets + Dataset_Num + ', '
+        SELECT @datasets = @datasets + Dataset_Name + ', '
         FROM #TD
-        ORDER BY Dataset_Num
+        ORDER BY Dataset_Name
 
         -- Remove the trailing comma
         If Len(@datasets) > 0
@@ -235,7 +236,7 @@ AS
         --
         SELECT @QExactiveDSCount = COUNT(*)
         FROM #TD
-             INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+             INNER JOIN T_Dataset DS ON #TD.Dataset_Name = DS.Dataset_Num
              INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
              INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
         WHERE (InstGroup.IN_Group = 'QExactive')
@@ -244,7 +245,7 @@ AS
         --
         SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
         FROM #TD
-           INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+           INNER JOIN T_Dataset DS ON #TD.Dataset_Name = DS.Dataset_Num
              INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
         WHERE DI.ProfileScanCount_MSn > 0
 

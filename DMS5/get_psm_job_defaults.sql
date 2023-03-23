@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[get_psm_job_defaults]
 **          09/10/2020 mem - Add job types 'TMT Zero' and 'TMT 16-plex'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          03/22/2023 mem - Rename column in temp table
 **
 *****************************************************/
 (
@@ -97,7 +98,7 @@ AS
         ---------------------------------------------------
 
         CREATE TABLE #TD (
-            Dataset_Num varchar(128),
+            Dataset_Name varchar(128),
             Dataset_ID int NULL,
             IN_class varchar(64) NULL,
             DS_state_ID int NULL,
@@ -138,9 +139,9 @@ AS
         -- Remove any duplicates that may be present
         ---------------------------------------------------
         --
-        INSERT INTO #TD ( Dataset_Num )
+        INSERT INTO #TD (Dataset_Name)
         SELECT DISTINCT Item
-        FROM make_table_from_list ( @datasets )
+        FROM make_table_from_list (@datasets)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -167,9 +168,9 @@ AS
         --
         Set @datasets = ''
 
-        SELECT @datasets = @datasets + Dataset_Num + ', '
+        SELECT @datasets = @datasets + Dataset_Name + ', '
         FROM #TD
-        ORDER BY Dataset_Num
+        ORDER BY Dataset_Name
 
         -- Remove the trailing comma
         If Len(@datasets) > 0
@@ -308,7 +309,7 @@ AS
         --
         SELECT @DatasetCountPhospho = COUNT(*)
         FROM #TD
-        WHERE Dataset_Num Like '%Phospho%' Or Dataset_Num Like '%NiNTA%'
+        WHERE Dataset_Name Like '%Phospho%' Or Dataset_Name Like '%NiNTA%'
 
         ---------------------------------------------------
         -- Define the default options using the stats on the datasets

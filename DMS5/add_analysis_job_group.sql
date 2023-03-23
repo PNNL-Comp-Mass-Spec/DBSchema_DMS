@@ -204,7 +204,7 @@ AS
     ---------------------------------------------------
 
     CREATE TABLE #TD (
-        Dataset_Num varchar(128),
+        Dataset_Name varchar(128),
         Dataset_ID int NULL,
         IN_class varchar(64) NULL,
         DS_state_ID int NULL,
@@ -220,7 +220,7 @@ AS
     If @myError <> 0
         RAISERROR ('Failed to create temporary table for request %d', 11, 7, @requestID)
 
-    CREATE CLUSTERED INDEX #IX_TD_Dataset_Num ON #TD (Dataset_Num)
+    CREATE CLUSTERED INDEX #IX_TD_Dataset_Name ON #TD (Dataset_Name)
 
     If @dataPackageID > 0
     Begin
@@ -235,7 +235,7 @@ AS
         -- Remove any duplicates that may be present
         ---------------------------------------------------
         --
-        INSERT INTO #TD ( Dataset_Num )
+        INSERT INTO #TD (Dataset_Name)
         SELECT DISTINCT Dataset
         FROM S_V_Data_Package_Datasets_Export
         WHERE Data_Package_ID = @dataPackageID
@@ -257,12 +257,9 @@ AS
         -- Using Select Distinct to make sure any duplicates are removed
         ---------------------------------------------------
         --
-        INSERT INTO #TD
-            (Dataset_Num)
-        SELECT
-            DISTINCT LTrim(RTrim(Item))
-        FROM
-            make_table_from_list(@datasetList)
+        INSERT INTO #TD (Dataset_Name)
+        SELECT DISTINCT LTrim(RTrim(Item))
+        From make_table_from_list(@datasetList)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -273,13 +270,13 @@ AS
 
         -- Make sure the Dataset names do not have carriage returns or line feeds
 
-        UPDATE #td
-        SET Dataset_Num = Replace(Dataset_Num, char(13), '')
-        WHERE Dataset_Num LIKE '%' + char(13) + '%'
+        UPDATE #TD
+        SET Dataset_Name = Replace(Dataset_Name, char(13), '')
+        WHERE Dataset_Name LIKE '%' + char(13) + '%'
 
-        UPDATE #td
-        SET Dataset_Num = Replace(Dataset_Num, char(10), '')
-        WHERE Dataset_Num LIKE '%' + char(10) + '%'
+        UPDATE #TD
+        SET Dataset_Name = Replace(Dataset_Name, char(10), '')
+        WHERE Dataset_Name LIKE '%' + char(10) + '%'
     End
 
      ---------------------------------------------------
@@ -342,15 +339,14 @@ AS
         )
         --
         INSERT INTO @matchingJobDatasets(Dataset)
-        SELECT
-            DS.Dataset_Num AS Dataset
+        SELECT DS.Dataset_Num AS Dataset
         FROM
             T_Dataset DS INNER JOIN
             T_Analysis_Job AJ ON AJ.AJ_datasetID = DS.Dataset_ID INNER JOIN
             T_Analysis_Tool AJT ON AJ.AJ_analysisToolID = AJT.AJT_toolID INNER JOIN
             T_Organisms Org ON AJ.AJ_organismID = Org.Organism_ID  INNER JOIN
             T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
-            #TD ON #TD.Dataset_Num = DS.Dataset_Num
+            #TD ON #TD.Dataset_Name = DS.Dataset_Num
         WHERE
             (NOT (AJ.AJ_StateID IN (5))) AND
             AJT.AJT_toolName = @toolName AND
@@ -383,7 +379,7 @@ AS
             -- remove datasets from list that have existing jobs
             --
             DELETE FROM #TD
-            WHERE Dataset_Num IN (SELECT Dataset FROM @matchingJobDatasets)
+            WHERE Dataset_Name IN (SELECT Dataset FROM @matchingJobDatasets)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -479,7 +475,7 @@ AS
     SET Dataset_Unreviewed = CASE WHEN DS.DS_rating = -10 THEN 1 ELSE 0 END
     FROM T_Dataset DS
         INNER JOIN #TD
-        ON DS.Dataset_Num = #TD.Dataset_Num
+        ON DS.Dataset_Num = #TD.Dataset_Name
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 

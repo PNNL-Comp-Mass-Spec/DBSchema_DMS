@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_list_for_datasets]
 **                         - Place auto-added protein collections at the end of @protCollNameList, which is more consistent with the order we get after calling validate_analysis_job_parameters
 **          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename column in temp table
 **
 *****************************************************/
 (
@@ -73,7 +74,7 @@ AS
     --------------------------------------------------------------
 
     CREATE TABLE #TmpDatasets (
-        Dataset_Num varchar(128),
+        Dataset_Name varchar(128),
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -170,7 +171,7 @@ AS
     -- Populate #TmpDatasets with the datasets in @datasets
     --------------------------------------------------------------
     --
-    INSERT INTO #TmpDatasets (Dataset_Num)
+    INSERT INTO #TmpDatasets (Dataset_Name)
     SELECT Value
     FROM dbo.parse_delimited_list(@datasets, ',', 'validate_protein_collection_list_for_datasets')
     --
@@ -199,7 +200,7 @@ AS
                     1 AS Enzyme_Contaminant_Collection
             FROM #TmpDatasets
                 INNER JOIN dbo.T_Dataset DS
-                    ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+                    ON #TmpDatasets.Dataset_Name = DS.Dataset_Num
                 INNER JOIN T_Experiments E
                     ON DS.Exp_ID = E.Exp_ID
                 INNER JOIN T_Enzymes Enz
@@ -272,7 +273,7 @@ AS
            0 AS Enzyme_Contaminant_Collection
     FROM #TmpDatasets
          INNER JOIN dbo.T_Dataset DS
-           ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+           ON #TmpDatasets.Dataset_Name = DS.Dataset_Num
          INNER JOIN dbo.T_Internal_Standards DSIntStd
            ON DS.DS_internal_standard_ID = DSIntStd.Internal_Std_Mix_ID
          INNER JOIN dbo.T_Internal_Std_Parent_Mixes ISPM
@@ -287,7 +288,7 @@ AS
            0 AS Enzyme_Contaminant_Collection
     FROM #TmpDatasets
          INNER JOIN dbo.T_Dataset DS
-           ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+           ON #TmpDatasets.Dataset_Name = DS.Dataset_Num
          INNER JOIN dbo.T_Experiments E
            ON DS.Exp_ID = E.Exp_ID
          INNER JOIN dbo.T_Internal_Standards DSIntStd
@@ -304,7 +305,7 @@ AS
            0 AS Enzyme_Contaminant_Collection
     FROM #TmpDatasets
          INNER JOIN dbo.T_Dataset DS
-           ON #TmpDatasets.Dataset_Num = DS.Dataset_Num
+           ON #TmpDatasets.Dataset_Name = DS.Dataset_Num
          INNER JOIN dbo.T_Experiments E
            ON DS.Exp_ID = E.Exp_ID
          INNER JOIN dbo.T_Internal_Standards DSIntStd
@@ -429,7 +430,7 @@ AS
         SELECT @DatasetCountTotal = COUNT(*),
                @ExperimentCountTotal = COUNT(DISTINCT E.Exp_ID)
         FROM #TmpDatasets INNER JOIN
-            T_Dataset DS ON #TmpDatasets.Dataset_Num = DS.Dataset_Num INNER JOIN
+            T_Dataset DS ON #TmpDatasets.Dataset_Name = DS.Dataset_Num INNER JOIN
             T_Experiments E ON DS.Exp_ID = E.Exp_ID
 
         If @ShowMessages <> 0

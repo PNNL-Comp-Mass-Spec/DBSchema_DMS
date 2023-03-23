@@ -77,6 +77,7 @@ CREATE PROCEDURE [dbo].[add_update_analysis_job]
 **          06/30/2022 mem - Rename parameter file argument
 **          07/29/2022 mem - Assure that the parameter file and settings file names are not null
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename column in temp table
 **
 *****************************************************/
 (
@@ -312,7 +313,7 @@ AS
     ---------------------------------------------------
 
     CREATE TABLE #TD (
-        Dataset_Num varchar(128),
+        Dataset_Name varchar(128),
         Dataset_ID int NULL,
         IN_class varchar(64) NULL,
         DS_state_ID int NULL,
@@ -336,10 +337,8 @@ AS
     -- Add dataset to table
     ---------------------------------------------------
     --
-    INSERT INTO #TD
-        (Dataset_Num)
-    VALUES
-        (@datasetName)
+    INSERT INTO #TD (Dataset_Name)
+    VALUES (@datasetName)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -443,7 +442,6 @@ AS
     --
     SELECT TOP 1 @datasetID = Dataset_ID FROM #TD
 
-
     ---------------------------------------------------
     -- set up transaction variables
     ---------------------------------------------------
@@ -475,7 +473,7 @@ AS
                 T_Analysis_Tool AJT ON AJ.AJ_analysisToolID = AJT.AJT_toolID INNER JOIN
                 T_Organisms Org ON AJ.AJ_organismID = Org.Organism_ID  INNER JOIN
                 T_Analysis_State_Name ASN ON AJ.AJ_StateID = ASN.AJS_stateID INNER JOIN
-                #TD ON #TD.Dataset_Num = DS.Dataset_Num
+                #TD ON #TD.Dataset_Name = DS.Dataset_Num
             WHERE
                 ( @PreventDuplicatesIgnoresNoExport > 0 AND NOT AJ.AJ_StateID IN (5, 13, 14) OR
                   @PreventDuplicatesIgnoresNoExport = 0 AND AJ.AJ_StateID <> 5

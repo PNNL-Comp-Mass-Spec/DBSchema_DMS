@@ -92,6 +92,8 @@ CREATE PROCEDURE [dbo].[add_update_analysis_job_request]
 **          05/23/2022 mem - Rename requester argument
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Rename column in temp table
+**                         - Also auto-remove datasets named 'Dataset Name' and 'Dataset_Name' from #TD
 **
 *****************************************************/
 (
@@ -250,12 +252,12 @@ AS
 
     ---------------------------------------------------
     -- Create temporary table to hold list of datasets
-    -- This procedure populates column Dataset_Num
+    -- This procedure populates column Dataset_Name
     -- Procedure validate_analysis_job_request_datasets (called by validate_analysis_job_parameters) will populate the remaining columns
     ---------------------------------------------------
 
     CREATE TABLE #TD (
-        Dataset_Num varchar(128),
+        Dataset_Name varchar(128),
         Dataset_ID int NULL,
         IN_class varchar(64) NULL,
         DS_state_ID int NULL,
@@ -276,7 +278,7 @@ AS
         -- Remove any duplicates that may be present
         ---------------------------------------------------
         --
-        INSERT INTO #TD ( Dataset_Num )
+        INSERT INTO #TD (Dataset_Name)
         SELECT DISTINCT Dataset
         FROM S_V_Data_Package_Datasets_Export
         WHERE Data_Package_ID = @dataPackageID
@@ -297,7 +299,7 @@ AS
         -- Remove any duplicates that may be present
         ---------------------------------------------------
         --
-        INSERT INTO #TD (Dataset_Num)
+        INSERT INTO #TD (Dataset_Name)
         SELECT DISTINCT Item
         FROM make_table_from_list (@datasets)
         --
@@ -308,15 +310,15 @@ AS
             RAISERROR ('Error populating temporary table', 11, 8)
 
         ---------------------------------------------------
-        -- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
+        -- Auto-delete dataset column names from #TD
         ---------------------------------------------------
         --
         DELETE FROM #TD
-        WHERE Dataset_Num IN ('Dataset', 'Dataset_Num')
+        WHERE Dataset_Name IN ('Dataset', 'Dataset Name', 'Dataset_Name', 'Dataset_Num')
     End
 
     ---------------------------------------------------
-    -- Find the first and last dataset in #td
+    -- Find the first and last dataset in #TD
     ---------------------------------------------------
     --
     SELECT @myRowCount = Count(*)
@@ -324,14 +326,14 @@ AS
 
     If @myRowCount = 1
     Begin
-        SELECT @datasetMin = Min(Dataset_Num)
+        SELECT @datasetMin = Min(Dataset_Name)
         FROM #TD
     End
 
     If @myRowCount > 1
     Begin
-        SELECT @datasetMin = Min(Dataset_Num),
-               @datasetMax = Max(Dataset_Num)
+        SELECT @datasetMin = Min(Dataset_Name),
+               @datasetMax = Max(Dataset_Name)
         FROM #TD
     End
 
@@ -340,7 +342,7 @@ AS
     ---------------------------------------------------
     --
     CREATE TABLE #TmpDatasets (
-        Dataset_Num varchar(128) Not NULL
+        Dataset_Name varchar(128) Not NULL
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -354,11 +356,11 @@ AS
 
     CREATE UNIQUE CLUSTERED INDEX #IX_TmpDatasets ON #TmpDatasets
     (
-        Dataset_Num
+        Dataset_Name
     )
 
-    INSERT INTO #TmpDatasets( Dataset_Num )
-    SELECT Dataset_Num
+    INSERT INTO #TmpDatasets( Dataset_Name )
+    SELECT Dataset_Name
     FROM #TD
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -497,7 +499,7 @@ AS
     --
     SELECT @QExactiveDSCount = COUNT(*)
     FROM #TD
-            INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+            INNER JOIN T_Dataset DS ON #TD.Dataset_Name = DS.Dataset_Num
             INNER JOIN T_Instrument_Name InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID
             INNER JOIN T_Instrument_Group InstGroup ON InstName.IN_Group = InstGroup.IN_Group
     WHERE InstGroup.IN_Group = 'QExactive'
@@ -507,7 +509,7 @@ AS
     --
     SELECT @ProfileModeMSnDatasets = Count(Distinct DS.Dataset_ID)
     FROM #TD
-            INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+            INNER JOIN T_Dataset DS ON #TD.Dataset_Name = DS.Dataset_Num
             INNER JOIN T_Dataset_Info DI ON DS.Dataset_ID = DI.Dataset_ID
     WHERE DI.ProfileScanCount_MSn > 0
 
@@ -538,7 +540,7 @@ AS
     Begin
         SELECT @tmtProDatasets = Count(Distinct DS.Dataset_ID)
         FROM #TD
-            INNER JOIN T_Dataset DS ON #TD.Dataset_Num = DS.Dataset_Num
+            INNER JOIN T_Dataset DS ON #TD.Dataset_Name = DS.Dataset_Num
             INNER JOIN T_Experiments E ON DS.Exp_ID = E.Exp_ID
         WHERE E.EX_Labelling = 'TMT16' OR DS.Dataset_Num LIKE '%TMTpro%'
 

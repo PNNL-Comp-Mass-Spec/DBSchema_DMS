@@ -11,7 +11,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_request_datasets]
 **          the remaining columns in the table will be populated by this procedure
 **
 **      CREATE TABLE #TD (
-**          Dataset_Num varchar(128),
+**          Dataset_Name varchar(128),
 **          Dataset_ID int NULL,
 **          IN_class varchar(64) NULL,
 **          DS_state_ID int NULL,
@@ -39,6 +39,8 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_request_datasets]
 **          08/26/2021 mem - Skip HMS vs. MS check when the tool is MSFragger
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          03/22/2023 mem - Rename column in temp table
+**                         - Also auto-remove datasets named 'Dataset Name' and 'Dataset_Name' from #TD
 **
 *****************************************************/
 (
@@ -61,11 +63,11 @@ AS
     Set @showDebugMessages = IsNull(@showDebugMessages, 0)
 
     ---------------------------------------------------
-    -- Auto-delete 'Dataset' and 'Dataset_Num' from #TD
+    -- Auto-delete dataset column names from #TD
     ---------------------------------------------------
     --
     DELETE FROM #TD
-    WHERE Dataset_Num IN ('Dataset', 'Dataset_Num')
+    WHERE Dataset_Name IN ('Dataset', 'Dataset Name', 'Dataset_Name', 'Dataset_Num')
 
     ---------------------------------------------------
     -- Update the additional info in #TD
@@ -80,7 +82,7 @@ AS
         #TD.DS_rating = T_Dataset.DS_Rating
     FROM #TD
          INNER JOIN T_Dataset
-           ON #TD.Dataset_Num = T_Dataset.Dataset_Num
+           ON #TD.Dataset_Name = T_Dataset.Dataset_Num
          INNER JOIN T_Instrument_Name
            ON T_Dataset.DS_instrument_name_ID = T_Instrument_Name.Instrument_ID
          INNER JOIN T_Instrument_Class
@@ -96,7 +98,7 @@ AS
     Begin
         SELECT *
         FROM #TD
-        ORDER BY Dataset_Num
+        ORDER BY Dataset_Name
     End
 
     ---------------------------------------------------
@@ -114,10 +116,10 @@ AS
     Begin
         Set @list = ''
 
-        SELECT @list = @list + Dataset_Num + ', '
+        SELECT @list = @list + Dataset_Name + ', '
         FROM #TD
         WHERE DS_Rating = -5
-        ORDER BY Dataset_Num
+        ORDER BY Dataset_Name
 
         -- Remove the trailing comma If the length is less than 400 characters, otherwise truncate
         If Len(@list) < 400
@@ -156,7 +158,7 @@ AS
     --
     set @list = null
     --
-    SELECT @list = Coalesce(@list + Dataset_Num + ', ', Dataset_Num)
+    SELECT @list = Coalesce(@list + Dataset_Name + ', ', Dataset_Name)
     FROM #TD
     WHERE Dataset_ID IS NULL
     --
@@ -188,7 +190,7 @@ AS
     --
     set @list = null
     --
-    SELECT @list = Coalesce(@list + Dataset_Num + ', ', Dataset_Num)
+    SELECT @list = Coalesce(@list + Dataset_Name + ', ', Dataset_Name)
     FROM #TD
     WHERE (@allowNewDatasets = 0 AND DS_state_ID <> 3) OR
           (@allowNewDatasets > 0 AND DS_state_ID NOT IN (1,2,3))
@@ -219,7 +221,7 @@ AS
     --
     set @list = null
     --
-    SELECT @list = Coalesce(@list + Dataset_Num + ', ', Dataset_Num)
+    SELECT @list = Coalesce(@list + Dataset_Name + ', ', Dataset_Name)
     FROM #TD
     WHERE (DS_rating IN (-1, -2))
     --
