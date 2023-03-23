@@ -43,12 +43,13 @@ CREATE PROCEDURE [dbo].[get_job_param_table]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/21/2023 mem - Add job parameter DatasetName
 **                         - Capitalize parameter LegacyFastaFileName
+**          03/22/2023 mem - Remove old parameter for dataset name
 **
 *****************************************************/
 (
     @job int,
     @settingsFileOverride varchar(256) = '',    -- When defined, use this settings file name instead of the one obtained with V_DMS_PipelineJobParameters
-    @debugMode tinyint = 0                        -- When non-zero, prints debug statements
+    @debugMode tinyint = 0                      -- When non-zero, prints debug statements
 )
 AS
     Declare @myError Int = 0
@@ -82,7 +83,6 @@ AS
     (
         Select
           CAST(Dataset As varchar(4000))                        AS DatasetName,
-          CAST(Dataset As varchar(4000))                        AS DatasetNum,              -- ToDo: Remove this after all analysis managers support DatasetName
           CAST(Dataset_ID As varchar(4000))                     AS DatasetID,
           CAST(Dataset_Folder_Name As varchar(4000))            AS DatasetFolderName,
           CAST(Archive_Folder_Path As varchar(4000))            AS DatasetArchivePath,
@@ -112,7 +112,6 @@ AS
     ) TD
     UNPIVOT (Value For [Name] In (
         DatasetName,
-        DatasetNum,             -- ToDo: Remove this after all analysis managers support DatasetName
         DatasetID,
         DatasetFolderName,
         DatasetStoragePath,
