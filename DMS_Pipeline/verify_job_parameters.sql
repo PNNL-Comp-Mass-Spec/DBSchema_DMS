@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[verify_job_parameters]
 **          01/31/2022 mem - Add support for MSFragger
 **          04/11/2022 mem - Use varchar(4000) when populating temporary tables
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Add support for DIA-NN
 **
 *****************************************************/
 (
@@ -50,7 +51,7 @@ AS
     Declare @paramFileValid tinyint
 
     Declare @collectionCountAdded int
-    Declare @scriptBaseName Varchar(24)
+    Declare @scriptBaseName Varchar(24) = ''
 
     ---------------------------------------------------
     -- Get parameter definition
@@ -142,16 +143,29 @@ AS
     -- Cross check to make sure required parameters are defined in #TJP (populated using @paramInput)
     ---------------------------------------------------
     --
-    If @scriptName LIKE 'MaxQuant%' Or @scriptName LIKE 'MSFragger%'
+    If @scriptName LIKE 'MaxQuant%' Or @scriptName LIKE 'MSFragger%' Or @scriptName LIKE 'DIA-NN%'
     Begin
-        -- Verify the MaxQuant or MSFragger parameter file name
+        -- Verify the MaxQuant, MSFragger, or DIA-NN parameter file name
+
         -- Also verify the protein collection (or legacy FASTA file)
         -- For protein collections, will auto-add contaminants if needed
 
         If @scriptName Like 'MaxQuant%'
             Set @scriptBaseName = 'MaxQuant'
-        Else
+
+        If @scriptName Like 'MSFragger%'
             Set @scriptBaseName = 'MSFragger'
+
+        If @scriptName Like 'DIA-NN%'
+            Set @scriptBaseName = 'DIA-NN'
+
+        If @scriptBaseName = ''
+        Begin
+            Set @message = 'Unrecognized script name: ' + @scriptName
+            Set @myError = 50102
+            Print @message
+            return @myError
+        End
 
         SELECT @parameterFileName = Value
         FROM #TJP
@@ -179,16 +193,16 @@ AS
 
         If ISNULL(@protCollOptionsList, '') = ''
         Begin
-            If @scriptBaseName = 'MaxQuant'
+            If @scriptBaseName In ('MaxQuant', 'DIA-NN')
                 Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
             Else
                 Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
         End
 
-        If @scriptBaseName = 'MaxQuant' And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
+        If @scriptBaseName In ('MaxQuant', 'DIA-NN') And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
         Begin
-            Set @message = 'The ProteinOptions parameter must be "seq_direction=forward,filetype=fasta" for MaxQuant jobs'
-            Set @myError = 50102
+            Set @message = 'The ProteinOptions parameter must be "seq_direction=forward,filetype=fasta" for ' + @scriptBaseName + ' jobs'
+            Set @myError = 50103
             Print @message
             return @myError
         End
@@ -196,7 +210,7 @@ AS
         If @scriptBaseName = 'MSFragger' And @protCollOptionsList <> 'seq_direction=decoy,filetype=fasta'
         Begin
             Set @message = 'The ProteinOptions parameter must be "seq_direction=decoy,filetype=fasta" for MSFragger jobs'
-            Set @myError = 50103
+            Set @myError = 50104
             Print @message
             return @myError
         End
@@ -210,7 +224,7 @@ AS
         If @myRowCount = 0
         Begin
             Set @message = 'Parameter file not found: ' + @parameterFileName
-            Set @myError = 50104
+            Set @myError = 50105
             Print @message
             return @myError
         End
@@ -218,7 +232,7 @@ AS
         If @paramFileValid = 0
         Begin
             Set @message = 'Parameter file is not active: ' + @parameterFileName
-            Set @myError = 50105
+            Set @myError = 50106
             Print @message
             return @myError
         End
@@ -226,7 +240,7 @@ AS
         If @paramFileType <> @scriptBaseName
         Begin
             Set @message = 'Parameter file is for ' + @paramFileType + ', and not ' + @scriptBaseName + ': ' + @parameterFileName
-            Set @myError = 50106
+            Set @myError = 50107
             Print @message
             return @myError
         End
@@ -284,7 +298,7 @@ AS
         End
     End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[verify_job_parameters] TO [DDL_Viewer] AS [dbo]

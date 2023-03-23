@@ -81,6 +81,9 @@ CREATE PROCEDURE [dbo].[add_analysis_job_group]
 **          07/01/2022 mem - Rename auto generated parameters to use ParamFileName and ParamFileStoragePath
 **          07/29/2022 mem - Assure that the parameter file and settings file names are not null
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/22/2023 mem - Add support for data package based DIA-NN jobs
+**                         - For data package based jobs, convert every settings file setting to XML compatible with add_update_local_job_in_broker
+**                         - Rename column in temp table
 **
 *****************************************************/
 (
@@ -230,8 +233,8 @@ AS
 
     If @dataPackageID > 0
     Begin
-        If Not @toolName In ('MaxQuant', 'MSFragger')
-            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tools are MaxQuant and MSFragger', 11, 7, @toolName)
+        If Not @toolName In ('MaxQuant', 'MSFragger', 'DIA-NN')
+            RAISERROR ('%s is not a compatible tool for job requests with a data package; the only supported tools are MaxQuant, MSFragger, and DIA-NN', 11, 7, @toolName)
 
         If @requestID <= 0
             RAISERROR ('Data-package based jobs must be associated with an analysis job request', 11, 7)
@@ -290,7 +293,9 @@ AS
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @paramFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%' Or @toolName Like 'DIA-NN%') And
+       @protCollOptionsList Like '%decoy%' And
+       @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 
@@ -302,6 +307,9 @@ AS
 
         If Coalesce(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
+
+        If Coalesce(@message, '') = '' And @toolName LIKE 'DIA-NN%'
+            Set @message = 'Note: changed protein options to forward-only since DIA-NN expects the FASTA file to not have decoy proteins'
     End
 
     If (@toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @paramFileName Not Like '%[_]NoDecoy%'
@@ -422,7 +430,7 @@ AS
                     END
 
     ---------------------------------------------------
-    -- validate job parameters
+    -- Validate job parameters
     ---------------------------------------------------
     --
     Declare @userID int
@@ -515,8 +523,8 @@ AS
 
         Set @logErrors = 1
 
-        If @toolName In ('MaxQuant', 'MSFragger')
-        Begin -- <MaxQuant_MSFragger>
+        If @toolName In ('MaxQuant', 'MSFragger', 'DIA-NN')
+        Begin -- <MaxQuant_MSFragger_DIA-NN>
             Declare @paramFileStoragePath varchar(128)
 
             SELECT @paramFileStoragePath = AJT_parmFileStoragePath
@@ -652,7 +660,12 @@ AS
                 Set @scriptName = 'MSFragger_DataPkg'
             End
 
-            -- Call add_update_local_job_in_broker
+            If @toolName = 'DIA-NN'
+            Begin
+                Set @scriptName = 'DIA-NN_DataPkg'
+            End
+
+            -- Call add_update_local_job_in_broker in DMS_Pipeline
             exec @myError = dbo.s_pipeline_add_update_local_job
                                 @job = @pipelineJob output,
                                 @scriptName = @scriptName,
@@ -703,7 +716,7 @@ AS
                 End
             End
 
-        End -- </MaxQuant_MSFragger>
+        End -- </MaxQuant_MSFragger_DIA-NN>
 
         If @myError = 0 And @mode = 'add'
         Begin
