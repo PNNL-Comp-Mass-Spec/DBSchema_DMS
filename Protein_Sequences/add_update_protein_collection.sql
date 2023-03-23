@@ -22,15 +22,16 @@ CREATE PROCEDURE [dbo].[add_update_protein_collection]
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument @fileName to @collectionName
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
     @collectionName varchar(128),         -- Protein collection name, which is typically the original FASTA file name but without the file extension
     @description varchar(900),
     @collectionSource varchar(900) = '',
-    @collection_type int = 1,
-    @collection_state int,
-    @primary_annotation_type_id int,
+    @collectionType int = 1,
+    @collectionState int,
+    @primaryAnnotationTypeId int,
     @numProteins int = 0,
     @numResidues int = 0,
     @active int = 1,
@@ -131,9 +132,9 @@ AS
             @collectionName,
             @description,
             @collectionSource,
-            @collection_type,
-            @collection_state,
-            @primary_annotation_type_id,
+            @collectionType,
+            @collectionState,
+            @primaryAnnotationTypeId,
             @numProteins,
             @numResidues,
             GETDATE(),
@@ -159,7 +160,7 @@ AS
 --            ) VALUES (
 --            @collectionID,
 --            0,
---            @primary_annotation_type_id
+--            @primaryAnnotationTypeId
 --            )
 
     end
@@ -171,8 +172,8 @@ AS
         SET
             Description = @description,
             Source = Case When @collectionSource = '' and IsNull(Source, '') <> '' Then Source Else @collectionSource End,
-            Collection_State_ID = @collection_state,
-            Collection_Type_ID = @collection_type,
+            Collection_State_ID = @collectionState,
+            Collection_Type_ID = @collectionType,
             NumProteins = @numProteins,
             NumResidues = @numResidues,
             DateModified = GETDATE()
@@ -207,7 +208,7 @@ AS
         ) VALUES (
             @collectionID,
             0,
-            @primary_annotation_type_id
+            @primaryAnnotationTypeId
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount

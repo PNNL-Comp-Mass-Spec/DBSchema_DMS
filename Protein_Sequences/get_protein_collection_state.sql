@@ -7,37 +7,36 @@ CREATE PROCEDURE [dbo].[get_protein_collection_state]
 /****************************************************
 **
 **  Desc: Gets Collection State Name for given CollectionID
-          Returns state 0 if the @Collection_ID does not exist
+          Returns state 0 if the @CollectionID does not exist
 **
-**
-**  Parameters:
 **
 **  Auth:   kja
 **  Date:   08/04/2005
 **          09/14/2015 mem - Now returning "Unknown" if the protein collection ID does not exist in T_Protein_Collections
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @collection_ID int,
-    @state_Name varchar(32) OUTPUT
+    @collectionID int,
+    @stateName varchar(32) OUTPUT
 )
 AS
-    declare @State_ID int
+    declare @StateID int
 
-    set @State_ID = 0
-    set @State_Name = 'Unknown'
+    set @StateID = 0
+    set @StateName = 'Unknown'
 
-    If Exists (Select * From T_Protein_Collections WHERE Protein_Collection_ID = @Collection_ID)
+    If Exists (Select * From T_Protein_Collections WHERE Protein_Collection_ID = @CollectionID)
     Begin
-        SELECT @State_ID = Collection_State_ID
+        SELECT @StateID = Collection_State_ID
         FROM T_Protein_Collections
-        WHERE (Protein_Collection_ID = @Collection_ID)
+        WHERE (Protein_Collection_ID = @CollectionID)
     End
 
-    SELECT @State_Name = State
+    SELECT @StateName = State
     FROM T_Protein_Collection_States
-    WHERE (Collection_State_ID = @State_ID)
+    WHERE (Collection_State_ID = @StateID)
 
     return 0
 

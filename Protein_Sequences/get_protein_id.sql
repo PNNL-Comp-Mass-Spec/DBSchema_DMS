@@ -9,11 +9,10 @@ CREATE PROCEDURE [dbo].[get_protein_id]
 **  Desc: Gets ProteinID for given length and SHA-1 Hash
 **
 **
-**  Parameters:
-**
 **  Auth:   kja
 **  Date:   10/06/2004
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
@@ -21,13 +20,13 @@ CREATE PROCEDURE [dbo].[get_protein_id]
     @hash varchar(40)
 )
 AS
-    declare @Protein_ID int
-    set @Protein_ID = 0
+    declare @ProteinID int
+    set @ProteinID = 0
 
-    SELECT @Protein_ID = Protein_ID FROM T_Proteins
+    SELECT @ProteinID = Protein_ID FROM T_Proteins
      WHERE (Length = @length AND SHA1_Hash = @hash)
 
-    return @Protein_ID
+    return @ProteinID
 
 GO
 GRANT EXECUTE ON [dbo].[get_protein_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

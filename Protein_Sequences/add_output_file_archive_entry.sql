@@ -10,36 +10,33 @@ CREATE PROCEDURE [dbo].[add_output_file_archive_entry]
 **
 **  Return values: Archived_File_ID (nonzero) : success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   03/10/2006
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-/*  @protein_collection_ID int,
-    @sha1_authentication varchar(40),
-    @file_modification_date datetime,
-    @file_size bigint,
-    @archived_file_path varchar(250),
-    @archived_file_type varchar(64),
-    @output_sequence_type varchar(64),
-    @creation_options varchar(250),
+/*  @proteinCollectionID int,
+    @sha1Authentication varchar(40),
+    @fileModificationDate datetime,
+    @fileSize bigint,
+    @archivedFilePath varchar(250),
+    @archivedFileType varchar(64),
+    @outputSequenceType varchar(64),
+    @creationOptions varchar(250),
     @message varchar(512) output
 */
-    @protein_collection_ID int,
-    @crc32_authentication varchar(8),
-    @file_modification_date datetime,
-    @file_size bigint,
-    @protein_count int = 0,
-    @archived_file_type varchar(64),
-    @creation_options varchar(250),
-    @protein_collection_string VARCHAR (8000),
-    @collection_string_hash varchar(40),
-    @archived_file_path varchar(250) output,
+    @proteinCollectionID int,
+    @crc32Authentication varchar(8),
+    @fileModificationDate datetime,
+    @fileSize bigint,
+    @proteinCount int = 0,
+    @archivedFileType varchar(64),
+    @creationOptions varchar(250),
+    @proteinCollectionString VARCHAR (8000),
+    @collectionStringHash varchar(40),
+    @archivedFilePath varchar(250) output,
     @message varchar(512) output
 
 )
@@ -61,7 +58,7 @@ AS
 -- is the hash the right length?
 
     set @myError = 0
-    if LEN(@crc32_authentication) <> 8
+    if LEN(@crc32Authentication) <> 8
     begin
         set @myError = -51000
         set @msg = 'Authentication hash must be 8 alphanumeric characters in length (0-9, A-F)'
@@ -72,13 +69,13 @@ AS
 
 -- does this hash code already exist?
 
-    declare @Archive_Entry_ID int
-    set @Archive_Entry_ID = 0
+    declare @ArchiveEntryID int
+    set @ArchiveEntryID = 0
     declare @skipOutputTableAdd int
 
-    SELECT @Archive_Entry_ID = Archived_File_ID
+    SELECT @ArchiveEntryID = Archived_File_ID
         FROM V_Archived_Output_Files
-        WHERE (Authentication_Hash = @crc32_authentication)
+        WHERE (Authentication_Hash = @crc32Authentication)
 
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -88,7 +85,7 @@ AS
         set @msg = 'Database retrieval error during hash duplication check'
         RAISERROR (@msg, 10, 1)
         set @message = @msg
-        return @myError
+        Return @myError
     end
 
 --  if @myRowCount > 0
@@ -97,7 +94,7 @@ AS
 --      set @myError = -51009
 --      set @msg = 'SHA-1 Authentication Hash already exists for this collection'
 --      RAISERROR (@msg, 10, 1)
---      return @myError
+--      Return @myError
 --  end
 
 
@@ -106,7 +103,7 @@ AS
 
 
     SELECT ID FROM V_Collection_Picker
-     WHERE (ID = @protein_collection_ID)
+     WHERE (ID = @proteinCollectionID)
 
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -117,19 +114,19 @@ AS
         set @myError = -51001
         set @msg = 'Collection does not exist'
         RAISERROR (@msg, 10, 1)
-        return @myError
+        Return @myError
     end
 
 
 
 -- Is the archive path length valid?
 
-    if LEN(@archived_file_path) < 1
+    if LEN(@archivedFilePath) < 1
     begin
         set @myError = -51002
         set @msg = 'No archive path specified!'
         RAISERROR (@msg, 10, 1)
-        return @myError
+        Return @myError
     end
 
 
@@ -137,35 +134,35 @@ AS
 
 -- Check for existence of output file type in T_Archived_File_Types
 
-    declare @archived_file_type_ID int
+    declare @archivedFileTypeID int
 
-    SELECT @archived_file_type_ID = Archived_File_Type_ID
+    SELECT @archivedFileTypeID = Archived_File_Type_ID
         FROM T_Archived_File_Types
-        WHERE File_Type_Name = @archived_file_type
+        WHERE File_Type_Name = @archivedFileType
 
-    if @archived_file_type_ID < 1
+    if @archivedFileTypeID < 1
     begin
         set @myError = -51003
         set @msg = 'archived_file_type does not exist'
         RAISERROR (@msg, 10, 1)
-        return @myError
+        Return @myError
     end
 
 
 /*-- Check for existence of sequence type in T_Output_Sequence_Types
 
-    declare @output_sequence_type_ID int
+    declare @outputSequenceTypeID int
 
-    SELECT @output_sequence_type_ID = Output_Sequence_Type_ID
+    SELECT @outputSequenceTypeID = Output_Sequence_Type_ID
         FROM T_Output_Sequence_Types
-        WHERE Output_Sequence_Type = @output_sequence_type
+        WHERE Output_Sequence_Type = @outputSequenceType
 
-    if @output_sequence_type_ID < 1
+    if @outputSequenceTypeID < 1
     begin
         set @myError = -51003
         set @msg = 'output_sequence_type does not exist'
         RAISERROR (@msg, 10, 1)
-        return @myError
+        Return @myError
     end
 */
 
@@ -175,7 +172,7 @@ AS
 
 --  SELECT Archived_File_ID
 --      FROM T_Archived_Output_Files
---      WHERE (Archived_File_Path = @archived_file_path)
+--      WHERE (Archived_File_Path = @archivedFilePath)
 --
 --  SELECT @myError = @@error, @myRowCount = @@rowcount
 --
@@ -184,7 +181,7 @@ AS
 --      set @msg = 'Database retrieval error during archive path duplication check'
 --      RAISERROR (@msg, 10, 1)
 --      set @message = @msg
---      return @myError
+--      Return @myError
 --  end
 --
 --  if @myRowCount <> 0
@@ -192,14 +189,14 @@ AS
 --      set @myError = -51010
 --      set @msg = 'An archived file already exists at this location'
 --      RAISERROR (@msg, 10, 1)
---      return @myError
+--      Return @myError
 --  end
 --
 
 --  if @myError <> 0
 --  begin
 --      set @message = @msg
---      return @myError
+--      Return @myError
 --  end
 
 
@@ -207,7 +204,7 @@ AS
 
     SELECT Archived_File_ID
     FROM T_Archived_Output_File_Collections_XRef
-    WHERE Protein_Collection_ID = @protein_collection_ID
+    WHERE Protein_Collection_ID = @proteinCollectionID
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -216,26 +213,26 @@ AS
         set @msg = 'Database retrieval error'
         RAISERROR (@msg, 10, 1)
         set @message = @msg
-        return @myError
+        Return @myError
     end
 
-    declare @archived_file_state varchar(64)
+    declare @archivedFileState varchar(64)
 
     if @myRowCount = 0
     begin
-        SET @archived_file_state = 'original'
+        SET @archivedFileState = 'original'
     end
 
     if @myRowCount > 0
     begin
-        SET @archived_file_state = 'modified'
+        SET @archivedFileState = 'modified'
     end
 
-    declare @archived_file_state_ID int
+    declare @archivedFileStateID int
 
-    SELECT @archived_file_state_ID = Archived_File_State_ID
+    SELECT @archivedFileStateID = Archived_File_State_ID
     FROM T_Archived_File_States
-    WHERE Archived_File_State = @archived_file_state
+    WHERE Archived_File_State = @archivedFileState
 
 
 
@@ -258,7 +255,7 @@ AS
     -- Make the initial entry with what we have
     ---------------------------------------------------
 
-    if @Archive_Entry_ID = 0
+    if @ArchiveEntryID = 0
     begin
 
 /*  INSERT INTO T_Archived_Output_Files (
@@ -272,15 +269,15 @@ AS
         File_Modification_Date,
         Filesize
     ) VALUES (
-        @archived_file_type_ID,
-        @archived_file_state_ID,
-        @output_sequence_type_ID,
-        @archived_file_path,
-        @creation_options,
-        @sha1_authentication,
+        @archivedFileTypeID,
+        @archivedFileStateID,
+        @outputSequenceTypeID,
+        @archivedFilePath,
+        @creationOptions,
+        @sha1Authentication,
         GETDATE(),
-        @file_modification_date,
-        @file_size)
+        @fileModificationDate,
+        @fileSize)
 */
     INSERT INTO T_Archived_Output_Files (
         Archived_File_Type_ID,
@@ -295,17 +292,17 @@ AS
         Protein_Collection_List,
         Collection_List_Hex_Hash
     ) VALUES (
-        @archived_file_type_ID,
-        @archived_file_state_ID,
-        @archived_file_path,
-        @crc32_authentication,
+        @archivedFileTypeID,
+        @archivedFileStateID,
+        @archivedFilePath,
+        @crc32Authentication,
         GETDATE(),
-        @file_modification_date,
-        @creation_options,
-        @file_size,
-        @protein_count,
-        @protein_collection_string,
-        @collection_string_hash)
+        @fileModificationDate,
+        @creationOptions,
+        @fileSize,
+        @proteinCount,
+        @proteinCollectionString,
+        @collectionStringHash)
 
 
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -313,20 +310,20 @@ AS
         if @myError <> 0
         begin
             rollback transaction @transName
-            set @msg = 'Insert operation failed: Archive File Entry for file with hash = "' + @crc32_authentication + '"'
+            set @msg = 'Insert operation failed: Archive File Entry for file with hash = "' + @crc32Authentication + '"'
             RAISERROR (@msg, 10, 1)
             set @message = @msg
-            return -51007
+            Return -51007
         end
 
 
-        SELECT @Archive_Entry_ID = @@Identity
+        SELECT @ArchiveEntryID = @@Identity
 
-        set @archived_file_path = REPLACE(@archived_file_path, '00000', RIGHT('000000'+CAST(@Archive_Entry_ID AS VARCHAR),6))
+        set @archivedFilePath = REPLACE(@archivedFilePath, '00000', RIGHT('000000'+CAST(@ArchiveEntryID AS VARCHAR),6))
 
         UPDATE T_Archived_Output_Files
-        SET Archived_File_Path = @archived_file_path
-        WHERE Archived_File_ID = @Archive_Entry_ID
+        SET Archived_File_Path = @archivedFilePath
+        WHERE Archived_File_ID = @ArchiveEntryID
 
     ---------------------------------------------------
     -- Parse and Store Creation Options
@@ -352,21 +349,21 @@ AS
     SET @tmpEndPosition = 0
     SET @tmpCommaPosition = 0
 
-    SET @tmpCommaPosition =  CHARINDEX(',', @creation_options)
+    SET @tmpCommaPosition =  CHARINDEX(',', @creationOptions)
     if @tmpCommaPosition = 0
     begin
-        SET @tmpCommaPosition = LEN(@creation_options)
+        SET @tmpCommaPosition = LEN(@creationOptions)
     end
 
-        WHILE(@tmpCommaPosition < LEN(@creation_options))
+        WHILE(@tmpCommaPosition < LEN(@creationOptions))
         begin
-            SET @tmpCommaPosition = CHARINDEX(',', @creation_options, @tmpStartPosition)
+            SET @tmpCommaPosition = CHARINDEX(',', @creationOptions, @tmpStartPosition)
             if @tmpCommaPosition = 0
             begin
-                SET @tmpCommaPosition = LEN(@creation_options) + 1
+                SET @tmpCommaPosition = LEN(@creationOptions) + 1
             end
             SET @tmpEndPosition = @tmpCommaPosition - @tmpStartPosition
-            SET @tmpOptionString = LTRIM(SUBSTRING(@creation_options, @tmpStartPosition, @tmpCommaPosition))
+            SET @tmpOptionString = LTRIM(SUBSTRING(@creationOptions, @tmpStartPosition, @tmpCommaPosition))
             SET @tmpEqualsPosition = CHARINDEX('=', @tmpOptionString)
 
             SET @tmpOptionKeyword = LEFT(@tmpOptionString, @tmpEqualsPosition - 1)
@@ -381,14 +378,14 @@ AS
             begin
                 SET @msg = 'Database retrieval error during keyword validity check'
                 SET @message = @msg
-                return @myError
+                Return @myError
             end
 
             if @myRowCount = 0
             begin
                 SET @msg = 'Keyword: "' + @tmpOptionKeyword + '" not located'
                 SET @message = @msg
-                return -50011
+                Return -50011
             end
 
 
@@ -422,7 +419,7 @@ AS
                 ) VALUES (
                     @tmpOptionKeywordID,
                     @tmpOptionValueID,
-                    @Archive_Entry_ID)
+                    @ArchiveEntryID)
 
                 end
 
@@ -432,7 +429,7 @@ AS
                     set @msg = 'Insert operation failed: Creation Options'
                     RAISERROR (@msg, 10, 1)
                     set @message = @msg
-                    return -51007
+                    Return -51007
                 end
 
 
@@ -450,25 +447,25 @@ AS
             Archived_File_ID,
             Protein_Collection_ID
         ) VALUES (
-            @Archive_Entry_ID,
-            @protein_collection_ID)
+            @ArchiveEntryID,
+            @proteinCollectionID)
 
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
             rollback transaction @transName
-            set @msg = 'Insert operation failed: Archive File Member Entry for "' + @protein_collection_ID + '"'
+            set @msg = 'Insert operation failed: Archive File Member Entry for "' + @proteinCollectionID + '"'
             RAISERROR (@msg, 10, 1)
             set @message = @msg
-            return -51011
+            Return -51011
         end
     end
 
 
     commit transaction @transName
 
-    return @Archive_Entry_ID
+    Return @ArchiveEntryID
 
 GO
 GRANT EXECUTE ON [dbo].[add_output_file_archive_entry] TO [DMS_Analysis_Job_Runner] AS [dbo]

@@ -10,18 +10,15 @@ CREATE PROCEDURE [dbo].[update_protein_collection_state]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   07/28/2005
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @protein_collection_ID int,
-    @state_ID int,
+    @proteinCollectionID int,
+    @stateID int,
     @message varchar(256) output
 )
 AS
@@ -36,19 +33,19 @@ AS
     declare @msg varchar(256)
 
     ---------------------------------------------------
-    -- Make sure that the @state_ID value exists in
+    -- Make sure that the @stateID value exists in
     -- T_Protein_Collection_States
     ---------------------------------------------------
 
-    declare @ID_Check int
-    set @ID_Check = 0
+    declare @IDCheck int
+    set @IDCheck = 0
 
-    SELECT @ID_Check = Collection_State_ID FROM T_Protein_Collection_States
-    WHERE Collection_State_ID = @state_ID
+    SELECT @IDCheck = Collection_State_ID FROM T_Protein_Collection_States
+    WHERE Collection_State_ID = @stateID
 
-    if @ID_Check = 0
+    if @IDCheck = 0
     begin
-        set @message = 'Collection_State_ID: "' + @state_ID + '" does not exist'
+        set @message = 'Collection_State_ID: "' + @stateID + '" does not exist'
         RAISERROR (@message, 10, 1)
         return 1  -- State Does not exist
     end
@@ -66,10 +63,10 @@ AS
     ---------------------------------------------------
         UPDATE T_Protein_Collections
         SET
-            Collection_State_ID = @state_ID,
+            Collection_State_ID = @stateID,
             DateModified = GETDATE()
         WHERE
-            (Protein_Collection_ID = @protein_collection_ID)
+            (Protein_Collection_ID = @proteinCollectionID)
     --
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -77,7 +74,7 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @message = 'Update operation failed: The state of "' + @protein_collection_ID + '" could not be updated'
+        set @message = 'Update operation failed: The state of "' + @proteinCollectionID + '" could not be updated'
         RAISERROR (@message, 10, 1)
         return 51007
     end

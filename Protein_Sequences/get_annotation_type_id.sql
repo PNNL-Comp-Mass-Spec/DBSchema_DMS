@@ -9,11 +9,10 @@ CREATE PROCEDURE [dbo].[get_annotation_type_id]
 **  Desc: Gets AnnotationTypeID for a given Annotation Name
 **
 **
-**  Parameters:
-**
 **  Auth:   kja
 **  Date:   01/11/2006
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
@@ -21,13 +20,13 @@ CREATE PROCEDURE [dbo].[get_annotation_type_id]
     @authID int
 )
 AS
-    declare @annType_id int
-    set @annType_id = 0
+    declare @annTypeId int
+    set @annTypeId = 0
 
-    SELECT @annType_id = Annotation_Type_ID FROM T_Annotation_Types
+    SELECT @annTypeId = Annotation_Type_ID FROM T_Annotation_Types
      WHERE (TypeName = @annName and Authority_ID = @authID)
 
-    return @annType_id
+    return @annTypeId
 
 GO
 GRANT EXECUTE ON [dbo].[get_annotation_type_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

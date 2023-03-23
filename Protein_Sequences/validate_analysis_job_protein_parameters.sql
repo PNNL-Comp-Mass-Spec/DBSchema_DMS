@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_protein_parameters]
 **          07/27/2022 mem - Switch from FileName to Collection_Name in T_Protein_Collections
 **          01/06/2023 mem - Use new column name in view
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 **  Error Return Codes:
 **      (-50001) = both values cannot be blank or 'na'
@@ -111,9 +112,9 @@ AS
      ** Check Validity of Organism Name
      ****************************************************************/
 
-    DECLARE @organism_ID int
+    DECLARE @organismID int
 
-    SELECT @organism_ID = ID
+    SELECT @organismID = ID
     FROM V_Organism_Picker
     WHERE Short_Name = @organismName
 

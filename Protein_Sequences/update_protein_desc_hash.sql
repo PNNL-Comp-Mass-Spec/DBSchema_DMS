@@ -10,17 +10,14 @@ CREATE PROCEDURE [dbo].[update_protein_desc_hash]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   02/21/2007
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @description_ID int,
+    @descriptionID int,
     @sha1Hash varchar(40),
     @message varchar(512) output
 )
@@ -52,7 +49,7 @@ AS
     UPDATE T_Protein_Descriptions
     SET
         Fingerprint = @SHA1Hash
-    WHERE (Description_ID = @Description_ID)
+    WHERE (Description_ID = @DescriptionID)
 
 
         --

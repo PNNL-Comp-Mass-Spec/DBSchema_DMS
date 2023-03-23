@@ -10,13 +10,10 @@ CREATE PROCEDURE [dbo].[add_annotation_type]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   01/11/2006
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
@@ -36,20 +33,20 @@ AS
     set @myRowCount = 0
 
     declare @msg varchar(256)
-    declare @member_ID int
+    declare @memberID int
 
-    declare @annType_id int
-    set @annType_id = 0
+    declare @annTypeId int
+    set @annTypeId = 0
 
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
 
-    execute @annType_id = get_annotation_type_id @name, @authID
+    execute @annTypeId = get_annotation_type_id @name, @authID
 
-    if @annType_id > 0
+    if @annTypeId > 0
     begin
-        return -@annType_id
+        return -@annTypeId
     end
 
     ---------------------------------------------------
@@ -69,7 +66,7 @@ AS
     VALUES     (@name, @description, @example, @authID)
 
 
-    SELECT @annType_id = @@Identity
+    SELECT @annTypeId = @@Identity
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -83,7 +80,7 @@ AS
 
     commit transaction @transName
 
-    return @annType_id
+    return @annTypeId
 
 GO
 GRANT EXECUTE ON [dbo].[add_annotation_type] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

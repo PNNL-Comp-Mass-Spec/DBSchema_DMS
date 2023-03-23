@@ -17,10 +17,11 @@ CREATE PROCEDURE [dbo].[update_protein_sequence_hash]
 **  Auth:   kja
 **  Date:   03/13/2006
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @protein_ID int,
+    @proteinID int,
     @sha1Hash varchar(40),
     @seguid varchar(27),
     @message varchar(512) output
@@ -54,7 +55,7 @@ AS
     SET
         SHA1_Hash = @sha1Hash,
         SEGUID = @seguid
-    WHERE (Protein_ID = @Protein_ID)
+    WHERE (Protein_ID = @ProteinID)
 
 
         --

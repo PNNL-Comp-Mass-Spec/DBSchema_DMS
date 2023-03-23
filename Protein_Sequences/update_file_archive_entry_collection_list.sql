@@ -10,19 +10,16 @@ CREATE PROCEDURE [dbo].[update_file_archive_entry_collection_list]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   02/21/2007
 **          02/11/2009 mem - Added parameter @CollectionListHexHash
 **                         - Now storing @Sha1Hash in Authentication_Hash instead of in Collection_List_Hash
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @archived_File_Entry_ID int,
+    @archivedFileEntryID int,
     @proteinCollectionList varchar(8000),
     @sha1Hash varchar(40),
     @message varchar(512) output,
@@ -58,7 +55,7 @@ AS
         Protein_Collection_List = @ProteinCollectionList,
         Authentication_Hash =   @SHA1Hash,
         Collection_List_Hex_Hash  = @CollectionListHexHash
-    WHERE (Archived_File_ID = @Archived_File_Entry_ID)
+    WHERE (Archived_File_ID = @ArchivedFileEntryID)
 
 
         --

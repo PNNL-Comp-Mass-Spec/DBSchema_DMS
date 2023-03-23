@@ -10,23 +10,20 @@ CREATE PROCEDURE [dbo].[update_protein_sequence_info]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   10/06/2004
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @protein_ID int,
+    @proteinID int,
     @sequence text,
     @length int,
-    @molecular_formula varchar(128),
-    @monoisotopic_mass float,
-    @average_mass float,
-    @sha1_hash varchar(40),
+    @molecularFormula varchar(128),
+    @monoisotopicMass float,
+    @averageMass float,
+    @sha1Hash varchar(40),
     @message varchar(512) output
 )
 AS
@@ -48,15 +45,15 @@ AS
 
     SELECT @tmpHash = SHA1_Hash
     FROM T_Proteins
-    WHERE Protein_ID = @Protein_ID
+    WHERE Protein_ID = @ProteinID
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     if @myRowCount = 0
     begin
-        SET @msg = 'Protein ID ' + @Protein_ID + ' not found'
+        SET @msg = 'Protein ID ' + @ProteinID + ' not found'
         RAISERROR(@msg, 10, 1)
-        return  -50001
+        Return  -50001
     end
 
 
@@ -84,27 +81,27 @@ AS
         ) VALUES (
             @sequence,
             @length,
-            @molecular_formula,
-            @monoisotopic_mass,
-            @average_mass,
-            @sha1_hash,
+            @molecularFormula,
+            @monoisotopicMass,
+            @averageMass,
+            @sha1Hash,
             GETDATE(),
             GETDATE()
         )
 
 
-    SELECT @Protein_ID = @@Identity
+    SELECT @ProteinID = @@Identity
 */
 
     UPDATE T_Proteins
     SET [Sequence] = @sequence,
         Length = @length,
-        Molecular_Formula = @molecular_formula,
-        Monoisotopic_Mass = @monoisotopic_mass,
-        Average_Mass = @average_mass,
-        SHA1_Hash = @sha1_hash,
+        Molecular_Formula = @molecularFormula,
+        Monoisotopic_Mass = @monoisotopicMass,
+        Average_Mass = @averageMass,
+        SHA1_Hash = @sha1Hash,
         DateModified = GETDATE()
-    WHERE Protein_ID = @Protein_ID
+    WHERE Protein_ID = @ProteinID
 
         --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -114,12 +111,12 @@ AS
         rollback transaction @transName
         set @msg = 'Update operation failed!'
         RAISERROR (@msg, 10, 1)
-        return 51007
+        Return 51007
     end
 
     commit transaction @transName
 
-    return 0
+    Return 0
 
 GO
 GRANT EXECUTE ON [dbo].[update_protein_sequence_info] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

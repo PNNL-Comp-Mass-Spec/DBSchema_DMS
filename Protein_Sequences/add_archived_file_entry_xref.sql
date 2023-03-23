@@ -11,19 +11,16 @@ CREATE PROCEDURE [dbo].[add_archived_file_entry_xref]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   03/17/2006 - kja
-**          03/12/2014 - Now validating @Collection_ID and @Archived_File_ID
+**          03/12/2014 - Now validating @CollectionID and @ArchivedFileID
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @collection_ID int,
-    @archived_File_ID int,
+    @collectionID int,
+    @archivedFileID int,
     @message varchar(512) output
 )
 AS
@@ -41,15 +38,15 @@ AS
     -- Verify the File ID and Collection ID
     ---------------------------------------------------
 
-    If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @Collection_ID)
+    If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @CollectionID)
     Begin
-        Set @message = 'Protein_Collection_ID ' + Convert(varchar(12), @Collection_ID) + ' not found in T_Protein_Collections'
+        Set @message = 'Protein_Collection_ID ' + Convert(varchar(12), @CollectionID) + ' not found in T_Protein_Collections'
         Return 51000
     End
 
-    If Not Exists (SELECT * FROM T_Archived_Output_Files WHERE Archived_File_ID = @Archived_File_ID)
+    If Not Exists (SELECT * FROM T_Archived_Output_Files WHERE Archived_File_ID = @ArchivedFileID)
     Begin
-        Set @message = 'Archived_File_ID ' + Convert(varchar(12), @Archived_File_ID) + ' not found in T_Archived_Output_Files'
+        Set @message = 'Archived_File_ID ' + Convert(varchar(12), @ArchivedFileID) + ' not found in T_Archived_Output_Files'
         Return 51001
     End
 
@@ -68,8 +65,8 @@ AS
     SELECT *
     FROM T_Archived_Output_File_Collections_XRef
     WHERE
-        (Archived_File_ID = @Archived_File_ID AND
-         Protein_Collection_ID = @Collection_ID)
+        (Archived_File_ID = @ArchivedFileID AND
+         Protein_Collection_ID = @CollectionID)
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -81,7 +78,7 @@ AS
     begin
 
         INSERT INTO T_Archived_Output_File_Collections_XRef (Archived_File_ID, Protein_Collection_ID)
-        VALUES (@Archived_File_ID, @Collection_ID)
+        VALUES (@ArchivedFileID, @CollectionID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --

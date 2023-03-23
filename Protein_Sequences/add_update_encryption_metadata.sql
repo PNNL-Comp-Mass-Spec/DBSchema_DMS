@@ -10,22 +10,19 @@ CREATE PROCEDURE [dbo].[add_update_encryption_metadata]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   04/14/2006
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 **
 **      (-50001) = Protein Collection ID not in T_Protein_Collections
 **
 *****************************************************/
 (
-    @protein_Collection_ID int,
-    @encryption_Passphrase varchar(64),
-    @passphrase_SHA1_Hash varchar(40),
+    @proteinCollectionID int,
+    @encryptionPassphrase varchar(64),
+    @passphraseSHA1Hash varchar(40),
     @message varchar(512) output
 )
 AS
@@ -46,7 +43,7 @@ AS
 
     SELECT Protein_Collection_ID
     FROM T_Protein_Collections
-    WHERE Protein_Collection_ID = @Protein_Collection_ID
+    WHERE Protein_Collection_ID = @ProteinCollectionID
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -54,14 +51,14 @@ AS
     begin
         set @msg = 'Error during Collection ID existence check'
         RAISERROR(@msg, 10, 1)
-        return @myError
+        Return @myError
     end
 
     if @myRowCount = 0
     begin
         set @msg = 'Error during Collection ID existence check'
         RAISERROR(@msg, 10, 1)
-        return -50001
+        Return -50001
     end
 
     ---------------------------------------------------
@@ -78,16 +75,16 @@ AS
 
     UPDATE T_Protein_Collections
     SET Contents_Encrypted = 1
-    WHERE Protein_Collection_ID = @Protein_Collection_ID
+    WHERE Protein_Collection_ID = @ProteinCollectionID
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @msg = 'Encryption state update operation failed: "' + @Protein_Collection_ID + '"'
+        set @msg = 'Encryption state update operation failed: "' + @ProteinCollectionID + '"'
         RAISERROR (@msg, 10, 1)
-        return -51007
+        Return -51007
     end
 
     ---------------------------------------------------
@@ -99,8 +96,8 @@ AS
         Passphrase,
         Protein_Collection_ID
     ) VALUES (
-        @Encryption_Passphrase,
-        @Protein_Collection_ID
+        @EncryptionPassphrase,
+        @ProteinCollectionID
     )
 
     SELECT @passPhraseID = @@Identity
@@ -111,9 +108,9 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @msg = 'Passphrase insert operation failed: "' + @Protein_Collection_ID + '"'
+        set @msg = 'Passphrase insert operation failed: "' + @ProteinCollectionID + '"'
         RAISERROR (@msg, 10, 1)
-        return -51007
+        Return -51007
     end
 
     ---------------------------------------------------
@@ -126,8 +123,8 @@ AS
         Protein_Collection_ID,
         Passphrase_ID
     ) VALUES (
-        @Passphrase_SHA1_Hash,
-        @Protein_Collection_ID,
+        @PassphraseSHA1Hash,
+        @ProteinCollectionID,
         @passphraseID
     )
 
@@ -137,15 +134,15 @@ AS
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @msg = 'Passphrase hash insert operation failed: "' + @Protein_Collection_ID + '"'
+        set @msg = 'Passphrase hash insert operation failed: "' + @ProteinCollectionID + '"'
         RAISERROR (@msg, 10, 1)
-        return -51007
+        Return -51007
     end
 
 
     commit transaction @transName
 
-    RETURN @passPhraseID
+    Return @passPhraseID
 
 GO
 GRANT EXECUTE ON [dbo].[add_update_encryption_metadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

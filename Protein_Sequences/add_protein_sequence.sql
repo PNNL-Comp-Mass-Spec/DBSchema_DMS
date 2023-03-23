@@ -10,24 +10,21 @@ CREATE PROCEDURE [dbo].[add_protein_sequence]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   10/06/2004
 **          12/11/2012 mem - Removed transaction
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
     @sequence text,
     @length int,
-    @molecular_formula varchar(128),
-    @monoisotopic_mass float,
-    @average_mass float,
-    @sha1_hash varchar(40),
-    @is_encrypted tinyint,
+    @molecularFormula varchar(128),
+    @monoisotopicMass float,
+    @averageMass float,
+    @sha1Hash varchar(40),
+    @isEncrypted tinyint,
     @mode varchar(12) = 'add',      -- The only option is "add"
     @message varchar(512) output
 )
@@ -45,14 +42,14 @@ AS
     -- Does entry already exist?
     ---------------------------------------------------
 
-    declare @Protein_ID int
-    set @Protein_ID = 0
+    declare @ProteinID int
+    set @ProteinID = 0
 
-    execute @Protein_ID = get_protein_id @length, @sha1_hash
+    execute @ProteinID = get_protein_id @length, @sha1Hash
 
-    if @Protein_ID > 0 and @mode = 'add'
+    if @ProteinID > 0 and @mode = 'add'
     begin
-        return @Protein_ID
+        Return @ProteinID
     end
 
 
@@ -75,26 +72,26 @@ AS
         ) VALUES (
             @sequence,
             @length,
-            @molecular_formula,
-            @monoisotopic_mass,
-            @average_mass,
-            @sha1_hash,
-            @is_encrypted,
+            @molecularFormula,
+            @monoisotopicMass,
+            @averageMass,
+            @sha1Hash,
+            @isEncrypted,
             GETDATE(),
             GETDATE()
         )
         --
-        SELECT @myError = @@error, @myRowCount = @@rowcount, @Protein_ID = SCOPE_IDENTITY()
+        SELECT @myError = @@error, @myRowCount = @@rowcount, @ProteinID = SCOPE_IDENTITY()
         --
         if @myError <> 0
         begin
             set @msg = 'Insert operation failed!'
             RAISERROR (@msg, 10, 1)
-            return 51007
+            Return 51007
         end
     end
 
-    return @Protein_ID
+    Return @ProteinID
 
 GO
 GRANT EXECUTE ON [dbo].[add_protein_sequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

@@ -10,19 +10,16 @@ CREATE PROCEDURE [dbo].[add_naming_authority]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   12/14/2005
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
     @name varchar(64),
     @description varchar(128),
-    @web_address varchar(128),
+    @webAddress varchar(128),
     @message varchar(256) output
 )
 AS
@@ -35,20 +32,20 @@ AS
     set @myRowCount = 0
 
     declare @msg varchar(256)
-    declare @member_ID int
+    declare @memberID int
 
-    declare @auth_id int
-    set @auth_id = 0
+    declare @authId int
+    set @authId = 0
 
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
 
-    execute @auth_id = get_naming_authority_id @name
+    execute @authId = get_naming_authority_id @name
 
-    if @auth_id > 0
+    if @authId > 0
     begin
-        return -@auth_id
+        return -@authId
     end
 
     ---------------------------------------------------
@@ -65,10 +62,10 @@ AS
     ---------------------------------------------------
     INSERT INTO T_Naming_Authorities
                ([Name], Description, Web_Address)
-    VALUES     (@name, @description, @web_address)
+    VALUES     (@name, @description, @webAddress)
 
 
-    SELECT @auth_id = @@Identity
+    SELECT @authId = @@Identity
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -82,7 +79,7 @@ AS
 
     commit transaction @transName
 
-    return @auth_ID
+    return @authID
 
 GO
 GRANT EXECUTE ON [dbo].[add_naming_authority] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

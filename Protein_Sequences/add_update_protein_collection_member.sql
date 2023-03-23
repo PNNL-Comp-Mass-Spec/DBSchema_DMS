@@ -17,13 +17,14 @@ CREATE PROCEDURE [dbo].[add_update_protein_collection_member]
 **          11/23/2005 kja - Added parameters
 **          12/11/2012 mem - Removed transaction
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @reference_ID int,
-    @protein_ID int,
-    @protein_collection_ID int,
-    @sorting_index int,
+    @referenceID int,
+    @proteinID int,
+    @proteinCollectionID int,
+    @sortingIndex int,
     @mode varchar(10),
     @message varchar(256) output
 )
@@ -36,19 +37,19 @@ AS
     set @myRowCount = 0
 
     declare @msg varchar(256)
-    declare @member_ID int
+    declare @memberID int
 
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
 
---  declare @ID_Check int
---  set @ID_Check = 0
+--  declare @IDCheck int
+--  set @IDCheck = 0
 --
---  SELECT @ID_Check = Protein_ID FROM T_Protein_Collection_Members
---  WHERE Protein_Collection_ID = @protein_collection_ID
+--  SELECT @IDCheck = Protein_ID FROM T_Protein_Collection_Members
+--  WHERE Protein_Collection_ID = @proteinCollectionID
 --
---  if @ID_Check > 0
+--  if @IDCheck > 0
 --  begin
 --      return 1  -- Entry already exists
 --  end
@@ -65,17 +66,17 @@ AS
             Protein_Collection_ID,
             Sorting_Index
         ) VALUES (
-            @reference_ID,
-            @protein_ID,
-            @protein_collection_ID,
-            @sorting_index
+            @referenceID,
+            @proteinID,
+            @proteinCollectionID,
+            @sortingIndex
         )
         --
-        SELECT @myError = @@error, @myRowCount = @@rowcount, @member_ID = SCOPE_IDENTITY()
+        SELECT @myError = @@error, @myRowCount = @@rowcount, @memberID = SCOPE_IDENTITY()
         --
         if @myError <> 0
         begin
-            set @msg = 'Insert operation failed for Protein_ID: "' + Convert(varchar(12), @protein_ID) + '"'
+            set @msg = 'Insert operation failed for Protein_ID: "' + Convert(varchar(12), @proteinID) + '"'
             RAISERROR (@msg, 10, 1)
             return 51007
         end
@@ -88,20 +89,20 @@ AS
         ---------------------------------------------------
         --
         UPDATE T_Protein_Collection_Members
-        SET Sorting_Index = @sorting_index
-        WHERE (Protein_ID = @protein_ID and Original_Reference_ID = @reference_ID and Protein_Collection_ID = @protein_collection_ID)
+        SET Sorting_Index = @sortingIndex
+        WHERE (Protein_ID = @proteinID and Original_Reference_ID = @referenceID and Protein_Collection_ID = @proteinCollectionID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
             --
         if @myError <> 0
         begin
-            set @msg = 'Update operation failed for Protein_ID: "' + Convert(varchar(12), @protein_ID) + '"'
+            set @msg = 'Update operation failed for Protein_ID: "' + Convert(varchar(12), @proteinID) + '"'
             RAISERROR (@msg, 10, 1)
             return 51008
         end
     end
 
-    return @member_ID
+    return @memberID
 
 GO
 GRANT EXECUTE ON [dbo].[add_update_protein_collection_member] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

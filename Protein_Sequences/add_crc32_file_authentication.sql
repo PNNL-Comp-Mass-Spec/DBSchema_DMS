@@ -10,18 +10,15 @@ CREATE PROCEDURE [dbo].[add_crc32_file_authentication]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
-**
-**
 **  Auth:   kja
 **  Date:   04/15/2005
 **          07/20/2015 mem - Added parameters @numProteins and @totalResidueCount
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @collection_ID int,
+    @collectionID int,
     @crc32FileHash varchar(8),
     @message varchar(512) output,
     @numProteins int = 0,           -- The number of proteins for this protein collection; used to update T_Protein_Collections
@@ -55,7 +52,7 @@ AS
     SET
         Authentication_Hash = @CRC32FileHash,
         DateModified = GETDATE()
-    WHERE (Protein_Collection_ID = @Collection_ID)
+    WHERE (Protein_Collection_ID = @CollectionID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -72,7 +69,7 @@ AS
         UPDATE T_Protein_Collections
         SET NumProteins = @numProteins,
             NumResidues = @totalResidueCount
-        WHERE Protein_Collection_ID = @Collection_ID
+        WHERE Protein_Collection_ID = @CollectionID
     End
 
     commit transaction @transName

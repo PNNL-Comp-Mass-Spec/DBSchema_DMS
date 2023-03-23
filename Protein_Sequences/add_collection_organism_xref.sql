@@ -11,17 +11,16 @@ CREATE PROCEDURE [dbo].[add_collection_organism_xref]
 **  Returns the ID value for the mapping in T_Collection_Organism_Xref
 **  Returns 0 or a negative number if unable to update T_Collection_Organism_Xref
 **
-**  Parameters:
-**
 **  Auth:   kja
 **  Date:   06/01/2006
-**          08/15/2006 mem - Updated to return @member_ID if the mapping already exists, or 0 or a negative number if it doesn't
+**          08/15/2006 mem - Updated to return @memberID if the mapping already exists, or 0 or a negative number if it doesn't
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @protein_Collection_ID int,
-    @organism_ID int,
+    @proteinCollectionID int,
+    @organismID int,
     @message varchar(256) output
 )
 AS
@@ -34,21 +33,21 @@ AS
     set @myRowCount = 0
 
     declare @msg varchar(256)
-    declare @member_ID int
+    declare @memberID int
 
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
 
-    --execute @auth_id = get_naming_authority_id @name
+    --execute @authId = get_naming_authority_id @name
 
-    SELECT @member_ID = ID FROM T_Collection_Organism_Xref
-    WHERE (Protein_Collection_ID = @Protein_Collection_ID AND
-           Organism_ID = @Organism_ID)
+    SELECT @memberID = ID FROM T_Collection_Organism_Xref
+    WHERE (Protein_Collection_ID = @ProteinCollectionID AND
+           Organism_ID = @OrganismID)
 
-    if @member_ID > 0
+    if @memberID > 0
     begin
-        return @member_ID
+        return @memberID
     end
 
     ---------------------------------------------------
@@ -65,24 +64,24 @@ AS
     ---------------------------------------------------
     INSERT INTO T_Collection_Organism_Xref
                (Protein_Collection_ID, Organism_ID)
-    VALUES     (@Protein_Collection_ID, @Organism_ID)
+    VALUES     (@ProteinCollectionID, @OrganismID)
 
 
-    SELECT @member_ID = @@Identity
+    SELECT @memberID = @@Identity
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     if @myError <> 0
     begin
         rollback transaction @transName
-        set @msg = 'Insert operation failed for Protein Collection: "' + @Protein_Collection_ID + '"'
+        set @msg = 'Insert operation failed for Protein Collection: "' + @ProteinCollectionID + '"'
         RAISERROR (@msg, 10, 1)
         return -51007
     end
 
     commit transaction @transName
 
-    return @member_ID
+    return @memberID
 
 GO
 GRANT EXECUTE ON [dbo].[add_collection_organism_xref] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]

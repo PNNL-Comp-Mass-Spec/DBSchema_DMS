@@ -8,15 +8,14 @@ CREATE PROCEDURE [dbo].[update_protein_collection_counts]
 **
 **  Desc: Updates the protein and residue counts tracked in T_Protein_Collections for the given collection
 **
-**  Parameters:
-**
 **  Auth:   mem
 **  Date:   09/14/2015 mem - Initial release
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Remove underscores from variables
 **
 *****************************************************/
 (
-    @collection_ID int,
+    @collectionID int,
     @numProteins int,
     @numResidues int,
     @message varchar(256)='' output
@@ -24,9 +23,9 @@ CREATE PROCEDURE [dbo].[update_protein_collection_counts]
 AS
     declare @myError int = 0
 
-    If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @Collection_ID)
+    If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @CollectionID)
     Begin
-        Set @message = 'Protein collection ID not found in T_Protein_Collections: ' + Cast(@Collection_ID as varchar(12))
+        Set @message = 'Protein collection ID not found in T_Protein_Collections: ' + Cast(@CollectionID as varchar(12))
         Set @myError = 15000
     End
     Else
@@ -34,9 +33,9 @@ AS
         UPDATE T_Protein_Collections
         SET NumProteins = @NumProteins,
             NumResidues = @NumResidues
-        WHERE Protein_Collection_ID = @Collection_ID
+        WHERE Protein_Collection_ID = @CollectionID
 
-        Set @message = 'Counts updated for Protein collection ID ' + Cast(@Collection_ID as varchar(12))
+        Set @message = 'Counts updated for Protein collection ID ' + Cast(@CollectionID as varchar(12))
     End
 
     return @myError
