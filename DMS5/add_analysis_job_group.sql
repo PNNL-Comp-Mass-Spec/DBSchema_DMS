@@ -127,6 +127,12 @@ AS
     Declare @backfillError int
     Declare @logErrors tinyint = 0
 
+    Declare @continue tinyint
+    Declare @entryID int
+    Declare @sectionName varchar(255)
+    Declare @keyName varchar(255)
+    Declare @value varchar(255)
+
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -523,16 +529,19 @@ AS
                 RAISERROR ('Tool %s not found in T_analysis_tool', 11, 9, @toolName)
 
             CREATE TABLE #Tmp_SettingsFile_Values_DataPkgJob (
+                Entry_ID Int Identity(1,1) NOT NULL,
+                SectionName varchar(512) NULL,
                 KeyName varchar(512) NULL,
                 Value varchar(512) NULL
             )
 
             -- Populate the temporary Table by parsing the XML in the Contents column of table T_Settings_Files
-            INSERT INTO #Tmp_SettingsFile_Values_DataPkgJob (KeyName, Value)
-            SELECT xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
+            INSERT INTO #Tmp_SettingsFile_Values_DataPkgJob (SectionName, KeyName, Value)
+            SELECT xmlNode.value('../@name', 'nvarchar(512)') AS SectionName,
+                   xmlNode.value('@key', 'nvarchar(512)') AS KeyName,
                    xmlNode.value('@value', 'nvarchar(512)') AS Value
             FROM T_Settings_Files cross apply Contents.nodes('//item') AS R(xmlNode)
-            WHERE (File_Name = @settingsFileName) AND (Analysis_Tool = @toolName)
+            WHERE File_Name = @settingsFileName AND Analysis_Tool = @toolName
 
             Declare @createMzMLFilesFlag varchar(12) = 'False'
             Declare @msXmlGenerator varchar(64) = ''
@@ -540,29 +549,6 @@ AS
             Declare @centroidMSXML varchar(12) = ''
             Declare @centroidPeakCountToRetain varchar(12) = ''
             Declare @cacheFolderRootPath varchar(128) = ''
-            Declare @msFraggerJavaMemorySize varchar(24) = ''
-            Declare @databaseSplitCount varchar(24) = ''
-            Declare @matchBetweenRuns varchar(24) = ''
-            Declare @autoDefineExperimentGroupWithDatasetName varchar(24) = ''
-            Declare @autoDefineExperimentGroupWithExperimentName varchar(24) = ''
-            Declare @runPeptideProphet varchar(24) = ''
-            Declare @runProteinProphet varchar(24) = ''
-            Declare @runPercolator varchar(24) = ''
-            Declare @generatePeptideLevelSummary varchar(24) = ''
-            Declare @generateProteinLevelSummary varchar(24) = ''
-            Declare @ms1QuantDisabled varchar(24) = ''
-            Declare @runFreeQuant varchar(24) = ''
-            Declare @runIonQuant varchar(24) = ''
-            Declare @reporterIonMode varchar(24) = ''
-            Declare @featureDetectionMZTolerance varchar(24) = ''
-            Declare @featureDetectionRTTolerance varchar(24) = ''
-            Declare @mbrMinimumCorrelation varchar(24) = ''
-            Declare @mbrRTTolerance varchar(24) = ''
-            Declare @mbrIonFdr varchar(24) = ''
-            Declare @mbrPeptideFdr varchar(24) = ''
-            Declare @mbrProteinFdr varchar(24) = ''
-            Declare @normalizeIonIntensities varchar(24) = ''
-            Declare @minIonsForProteinQuant varchar(24) = ''
 
             SELECT @msXmlGenerator = Value
             FROM #Tmp_SettingsFile_Values_DataPkgJob
@@ -584,101 +570,6 @@ AS
             FROM #Tmp_SettingsFile_Values_DataPkgJob
             WHERE KeyName = 'CacheFolderRootPath'
 
-            If @toolName = 'MSFragger'
-            Begin
-                SELECT @msFraggerJavaMemorySize = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MSFraggerJavaMemorySize'
-
-                SELECT @databaseSplitCount = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'DatabaseSplitCount'
-
-                SELECT @matchBetweenRuns = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MatchBetweenRuns'
-
-                SELECT @autoDefineExperimentGroupWithDatasetName = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'AutoDefineExperimentGroupWithDatasetName'
-
-                SELECT @autoDefineExperimentGroupWithExperimentName = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'AutoDefineExperimentGroupWithExperimentName'
-
-                SELECT @runPeptideProphet = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'RunPeptideProphet'
-
-                SELECT @runProteinProphet = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'RunProteinProphet'
-
-                SELECT @runPercolator = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'RunPercolator'
-
-                SELECT @generatePeptideLevelSummary = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'GeneratePeptideLevelSummary'
-
-                SELECT @generateProteinLevelSummary = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'GenerateProteinLevelSummary'
-
-                SELECT @ms1QuantDisabled = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MS1QuantDisabled'
-
-                SELECT @runFreeQuant = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'RunFreeQuant'
-
-                SELECT @runIonQuant = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'RunIonQuant'
-
-                SELECT @reporterIonMode = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'ReporterIonMode'
-
-                SELECT @featureDetectionMZTolerance = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'FeatureDetectionMZTolerance'
-
-                SELECT @featureDetectionRTTolerance = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'FeatureDetectionRTTolerance'
-
-                SELECT @mbrMinimumCorrelation = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MbrMinimumCorrelation'
-
-                SELECT @mbrRTTolerance = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MbrRTTolerance'
-
-                SELECT @mbrIonFdr = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MbrIonFdr'
-
-                SELECT @mbrPeptideFdr = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MbrPeptideFdr'
-
-                SELECT @mbrProteinFdr = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MbrProteinFdr'
-
-                SELECT @normalizeIonIntensities = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'NormalizeIonIntensities'
-
-                SELECT @minIonsForProteinQuant = Value
-                FROM #Tmp_SettingsFile_Values_DataPkgJob
-                WHERE KeyName = 'MinIonsForProteinQuant'
-            End
-
             If Len(@msXmlGenerator) > 0 And Len(@msXMLOutputType) > 0 And @msXmlGenerator <> 'skip'
             Begin
                 Set @createMzMLFilesFlag= 'True'
@@ -695,9 +586,11 @@ AS
             --
             Declare @pipelineJob int = 0
             Declare @resultsFolderName varchar(128)
-            Declare @jobParam varchar(8000) =    -- TODO: Remove parameter named 'DatasetNum'
+
+            -- Note that the parameters defined here need to stay in sync with the parameters in the SELECT TOP 1 ... FROM #Tmp_SettingsFile_Values_DataPkgJob query below
+            --
+            Declare @jobParam varchar(8000) =
                '<Param Section="JobParameters" Name="CreateMzMLFiles" Value="' + @createMzMLFilesFlag + '" />
-                <Param Section="JobParameters" Name="DatasetNum" Value="Aggregation" />
                 <Param Section="JobParameters" Name="DatasetName" Value="Aggregation" />
                 <Param Section="JobParameters" Name="CacheFolderRootPath" Value="' + @cacheFolderRootPath + '" />
                 <Param Section="JobParameters" Name="SettingsFileName" Value="' + @settingsFileName + '" />
@@ -712,144 +605,33 @@ AS
                 <Param Section="PeptideSearch" Name="ProteinOptions" Value="' +  @protCollOptionsList + '" />
                 <Param Section="PeptideSearch" Name="LegacyFastaFileName" Value="' + @organismDBName + '" />'
 
-            If @toolName = 'MSFragger'
+            -- Append the additional settings defined in the settings file
+
+            Set @continue = 1
+            Set @entryID = 0
+
+            While @continue > 0
             Begin
-                If Coalesce(@msFraggerJavaMemorySize, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="MSFragger" Name="MSFraggerJavaMemorySize" Value="' + @msFraggerJavaMemorySize + '" />'
-                End
+                SELECT TOP 1 @entryID = Entry_ID,
+                             @sectionName = SectionName,
+                             @keyName = KeyName,
+                             @value = Value
+                FROM #Tmp_SettingsFile_Values_DataPkgJob
+                WHERE Entry_ID > @entryID AND
+                      NOT (SectionName = 'JobParameters'  AND KeyName IN ('CreateMzMLFiles', 'DatasetName', 'CacheFolderRootPath', 'SettingsFileName')) AND
+                      NOT (SectionName = 'MSXMLGenerator' AND KeyName IN ('MSXMLGenerator', 'MSXMLOutputType', 'CentroidMSXML', 'CentroidPeakCountToRetain')) AND
+                      NOT (SectionName = 'PeptideSearch'  AND KeyName IN ('ParamFileName', 'ParamFileStoragePath', 'OrganismName', 'ProteinCollectionList', 'ProteinOptions', 'LegacyFastaFileName'))
+                ORDER BY Entry_ID
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                If Coalesce(@databaseSplitCount, '') <> ''
+                If @myRowCount = 0
                 Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="MSFragger" Name="DatabaseSplitCount" Value="' + @databaseSplitCount + '" />'
+                    Set @continue = 0
                 End
-
-                If Coalesce(@matchBetweenRuns, '') <> ''
+                Else
                 Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="MatchBetweenRuns" Value="' + @matchBetweenRuns + '" />'
-                End
-
-                If Coalesce(@autoDefineExperimentGroupWithDatasetName, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="AutoDefineExperimentGroupWithDatasetName" Value="' + @autoDefineExperimentGroupWithDatasetName + '" />'
-                End
-
-                If Coalesce(@autoDefineExperimentGroupWithExperimentName, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="AutoDefineExperimentGroupWithExperimentName" Value="' + @autoDefineExperimentGroupWithExperimentName + '" />'
-                End
-
-                If Coalesce(@runPeptideProphet, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="RunPeptideProphet" Value="' + @runPeptideProphet + '" />'
-                End
-
-                If Coalesce(@runProteinProphet, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="RunProteinProphet" Value="' + @runProteinProphet + '" />'
-                End
-
-                If Coalesce(@runPercolator, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="RunPercolator" Value="' + @runPercolator + '" />'
-                End
-
-                If Coalesce(@generatePeptideLevelSummary, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="GeneratePeptideLevelSummary" Value="' + @generatePeptideLevelSummary + '" />'
-                End
-
-                If Coalesce(@generateProteinLevelSummary, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="GenerateProteinLevelSummary" Value="' + @generateProteinLevelSummary + '" />'
-                End
-
-                If Coalesce(@ms1QuantDisabled, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="MS1QuantDisabled" Value="' + @ms1QuantDisabled + '" />'
-                End
-
-                If Coalesce(@runFreeQuant, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="RunFreeQuant" Value="' + @runFreeQuant + '" />'
-                End
-
-                If Coalesce(@runIonQuant, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="RunIonQuant" Value="' + @runIonQuant + '" />'
-                End
-
-                If Coalesce(@reporterIonMode, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="Philosopher" Name="ReporterIonMode" Value="' + @reporterIonMode + '" />'
-                End
-
-                If Coalesce(@featureDetectionMZTolerance, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="FeatureDetectionMZTolerance" Value="' + @featureDetectionMZTolerance + '" />'
-                End
-
-                If Coalesce(@featureDetectionRTTolerance, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="FeatureDetectionRTTolerance" Value="' + @featureDetectionRTTolerance + '" />'
-                End
-
-                If Coalesce(@mbrMinimumCorrelation, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="MbrMinimumCorrelation" Value="' + @mbrMinimumCorrelation + '" />'
-                End
-
-                If Coalesce(@mbrRTTolerance, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="MbrRTTolerance" Value="' + @mbrRTTolerance + '" />'
-                End
-
-                If Coalesce(@mbrIonFdr, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="MbrIonFdr" Value="' + @mbrIonFdr + '" />'
-                End
-
-                If Coalesce(@mbrPeptideFdr, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="MbrPeptideFdr" Value="' + @mbrPeptideFdr + '" />'
-                End
-
-                If Coalesce(@mbrProteinFdr, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="MbrProteinFdr" Value="' + @mbrProteinFdr + '" />'
-                End
-
-                If Coalesce(@normalizeIonIntensities, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="NormalizeIonIntensities" Value="' + @normalizeIonIntensities + '" />'
-                End
-
-                If Coalesce(@minIonsForProteinQuant, '') <> ''
-                Begin
-                    Set @jobParam = @jobParam +
-                    '<Param Section="IonQuant" Name="MinIonsForProteinQuant" Value="' + @minIonsForProteinQuant + '" />'
+                    Set @jobParam = @jobParam + '<Param Section="' + @sectionName + '" Name="' + @keyName + '" Value="' + @value + '" />'
                 End
             End
 
