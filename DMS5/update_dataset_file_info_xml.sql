@@ -86,6 +86,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **          06/13/2022 mem - Update call to get_dataset_scan_type_list since now a scalar-valued function
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/23/2023 mem - Add support for datasets with multiple instrument files with the same name (e.g. 20220105_JL_kpmp_3504 with ser files in eight .d directories)
 **
 *****************************************************/
 (
@@ -164,11 +165,13 @@ AS
         ScanFilter varchar(256) NULL
     )
 
-    Declare @InstrumentFilesTable table (
-        InstFilePath varchar(512) NOT NULL,     -- Relative file path of the instrument ifle
+    CREATE TABLE #Tmp_InstrumentFilesTable (
+        Entry_ID Int Identity(1,1) Not Null,
+        InstFilePath varchar(512) NOT NULL,     -- Relative file path of the instrument file
         InstFileHash varchar(64) NULL,
         InstFileHashType varchar(32) NULL,      -- Should always be SHA1
-        InstFileSize bigint NULL
+        InstFileSize bigint Null,
+        FileSizeRank Smallint Null              -- File size rank, across all instrument files for this dataset
     )
 
     Declare @DuplicateDatasetsTable Table (
@@ -326,7 +329,7 @@ AS
     -- Now extract out the instrument files
     ---------------------------------------------------
     --
-    INSERT INTO @InstrumentFilesTable ( InstFilePath, InstFileHash, InstFileHashType, InstFileSize)
+    INSERT INTO #Tmp_InstrumentFilesTable ( InstFilePath, InstFileHash, InstFileHashType, InstFileSize)
     SELECT instFiles.InstrumentFile.value('(.)[1]','varchar(512)') As InstFilePath,
            instFiles.InstrumentFile.value('(./@Hash)[1]','varchar(64)') As InstFileHash,
            instFiles.InstrumentFile.value('(./@HashType)[1]','varchar(32)') As InstFileHashType,
@@ -342,13 +345,24 @@ AS
     End
 
     ---------------------------------------------------
+    -- Update FileSizeRank in #Tmp_InstrumentFilesTable
+    ---------------------------------------------------
+
+    Update #Tmp_InstrumentFilesTable
+    Set FileSizeRank = RankQ.FileSizeRank
+    From #Tmp_InstrumentFilesTable Inner Join (
+        SELECT Entry_ID, Row_Number() Over (Order By InstFileSize Desc) As FileSizeRank
+        FROM #Tmp_InstrumentFilesTable
+        ) As RankQ On #Tmp_InstrumentFilesTable.Entry_ID = RankQ.Entry_ID
+
+    ---------------------------------------------------
     -- Validate the hash type
     ---------------------------------------------------
     --
     Declare @unrecognizedHashType varchar(32) = ''
 
     SELECT @unrecognizedHashType = InstFileHashType
-    FROM @InstrumentFilesTable
+    FROM #Tmp_InstrumentFilesTable
     WHERE Not InstFileHashType In ('SHA1')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -369,7 +383,7 @@ AS
     Declare @instrumentFileCount int = 0
 
     SELECT @instrumentFileCount = Count(*)
-    FROM @InstrumentFilesTable
+    FROM #Tmp_InstrumentFilesTable
 
     If @instrumentFileCount > 0
     Begin
@@ -380,7 +394,7 @@ AS
                Count(*) AS MatchingFiles,
                0 As Allow_Duplicates
         FROM T_Dataset_Files DSFiles
-             INNER JOIN @InstrumentFilesTable NewDSFiles
+             INNER JOIN #Tmp_InstrumentFilesTable NewDSFiles
                ON DSFiles.File_Hash = NewDSFiles.InstFileHash
         WHERE DSFiles.Dataset_ID <> @datasetID And DSFiles.Deleted = 0 And DSFiles.File_Size_Bytes > 0
         GROUP BY DSFiles.Dataset_ID
@@ -498,7 +512,7 @@ AS
         FROM @ScanTypesTable
 
         SELECT *
-        FROM @InstrumentFilesTable
+        FROM #Tmp_InstrumentFilesTable
 
         Exec update_dataset_device_info_xml @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=1, @skipValidation=1
 
@@ -692,19 +706,20 @@ AS
     --
     MERGE T_Dataset_Files As target
     USING
-        (SELECT @datasetID, InstFilePath, InstFileSize, InstFileHash
-         FROM @InstrumentFilesTable
-        ) AS Source (Dataset_ID, InstFilePath, InstFileSize, InstFileHash)
-    ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath)
+        (SELECT @datasetID, InstFilePath, InstFileSize, InstFileHash, FileSizeRank
+         FROM #Tmp_InstrumentFilesTable
+        ) AS Source (Dataset_ID, InstFilePath, InstFileSize, InstFileHash, FileSizeRank)
+    ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath And Target.File_Size_Rank = Source.FileSizeRank)
     WHEN Matched
         THEN UPDATE
             Set File_Size_Bytes = Source.InstFileSize,
                 File_Hash = Source.InstFileHash,
+                File_Size_Rank = Source.FileSizeRank,
                 Deleted = 0
     WHEN Not Matched THEN
         INSERT (Dataset_ID, File_Path,
-                File_Size_Bytes, File_Hash)
-        VALUES (Source.Dataset_ID, Source.InstFilePath, Source.InstFileSize, Source.InstFileHash)
+                File_Size_Bytes, File_Hash, File_Size_Rank)
+        VALUES (Source.Dataset_ID, Source.InstFilePath, Source.InstFileSize, Source.InstFileHash, Source.FileSizeRank)
     ;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -719,35 +734,13 @@ AS
     --
     DELETE T_Dataset_Files
     FROM T_Dataset_Files Target
-         LEFT OUTER JOIN @InstrumentFilesTable Source
+         LEFT OUTER JOIN #Tmp_InstrumentFilesTable Source
            ON Target.Dataset_ID = @datasetID AND
-              Target.File_Path = Source.InstFilePath
+              Target.File_Path = Source.InstFilePath And
+              Target.File_Size_Rank = Source.FileSizeRank
     WHERE Target.Dataset_ID = @datasetID AND
           Target.Deleted = 0 AND
           Source.InstFilePath IS NULL
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-
-    -----------------------------------------------
-    -- Update the File_Size_Rank column for this dataset
-    -----------------------------------------------
-    --
-    UPDATE T_Dataset_Files
-    SET File_Size_Rank = SrcQ.Size_Rank
-    FROM T_Dataset_Files Target
-         INNER JOIN ( SELECT Dataset_ID,
-                             File_Path,
-                             File_Size_Bytes,
-                             File_Hash,
-                             Dataset_File_ID,
-                             Row_Number() OVER (
-                                PARTITION BY Dataset_ID
-                                ORDER BY Deleted ASC, File_Size_Bytes DESC
-                                ) AS Size_Rank
-                      FROM T_Dataset_Files
-                      WHERE Dataset_ID = @datasetID
-                    ) SrcQ
-           ON Target.Dataset_File_ID = SrcQ.Dataset_File_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
