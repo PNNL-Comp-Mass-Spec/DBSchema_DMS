@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[adjust_params_for_local_job]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in temporary tables
 **          03/22/2023 mem - Rename job parameter to DatasetName
+**          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **
 *****************************************************/
 (
@@ -62,7 +63,7 @@ AS
     ---------------------------------------------------
     -- If this job has a 'DataPackageID' defined, update parameters
     --   'CacheFolderPath'
-    --   'transferFolderPath'
+    --   'TransferFolderPath'
     --   'DataPackagePath'
     ---------------------------------------------------
 
@@ -75,7 +76,7 @@ AS
     --     'DatasetName'
     --     'RawDataType'
     --     'DatasetStoragePath'
-    --     'transferFolderPath'
+    --     'TransferFolderPath'
     --     'DatasetFolderName'
     --     'InstrumentDataPurged'
     --
@@ -126,7 +127,7 @@ AS
                            'DatasetNum',
                            'RawDataType',
                            'DatasetStoragePath',
-                           'transferFolderPath',
+                           'TransferFolderPath',
                            'DatasetFolderName',
                            'InstrumentDataPurged')
             --
@@ -140,7 +141,7 @@ AS
             UNION
             SELECT 'JobParameters', 'DatasetStoragePath', @datasetStoragePath
             UNION
-            SELECT 'JobParameters', 'transferFolderPath', @transferFolderPath
+            SELECT 'JobParameters', 'TransferFolderPath', @transferFolderPath
             UNION
             SELECT 'JobParameters', 'DatasetFolderName', @dataset
             UNION

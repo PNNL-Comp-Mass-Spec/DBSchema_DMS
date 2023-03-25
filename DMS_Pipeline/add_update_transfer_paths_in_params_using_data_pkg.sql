@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[add_update_transfer_paths_in_params_using_data_pkg]
 **
 **  Desc:
 **      If a job has a data package ID defined, determines the
-**      appropriate paths for 'CacheFolderPath' and 'transferFolderPath'
+**      appropriate paths for 'CacheFolderPath' and 'TransferFolderPath'
 **
 **      Updates #PARAMS to have these paths defined if not yet defined or if different
 **      If #PARAMS is updated, @paramsUpdated will be set to 1
@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[add_update_transfer_paths_in_params_using_data_pkg]
 **          06/24/2012 mem - Add parameter DataPackagePath
 **          01/09/2023 mem - Use new column name in view
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **
 *****************************************************/
 (
@@ -123,7 +124,7 @@ AS
 
         SELECT @xferPathOld = Value
         FROM #PARAMS
-        WHERE Section = 'JobParameters' and Name = 'transferFolderPath'
+        WHERE Section = 'JobParameters' and Name = 'TransferFolderPath'
 
 
         If IsNull(@cacheRootFolderPath, '') = ''
@@ -148,10 +149,10 @@ AS
         If @xferPathOld <> @xferPath
         Begin
             DELETE FROM #PARAMS
-            WHERE Name = 'transferFolderPath'
+            WHERE Name = 'TransferFolderPath'
             --
             INSERT INTO #PARAMS ( Section, Name, Value )
-            VALUES ( 'JobParameters', 'transferFolderPath', @xferPath )
+            VALUES ( 'JobParameters', 'TransferFolderPath', @xferPath )
         End
 
         Delete From #PARAMS

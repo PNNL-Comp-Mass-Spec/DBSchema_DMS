@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[validate_job_server_info]
 **          12/21/2016 mem - Use job parameter DatasetFolderName when constructing the transfer folder path
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Rename job parameter to DatasetName
+**          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **
 *****************************************************/
 (
@@ -54,14 +55,14 @@ AS
     if @UseJobParameters <> 0
     Begin
         ---------------------------------------------------
-        -- Query T_Job_Parameters to extract out the transferFolderPath value for this job
+        -- Query T_Job_Parameters to extract out the TransferFolderPath value for this job
         -- The XML we are querying looks like:
-        -- <Param Section="JobParameters" Name="transferFolderPath" Value="\\proto-9\DMS3_Xfer\"/>
+        -- <Param Section="JobParameters" Name="TransferFolderPath" Value="\\proto-9\DMS3_Xfer\"/>
         ---------------------------------------------------
         --
         SELECT @TransferFolderPath = [Value]
         FROM dbo.get_job_param_table_local ( @Job )
-        WHERE [Name] = 'transferFolderPath'
+        WHERE [Name] = 'TransferFolderPath'
 
         SELECT TOP 1 @Dataset = [Value]
         FROM dbo.get_job_param_table_local ( @Job )
@@ -83,7 +84,7 @@ AS
         -- Directly query DMS
         ---------------------------------------------------
         --
-        declare @Job_Parameters table (
+        Declare @Job_Parameters table (
             [Job] int,
             [Step_Number] int,
             [Section] varchar(64),
@@ -99,7 +100,7 @@ AS
 
         SELECT @TransferFolderPath = Value
         FROM @Job_Parameters
-        WHERE [Name] = 'transferFolderPath'
+        WHERE [Name] = 'TransferFolderPath'
 
         SELECT TOP 1 @Dataset = Value
         FROM @Job_Parameters

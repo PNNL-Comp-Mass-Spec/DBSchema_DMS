@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **                         - Pass data package ID to create_signatures_for_job_steps
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in temporary tables
+**          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **
 *****************************************************/
 (
@@ -326,7 +327,7 @@ AS
 
         SELECT @transferFolderPath = [Value]
         FROM dbo.get_job_param_table_local ( @job )
-        WHERE [Name] = 'transferFolderPath'
+        WHERE [Name] = 'TransferFolderPath'
 
         If IsNull(@transferFolderPath, '') <> ''
         Begin

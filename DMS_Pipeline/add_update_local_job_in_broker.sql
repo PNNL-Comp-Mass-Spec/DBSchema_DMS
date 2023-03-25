@@ -61,6 +61,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          07/01/2022 mem - Update parameter names in comments
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          03/22/2023 mem - Rename job parameter to DatasetName
+**          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **
 *****************************************************/
 (
@@ -248,7 +249,7 @@ AS
                 ---------------------------------------------------
                 -- If this job has a 'DataPackageID' defined, update parameters
                 --   'CacheFolderPath'
-                --   'transferFolderPath'
+                --   'TransferFolderPath'
                 --   'DataPackagePath'
                 ---------------------------------------------------
 
@@ -277,7 +278,7 @@ AS
 
                 SELECT @TransferFolderPath = [Value]
                 FROM dbo.get_job_param_table_local ( @Job )
-                WHERE [Name] = 'transferFolderPath'
+                WHERE [Name] = 'TransferFolderPath'
 
                 If IsNull(@TransferFolderPath, '') <> ''
                 Begin
