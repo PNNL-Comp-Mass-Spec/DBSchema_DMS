@@ -62,6 +62,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          03/22/2023 mem - Rename job parameter to DatasetName
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
+**          03/25/2023 mem - Force dataset name to 'Aggregation' if using a data package
 **
 *****************************************************/
 (
@@ -92,7 +93,13 @@ AS
     Declare @tool varchar(64) = ''
     Declare @msg varchar(512) = ''
 
+    Set @datasetName = IsNull(@datasetName, 'na')
     Set @dataPackageID = IsNull(@dataPackageID, 0)
+
+    If @dataPackageID > 0 And @datasetName <> 'Aggregation'
+    Begin
+        Set @datasetName = 'Aggregation'
+    End
 
     Declare @reset CHAR(1) = 'N'
     If @mode = 'reset'
