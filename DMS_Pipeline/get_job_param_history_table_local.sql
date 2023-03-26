@@ -29,11 +29,11 @@ BEGIN
     -- The following demonstrates how we could Query the XML for a specific parameter:
     --
     -- The XML we are querying looks like:
-    -- <Param Section="JobParameters" Name="transferFolderPath" Value="\\proto-9\DMS3_Xfer\"/>
+    -- <Param Section="JobParameters" Name="TransferFolderPath" Value="\\proto-9\DMS3_Xfer\"/>
     ---------------------------------------------------
 /*
 
-    SELECT @TransferFolderPath = Parameters.query('Param[@Name = "transferFolderPath"]').value('(/Param/@Value)[1]', 'varchar(256)')
+    SELECT @TransferFolderPath = Parameters.query('Param[@Name = "TransferFolderPath"]').value('(/Param/@Value)[1]', 'varchar(256)')
     FROM [T_Job_Parameters_History]
     WHERE Job = @currJob
 */
