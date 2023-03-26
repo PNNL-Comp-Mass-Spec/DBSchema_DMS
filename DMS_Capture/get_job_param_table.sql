@@ -34,10 +34,11 @@ CREATE PROCEDURE [dbo].[get_job_param_table]
 **          03/23/2012 mem - Now including EUS_Instrument_ID
 **          04/09/2013 mem - Now looking up Perform_Calibration from S_DMS_T_Instrument_Name
 **          08/20/2013 mem - Now looking up EUS_Proposal_ID
-**          09/04/2013 mem - Now including TransferFolderPath
+**          09/04/2013 mem - Now including TransferFolderPath (later renamed to TransferDirectoryPath)
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          11/16/2015 mem - Now including EUS_Operator_ID and Operator_PRN
 **          05/17/2019 mem - Switch from folder to directory in temp tables
+**                         - Rename job parameter to TransferDirectoryPath
 **                         - Add parameter SHA1_Hash
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
 **          02/01/2023 mem - Use new synonym name
