@@ -5,10 +5,13 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW [dbo].[V_Dataset_Files_Export]
 AS
-SELECT DF.dataset_id,
+SELECT DF.dataset_file_id,
+       DF.dataset_id,
        DF.file_path,
        DF.file_size_bytes,
-       DF.file_hash
+       DF.file_hash,
+       DF.file_size_rank,
+       DF.allow_duplicates
 FROM T_Dataset_Files DF
 WHERE Deleted = 0
 
