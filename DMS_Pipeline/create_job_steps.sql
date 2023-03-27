@@ -451,7 +451,7 @@ AS
                     exec @myError = create_results_folder_name @job, @tag, @resultsFolderName output, @message output
                 End
 
-                -- get parameters for job (and also store in job parameters)
+                -- Get parameters for job (and also store in #Job_Parameters)
                 -- Parameters are returned in @pXML
                 exec @myError = create_parameters_for_job
                                         @job,
