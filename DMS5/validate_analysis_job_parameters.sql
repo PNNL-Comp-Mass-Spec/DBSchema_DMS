@@ -89,6 +89,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_parameters]
 **          02/28/2023 mem - Update warning message to use MSGFPlus
 **          03/22/2023 mem - Rename column in temp table
 **                         - Trim trailing whitespace from output parameters
+**          03/27/2023 mem - Add logic for DIA-NN
 **
 *****************************************************/
 (
@@ -254,7 +255,7 @@ AS
         Begin
             Set @message = 'The MSGFPlus SplitFasta tool used concatenated _dta.txt files, which are PNNL-specific. Please use tool MSGFPlus_MzML instead (for example requests, see https://dms2.pnl.gov/analysis_job_request/report/-/-/-/-/StartsWith__MSGFPlus_MzML_SplitFasta/-/- )'
         End
-        Else If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg' Or @toolName = 'MSFragger_DataPkg')
+        Else If @mode = 'reset' And (@toolName LIKE 'MAC[_]%' Or @toolName = 'MaxQuant_DataPkg' Or @toolName = 'MSFragger_DataPkg' Or @toolName = 'DIA-NN_DataPkg')
         Begin
             Set @message = @toolName + ' jobs must be reset by clicking Edit on the Pipeline Job Detail report'
             If IsNull(@Job, 0) > 0

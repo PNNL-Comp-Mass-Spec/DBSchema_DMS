@@ -94,6 +94,7 @@ CREATE PROCEDURE [dbo].[add_update_analysis_job_request]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Rename column in temp table
 **                         - Also auto-remove datasets named 'Dataset Name' and 'Dataset_Name' from #TD
+**          03/27/2023 mem - Add support for DIA-NN and synchronize protein collection options validation with add_analysis_job_group
 **
 *****************************************************/
 (
@@ -149,8 +150,8 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @requestName = IsNull(@requestName, '')
-    Set @comment = IsNull(@comment, '')
+    Set @requestName = Coalesce(@requestName, '')
+    Set @comment = Coalesce(@comment, '')
 
     Set @message = ''
 
@@ -159,16 +160,16 @@ AS
     If @requestName = ''
         RAISERROR ('Cannot add: request name cannot be blank', 11, 4)
 
-    Set @requesterUsername = Ltrim(Rtrim(IsNull(@requesterUsername, '')))
+    Set @requesterUsername = Ltrim(Rtrim(Coalesce(@requesterUsername, '')))
 
     If @requesterUsername = 'H09090911' Or @requesterUsername = 'Autouser'
         RAISERROR ('Cannot add: the "Requested by" username cannot be the Autouser', 11, 4)
 
-    Set @dataPackageID = IsNull(@dataPackageID, 0)
+    Set @dataPackageID = Coalesce(@dataPackageID, 0)
     If @dataPackageID < 0
         Set @dataPackageID = 0
 
-    Set @datasets = LTrim(RTrim(IsNull(@datasets, '')))
+    Set @datasets = LTrim(RTrim(Coalesce(@datasets, '')))
     Set @datasets = Replace(Replace(@datasets, ' ', ','), Char(9), ',')
 
     ---------------------------------------------------
@@ -376,7 +377,7 @@ AS
     Declare @result int
     Set @result = 0
 
-    Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
+    Set @protCollNameList = LTrim(RTrim(Coalesce(@protCollNameList, '')))
     If Len(@protCollNameList) > 0 And dbo.validate_na_parameter(@protCollNameList, 1) <> 'na'
     Begin
         exec @result = validate_protein_collection_list_for_dataset_table
@@ -436,18 +437,23 @@ AS
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%') And @protCollOptionsList Like '%decoy%' And @paramFileName Not Like '%[_]NoDecoy%'
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%' Or @toolName Like 'DIA-NN%') And
+       @protCollOptionsList Like '%decoy%' And
+       @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'MSGFPlus%'
             Set @message = 'Note: changed protein options to forward-only since MS-GF+ parameter files typically have tda=1'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'TopPIC%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'TopPIC%'
             Set @message = 'Note: changed protein options to forward-only since TopPIC parameter files typically have Decoy=True'
 
-        If IsNull(@message, '') = '' And @toolName LIKE 'MaxQuant%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
+
+        If Coalesce(@message, '') = '' And @toolName LIKE 'DIA-NN%'
+            Set @message = 'Note: changed protein options to forward-only since DIA-NN expects the FASTA file to not have decoy proteins'
     End
 
     ---------------------------------------------------
@@ -455,11 +461,12 @@ AS
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MODa%' Or @toolName LIKE 'MSFragger%') And @protCollOptionsList Not Like '%decoy%'
+    If (@toolName LIKE 'MODa%' Or @toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
-        If IsNull(@message, '') = ''
-            Set @message = 'Note: changed protein options to decoy since ' + @toolName + ' requires decoy proteins to perform FDR-based filtering'
+
+        If Coalesce(@message, '') = ''
+            Set @message = 'Note: changed protein options to decoy since ' + @toolName + ' expects the FASTA file to have decoy proteins'
     End
 
     /*
@@ -479,7 +486,7 @@ AS
         WHERE [File_Name] = @settingsFileName AND
                Analysis_Tool = @toolName
 
-        If IsNull(@AutoSupersedeName, '') <> ''
+        If Coalesce(@AutoSupersedeName, '') <> ''
         Begin
             Set @settingsFileName = @AutoSupersedeName
 
@@ -518,7 +525,7 @@ AS
         -- Auto-update the settings file since we have one or more Q Exactive datasets or one or more datasets with profile-mode MS/MS spectra
         Set @AutoSupersedeName = dbo.auto_update_settings_file_to_centroid(@settingsFileName, @toolName)
 
-        If IsNull(@AutoSupersedeName, '') <> @settingsFileName
+        If Coalesce(@AutoSupersedeName, '') <> @settingsFileName
         Begin
             Set @settingsFileName = @AutoSupersedeName
             Set @MsgToAppend = 'Note: Auto-updated the settings file to ' + @AutoSupersedeName

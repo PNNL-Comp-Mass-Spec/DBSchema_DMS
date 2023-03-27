@@ -20,12 +20,13 @@ CREATE PROCEDURE [dbo].[update_job_param_org_db_info_using_data_pkg]
 **                         - Add parameters @debugMode and @scriptNameForDebug
 **          02/01/2023 mem - Use new synonym name
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/27/2023 mem - Add support for DIA-NN
 **
 *****************************************************/
 (
     @job int,
     @dataPackageID int,
-    @deleteIfInvalid tinyint = 0,            -- When 1, deletes entries for OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList if @dataPackageID = 0, or @dataPackageID points to a non-existent data package, or if the data package doesn't have any Peptide_Hit jobs (MAC Jobs) or doesn't have any datasets (MaxQuant job)
+    @deleteIfInvalid tinyint = 0,            -- When 1, deletes entries for OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList if @dataPackageID = 0, or @dataPackageID points to a non-existent data package, or if the data package doesn't have any Peptide_Hit jobs (MAC Jobs) or doesn't have any datasets (MaxQuant, MSFragger, or DIA-NN)
     @debugMode tinyint = 0,
     @scriptNameForDebug varchar(64) = '',
     @message varchar(512)= '' output,
@@ -111,7 +112,7 @@ AS
             Print 'update_job_param_org_db_info_using_data_pkg: ' + @message
     End
 
-    If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%' AND NOT @scriptName LIKE 'MSFragger%'
+    If @dataPackageID > 0 AND NOT @scriptName LIKE 'MaxQuant%' AND NOT @scriptName LIKE 'MSFragger%' AND NOT @scriptName LIKE 'DIA-NN%'
     Begin -- <a>
         If @debugMode > 0
             Print 'update_job_param_org_db_info_using_data_pkg: Looking update OrgDB info for jobs associated with data package ' + Cast(@dataPackageID As Varchar(12)) + ' for script ' + @scriptName
@@ -209,7 +210,7 @@ AS
         -- One of the following is tue:
         --   Data package ID was invalid
         --   For MAC jobs, the data package does not have any jobs with a protein collection or legacy fasta file
-        --   For MaxQuant or MSFragger jobs, the data package does not have any datasets
+        --   For MaxQuant, MSFragger, or DIA-NN jobs, the data package does not have any datasets
         ---------------------------------------------------
         --
 

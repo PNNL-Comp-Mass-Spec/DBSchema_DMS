@@ -84,6 +84,7 @@ CREATE PROCEDURE [dbo].[add_analysis_job_group]
 **          03/22/2023 mem - Add support for data package based DIA-NN jobs
 **                         - For data package based jobs, convert every settings file setting to XML compatible with add_update_local_job_in_broker
 **                         - Rename column in temp table
+**          03/27/2023 mem - Synchronize protein collection options validation with add_update_analysis_job_request
 **
 *****************************************************/
 (
@@ -312,12 +313,17 @@ AS
             Set @message = 'Note: changed protein options to forward-only since DIA-NN expects the FASTA file to not have decoy proteins'
     End
 
-    If (@toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @paramFileName Not Like '%[_]NoDecoy%'
+    ---------------------------------------------------
+    -- Assure that we are running a decoy search if using MODa or MSFragger
+    -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
+    ---------------------------------------------------
+    --
+    If (@toolName LIKE 'MODa%' Or @toolName LIKE 'MSFragger%') And @protCollOptionsList Like '%forward%' And @paramFileName Not Like '%[_]NoDecoy%'
     Begin
         Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
 
-        If Coalesce(@message, '') = '' And @toolName LIKE 'MSFragger%'
-            Set @message = 'Note: changed protein options to decoy-mode since MSFragger expects the FASTA file to have decoy proteins'
+        If Coalesce(@message, '') = ''
+            Set @message = 'Note: changed protein options to decoy since ' + @toolName + ' expects the FASTA file to have decoy proteins'
     End
 
     ---------------------------------------------------

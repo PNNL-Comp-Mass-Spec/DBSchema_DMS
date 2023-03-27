@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[backfill_pipeline_jobs]
 **          10/04/2022 mem - Assure that auto-generated dataset names only contain alphanumeric characters (plus underscore or dash)
 **          02/06/2023 bcg - Update column names from views
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/27/2023 mem - Auto change script DIA-NN_DataPkg to DIA-NN
 **
 *****************************************************/
 (
@@ -219,6 +220,11 @@ AS
                 If @script Like 'MSFragger[_]%'
                 Begin
                     Set @script = 'MSFragger'
+                End
+
+                If @script Like 'DIA-NN[_]%'
+                Begin
+                    Set @script = 'DIA-NN'
                 End
 
                 SELECT @analysisToolID = AJT_toolID

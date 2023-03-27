@@ -96,6 +96,7 @@ AS
     -- PRIDE_Converter   \\protoapps\MassIVE_Staging
     -- MaxQuant          \\protoapps\MaxQuant_Staging
     -- MSFragger         \\proto-9\MSFragger_Staging
+    -- DIA-NN            \\proto-9\DIA-NN_Staging
     --
     -- PeptideAtlas      \\protoapps\PeptideAtlas_Staging   (tool retired in 2020)
 

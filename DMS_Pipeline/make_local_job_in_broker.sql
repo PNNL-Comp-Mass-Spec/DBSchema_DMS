@@ -27,11 +27,12 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          03/10/2021 mem - Do not call s_get_new_job_id when @debugMode is non-zero
 **          10/15/2021 mem - Capitalize keywords and update whitespace
-**          03/02/2022 mem - Require that data package ID is non-zero for MaxQuant and MSFragger jobs
+**          03/02/2022 mem - Require that data package ID is non-zero for MaxQuant_DataPkg and MSFragger_DataPkg jobs
 **                         - Pass data package ID to create_signatures_for_job_steps
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in temporary tables
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
+**          03/27/2022 mem - Require that data package ID is non-zero for DIA-NN_DataPkg jobs
 **
 *****************************************************/
 (
@@ -141,7 +142,7 @@ AS
         return @myError
     End
 
-    If @scriptName IN ('MultiAlign_Aggregator', 'MaxQuant_DataPkg', 'MSFragger_DataPkg') And @dataPackageID = 0
+    If @scriptName IN ('MultiAlign_Aggregator', 'MaxQuant_DataPkg', 'MSFragger_DataPkg', 'DIA-NN_DataPkg') And @dataPackageID = 0
     Begin
         Set @myError = 50015
         Set @msg = '"Data Package ID" must be positive when using script ' + @scriptName
