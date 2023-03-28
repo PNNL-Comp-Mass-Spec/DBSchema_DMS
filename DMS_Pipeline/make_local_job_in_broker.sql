@@ -32,7 +32,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in temporary tables
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
-**          03/27/2022 mem - Require that data package ID is non-zero for DIA-NN_DataPkg jobs
+**          03/27/2022 mem - Require that data package ID is non-zero for DiaNN_DataPkg jobs
 **
 *****************************************************/
 (
@@ -142,7 +142,7 @@ AS
         return @myError
     End
 
-    If @scriptName IN ('MultiAlign_Aggregator', 'MaxQuant_DataPkg', 'MSFragger_DataPkg', 'DIA-NN_DataPkg') And @dataPackageID = 0
+    If @scriptName IN ('MultiAlign_Aggregator', 'MaxQuant_DataPkg', 'MSFragger_DataPkg', 'DiaNN_DataPkg') And @dataPackageID = 0
     Begin
         Set @myError = 50015
         Set @msg = '"Data Package ID" must be positive when using script ' + @scriptName

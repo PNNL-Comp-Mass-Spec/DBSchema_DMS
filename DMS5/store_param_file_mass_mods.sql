@@ -112,6 +112,7 @@ CREATE PROCEDURE [dbo].[store_param_file_mass_mods]
 **          02/23/2023 mem - Add support for DIA-NN
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/28/2023 mem - Use renamed parameter file type, 'MSGFPlus'
+**          03/27/2023 mem - Remove dash from DiaNN tool name
 **
 *****************************************************/
 (
@@ -120,7 +121,7 @@ CREATE PROCEDURE [dbo].[store_param_file_mass_mods]
     @infoOnly tinyint = 0,       -- 1 to print @row, 2 to show #Tmp_Residues for each modification
     @replaceExisting tinyint = 0,
     @validateUnimod tinyint = 1,
-    @paramFileType varchar(50) = '',    -- MSGFPlus, DIA-NN, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFPlus (aka MS-GF+)
+    @paramFileType varchar(50) = '',    -- MSGFPlus, DiaNN, TopPIC, MSFragger, or MaxQuant; if empty, will lookup using @paramFileID; if no match (or if @paramFileID is null or 0) assumes MSGFPlus (aka MS-GF+)
     @message varchar(512) = '' OUTPUT
 )
 AS
@@ -212,7 +213,7 @@ AS
         End
     End
 
-    If Not @paramFileType In ('MSGFPlus', 'DIA-NN', 'TopPIC', 'MSFragger', 'MaxQuant')
+    If Not @paramFileType In ('MSGFPlus', 'DiaNN', 'TopPIC', 'MSFragger', 'MaxQuant')
     Begin
         Set @paramFileType = 'MSGFPlus'
     End
@@ -572,7 +573,7 @@ AS
                 End
             End
 
-            If @paramFileType = 'DIA-NN'
+            If @paramFileType = 'DiaNN'
             Begin
                 -- Check for setting StaticCysCarbamidomethyl=True
                 If @row Like 'StaticCysCarbamidomethyl%=%True'
@@ -684,7 +685,7 @@ AS
                             End
                         End
 
-                        If @paramFileType In ('DIA-NN') And @rowCount < 3
+                        If @paramFileType In ('DiaNN') And @rowCount < 3
                         Begin
                             Set @validRow = 0
                             Print 'Skipping row since not enough rows in #Tmp_ModDef: ' + @row
@@ -701,7 +702,7 @@ AS
 
                             Set @field = ''
 
-                            If @paramFileType In ('DIA-NN', 'TopPIC', 'MSFragger', 'MaxQuant')
+                            If @paramFileType In ('DiaNN', 'TopPIC', 'MSFragger', 'MaxQuant')
                             Begin
                                 -- Mod defs for these tools don't include 'opt' or 'fix, so we update @field based on @modType
                                 If @modType = 'DynamicMod'
@@ -752,7 +753,7 @@ AS
 
                             DELETE FROM #Tmp_Residues
 
-                            If @paramFileType In ('MSGFPlus', 'DIA-NN', 'TopPIC')
+                            If @paramFileType In ('MSGFPlus', 'DiaNN', 'TopPIC')
                             Begin
                                 -----------------------------------------
                                 -- Determine the modification name (preferably UniMod name, but could also be a mass correction tag name)
@@ -898,11 +899,11 @@ AS
                                     Goto Done
                                 End
 
-                                If @paramFileType = 'DIA-NN'
+                                If @paramFileType = 'DiaNN'
                                 Begin
                                     SELECT @field = LTrim(RTrim(Value))
                                     FROM #Tmp_ModDef
-                                    WHERE @paramFileType = 'DIA-NN' And EntryID = 3
+                                    WHERE @paramFileType = 'DiaNN' And EntryID = 3
 
                                     If @field = '*n'
                                         Set @location = 'Prot-N-term'   -- Protein N-terminus
@@ -942,7 +943,7 @@ AS
                                 SELECT @field = LTrim(RTrim(Value))
                                 FROM #Tmp_ModDef
                                 WHERE EntryID = 2 And @paramFileType In ('MSGFPlus') Or
-                                      EntryID = 3 And @paramFileType In ('DIA-NN', 'TopPIC')
+                                      EntryID = 3 And @paramFileType In ('DiaNN', 'TopPIC')
 
                                 If @field = 'any'
                                 Begin
@@ -1122,7 +1123,7 @@ AS
 
                                     If @terminalMod = 1
                                     Begin
-                                        If @paramFileType = 'DIA-NN'
+                                        If @paramFileType = 'DiaNN'
                                         Begin
                                             -- This should be a peptide or protein N-terminal mod
                                             -- Break out of the while loop
@@ -1376,7 +1377,6 @@ Done:
 
     --
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[store_param_file_mass_mods] TO [DDL_Viewer] AS [dbo]

@@ -37,7 +37,7 @@ CREATE PROCEDURE [dbo].[validate_data_package_for_mac_job]
 **          06/30/2022 mem - Use new parameter file column name
 **          12/07/2022 mem - Include script name in the error message
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          03/27/2023 mem - Add support for DIA-NN
+**          03/27/2023 mem - Add support for DiaNN
 **
 *****************************************************/
 (
@@ -141,7 +141,7 @@ AS
 
         DROP TABLE #Tmp_DataPackageItems
 
-        If @scriptName LIKE ('MaxQuant%') Or @scriptName LIKE ('MSFragger%') Or @scriptName LIKE ('DIA-NN%')
+        If @scriptName LIKE ('MaxQuant%') Or @scriptName LIKE ('MSFragger%') Or @scriptName LIKE ('DiaNN%')
         Begin
             If @datasetCount = 0
             Begin
@@ -149,7 +149,7 @@ AS
             End
         End
 
-        If Not @scriptName In ('Global_Label-Free_AMT_Tag') AND Not @scriptName LIKE ('MaxQuant%') AND Not @scriptName LIKE ('MSFragger%') AND Not @scriptName LIKE ('DIA-NN%')
+        If Not @scriptName In ('Global_Label-Free_AMT_Tag') AND Not @scriptName LIKE ('MaxQuant%') AND Not @scriptName LIKE ('MSFragger%') AND Not @scriptName LIKE ('DiaNN%')
         Begin
             If @scriptName = 'PRIDE_Converter'
             Begin

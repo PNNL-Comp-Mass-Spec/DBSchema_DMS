@@ -41,7 +41,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_request_datasets]
 **          03/02/2023 mem - Use renamed table names
 **          03/22/2023 mem - Rename column in temp table
 **                         - Also auto-remove datasets named 'Dataset Name' and 'Dataset_Name' from #TD
-**          03/27/2023 mem - Skip HMS vs. MS check when the tool is DIA-NN
+**          03/27/2023 mem - Skip HMS vs. MS check when the tool is DiaNN
 **
 *****************************************************/
 (
@@ -248,7 +248,7 @@ AS
 
     ---------------------------------------------------
     -- Do not allow high res datasets to be mixed with low res datasets
-    -- (though this is OK if the tool is MSXML_Gen, MaxQuant, MSFragger, or DIA-NN)
+    -- (though this is OK if the tool is MSXML_Gen, MaxQuant, MSFragger, or DiaNN)
     ---------------------------------------------------
     --
     Declare @HMSCount int = 0
@@ -265,7 +265,7 @@ AS
     WHERE Dataset_Type LIKE 'MS%' OR
           Dataset_Type LIKE 'IMS-MS%'
 
-    If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen', 'MaxQuant', 'MSFragger', 'DIA-NN')
+    If @HMSCount > 0 And @MSCount > 0 And Not @toolName in ('MSXML_Gen', 'MaxQuant', 'MSFragger', 'DiaNN')
     Begin
         Set @message = 'You cannot mix high-res MS datasets with low-res datasets; create separate analysis job requests. You currently have ' + Convert(varchar(12), @HMSCount) + ' high res (HMS) and ' + Convert(varchar(12), @MSCount) + ' low res (MS)'
         if @showDebugMessages <> 0

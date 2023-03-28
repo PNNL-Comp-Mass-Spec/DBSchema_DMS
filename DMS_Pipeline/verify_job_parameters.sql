@@ -21,7 +21,7 @@ CREATE PROCEDURE [dbo].[verify_job_parameters]
 **          01/31/2022 mem - Add support for MSFragger
 **          04/11/2022 mem - Use varchar(4000) when populating temporary tables
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          03/22/2023 mem - Add support for DIA-NN
+**          03/22/2023 mem - Add support for DiaNN
 **
 *****************************************************/
 (
@@ -143,9 +143,9 @@ AS
     -- Cross check to make sure required parameters are defined in #TJP (populated using @paramInput)
     ---------------------------------------------------
     --
-    If @scriptName LIKE 'MaxQuant%' Or @scriptName LIKE 'MSFragger%' Or @scriptName LIKE 'DIA-NN%'
+    If @scriptName LIKE 'MaxQuant%' Or @scriptName LIKE 'MSFragger%' Or @scriptName LIKE 'DiaNN%'
     Begin
-        -- Verify the MaxQuant, MSFragger, or DIA-NN parameter file name
+        -- Verify the MaxQuant, MSFragger, or DiaNN parameter file name
 
         -- Also verify the protein collection (or legacy FASTA file)
         -- For protein collections, will auto-add contaminants if needed
@@ -156,8 +156,8 @@ AS
         If @scriptName Like 'MSFragger%'
             Set @scriptBaseName = 'MSFragger'
 
-        If @scriptName Like 'DIA-NN%'
-            Set @scriptBaseName = 'DIA-NN'
+        If @scriptName Like 'DiaNN%'
+            Set @scriptBaseName = 'DiaNN'
 
         If @scriptBaseName = ''
         Begin
@@ -193,13 +193,13 @@ AS
 
         If ISNULL(@protCollOptionsList, '') = ''
         Begin
-            If @scriptBaseName In ('MaxQuant', 'DIA-NN')
+            If @scriptBaseName In ('MaxQuant', 'DiaNN')
                 Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
             Else
                 Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
         End
 
-        If @scriptBaseName In ('MaxQuant', 'DIA-NN') And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
+        If @scriptBaseName In ('MaxQuant', 'DiaNN') And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
         Begin
             Set @message = 'The ProteinOptions parameter must be "seq_direction=forward,filetype=fasta" for ' + @scriptBaseName + ' jobs'
             Set @myError = 50103
@@ -299,6 +299,7 @@ AS
     End
 
     Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[verify_job_parameters] TO [DDL_Viewer] AS [dbo]

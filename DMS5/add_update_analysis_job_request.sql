@@ -437,7 +437,7 @@ AS
     -- However, if the parameter file contains _NoDecoy in the name, we'll allow @protCollOptionsList to contain Decoy
     ---------------------------------------------------
     --
-    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%' Or @toolName Like 'DIA-NN%') And
+    If (@toolName LIKE 'MSGFPlus%' Or @toolName LIKE 'TopPIC%' Or @toolName LIKE 'MaxQuant%' Or @toolName Like 'DiaNN%') And
        @protCollOptionsList Like '%decoy%' And
        @paramFileName Not Like '%[_]NoDecoy%'
     Begin
@@ -452,7 +452,7 @@ AS
         If Coalesce(@message, '') = '' And @toolName LIKE 'MaxQuant%'
             Set @message = 'Note: changed protein options to forward-only since MaxQuant parameter files typically have <decoyMode>revert</decoyMode>'
 
-        If Coalesce(@message, '') = '' And @toolName LIKE 'DIA-NN%'
+        If Coalesce(@message, '') = '' And @toolName LIKE 'DiaNN%'
             Set @message = 'Note: changed protein options to forward-only since DIA-NN expects the FASTA file to not have decoy proteins'
     End
 
