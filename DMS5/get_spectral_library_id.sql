@@ -23,6 +23,8 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **          03/19/2023 mem - Truncate protein collection lists to 110 characters
 **                         - Remove the extension from legacy FASTA file names
 **          03/28/2023 mem - Change @allowAddNew, @trimNTerminalMet, and @staticCysCarbamidomethyl from tinyint to bit
+**          03/29/2023 mem - If the library state is 2 and @dmsSourceJob matches the Source_Job in T_Spectral_Library, assume the job failed and was re-started, and thus set @sourceJobShouldMakeLibrary to 1
+**                         - Change tinyint parameters to smallint or bit
 **
 *****************************************************/
 (
@@ -377,8 +379,19 @@ Begin
             End
             Else
             Begin
-                Set @message = 'Found existing spectral library ID ' + Cast(@libraryId As varchar(12)) +
-                               ' with state ' + Cast(@libraryStateID as varchar(12)) + ': ' + @libraryName
+                If @libraryStateID = 2 And @dmsSourceJob > 0 And @existingSourceJob = @dmsSourceJob
+                Begin                
+                    Set @message = 'Found existing spectral library ID ' + Cast(@libraryId As varchar(12)) +
+                                   ' with state 2, already associated with job ' + Cast(@dmsSourceJob as varchar(12)) + ': ' + @libraryName
+
+                    Set @sourceJobShouldMakeLibrary = 1
+                End 
+                Else
+                Begin
+                    Set @message = 'Found existing spectral library ID ' + Cast(@libraryId As varchar(12)) +
+                                   ' with state ' + Cast(@libraryStateID as varchar(12)) + ': ' + @libraryName
+                End
+
                 Return 0
             End
         End
