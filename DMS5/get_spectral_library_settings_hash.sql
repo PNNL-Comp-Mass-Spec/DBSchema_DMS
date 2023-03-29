@@ -125,7 +125,7 @@ Begin
                     @organismDbFile + '_' +
                     Cast(@fragmentIonMzMin As varchar(24)) + '_' +
                     Cast(@fragmentIonMzMax As varchar(24)) + '_' +
-                    Cast(@trimNTerminalMet As varchar(24)) + '_' +
+                    Case When @trimNTerminalMet > 0 Then 'true' Else 'false' End + '_' +
                     Cast(@cleavageSpecificity As varchar(24)) + '_' +
                     Cast(@missedCleavages As varchar(24)) + '_' +
                     Cast(@peptideLengthMin As varchar(24)) + '_' +
@@ -134,7 +134,7 @@ Begin
                     Cast(@precursorMzMax As varchar(24)) + '_' +
                     Cast(@precursorChargeMin As varchar(24)) + '_' +
                     Cast(@precursorChargeMax As varchar(24)) + '_' +
-                    Cast(@staticCysCarbamidomethyl As varchar(24)) + '_' +
+                    Case When @staticCysCarbamidomethyl > 0 Then 'true' Else 'false' End + '_' +
                     @staticMods + '_' +
                     @dynamicMods + '_' +
                     Cast(@maxDynamicMods As varchar(24)) + '_'
