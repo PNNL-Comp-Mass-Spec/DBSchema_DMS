@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
 **          03/16/2023 mem - Use lowercase variable names
 **          03/18/2023 mem - Rename parameters
 **          03/28/2023 mem - Change @trimNTerminalMet and @staticCysCarbamidomethyl from tinyint to bit
+**          03/29/2023 mem - Change tinyint parameters to smallint
 **
 *****************************************************/
 (
@@ -32,16 +33,16 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
     @trimNTerminalMet bit = 0,
     @cleavageSpecificity varchar(64) = '',
     @missedCleavages int = 0,
-    @peptideLengthMin tinyint = 0,
-    @peptideLengthMax tinyint = 0,
+    @peptideLengthMin smallint = 0,
+    @peptideLengthMax smallint = 0,
     @precursorMzMin real = 0,
     @precursorMzMax real = 0,
-    @precursorChargeMin tinyint = 0,
-    @precursorChargeMax tinyint = 0,
+    @precursorChargeMin smallint = 0,
+    @precursorChargeMax smallint = 0,
     @staticCysCarbamidomethyl bit = 0,
     @staticMods varchar(512) = '',
     @dynamicMods varchar(512) = '',
-    @maxDynamicMods tinyint = 0,
+    @maxDynamicMods smallint = 0,
     @hash varchar(64) = '' Output,
     @settings varchar(4000) = '' Output
 )
