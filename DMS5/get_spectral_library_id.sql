@@ -22,16 +22,17 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **                         - Assign the source job to the spectral library if it has state 1 and @allowAddNew is enabled
 **          03/19/2023 mem - Truncate protein collection lists to 110 characters
 **                         - Remove the extension from legacy FASTA file names
+**          03/28/2023 mem - Change @allowAddNew, @trimNTerminalMet, and @staticCysCarbamidomethyl from tinyint to bit
 **
 *****************************************************/
 (
-    @allowAddNew tinyint,
+    @allowAddNew bit,
     @dmsSourceJob int = 0,
     @proteinCollectionList varchar(2000) = '',
     @organismDbFile varchar(128) = '',
     @fragmentIonMzMin real = 0,
     @fragmentIonMzMax real = 0,
-    @trimNTerminalMet tinyint = 0,
+    @trimNTerminalMet bit = 0,
     @cleavageSpecificity varchar(64) = '',
     @missedCleavages int = 0,
     @peptideLengthMin tinyint = 0,
@@ -40,7 +41,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
     @precursorMzMax real = 0,
     @precursorChargeMin tinyint = 0,
     @precursorChargeMax tinyint = 0,
-    @staticCysCarbamidomethyl tinyint = 0,
+    @staticCysCarbamidomethyl bit = 0,
     @staticMods varchar(512) = '',
     @dynamicMods varchar(512) = '',
     @maxDynamicMods tinyint = 0,

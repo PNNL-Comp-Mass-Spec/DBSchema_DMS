@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
 **  Date:   03/15/2023 mem - Initial Release
 **          03/16/2023 mem - Use lowercase variable names
 **          03/18/2023 mem - Rename parameters
+**          03/28/2023 mem - Change @trimNTerminalMet and @staticCysCarbamidomethyl from tinyint to bit
 **
 *****************************************************/
 (
@@ -28,7 +29,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
     @organismDbFile varchar(128) = '',
     @fragmentIonMzMin real = 0,
     @fragmentIonMzMax real = 0,
-    @trimNTerminalMet tinyint = 0,
+    @trimNTerminalMet bit = 0,
     @cleavageSpecificity varchar(64) = '',
     @missedCleavages int = 0,
     @peptideLengthMin tinyint = 0,
@@ -37,7 +38,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
     @precursorMzMax real = 0,
     @precursorChargeMin tinyint = 0,
     @precursorChargeMax tinyint = 0,
-    @staticCysCarbamidomethyl tinyint = 0,
+    @staticCysCarbamidomethyl bit = 0,
     @staticMods varchar(512) = '',
     @dynamicMods varchar(512) = '',
     @maxDynamicMods tinyint = 0,
