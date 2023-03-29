@@ -60,7 +60,7 @@ Begin
     Declare @myError int = 0
 
     -- Default library name, without the suffix '.predicted.speclib'
-    Declare @defaultLibraryName varchar(255)
+    Declare @defaultLibraryName varchar(2000)           -- This is varchar(2000) for compatibility with @proteinCollectionList
     Declare @libraryNameHash varchar(64)
 
     Declare @hash varchar(64)
