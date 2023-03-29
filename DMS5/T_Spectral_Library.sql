@@ -72,9 +72,9 @@ ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Fr
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Fragment_Ion_Mz_Max]  DEFAULT ((0)) FOR [Fragment_Ion_Mz_Max]
 GO
-ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_rim_N_Terminal_Met]  DEFAULT ((0)) FOR [Trim_N_Terminal_Met]
+ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Trim_N_Terminal_Met]  DEFAULT ((0)) FOR [Trim_N_Terminal_Met]
 GO
-ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_leavage_Specificity]  DEFAULT ('') FOR [Cleavage_Specificity]
+ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Cleavage_Specificity]  DEFAULT ('') FOR [Cleavage_Specificity]
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Missed_Cleavages]  DEFAULT ((0)) FOR [Missed_Cleavages]
 GO
@@ -138,7 +138,6 @@ AS
 		FROM T_Spectral_Library INNER JOIN 
 			 inserted ON T_Spectral_Library.Library_ID = inserted.Library_ID
 	End
-
 
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ENABLE TRIGGER [trig_u_T_Spectral_Library]
