@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[request_step_task_xml]
 /****************************************************
 **
@@ -98,6 +99,7 @@ CREATE PROCEDURE [dbo].[request_step_task_xml]
 **          02/06/2023 bcg - Update after view column rename
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps
+**          03/29/2023 mem - Add support for state 11 (Waiting_For_File)
 **
 *****************************************************/
 (
@@ -773,7 +775,7 @@ AS
              ) J
              INNER JOIN T_Job_Steps JS
                ON J.Job = JS.Job
-             INNER JOIN (    -- Viable processors/step tool combinations (with CPU loading, memory usage,and processor group information)
+             INNER JOIN ( -- Viable processors/step tool combinations (with CPU loading, memory usage,and processor group information)
                           SELECT LP.Processor_Name,
                                  LP.ID AS Processor_ID,
                                  PTGD.Tool_Name,
@@ -805,7 +807,7 @@ AS
                ON TP.Tool_Name = JS.Tool
         WHERE (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
               J.Priority <= TP.Max_Job_Priority AND
-              (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
+              (JS.State In (2, 11) OR @remoteInfoID > 1 And JS.State = 9) AND
               NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step)
         ORDER BY
             Association_Type,
@@ -884,7 +886,7 @@ AS
                WHERE TJ.State <> 8 ) J
                INNER JOIN T_Job_Steps JS
                    ON J.Job = JS.Job
-                 INNER JOIN (    -- Viable processors/step tools combinations (with CPU loading and processor group information)
+                 INNER JOIN ( -- Viable processors/step tools combinations (with CPU loading and processor group information)
                               SELECT LP.Processor_Name,
                                      LP.ID AS Processor_ID,
                                      PTGD.Tool_Name,
@@ -910,7 +912,7 @@ AS
                    ON TP.Tool_Name = JS.Tool
             WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 THEN 0 ELSE TP.CPU_Load END) AND
                   GETDATE() > JS.Next_Try AND
-                  (JS.State = 2 OR JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
+                  (JS.State IN (2, 11) OR JS.State = 9 AND JS.Remote_Info_ID = @remoteInfoId) AND
                   TP.Memory_Available >= JS.Memory_Usage_MB AND
                   NOT (Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
                   NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step) AND
@@ -988,7 +990,7 @@ AS
                    WHERE TJ.State <> 8 ) J
                  INNER JOIN T_Job_Steps JS
                    ON J.Job = JS.Job
-                 INNER JOIN (    -- Viable processors/step tools combinations (with CPU loading and processor group information)
+                 INNER JOIN ( -- Viable processors/step tools combinations (with CPU loading and processor group information)
                               SELECT LP.Processor_Name,
                                      LP.ID as Processor_ID,
                                      PTGD.Tool_Name,
@@ -1020,7 +1022,7 @@ AS
             WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 Or @remoteInfoID > 1 Then -50 ELSE TP.CPU_Load END) AND
                   J.Priority <= TP.Max_Job_Priority AND
                   (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
-                  (JS.State = 2 OR @remoteInfoID > 1 And JS.State = 9) AND
+                  (JS.State In (2, 11) OR @remoteInfoID > 1 And JS.State = 9) AND
                   TP.Memory_Available >= JS.Memory_Usage_MB AND
                   NOT (Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
                   NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step)
@@ -1253,7 +1255,7 @@ AS
     FROM
         T_Job_Steps JS WITH (HOLDLOCK) INNER JOIN
         #Tmp_CandidateJobSteps CJS ON CJS.Job = JS.Job AND CJS.Step = JS.Step
-    WHERE JS.State IN (2, 9) And CJS.Association_Type <= @AssociationTypeIgnoreThreshold
+    WHERE JS.State IN (2, 9, 11) And CJS.Association_Type <= @AssociationTypeIgnoreThreshold
     ORDER BY Seq
       --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -1332,7 +1334,7 @@ AS
             goto Done
         End
 
-    end --<e>
+    End --<e>
 
     -- update was successful
     commit transaction @transName
@@ -1426,7 +1428,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- dump candidate list if in infoOnly mode
+    -- Dump candidate list if in infoOnly mode
     ---------------------------------------------------
     --
     If @infoOnly <> 0
