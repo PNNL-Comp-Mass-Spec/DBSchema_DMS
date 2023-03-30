@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          10/10/2022 mem - Add @newRequestedRunID; if defined (and active), associate the dataset with this Request ID and use it to update the dataset's experiment
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          03/29/2023 mem - No longer add job parameter DatasetNum
 **
 *****************************************************/
 (
@@ -520,8 +521,7 @@ AS
         Else
         Begin
 
-            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetNum',        @datasetNameNew, @infoOnly=0 -- TODO: Remove later
-            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetName',        @datasetNameNew, @infoOnly=0
+            exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetName',       @datasetNameNew, @infoOnly=0
             exec DMS_Pipeline.dbo.add_update_job_parameter @job, 'JobParameters', 'DatasetFolderName', @datasetNameNew, @infoOnly=0
 
             UPDATE DMS_Pipeline.dbo.T_Jobs
