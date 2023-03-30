@@ -3,11 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[delete_requested_run]
 /****************************************************
 **
 **  Desc:
-**  Remove a requested run (and all its dependencies)
+**      Remove a requested run (and all its dependencies)
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,6 +23,7 @@ CREATE PROCEDURE [dbo].[delete_requested_run]
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/30/2023 mem - Append data to T_Deleted_Requested_Run and T_Deleted_Factor prior to deleting the requested run
 **
 *****************************************************/
 (
@@ -36,9 +38,18 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
     Declare @batchID int
+    Declare @eusPersonID int
+    Declare @deletedBy Varchar(128)
 
-    set @message = ''
-    Set @skipDatasetCheck = Isnull(@skipDatasetCheck, 0)
+    Set @message = ''
+    Set @skipDatasetCheck = Coalesce(@skipDatasetCheck, 0)
+    
+    Set @callingUser = Ltrim(Rtrim(Coalesce(@callingUser, '')))
+
+    Set @deletedBy = CASE WHEN @callingUser = '' 
+                          THEN SUSER_SNAME()
+                          ELSE @callingUser 
+                     END
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -81,17 +92,17 @@ AS
     Begin
         Declare @DatasetID int = 0
 
-        Select @DatasetID = DatasetID
+        SELECT @DatasetID = DatasetID
         FROM T_Requested_Run
         WHERE ID = @requestID
 
-        If IsNull(@DatasetID, 0) > 0
+        If Coalesce(@DatasetID, 0) > 0
         Begin
             Declare @Dataset varchar(128)
 
-            Select @Dataset = Dataset_Num
+            SELECT @Dataset = Dataset_Num
             FROM T_Dataset
-            Where Dataset_ID = @DatasetID
+            WHERE Dataset_ID = @DatasetID
 
             Set @message = 'Cannot delete requested run ' + Cast(@requestID as varchar(9)) +
                            ' because it is associated with dataset ' + Coalesce(@Dataset, '??') +
@@ -108,13 +119,59 @@ AS
 
     declare @transName varchar(32) = 'delete_requested_run'
     begin transaction @transName
+    
+    -- Look for an EUS user associated with the requested run
+    -- If there is more than one user, only keep the first one (since, effective February 2020, requested runs are limited to a single EUS user)
+    SELECT TOP 1 @eusPersonID = EUS_Person_ID
+    FROM T_Requested_Run_EUS_Users 
+    WHERE request_id = @requestID
+    ORDER BY EUS_Person_ID Asc
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount < 1
+        Set @eusPersonID = Null
+        
+    ---------------------------------------------------
+    -- Add any factors to T_Deleted_Factor
+    ---------------------------------------------------
+
+    INSERT INTO T_Deleted_Factor (Factor_ID, Type, Target_ID, Name, Value, Last_Updated, Deleted_By)
+    SELECT FactorID, Type, TargetID, Name, Value, Last_Updated, @deletedBy
+    FROM T_Factor
+    WHERE [Type] = 'Run_Request' AND
+          TargetID = @requestID;
 
     ---------------------------------------------------
-    -- delete associated factors
+    -- Add the requested run to T_Deleted_Requested_Run
+    ---------------------------------------------------
+    
+    INSERT INTO T_Deleted_Requested_Run (
+        Request_Id, Request_Name, Requester_Username, Comment, Created, Instrument_Group, 
+        Request_Type_Id, Instrument_Setting, Special_Instructions, Wellplate, Well, Priority, Note, Exp_Id, 
+        Request_Run_Start, Request_Run_Finish, Request_Internal_Standard, Work_Package, Batch_Id, 
+        Blocking_Factor, Block, Run_Order, EUS_Proposal_Id, EUS_Usage_Type_Id, EUS_Person_Id, 
+        Cart_Id, Cart_Config_Id, Cart_Column, Separation_Group, Mrm_Attachment, 
+        Dataset_Id, Origin, State_Name, Request_Name_Code, Vialing_Conc, Vialing_Vol, Location_Id, 
+        Queue_State, Queue_Instrument_Id, Queue_Date, Entered, Updated, Updated_By, Deleted_By
+        )
+    SELECT ID, RDS_Name, RDS_Requestor_PRN, RDS_comment, RDS_created, RDS_instrument_group, 
+           RDS_type_ID, RDS_instrument_setting, RDS_special_instructions, RDS_Well_Plate_Num, RDS_Well_Num, RDS_priority, RDS_note, Exp_ID, 
+           RDS_Run_Start, RDS_Run_Finish, RDS_Internal_Standard, RDS_WorkPackage, RDS_BatchID, 
+           RDS_Blocking_Factor, RDS_Block, RDS_Run_Order, RDS_EUS_Proposal_ID, RDS_EUS_UsageType, @eusPersonID, 
+           RDS_Cart_ID, RDS_Cart_Config_ID, RDS_Cart_Col, RDS_Sec_Sep, RDS_MRM_Attachment, 
+           DatasetID, RDS_Origin, RDS_Status, RDS_NameCode, Vialing_Conc, Vialing_Vol, Location_ID, 
+           Queue_State, Queue_Instrument_ID, Queue_Date, Entered, Updated, Updated_By, @deletedBy
+    FROM T_Requested_Run
+    WHERE ID = @requestID
+
+    ---------------------------------------------------
+    -- Delete associated factors
     ---------------------------------------------------
     --
     DELETE FROM T_Factor
-    WHERE TargetID = @requestID
+    WHERE [Type] = 'Run_Request' AND
+          TargetID = @requestID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -125,7 +182,7 @@ AS
     end
 
     ---------------------------------------------------
-    -- delete EUS users associated with request
+    -- Delete EUS users associated with request
     ---------------------------------------------------
     --
     DELETE FROM dbo.T_Requested_Run_EUS_Users
@@ -154,7 +211,8 @@ AS
         goto Done
     end
 
-    -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
+    -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
+
     If Len(@callingUser) > 0
     Begin
         Declare @stateID int
