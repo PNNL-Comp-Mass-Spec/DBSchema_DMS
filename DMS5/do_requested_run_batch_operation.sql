@@ -7,10 +7,7 @@ CREATE PROCEDURE [dbo].[do_requested_run_batch_operation]
 /****************************************************
 **
 **  Desc:
-**      Perform operations on requested run batches
-**      that only admins are allowed to do
-**
-**  Return values: 0: success, otherwise, error code
+**      Lock, unlock, or delete a requested run batch
 **
 **  Auth:   grk
 **  Date:   01/12/2006
@@ -23,12 +20,13 @@ CREATE PROCEDURE [dbo].[do_requested_run_batch_operation]
 **          08/01/2022 mem - Exit the procedure if @batchID is 0
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/31/2023 mem - When deleting a batch, archive it in T_Deleted_Requested_Run_Batch
 **
 *****************************************************/
 (
     @batchID int,
-    @mode varchar(12), -- 'LockBatch', 'UnlockBatch', 'delete'; Supported, but unused in July 2017 are 'FreeMembers', 'GrantHiPri', 'DenyHiPri'
-    @message varchar(512) output
+    @mode varchar(12),  -- 'LockBatch', 'UnlockBatch', 'Lock', 'Unlock', 'Delete'; Supported, but unused modes (as of July 2017): 'FreeMembers', 'GrantHiPri', 'DenyHiPri'
+    @message varchar(512) = '' output
 )
 AS
     set nocount on
@@ -36,9 +34,7 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
-
-    Declare @result int
+    Set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -52,6 +48,7 @@ AS
     End;
 
     Set @batchID = Coalesce(@batchID, 0)
+    Set @mode = Coalesce(@mode, '')
 
     If @batchID = 0
     Begin;
@@ -62,16 +59,15 @@ AS
     -- Is batch in table?
     ---------------------------------------------------
 
-    Declare @batchExists int
+    Declare @batchExists int = 0
     Declare @lock varchar(12)
-    set @batchExists = 0
-    --
+    
     SELECT @lock = Locked
     FROM T_Requested_Run_Batches
     WHERE ID = @batchID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         set @message = 'Failed trying to find batch in batch table'
@@ -79,13 +75,13 @@ AS
         return 51007
     End
 
-    set @batchExists = @myRowCount
+    Set @batchExists = @myRowCount
 
     ---------------------------------------------------
     -- Lock run order
     ---------------------------------------------------
 
-    If @mode = 'LockBatch'
+    If @mode IN ('LockBatch', 'Lock')
     Begin
         If @batchExists > 0
         Begin
@@ -109,7 +105,7 @@ AS
     -- Unlock run order
     ---------------------------------------------------
 
-    If @mode = 'UnlockBatch'
+    If @mode IN ('UnlockBatch', 'Unlock')
     Begin
         If @batchExists > 0
         Begin
@@ -121,7 +117,7 @@ AS
             --
             If @myError <> 0
             Begin
-                set @message = 'Failed trying to unlock table'
+                set @message = 'Failed trying to unlock batch'
                 RAISERROR (@message, 10, 1)
                 return 51140
             End
@@ -133,7 +129,7 @@ AS
     -- Remove current member requests from batch
     ---------------------------------------------------
 
-    If @mode = 'FreeMembers' or @mode = 'delete'
+    If @mode = 'FreeMembers' or @mode = 'Delete'
     Begin
         If @lock = 'yes'
         Begin
@@ -173,7 +169,7 @@ AS
     -- Delete batch
     ---------------------------------------------------
 
-    If @mode = 'delete'
+    If @mode = 'Delete'
     Begin
         If @lock = 'yes'
         Begin
@@ -181,16 +177,29 @@ AS
             RAISERROR (@message, 10, 1)
             return 51170
         End
-        else
+        Else
         Begin
+            INSERT INTO T_Deleted_Requested_Run_Batch (Batch_ID, Batch, Description, Owner_User_ID, Created, Locked, 
+                                                       Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
+                                                       Requested_Completion_Date, Justification_for_High_Priority, Comment, 
+                                                       Requested_Instrument_Group, Batch_Group_ID, Batch_Group_Order)
+            SELECT ID, Batch, Description, Owner, Created, Locked, 
+                   Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
+                   Requested_Completion_Date, Justification_for_High_Priority, Comment, 
+                   Requested_Instrument, Batch_Group_ID, Batch_Group_Order
+            FROM T_Requested_Run_Batches
+            WHERE ID = @batchID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
             DELETE FROM T_Requested_Run_Batches
             WHERE ID = @batchID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            --
+
             If @myError <> 0
             Begin
-                set @message = 'Failed trying to unlock table'
+                set @message = 'Failed trying to delete batch'
                 RAISERROR (@message, 10, 1)
                 return 51140
             End
@@ -206,14 +215,14 @@ AS
     If @mode = 'GrantHiPri'
     Begin
         UPDATE T_Requested_Run_Batches
-            Set Actual_Batch_Priority = 'High'
+        SET Actual_Batch_Priority = 'High'
         WHERE ID = @batchID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
-            set @message = 'Failed trying to set Actual Batch Priority to - High'
+            set @message = 'Failed trying to set Actual Batch Priority to High'
             RAISERROR (@message, 10, 1)
             return 51145
         End
@@ -228,15 +237,15 @@ AS
     If @mode = 'DenyHiPri'
     Begin
         UPDATE T_Requested_Run_Batches
-            Set Actual_Batch_Priority = 'Normal',
-                Requested_Batch_Priority = 'Normal'
+        SET Actual_Batch_Priority = 'Normal',
+            Requested_Batch_Priority = 'Normal'
         WHERE ID = @batchID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
         Begin
-            set @message = 'Failed trying to set Actual Batch Priority and Requested Batch Priority to - Normal'
+            set @message = 'Failed trying to set Actual Batch Priority and Requested Batch Priority to Normal'
             RAISERROR (@message, 10, 1)
             return 51150
         End
@@ -251,13 +260,13 @@ AS
     If @mode = ''
     Begin
         return 0
-    End -- mode ''
+    End
 
     ---------------------------------------------------
     -- Mode was unrecognized
     ---------------------------------------------------
 
-    set @message = 'Mode "' + @mode +  '" was unrecognized'
+    Set @message = 'Mode "' + @mode +  '" was unrecognized'
     RAISERROR (@message, 10, 1)
     return 51222
 
