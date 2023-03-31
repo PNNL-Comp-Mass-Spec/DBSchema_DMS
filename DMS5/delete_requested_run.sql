@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[delete_requested_run]
 /****************************************************
 **
@@ -40,6 +39,7 @@ AS
     Declare @batchID int
     Declare @eusPersonID int
     Declare @deletedBy Varchar(128)
+    Declare @deletedRequestedRunEntryID Int
 
     Set @message = ''
     Set @skipDatasetCheck = Coalesce(@skipDatasetCheck, 0)
@@ -131,17 +131,7 @@ AS
 
     If @myRowCount < 1
         Set @eusPersonID = Null
-        
-    ---------------------------------------------------
-    -- Add any factors to T_Deleted_Factor
-    ---------------------------------------------------
-
-    INSERT INTO T_Deleted_Factor (Factor_ID, Type, Target_ID, Name, Value, Last_Updated, Deleted_By)
-    SELECT FactorID, Type, TargetID, Name, Value, Last_Updated, @deletedBy
-    FROM T_Factor
-    WHERE [Type] = 'Run_Request' AND
-          TargetID = @requestID;
-
+  
     ---------------------------------------------------
     -- Add the requested run to T_Deleted_Requested_Run
     ---------------------------------------------------
@@ -164,6 +154,18 @@ AS
            Queue_State, Queue_Instrument_ID, Queue_Date, Entered, Updated, Updated_By, @deletedBy
     FROM T_Requested_Run
     WHERE ID = @requestID
+
+    Set @deletedRequestedRunEntryID = SCOPE_IDENTITY()
+
+    ---------------------------------------------------
+    -- Add any factors to T_Deleted_Factor
+    ---------------------------------------------------
+
+    INSERT INTO T_Deleted_Factor (Factor_ID, Type, Target_ID, Name, Value, Last_Updated, Deleted_By, Deleted_Requested_Run_Entry_ID)
+    SELECT FactorID, Type, TargetID, Name, Value, Last_Updated, @deletedBy, @deletedRequestedRunEntryID
+    FROM T_Factor
+    WHERE [Type] = 'Run_Request' AND
+          TargetID = @requestID;
 
     ---------------------------------------------------
     -- Delete associated factors
