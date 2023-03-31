@@ -49,7 +49,11 @@ CREATE TABLE [dbo].[T_Deleted_Requested_Run](
 	[Updated] [smalldatetime] NULL,
 	[Updated_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Deleted] [datetime] NOT NULL,
-	[Deleted_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+	[Deleted_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+ CONSTRAINT [PK_T_Deleted_Requested_Run] PRIMARY KEY CLUSTERED 
+(
+	[Entry_Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO

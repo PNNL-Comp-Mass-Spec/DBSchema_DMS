@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_Deleted_Factor](
 	[Last_Updated] [smalldatetime] NOT NULL,
 	[Deleted] [datetime] NOT NULL,
 	[Deleted_By] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Deleted_Requested_Run_Entry_ID] [int] NOT NULL,
  CONSTRAINT [PK_T_Deleted_Factor] PRIMARY KEY NONCLUSTERED 
 (
 	[Entry_Id] ASC
@@ -36,4 +37,9 @@ GO
 ALTER TABLE [dbo].[T_Deleted_Factor] ADD  CONSTRAINT [DF_T_Deleted_Factor_Type]  DEFAULT ('Run_Request') FOR [Type]
 GO
 ALTER TABLE [dbo].[T_Deleted_Factor] ADD  CONSTRAINT [DF_T_Deleted_Factor_Deleted]  DEFAULT (getdate()) FOR [Deleted]
+GO
+ALTER TABLE [dbo].[T_Deleted_Factor]  WITH CHECK ADD  CONSTRAINT [FK_T_Deleted_Factor_T_Deleted_Requested_Run] FOREIGN KEY([Deleted_Requested_Run_Entry_ID])
+REFERENCES [dbo].[T_Deleted_Requested_Run] ([Entry_Id])
+GO
+ALTER TABLE [dbo].[T_Deleted_Factor] CHECK CONSTRAINT [FK_T_Deleted_Factor_T_Deleted_Requested_Run]
 GO
