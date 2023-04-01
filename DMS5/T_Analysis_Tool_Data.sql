@@ -93,4 +93,4 @@ INSERT INTO [T_Analysis_Tool] VALUES (88,'MSFragger','MSFragger',1033,'\\gigasax
 INSERT INTO [T_Analysis_Tool] VALUES (89,'PepProtProphet','PepProtProphet',1,'(na)','(na)','??','TSV','no ',0,'(na)',1,'N',null,null,0,1,1)
 INSERT INTO [T_Analysis_Tool] VALUES (90,'MSGFPlus_MzML_SplitFasta_NoRefine','MSGFPlus_MzML',1018,'\\gigasax\DMS_Parameter_Files\MSGFPlus','G:\DMS_Parameter_Files\MSGFPlus','IonTrapDefSettings_MzML_5Parts_MergeResults_Top1.xml','MSG_Peptide_Hit','no ',1,null,1,'Y',null,null,0,1,1)
 INSERT INTO [T_Analysis_Tool] VALUES (91,'MaxQuant','MaxQuant',1034,'\\gigasax\DMS_Parameter_Files\MaxQuant','G:\DMS_Parameter_Files\MaxQuant','??','MXQ_Peptide_Hit','no ',1,null,1,'N',null,null,0,1,1)
-INSERT INTO [T_Analysis_Tool] VALUES (92,'DIA-NN','DIA-NN',1035,'\\gigasax\DMS_Parameter_Files\DIA-NN','G:\DMS_Parameter_Files\DIA-NN','??','DNN_Peptide_Hit','no ',1,null,1,'N',null,null,0,1,1)
+INSERT INTO [T_Analysis_Tool] VALUES (92,'DiaNN','DiaNN',1035,'\\gigasax\DMS_Parameter_Files\DiaNN','G:\DMS_Parameter_Files\DiaNN','DiaNN_Standard.xml','DNN_Peptide_Hit','no ',1,null,1,'N',null,null,0,1,1)
