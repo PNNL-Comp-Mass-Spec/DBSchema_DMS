@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Job_Step_State_Name] ******/
-/****** RowCount: 10 ******/
+/****** RowCount: 11 ******/
 /****** Columns: ID, Name, Description ******/
 INSERT INTO [T_Job_Step_State_Name] VALUES (1,'Waiting','Step has not been run yet, and it cannot be assigned yet.')
 INSERT INTO [T_Job_Step_State_Name] VALUES (2,'Enabled','Step can be run because all its dependencies have been satisfied')
@@ -10,4 +10,5 @@ INSERT INTO [T_Job_Step_State_Name] VALUES (6,'Failed','Manager could not comple
 INSERT INTO [T_Job_Step_State_Name] VALUES (7,'Holding','Established and removed manually when deus ex machina is necessary')
 INSERT INTO [T_Job_Step_State_Name] VALUES (9,'Running_Remote','Job is running on a remote resource (Linux or Cloud)')
 INSERT INTO [T_Job_Step_State_Name] VALUES (10,'Holding_Staging','Waiting for the Aurora data archive to stage the required files')
+INSERT INTO [T_Job_Step_State_Name] VALUES (11,'Waiting_For_File','Waiting for another job to generate a required file')
 INSERT INTO [T_Job_Step_State_Name] VALUES (16,'Failed_Remote','Job failed while running on a remote resource')
