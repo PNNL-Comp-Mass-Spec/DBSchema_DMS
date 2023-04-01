@@ -1,20 +1,22 @@
-/****** Object:  StoredProcedure [dbo].[delete_orphaned_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[delete_orphaned_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[delete_orphaned_jobs]
+CREATE PROCEDURE [dbo].[delete_orphaned_tasks]
 /****************************************************
 **
-**  Desc:   Delete jobs in state 0 where the dataset no longer exists in DMS
+**  Desc:
+**      Delete jobs in state 0 where the dataset no longer exists in DMS
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
-**          05/22/2019 mem - Initial version
+**  Date:   05/22/2019 mem - Initial version
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -129,7 +131,7 @@ AS
 
                 Set @logMessage = 'Deleted orphaned ' + @scriptName + ' job ' + Cast(@job As Varchar(12)) + ' for dataset ' + @dataset + ' since no longer defined in DMS'
 
-                Exec post_log_entry 'Normal', @logMessage, 'delete_orphaned_jobs'
+                Exec post_log_entry 'Normal', @logMessage, 'delete_orphaned_tasks'
 
                 Set @jobsDeleted = @jobsDeleted + 1
             End -- </c>

@@ -1,14 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[get_job_step_params_as_table] ******/
+/****** Object:  StoredProcedure [dbo].[get_task_step_params_as_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[get_job_step_params_as_table]
+CREATE PROCEDURE [dbo].[get_task_step_params_as_table]
 /****************************************************
 **
-**  Desc:   Get job step parameters for given job step
+**  Desc:
+**      Get job step parameters for given job step
 **
-**  Note: Data comes from table T_Task_Parameters in the DMS_Capture DB, not from DMS5
+**      Note: Data comes from table T_Task_Parameters in the DMS_Capture DB, not from DMS5
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_as_table]
 **          02/12/2020 mem - Add argument @paramName, which can be used to filter the results
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -47,10 +49,10 @@ AS
     )
 
     ---------------------------------------------------
-    -- Call get_job_step_params to populate the temporary table
+    -- Call get_task_step_params to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = get_job_step_params @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_task_step_params @jobNumber, @stepNumber, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 
@@ -79,9 +81,8 @@ AS
     ---------------------------------------------------
     --
 Done:
-
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_as_table] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_step_params_as_table] TO [DDL_Viewer] AS [dbo]
 GO

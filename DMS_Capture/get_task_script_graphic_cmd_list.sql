@@ -1,9 +1,9 @@
-/****** Object:  UserDefinedFunction [dbo].[get_job_script_graphic_cmd_list] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_task_script_graphic_cmd_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[get_job_script_graphic_cmd_list]
+CREATE FUNCTION [dbo].[get_task_script_graphic_cmd_list]
 /****************************************************
 **  Returns Dot graphic commnd list for given script
 **
@@ -11,8 +11,9 @@ CREATE FUNCTION [dbo].[get_job_script_graphic_cmd_list]
 **  Date:   09/08/2009
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/05/2023 mem - Use new view name
+**          04/01/2023 mem - Rename procedures and functions
 **
-****************************************************/
+*****************************************************/
 (
     @script VARCHAR(256)
 )
@@ -31,5 +32,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_script_graphic_cmd_list] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_script_graphic_cmd_list] TO [DDL_Viewer] AS [dbo]
 GO

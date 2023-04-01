@@ -1,13 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[retry_capture_for_dms_reset_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[retry_capture_for_dms_reset_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[retry_capture_for_dms_reset_jobs]
+CREATE PROCEDURE [dbo].[retry_capture_for_dms_reset_tasks]
 /****************************************************
 **
-**  Desc:   Retry capture for datasets that failed capture
-**          but for which the dataset state in DMS is 1=New
+**  Desc:
+**      Retry capture for datasets that failed capture
+**      but for which the dataset state in DMS is 1=New
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +20,7 @@ CREATE PROCEDURE [dbo].[retry_capture_for_dms_reset_jobs]
 **          02/02/2023 bcg - Changed from V_Jobs and V_Job_Steps to V_Tasks and V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -28,10 +30,8 @@ CREATE PROCEDURE [dbo].[retry_capture_for_dms_reset_jobs]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     CREATE TABLE #SJL (
         Job int NOT NULL,
@@ -108,12 +108,12 @@ AS
     Begin -- <a>
 
         -- Update the job parameters for each job
-        exec update_parameters_for_job @jobList, @message output
+        exec update_parameters_for_task @jobList, @message output
 
-        -- Reset the job steps using retry_selected_jobs
+        -- Reset the job steps using retry_selected_tasks
         -- Fail out any completed steps before performing the reset
 
-        Declare @transName varchar(32) = 'retry_capture_for_dms_reset_jobs'
+        Declare @transName varchar(32) = 'retry_capture_for_dms_reset_tasks'
 
         begin transaction @transName
 
@@ -138,7 +138,7 @@ AS
             SET State = 6
             WHERE State = 5 AND Job IN (SELECT Job FROM #SJL)
 
-            EXEC @myError = retry_selected_jobs @message output
+            EXEC @myError = retry_selected_tasks @message output
         End
         Else
         Begin
@@ -156,7 +156,7 @@ AS
         Else
             Set @message = 'Reset dataset capture for job ' + @JobList
 
-        exec post_log_entry 'Normal', @message, 'retry_capture_for_dms_reset_jobs'
+        exec post_log_entry 'Normal', @message, 'retry_capture_for_dms_reset_tasks'
 
     End -- </a>
 
@@ -168,5 +168,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[retry_capture_for_dms_reset_jobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[retry_capture_for_dms_reset_tasks] TO [DDL_Viewer] AS [dbo]
 GO

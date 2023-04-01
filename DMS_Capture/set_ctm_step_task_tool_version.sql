@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[set_step_task_tool_version] ******/
+/****** Object:  StoredProcedure [dbo].[set_ctm_step_task_tool_version] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[set_step_task_tool_version]
+CREATE PROCEDURE [dbo].[set_ctm_step_task_tool_version]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[set_step_task_tool_version]
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'set_step_task_tool_version', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'set_ctm_step_task_tool_version', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -132,7 +133,7 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[set_step_task_tool_version] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_ctm_step_task_tool_version] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[set_step_task_tool_version] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_ctm_step_task_tool_version] TO [DMS_SP_User] AS [dbo]
 GO

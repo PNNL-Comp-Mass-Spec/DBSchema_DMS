@@ -1,16 +1,17 @@
-/****** Object:  StoredProcedure [dbo].[request_step_task] ******/
+/****** Object:  StoredProcedure [dbo].[request_ctm_step_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[request_step_task]
+CREATE PROCEDURE [dbo].[request_ctm_step_task]
 /****************************************************
 **
-**  Desc:   Looks for capture job step that is appropriate for the given Processor Name.
-**          If found, step is assigned to caller
+**  Desc:
+**      Looks for capture job step that is appropriate for the given Processor Name.
+**      If found, step is assigned to caller
 **
-**          Task assignment will be based on:
-**          Assignment restrictions:
+**      Task assignment will be based on:
+**      Assignment restrictions:
 **              Job not in hold state
 **              Processor on storage machine (for step tools that require it)
 **              Bionet access (for step tools that reqire it)
@@ -47,6 +48,7 @@ CREATE PROCEDURE [dbo].[request_step_task]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -78,7 +80,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'request_step_task', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'request_ctm_step_task', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -109,7 +111,7 @@ AS
     Declare @jobNotAvailableErrorCode int = 53000
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task: Starting; make sure this is a valid processor'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Starting; make sure this is a valid processor'
 
     ---------------------------------------------------
     -- Make sure this is a valid processor
@@ -431,13 +433,13 @@ AS
     ---------------------------------------------------
 
     If @infoOnly > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task: Start transaction'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Start transaction'
 
     ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
     --
-    Declare @transName varchar(32) = 'request_step_task'
+    Declare @transName varchar(32) = 'request_ctm_step_task'
 
     Begin TRANSACTION @transName
 
@@ -531,14 +533,14 @@ AS
         End
 
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task: Call get_job_step_params'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Call get_task_step_params'
 
         ---------------------------------------------------
         -- Job was assigned; get step parameters
         ---------------------------------------------------
 
         -- Populate #ParamTab with job step parameters
-        EXEC @myError = get_job_step_params @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
+        EXEC @myError = get_task_step_params @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
 
         If @infoOnly <> 0 AND LEN(@message) = 0
             Set @message = 'Job ' + CONVERT(varchar(12), @jobNumber) + ', Step '+ CONVERT(varchar(12), @stepNumber) + ' would be assigned to ' + @processorName
@@ -561,7 +563,7 @@ AS
     If @infoOnly <> 0
     Begin
         If @infoOnly > 1
-            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_taskXML: Preview results'
+            Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Preview results'
 
         Declare @machineLockedStepTools varchar(64) = null
 
@@ -604,7 +606,7 @@ AS
         --
         If @infoOnly >= 2
         Begin
-            EXEC request_step_task_explanation @processorName, @processorIsAssigned, @infoOnly, @machine
+            EXEC request_ctm_step_task_explanation @processorName, @processorIsAssigned, @infoOnly, @machine
         End
 
     End
@@ -626,7 +628,7 @@ Done:
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[request_step_task] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_ctm_step_task] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[request_step_task] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[request_ctm_step_task] TO [DMS_SP_User] AS [dbo]
 GO

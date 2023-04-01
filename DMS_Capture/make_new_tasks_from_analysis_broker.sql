@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[make_new_jobs_from_analysis_broker] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_tasks_from_analysis_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_jobs_from_analysis_broker]
+CREATE PROCEDURE [dbo].[make_new_tasks_from_analysis_broker]
 /****************************************************
 **
 **  Desc:
-**    Create new jobs from analysis job broker jobs
+**      Create new jobs from analysis job broker jobs
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_analysis_broker]
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -42,14 +43,12 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_analysis_broker]
 AS
     Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     -- Set SP name
     declare @spName varchar(128)
-    SET @spName = 'make_new_jobs_from_analysis_broker'
+    SET @spName = 'make_new_tasks_from_analysis_broker'
 
     ---------------------------------------------------
     -- Create a temporary table containing defaults for this SP
@@ -312,9 +311,9 @@ AS
 Done:
     If @LoggingEnabled = 1 AND @myError > 0 AND @message <> ''
     Begin
-        exec post_log_entry 'Error', @message, 'make_new_jobs_from_analysis_broker'
+        exec post_log_entry 'Error', @message, 'make_new_tasks_from_analysis_broker'
     End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_jobs_from_analysis_broker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_tasks_from_analysis_broker] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[make_new_quameter_job] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_quameter_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_quameter_job]
+CREATE PROCEDURE [dbo].[make_new_quameter_task]
 /****************************************************
 **
 **  Desc:
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[make_new_quameter_job]
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -26,10 +27,8 @@ CREATE PROCEDURE [dbo].[make_new_quameter_job]
 AS
     Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @DatasetID int
     Declare @JobID int
@@ -96,7 +95,7 @@ AS
             'Quameter' AS Script,
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
-            'Created manually using make_new_quameter_job' AS Comment
+            'Created manually using make_new_quameter_task' AS Comment
     End
     Else
     Begin
@@ -107,7 +106,7 @@ AS
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
             '' AS Results_Folder_Name,
-            'Created manually using make_new_quameter_job' AS Comment
+            'Created manually using make_new_quameter_task' AS Comment
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -133,5 +132,5 @@ Done:
         Print @message
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_quameter_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_quameter_task] TO [DDL_Viewer] AS [dbo]
 GO

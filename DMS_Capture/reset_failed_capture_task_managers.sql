@@ -1,18 +1,20 @@
-/****** Object:  StoredProcedure [dbo].[reset_failed_managers] ******/
+/****** Object:  StoredProcedure [dbo].[reset_failed_capture_task_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[reset_failed_managers]
+CREATE PROCEDURE [dbo].[reset_failed_capture_task_managers]
 /****************************************************
 **
-**  Desc:   Resets managers that report "flag file" in V_Processor_Status_Warnings_CTM
+**  Desc:
+**      Resets managers that report "flag file" in V_Processor_Status_Warnings_CTM
 **
 **  Auth:   mem
 **          10/20/2016 mem - Ported from DMS_Pipeline
 **          01/16/2023 mem - Use new view name
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/06/2023 bcg - Use a synonym to access the Manager_Control database
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -81,5 +83,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[reset_failed_managers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_failed_capture_task_managers] TO [DDL_Viewer] AS [dbo]
 GO

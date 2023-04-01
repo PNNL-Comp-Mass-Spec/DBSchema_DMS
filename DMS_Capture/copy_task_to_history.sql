@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[copy_job_to_history] ******/
+/****** Object:  StoredProcedure [dbo].[copy_task_to_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[copy_job_to_history]
+CREATE PROCEDURE [dbo].[copy_task_to_history]
 /****************************************************
 **
 **  Desc:
-**    For a given job, copies the job details, steps,
-**    and parameters to the history tables
+**      For a given job, copies the job details, steps,
+**      and parameters to the history tables
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[copy_job_to_history]
 **          11/04/2016 mem - Return a more detailed error message in @message
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -267,5 +268,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[copy_job_to_history] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_task_to_history] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,13 +1,13 @@
-/****** Object:  UserDefinedFunction [dbo].[get_job_param_list] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_task_param_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[get_job_param_list]
+CREATE FUNCTION [dbo].[get_task_param_list]
 /****************************************************
 **
 **  Desc:
-**  Builds delimited list of cached parameters for given job
+**      Builds delimited list of cached parameters for given job
 **
 **  Return value: delimited list
 **
@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[get_job_param_list]
 **  Date:   01/27/2010
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -62,5 +63,5 @@ AS
     END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_param_list] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_param_list] TO [DDL_Viewer] AS [dbo]
 GO

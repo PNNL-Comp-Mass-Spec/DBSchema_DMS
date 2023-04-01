@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[add_update_local_task_in_broker]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **                         - Rename procedure to differentiate from DMS_Pipeline
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -110,7 +111,7 @@ AS
             UPDATE   dbo.T_Tasks
             SET      Priority = @priority ,
                     Comment = @comment ,
-                    State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (update_job_state will handle final job state update)
+                    State = CASE WHEN @reset = 'Y' THEN 20 ELSE State END -- 20=resuming (update_task_state will handle final job state update)
             WHERE    Job = @job
 
             UPDATE   dbo.T_Task_Parameters
@@ -134,7 +135,7 @@ AS
 
             DECLARE @jobParamXML XML = CONVERT(XML, @jobParam)
 /*
-            exec make_local_job_in_broker
+            exec make_local_task_in_broker
                     @scriptName,
                     @priority,
                     @jobParamXML,
@@ -158,7 +159,6 @@ AS
     END CATCH
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_local_task_in_broker] TO [DDL_Viewer] AS [dbo]

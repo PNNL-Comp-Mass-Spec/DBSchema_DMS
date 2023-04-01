@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[finish_job_creation] ******/
+/****** Object:  StoredProcedure [dbo].[finish_task_creation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[finish_job_creation]
+CREATE PROCEDURE [dbo].[finish_task_creation]
 /****************************************************
 **
 **  Desc:
@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[finish_job_creation]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -152,5 +153,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[finish_job_creation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[finish_task_creation] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[remove_old_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[remove_old_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[remove_old_jobs]
+CREATE PROCEDURE [dbo].[remove_old_tasks]
 /****************************************************
 **
 **  Delete jobs past their expiration date
@@ -15,12 +15,13 @@ CREATE PROCEDURE [dbo].[remove_old_jobs]
 **          09/12/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          06/21/2010 mem - Increased retention to 60 days for successful jobs
 **                         - Now removing jobs with state Complete, Inactive, or Ignore
-**          03/10/2014 mem - Added call to synchronize_job_stats_with_job_steps
+**          03/10/2014 mem - Added call to synchronize_task_stats_with_task_steps
 **          01/23/2017 mem - Assure that jobs exist in the history before deleting from T_Tasks
 **          08/17/2021 mem - When looking for completed or inactive jobs, use the Start time if Finish is null
 **                         - Also look for jobs with state 14 = Failed, Ignore Job Step States
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ AS
     -- Make sure the job Start and Finish values are up-to-date
     ---------------------------------------------------
     --
-    Exec synchronize_job_stats_with_job_steps @infoOnly=0
+    Exec synchronize_task_stats_with_task_steps @infoOnly=0
 
     ---------------------------------------------------
     -- Add old successful jobs to be removed to list
@@ -186,9 +187,9 @@ AS
             Else
             Begin
                 If @infoOnly > 0
-                    Print 'Call copy_job_to_history for job ' + Cast(@JobToAdd as varchar(9)) + ' with date ' + Cast(@SaveTimeOverride as varchar(32))
+                    Print 'Call copy_task_to_history for job ' + Cast(@JobToAdd as varchar(9)) + ' with date ' + Cast(@SaveTimeOverride as varchar(32))
                 Else
-                    exec copy_job_to_history @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
+                    exec copy_task_to_history @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
             End
         End
     End -- </c>
@@ -197,10 +198,10 @@ AS
     -- Do actual deletion
     ---------------------------------------------------
 
-    Declare @transName varchar(64) = 'remove_old_jobs'
+    Declare @transName varchar(64) = 'remove_old_tasks'
     Begin transaction @transName
 
-    exec @myError = remove_selected_jobs @infoOnly, @message output, @LogDeletions=0
+    exec @myError = remove_selected_tasks @infoOnly, @message output, @LogDeletions=0
 
     If @myError = 0
         Commit transaction @transName
@@ -215,5 +216,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[remove_old_jobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_old_tasks] TO [DDL_Viewer] AS [dbo]
 GO

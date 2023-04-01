@@ -1,20 +1,21 @@
-/****** Object:  StoredProcedure [dbo].[update_job_state] ******/
+/****** Object:  StoredProcedure [dbo].[update_task_state] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_job_state]
+CREATE PROCEDURE [dbo].[update_task_state]
 /****************************************************
 **
-**    Desc: Based on step state, look for jobs that have been completed,
-**          or have entered the "in progress" state,
-**          and update state of job locally and dataset in DMS accordingly
+**  Desc:
+**      Based on step state, look for jobs that have been completed,
+**      or have entered the "in progress" state,
+**      and update state of job locally and dataset in DMS accordingly
 **
-**    First step:
-**      Evaluate state of steps for jobs that are in new or busy state,
-**      or in transient state of being resumed or reset, and determine what new
-**      broker job state should be, and accumulate list of jobs whose new state is different than their
-**      current state.  Only steps for jobs in New or Busy state are considered.
+**      First step:
+**        Evaluate state of steps for jobs that are in new or busy state,
+**        or in transient state of being resumed or reset, and determine what new
+**        broker job state should be, and accumulate list of jobs whose new state is different than their
+**        current state.  Only steps for jobs in New or Busy state are considered.
 **
 **    Current             Current                                     New
 **    Broker              Job                                         Broker
@@ -32,9 +33,9 @@ CREATE PROCEDURE [dbo].[update_job_state]
 **    Failed              All steps waiting/enabled/In Progress       In Progress
 **
 **
-**    Second step:
-**      Go through list of jobs from first step whose current state must be changed and
-**      take action in broker and DMS as noted.
+**      Second step:
+**        Go through list of jobs from first step whose current state must be changed and
+**        take action in broker and DMS as noted.
 **
 **  Auth:   grk
 **  Date:   12/15/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
@@ -47,15 +48,16 @@ CREATE PROCEDURE [dbo].[update_job_state]
 **          11/05/2014 mem - Now looking for failed jobs that should be changed to state 2 in T_Tasks
 **          11/11/2014 mem - Now looking for jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
 **          11/04/2016 mem - Now looking for jobs that are failed, yet should be listed as in progress
-**                         - Only call copy_job_to_history if the new job state is 3 or 5 and if not changing the state from 5 to 2
+**                         - Only call copy_task_to_history if the new job state is 3 or 5 and if not changing the state from 5 to 2
 **                         - Add parameter @infoOnly
 **                         - No longer computing @ProcessingTimeMinutes since not stored in any table
-**          01/23/2017 mem - Fix logic bug involving call to copy_job_to_history
+**          01/23/2017 mem - Fix logic bug involving call to copy_task_to_history
 **          06/13/2018 mem - Add comments regarding update_dms_file_info_xml and T_Dataset_Info
 **          06/01/2020 mem - Add support for step state 13 (Inactive)
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -455,7 +457,7 @@ AS
                                         @message output
 
                     If @myError <> 0
-                        Exec post_log_entry 'Error', @message, 'update_job_state'
+                        Exec post_log_entry 'Error', @message, 'update_task_state'
                 End
 
             End -- </c>
@@ -476,7 +478,7 @@ AS
                                 @message output
 
                     If @myError <> 0
-                        Exec post_log_entry 'Error', @message, 'update_job_state'
+                        Exec post_log_entry 'Error', @message, 'update_task_state'
                 End
             End -- </d>
 
@@ -490,11 +492,11 @@ AS
             Begin
                 If @infoOnly > 0
                 Begin
-                    Print 'Exec copy_job_to_history @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+                    Print 'Exec copy_task_to_history @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
                 End
                 Else
                 Begin
-                    exec @myError = copy_job_to_history @job, @newJobStateInBroker, @message output
+                    exec @myError = copy_task_to_history @job, @newJobStateInBroker, @message output
                 End
             End
 
@@ -504,7 +506,7 @@ AS
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             Set @StatusMessage = '... Updating job state: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-            exec post_log_entry 'Progress', @StatusMessage, 'update_job_state'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_state'
             Set @LastLogTime = GetDate()
         End
 
@@ -528,5 +530,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_job_state] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_task_state] TO [DDL_Viewer] AS [dbo]
 GO

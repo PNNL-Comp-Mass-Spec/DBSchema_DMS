@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[remove_selected_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[remove_selected_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[remove_selected_jobs]
+CREATE PROCEDURE [dbo].[remove_selected_tasks]
 /****************************************************
 **
 **  Desc:
-**  Delete jobs given in temp table #SJL
-**  that must be populated by the caller
+**      Delete jobs given in temp table #SJL
+**      that must be populated by the caller
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[remove_selected_jobs]
 **          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -148,7 +149,7 @@ AS
                     end
 
                     Set @message = 'Deleted job ' + Convert(varchar(17), @Job) + ' from T_Tasks'
-                    Exec post_log_entry 'Normal', @message, 'remove_selected_jobs'
+                    Exec post_log_entry 'Normal', @message, 'remove_selected_tasks'
 
                 End -- </d>
 
@@ -184,5 +185,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[remove_selected_jobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[remove_selected_tasks] TO [DDL_Viewer] AS [dbo]
 GO

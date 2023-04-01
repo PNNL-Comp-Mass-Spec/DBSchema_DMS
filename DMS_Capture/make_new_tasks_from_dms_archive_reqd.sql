@@ -1,14 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[make_new_jobs_from_dms_archive_reqd] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_tasks_from_dms_archive_reqd] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_jobs_from_dms_archive_reqd]
+CREATE PROCEDURE [dbo].[make_new_tasks_from_dms_archive_reqd]
 /****************************************************
 **
 **  Desc:
-**    create new jobs from DMS datasets
-**    that are in archive required state
+**      Create new jobs from DMS datasets
+**      that are in archive required state
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_dms_archive_reqd]
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Archive_Status
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -29,10 +30,8 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_dms_archive_reqd]
 AS
     Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- temp table to hold candidate jobs
@@ -96,9 +95,9 @@ AS
 Done:
     If @LoggingEnabled = 1 AND @myError > 0 AND @message <> ''
     Begin
-        exec post_log_entry 'Error', @message, 'make_new_jobs_from_dms_archive_reqd'
+        exec post_log_entry 'Error', @message, 'make_new_tasks_from_dms_archive_reqd'
     End
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_jobs_from_dms_archive_reqd] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_tasks_from_dms_archive_reqd] TO [DDL_Viewer] AS [dbo]
 GO

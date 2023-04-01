@@ -1,16 +1,18 @@
-/****** Object:  StoredProcedure [dbo].[move_entries_to_history] ******/
+/****** Object:  StoredProcedure [dbo].[move_capture_entries_to_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[move_entries_to_history]
+CREATE PROCEDURE [dbo].[move_capture_entries_to_history]
 /****************************************************
 **
-**  Desc: Move entries from log tables into
-**          historic log DB (insert and then delete)
-**        Moves entries older than @intervalDays days
+**  Desc:
+**      Move entries from log tables into
+**      historic log DB (insert and then delete)
 **
-**        In addition, purges old data in T_Task_Parameters_History
+**      Moves entries older than @intervalDays days
+**
+**      In addition, purges old data in T_Task_Parameters_History
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -20,6 +22,7 @@ CREATE PROCEDURE [dbo].[move_entries_to_history]
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/05/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -237,7 +240,7 @@ AS
     ----------------------------------------------------------
     -- Delete old entries in T_Task_Parameters_History
     -- Note that this data is intentionally not copied to the historic log DB
-    --   because it is very easy to re-generate (use update_parameters_for_job)
+    --   because it is very easy to re-generate (use update_parameters_for_task)
     ----------------------------------------------------------
     --
     begin transaction @transName
@@ -258,5 +261,5 @@ AS
     return 0
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[move_entries_to_history] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_capture_entries_to_history] TO [DDL_Viewer] AS [dbo]
 GO

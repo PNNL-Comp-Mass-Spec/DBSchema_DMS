@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[update_multiple_capture_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[update_multiple_capture_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_multiple_capture_jobs]
+CREATE PROCEDURE [dbo].[update_multiple_capture_tasks]
 /****************************************************
 **
 **  Desc:
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[update_multiple_capture_jobs]
 **          08/01/2017 mem - Use THROW instead of RAISERROR
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -36,7 +37,7 @@ CREATE PROCEDURE [dbo].[update_multiple_capture_jobs]
 AS
     set nocount on
 
-    -- Required to avoid warnings when retry_selected_jobs is called
+    -- Required to avoid warnings when retry_selected_tasks is called
     SET CONCAT_NULL_YIELDS_NULL ON
     SET ANSI_WARNINGS ON
     SET ANSI_PADDING ON
@@ -51,7 +52,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'update_multiple_capture_jobs', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'update_multiple_capture_tasks', @raiseError = 1;
 
     If @authorized = 0
     Begin;
@@ -85,7 +86,7 @@ AS
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'update_multiple_capture_jobs'
+    set @transName = 'update_multiple_capture_tasks'
 
     ---------------------------------------------------
     -- update parameters for jobs
@@ -94,7 +95,7 @@ AS
     IF @action = 'UpdateParameters' AND @mode = 'update'
     BEGIN --<update params>
         begin transaction @transName
-        EXEC @myError = update_parameters_for_job @jobList, @message  output, 0
+        EXEC @myError = update_parameters_for_task @jobList, @message  output, 0
         IF @myError <> 0
             rollback transaction @transName
         ELSE
@@ -155,7 +156,7 @@ AS
     IF @action = 'Retry' AND @mode = 'update'
     BEGIN --<retry>
         begin transaction @transName
-        EXEC @myError = retry_selected_jobs @message output
+        EXEC @myError = retry_selected_tasks @message output
         IF @myError <> 0
             rollback transaction @transName
         ELSE
@@ -245,7 +246,7 @@ AS
     -- delete?
     ---------------------------------------------------
 
-    -- remove_selected_jobs 0, @message output, 0
+    -- remove_selected_tasks 0, @message output, 0
 
     ---------------------------------------------------
     -- if we reach this point, action was not implemented
@@ -262,7 +263,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_multiple_capture_jobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_multiple_capture_tasks] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[update_multiple_capture_jobs] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_multiple_capture_tasks] TO [DMS_SP_User] AS [dbo]
 GO

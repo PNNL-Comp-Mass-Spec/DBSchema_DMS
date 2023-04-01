@@ -1,18 +1,20 @@
-/****** Object:  UserDefinedFunction [dbo].[get_job_param_table_local] ******/
+/****** Object:  UserDefinedFunction [dbo].[get_task_param_table_local] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE FUNCTION [dbo].[get_job_param_table_local]
+CREATE FUNCTION [dbo].[get_task_param_table_local]
 /****************************************************
 **
-**  Desc:   Returns a table of the job parameters stored locally in T_Task_Parameters
+**  Desc:
+**      Returns a table of the job parameters stored locally in T_Task_Parameters
 **
 **  Auth:   grk
 **  Date:   06/07/2010
 **          04/04/2011 mem - Updated to only query T_Task_Parameters
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -58,5 +60,5 @@ BEGIN
 END
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_param_table_local] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_param_table_local] TO [DDL_Viewer] AS [dbo]
 GO

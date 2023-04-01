@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[enable_disable_step_tool_for_debugging] ******/
+/****** Object:  StoredProcedure [dbo].[enable_disable_ctm_step_tool_for_debugging] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[enable_disable_step_tool_for_debugging]
+CREATE PROCEDURE [dbo].[enable_disable_ctm_step_tool_for_debugging]
 /****************************************************
 **
 **  Desc:
-**   Bulk enables or disables a step tool to allow for debugging
+**      Bulk enables or disables a step tool to allow for debugging
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -16,6 +16,8 @@ CREATE PROCEDURE [dbo].[enable_disable_step_tool_for_debugging]
 **          04/30/2014 mem - Now validating @Tool
 **          09/01/2017 mem - Implement functionality of @InfoOnly
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
+**          04/02/2023 mem - Rename procedure
 **
 *****************************************************/
 (
@@ -155,5 +157,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[enable_disable_step_tool_for_debugging] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[enable_disable_ctm_step_tool_for_debugging] TO [DDL_Viewer] AS [dbo]
 GO

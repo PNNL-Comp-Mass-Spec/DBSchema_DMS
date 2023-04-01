@@ -1,19 +1,19 @@
-/****** Object:  StoredProcedure [dbo].[update_dependent_steps] ******/
+/****** Object:  StoredProcedure [dbo].[update_task_dependent_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_dependent_steps]
+CREATE PROCEDURE [dbo].[update_task_dependent_steps]
 /****************************************************
 **
 **  Desc:
-**    Examine all dependencies for steps in "Waiting" state
-**    and update the state of steps for which all dependencies
-**    have been satisfied
+**      Examine all dependencies for steps in "Waiting" state
+**      and update the state of steps for which all dependencies
+**      have been satisfied
 **
-**    The updated state can be affected by conditions on
-**    conditional dependencies and by whether or not the
-**    step tool produces shared results
+**      The updated state can be affected by conditions on
+**      conditional dependencies and by whether or not the
+**      step tool produces shared results
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[update_dependent_steps]
 **          03/10/2015 mem - Now updating T_Task_Steps.Dependencies if the dependency count listed is lower than that defined in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -36,10 +37,8 @@ CREATE PROCEDURE [dbo].[update_dependent_steps]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     set @message = ''
     set @numStepsSkipped = 0
@@ -432,7 +431,7 @@ AS
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             Set @StatusMessage = '... Updating dependent steps: ' + Convert(varchar(12), @RowsProcessed) + ' / ' + Convert(varchar(12), @RowCountToProcess)
-            exec post_log_entry 'Progress', @StatusMessage, 'update_dependent_steps'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_dependent_steps'
             Set @LastLogTime = GetDate()
         End
 
@@ -464,5 +463,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_dependent_steps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_task_dependent_steps] TO [DDL_Viewer] AS [dbo]
 GO

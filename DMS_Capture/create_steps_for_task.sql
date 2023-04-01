@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[create_steps_for_job] ******/
+/****** Object:  StoredProcedure [dbo].[create_steps_for_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[create_steps_for_job]
+CREATE PROCEDURE [dbo].[create_steps_for_task]
 /****************************************************
 **
 **  Desc:
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[create_steps_for_job]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -123,5 +124,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[create_steps_for_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_steps_for_task] TO [DDL_Viewer] AS [dbo]
 GO

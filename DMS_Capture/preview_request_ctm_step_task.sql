@@ -1,20 +1,22 @@
-/****** Object:  StoredProcedure [dbo].[preview_request_step_task] ******/
+/****** Object:  StoredProcedure [dbo].[preview_request_ctm_step_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[preview_request_step_task]
+CREATE PROCEDURE [dbo].[preview_request_ctm_step_task]
 /****************************************************
 **
-**  Desc: Previews the next step task that would be returned for a given processor
+**  Desc:
+**      Previews the next step task that would be returned for a given processor
 **
 **  Auth:   mem
 **          01/06/2011 mem
-**          07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into request_step_task
+**          07/26/2012 mem - Now looking up "perspective" for the given manager and then passing @serverPerspectiveEnabled into request_ctm_step_task
 **          02/03/2023 bcg - Use the synonym for Manager_Control.V_Mgr_Params instead of a local view wrapping the synonym
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/06/2023 bcg - Rename the synonym used to access Manager_Control.V_Mgr_Params
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -28,10 +30,8 @@ CREATE PROCEDURE [dbo].[preview_request_step_task]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @serverPerspectiveEnabled tinyint = 0
     Declare @perspective varchar(64) = ''
@@ -53,12 +53,13 @@ AS
     If @perspective = 'server'
         Set @serverPerspectiveEnabled = 1
 
-    Exec request_step_task    @processorName,
-                            @jobNumber = @jobNumber output,
-                            @message = @message output,
-                            @infoonly = @infoOnly,
-                            @JobCountToPreview=@JobCountToPreview,
-                            @serverPerspectiveEnabled=@serverPerspectiveEnabled
+    Exec request_ctm_step_task
+                    @processorName,
+                    @jobNumber = @jobNumber output,
+                    @message = @message output,
+                    @infoonly = @infoOnly,
+                    @JobCountToPreview=@JobCountToPreview,
+                    @serverPerspectiveEnabled=@serverPerspectiveEnabled
 
     If Exists (Select * FROM T_Tasks WHERE Job = @JobNumber)
         SELECT @jobNumber AS JobNumber,
@@ -82,5 +83,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[preview_request_step_task] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[preview_request_ctm_step_task] TO [DDL_Viewer] AS [dbo]
 GO

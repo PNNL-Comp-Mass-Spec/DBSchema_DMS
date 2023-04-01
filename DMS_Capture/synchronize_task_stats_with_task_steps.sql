@@ -1,13 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[synchronize_job_stats_with_job_steps] ******/
+/****** Object:  StoredProcedure [dbo].[synchronize_task_stats_with_task_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[synchronize_job_stats_with_job_steps]
+CREATE PROCEDURE [dbo].[synchronize_task_stats_with_task_steps]
 /****************************************************
 **
-**  Desc:   Makes sure the job stats (start and finish)
-**          agree with the job steps for the job
+**  Desc:
+**      Makes sure the job stats (start and finish)
+**      agree with the job steps for the job
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +20,7 @@ CREATE PROCEDURE [dbo].[synchronize_job_stats_with_job_steps]
 **          09/30/2022 mem - Fix bug that used the wrong state_id for completed tasks
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -120,5 +122,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[synchronize_job_stats_with_job_steps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[synchronize_task_stats_with_task_steps] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[update_manager_and_task_status_xml] ******/
+/****** Object:  StoredProcedure [dbo].[update_capture_task_manager_and_task_status_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
+CREATE PROCEDURE [dbo].[update_capture_task_manager_and_task_status_xml]
 /****************************************************
 **
 **  Desc:
@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 **          09/19/2018 mem - Add parameter @logProcessorNames
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/07/2023 mem - Rename column in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -60,7 +61,7 @@ AS
         ---------------------------------------------------
 
         Declare @authorized tinyint = 0
-        Exec @authorized = verify_sp_authorized 'update_manager_and_task_status_xml', @raiseError = 1;
+        Exec @authorized = verify_sp_authorized 'update_capture_task_manager_and_task_status_xml', @raiseError = 1;
         If @authorized = 0
         Begin;
             Throw 50000, 'Access denied', 1;
@@ -377,13 +378,13 @@ AS
 
             Declare @logMessage varchar(4000) = @statusMessages + ', processors ' + @updatedProcessors
 
-            Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
+            Exec post_log_entry 'Debug', @logMessage, 'update_capture_task_manager_and_task_status_xml'
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_manager_and_task_status_xml')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_capture_task_manager_and_task_status_xml')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
@@ -400,7 +401,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_manager_and_task_status_xml] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_capture_task_manager_and_task_status_xml] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[update_manager_and_task_status_xml] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[update_capture_task_manager_and_task_status_xml] TO [DMS_SP_User] AS [dbo]
 GO

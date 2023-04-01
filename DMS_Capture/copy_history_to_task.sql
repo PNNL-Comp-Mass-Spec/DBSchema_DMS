@@ -1,15 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[copy_history_to_job] ******/
+/****** Object:  StoredProcedure [dbo].[copy_history_to_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[copy_history_to_job]
+CREATE PROCEDURE [dbo].[copy_history_to_task]
 /****************************************************
 **
 **  Desc:
-**    For a given job, copies the job details, steps,
-**    and parameters from the most recent successful
-**    run in the history tables back into the main tables
+**      For a given job, copies the job details, steps,
+**      and parameters from the most recent successful
+**      run in the history tables back into the main tables
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,12 +19,13 @@ CREATE PROCEDURE [dbo].[copy_history_to_job]
 **          03/12/2012 mem - Added column Tool_Version_ID
 **          03/21/2012 mem - Now disabling identity_insert prior to inserting a row into T_Tasks
 **                         - Fixed bug finding most recent successful job in T_Tasks_History
-**          08/27/2013 mem - Now calling update_parameters_for_job
+**          08/27/2013 mem - Now calling update_parameters_for_task
 **          10/21/2013 mem - Added @AssignNewJobNumber
 **          03/10/2015 mem - Added T_Task_Step_Dependencies_History
 **          03/10/2015 mem - Now updating T_Task_Steps.Dependencies if it doesn't match the dependent steps listed in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -36,10 +37,8 @@ CREATE PROCEDURE [dbo].[copy_history_to_job]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     set @message = ''
     set @debugMode = IsNull(@debugMode, 0)
@@ -113,7 +112,7 @@ AS
     ---------------------------------------------------
     --
     declare @transName varchar(64)
-    set @transName = 'copy_history_to_job'
+    set @transName = 'copy_history_to_task'
     begin transaction @transName
 
     Declare @NewJob int = @Job
@@ -421,7 +420,7 @@ AS
 
     If Not Exists (SELECT * FROM T_Task_Parameters WHERE Job = @NewJob)
     Begin
-        exec update_parameters_for_job @NewJob
+        exec update_parameters_for_task @NewJob
     End
 
     ---------------------------------------------------
@@ -430,7 +429,7 @@ AS
     --
     Declare @jobList varchar(max) = Cast(@NewJob as varchar(12))
 
-    exec update_parameters_for_job @jobList
+    exec update_parameters_for_task @jobList
 
     ---------------------------------------------------
     -- Make sure the Dependencies column is up-to-date in T_Task_Steps
@@ -462,5 +461,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[copy_history_to_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[copy_history_to_task] TO [DDL_Viewer] AS [dbo]
 GO

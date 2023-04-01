@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[make_new_dataset_source_file_rename_job] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_dataset_source_file_rename_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_dataset_source_file_rename_job]
+CREATE PROCEDURE [dbo].[make_new_dataset_source_file_rename_task]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[make_new_dataset_source_file_rename_job]
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -95,7 +96,7 @@ AS
             'SourceFileRename' AS Script,
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
-            'Manually created using make_new_dataset_source_file_rename_job' AS Comment
+            'Manually created using make_new_dataset_source_file_rename_task' AS Comment
     End
     Else
     Begin
@@ -106,7 +107,7 @@ AS
             @DatasetName AS Dataset,
             @DatasetID AS Dataset_ID,
             NULL AS Results_Folder_Name,
-            'Created manually using make_new_dataset_source_file_rename_job' AS Comment
+            'Created manually using make_new_dataset_source_file_rename_task' AS Comment
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -132,5 +133,5 @@ Done:
         Print @message
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_dataset_source_file_rename_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_dataset_source_file_rename_task] TO [DDL_Viewer] AS [dbo]
 GO

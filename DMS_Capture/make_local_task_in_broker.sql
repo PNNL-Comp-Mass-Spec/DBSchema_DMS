@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[make_local_job_in_broker] ******/
+/****** Object:  StoredProcedure [dbo].[make_local_task_in_broker] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_local_job_in_broker]
+CREATE PROCEDURE [dbo].[make_local_task_in_broker]
 /****************************************************
 **
 **  Desc:
@@ -13,7 +13,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **
 **  Auth:   grk
 **          05/03/2010 grk - Initial release
-**          05/25/2011 mem - Updated call to create_steps_for_job and removed Priority from #Job_Steps
+**          05/25/2011 mem - Updated call to create_steps_for_task and removed Priority from #Job_Steps
 **          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          05/29/2015 mem - Add support for column Capture_Subfolder
 **          02/23/2016 mem - Add set XACT_ABORT on
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -154,7 +155,7 @@ AS
     ---------------------------------------------------
     -- save job parameters as XML into temp table
     ---------------------------------------------------
-    -- FUTURE: need to get set of parameters normally provided by get_job_param_table,
+    -- FUTURE: need to get set of parameters normally provided by get_task_param_table,
     -- except for the job specifc ones which need to be provided as initial content of @jobParamXML
     --
     INSERT INTO #Job_Parameters (Job, Parameters)
@@ -166,7 +167,7 @@ AS
     -- Details are stored in #Job_Steps and #Job_Step_Dependencies
     ---------------------------------------------------
     --
-    exec @myError = create_steps_for_job @job, @scriptXML, @resultsDirectoryName, @message output
+    exec @myError = create_steps_for_task @job, @scriptXML, @resultsDirectoryName, @message output
 
     ---------------------------------------------------
     -- Perform a mixed bag of operations on the jobs
@@ -174,13 +175,13 @@ AS
     --  copying to the main database tables
     ---------------------------------------------------
     --
-    exec @myError = finish_job_creation @job, @message output
+    exec @myError = finish_task_creation @job, @message output
 
     ---------------------------------------------------
     -- transaction
     ---------------------------------------------------
     Declare @transName varchar(32)
-    set @transName = 'make_local_job_in_broker'
+    set @transName = 'make_local_task_in_broker'
 
     ---------------------------------------------------
     -- move temp tables to main tables
@@ -190,7 +191,7 @@ AS
 
         begin transaction @transName
 
-        -- move_jobs_to_main_tables sproc assumes that T_Tasks table entry is already there
+        -- move_tasks_to_main_tables sproc assumes that T_Tasks table entry is already there
         --
         INSERT INTO T_Tasks
             (
@@ -222,7 +223,7 @@ AS
         UPDATE #Job_Step_Dependencies  SET Job = @Job
         UPDATE #Job_Parameters  SET Job = @Job
 
-        exec @myError = move_jobs_to_main_tables @message output
+        exec @myError = move_tasks_to_main_tables @message output
 
         commit transaction @transName
     end
@@ -252,10 +253,10 @@ Done:
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec post_log_entry 'Error', @message, 'make_local_job_in_broker'
+        Exec post_log_entry 'Error', @message, 'make_local_task_in_broker'
     END CATCH
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_local_task_in_broker] TO [DDL_Viewer] AS [dbo]
 GO

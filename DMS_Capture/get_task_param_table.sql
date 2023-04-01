@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[get_job_param_table] ******/
+/****** Object:  StoredProcedure [dbo].[get_task_param_table] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[get_job_param_table]
+CREATE PROCEDURE [dbo].[get_task_param_table]
 /****************************************************
 **
 **  Desc:
@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[get_job_param_table]
 **          02/03/2023 bcg - Update column names for V_DMS_Dataset_Metadata
 **          02/03/2023 bcg - Replace Operator_PRN with Operator_Username
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -287,5 +288,5 @@ AS
     RETURN @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_param_table] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_param_table] TO [DDL_Viewer] AS [dbo]
 GO

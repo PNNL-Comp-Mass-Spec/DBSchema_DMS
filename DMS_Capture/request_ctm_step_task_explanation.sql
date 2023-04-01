@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[request_step_task_explanation] ******/
+/****** Object:  StoredProcedure [dbo].[request_ctm_step_task_explanation] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[request_step_task_explanation]
+CREATE PROCEDURE [dbo].[request_ctm_step_task_explanation]
 /****************************************************
 **
 ** Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[request_step_task_explanation]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
   (
@@ -183,6 +184,7 @@ AS
         INNER JOIN dbo.T_Tasks ON T_Tasks.Job = CJS.Job
         LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Tool
 
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[request_step_task_explanation] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[request_ctm_step_task_explanation] TO [DDL_Viewer] AS [dbo]
 GO

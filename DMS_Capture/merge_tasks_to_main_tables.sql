@@ -1,12 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[merge_jobs_to_main_tables] ******/
+/****** Object:  StoredProcedure [dbo].[merge_tasks_to_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
+CREATE PROCEDURE [dbo].[merge_tasks_to_main_tables]
 /****************************************************
 **
-**  Desc:   Updates T_Tasks, T_Task_Parameters, and T_Task_Steps
+**  Desc:
+**      Updates T_Tasks, T_Task_Parameters, and T_Task_Steps
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,6 +19,7 @@ CREATE PROCEDURE [dbo].[merge_jobs_to_main_tables]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -44,7 +46,7 @@ goto Done
     ---------------------------------------------------
     --
     declare @transName varchar(32)
-    set @transName = 'merge_jobs_to_main_tables'
+    set @transName = 'merge_tasks_to_main_tables'
     --
     begin transaction @transName
     --
@@ -186,5 +188,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[merge_jobs_to_main_tables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[merge_tasks_to_main_tables] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[update_parameters_for_job] ******/
+/****** Object:  StoredProcedure [dbo].[update_parameters_for_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_parameters_for_job]
+CREATE PROCEDURE [dbo].[update_parameters_for_task]
 /****************************************************
 **
 **  Desc:
@@ -15,7 +15,7 @@ CREATE PROCEDURE [dbo].[update_parameters_for_job]
 **  Auth:   grk
 **  Date:   12/16/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          01/14/2010 grk - removed path ID fields
-**          01/28/2010 grk - modified to use create_parameters_for_job, and to take list of jobs
+**          01/28/2010 grk - modified to use create_parameters_for_task, and to take list of jobs
 **          04/13/2010 mem - Fixed bug that didn't properly update T_Task_Parameters when #Job_Parameters contains multiple jobs (because @jobList contained multiple jobs)
 **                         - Added support for jobs being present in T_Tasks but not present in T_Task_Parameters
 **          05/18/2011 mem - Updated @jobList to varchar(max)
@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[update_parameters_for_job]
 **          08/31/2022 mem - Rename view V_DMS_Capture_Job_Parameters to V_DMS_Dataset_Metadata
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -51,7 +52,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'update_parameters_for_job', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'update_parameters_for_task', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -90,7 +91,7 @@ AS
     ---------------------------------------------------
     -- Create temp table for jobs that are being updated
     -- and populate it
-    -- (needed by call to get_job_param_table which create_parameters_for_job calls)
+    -- (needed by call to get_task_param_table which create_parameters_for_task calls)
     ---------------------------------------------------
     --
     CREATE TABLE #Jobs (
@@ -142,7 +143,7 @@ AS
     ---------------------------------------------------
     -- temp table to accumulate XML parameters for
     -- jobs in list
-    -- (parameters for jobs will be added by create_parameters_for_job)
+    -- (parameters for jobs will be added by create_parameters_for_task)
     ---------------------------------------------------
     --
     CREATE TABLE #Job_Parameters (
@@ -217,7 +218,7 @@ AS
 
             -- get parameters for job (and also store in temp table #Job_Parameters)
             -- Parameters are returned in @paramsXML
-            exec @myError = create_parameters_for_job @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
+            exec @myError = create_parameters_for_task @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
 
         end --<b>
     end --<a>
@@ -270,5 +271,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_parameters_for_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_parameters_for_task] TO [DDL_Viewer] AS [dbo]
 GO

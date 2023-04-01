@@ -1,13 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[get_job_step_params] ******/
+/****** Object:  StoredProcedure [dbo].[get_task_step_params] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[get_job_step_params]
+CREATE PROCEDURE [dbo].[get_task_step_params]
 /****************************************************
 **
-**  Desc:   Populate a temporary table with job step parameters for given job step
-**          Data comes from tables T_Tasks, T_Task_Steps, and T_Task_Parameters in the DMS_Capture DB, not from DMS5
+**  Desc:
+**      Populate a temporary table with job step parameters for given job step
+**      Data comes from tables T_Tasks, T_Task_Steps, and T_Task_Parameters in the DMS_Capture DB, not from DMS5
 **
 **  The calling procedure must create this temporary table:
 **
@@ -28,6 +29,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params]
 **          05/17/2019 mem - Switch from folder to directory
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -186,5 +188,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_step_params] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_step_params] TO [DDL_Viewer] AS [dbo]
 GO

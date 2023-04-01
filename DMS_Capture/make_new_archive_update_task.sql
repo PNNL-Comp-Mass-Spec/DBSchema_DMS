@@ -1,13 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[make_new_archive_update_job] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_archive_update_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_archive_update_job]
+CREATE PROCEDURE [dbo].[make_new_archive_update_task]
 /****************************************************
 **
 **  Desc:
-**  Creates a new archive update job for the specified dataset and results directory
+**      Creates a new archive update job for the specified dataset and results directory
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[make_new_archive_update_job]
 **          02/03/2023 bcg - Use synonym S_DMS_V_DatasetFullDetails instead of view wrapping it
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'make_new_archive_update_job', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'make_new_archive_update_task', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -146,7 +147,7 @@ AS
             @datasetName AS Dataset,
             @DatasetID AS Dataset_ID,
             @resultsDirectoryName AS Results_Folder_Name,
-            'Manually created using make_new_archive_update_job' AS Comment
+            'Manually created using make_new_archive_update_task' AS Comment
     End
     Else
     Begin
@@ -161,7 +162,7 @@ AS
                @datasetName AS Dataset,
                @DatasetID AS Dataset_ID,
                @resultsDirectoryName AS Results_Folder_Name,
-               'Created manually using make_new_archive_update_job' AS [Comment],
+               'Created manually using make_new_archive_update_task' AS [Comment],
                CASE
                    WHEN @resultsDirectoryName = '' THEN 3
                    ELSE 4
@@ -196,7 +197,7 @@ Done:
         Print @message
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_archive_update_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_archive_update_task] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[make_new_archive_update_job] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[make_new_archive_update_task] TO [DMS_SP_User] AS [dbo]
 GO

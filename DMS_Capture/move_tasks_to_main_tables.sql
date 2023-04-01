@@ -1,17 +1,18 @@
-/****** Object:  StoredProcedure [dbo].[move_jobs_to_main_tables] ******/
+/****** Object:  StoredProcedure [dbo].[move_tasks_to_main_tables] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
+CREATE PROCEDURE [dbo].[move_tasks_to_main_tables]
 /****************************************************
 **
-**  Desc: Move contents of temporary tables:
-**      #Jobs
-**      #Job_Steps
-**      #Job_Step_Dependencies
-**      #Job_Parameters
-**  To main database tables
+**  Desc:
+**      Move contents of temporary tables:
+**        #Jobs
+**        #Job_Steps
+**        #Job_Step_Dependencies
+**        #Job_Parameters
+**      To main database tables
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -26,6 +27,7 @@ CREATE PROCEDURE [dbo].[move_jobs_to_main_tables]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -46,7 +48,7 @@ AS
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    set @transName = 'move_jobs_to_main_tables'
+    set @transName = 'move_tasks_to_main_tables'
 
     ---------------------------------------------------
     -- populate actual tables from accumulated entries
@@ -179,5 +181,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[move_jobs_to_main_tables] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[move_tasks_to_main_tables] TO [DDL_Viewer] AS [dbo]
 GO

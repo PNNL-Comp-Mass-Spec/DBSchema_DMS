@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[update_job_step_status_history] ******/
+/****** Object:  StoredProcedure [dbo].[update_task_step_status_history] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_job_step_status_history]
+CREATE PROCEDURE [dbo].[update_task_step_status_history]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[update_job_step_status_history]
 **  Date:   02/05/2016 - Initial version (copied from the DMS_Pipeline DB)
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -161,9 +162,8 @@ AS
         set @message = 'Update skipped since last update was ' + convert(varchar(9), Round(@TimeIntervalLastUpdateMinutes, 1)) + ' minutes ago'
 
 Done:
-
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_job_step_status_history] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_task_step_status_history] TO [DDL_Viewer] AS [dbo]
 GO

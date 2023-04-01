@@ -1,19 +1,18 @@
-/****** Object:  StoredProcedure [dbo].[create_parameters_for_job] ******/
+/****** Object:  StoredProcedure [dbo].[create_parameters_for_task] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[create_parameters_for_job]
+CREATE PROCEDURE [dbo].[create_parameters_for_task]
 /****************************************************
 **
 **  Desc:
-**  Get parameters for given job into XML format
-**  Make entries in temporary table:
-**      #Job_Parameters
-**  Update #Job
+**      Get parameters for given job into XML format
+**      Make entries in temporary table:
+**          #Job_Parameters
+**      Update #Job
 **
 **  Return values: 0: success, otherwise, error code
-**
 **
 **  Auth:   grk
 **  Date:   09/05/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
@@ -21,6 +20,7 @@ CREATE PROCEDURE [dbo].[create_parameters_for_job]
 **                         - Added support for script 'MyEMSLDatasetPush'
 **          07/11/2013 mem - Added support for script 'MyEMSLDatasetPushRecursive'
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -57,7 +57,7 @@ AS
     --
     INSERT INTO @Job_Parameters
         (Job, Step_Number, [Section], [Name], Value)
-    execute get_job_param_table @job, @datasetID
+    execute get_task_param_table @job, @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -120,5 +120,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[create_parameters_for_job] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_parameters_for_task] TO [DDL_Viewer] AS [dbo]
 GO

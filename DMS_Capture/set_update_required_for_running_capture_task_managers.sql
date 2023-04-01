@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[set_update_required_for_running_managers] ******/
+/****** Object:  StoredProcedure [dbo].[set_update_required_for_running_capture_task_managers] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
+CREATE PROCEDURE [dbo].[set_update_required_for_running_capture_task_managers]
 /****************************************************
 **
 **  Desc:
@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/06/2023 bcg - Use a synonym to access the Manager_Control database
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -26,10 +27,8 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
@@ -67,5 +66,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[set_update_required_for_running_managers] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_update_required_for_running_capture_task_managers] TO [DDL_Viewer] AS [dbo]
 GO

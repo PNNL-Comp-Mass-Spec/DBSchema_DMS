@@ -1,24 +1,26 @@
-/****** Object:  StoredProcedure [dbo].[update_context] ******/
+/****** Object:  StoredProcedure [dbo].[update_task_context] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_context]
+CREATE PROCEDURE [dbo].[update_task_context]
 /****************************************************
 **
-**  Desc:   Update context under which job steps are assigned
+**  Desc:
+**      Update context under which job steps are assigned
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
-**          01/08/2010 grk - Added call to make_new_archive_jobs_from_dms
+**          01/08/2010 grk - Added call to make_new_archive_tasks_from_dms
 **          05/25/2011 mem - Changed default value for @bypassDMS to 0
-**                         - Added call to retry_capture_for_dms_reset_jobs
+**                         - Added call to retry_capture_for_dms_reset_tasks
 **          02/23/2016 mem - Add Set XACT_ABORT on
-**          06/13/2018 mem - No longer pass @debugMode to make_new_archive_jobs_from_dms
-**          01/29/2021 mem - No longer pass @maxJobsToProcess to make_new_automatic_jobs
+**          06/13/2018 mem - No longer pass @debugMode to make_new_archive_tasks_from_dms
+**          01/29/2021 mem - No longer pass @maxJobsToProcess to make_new_automatic_tasks
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -89,10 +91,10 @@ AS
         ---------------------------------------------------
         --
 
-        -- make_new_automatic_jobs
+        -- make_new_automatic_tasks
         --
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_automatic_jobs')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_automatic_tasks')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -101,19 +103,19 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' make_new_automatic_jobs'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' make_new_automatic_tasks'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call make_new_automatic_jobs'
+        Set @CurrentLocation = 'Call make_new_automatic_tasks'
         if @result <> 0
-            exec make_new_automatic_jobs @bypassDMS, @message output
+            exec make_new_automatic_tasks @bypassDMS, @message output
 
 
-        -- make_new_jobs_from_analysis_broker
+        -- make_new_tasks_from_analysis_broker
         --
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_jobs_from_analysis_broker')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_tasks_from_analysis_broker')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -122,19 +124,19 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' make_new_jobs_from_analysis_broker'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' make_new_tasks_from_analysis_broker'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call make_new_jobs_from_analysis_broker'
+        Set @CurrentLocation = 'Call make_new_tasks_from_analysis_broker'
         if @result <> 0
-            exec make_new_jobs_from_analysis_broker @infoOnly, @message output, @loggingEnabled = @loggingEnabled
+            exec make_new_tasks_from_analysis_broker @infoOnly, @message output, @loggingEnabled = @loggingEnabled
 
 
-        -- make_new_jobs_from_dms
+        -- make_new_tasks_from_dms
         --
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_jobs_from_dms')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_tasks_from_dms')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -143,13 +145,13 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' make_new_jobs_from_dms'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' make_new_tasks_from_dms'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call make_new_jobs_from_dms'
+        Set @CurrentLocation = 'Call make_new_tasks_from_dms'
         if @result <> 0
-            exec make_new_jobs_from_dms @bypassDMS,
+            exec make_new_tasks_from_dms @bypassDMS,
                                     @message output,
                                     @maxJobsToProcess = @maxJobsToProcess,
                                     @logIntervalThreshold = @logIntervalThreshold,
@@ -158,10 +160,10 @@ AS
                                     @infoOnly = @infoOnly,
                                     @debugMode = @debugMode
 
-        -- make_new_archive_jobs_from_dms
+        -- make_new_archive_tasks_from_dms
         --
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_archive_jobs_from_dms')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'make_new_archive_tasks_from_dms')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -170,13 +172,13 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' make_new_archive_jobs_from_dms'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' make_new_archive_tasks_from_dms'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call make_new_archive_jobs_from_dms'
+        Set @CurrentLocation = 'Call make_new_archive_tasks_from_dms'
         if @result <> 0
-            exec make_new_archive_jobs_from_dms @bypassDMS,
+            exec make_new_archive_tasks_from_dms @bypassDMS,
                                            @message output,
                                            @maxJobsToProcess = @maxJobsToProcess,
                                            @logIntervalThreshold = @logIntervalThreshold,
@@ -187,7 +189,7 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_context')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_task_context')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
@@ -197,7 +199,7 @@ AS
     Begin Try
 
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'create_job_steps')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'create_task_steps')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -206,13 +208,13 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' create_job_steps'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' create_task_steps'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call create_job_steps'
+        Set @CurrentLocation = 'Call create_task_steps'
         if @result <> 0
-            exec create_job_steps @message output,
+            exec create_task_steps @message output,
                                 @maxJobsToProcess = @maxJobsToProcess,
                                 @logIntervalThreshold = @logIntervalThreshold,
                                 @loggingEnabled = @loggingEnabled,
@@ -223,7 +225,7 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_context')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_task_context')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
@@ -232,7 +234,7 @@ AS
     Begin Try
 
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'update_step_states')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'update_task_step_states')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -241,28 +243,28 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' update_step_states'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' update_task_step_states'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call update_step_states'
+        Set @CurrentLocation = 'Call update_task_step_states'
         if @result <> 0
-            exec update_step_states @message output, @infoOnly=@infoOnly, @maxJobsToProcess = @maxJobsToProcess, @loopingUpdateInterval=@loopingUpdateInterval
+            exec update_task_step_states @message output, @infoOnly=@infoOnly, @maxJobsToProcess = @maxJobsToProcess, @loopingUpdateInterval=@loopingUpdateInterval
 
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_context')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_task_context')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
 
     -- Part E: Update Job States
-    --         This calls update_job_state, which calls update_dms_dataset_state, which calls update_dms_file_info_xml
+    --         This calls update_task_state, which calls update_dms_dataset_state, which calls update_dms_file_info_xml
     Begin Try
 
         Set @result = 1
-        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'update_job_state')
+        SELECT @result = enabled FROM T_Process_Step_Control WHERE (Processing_Step_Name = 'update_task_state')
         If @result = 0
             Set @Action = 'Skipping'
         Else
@@ -271,18 +273,18 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' update_job_state'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' update_task_state'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call update_job_state'
+        Set @CurrentLocation = 'Call update_task_state'
         if @result <> 0
-            exec update_job_state @bypassDMS, @message output, @maxJobsToProcess = @maxJobsToProcess, @loopingUpdateInterval=@loopingUpdateInterval, @infoOnly=@infoOnly
+            exec update_task_state @bypassDMS, @message output, @maxJobsToProcess = @maxJobsToProcess, @loopingUpdateInterval=@loopingUpdateInterval, @infoOnly=@infoOnly
 
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_context')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_task_context')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
@@ -304,17 +306,17 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @loggingEnabled = 1
-            Set @StatusMessage = @Action + ' retry_capture_for_dms_reset_jobs'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            Set @StatusMessage = @Action + ' retry_capture_for_dms_reset_tasks'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
-        Set @CurrentLocation = 'Call retry_capture_for_dms_reset_jobs'
+        Set @CurrentLocation = 'Call retry_capture_for_dms_reset_tasks'
         if @result <> 0
-            exec retry_capture_for_dms_reset_jobs @message output
+            exec retry_capture_for_dms_reset_tasks @message output
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_context')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_task_context')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
@@ -334,7 +336,7 @@ AS
         Begin
             Set @loggingEnabled = 1
             Set @StatusMessage = @Action + ' update_cpu_loading'
-            exec post_log_entry 'Progress', @StatusMessage, 'update_context'
+            exec post_log_entry 'Progress', @StatusMessage, 'update_task_context'
         End
 
         Set @CurrentLocation = 'Call update_cpu_loading'
@@ -344,15 +346,15 @@ AS
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
-        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_context')
+        Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_task_context')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
     End Catch
 */
     If @loggingEnabled = 1
     Begin
-        Set @StatusMessage = 'update_context complete: ' + Convert(varchar(12), DateDiff(second, @StartTime, GetDate())) + ' seconds elapsed'
-        exec post_log_entry 'Normal', @StatusMessage, 'update_context'
+        Set @StatusMessage = 'update_task_context complete: ' + Convert(varchar(12), DateDiff(second, @StartTime, GetDate())) + ' seconds elapsed'
+        exec post_log_entry 'Normal', @StatusMessage, 'update_task_context'
     End
 
     ---------------------------------------------------
@@ -363,5 +365,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[update_context] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[update_task_context] TO [DDL_Viewer] AS [dbo]
 GO

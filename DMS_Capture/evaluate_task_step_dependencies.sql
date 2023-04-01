@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[evaluate_step_dependencies] ******/
+/****** Object:  StoredProcedure [dbo].[evaluate_task_step_dependencies] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[evaluate_step_dependencies]
+CREATE PROCEDURE [dbo].[evaluate_task_step_dependencies]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[evaluate_step_dependencies]
 **          09/23/2022 mem - Remove unnecesary Else
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -334,7 +335,7 @@ AS
         If DateDiff(second, @LastLogTime, GetDate()) >= @loopingUpdateInterval
         Begin
             Set @StatusMessage = '... Evaluating step dependencies: ' + Convert(varchar(12), @RowsProcessed) + ' / ' + Convert(varchar(12), @RowCountToProcess)
-            exec post_log_entry 'Progress', @StatusMessage, 'evaluate_step_dependencies'
+            exec post_log_entry 'Progress', @StatusMessage, 'evaluate_task_step_dependencies'
             Set @LastLogTime = GetDate()
         End
 
@@ -348,5 +349,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[evaluate_step_dependencies] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[evaluate_task_step_dependencies] TO [DDL_Viewer] AS [dbo]
 GO

@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[add_update_job_parameter] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_task_parameter] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[add_update_job_parameter]
+CREATE PROCEDURE [dbo].[add_update_task_parameter]
 /****************************************************
 **
 **  Desc:
@@ -15,11 +15,12 @@ CREATE PROCEDURE [dbo].[add_update_job_parameter]
 **  Auth:   mem
 **  Date:   03/22/2011 mem - Initial Version
 **          04/04/2011 mem - Expanded [Value] to varchar(4000) in @Job_Parameters
-**          01/19/2012 mem - Now using add_update_job_parameter_xml
+**          01/19/2012 mem - Now using add_update_task_parameter_xml
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -45,7 +46,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'add_update_job_parameter', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'add_update_task_parameter', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -79,10 +80,10 @@ AS
     End
 
     ---------------------------------------------------
-    -- Call add_update_job_parameter_xml to perform the work
+    -- Call add_update_task_parameter_xml to perform the work
     ---------------------------------------------------
     --
-    exec add_update_job_parameter_xml @paramsXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
+    exec add_update_task_parameter_xml @paramsXML output, @Section, @ParamName, @Value, @DeleteParam, @message output, @infoOnly
 
 
     If @infoOnly = 0
@@ -121,5 +122,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_task_parameter] TO [DDL_Viewer] AS [dbo]
 GO

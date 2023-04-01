@@ -1,16 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[make_new_automatic_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_automatic_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_automatic_jobs]
+CREATE PROCEDURE [dbo].[make_new_automatic_tasks]
 /****************************************************
 **
 **  Desc:
-**    Create new jobs for jobs that are complete
-**    that have scripts that have entries in the
-**    automatic job creation table
-**
+**      Create new jobs for jobs that are complete
+**      that have scripts that have entries in the
+**      automatic job creation table
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -20,6 +19,7 @@ CREATE PROCEDURE [dbo].[make_new_automatic_jobs]
 **          01/29/2021 mem - Remove unused parameters
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -58,5 +58,5 @@ AS
                              Dataset = J.Dataset )
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_automatic_jobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_automatic_tasks] TO [DDL_Viewer] AS [dbo]
 GO

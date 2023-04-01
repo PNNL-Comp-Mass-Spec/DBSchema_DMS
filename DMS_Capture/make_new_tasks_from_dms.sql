@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[make_new_jobs_from_dms] ******/
+/****** Object:  StoredProcedure [dbo].[make_new_tasks_from_dms] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[make_new_jobs_from_dms]
+CREATE PROCEDURE [dbo].[make_new_tasks_from_dms]
 /****************************************************
 **
 **  Desc:
@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[make_new_jobs_from_dms]
 **          02/03/2023 bcg - Update column names for V_DMS_Get_New_Datasets
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -57,7 +58,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'make_new_jobs_from_dms', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'make_new_tasks_from_dms', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -93,7 +94,7 @@ AS
     If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @StatusMessage = 'Entering (' + CONVERT(VARCHAR(12), @bypassDMS) + ')'
-        exec post_log_entry 'Progress', @StatusMessage, 'make_new_jobs_from_dms'
+        exec post_log_entry 'Progress', @StatusMessage, 'make_new_tasks_from_dms'
     End
 
     ---------------------------------------------------
@@ -106,7 +107,7 @@ AS
         If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
         Begin
             Set @StatusMessage = 'Querying DMS'
-            exec post_log_entry 'Progress', @StatusMessage, 'make_new_jobs_from_dms'
+            exec post_log_entry 'Progress', @StatusMessage, 'make_new_tasks_from_dms'
         End
 
         If @infoOnly = 0
@@ -169,13 +170,13 @@ Done:
     If @loggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @logIntervalThreshold
     Begin
         Set @StatusMessage = 'Exiting'
-        exec post_log_entry 'Progress', @StatusMessage, 'make_new_jobs_from_dms'
+        exec post_log_entry 'Progress', @StatusMessage, 'make_new_tasks_from_dms'
     End
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[make_new_jobs_from_dms] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[make_new_tasks_from_dms] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[make_new_jobs_from_dms] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[make_new_tasks_from_dms] TO [DMS_SP_User] AS [dbo]
 GO

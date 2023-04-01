@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[update_step_states] ******/
+/****** Object:  StoredProcedure [dbo].[update_task_step_states] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[update_step_states]
+CREATE PROCEDURE [dbo].[update_task_step_states]
 /****************************************************
 **
 **  Desc:
@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[update_step_states]
 **  Date:   09/02/2009 grk - Initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          06/01/2020 mem - Tabs to spaces
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -49,12 +50,12 @@ AS
         -- Get unevaluated dependencies for steps that are finished
         -- (skipped or completed)
         --
-        exec @result = evaluate_step_dependencies @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
+        exec @result = evaluate_task_step_dependencies @message output, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
 
         -- Examine all dependencies for steps in "Waiting" state
         -- and set state of steps that have them all satisfied
         --
-        exec @result = update_dependent_steps @message output, @numStepsSkipped output, @infoOnly=@infoOnly, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
+        exec @result = update_task_dependent_steps @message output, @numStepsSkipped output, @infoOnly=@infoOnly, @MaxJobsToProcess = @MaxJobsToProcess, @LoopingUpdateInterval=@LoopingUpdateInterval
 
         -- Repeat if any step states were changed (but only if @infoOnly = 0)
         --
@@ -70,6 +71,4 @@ AS
 Done:
     return @myError
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[update_step_states] TO [DDL_Viewer] AS [dbo]
 GO

@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[retry_myemsl_upload]
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -31,10 +32,8 @@ CREATE PROCEDURE [dbo].[retry_myemsl_upload]
 AS
     Set XACT_ABORT, nocount on
 
-    Declare @myError int
-    Declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @JobResetTran varchar(24) = 'ResetArchiveOperation'
 
@@ -165,7 +164,7 @@ AS
                    ON TS.job = JR.Job
             WHERE tool IN ('ArchiveUpdate', 'DatasetArchive')
 
-            Declare @execMsg varchar(256) = 'exec reset_dependent_job_steps ' + @JobList
+            Declare @execMsg varchar(256) = 'exec reset_dependent_task_steps ' + @JobList
             print @execMsg
 
         End
@@ -191,7 +190,7 @@ AS
 
             -- Reset the state of the dependent steps
             --
-            exec reset_dependent_job_steps @JobList, @InfoOnly=0
+            exec reset_dependent_task_steps @JobList, @InfoOnly=0
 
             -- Reset the retry counts for the ArchiveVerify step
             --
@@ -222,7 +221,6 @@ AS
     END CATCH
 
 Done:
-
     return @myError
 
 GO

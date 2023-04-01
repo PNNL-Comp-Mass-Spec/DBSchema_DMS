@@ -1,13 +1,14 @@
-/****** Object:  StoredProcedure [dbo].[get_job_step_params_to_xml] ******/
+/****** Object:  StoredProcedure [dbo].[get_task_step_params_to_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[get_job_step_params_to_xml]
+CREATE PROCEDURE [dbo].[get_task_step_params_to_xml]
 /****************************************************
 **
-**  Desc:   Get job step parameters as XML using data in temp table #ParamTab
-**          This stored procedure appears unused
+**  Desc:
+**      Get job step parameters as XML using data in temp table #ParamTab
+**      This stored procedure appears unused
 **
 **  The calling procedure must create table #ParamTab
 **
@@ -22,6 +23,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_to_xml]
 **  Auth:   grk
 **  Date:   09/08/2009 grk - initial release (http://prismtrac.pnl.gov/trac/ticket/746)
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -75,7 +77,7 @@ AS
     set @xp = '<sections>' + convert(varchar(max), @x) + '</sections>'
 
     If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_paramsXML: exiting'
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_task_step_paramsXML: exiting'
 
     -- Return parameters in XML
     --
@@ -84,5 +86,5 @@ AS
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_to_xml] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[get_task_step_params_to_xml] TO [DDL_Viewer] AS [dbo]
 GO

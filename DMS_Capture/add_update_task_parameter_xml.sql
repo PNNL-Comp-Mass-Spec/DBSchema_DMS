@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[add_update_job_parameter_xml] ******/
+/****** Object:  StoredProcedure [dbo].[add_update_task_parameter_xml] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[add_update_job_parameter_xml]
+CREATE PROCEDURE [dbo].[add_update_task_parameter_xml]
 /****************************************************
 **
 **  Desc:
@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[add_update_job_parameter_xml]
 **  Auth:   mem
 **  Date:   09/24/2012 mem - Ported from DMS_Pipeline DB
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -29,10 +30,8 @@ CREATE PROCEDURE [dbo].[add_update_job_parameter_xml]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- get job parameters into table format
@@ -145,5 +144,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[add_update_job_parameter_xml] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[add_update_task_parameter_xml] TO [DDL_Viewer] AS [dbo]
 GO

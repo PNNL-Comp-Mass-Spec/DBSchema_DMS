@@ -1,12 +1,13 @@
-/****** Object:  StoredProcedure [dbo].[set_step_task_complete] ******/
+/****** Object:  StoredProcedure [dbo].[set_ctm_step_task_complete] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[set_step_task_complete]
+CREATE PROCEDURE [dbo].[set_ctm_step_task_complete]
 /****************************************************
 **
-**  Desc:   Make entry in step completion table
+**  Desc:
+**      Make entry in step completion table
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -34,6 +35,7 @@ CREATE PROCEDURE [dbo].[set_step_task_complete]
 **          08/21/2020 mem - Set @HoldoffIntervalMinutes to 60 (or higher) if @retryCount is 0
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -62,7 +64,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'set_step_task_complete', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'set_ctm_step_task_complete', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -201,7 +203,7 @@ AS
     ---------------------------------------------------
     --
     Declare @transName varchar(32)
-    set @transName = 'set_step_task_complete'
+    set @transName = 'set_ctm_step_task_complete'
 
     -- Start transaction
     Begin transaction @transName
@@ -265,13 +267,13 @@ AS
     If @completionMessage Like '%Over%of the % spectra have a minimum m/z value larger than the required minimum%'
     Begin
         Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
-        Exec s_post_email_alert 'Error', @msg, 'set_step_task_complete', @recipients='admins', @postMessageToLogEntries=1
+        Exec s_post_email_alert 'Error', @msg, 'set_ctm_step_task_complete', @recipients='admins', @postMessageToLogEntries=1
     End
     Else If @completionMessage Like '%Some of the % spectra have a minimum m/z value larger than the required minimum%' Or
             @completionMessage Like '%reporter ion peaks likely could not be detected%'
     Begin
         Set @msg = 'Dataset ' + @datasetName + ' (ID ' + Cast(@datasetID  As varchar(12)) + '): ' + @completionMessage
-        Exec s_post_email_alert 'Warning', @msg, 'set_step_task_complete', @recipients='admins', @postMessageToLogEntries=1
+        Exec s_post_email_alert 'Warning', @msg, 'set_ctm_step_task_complete', @recipients='admins', @postMessageToLogEntries=1
     End
 
     ---------------------------------------------------
@@ -309,7 +311,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[set_step_task_complete] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[set_ctm_step_task_complete] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[set_step_task_complete] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[set_ctm_step_task_complete] TO [DMS_SP_User] AS [dbo]
 GO

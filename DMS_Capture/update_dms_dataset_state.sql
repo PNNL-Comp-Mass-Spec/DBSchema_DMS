@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[update_dms_dataset_state]
 **          08/17/2021 mem - Remove extra information from Completion messages with warning "Over 10% of the MS/MS spectra have a minimum m/z value larger than the required minimum; reporter ion peaks likely could not be detected"
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -100,8 +101,8 @@ AS
                     T_Tasks J ON JS.Job = J.Job
                 WHERE (JS.Job = @job) AND IsNull(JS.Completion_Message, '') <> ''
 
-                -- Auto remove "; To ignore this error, use Exec add_update_job_parameter" from the completion message
-                Set @startPos = CharIndex('; To ignore this error, use Exec add_update_job_parameter', @failureMessage)
+                -- Auto remove "; To ignore this error, use Exec add_update_task_parameter" from the completion message
+                Set @startPos = CharIndex('; To ignore this error, use Exec add_update_task_parameter', @failureMessage)
 
                 If @startPos > 1
                 Begin

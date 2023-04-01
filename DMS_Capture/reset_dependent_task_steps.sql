@@ -1,14 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[reset_dependent_job_steps] ******/
+/****** Object:  StoredProcedure [dbo].[reset_dependent_task_steps] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
+CREATE PROCEDURE [dbo].[reset_dependent_task_steps]
 /****************************************************
 **
-**  Desc:   Resets entries in T_Task_Steps and T_Task_Step_Dependencies for the given jobs
-**          for which the job steps that are complete yet depend a job step that is enabled,
-**          in progress, or completed after the given job step finished
+**  Desc:
+**      Resets entries in T_Task_Steps and T_Task_Step_Dependencies for the given jobs
+**      for which the job steps that are complete yet depend a job step that is enabled,
+**      in progress, or completed after the given job step finished
 **
 **  Auth:   mem
 **          05/19/2011 mem - Initial version
@@ -23,6 +24,7 @@ CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -33,10 +35,8 @@ CREATE PROCEDURE [dbo].[reset_dependent_job_steps]
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     declare @JobResetTran varchar(24) = 'DependentJobStepReset'
 
@@ -163,11 +163,11 @@ AS
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
-        Exec post_log_entry 'Error', @message, 'reset_dependent_job_steps'
+        Exec post_log_entry 'Error', @message, 'reset_dependent_task_steps'
     END CATCH
 
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[reset_dependent_job_steps] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[reset_dependent_task_steps] TO [DDL_Viewer] AS [dbo]
 GO

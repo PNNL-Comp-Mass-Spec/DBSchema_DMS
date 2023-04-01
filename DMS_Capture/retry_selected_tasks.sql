@@ -1,15 +1,15 @@
-/****** Object:  StoredProcedure [dbo].[retry_selected_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[retry_selected_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[retry_selected_jobs]
+CREATE PROCEDURE [dbo].[retry_selected_tasks]
 /****************************************************
 **
 **  Desc:
 **      Updates capture jobs in temporary table #SJL
 **
-**      Note: Use SP update_multiple_capture_jobs to retry a list of jobs
+**      Note: Use SP update_multiple_capture_tasks to retry a list of jobs
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[retry_selected_jobs]
 **          09/24/2014 mem - Rename Job in T_Task_Step_Dependencies
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -29,10 +30,8 @@ CREATE PROCEDURE [dbo].[retry_selected_jobs]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     set @message = ''
 
@@ -113,5 +112,5 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[retry_selected_jobs] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[retry_selected_tasks] TO [DDL_Viewer] AS [dbo]
 GO

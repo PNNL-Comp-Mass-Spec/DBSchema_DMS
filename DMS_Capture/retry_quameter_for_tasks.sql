@@ -1,17 +1,18 @@
-/****** Object:  StoredProcedure [dbo].[retry_quameter_for_jobs] ******/
+/****** Object:  StoredProcedure [dbo].[retry_quameter_for_tasks] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[retry_quameter_for_jobs]
+CREATE PROCEDURE [dbo].[retry_quameter_for_tasks]
 /****************************************************
 **
-**  Desc:   Resets failed DatasetQuality step in T_Task_Steps for the specified jobs
+**  Desc:
+**      Resets failed DatasetQuality step in T_Task_Steps for the specified jobs
 **
-**          Useful for jobs where Quameter encountered an error
+**      Useful for jobs where Quameter encountered an error
 **
-**          By default, also sets job parameter IgnoreQuameterErrors to 1, meaning
-**          if Quameter fails again, the job will be marked as "skipped" instead of "Failed"
+**      By default, also sets job parameter IgnoreQuameterErrors to 1, meaning
+**      if Quameter fails again, the job will be marked as "skipped" instead of "Failed"
 **
 **  Auth:   mem
 **  Date:   07/11/2019 mem - Initial version
@@ -19,6 +20,7 @@ CREATE PROCEDURE [dbo].[retry_quameter_for_jobs]
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -137,9 +139,9 @@ AS
                 Else
                 Begin
                     If @infoOnly <> 0
-                        Print 'Exec add_update_job_parameter @job, ''StepParameters'', ''IgnoreQuameterErrors'', ''1'', @infoOnly=0'
+                        Print 'Exec add_update_task_parameter @job, ''StepParameters'', ''IgnoreQuameterErrors'', ''1'', @infoOnly=0'
                     Else
-                        Exec add_update_job_parameter @job, 'StepParameters', 'IgnoreQuameterErrors', '1', @infoOnly=0
+                        Exec add_update_task_parameter @job, 'StepParameters', 'IgnoreQuameterErrors', '1', @infoOnly=0
                 End
             End
         End
@@ -158,7 +160,7 @@ AS
                    ON TS.job = JR.Job AND
                       TS.step = JR.Step
 
-            Declare @execMsg varchar(256) = 'exec reset_dependent_job_steps ' + @jobList
+            Declare @execMsg varchar(256) = 'exec reset_dependent_task_steps ' + @jobList
             print @execMsg
 
         End
@@ -185,7 +187,7 @@ AS
 
             -- Reset the state of the dependent steps
             --
-            exec reset_dependent_job_steps @jobList, @infoOnly=0
+            exec reset_dependent_task_steps @jobList, @infoOnly=0
 
             Commit Tran @jobResetTran
 
@@ -212,12 +214,11 @@ AS
 
         If @logErrors > 0
         Begin
-            Exec post_log_entry 'Error', @message, 'retry_quameter_for_jobs'
+            Exec post_log_entry 'Error', @message, 'retry_quameter_for_tasks'
         End
     END CATCH
 
 Done:
-
     return @myError
 
 GO

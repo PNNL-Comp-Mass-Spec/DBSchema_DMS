@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[report_manager_idle] ******/
+/****** Object:  StoredProcedure [dbo].[report_capture_task_manager_idle] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[report_manager_idle]
+CREATE PROCEDURE [dbo].[report_capture_task_manager_idle]
 /****************************************************
 **
 **  Desc:
@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[report_manager_idle]
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Rename procedures and functions
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'report_manager_idle', @raiseError = 1;
+    Exec @authorized = verify_sp_authorized 'report_capture_task_manager_idle', @raiseError = 1;
     If @authorized = 0
     Begin;
         THROW 51000, 'Access denied', 1;
@@ -109,7 +110,7 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         Set @message = 'Reset step task state back to 2 for job ' + cast(@jobNumber as varchar(9))
-        Exec post_log_entry 'Warning', @message, 'report_manager_idle'
+        Exec post_log_entry 'Warning', @message, 'report_capture_task_manager_idle'
     End
 
     ---------------------------------------------------
@@ -124,7 +125,7 @@ Done:
     return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[report_manager_idle] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[report_capture_task_manager_idle] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[report_manager_idle] TO [DMS_SP_User] AS [dbo]
+GRANT EXECUTE ON [dbo].[report_capture_task_manager_idle] TO [DMS_SP_User] AS [dbo]
 GO
