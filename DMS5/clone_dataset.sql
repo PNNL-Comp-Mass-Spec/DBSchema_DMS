@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[clone_dataset]
 **          02/27/2023 mem - Use new argument name, @requestName
 **          03/02/2023 mem - Use renamed table names
 **          03/04/2023 mem - Use new T_Task tables
+**          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **
 *****************************************************/
 (
@@ -503,7 +504,7 @@ AS
 
             If IsNull(@CaptureJobNew, 0) > 0
             Begin
-                exec DMS_Capture.dbo.update_parameters_for_job @CaptureJobNew
+                exec DMS_Capture.dbo.update_parameters_for_task @CaptureJobNew
 
                 Declare @jobMessage varchar(255) = 'Created capture task job ' + Convert(varchar(12), @CaptureJobNew) + ' for dataset ' + @DatasetNew + ' by cloning job ' + Convert(varchar(12), @CaptureJob)
                 Exec post_log_entry 'Normal', @jobMessage, 'clone_dataset'

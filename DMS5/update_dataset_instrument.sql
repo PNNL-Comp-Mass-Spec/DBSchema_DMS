@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[update_dataset_instrument]
 **          01/05/2023 mem - Use new column names in V_Storage_List_Report
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new synonym names and T_Task tables
+**          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **
 *****************************************************/
 (
@@ -230,7 +231,7 @@ AS
             Goto Done
         End
 
-        Exec DMS_Capture.dbo.update_parameters_for_job @captureJob
+        Exec DMS_Capture.dbo.update_parameters_for_task @captureJob
     End
     Else
     Begin

@@ -22,7 +22,7 @@ CREATE PROCEDURE [dbo].[set_purge_task_complete]
 **          04/17/2012 mem - Added support for @completionCode = 4 (drive missing)
 **          06/12/2012 mem - Added support for @completionCode = 5 and @completionCode = 6  (corresponding to Archive States 14 and 15)
 **          06/15/2012 mem - No longer changing the purge holdoff date if @completionCode = 4 (drive missing)
-**          08/13/2013 mem - Now using explicit parameter names when calling s_make_new_archive_update_job
+**          08/13/2013 mem - Now using explicit parameter names when calling s_make_new_archive_update_task
 **          08/15/2013 mem - Added support for @completionCode = 7 (dataset folder missing in archive)
 **          08/26/2013 mem - Now mentioning "permissions error" when @completionCode = 7
 **          03/21/2014 mem - Tweaked log message for @completionCode = 7
@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[set_purge_task_complete]
 **          07/11/2017 mem - Add support for @completionCode = 9 (Previewed purge)
 **          09/09/2022 mem - Use new argument names when calling MakeNewArchiveUpdateJob
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **
 *****************************************************/
 (
@@ -164,7 +165,7 @@ Code 6 (Purged all data except QC folder)
     begin
         set @completionState = 3    -- complete
         set @currentUpdateState = 2 -- Update Required
-        EXEC s_make_new_archive_update_job @datasetName, @resultsDirectoryName='', @allowBlankResultsDirectory=1, @PushDatasetToMyEMSL=0, @message=@message output
+        EXEC s_make_new_archive_update_task @datasetName, @resultsDirectoryName='', @allowBlankResultsDirectory=1, @PushDatasetToMyEMSL=0, @message=@message output
         goto SetStates
     end
 

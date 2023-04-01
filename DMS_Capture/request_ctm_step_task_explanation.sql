@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[request_ctm_step_task_explanation]
 /****************************************************
 **
 ** Desc:
-**  Called from request_step_task in info only mode
+**  Called from request_ctm_step_task in info only mode
 **  to explain the assignment logic
 **
 **  Return values: 0: success, otherwise, error code
@@ -183,7 +183,6 @@ AS
         #CandidateJobSteps CJS
         INNER JOIN dbo.T_Tasks ON T_Tasks.Job = CJS.Job
         LEFT OUTER JOIN T_Step_Tools ON T_Step_Tools.Name = Tool
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[request_ctm_step_task_explanation] TO [DDL_Viewer] AS [dbo]

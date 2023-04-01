@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[cleanup_operating_logs]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/01/2023 mem - Use new procedure name
 **
 *****************************************************/
 (
@@ -68,9 +69,9 @@ AS
         -- Move old log entries and event entries to DMSHistoricLogCapture
         ----------------------------------------------------
         --
-        Set @CurrentLocation = 'Call move_entries_to_history'
+        Set @CurrentLocation = 'Call move_capture_entries_to_history'
 
-        exec @myError = move_entries_to_history @LogRetentionIntervalDays
+        exec @myError = move_capture_entries_to_history @LogRetentionIntervalDays
 
     End Try
     Begin Catch

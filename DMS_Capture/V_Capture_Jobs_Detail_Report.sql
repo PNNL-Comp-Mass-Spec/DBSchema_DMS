@@ -21,7 +21,7 @@ SELECT J.job,
        J.max_simultaneous_captures,
        J.comment,
 	   J.capture_subfolder,
-       dbo.get_job_param_list(J.Job) AS parameters
+       dbo.get_task_param_list(J.Job) AS parameters
 FROM dbo.T_Tasks AS J
      INNER JOIN dbo.T_Task_State_Name AS JSN
        ON J.State = JSN.ID

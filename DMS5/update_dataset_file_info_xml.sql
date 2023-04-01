@@ -87,6 +87,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Add support for datasets with multiple instrument files with the same name (e.g. 20220105_JL_kpmp_3504 with ser files in eight .d directories)
+**          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **
 *****************************************************/
 (
@@ -440,7 +441,7 @@ AS
             Exec post_email_alert 'Error', @message, 'update_dataset_file_info_xml', @recipients='admins', @postMessageToLogEntries=1, @duplicateEntryHoldoffHours=6
 
             -- Error code 53600 is used by stored procedure update_dms_dataset_state in the DMS_Capture database
-            -- Call stack: update_context->update_job_state->update_dms_dataset_state->update_dms_file_info_xml->update_dataset_file_info_xml
+            -- Call stack: update_task_context->update_task_state->update_dms_dataset_state->update_dms_file_info_xml->update_dataset_file_info_xml
             Set @myError = 53600
             Goto Done
 

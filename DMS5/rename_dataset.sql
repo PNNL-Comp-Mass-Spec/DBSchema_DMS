@@ -26,7 +26,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          01/04/2019 mem - Add sed command for updating the index.html file in the QC directory
 **          01/20/2020 mem - Show the File_Hash in T_Dataset_Files when previewing updates
 **                         - Add commands for updating the DatasetInfo.xml file with sed
-**                         - Switch from Folder to Directory when calling add_update_job_parameter
+**                         - Switch from Folder to Directory when calling add_update_task_parameter
 **          02/19/2021 mem - Validate the characters in the new dataset name
 **          11/04/2021 mem - Add more MASIC file names and use sed to edit MASIC's index.html file
 **          11/05/2021 mem - Add more MASIC file names and rename files in any MzRefinery directories
@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          03/29/2023 mem - No longer add job parameter DatasetNum
+**          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **
 *****************************************************/
 (
@@ -464,8 +465,8 @@ AS
         Else
         Begin
 
-            exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
-            exec DMS_Capture.dbo.add_update_job_parameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.add_update_task_parameter @job, 'JobParameters', 'Dataset',   @datasetNameNew, @infoOnly=0
+            exec DMS_Capture.dbo.add_update_task_parameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
 
             UPDATE DMS_Capture.dbo.T_Tasks
             Set Dataset = @datasetNameNew
