@@ -11,6 +11,7 @@ CREATE PROCEDURE [dbo].[undelete_requested_run]
 **
 **  Auth:   mem
 **  Date:   03/30/2023 mem - Initial version
+**          03/31/2023 mem - Restore requested run batches and batch groups if the requested run refers to a deleted batch or batch group
 **
 *****************************************************/
 (
@@ -27,6 +28,10 @@ AS
     Declare @entryID int
     Declare @batchID int
     Declare @eusPersonID int
+    Declare @batchGroupID int
+
+    Declare @deletedBatchEntryID int = 0
+    Declare @deletedBatchGroupEntryID int = 0
 
     Set @message = ''
     Set @infoOnly = Coalesce(@infoOnly, 0)
@@ -55,7 +60,7 @@ AS
 
     -- Verify that the deleted requested run exists, and lookup the batch ID and EUS person ID
     --
-    SELECT Top 1 @entryID = Entry_ID,
+    SELECT TOP 1 @entryID = Entry_ID,
                  @batchID = Batch_Id,
                  @eusPersonID = EUS_Person_Id
     FROM dbo.T_Deleted_Requested_Run
@@ -104,14 +109,105 @@ AS
     End
 
     ---------------------------------------------------
+    -- See if the deleted requested run references a deleted requested run batch
+    ---------------------------------------------------
+
+    If @batchID > 0 And Not Exists (Select ID From T_Requested_Run_Batches Where ID = @batchID)
+    Begin
+        -- Need to undelete the batch
+        SELECT TOP 1 @deletedBatchEntryID = Entry_ID,
+                     @batchGroupID = Batch_Group_ID
+        FROM T_Deleted_Requested_Run_Batch
+        WHERE Batch_ID = @batchID
+        ORDER BY Entry_ID DESC;
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Requested run ID ' + Cast(@requestID as varchar(9)) + ' refers to batch ' + Cast(@batchID as varchar(9)) + ', ' +
+                           'which does not exist, and cannot be restored from T_Deleted_Requested_Run_Batch; ' + 
+                           'see entry ' + Cast(@entryID as varchar(9)) + ' in T_Deleted_Requested_Run';
+            print @message
+            goto Done
+        End
+
+        ---------------------------------------------------
+        -- See if the deleted requested run batch references a deleted batch group
+        ---------------------------------------------------
+
+        If Coalesce(@batchGroupID, 0) > 0 And Not Exists (Select Batch_Group_ID From T_Requested_Run_Batch_Group Where Batch_Group_ID = @batchGroupID)
+        Begin
+            -- Need to undelete the batch group
+            SELECT TOP 1 @deletedBatchGroupEntryID = Entry_ID
+            FROM T_Deleted_Requested_Run_Batch_Group
+            WHERE Batch_Group_ID = @batchGroupID
+            ORDER BY Entry_ID DESC;
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+            Begin
+                Set @message = 'Requested run ID ' + Cast(@requestID as varchar(9)) + ' refers to batch ' + Cast(@batchID as varchar(9)) + ', ' +
+                               'which refers to batch group ' + Cast(@batchGroupID as varchar(9)) + ', ' +
+                               'but that batch group does not exist and cannot be restored from T_Deleted_Requested_Run_Batch_Group; ' + 
+                               'see entry ' + Cast(@entryID as varchar(9)) + ' in T_Deleted_Requested_Run ' +
+                               'and entry ' + Cast(@deletedBatchEntryID as varchar(9)) + ' in T_Deleted_Requested_Run_Batch';
+                print @message
+                goto Done
+            End
+        End
+    End
+
+    ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
 
     Declare @transName varchar(32) = 'undelete_requested_run'
     begin transaction @transName
    
+    If @deletedBatchGroupEntryID > 0
+    Begin
+        ---------------------------------------------------
+        -- Add the deleted requested run batch group to T_Requested_Run_Batch_Group
+        ---------------------------------------------------
+    
+        Set IDENTITY_INSERT T_Requested_Run_Batch_Group ON;
+
+        INSERT INTO T_Requested_Run_Batch_Group (Batch_Group_ID, Batch_Group, Description, Owner_User_ID, Created)
+        SELECT Batch_Group_ID, Batch_Group, Description, Owner_User_ID, Created
+        FROM T_Deleted_Requested_Run_Batch_Group
+        WHERE Entry_ID = @deletedBatchGroupEntryID
+
+        Set IDENTITY_INSERT T_Requested_Run_Batch_Group OFF;
+    End
+
+    If @deletedBatchEntryID > 0
+    Begin
+        ---------------------------------------------------
+        -- Add the deleted requested run batch to T_Requested_Run_Batches
+        ---------------------------------------------------
+    
+        Set IDENTITY_INSERT T_Requested_Run_Batches ON;
+
+        INSERT INTO T_Requested_Run_Batches (
+               ID, Batch, Description, Owner, Created, Locked, 
+               Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
+               Requested_Completion_Date, Justification_for_High_Priority, Comment, 
+               Requested_Instrument, Batch_Group_ID, Batch_Group_Order
+            )
+        SELECT Batch_ID, Batch, Description, Owner_User_ID, Created, Locked, 
+               Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
+               Requested_Completion_Date, Justification_for_High_Priority, Comment, 
+               Requested_Instrument_Group, Batch_Group_ID, Batch_Group_Order
+        FROM T_Deleted_Requested_Run_Batch
+        WHERE Entry_ID = @deletedBatchEntryID
+
+        Set IDENTITY_INSERT T_Requested_Run_Batches OFF;
+    End
+
     ---------------------------------------------------
-    -- Add the requested run to T_Requested_Run
+    -- Add the deleted requested run to T_Requested_Run
     ---------------------------------------------------
     
     Set IDENTITY_INSERT T_Requested_Run ON;
