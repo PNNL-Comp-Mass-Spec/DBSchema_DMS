@@ -53,8 +53,8 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
     @libraryName varchar(255) = '' output,
     @storagePath varchar(255) = '' output,
     @sourceJobShouldMakeLibrary bit = 0 output,
-    @message varchar(255) = '' Output,
-    @returnCode varchar(64) = '' Output
+    @message varchar(255) = '' output,
+    @returnCode varchar(64) = '' output
 )
 As
 Begin
@@ -83,6 +83,9 @@ Begin
     Declare @actualSourceJob int
 
     Declare @logMessage varchar(1024)
+        
+    Set @message = ''
+    Set @returnCode = ''
 
     BEGIN TRY
         ---------------------------------------------------
@@ -116,11 +119,6 @@ Begin
         Set @libraryName = ''
         Set @storagePath = ''
         Set @sourceJobShouldMakeLibrary = 0
-        Set @message = ''
-        Set @returnCode  = ''
-
-        Set @message = ''
-        Set @returnCode = ''
 
         ---------------------------------------------------
         -- Assure that the protein collection list is in the standard format
@@ -247,7 +245,7 @@ Begin
                     Set @defaultLibraryName = @defaultLibraryName + '_'
                 End
 
-                 Set @defaultLibraryName = @defaultLibraryName + Substring(@libraryNameHash, 1, 8)
+                Set @defaultLibraryName = @defaultLibraryName + Substring(@libraryNameHash, 1, 8)
             End
         End
 
@@ -298,23 +296,23 @@ Begin
                @storagePath = Storage_Path,
                @existingHash = Settings_Hash
         FROM T_Spectral_Library
-        WHERE  Protein_Collection_List    = @proteinCollectionList And
-               Organism_DB_File           = @organismDbFile And
-               Fragment_Ion_Mz_Min        = @fragmentIonMzMin And
-               Fragment_Ion_Mz_Max        = @fragmentIonMzMax And
-               Trim_N_Terminal_Met        = @trimNTerminalMet And
-               Cleavage_Specificity       = @cleavageSpecificity And
-               Missed_Cleavages           = @missedCleavages And
-               Peptide_Length_Min         = @peptideLengthMin And
-               Peptide_Length_Max         = @peptideLengthMax And
-               Precursor_Mz_Min           = @precursorMzMin And
-               Precursor_Mz_Max           = @precursorMzMax And
-               Precursor_Charge_Min       = @precursorChargeMin And
-               Precursor_Charge_Max       = @precursorChargeMax And
-               Static_Cys_Carbamidomethyl = @staticCysCarbamidomethyl And
-               Static_Mods                = @staticMods And
-               Dynamic_Mods               = @dynamicMods And
-               Max_Dynamic_Mods           = @maxDynamicMods
+        WHERE Protein_Collection_List    = @proteinCollectionList And
+              Organism_DB_File           = @organismDbFile And
+              Fragment_Ion_Mz_Min        = @fragmentIonMzMin And
+              Fragment_Ion_Mz_Max        = @fragmentIonMzMax And
+              Trim_N_Terminal_Met        = @trimNTerminalMet And
+              Cleavage_Specificity       = @cleavageSpecificity And
+              Missed_Cleavages           = @missedCleavages And
+              Peptide_Length_Min         = @peptideLengthMin And
+              Peptide_Length_Max         = @peptideLengthMax And
+              Precursor_Mz_Min           = @precursorMzMin And
+              Precursor_Mz_Max           = @precursorMzMax And
+              Precursor_Charge_Min       = @precursorChargeMin And
+              Precursor_Charge_Max       = @precursorChargeMax And
+              Static_Cys_Carbamidomethyl = @staticCysCarbamidomethyl And
+              Static_Mods                = @staticMods And
+              Dynamic_Mods               = @dynamicMods And
+              Max_Dynamic_Mods           = @maxDynamicMods
         --
         Select @myRowCount = @@RowCount, @myError = @@Error
 
