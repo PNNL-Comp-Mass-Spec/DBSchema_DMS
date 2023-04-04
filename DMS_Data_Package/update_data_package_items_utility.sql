@@ -70,7 +70,7 @@ AS
     set @message = ''
 
     Declare @itemCountChanged int = 0
-    Declare @actionMsg varchar(128)
+    Declare @actionMsg varchar(512)
     Declare @datasetsRemoved varchar(512)
 
     CREATE TABLE #Tmp_DatasetIDsToAdd (
