@@ -50,6 +50,7 @@ CREATE PROCEDURE [dbo].[update_data_package_items_utility]
 **          01/04/2023 mem - Update to use S_V_Biomaterial_List_Report_2
 **          02/08/2023 bcg - Update to use S_V_Experiment_Biomaterial
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/04/2023 mem - Do not add data package placeholder datasets (e.g. dataset DataPackage_3442_TestData)
 **
 *****************************************************/
 (
@@ -70,6 +71,7 @@ AS
 
     Declare @itemCountChanged int = 0
     Declare @actionMsg varchar(128)
+    Declare @datasetsRemoved varchar(512)
 
     CREATE TABLE #Tmp_DatasetIDsToAdd (
         DataPackageID int NOT NULL,
@@ -124,13 +126,13 @@ AS
         If Exists ( SELECT * FROM #TPI WHERE [Type] = 'Dataset' )
         Begin
             -- Auto-remove .raw and .d from the end of dataset names
-            Update #TPI
-            Set Identifier = Substring(Identifier, 1, Len(Identifier) - 4)
-            Where [Type] = 'Dataset' And #TPI.Identifier Like '%.raw'
+            UPDATE #TPI
+            SET Identifier = Substring(Identifier, 1, Len(Identifier) - 4)
+            WHERE [Type] = 'Dataset' And #TPI.Identifier Like '%.raw'
 
-            Update #TPI
-            Set Identifier = Substring(Identifier, 1, Len(Identifier) - 2)
-            Where [Type] = 'Dataset' And #TPI.Identifier Like '%.d'
+            UPDATE #TPI
+            SET Identifier = Substring(Identifier, 1, Len(Identifier) - 2)
+            WHERE [Type] = 'Dataset' And #TPI.Identifier Like '%.d'
 
             -- Auto-convert dataset IDs to dataset names
             -- First look for dataset IDs
@@ -164,6 +166,30 @@ AS
                      INNER JOIN #Tmp_DatasetIDsToAdd Source
                        ON #TPI.Identifier = Cast(Source.DatasetID AS varchar(12))
 
+            End
+
+            If Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset' And Identifier Like 'DataPackage[_][0-9][0-9]%')
+            Begin
+                Set @datasetsRemoved = ''
+
+                SELECT @datasetsRemoved = @datasetsRemoved + Identifier + ', '
+                FROM #TPI
+                WHERE [Type] = 'Dataset' And Identifier Like 'DataPackage[_][0-9][0-9]%'
+                ORDER BY Identifier
+
+                Set @datasetsRemoved = Rtrim(@datasetsRemoved)
+
+                If Len(@datasetsRemoved) > 0
+                Begin
+                    -- Remove the trailing comma
+                    Set @datasetsRemoved = Left(@datasetsRemoved, Len(@datasetsRemoved) - 1)
+                End
+
+                DELETE FROM #TPI
+                WHERE [Type] = 'Dataset' And Identifier Like 'DataPackage[_][0-9][0-9]%'
+
+                Set @actionMsg = 'Data packages cannot include placeholder data package datasets; removed "' + @datasetsRemoved + '"';
+                Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
             End
 
         End
@@ -420,7 +446,7 @@ AS
         -- Biomaterial operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'Biomaterial')
+        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
         BEGIN -- <delete biomaterial>
             If @infoOnly > 0
             Begin
@@ -451,7 +477,7 @@ AS
             End
         END -- </delete biomaterial>
 
-        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'Biomaterial')
+        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
         BEGIN -- <comment biomaterial>
             If @infoOnly > 0
             Begin
@@ -484,7 +510,7 @@ AS
             End
         END -- </comment biomaterial>
 
-        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'Biomaterial')
+        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
         BEGIN -- <add biomaterial>
 
             -- Delete extras
@@ -553,7 +579,7 @@ AS
         -- EUS Proposal operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'EUSProposal')
+        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
         BEGIN -- <delete EUS Proposals>
             If @infoOnly > 0
             Begin
@@ -584,7 +610,7 @@ AS
             End
         END -- </delete EUS Proposal>
 
-        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'EUSProposal')
+        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
         BEGIN -- <comment EUS Proposals>
             If @infoOnly > 0
             Begin
@@ -618,7 +644,7 @@ AS
             End
         END -- </comment EUS Proposals>
 
-        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'EUSProposal')
+        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
         BEGIN -- <add EUS Proposals>
 
             -- Delete extras
@@ -671,7 +697,7 @@ AS
         -- Experiment operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'Experiment')
+        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
         BEGIN -- <delete experiments>
             If @infoOnly > 0
             Begin
@@ -703,7 +729,7 @@ AS
             End
         END -- </delete experiments>
 
-        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'Experiment')
+        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
         BEGIN -- <comment experiments>
             If @infoOnly > 0
             Begin
@@ -738,7 +764,7 @@ AS
             End
         END -- </comment experiments>
 
-        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'Experiment')
+        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
         BEGIN -- <add experiments>
 
             -- Delete extras
@@ -802,7 +828,7 @@ AS
         -- Dataset operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (Select * From #TPI Where [Type] = 'Dataset')
+        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
         BEGIN -- <delete datasets>
             If @infoOnly > 0
             Begin
@@ -834,7 +860,7 @@ AS
             End
         END -- </delete datasets>
 
-        IF @mode = 'comment' And Exists (Select * From #TPI Where [Type] = 'Dataset')
+        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
         BEGIN -- <comment datasets>
             If @infoOnly > 0
             Begin
@@ -869,7 +895,7 @@ AS
             End
         END -- </comment datasets>
 
-        IF @mode = 'add' And Exists (Select * From #TPI Where [Type] = 'Dataset')
+        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
         BEGIN -- <add datasets>
 
             -- Delete extras
@@ -933,7 +959,7 @@ AS
         -- Analysis_job operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (Select * From #Tmp_JobsToAddOrDelete)
+        IF @mode = 'delete' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
         BEGIN -- <delete analysis_jobs>
             If @infoOnly > 0
             Begin
@@ -962,7 +988,7 @@ AS
             End
         END -- </delete analysis_jobs>
 
-        IF @mode = 'comment' And Exists (Select * From #Tmp_JobsToAddOrDelete)
+        IF @mode = 'comment' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
         BEGIN -- <comment analysis_jobs>
             If @infoOnly > 0
             Begin
@@ -994,7 +1020,7 @@ AS
             End
         END -- </comment analysis_jobs>
 
-        IF @mode = 'add' And Exists (Select * From #Tmp_JobsToAddOrDelete)
+        IF @mode = 'add' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
         BEGIN -- <add analysis_jobs>
 
             -- Delete extras
@@ -1142,7 +1168,7 @@ AS
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_data_package_items_utility] TO [DDL_Viewer] AS [dbo]
