@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_NCBI_Taxonomy_Names](
 	[Entry_ID] [int] IDENTITY(1,1) NOT NULL,
 	[Tax_ID] [int] NOT NULL,
-	[Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Name] [varchar](350) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Unique_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Name_Class] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
  CONSTRAINT [PK_T_NCBI_Taxonomy_Names] PRIMARY KEY NONCLUSTERED 
