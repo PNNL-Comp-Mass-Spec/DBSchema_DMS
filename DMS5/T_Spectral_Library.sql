@@ -31,6 +31,7 @@ CREATE TABLE [dbo].[T_Spectral_Library](
 	[Dynamic_Mods] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Max_Dynamic_Mods] [tinyint] NOT NULL,
 	[Settings_Hash] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Completion_Code] [int] NULL,
  CONSTRAINT [PK_T_Spectral_Library] PRIMARY KEY CLUSTERED 
 (
 	[Library_ID] ASC
