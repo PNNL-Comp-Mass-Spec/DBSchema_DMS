@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_MyEMSL_Uploads2]
 AS
 SELECT MU.Entry_ID,
@@ -13,8 +12,9 @@ SELECT MU.Entry_ID,
        MU.Subfolder,
        MU.FileCountNew AS File_Count_New,
        MU.FileCountUpdated AS File_Count_Updated,
-       CONVERT(decimal(9, 3), MU.Bytes / 1024.0 / 1024.0) AS MB,
-       CONVERT(decimal(9, 1), MU.UploadTimeSeconds) AS Upload_Time_Seconds,
+       CONVERT(decimal(9,3), Case When MU.Bytes / 1024.0 / 1024.0 > 999999          Then 999999 Else MU.Bytes / 1024.0 / 1024.0 End) AS MB,
+       CONVERT(decimal(9,3), Case When MU.Bytes / 1024.0 / 1024.0 / 1024.0 > 999999 Then 999999 Else MU.Bytes / 1024.0 / 1024.0 / 1024.0 End) AS GB,
+       CONVERT(decimal(9,1), MU.UploadTimeSeconds) AS Upload_Time_Seconds,
        MU.StatusURI_PathID AS Status_URI_Path_ID,
        MU.StatusNum AS Status_Num,
        MU.ErrorCode AS Error_Code,
@@ -53,6 +53,5 @@ FROM T_MyEMSL_Uploads MU
        ON MU.Dataset_ID = TF.Dataset_ID
      LEFT OUTER JOIN dbo.S_DMS_V_DatasetFullDetails DI
        ON MU.Dataset_ID = DI.Dataset_ID
-
 
 GO

@@ -3,13 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_MyEMSL_Uploads]
 AS
 /*
 ** Note that this view is used by clsPluginMain of the ArchiveStatusCheckPlugin
 */
-
 SELECT MU.Entry_ID,
        MU.Job,
        DS.Dataset_Num AS Dataset,
@@ -17,7 +15,8 @@ SELECT MU.Entry_ID,
        MU.Subfolder,
        MU.FileCountNew AS File_Count_New,
        MU.FileCountUpdated AS File_Count_Updated,
-       CONVERT(decimal(9,3), MU.Bytes / 1024.0 / 1024.0) AS MB,
+       CONVERT(decimal(9,3), Case When MU.Bytes / 1024.0 / 1024.0 > 999999          Then 999999 Else MU.Bytes / 1024.0 / 1024.0 End) AS MB,
+       CONVERT(decimal(9,3), Case When MU.Bytes / 1024.0 / 1024.0 / 1024.0 > 999999 Then 999999 Else MU.Bytes / 1024.0 / 1024.0 / 1024.0 End) AS GB,
        CONVERT(decimal(9,1), MU.UploadTimeSeconds) AS Upload_Time_Seconds,
        MU.StatusURI_PathID AS Status_URI_Path_ID,
        MU.StatusNum AS Status_Num,
@@ -35,7 +34,6 @@ FROM T_MyEMSL_Uploads MU
        ON MU.StatusURI_PathID = StatusU.URI_PathID
      LEFT OUTER JOIN S_DMS_T_Dataset DS
        ON MU.Dataset_ID = DS.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Uploads] TO [DDL_Viewer] AS [dbo]
