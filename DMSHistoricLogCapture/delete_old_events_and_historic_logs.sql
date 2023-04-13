@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[delete_old_events_and_historic_logs]
 /****************************************************
 **
 **  Desc:   Delete entries over 2 years old in
-**          T_Job_Events, T_Job_Step_Events, T_Job_Step_Processing_Log, and T_Log_Entries
+**          T_Task_Events, T_Task_Step_Events, T_Task_Step_Processing_Log, and T_Log_Entries
 **
 **          However, keep two weeks of events per year for historic reference reasons
 **          (retain the first week of February and the first week of August)
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[delete_old_events_and_historic_logs]
 **  Date:   06/08/2022 mem - Initial version
 **          08/26/2022 mem - Use new column name in T_Log_Entries
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/12/2023 mem - Use new table names
 **
 *****************************************************/
 (
@@ -116,12 +117,12 @@ AS
     End
 
     ---------------------------------------------------
-    -- Find items to delete in T_Job_Events
+    -- Find items to delete in T_Task_Events
     ---------------------------------------------------
 
     INSERT INTO #Tmp_JobEventIDs( Event_ID, Entered )
     SELECT Event_ID, Entered
-    FROM T_Job_Events
+    FROM T_Task_Events
     WHERE Entered < @dateThreshold And
           Not (Month(Entered) In (2,8) And Day(Entered) Between 1 And 7) And
           (@yearFilter < 1970 Or Year(entered) = @yearFilter)
@@ -152,26 +153,26 @@ AS
         If @infoOnly > 0
         Begin
             INSERT INTO #Tmp_EventsToDelete (Target_Table, Event_ID, Job, Step, Target_State, Prev_Target_State, Processor, Entered)
-            SELECT TOP 10 'T_Job_Events', T.Event_ID, T.Job, Null As Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
+            SELECT TOP 10 'T_Task_Events', T.Event_ID, T.Job, Null As Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
             FROM #Tmp_JobEventIDs S
-                 INNER JOIN T_Job_Events T
+                 INNER JOIN T_Task_Events T
                    ON S.Event_ID = T.Event_ID
             ORDER BY S.Event_ID
 
             INSERT INTO #Tmp_EventsToDelete (Target_Table, Event_ID, Job, Step, Target_State, Prev_Target_State, Processor, Entered)
-            SELECT TOP 10 'T_Job_Events', T.Event_ID, T.Job, Null As Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
+            SELECT TOP 10 'T_Task_Events', T.Event_ID, T.Job, Null As Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
             FROM ( SELECT TOP 10 Event_ID
                    FROM #Tmp_JobEventIDs
                    ORDER BY Event_ID DESC
                  ) S
-                 INNER JOIN T_Job_Events T
+                 INNER JOIN T_Task_Events T
                    ON S.Event_ID = T.Event_ID
             ORDER BY T.Event_ID
         End
         Else
         Begin
-            Delete From T_Job_Events
-            Where Event_ID In (Select Event_ID From #Tmp_JobEventIDs)
+            DELETE FROM T_Task_Events
+            WHERE Event_ID In (Select Event_ID From #Tmp_JobEventIDs)
         End
 
         If @infoOnly > 0
@@ -180,7 +181,7 @@ AS
             Set @jobEventsMessage = 'Deleted '
 
         Set @jobEventsMessage = @jobEventsMessage +
-            Cast(@eventsToDelete As Varchar(12)) + ' old entries from T_Job_Events ' + @thresholdDescription + '; ' +
+            Cast(@eventsToDelete As Varchar(12)) + ' old entries from T_Task_Events ' + @thresholdDescription + '; ' +
             'Event_ID range ' + Cast(@eventIdMin As varchar(12)) + ' to ' + Cast(@eventIdMax As varchar(12))
 
         If @infoOnly = 0 And @eventsToDelete > 0
@@ -191,12 +192,12 @@ AS
 
 
     ---------------------------------------------------
-    -- Find items to delete in T_Job_Step_Events
+    -- Find items to delete in T_Task_Step_Events
     ---------------------------------------------------
 
     INSERT INTO #Tmp_JobStepEventIDs( Event_ID, Entered )
     SELECT Event_ID, Entered
-    FROM T_Job_Step_Events
+    FROM T_Task_Step_Events
     WHERE Entered < @dateThreshold And
           Not (Month(Entered) In (2,8) And Day(Entered) Between 1 And 7) And
           (@yearFilter < 1970 Or Year(entered) = @yearFilter)
@@ -227,26 +228,26 @@ AS
         If @infoOnly > 0
         Begin
             INSERT INTO #Tmp_EventsToDelete (Target_Table, Event_ID, Job, Step, Target_State, Prev_Target_State, Processor, Entered)
-            SELECT TOP 10 'T_Job_Step_Events', T.Event_ID, T.Job, T.Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
+            SELECT TOP 10 'T_Task_Step_Events', T.Event_ID, T.Job, T.Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
             FROM #Tmp_JobStepEventIDs S
-                 INNER JOIN T_Job_Step_Events T
+                 INNER JOIN T_Task_Step_Events T
                    ON S.Event_ID = T.Event_ID
             ORDER BY S.Event_ID
 
             INSERT INTO #Tmp_EventsToDelete (Target_Table, Event_ID, Job, Step, Target_State, Prev_Target_State, Processor, Entered)
-            SELECT TOP 10 'T_Job_Step_Events', T.Event_ID, T.Job, T.Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
+            SELECT TOP 10 'T_Task_Step_Events', T.Event_ID, T.Job, T.Step, T.Target_State, T.Prev_Target_State, Null As Processor, T.Entered
             FROM ( SELECT TOP 10 Event_ID
                    FROM #Tmp_JobStepEventIDs
                    ORDER BY Event_ID DESC
                  ) S
-                 INNER JOIN T_Job_Step_Events T
+                 INNER JOIN T_Task_Step_Events T
                    ON S.Event_ID = T.Event_ID
             ORDER BY T.Event_ID
         End
         Else
         Begin
-            Delete From T_Job_Step_Events
-            Where Event_ID In (Select Event_ID From #Tmp_JobStepEventIDs)
+            DELETE FROM T_Task_Step_Events
+            WHERE Event_ID In (Select Event_ID From #Tmp_JobStepEventIDs)
         End
 
         If @infoOnly > 0
@@ -255,7 +256,7 @@ AS
             Set @jobStepEventsMessage = 'Deleted '
 
         Set @jobStepEventsMessage = @jobStepEventsMessage +
-            Cast(@eventsToDelete As Varchar(12)) + ' old entries from T_Job_Step_Events ' + @thresholdDescription + '; ' +
+            Cast(@eventsToDelete As Varchar(12)) + ' old entries from T_Task_Step_Events ' + @thresholdDescription + '; ' +
             'Event_ID range ' + Cast(@eventIdMin As varchar(12)) + ' to ' + Cast(@eventIdMax As varchar(12))
 
         If @infoOnly = 0 And @eventsToDelete > 0
@@ -265,12 +266,12 @@ AS
     End
 
     ---------------------------------------------------
-    -- Find items to delete in T_Job_Step_Processing_Log
+    -- Find items to delete in T_Task_Step_Processing_Log
     ---------------------------------------------------
 
     INSERT INTO #Tmp_ProcessingLogEventIDs( Event_ID, Entered )
     SELECT Event_ID, Entered
-    FROM T_Job_Step_Processing_Log
+    FROM T_Task_Step_Processing_Log
     WHERE Entered < @dateThreshold And
           Not (Month(Entered) In (2,8) And Day(Entered) Between 1 And 7) And
           (@yearFilter < 1970 Or Year(entered) = @yearFilter)
@@ -301,26 +302,26 @@ AS
         If @infoOnly > 0
         Begin
             INSERT INTO #Tmp_EventsToDelete (Target_Table, Event_ID, Job, Step, Target_State, Prev_Target_State, Processor, Entered)
-            SELECT TOP 10 'T_Job_Step_Processing_Log', T.Event_ID, T.Job, T.Step, Null As Target_State, Null As Prev_Target_State, T.Processor, T.Entered
+            SELECT TOP 10 'T_Task_Step_Processing_Log', T.Event_ID, T.Job, T.Step, Null As Target_State, Null As Prev_Target_State, T.Processor, T.Entered
             FROM #Tmp_ProcessingLogEventIDs S
-                 INNER JOIN T_Job_Step_Processing_Log T
+                 INNER JOIN T_Task_Step_Processing_Log T
                    ON S.Event_ID = T.Event_ID
             ORDER BY S.Event_ID
 
             INSERT INTO #Tmp_EventsToDelete (Target_Table, Event_ID, Job, Step, Target_State, Prev_Target_State, Processor, Entered)
-            SELECT TOP 10 'T_Job_Step_Processing_Log', T.Event_ID, T.Job, T.Step, Null As Target_State, Null As Prev_Target_State, T.Processor, T.Entered
+            SELECT TOP 10 'T_Task_Step_Processing_Log', T.Event_ID, T.Job, T.Step, Null As Target_State, Null As Prev_Target_State, T.Processor, T.Entered
             FROM ( SELECT TOP 10 Event_ID
                    FROM #Tmp_ProcessingLogEventIDs
                    ORDER BY Event_ID DESC
                  ) S
-                 INNER JOIN T_Job_Step_Processing_Log T
+                 INNER JOIN T_Task_Step_Processing_Log T
                    ON S.Event_ID = T.Event_ID
             ORDER BY T.Event_ID
         End
         Else
         Begin
-            Delete From T_Job_Step_Processing_Log
-            Where Event_ID In (Select Event_ID From #Tmp_ProcessingLogEventIDs)
+            DELETE FROM T_Task_Step_Processing_Log
+            WHERE Event_ID In (Select Event_ID From #Tmp_ProcessingLogEventIDs)
         End
 
         If @infoOnly > 0
@@ -329,7 +330,7 @@ AS
             Set @jobStepProcessingLogMessage = 'Deleted '
 
         Set @jobStepProcessingLogMessage = @jobStepProcessingLogMessage +
-            Cast(@eventsToDelete As Varchar(12)) + ' old entries from T_Job_Step_Processing_Log ' + @thresholdDescription + '; ' +
+            Cast(@eventsToDelete As Varchar(12)) + ' old entries from T_Task_Step_Processing_Log ' + @thresholdDescription + '; ' +
             'Event_ID range ' + Cast(@eventIdMin As varchar(12)) + ' to ' + Cast(@eventIdMax As varchar(12))
 
         If @infoOnly = 0 And @eventsToDelete > 0
@@ -404,8 +405,8 @@ AS
         End
         Else
         Begin
-            Delete From T_Log_Entries
-            Where Entry_ID In (Select Entry_ID From #Tmp_HistoricLogIDs)
+            DELETE FROM T_Log_Entries
+            WHERE Entry_ID In (Select Entry_ID From #Tmp_HistoricLogIDs)
         End
 
         If @infoOnly > 0
