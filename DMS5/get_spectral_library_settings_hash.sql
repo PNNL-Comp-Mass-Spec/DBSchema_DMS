@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
 **          03/28/2023 mem - Change @trimNTerminalMet and @staticCysCarbamidomethyl from tinyint to bit
 **          03/29/2023 mem - Change tinyint parameters to smallint
 **          04/16/2023 mem - Auto-update @proteinCollectionList and @organismDbFile to 'na' if an empty string
+**          04/17/2023 mem - Use 'na' for @organismDBFile if @proteinCollectionList is not 'na' or an empty string
 **
 *****************************************************/
 (
@@ -113,7 +114,7 @@ Begin
         Set @staticMods = Coalesce(@staticMods, '');
         Set @dynamicMods = Coalesce(@dynamicMods, '');
         Set @maxDynamicMods = Coalesce(@maxDynamicMods, 0);
-        
+
         If Len(@proteinCollectionList) = 0
             Set @proteinCollectionList = 'na'
 
@@ -129,8 +130,25 @@ Begin
     -- Store the options in @settings
     ---------------------------------------------------
 
-    Set @settings = @proteinCollectionList + '_' +
-                    @organismDbFile + '_' +
+    If dbo.validate_na_parameter(@proteinCollectionList, 1) <> 'na'
+    Begin
+        Set @settings = @proteinCollectionList + '_na_';
+    End
+    Else
+    Begin
+        Set @settings = 'na_';
+
+        If dbo.validate_na_parameter(@organismDBFile, 1) <> 'na'
+        Begin
+            Set @settings = @settings + @organismDBFile + '_';
+        End
+        Else
+        Begin
+            Set @settings = @settings + 'na_';
+        End
+    End
+
+    Set @settings = @settings +
                     Cast(@fragmentIonMzMin As varchar(24)) + '_' +
                     Cast(@fragmentIonMzMax As varchar(24)) + '_' +
                     Case When @trimNTerminalMet > 0 Then 'true' Else 'false' End + '_' +
