@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **          03/28/2023 mem - Change @allowAddNew, @trimNTerminalMet, and @staticCysCarbamidomethyl from tinyint to bit
 **          03/29/2023 mem - If the library state is 2 and @dmsSourceJob matches the Source_Job in T_Spectral_Library, assume the job failed and was re-started, and thus set @sourceJobShouldMakeLibrary to 1
 **                         - Change tinyint parameters to smallint or bit
+**          04/16/2023 mem - Auto-update @proteinCollectionList and @organismDbFile to 'na' if an empty string
 **
 *****************************************************/
 (
@@ -119,6 +120,12 @@ Begin
         Set @libraryName = ''
         Set @storagePath = ''
         Set @sourceJobShouldMakeLibrary = 0
+
+        If Len(@proteinCollectionList) = 0
+            Set @proteinCollectionList = 'na'
+
+        If Len(@organismDbFile) = 0
+            Set @organismDbFile = 'na'
 
         ---------------------------------------------------
         -- Assure that the protein collection list is in the standard format

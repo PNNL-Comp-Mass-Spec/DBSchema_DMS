@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_settings_hash]
 **          03/18/2023 mem - Rename parameters
 **          03/28/2023 mem - Change @trimNTerminalMet and @staticCysCarbamidomethyl from tinyint to bit
 **          03/29/2023 mem - Change tinyint parameters to smallint
+**          04/16/2023 mem - Auto-update @proteinCollectionList and @organismDbFile to 'na' if an empty string
 **
 *****************************************************/
 (
@@ -112,6 +113,12 @@ Begin
         Set @staticMods = Coalesce(@staticMods, '');
         Set @dynamicMods = Coalesce(@dynamicMods, '');
         Set @maxDynamicMods = Coalesce(@maxDynamicMods, 0);
+        
+        If Len(@proteinCollectionList) = 0
+            Set @proteinCollectionList = 'na'
+
+        If Len(@organismDbFile) = 0
+            Set @organismDbFile = 'na'
     End
 
     -- Remove any spaces in the static and dynamic mods
