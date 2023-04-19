@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[add_new_instrument]
 **                           Pass @urlDomain to add_update_storage
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/19/2023 mem - Change severity level from 10 to 11 for RAISERROR() calls
 **
 *****************************************************/
 (
@@ -114,14 +115,14 @@ AS
     If @myError <> 0
     begin
         Set @message = 'Failed to look for existing instrument'
-        RAISERROR (@message, 10, 1)
+        RAISERROR (@message, 11, 1)
         return 51007
     end
 
     If @myRowCount <> 0
     begin
         Set @message = 'Instrument name already in use'
-        RAISERROR (@message, 10, 1)
+        RAISERROR (@message, 11, 1)
         return 51008
     end
 
@@ -249,8 +250,7 @@ AS
     If @myError <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Insert into x table was unsuccessful for add instrument',
-            10, 1)
+        RAISERROR ('Insert into x table was unsuccessful for add instrument', 11, 1)
         return 51131
     end
 
@@ -313,8 +313,7 @@ AS
     If @result <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Creating storage path was unsuccessful for add instrument',
-            10, 1)
+        RAISERROR ('Creating storage path was unsuccessful for add instrument', 11, 1)
         return 51132
     end
 
@@ -338,8 +337,7 @@ AS
     If @result <> 0
     begin
         rollback transaction @transName
-        RAISERROR ('Creating source path was unsuccessful for add instrument',
-            10, 1)
+        RAISERROR ('Creating source path was unsuccessful for add instrument', 11, 1)
         return 51133
     end
 
@@ -383,8 +381,7 @@ AS
         If @myError <> 0
         begin
             rollback transaction @transName
-            RAISERROR ('Insert into archive path table was unsuccessful for add instrument',
-                10, 1)
+            RAISERROR ('Insert into archive path table was unsuccessful for add instrument', 11, 1)
             return 51134
         end
     End -- </a>
