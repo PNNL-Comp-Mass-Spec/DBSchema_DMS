@@ -9,6 +9,7 @@ CREATE TABLE [dbo].[T_Dataset_ScanTypes](
 	[ScanType] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[ScanCount] [int] NULL,
 	[ScanFilter] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[MS2_Isolation_Width] [real] NULL,
  CONSTRAINT [PK_T_Dataset_ScanTypes] PRIMARY KEY NONCLUSTERED 
 (
 	[Entry_ID] ASC

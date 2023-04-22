@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 54 ******/
+/****** RowCount: 57 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag, Sample_Prep_Visible, Requested_Run_Visible, Target_Instrument_Group ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('21T','Research','',1,1,'FT',1,1,null)
@@ -13,15 +13,16 @@ INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF','Research','',0,1,null,0,
 INSERT INTO [T_Instrument_Group] VALUES ('Agilent_TOF_V2','Research','',1,3,'TOF',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Altis','MRM','',0,9,'QQQ',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Ascend','LC-HMS with MS/MS','',1,13,'ORB',1,1,null)
-INSERT INTO [T_Instrument_Group] VALUES ('Ascend_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,13,'ORB',0,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Ascend_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,13,'ORB',0,1,'Ascend')
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_Amazon_Ion_Trap','Research','',0,3,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_FTMS','Research','',1,1,'FT',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Bruker_QTOF','Research','',0,5,'TOF',0,0,null)
-INSERT INTO [T_Instrument_Group] VALUES ('Bruker_timsTOF','LC-IMS-MS with MS/MS','',1,30,'TOF',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('DataFolders','DMS Pipeline Data','',0,27,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Eclipse','LC-HMS with MS/MS','',1,13,'ORB',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Eclipse_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,13,'ORB',0,1,'Eclipse')
 INSERT INTO [T_Instrument_Group] VALUES ('Exactive','LC-HMS (no MS/MS)','',0,1,'EXA',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Exploris','LC-HMS with MS/MS; optionally HCD','',1,5,'ORB',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Exploris_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,5,'ORB',0,1,'Exploris')
 INSERT INTO [T_Instrument_Group] VALUES ('FT_ZippedSFolders','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('GC-QExactive','Metabolomics',null,1,41,'ORB',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('GC-TSQ','Metabolomics','',0,9,'GC',0,0,null)
@@ -49,6 +50,8 @@ INSERT INTO [T_Instrument_Group] VALUES ('QTrap','Research','MRM',0,3,'QQQ',0,1,
 INSERT INTO [T_Instrument_Group] VALUES ('Sciex_TripleTOF','Research','',0,5,null,0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Shimadzu_GC','Real-time atmospheric monitoring','',1,18,'GC',0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('SLIM','Ion-mobility LC-IMS-MS with SLIM','',1,6,'IMS',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('timsTOF','LC-IMS-MS with MS/MS','Bruker timsTOF',1,30,'TOF',0,0,null)
+INSERT INTO [T_Instrument_Group] VALUES ('timsTOFScp','LC-IMS-MS with MS/MS','Bruker timsTOF for single cell proteomics',1,30,'TOF',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('TSQ','MRM','',1,9,'QQQ',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('TSQ_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,9,'QQQ',0,1,'TSQ')
 INSERT INTO [T_Instrument_Group] VALUES ('VelosOrbi','LC-HMS with MS/MS; optionally ETD','',1,3,'ORB',1,1,null)
