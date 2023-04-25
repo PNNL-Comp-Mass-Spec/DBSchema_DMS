@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[add_archive_dataset]
 /****************************************************
 **
-**  Desc:   Make new entry into the archive table
+**  Desc:   Make new entry in T_Dataset_Archive
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_archive_dataset]
 **          08/10/2018 mem - Do not create an archive task for datasets with state 14
 **          12/20/2021 bcg - Look up Purge_Priority and AS_purge_holdoff_date offset in T_Instrument_Name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/24/2023 mem - Do not create an archive task if 'ArchiveDisabled' has a non-zero value in T_MiscOptions
 **
 *****************************************************/
 (
@@ -44,6 +45,28 @@ AS
         Set @message = 'Dataset ID ' + Cast(@datasetID As varchar(12)) + ' already in archive table'
         Print @message
         Return 0
+    End
+
+    ---------------------------------------------------
+    -- Check if dataset archiving is diabled
+    ---------------------------------------------------
+    
+    Declare @archiveDisabled int
+
+    SELECT @archiveDisabled = Value
+    FROM T_MiscOptions
+    WHERE Name = 'ArchiveDisabled'
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount = 0
+        Set @archiveDisabled = 0
+
+    If @archiveDisabled > 0
+    Begin
+        Set @message = 'Dataset archiving is disabled in T_MiscOptions'
+        Print @message
+        Return 0;
     End
 
     ---------------------------------------------------
