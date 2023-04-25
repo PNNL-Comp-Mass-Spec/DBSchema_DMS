@@ -172,9 +172,9 @@ AS
         goto done
     end
 
-
     ---------------------------------------------------
-    -- Create a new dataset archive task
+    -- Create a new dataset archive task 
+    -- However, if 'ArchiveDisabled" has a value of 1 in T_MiscOptions, the archive task will not be created
     ---------------------------------------------------
     --
     declare @result int
