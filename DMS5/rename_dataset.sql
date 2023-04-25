@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          03/04/2023 mem - Use new T_Task tables
 **          03/29/2023 mem - No longer add job parameter DatasetNum
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
+**          04/25/2023 mem - Update Queue_State for the old and new requested runs
 **
 *****************************************************/
 (
@@ -365,13 +366,14 @@ AS
         SELECT RL.Request,
                RL.[Name],
                RL.[Status],
+               RR.Queue_State,
                RL.Origin,
                RL.Campaign,
                RL.Experiment,
                RL.Dataset,
                RL.Instrument,
                RR.RDS_Run_Start,
-               RR.RDS_Run_Finish
+               RR.RDS_Run_Finish               
         FROM V_Requested_Run_List_Report_2 RL
              INNER JOIN T_Requested_Run RR
                ON RL.Request = RR.ID
@@ -384,10 +386,11 @@ AS
         If @infoOnly = 0 And @datasetAlreadyRenamed = 0
         Begin
             UPDATE T_Requested_Run
-            SET DatasetID = Null,
-                RDS_Run_Start = Null,
+            SET DatasetID      = Null,
+                RDS_Run_Start  = Null,
                 RDS_Run_Finish = Null,
-                RDS_Status = 'Active'
+                RDS_Status     = 'Active',
+                Queue_State    = 2          -- Assigned
             WHERE ID = @oldRequestedRunID
 
             UPDATE T_Requested_Run
@@ -397,20 +400,22 @@ AS
                 RDS_Cart_ID        = @cartId,
                 RDS_Cart_Config_ID = @cartConfigID,
                 RDS_Cart_Col       = @cartColumn,
-                RDS_Status         = 'Completed'
+                RDS_Status         = 'Completed',
+                Queue_State        = 3      -- Analyzed
             WHERE ID = @newRequestedRunID
         End
 
         SELECT RL.Request,
                RL.[Name],
                RL.[Status],
+               RR.Queue_State,
                RL.Origin,
                RL.Campaign,
                RL.Experiment,
                RL.Dataset,
                RL.Instrument,
                RR.RDS_Run_Start,
-               RR.RDS_Run_Finish
+               RR.RDS_Run_Finish               
         FROM V_Requested_Run_List_Report_2 RL
              INNER JOIN T_Requested_Run RR
                ON RL.Request = RR.ID
