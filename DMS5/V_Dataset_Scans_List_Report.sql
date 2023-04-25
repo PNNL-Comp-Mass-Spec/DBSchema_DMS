@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_Scans_List_Report]
 AS
 SELECT DS.Dataset_ID AS id,
@@ -24,6 +23,7 @@ SELECT DS.Dataset_ID AS id,
 	   DSInfo.ProfileScanCount_MSn  AS profile_scan_count_msn,
        DSInfo.CentroidScanCount_MS  AS centroid_scan_count_ms,
 	   DSInfo.CentroidScanCount_MSn AS centroid_scan_count_msn,
+       DSInfo.Scan_Count_DIA As scan_count_dia,
        DST.Entry_ID AS scan_type_entry_id
 FROM dbo.T_Dataset DS
      INNER JOIN dbo.T_Dataset_Type_Name DTN

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_Info_List_Report]
 AS
 SELECT DS.Dataset_ID AS id,
@@ -14,6 +13,7 @@ SELECT DS.Dataset_ID AS id,
        DS.Scan_Count AS scan_count_total,
        DSInfo.ScanCountMS AS scan_count_ms,
        DSInfo.ScanCountMSn AS scan_count_msn,
+       DSInfo.Scan_Count_DIA AS scan_count_dia,
        CONVERT(decimal(9, 2),
          CASE WHEN ISNULL(DSInfo.elution_time_max, 0) < 1E6
               THEN DSInfo.elution_time_max
