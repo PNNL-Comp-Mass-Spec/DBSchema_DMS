@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **          <ScanCount>53435</ScanCount>
 **          <ScanCountMS>10574</ScanCountMS>
 **          <ScanCountMSn>42861</ScanCountMSn>
+**          <ScanCountDIA>0</ScanCountDIA>
 **          <Elution_Time_Max>120.00</Elution_Time_Max>
 **          <AcqTimeMinutes>120.00</AcqTimeMinutes>
 **          <StartTime>2018-06-07 07:19:59 PM</StartTime>
@@ -88,6 +89,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Add support for datasets with multiple instrument files with the same name (e.g. 20220105_JL_kpmp_3504 with ser files in eight .d directories)
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
+**          04/24/2023 mem - Store DIA scan count values
 **
 *****************************************************/
 (
@@ -141,6 +143,7 @@ AS
         ScanCount int NULL,
         ScanCountMS int NULL,
         ScanCountMSn int NULL,
+        Scan_Count_DIA Int Null,
         Elution_Time_Max real NULL,
         AcqTimeMinutes real NULL,
         Acq_Time_Start datetime NULL,
@@ -217,6 +220,7 @@ AS
         ScanCount,
         ScanCountMS,
         ScanCountMSn,
+        Scan_Count_DIA,
         Elution_Time_Max,
         AcqTimeMinutes,
         FileSizeBytes,
@@ -238,6 +242,7 @@ AS
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCount)[1]', 'int') AS ScanCount,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMS)[1]', 'int') AS ScanCountMS,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
+            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountDIA)[1]', 'int') AS Scan_Count_DIA,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
             @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,
@@ -599,8 +604,8 @@ AS
     --
     MERGE T_Dataset_Info AS target
     USING
-        (Select Dataset_ID, ScanCountMS, ScanCountMSn,
-                Elution_Time_Max, AcqTimeMinutes,
+        (Select Dataset_ID, ScanCountMS, ScanCountMSn, 
+                Scan_Count_DIA, Elution_Time_Max,
                 TIC_Max_MS, TIC_Max_MSn,
                 BPI_Max_MS, BPI_Max_MSn,
                 TIC_Median_MS, TIC_Median_MSn,
@@ -608,8 +613,8 @@ AS
                 ProfileScanCount_MS, ProfileScanCount_MSn,
                 CentroidScanCount_MS, CentroidScanCount_MSn
          FROM @DSInfoTable
-        ) AS Source (Dataset_ID, ScanCountMS, ScanCountMSn,
-                     Elution_Time_Max, AcqTimeMinutes,
+        ) AS Source (Dataset_ID, ScanCountMS, ScanCountMSn, 
+                     Scan_Count_DIA, Elution_Time_Max,
                      TIC_Max_MS, TIC_Max_MSn,
                      BPI_Max_MS, BPI_Max_MSn,
                      TIC_Median_MS, TIC_Median_MSn,
@@ -621,7 +626,8 @@ AS
         THEN UPDATE
             Set ScanCountMS = Source.ScanCountMS,
                 ScanCountMSn = Source.ScanCountMSn,
-                Elution_Time_Max = Source.Elution_Time_Max,
+                Scan_Count_DIA = Source.Scan_Count_DIA,
+                Elution_Time_Max = Source.Elution_Time_Max,                
                 TIC_Max_MS = Source.TIC_Max_MS,
                 TIC_Max_MSn = Source.TIC_Max_MSn,
                 BPI_Max_MS = Source.BPI_Max_MS,
@@ -636,8 +642,8 @@ AS
                 CentroidScanCount_MSn = Source.CentroidScanCount_MSn,
                 Last_Affected = GetDate()
     WHEN Not Matched THEN
-        INSERT (Dataset_ID, ScanCountMS,
-                ScanCountMSn, Elution_Time_Max,
+        INSERT (Dataset_ID, ScanCountMS, ScanCountMSn, 
+                Scan_Count_DIA, Elution_Time_Max,
                 TIC_Max_MS, TIC_Max_MSn,
                 BPI_Max_MS, BPI_Max_MSn,
                 TIC_Median_MS, TIC_Median_MSn,
@@ -645,7 +651,8 @@ AS
                 ProfileScanCount_MS, ProfileScanCount_MSn,
                 CentroidScanCount_MS, CentroidScanCount_MSn,
                 Last_Affected )
-        VALUES (Source.Dataset_ID, Source.ScanCountMS, Source.ScanCountMSn, Source.Elution_Time_Max,
+        VALUES (Source.Dataset_ID, Source.ScanCountMS, Source.ScanCountMSn, 
+                Source.Scan_Count_DIA,Source.Elution_Time_Max,
                 Source.TIC_Max_MS, Source.TIC_Max_MSn,
                 Source.BPI_Max_MS, Source.BPI_Max_MSn,
                 Source.TIC_Median_MS, Source.TIC_Median_MSn,
