@@ -22,12 +22,16 @@ FROM dbo.T_Analysis_Job AS AJ
        ON AJ.AJ_analysisToolID = AnTool.AJT_toolID
      INNER JOIN dbo.T_Dataset DS
        ON AJ.AJ_datasetID = DS.Dataset_ID
-     INNER JOIN dbo.t_storage_path SPath
+     INNER JOIN dbo.T_Storage_Path SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
+     INNER JOIN dbo.T_Instrument_Name InstName
+       ON DS.DS_instrument_name_ID = InstName.Instrument_ID
      LEFT OUTER JOIN dbo.T_Dataset_Archive AS DA
        ON AJ.AJ_datasetID = DA.AS_Dataset_ID
      LEFT OUTER JOIN (SELECT Value As ArchiveDisabled FROM dbo.T_MiscOptions WHERE Name = 'ArchiveDisabled') As ArchiveStatus ON 1=1
-WHERE (AJ.AJ_StateID IN (1, 8)) AND
+WHERE AJ.AJ_StateID IN (1, 8) AND
+      -- Exclude jobs with data package based datasets
+      InstName.IN_operations_role <> 'InSilico' AND
       (
         -- Ideally we only allow a job to start processing if the dataset is archived (states 3 or 10)
         -- or purged (states 4, 9, 14, 15) or NonPurgeable (10)
@@ -42,7 +46,7 @@ WHERE (AJ.AJ_StateID IN (1, 8)) AND
         -- If the archive state is "Purge in Progress" or "Purge failed" for over 60 minutes, let the job start
         (DA.AS_state_ID IN (7, 8) And DA.AS_state_Last_Affected < DateAdd(minute, -60, GetDate()))
         Or
-        -- If option ArchiveDisabled is non-zero, datasets will not have entries in T_Dataset_Archive             
+        -- If option ArchiveDisabled is non-zero, datasets will not have entries in T_Dataset_Archive
         Coalesce(ArchiveStatus.ArchiveDisabled, 0) > 0
         Or
         -- Lastly, let QC_Shew and QC_Mam datasets start if they have been dispositioned (DS_Rating >= 1) and the archive state changed more than 15 minutes ago
