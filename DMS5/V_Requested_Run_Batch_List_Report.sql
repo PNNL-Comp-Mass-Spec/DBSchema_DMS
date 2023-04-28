@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_Batch_List_Report]
 AS
 SELECT RRB.id,
        RRB.Batch AS name,
        RBS.active_requests AS requests, -- Active requests
-       RBS.datasets AS runs,            -- Completed requests (with datasets)
+       RBS.datasets,                    -- Completed requests (with datasets)
        RBS.blocked,                     -- Requests with a block number
        RBS.block_missing,
        RBS.first_active_request,
@@ -50,7 +49,6 @@ FROM T_Requested_Run_Batches AS RRB
      LEFT OUTER JOIN T_Cached_Requested_Run_Batch_Stats RBS
        ON RRB.ID = RBS.batch_id
 WHERE RRB.ID > 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Requested_Run_Batch_List_Report] TO [DDL_Viewer] AS [dbo]

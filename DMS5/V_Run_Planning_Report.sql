@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Run_Planning_Report]
 AS
 SELECT GroupQ.inst_group,
        GroupQ.ds_type,
        Case When GroupQ.Fraction_Count > 1
-            Then GroupQ.Run_Count * GroupQ.fraction_count
-            Else GroupQ.run_count
-       End AS run_count,
+            Then GroupQ.Requests * GroupQ.fraction_count
+            Else GroupQ.Requests
+       End AS requests,
        GroupQ.blocked,
        GroupQ.block_missing,
        Case When RequestLookupQ.RDS_BatchID > 0
@@ -57,7 +56,7 @@ SELECT GroupQ.inst_group,
        END AS fraction_color_mode
 FROM ( SELECT Inst_Group,
               MIN(RequestID) AS Min_Request,
-              COUNT(RequestID) AS Run_Count,
+              COUNT(RequestID) AS Requests,
               MIN(Request_Prefix) AS Request_Prefix,
               Requester,
               MIN(Request_Created) AS Date_Created,
