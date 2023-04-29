@@ -22,7 +22,7 @@ CREATE TABLE [dbo].[T_Dataset_Info](
 	[ProfileScanCount_MSn] [int] NULL,
 	[CentroidScanCount_MS] [int] NULL,
 	[CentroidScanCount_MSn] [int] NULL,
-	[DIA_Scan_Count] [int] NULL,
+	[Scan_Count_DIA] [int] NULL,
  CONSTRAINT [PK_T_Dataset_ScanInfo] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC
