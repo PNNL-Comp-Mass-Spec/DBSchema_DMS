@@ -1,8 +1,9 @@
 /****** Object:  Table [T_Dataset_QC_Instruments] ******/
-/****** RowCount: 61 ******/
+/****** RowCount: 63 ******/
 /****** Columns: IN_name, Instrument_ID, Last_Updated ******/
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('21T_Agilent',106,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('AMOLF_VOrbiETD01',102,'11/4/2015 4:46:10 PM')
+INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Ascend01',192,'4/24/2023 9:37:48 AM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Broad_Exploris01',184,'10/22/2021 1:37:49 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Broad_QEHFX01',168,'11/21/2019 9:37:48 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Broad_QExactP01',148,'12/6/2017 5:37:48 PM')
@@ -15,6 +16,7 @@ INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Exact01',54,'11/4/2015 4:46:10 P
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Exact03',57,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Exact04',82,'11/4/2015 4:46:10 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Exploris01',173,'9/29/2020 9:37:48 AM')
+INSERT INTO [T_Dataset_QC_Instruments] VALUES ('Exploris02',193,'4/25/2023 1:37:48 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('External_Agilent_QQQ',175,'2/16/2021 1:37:49 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('External_Eclipse',176,'1/27/2021 5:37:48 PM')
 INSERT INTO [T_Dataset_QC_Instruments] VALUES ('External_Exploris',179,'5/5/2021 5:37:49 PM')

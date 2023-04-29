@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 129 ******/
+/****** RowCount: 130 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -116,6 +116,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Formic_90min',119,'Waters const
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-GlcNAc',95,'GlcNAc separations using a Waters LC pump',1,'LC-GlcNAc',0,'11/15/2015 11:10:50 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-HC-Lipids_35min',99,'Waters constant flow,optimized for lipids, 35 minute separation',1,'LC-Metabolomics_LipidSoluble',4,'8/30/2016 9:26:58 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-IntactProtein_200min',41,'Waters constant flow, 200 minute separation, high molecular weight analytes',1,'LC-IntactProtein_200min',2,'11/30/2010 9:25:31 AM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics-LipidSoluble',131,'Waters system, mobile phase optimized for lipid soluble metabolites. Samples in 2:1 chloroform:methanol before drying down and analyzing, in 9:1 methanol:chloroform after drying down',1,'LC-Metabolomics_LipidSoluble',4,'4/26/2023 2:38:13 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics_LipidSoluble',43,'Waters system, mobile phase optimized for lipid soluble metabolites',1,'LC-Metabolomics_LipidSoluble',4,'1/12/2011 11:16:13 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics_LipidSoluble_25MinGradient',123,'Waters system, mobile phase optimized for lipid soluble metabolites',1,'LC-Metabolomics_LipidSoluble',4,'10/24/2022 8:26:29 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Waters-Metabolomics_Sonnenburg',122,'Waters system, gradient optimized for mammalian polar metabolites',1,'LC-Metabolomics_Sonnenburg',4,'2/16/2022 11:09:19 AM')
