@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[update_user_permissions]
 **          07/31/2012 mem - Removed references to emsl-prism.Users.DMS_JobRunner
 **                         - Added stored procedure and table permissions
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/04/2023 mem - Remove deleted procedures
 **
 *****************************************************/
 AS
@@ -178,7 +179,6 @@ AS
     GRANT EXECUTE ON [dbo].[add_output_file_archive_entry_New] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[add_protein_reference] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[add_protein_sequence] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[add_sha1_file_authentication] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[add_update_encryption_metadata] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[add_update_protein_collection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[add_update_protein_collectionMember] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
@@ -189,11 +189,7 @@ AS
     GRANT EXECUTE ON [dbo].[get_archived_file_id_for_protein_collection_list] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[get_naming_authority_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[get_protein_collection_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[get_protein_collection_member_count] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[get_protein_collection_state] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[get_protein_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[get_protein_id_from_name] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
-    GRANT EXECUTE ON [dbo].[get_protein_reference_id] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
     GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [DMS_Analysis] AS [dbo]
     GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [DMS_User] AS [dbo]
     GRANT EXECUTE ON [dbo].[standardize_protein_collection_list] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
@@ -294,7 +290,6 @@ AS
     DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [pnl\d3l243] AS [dbo]
     DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [PNL\EMSL-Prism.Users.DMS_Guest] AS [dbo]
     DENY UPDATE ON [dbo].[T_Encrypted_Collection_Passphrases] TO [public] AS [dbo]
-
 
     Return 0
 
