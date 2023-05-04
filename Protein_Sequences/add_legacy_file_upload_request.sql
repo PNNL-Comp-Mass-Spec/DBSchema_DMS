@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[add_legacy_file_upload_request]
 **          01/06/2023 mem - Use new column name in view
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Remove underscores from variables
+**          05/03/2023 mem - Return 0 if no errors (previously returned the ID of the newly added row, but the calling application does not use that value)
 **
 *****************************************************/
 (
@@ -27,18 +28,15 @@ CREATE PROCEDURE [dbo].[add_legacy_file_upload_request]
 AS
     set nocount on
 
-    declare @myError int
-    set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @myRowCount int
-    set @myRowCount = 0
+    Declare @msg varchar(256)
+    Declare @memberID int
 
-    declare @msg varchar(256)
-    declare @memberID int
-
-    declare @legacyFileID int
-    declare @AuthenticationHashStored varchar(8)
-    declare @requestID int
+    Declare @legacyFileID int
+    Declare @AuthenticationHashStored varchar(8)
+    Declare @requestID int
 
     set @message = ''
 
@@ -53,16 +51,18 @@ AS
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    if @myRowCount > 0
-    begin
+    If @myRowCount > 0
+    Begin
         -- Entry already exists; update the hash if different
-        if IsNull(@AuthenticationHashStored, '') <> IsNull(@AuthenticationHash, '')
+        If IsNull(@AuthenticationHashStored, '') <> IsNull(@AuthenticationHash, '')
+        Begin
             UPDATE T_Legacy_File_Upload_Requests
             SET Authentication_Hash = @AuthenticationHash
             WHERE Legacy_File_ID = @legacyFileID
+        End
 
         Return 0
-    end
+    End
 
     ---------------------------------------------------
     -- Get File ID from DMS
@@ -74,18 +74,18 @@ AS
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    if @myRowCount = 0
-    begin
-        return 0
-    end
+    If @myRowCount = 0
+    Begin
+        Return 0
+    End
 
     ---------------------------------------------------
     -- Start transaction
     ---------------------------------------------------
 
-    declare @transName varchar(32)
-    set @transName = 'add_legacy_file_upload_request'
-    begin transaction @transName
+    Declare @transName varchar(32) = 'add_legacy_file_upload_request'
+
+    Begin Transaction @transName
 
     ---------------------------------------------------
     -- action for add mode
@@ -106,17 +106,17 @@ AS
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
         set @msg = 'Insert operation failed: "' + @legacyFileName + '"'
         RAISERROR (@msg, 10, 1)
-        return 51007
-    end
+        Return 51007
+    End
 
-    commit transaction @transName
+    Commit Transaction @transName
 
-    return @requestID
+    Return 0
 
 GO
 GRANT EXECUTE ON [dbo].[add_legacy_file_upload_request] TO [DMS_Analysis_Job_Runner] AS [dbo]
