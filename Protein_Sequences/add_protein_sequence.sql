@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[add_protein_sequence]
 **          12/11/2012 mem - Removed transaction
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Remove underscores from variables
+**          05/04/2023 mem - Directly query T_Proteins when checking for an existing protein
 **
 *****************************************************/
 (
@@ -29,32 +30,32 @@ CREATE PROCEDURE [dbo].[add_protein_sequence]
     @message varchar(512) output
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+    Set @myError = 0
+    Set @myRowCount = 0
 
-    declare @msg varchar(256)
+    Declare @msg varchar(256)
 
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
 
-    declare @ProteinID int
-    set @ProteinID = 0
+    Declare @ProteinID int = 0
 
-    execute @ProteinID = get_protein_id @length, @sha1Hash
+    SELECT @ProteinID = protein_id
+    FROM T_Proteins
+    WHERE length = @length AND sha1_hash = @sha1Hash;
 
-    if @ProteinID > 0 and @mode = 'add'
-    begin
+    If @ProteinID > 0 and @mode = 'add'
+    Begin
         Return @ProteinID
-    end
+    End
 
-
-    if @mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
         ---------------------------------------------------
         -- action for add mode
         ---------------------------------------------------
@@ -83,13 +84,13 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount, @ProteinID = SCOPE_IDENTITY()
         --
-        if @myError <> 0
-        begin
-            set @msg = 'Insert operation failed!'
+        If @myError <> 0
+        Begin
+            Set @msg = 'Insert operation failed!'
             RAISERROR (@msg, 10, 1)
             Return 51007
-        end
-    end
+        End
+    End
 
     Return @ProteinID
 
