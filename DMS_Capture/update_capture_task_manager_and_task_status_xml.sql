@@ -7,10 +7,13 @@ CREATE PROCEDURE [dbo].[update_capture_task_manager_and_task_status_xml]
 /****************************************************
 **
 **  Desc:
-**      Update processor status from concatenated list
-**      of XML status messages
+**      Update processor status from concatenated list of XML status messages
 **
-**  Return values: 0: success, otherwise, error code
+**  Arguments:
+**    @managerStatusXML     Manager status XML
+**    @infoLevel            0 to update tables; 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore _managerStatusXML, use test data, and update tables, 4 to ignore _managerStatusXML, use test data, and not update tables
+**    @logProcessorNames    true to log the names of updated processors (in T_Log_Entries)
+**    @message              Output message
 **
 **  Auth:   grk
 **          08/20/2009 grk - Initial release
@@ -28,13 +31,14 @@ CREATE PROCEDURE [dbo].[update_capture_task_manager_and_task_status_xml]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/07/2023 mem - Rename column in temporary table
 **          04/01/2023 mem - Rename procedures and functions
+**          05/04/2023 mem - Rename procedure arguments from @parameters, @result, and @debugMode to @managerStatusXML, @infoLevel, and @message
 **
 *****************************************************/
 (
-    @parameters text = '',
-    @result varchar(4096) output,
-    @debugMode tinyint = 0,             -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @parameters, use test data, and update tables, 4 to ignore @parameters, use test data, and not update tables
-    @logProcessorNames tinyint = 0      -- 1 to log the names of updated processors (in T_Log_Entries)
+    @managerStatusXML text = '',
+    @infoLevel tinyint = 0,             -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @managerStatusXML, use test data, and update tables, 4 to ignore @managerStatusXML, use test data, and not update tables
+    @logProcessorNames tinyint = 0,     -- 1 to log the names of updated processors (in T_Log_Entries)
+    @message varchar(4096) output
 )
 AS
     Set XACT_ABORT, nocount on
@@ -42,17 +46,15 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Set @result = ''
-    Set @debugMode = IsNull(@debugMode, 0)
-    Set @logProcessorNames= IsNull(@logProcessorNames, 0)
-
     Declare @statusMessages varchar(2048) = ''
-
-    Declare @message varchar(512)
 
     Declare @CallingProcName varchar(128)
     Declare @CurrentLocation varchar(128)
     Set @CurrentLocation = 'Start'
+
+    Set @message = ''
+    Set @infoLevel = IsNull(@infoLevel, 0)
+    Set @logProcessorNames= IsNull(@logProcessorNames, 0)
 
     Begin Try
 
@@ -72,9 +74,9 @@ AS
         ---------------------------------------------------
 
         Declare @paramXML xml
-        set @paramXML = @parameters
+        Set @paramXML = @managerStatusXML
 
-        If @debugMode >= 3
+        If @infoLevel >= 3
         Begin
             -- Use some test data
             SET @paramXML ='<Root><Manager><MgrName>TestManager1</MgrName><MgrStatus>Stopped</MgrStatus><LastUpdate>8/20/2009 10:39:21 AM</LastUpdate><LastStartTime>8/20/2009 10:39:20 AM</LastStartTime><CPUUtilization>100.0</CPUUtilization><FreeMemoryMB>490.0</FreeMemoryMB><ProcessID>5555</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool /><Status>No Task</Status><Duration>0.00</Duration><DurationMinutes>0.0</DurationMinutes><Progress>0.00</Progress><CurrentOperation /><TaskDetails><Status>No Task</Status><Job>0</Job><Step>0</Step><Dataset /><MostRecentLogMessage>Closing manager.</MostRecentLogMessage><MostRecentJobInfo /><SpectrumCount>0</SpectrumCount></TaskDetails></Task></Root>
@@ -85,8 +87,8 @@ AS
                             <Root><Manager><MgrName>TestManager6</MgrName><MgrStatus>Running</MgrStatus><LastUpdate>8/20/2009 10:39:30 AM</LastUpdate><LastStartTime>8/19/2009 10:24:32 PM</LastStartTime><CPUUtilization>33.0</CPUUtilization><FreeMemoryMB>1133.0</FreeMemoryMB><ProcessID>6666</ProcessID><RecentErrorMessages><ErrMsg /></RecentErrorMessages></Manager><Task><Tool>Sequest, Step 3</Tool><Status>Running</Status><Duration>12.25</Duration><DurationMinutes>735.0</DurationMinutes><Progress>81.81</Progress><CurrentOperation /><TaskDetails><Status>Running Tool</Status><Job>525236</Job><Step>3</Step><Dataset>PL-1_pro_A_5Aug09_Owl_09-05-10</Dataset><MostRecentLogMessage /><MostRecentJobInfo>Job 525236; Sequest, Step 3; PL-1_pro_A_5Aug09_Owl_09-05-10; 8/19/2009 10:24:32 PM</MostRecentJobInfo><SpectrumCount>44321</SpectrumCount></TaskDetails></Task></Root>'
         End
 
-         ---------------------------------------------------
-        -- temporary table to hold processor status messages
+        ---------------------------------------------------
+        -- Temporary table to hold processor status messages
         ---------------------------------------------------
         --
         CREATE TABLE #TPS (
@@ -118,8 +120,8 @@ AS
 
         CREATE CLUSTERED INDEX #IX_TPS_Processor_Name ON #TPS (Processor_Name)
 
-         ---------------------------------------------------
-        -- load status messages into temp table
+        ---------------------------------------------------
+        -- Load status messages into temp table
         ---------------------------------------------------
         --
         INSERT INTO #TPS( Processor_Name,
@@ -173,27 +175,27 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
         begin
-            set @result = 'Error loading temp table'
+            Set @message = 'Error loading temp table'
             goto Done
-        end
+        End
 
-        If @debugMode > 0
+        If @infoLevel > 0
         Begin
             SELECT *
             FROM #TPS
             ORDER BY Processor_Name
         End
 
-        set @statusMessages = @statusMessages + 'Messages:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + 'Messages:' + convert(varchar(12), @myRowCount)
 
-        If @debugMode IN (2, 4)
+        If @infoLevel IN (2, 4)
             Goto Done
 
 /*
-         ---------------------------------------------------
-        -- update error message column in temp table
+        ---------------------------------------------------
+        -- Update error message column in temp table
         ---------------------------------------------------
         --
         UPDATE #TPS
@@ -208,13 +210,13 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
         begin
-            set @result = 'Error updating temp table'
+            Set @message = 'Error updating temp table'
             goto Done
-        end
+        End
 
-        set @statusMessages = @statusMessages + ', ErrMsg:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + ', ErrMsg:' + convert(varchar(12), @myRowCount)
 
 
 */
@@ -294,13 +296,13 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
         begin
-        set @result = 'Error updating existing rows in status table'
+            Set @message = 'Error updating existing rows in status table'
             goto Done
-        end
+        End
 
-        set @statusMessages = @statusMessages + ', Preserved:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + ', Preserved:' + convert(varchar(12), @myRowCount)
 
          ---------------------------------------------------
         -- Add missing processors to the table
@@ -359,13 +361,13 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
         begin
-            set @result = 'Error updating status table'
+            Set @message = 'Error updating status table'
             goto Done
-        end
+        End
 
-        set @statusMessages = @statusMessages + ', Inserted:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + ', Inserted:' + convert(varchar(12), @myRowCount)
 
         If @logProcessorNames > 0
         Begin
@@ -388,17 +390,21 @@ AS
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
                                 @ErrorNum = @myError output, @message = @message output
 
-        Set @result = @message
+        If @myError = 0
+        Begin
+            Set @myError = 52001
+        End
+
     End Catch
 
      ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
 Done:
-    if @myError = 0
-        set @result = @statusMessages
+    If @myError = 0
+        Set @message = @statusMessages
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_capture_task_manager_and_task_status_xml] TO [DDL_Viewer] AS [dbo]
