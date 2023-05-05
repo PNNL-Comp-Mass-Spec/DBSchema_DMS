@@ -10,6 +10,21 @@ CREATE PROCEDURE [dbo].[manage_job_execution]
 **      Updates parameters to new values for jobs in list
 **      Meant to be called by job control dashboard program
 **
+**      Example contents of @parameters:
+**          <root>
+**            <operation>
+**              <action>priority</action>
+**              <value>5</value>
+**            </operation>
+**            <jobs>
+**              <job>1563493</job>
+**              <job>1563496</job>
+**              <job>1563499</job>
+**            </jobs>
+**          </root>
+**
+**      Allowed values for action: state, priority, group
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -22,11 +37,12 @@ CREATE PROCEDURE [dbo].[manage_job_execution]
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/05/2023 mem - Rename argument @result to @message
 **
 *****************************************************/
 (
     @parameters text = '',
-    @result varchar(4096) output
+    @message varchar(4096) = '' output
 )
 AS
     Set nocount on
@@ -35,7 +51,8 @@ AS
     Declare @myRowCount int = 0
 
     Declare @jobCount int = 0
-    Set @result = ''
+    
+    Set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -44,29 +61,26 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'manage_job_execution', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     ---------------------------------------------------
-    --  Extract parameters from XML input
+    -- Extract parameters from XML input
     ---------------------------------------------------
     --
-    Declare @paramXML xml
-    Set @paramXML = @parameters
+    Declare @paramXML xml = @parameters
 
     ---------------------------------------------------
-    --  get action and value parameters
+    -- Get action and value parameters
     ---------------------------------------------------
 
-    Declare @action varchar(64)
-    Set @action = ''
+    Declare @action varchar(64) = ''
 
     SELECT @action = xmlNode.value('.', 'nvarchar(64)')
     FROM   @paramXML.nodes('//action') AS R(xmlNode)
 
-    Declare @value varchar(512)
-    Set @value = ''
+    Declare @value varchar(512) = ''
 
     SELECT @value = xmlNode.value('.', 'nvarchar(512)')
     FROM   @paramXML.nodes('//value') AS R(xmlNode)
@@ -87,13 +101,12 @@ AS
     --
     If @myError <> 0
     Begin
-        Set @result = 'Error populating temporary job table'
-        return 51007
+        Set @message = 'Error populating temporary job table'
+        Return 51007
     End
 
     Set @jobCount = @myRowCount
-
-
+    
     ---------------------------------------------------
     -- Set up default arguments
     -- for calling update_analysis_jobs
@@ -109,13 +122,12 @@ AS
     Declare @assignedProcessor varchar(64)          = @noChangeText
     Declare @associatedProcessorGroup varchar(64)   = @noChangeText
     Declare @propagationMode varchar(24)            = @noChangeText
-    Declare @paramFileName varchar(255)              = @noChangeText
+    Declare @paramFileName varchar(255)             = @noChangeText
     Declare @settingsFileName varchar(255)          = @noChangeText
     Declare @organismName varchar(128)              = @noChangeText
     Declare @protCollNameList varchar(4000)         = @noChangeText
     Declare @protCollOptionsList varchar(256)       = @noChangeText
     Declare @mode varchar(12)                       = 'update'
-    Declare @message varchar(512)                   = ''
     Declare @callingUser varchar(128)               = ''
 
     ---------------------------------------------------
@@ -142,7 +154,7 @@ AS
         If @value = 'Reset'
         Begin
             -- Reset
-            -- For a reset, we still just Set the DMS state to "New"
+            -- For a reset, we still just set the DMS state to "New"
             -- If the job was failed in the broker, it will get reset
             -- If it was on hold, then it will resume
             SELECT @state = AJS_name
@@ -185,31 +197,30 @@ AS
         @callingUser,
         @disableRaiseError=1
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Report success or error
     ---------------------------------------------------
 
     If @myError <> 0
     Begin
         If IsNull(@message, '') <> ''
-            Set @result = 'Error: ' + @message + '; '
+            Set @message = 'Error: ' + @message + '; '
         Else
-            Set @result = 'Unknown error calling update_analysis_jobs_work; '
+            Set @message = 'Unknown error calling update_analysis_jobs_work; '
     End
     Else
     Begin
-        Set @result = @message
-
-        If IsNull(@result, '') = ''
+        If IsNull(@message, '') = ''
         Begin
-            Set @result = 'Empty message returned by update_analysis_jobs_work.  '
-            Set @result = @result + 'The action was "' + @action + '".  '
-            Set @result = @result + 'The value was "' + @value + '".  '
-            Set @result = @result + 'There were ' + convert(varchar(12), @jobCount) + ' jobs in the list: '
+            Set @message = 'Empty message returned by update_analysis_jobs_work.  '
+            Set @message = @message + 'The action was "' + @action + '".  '
+            Set @message = @message + 'The value was "' + @value + '".  '
+            Set @message = @message + 'There were ' + convert(varchar(12), @jobCount) + ' jobs in the list: '
         End
     End
 
-    return @myError
+    Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[manage_job_execution] TO [DDL_Viewer] AS [dbo]

@@ -7,12 +7,25 @@ CREATE PROCEDURE [dbo].[manage_job_execution]
 /****************************************************
 **
 **  Desc:
-**   Updates parameters to new values for jobs in list
-**   Meant to be called by job control dashboard program
+**      Updates parameters to new values for jobs in list
+**      Meant to be called by job control dashboard program
+**
+**      Example contents of @parameters:
+**          <root>
+**            <operation>
+**              <action>priority</action>
+**              <value>5</value>
+**            </operation>
+**            <jobs>
+**              <job>1563493</job>
+**              <job>1563496</job>
+**              <job>1563499</job>
+**            </jobs>
+**          </root>
+**
+**      Allowed values for action: state, priority, group
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   grk
 **          05/08/2009 grk - Initial release
@@ -22,23 +35,20 @@ CREATE PROCEDURE [dbo].[manage_job_execution]
 **          06/01/2015 mem - Removed support for option @action = 'group' because we have deprecated processor groups
 **          02/15/2016 mem - Added back support for @action = 'group'
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/05/2023 mem - Rename argument @result to @message
 **
 *****************************************************/
 (
     @parameters text = '',
-    @result varchar(4096) output
+    @message varchar(4096) = '' output
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @result = ''
-
-    Declare @message varchar(512)
+    Set @message = ''
 
     Declare @priority varchar(12)
     Declare @NewPriority int
@@ -48,30 +58,25 @@ AS
     Declare @JobUpdateCount int
 
     ---------------------------------------------------
-    ---------------------------------------------------
-    --  Extract parameters from XML input
-    ---------------------------------------------------
+    -- Extract parameters from XML input
     ---------------------------------------------------
 
-    declare @paramXML xml
---  set @paramXML = '<root> <operation> <action>priority</action> <value>3</value> </operation> <jobs> <job>245023</job> <job>304378</job> <job>305663</job> <job>305680</job> <job>305689</job> <job>305696</job> <job>121917</job> <job>305677</job> <job>305692</job> <job>305701</job> </jobs> </root>'
-    set @paramXML = @parameters
+    Declare @paramXML xml
+
+    Set @paramXML = @parameters
 
     ---------------------------------------------------
-    --  get action and value parameters
+    -- Get action and value parameters
     ---------------------------------------------------
-    declare @action varchar(64)
-    set @action = ''
 
-    SELECT
-    @action = xmlNode.value('.', 'nvarchar(64)')
+    Declare @action varchar(64) = ''
+
+    SELECT @action = xmlNode.value('.', 'nvarchar(64)')
     FROM   @paramXML.nodes('//action') AS R(xmlNode)
 
-    declare @value varchar(512)
-    set @value = ''
+    Declare @value varchar(512) = ''
 
-    SELECT
-    @value = xmlNode.value('.', 'nvarchar(512)')
+    SELECT @value = xmlNode.value('.', 'nvarchar(512)')
     FROM   @paramXML.nodes('//value') AS R(xmlNode)
 
     ---------------------------------------------------
@@ -82,32 +87,30 @@ AS
         Job int
     )
 
-    INSERT INTO #Tmp_JobList
-    (Job)
-    SELECT
-        xmlNode.value('.', 'nvarchar(12)') Job
+    INSERT INTO #Tmp_JobList (Job)
+    Select xmlNode.value('.', 'nvarchar(12)') Job
     FROM   @paramXML.nodes('//job') AS R(xmlNode)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @result = 'Error populating temporary job table'
-        return 51007
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Error populating temporary job table'
+        Return 51007
+    End
 
     ---------------------------------------------------
     -- See if Priority or Processor Group needs to be updated
     ---------------------------------------------------
 
-    if(@action = 'priority')
-    begin
+    If (@action = 'priority')
+    Begin
         ---------------------------------------------------
         -- Immediately update priorities for jobs
         ---------------------------------------------------
         --
 
-        set @priority = @value
+        Set @priority = @value
         Set @NewPriority = Cast(@priority as int)
 
         Set @JobUpdateCount = 0
@@ -129,11 +132,11 @@ AS
             execute post_log_entry 'Normal', @message, 'manage_job_execution'
             Set @message = ''
         End
-    end
+    End
 
-    if(@action = 'group')
-    begin
-        set @associatedProcessorGroup = @value
+    If (@action = 'group')
+    Begin
+        Set @associatedProcessorGroup = @value
 
         If @associatedProcessorGroup = ''
         Begin
@@ -166,10 +169,10 @@ AS
             ---------------------------------------------------
             Set @myError = 0
         End
-    end
+    End
 
-    if(@action = 'state')
-    begin
+    If (@action = 'state')
+    Begin
         If @value = 'Hold'
         Begin
             ---------------------------------------------------
@@ -183,16 +186,16 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
         End
-    end
+    End
 
 
     ---------------------------------------------------
-    --  Call s_manage_job_execution to update the primary DMS DB
+    -- Call s_manage_job_execution to update the primary DMS DB
     ---------------------------------------------------
 
-    exec @myError = s_manage_job_execution @parameters, @result output
+    exec @myError = s_manage_job_execution @parameters, @message output
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[manage_job_execution] TO [DDL_Viewer] AS [dbo]
