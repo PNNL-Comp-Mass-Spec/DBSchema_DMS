@@ -34,11 +34,13 @@ CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/04/2023 mem - Rename procedure arguments from @parameters, @result, and @debugMode to @managerStatusXML, @infoLevel, and @message
+**                         - Add argument @logProcessorNames
 **
 *****************************************************/
 (
     @managerStatusXML text = '',
     @infoLevel tinyint = 0,             -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @managerStatusXML, use test data, and update tables, 4 to ignore @managerStatusXML, use test data, and not update tables
+    @logProcessorNames tinyint = 0,     -- 1 to log the names of updated processors (in T_Log_Entries)
     @message varchar(4096) output
 )
 AS
@@ -55,6 +57,8 @@ AS
 
     Set @message = ''
     Set @infoLevel = IsNull(@infoLevel, 0)
+    Set @logProcessorNames= IsNull(@logProcessorNames, 0)
+    
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
@@ -458,6 +462,19 @@ AS
 
         Set @statusMessages = @statusMessages + ', InsertedB:' + Cast(@myRowCount as varchar(12))
 
+        If @logProcessorNames > 0
+        Begin
+
+            Declare @updatedProcessors varchar(4000) = null
+
+            SELECT @updatedProcessors = Coalesce(@updatedProcessors + ', ' + Processor_Name, Processor_Name)
+            FROM #TPS
+            ORDER BY Processor_Name
+
+            Declare @logMessage varchar(4000) = @statusMessages + ', processors ' + @updatedProcessors
+
+            Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
+        End
 
     End Try
     Begin Catch
