@@ -7,13 +7,19 @@ CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 /****************************************************
 **
 **  Desc:
-**  Accepts mixed list of locations and containers,
-**  makes new containers for locations, and returns
-**  consolidated list
+**      Examines the list of containers and/or locations in _containerList
+**      For items that are locations, creates a new container by calling add_update_material_container
+**      Returns a consolidated list of container names
+**
+**  Arguments:
+**    @containerList        Input / Output: Comma separated list of locations and containers (can be a mix of both)
+**    @comment              Comment
+**    @type                 Container type: 'Box', 'Bag', or 'Wellplate'
+**    @researcher           Researcher name; supports 'Zink, Erika M (D3P704)' or simply 'D3P704'
+**    @mode                 Typically 'add' or 'create'
+**                          However, if @mode is 'verify_only', will populate a temporary table with items in @containerList, then will exit the procedure without making any changes
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   grk
 **          04/27/2010 grk - initial release
@@ -21,6 +27,7 @@ CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/04/2023 mem - Use TOP 1 when retrieving the next item to process
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2010, Battelle Memorial Institute
@@ -37,10 +44,8 @@ CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     set @message = ''
 
@@ -64,25 +69,26 @@ AS
     SELECT Item, 0, 0 FROM dbo.make_table_from_list(@ContainerList)
 
     ---------------------------------------------------
-    -- mark list items as either container or location
+    -- Mark list items as either container or location
     ---------------------------------------------------
     --
     UPDATE #TL
-    SET IsContainer = 1, Container = Item
-    FROM
-    #TL INNER JOIN
-    T_Material_Containers ON Item = Tag
+    SET IsContainer = 1,
+        Container = Item
+    FROM #TL
+         INNER JOIN T_Material_Containers
+           ON Item = Tag
 
     UPDATE #TL
     SET IsLocation = 1
-    FROM
-    #TL INNER JOIN
-    T_Material_Locations ON Item = Tag
+    FROM #TL
+         INNER JOIN T_Material_Locations
+           ON Item = Tag
 
 --SELECT CONVERT(VARCHAR(10), IsContainer) AS C, CONVERT(VARCHAR(10), IsLocation) AS L, CONVERT(VARCHAR(32), Item) AS Item, Container FROM #TL
 
     ---------------------------------------------------
-    -- quick check of list
+    -- Quick check of list
     ---------------------------------------------------
     --
     DECLARE @s VARCHAR(MAX)
@@ -104,17 +110,22 @@ AS
     DECLARE @item VARCHAR(64)
     DECLARE @Container varchar(128)
     --
-    DECLARE @done tinyint
-    SET @done = 0
+    DECLARE @done tinyint = 0
+
     WHILE @done = 0
     BEGIN
-        SET @item = ''
-        SELECT @item = Item FROM #TL WHERE IsLocation > 0
+        SELECT TOP 1 @item = Item
+        FROM #TL
+        WHERE IsLocation > 0
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        IF @item = ''
-            SET @done = 1
-        ELSE
-        BEGIN
+        If @myRowCount = 0
+        Begin
+            Set @done = 1
+        End
+        Else
+        Begin
             /**/
             SET @Container = '(generate name)'
             EXEC @myError = add_update_material_container
@@ -135,11 +146,11 @@ AS
             UPDATE #TL
             SET Container = @Container, IsContainer = 1, IsLocation = 0
             WHERE Item = @item
-        END
+        End
     END
 
     ---------------------------------------------------
-    -- make consolidated list of containers
+    -- Make consolidated list of containers
     ---------------------------------------------------
     --
     SET @s = ''
@@ -156,7 +167,8 @@ AS
 
         Exec post_log_entry 'Error', @message, 'assure_material_containers_exist'
     END CATCH
-    return @myError
+
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[assure_material_containers_exist] TO [DDL_Viewer] AS [dbo]
