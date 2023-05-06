@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 130 ******/
+/****** RowCount: 131 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -35,6 +35,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Broad-Standard',10,'Datasets acquired 
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Bruker-Advance',50,'Bruker Advance LC',0,'Other',0,'1/31/2012 12:15:48 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Acetylome-2hr',121,'Dionex LC, 2 hr separation',1,'LC-Acetylome',1,'8/11/2021 9:18:52 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_100min',87,'Dionex LC, formic acid, 100 minute separation',1,'LC-Formic_100min',1,'12/11/2014 3:31:52 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_1hr',132,'Dionex LC, formic acid, 1 hr separation',1,'LC-Formic_1hr',1,'5/4/2023 8:47:02 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_2hr',117,'Dionex LC, formic acid, 2 hr separation',1,'LC-Formic_2hr',1,'10/9/2020 10:49:32 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_30min',115,'Dionex LC, formic acid, 30 minute separation',1,'LC-Formic_30min',1,'2/27/2020 10:00:00 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-Formic_3hr',104,'Dionex LC, formic acid, 180 minute (3 hr) separation',1,'LC-Formic_3hr',1,'8/31/2017 4:34:20 PM')
