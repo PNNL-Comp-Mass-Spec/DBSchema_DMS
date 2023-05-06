@@ -23,7 +23,7 @@ CREATE PROCEDURE [dbo].[delete_data_package]
 **          01/05/2023 mem - Use new column names in V_Data_Package_Detail_Report
 **          01/20/2023 mem - Use new column names in V_Data_Package_Detail_Report
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          05/04/2023 mem - Fix bug using @myRowCount instead of @datasetOrExperimentCount
+**          05/04/2023 mem - Fix bug that used @myRowCount instead of @datasetOrExperimentCount
 **
 *****************************************************/
 (
