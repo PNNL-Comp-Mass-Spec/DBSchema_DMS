@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[add_update_data_package]
 /****************************************************
 **
-**  Desc: Adds new or edits existing T_Data_Package
+**  Desc: Adds new or edits existing item in T_Data_Package
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -35,12 +35,11 @@ CREATE PROCEDURE [dbo].[add_update_data_package]
 **          11/19/2020 mem - Add @dataDOI and @manuscriptDOI
 **          07/05/2022 mem - Include the data package ID when logging errors
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/10/2023 mem - Update warning messages
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @id int output,                -- Data Package ID
+    @id int output,                      -- Data Package ID
     @name varchar(128),
     @packageType varchar(128),
     @description varchar(2048),
@@ -54,23 +53,23 @@ CREATE PROCEDURE [dbo].[add_update_data_package]
     @manuscriptDOI varchar(255),
     @prismWikiLink varchar(1024) output,
     @creationParams varchar(4096) output,
-    @mode varchar(12) = 'add', -- or 'update'
+    @mode varchar(12) = 'add',          -- 'add' or 'update'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
     Declare @currentID int
-    Declare @teamCurrent varchar(64)
+    Declare @currentTeam varchar(64)
     Declare @teamChangeWarning varchar(256)
     Declare @pkgFileFolder varchar(256)
 
-    set @teamChangeWarning = ''
-    set @message = ''
+    Set @teamChangeWarning = ''
+    Set @message = ''
 
     Declare @logErrors tinyint = 0
 
@@ -98,32 +97,32 @@ AS
 
     If @team = ''
     Begin
-        set @message = 'Data package team cannot be blank'
+        Set @message = 'Data package team cannot be blank'
         RAISERROR (@message, 10, 1)
-        return 51005
+        Return 51005
     End
 
     If @packageType = ''
     Begin
-        set @message = 'Data package type cannot be blank'
+        Set @message = 'Data package type cannot be blank'
         RAISERROR (@message, 10, 1)
-        return 51006
+        Return 51006
     End
 
     -- Make sure the team name is valid
     If Not Exists (SELECT * FROM T_Data_Package_Teams WHERE Team_Name = @team)
     Begin
-        set @message = 'Teams "' + @team + '" is not a valid data package team'
+        Set @message = 'Invalid data package team: ' + @team
         RAISERROR (@message, 10, 1)
-        return 51007
+        Return 51007
     End
 
     -- Make sure the data package type is valid
     If Not Exists (SELECT * FROM T_Data_Package_Type WHERE Name = @packageType)
     Begin
-        set @message = 'Type "' + @packageType + '" is not a valid data package type'
+        Set @message = 'Invalid data package type: ' + @packageType
         RAISERROR (@message, 10, 1)
-        return 51008
+        Return 51008
     End
 
     ---------------------------------------------------
@@ -142,50 +141,51 @@ AS
 
     If Not Exists (SELECT * FROM T_Data_Package_State WHERE [Name] = @state)
     Begin
-        set @message = 'Invalid state: ' + @state
-        RAISERROR (@message, 11, 32)
+        Set @message = 'Invalid state: ' + @state
+        RAISERROR (@message, 10, 32)
+        Return 51009
     End
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
 
-    if @mode = 'update'
-    begin
+    If @mode = 'update'
+    Begin
         -- cannot update a non-existent entry
         --
-        set @currentID = 0
+        Set @currentID = 0
         --
         SELECT @currentID = ID,
-               @teamCurrent = Path_Team
+               @currentTeam = Path_Team
         FROM T_Data_Package
         WHERE (ID = @id)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0 OR @currentID = 0
-        begin
-            set @message = 'No entry could be found in database for update'
-            RAISERROR (@message, 10, 1)
-            return 51009
-        end
-
-        -- Warn if the user is changing the team
-        If IsNull(@teamCurrent, '') <> ''
+        If @myError <> 0 OR @currentID = 0
         Begin
-            If @teamCurrent <> @team
-                Set @teamChangeWarning = 'Warning: Team changed from "' + @teamCurrent + '" to "' + @team + '"; the data package files will need to be moved from the old location to the new one'
+            Set @message = 'Data package ID ' + Cast(@id as varchar(12)) + ' does not exist; cannot update'
+            RAISERROR (@message, 10, 1)
+            Return 51011
         End
 
-    end -- mode update
+        -- Warn if the user is changing the team
+        If IsNull(@currentTeam, '') <> '' And @currentTeam <> @team
+        Begin
+            Set @teamChangeWarning = 'Warning: Team changed from "' + @currentTeam + '" to "' + @team + '"; the data package files will need to be moved from the old location to the new one'
+        End
+
+    End
 
     Set @logErrors = 1
 
     ---------------------------------------------------
-    -- action for add mode
+    -- Action for add mode
     ---------------------------------------------------
+
     If @mode = 'add'
-    begin
+    Begin
 
         If @name Like '%&%'
         Begin
@@ -198,8 +198,10 @@ AS
                 Else
                     Set @name = Replace(@name, '&', '_and_')
             End
-
-            Set @name = Replace(@name, '&', 'and')
+            Else
+            Begin
+                Set @name = Replace(@name, '&', 'and')
+            End
         End
 
         If @name Like '%;%'
@@ -211,9 +213,9 @@ AS
         -- Make sure the data package name doesn't already exist
         If Exists (SELECT * FROM T_Data_Package WHERE Name = @name)
         Begin
-            set @message = 'Data package name "' + @name + '" already exists; cannot create an identically named data package'
+            Set @message = 'Data package "' + @name + '" already exists; cannot create an identically named data package'
             RAISERROR (@message, 10, 1)
-            return 51010
+            Return 51011
         End
 
         INSERT INTO T_Data_Package (
@@ -252,23 +254,23 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Insert operation failed'
+        If @myError <> 0
+        Begin
+            Set @message = 'Insert operation failed'
             RAISERROR (@message, 10, 1)
-            return 51011
-        end
+            Return 51011
+        End
 
-        -- return ID of newly created entry
+        -- Return ID of newly created entry
         --
-        set @id = IDENT_CURRENT('T_Data_Package')
+        Set @id = IDENT_CURRENT('T_Data_Package')
 
         ---------------------------------------------------
         -- data package folder and wiki page auto naming
         ---------------------------------------------------
         --
-        set @pkgFileFolder = dbo.make_package_folder_name(@id, @name)
-        set @prismWikiLink = dbo.make_prismwiki_page_link(@id, @name)
+        Set @pkgFileFolder = dbo.make_package_folder_name(@id, @name)
+        Set @prismWikiLink = dbo.make_prismwiki_page_link(@id, @name)
         --
         UPDATE T_Data_Package
         SET
@@ -278,22 +280,22 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Updating package folder name failed'
+        If @myError <> 0
+        Begin
+            Set @message = 'Updating package folder name failed'
             RAISERROR (@message, 10, 1)
-            return 51012
-        end
+            Return 51012
+        End
 
-    end -- add mode
+    End
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
-    --
-    if @mode = 'update'
-    begin
-        set @myError = 0
+
+    If @mode = 'update'
+    Begin
+        Set @myError = 0
         --
         UPDATE T_Data_Package
         SET
@@ -314,29 +316,30 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Update operation failed for ID "' + Convert(varchar(12), @id) + '"'
+        If @myError <> 0
+        Begin
+            Set @message = 'Update operation failed for ID "' + Convert(varchar(12), @id) + '"'
             RAISERROR (@message, 10, 1)
-            return 51013
-        end
+            Return 51013
+        End
 
-    end -- update mode
+    End
 
     ---------------------------------------------------
     -- Create the data package folder when adding a new data package
     ---------------------------------------------------
-    if @mode = 'add'
+
+    If @mode = 'add'
+    Begin
         exec @myError = make_data_package_storage_folder @id, @mode, @message=@message output, @callingUser=@callingUser
+    End
 
     If @teamChangeWarning <> ''
     Begin
         If IsNull(@message, '') <> ''
-            Set @message = @message + '; '
+            Set @message = @message + '; ' + @teamChangeWarning
         Else
-            Set @message = ': '
-
-        Set @message = @message + @teamChangeWarning
+            Set @message = @teamChangeWarning
     End
 
     ---------------------------------------------------
@@ -366,7 +369,7 @@ AS
 
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_data_package] TO [DDL_Viewer] AS [dbo]
