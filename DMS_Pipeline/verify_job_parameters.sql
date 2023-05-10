@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[verify_job_parameters]
 **          04/11/2022 mem - Use varchar(4000) when populating temporary tables
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Add support for DiaNN
+**          05/10/2023 mem - Do not update @protCollOptionsList when using a legacy FASTA file
 **
 *****************************************************/
 (
@@ -46,6 +47,7 @@ AS
     Declare @protCollOptionsList varchar(256) = ''
     Declare @organismName varchar(128) = ''
     Declare @organismDBName varchar(255) = ''    -- Aka legacy FASTA file
+    Declare @usingLegacyFASTA tinyint = 0
 
     Declare @paramFileType varchar(64) = ''
     Declare @paramFileValid tinyint
@@ -189,9 +191,18 @@ AS
         FROM #TJP
         WHERE Name = 'LegacyFastaFileName'
 
-        Set @protCollNameList = LTrim(RTrim(IsNull(@protCollNameList, '')))
+        Set @protCollNameList    = LTrim(RTrim(IsNull(@protCollNameList, '')))
+        Set @protCollOptionsList = LTrim(RTrim(IsNull(@protCollOptionsList, '')))
+        Set @organismDBName      = LTrim(RTrim(IsNull(@organismDBName, '')))
 
-        If ISNULL(@protCollOptionsList, '') = ''
+        If @organismDBName <> '' And
+           dbo.validate_na_parameter(@protCollNameList) = 'na' And
+           dbo.validate_na_parameter(@protCollOptionsList) = 'na'
+        Begin
+            Set @usingLegacyFASTA = 1
+        End
+
+        If @protCollOptionsList = '' And @usingLegacyFASTA = 0
         Begin
             If @scriptBaseName In ('MaxQuant', 'DiaNN')
                 Set @protCollOptionsList = 'seq_direction=forward,filetype=fasta'
@@ -199,7 +210,7 @@ AS
                 Set @protCollOptionsList = 'seq_direction=decoy,filetype=fasta'
         End
 
-        If @scriptBaseName In ('MaxQuant', 'DiaNN') And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta'
+        If @scriptBaseName In ('MaxQuant', 'DiaNN') And @protCollOptionsList <> 'seq_direction=forward,filetype=fasta' And @usingLegacyFASTA = 0
         Begin
             Set @message = 'The ProteinOptions parameter must be "seq_direction=forward,filetype=fasta" for ' + @scriptBaseName + ' jobs'
             Set @myError = 50103
@@ -207,7 +218,7 @@ AS
             return @myError
         End
 
-        If @scriptBaseName = 'MSFragger' And @protCollOptionsList <> 'seq_direction=decoy,filetype=fasta'
+        If @scriptBaseName = 'MSFragger' And @protCollOptionsList <> 'seq_direction=decoy,filetype=fasta' And @usingLegacyFASTA = 0
         Begin
             Set @message = 'The ProteinOptions parameter must be "seq_direction=decoy,filetype=fasta" for MSFragger jobs'
             Set @myError = 50104
@@ -299,7 +310,6 @@ AS
     End
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[verify_job_parameters] TO [DDL_Viewer] AS [dbo]
