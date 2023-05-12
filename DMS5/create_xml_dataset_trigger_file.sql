@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[create_xml_dataset_trigger_file]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Look for '..\' at the start of @capture_Subfolder
 **                         - Use new XML element names
+**          05/12/2023 bcg - Fix too many double quotes on the XML 'Capture Share Name' line
 **
 *****************************************************/
 (
@@ -163,7 +164,7 @@ set nocount on
     set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Dataset Name" Value="' +            dbo.xml_quote_check(@dataset_Name) + '" />' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Experiment Name" Value="' +         dbo.xml_quote_check(@experiment_Name) + '" />' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Instrument Name" Value="' +         dbo.xml_quote_check(@instrument_Name) + '" />' + @newLine
-    set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Capture Share Name" Value=""' +     dbo.xml_quote_check(@captureShareName) + '" />' + @newLine
+    set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Capture Share Name" Value="' +      dbo.xml_quote_check(@captureShareName) + '" />' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Capture Subdirectory" Value="' +    dbo.xml_quote_check(@captureSubdirectory) + '" />' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="Separation Type" Value="' +         dbo.xml_quote_check(@separation_Type) + '" />' + @newLine
     set @tmpXmlLine = @tmpXmlLine + '  <Parameter Name="LC Cart Name" Value="' +            dbo.xml_quote_check(@lc_Cart_Name) + '" />' + @newLine
