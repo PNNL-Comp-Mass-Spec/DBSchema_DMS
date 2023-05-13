@@ -35,7 +35,7 @@ CREATE PROCEDURE [dbo].[add_update_data_package]
 **          11/19/2020 mem - Add @dataDOI and @manuscriptDOI
 **          07/05/2022 mem - Include the data package ID when logging errors
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          05/10/2023 mem - Update warning messages
+**          05/10/2023 mem - Reword warning messages
 **
 *****************************************************/
 (
