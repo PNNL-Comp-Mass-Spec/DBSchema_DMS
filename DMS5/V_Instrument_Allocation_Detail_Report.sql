@@ -3,27 +3,26 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Instrument_Allocation_Detail_Report]
 AS
-SELECT PivotQ.FY_Proposal,
-       PivotQ.Fiscal_Year AS [Fiscal Year],
-       PivotQ.Proposal_ID,
-       PivotQ.[FT]  AS [FT Hours],
-       CommentQ.FT  AS [FT Comment],
-       PivotQ.[IMS] AS [IMS Hours],
-       CommentQ.IMS AS [IMS Comment],
-       PivotQ.[ORB] AS [Orbitrap Hours],
-       CommentQ.ORB AS [Orbi Comment],
-       PivotQ.[EXA] AS [Exactive Hours],
-       CommentQ.EXA AS [Exactive Comment],
-       PivotQ.[LTQ] AS [LTQ Hours],
-       CommentQ.LTQ AS [LTQ Comment],
-       PivotQ.[GC]  AS [GC Hours],
-       CommentQ.GC  AS [GC Comment],
-       PivotQ.[QQQ] AS [QQQ Hours],
-       CommentQ.QQQ AS [QQQ Comment],
-       UpdatedQ.Last_Updated
+SELECT PivotQ.fy_proposal,
+       PivotQ.Fiscal_Year AS fiscal_year,
+       PivotQ.proposal_id,
+       PivotQ.[FT]  AS ft_hours,
+       CommentQ.FT  AS ft_comment,
+       PivotQ.[IMS] AS ims_hours,
+       CommentQ.IMS AS ims_comment,
+       PivotQ.[ORB] AS orbitrap_hours,
+       CommentQ.ORB AS orbi_comment,
+       PivotQ.[EXA] AS exactive_hours,
+       CommentQ.EXA AS exactive_comment,
+       PivotQ.[LTQ] AS ltq_hours,
+       CommentQ.LTQ AS ltq_comment,
+       PivotQ.[GC]  AS gc_hours,
+       CommentQ.GC  AS gc_comment,
+       PivotQ.[QQQ] AS qqq_hours,
+       CommentQ.QQQ AS qqq_comment,
+       UpdatedQ.last_updated
 FROM ( SELECT FY_Proposal,
               Fiscal_Year,
               Proposal_ID,
