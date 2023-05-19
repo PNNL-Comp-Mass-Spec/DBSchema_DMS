@@ -50,7 +50,8 @@ CREATE PROCEDURE [dbo].[update_data_package_items_utility]
 **          01/04/2023 mem - Update to use S_V_Biomaterial_List_Report_2
 **          02/08/2023 bcg - Update to use S_V_Experiment_Biomaterial
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          04/04/2023 mem - Do not add data package placeholder datasets (e.g. dataset DataPackage_3442_TestData)
+**          04/04/2023 mem - When adding datasets, do not add data package placeholder datasets (e.g. dataset DataPackage_3442_TestData)
+**          05/19/2023 mem - When adding analysis jobs, do not add data package placeholder datasets
 **
 *****************************************************/
 (
@@ -168,13 +169,13 @@ AS
 
             End
 
-            If Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset' And Identifier Like 'DataPackage[_][0-9][0-9]%')
+            If Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset' And Identifier LIKE 'DataPackage[_][0-9][0-9]%')
             Begin
                 Set @datasetsRemoved = ''
 
                 SELECT @datasetsRemoved = @datasetsRemoved + Identifier + ', '
                 FROM #TPI
-                WHERE [Type] = 'Dataset' And Identifier Like 'DataPackage[_][0-9][0-9]%'
+                WHERE [Type] = 'Dataset' And Identifier LIKE 'DataPackage[_][0-9][0-9]%'
                 ORDER BY Identifier
 
                 Set @datasetsRemoved = Rtrim(@datasetsRemoved)
@@ -186,7 +187,7 @@ AS
                 End
 
                 DELETE FROM #TPI
-                WHERE [Type] = 'Dataset' And Identifier Like 'DataPackage[_][0-9][0-9]%'
+                WHERE [Type] = 'Dataset' And Identifier LIKE 'DataPackage[_][0-9][0-9]%'
 
                 Set @actionMsg = 'Data packages cannot include placeholder data package datasets; removed "' + @datasetsRemoved + '"';
                 Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
@@ -197,8 +198,8 @@ AS
         -- Add parent items and associated items to list for items in the list
         -- This process cascades up the DMS hierarchy of tracking entities, but not down
         --
-        IF @mode = 'add'
-        BEGIN -- <add_associated_items>
+        If @mode = 'add'
+        Begin -- <add_associated_items>
 
             -- Add datasets to list that are parents of jobs in the list
             -- (and are not already in the list)
@@ -216,7 +217,8 @@ AS
                     SELECT *
                     FROM #TPI
                     WHERE #TPI.[Type] = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.DataPackageID = J.DataPackageID
-                )
+                ) AND
+                NOT TX.Dataset LIKE 'DataPackage[_][0-9][0-9]%'
 
             -- Add experiments to list that are parents of datasets in the list
             -- (and are not already in the list)
@@ -276,7 +278,7 @@ AS
                     WHERE #TPI.[Type] = 'Biomaterial' AND #TPI.Identifier = TX.Biomaterial_Name AND #TPI.DataPackageID = TP.DataPackageID
                 )
 
-        END -- </add_associated_items>
+        End -- </add_associated_items>
 
 
         If @mode = 'delete' And @removeParents > 0
@@ -446,8 +448,8 @@ AS
         -- Biomaterial operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
-        BEGIN -- <delete biomaterial>
+        If @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
+        Begin -- <delete biomaterial>
             If @infoOnly > 0
             Begin
                 SELECT 'Biomaterial to delete' AS Biomaterial_Msg, Target.*
@@ -475,13 +477,13 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </delete biomaterial>
+        End -- </delete biomaterial>
 
-        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
-        BEGIN -- <comment biomaterial>
+        If @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
+        Begin -- <comment biomaterial>
             If @infoOnly > 0
             Begin
-                SELECT 'Update Biomaterial comment' AS Item_Type,
+                SELECT 'Update biomaterial comment' AS Item_Type,
                        @comment AS New_Comment, *
                 FROM T_Data_Package_Biomaterial Target
                      INNER JOIN #TPI
@@ -508,10 +510,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </comment biomaterial>
+        End -- </comment biomaterial>
 
-        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
-        BEGIN -- <add biomaterial>
+        If @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Biomaterial')
+        Begin -- <add biomaterial>
 
             -- Delete extras
             DELETE #TPI
@@ -573,14 +575,14 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </add biomaterial>
+        End -- </add biomaterial>
 
         ---------------------------------------------------
         -- EUS Proposal operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
-        BEGIN -- <delete EUS Proposals>
+        If @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
+        Begin -- <delete EUS Proposals>
             If @infoOnly > 0
             Begin
                 SELECT 'EUS Proposal to delete' AS EUS_Proposal_Msg, Target.*
@@ -608,10 +610,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </delete EUS Proposal>
+        End -- </delete EUS Proposal>
 
-        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
-        BEGIN -- <comment EUS Proposals>
+        If @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
+        Begin -- <comment EUS Proposals>
             If @infoOnly > 0
             Begin
                 SELECT 'Update EUS Proposal comment' AS Item_Type,
@@ -642,10 +644,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </comment EUS Proposals>
+        End -- </comment EUS Proposals>
 
-        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
-        BEGIN -- <add EUS Proposals>
+        If @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'EUSProposal')
+        Begin -- <add EUS Proposals>
 
             -- Delete extras
             DELETE #TPI
@@ -691,14 +693,14 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </add EUS Proposals>
+        End -- </add EUS Proposals>
 
         ---------------------------------------------------
         -- Experiment operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
-        BEGIN -- <delete experiments>
+        If @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
+        Begin -- <delete experiments>
             If @infoOnly > 0
             Begin
                 SELECT 'Experiment to delete' AS Experiment_Msg, Target.*
@@ -727,10 +729,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </delete experiments>
+        End -- </delete experiments>
 
-        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
-        BEGIN -- <comment experiments>
+        If @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
+        Begin -- <comment experiments>
             If @infoOnly > 0
             Begin
                 SELECT 'Update Experiment comment' AS Item_Type,
@@ -762,10 +764,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </comment experiments>
+        End -- </comment experiments>
 
-        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
-        BEGIN -- <add experiments>
+        If @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Experiment')
+        Begin -- <add experiments>
 
             -- Delete extras
             DELETE #TPI
@@ -822,14 +824,14 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </add experiments>
+        End -- </add experiments>
 
         ---------------------------------------------------
         -- Dataset operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
-        BEGIN -- <delete datasets>
+        If @mode = 'delete' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
+        Begin -- <delete datasets>
             If @infoOnly > 0
             Begin
                 SELECT 'Dataset to delete' AS Dataset_Msg, Target.*
@@ -858,10 +860,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </delete datasets>
+        End -- </delete datasets>
 
-        IF @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
-        BEGIN -- <comment datasets>
+        If @mode = 'comment' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
+        Begin -- <comment datasets>
             If @infoOnly > 0
             Begin
                 SELECT 'Update Dataset comment' AS Item_Type,
@@ -893,10 +895,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </comment datasets>
+        End -- </comment datasets>
 
-        IF @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
-        BEGIN -- <add datasets>
+        If @mode = 'add' And Exists (SELECT * FROM #TPI WHERE [Type] = 'Dataset')
+        Begin -- <add datasets>
 
             -- Delete extras
             DELETE #TPI
@@ -953,14 +955,14 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </add datasets>
+        End -- </add datasets>
 
         ---------------------------------------------------
         -- Analysis_job operations
         ---------------------------------------------------
 
-        IF @mode = 'delete' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
-        BEGIN -- <delete analysis_jobs>
+        If @mode = 'delete' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
+        Begin -- <delete analysis_jobs>
             If @infoOnly > 0
             Begin
                 SELECT 'Job to delete' AS Job_Msg, *
@@ -986,10 +988,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </delete analysis_jobs>
+        End -- </delete analysis_jobs>
 
-        IF @mode = 'comment' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
-        BEGIN -- <comment analysis_jobs>
+        If @mode = 'comment' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
+        Begin -- <comment analysis_jobs>
             If @infoOnly > 0
             Begin
                 SELECT 'Update Job comment' AS Item_Type,
@@ -1018,10 +1020,10 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </comment analysis_jobs>
+        End -- </comment analysis_jobs>
 
-        IF @mode = 'add' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
-        BEGIN -- <add analysis_jobs>
+        If @mode = 'add' And Exists (SELECT * FROM #Tmp_JobsToAddOrDelete)
+        Begin -- <add analysis_jobs>
 
             -- Delete extras
             DELETE #Tmp_JobsToAddOrDelete
@@ -1074,7 +1076,7 @@ AS
                     Set @message = dbo.append_to_text(@message, @actionMsg, 0, ', ', 512)
                 End
             End
-        END -- </add analysis_jobs>
+        End -- </add analysis_jobs>
 
         ---------------------------------------------------
         -- Update item counts for all data packages in the list
@@ -1159,7 +1161,7 @@ AS
         Declare @msgForLog varchar(512) = ERROR_MESSAGE()
 
         -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         Exec post_log_entry 'Error', @msgForLog, 'update_data_package_items_utility'
