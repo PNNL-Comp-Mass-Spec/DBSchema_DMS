@@ -3,21 +3,20 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Archive_List_Report]
 AS
-SELECT DA.AS_Dataset_ID AS ID,
-       DS.Dataset_Num AS Dataset,
-       InstName.IN_name AS Instrument,
-       DS.DS_created AS Created,
-       DASN.archive_state AS State,
-       AUS.AUS_name AS [Update],
+SELECT DA.AS_Dataset_ID AS id,
+       DS.Dataset_Num AS dataset,
+       InstName.IN_name AS instrument,
+       DS.DS_created AS created,
+       DASN.archive_state AS state,
+       AUS.AUS_name AS [update],
        DA.AS_datetime AS entered,
-       DA.AS_last_update AS Last_Update,
-       DA.AS_last_verify AS Last_Verify,
-       APath.AP_archive_path AS Archive_Path,
-       APath.AP_Server_Name AS Archive_Server,
-	   DA.AS_instrument_data_purged AS Instrument_Data_Purged
+       DA.AS_last_update AS last_update,
+       DA.AS_last_verify AS last_verify,
+       APath.AP_archive_path AS archive_path,
+       APath.AP_Server_Name AS archive_server,
+	   DA.AS_instrument_data_purged AS instrument_data_purged
 FROM dbo.T_Dataset_Archive DA
      INNER JOIN dbo.T_Dataset DS
        ON DA.AS_Dataset_ID = DS.Dataset_ID
