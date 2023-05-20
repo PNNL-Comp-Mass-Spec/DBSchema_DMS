@@ -191,5 +191,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgTOF10',189,'Agilent_TOF_V2',4294
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('15T_FTICR_I',190,'BrukerFT_BAF',4295,4438,'secfso',null,'EMSL 1621','Bruker Solarix 15T with an infinity cell','11/2/2022 11:33:18 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS12-AgQTOF09',191,'IMS_Agilent_TOF_DotD',4399,4439,'secfso',null,'EMSL 1430','Agilent 6560C IM-QTOF; warranty replacement for IMS11_AgQTOF08','3/2/2023 2:43:27 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Ascend01',192,'LTQ_FT',4440,4443,'secfso',null,'BSF 1229','Purchased by Leidos','4/18/2023 12:19:15 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris02',193,'LTQ_FT',4441,2,'secfso',null,'BSF 1229','Exploris 240','4/18/2023 12:19:29 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris02',193,'LTQ_FT',4441,4444,'secfso',null,'BSF 1229','Exploris 240','4/18/2023 12:19:29 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('timsTOFScp01',194,'BrukerTOF_TDF',4442,2,'secfso',null,'EMSL 14??','Bruker timsTOF for single cell proteomics','4/19/2023 4:36:27 PM')
