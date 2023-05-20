@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[auto_add_charge_code_users]
 **          02/17/2022 mem - Tabs to spaces
 **          02/08/2023 bcg - Update view column name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/19/2023 mem - Add missing Else
 **
 *****************************************************/
 (
@@ -139,6 +140,7 @@ AS
                     Set @message = 'User operation DMS_Guest not found in T_User_Operations'
                     Exec post_log_entry 'Error', @message, 'auto_add_charge_code_users'
                 End
+                Else
                 Begin
                     INSERT INTO T_User_Operations_Permissions (U_ID, Op_ID)
                     SELECT DMS_ID, @OperationID
