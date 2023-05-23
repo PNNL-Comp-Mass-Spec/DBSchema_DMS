@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[T_Material_Locations](
 	[Barcode] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Container_Limit] [int] NOT NULL,
-	[Tag]  AS (case when [Freezer_Tag]='QC_Staging' OR [Freezer_Tag]='Phosphopep_Staging' OR [Freezer_Tag]='-80_Staging' OR [Freezer_Tag]='-20_Met_Staging' OR [Freezer_Tag]='-20_Staging_1206' OR [Freezer_Tag]='-20_Staging' OR [Freezer_Tag]='None' then [Freezer_Tag] else ((((((([Freezer_Tag]+'.')+[Shelf])+'.')+[Rack])+'.')+[Row])+'.')+[Col] end) PERSISTED NOT NULL,
+	[Tag]  AS (case when [Freezer_Tag] like '%Staging%' OR [Freezer_Tag]='None' then [Freezer_Tag] else ((((((([Freezer_Tag]+'.')+[Shelf])+'.')+[Rack])+'.')+[Row])+'.')+[Col] end) PERSISTED NOT NULL,
 	[RFID_Hex_ID]  AS (left(concat(CONVERT([varchar](24),CONVERT([varbinary],'ML'+CONVERT([varchar](10),[ID])),(2)),'000000000000000000000000'),(24))) PERSISTED,
  CONSTRAINT [PK_T_Material_Locations] PRIMARY KEY CLUSTERED 
 (
