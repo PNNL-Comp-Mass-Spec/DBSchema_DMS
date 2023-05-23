@@ -10,8 +10,6 @@ CREATE PROCEDURE [dbo].[add_update_material_container]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   grk
 **  Date:   03/20/2008 grk - Initial release
 **          07/18/2008 grk - Added checking for location's container limit
@@ -25,9 +23,8 @@ CREATE PROCEDURE [dbo].[add_update_material_container]
 **          11/11/2019 mem - If @researcher is 'na' or 'none', store an empty string in the Researcher column of T_Material_Containers
 **          07/02/2021 mem - Require that the researcher is a valid DMS user
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/23/2023 mem - Use a Like clause to prevent updating Staging containers
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
     @container varchar(128) output,
@@ -106,7 +103,7 @@ AS
         Return 51002
     End
 
-    If @container In ('na', 'Staging', '-80_Staging', 'Met_Staging')
+    If @container = 'na' Or @container Like '%Staging%'
     Begin
         Set @message = 'The "' + @container + '" container cannot be updated via the website; contact a DMS admin (see add_update_material_container)'
         Return 51003

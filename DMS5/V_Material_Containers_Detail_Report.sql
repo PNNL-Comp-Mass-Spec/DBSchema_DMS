@@ -52,11 +52,10 @@ FROM ( SELECT MC.Tag AS Container,
                               WHERE Entity_Type = 'material_container' AND
                                     Active > 0 AND
                                     -- Exclude the staging containers because they have thousands of items,
-
                                     -- leading to slow query times on the Material Container Detail Report
-
                                     -- when this query looks for a file attachment associated with every container in the staging location
-                                    Entity_ID NOT IN ('na', 'Staging', 'Met_Staging', '-80_Staging')
+                                    Entity_ID <> 'na' AND
+                                    Entity_ID NOT LIKE '%Staging%'
                               GROUP BY Entity_ID
                             ) AS TFA
               ON TFA.Entity_ID = MC.Tag
