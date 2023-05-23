@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Material_Freezers](
 	[Freezer_ID] [int] IDENTITY(10,1) NOT NULL,
 	[Freezer] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Freezer_Tag] [varchar](20) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Freezer_Tag] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Material_Freezers] PRIMARY KEY CLUSTERED 
 (
