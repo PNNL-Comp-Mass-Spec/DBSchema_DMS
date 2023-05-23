@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_admin]
 **          10/23/2020 mem - Allow updating 'fraction' based requests
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/23/2023 mem - Allow deleting requests of type 'auto' or 'fraction'
 **
 *****************************************************/
 (
@@ -148,7 +149,7 @@ AS
         GOTO DoneNoLog
     End
 
-    IF EXISTS (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction'))
+    IF EXISTS (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction') And @mode <> 'Delete')
     Begin
         Set @myError = 51013
         Set @message = 'Cannot change requests that were not entered by user'
