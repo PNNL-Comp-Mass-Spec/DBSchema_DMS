@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[auto_add_charge_code_users]
 **          02/08/2023 bcg - Update view column name
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/19/2023 mem - Add missing Else
+**          05/24/2023 mem - When previewing new users, show charge codes associated with each new user
 **
 *****************************************************/
 (
@@ -52,13 +53,15 @@ AS
         HID varchar(12),
         LastName_FirstName varchar(128),
         Network_ID varchar(12) NULL,
+        Charge_Code_First varchar(12) NULL,
+        Charge_Code_Last varchar(12) NULL,
         DMS_ID int NULL
     )
 
     BEGIN TRY
 
-        INSERT INTO #Tmp_NewUsers (Payroll, HID)
-        SELECT CC.Resp_PRN, MAX(CC.Resp_HID)
+        INSERT INTO #Tmp_NewUsers (Payroll, HID, Charge_Code_First, Charge_Code_Last)
+        SELECT CC.Resp_PRN, MAX(CC.Resp_HID), Min(CC.Charge_Code) AS Charge_Code_First, Max(CC.Charge_Code) AS Charge_Code_Last
         FROM T_Charge_Code CC
              LEFT OUTER JOIN V_Charge_Code_Owner_DMS_User_Map UMap
                ON CC.Charge_Code = UMap.Charge_Code
@@ -158,7 +161,6 @@ AS
 
         End
 
-
     END TRY
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
@@ -170,7 +172,7 @@ AS
         Exec post_log_entry 'Error', @message, 'auto_add_charge_code_users'
     END CATCH
 
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[auto_add_charge_code_users] TO [DDL_Viewer] AS [dbo]
