@@ -239,20 +239,20 @@ AS
     MERGE T_Requested_Run_Batch_Location_History AS t
     USING (SELECT @locationID AS location_id, batch_id FROM #Tmp_BatchIDs) AS s
     ON ( t.batch_id = s.batch_id AND t.location_id = s.location_id )
-    WHEN NOT MATCHED BY TARGET THEN
-        INSERT (batch_id, location_id, first_scan_date)
-        VALUES (s.batch_id, s.location_id, @scanDate)
     WHEN MATCHED AND (t.first_scan_date < @scanDate OR t.last_scan_date IS NULL OR t.last_scan_date < @scanDate) THEN
-        UPDATE
-            SET last_scan_date = CASE
-                                     WHEN t.last_scan_date IS NULL AND @scanDate < t.first_scan_date THEN t.first_scan_date
-                                     WHEN t.last_scan_date IS NULL OR t.last_scan_date < @scanDate THEN @scanDate
-                                     ELSE t.last_scan_date
-                                 END,
-                first_scan_date = CASE
-                                     WHEN @scanDate < t.first_scan_date THEN @scanDate
-                                     ELSE t.first_scan_date
-                                  END;
+        UPDATE SET
+            last_scan_date =  CASE
+                                WHEN t.last_scan_date IS NULL AND @scanDate < t.first_scan_date THEN t.first_scan_date
+                                WHEN t.last_scan_date IS NULL OR t.last_scan_date < @scanDate THEN @scanDate
+                                ELSE t.last_scan_date
+                              END,
+            first_scan_date = CASE
+                                WHEN @scanDate < t.first_scan_date THEN @scanDate
+                                ELSE t.first_scan_date
+                              END
+    WHEN NOT MATCHED THEN
+        INSERT (batch_id, location_id, first_scan_date)
+        VALUES (s.batch_id, s.location_id, @scanDate);
 
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
