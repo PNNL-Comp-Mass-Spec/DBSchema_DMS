@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_batch_location_scan]
 /****************************************************
 **
 **  Desc:
-**      Adds a location scan for one or more requested run batches
+**      Adds a location scan to T_Requested_Run_Batch_Location_History for one or more requested run batches
 **
 **  Arguments:
 **    @locationId           Location ID (row in in t_material_locations)
@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_batch_location_scan]
 **  Auth:   bcg
 **  Date:   05/19/2023 bcg - Initial version
 **          05/23/2023 mem - Add missing error message and additional validation
+**          05/24/2023 mem - Update @message if any batch IDs are unrecognized, but continue processing
 **
 *****************************************************/
 (
@@ -160,8 +161,8 @@ AS
     --
     UPDATE #Tmp_BatchIDs
     SET #Tmp_BatchIDs.Valid = 1
-    FROM T_Requested_Run_Batches rrb
-    WHERE #Tmp_BatchIDs.Batch_ID = rrb.ID
+    FROM T_Requested_Run_Batches RRB
+    WHERE #Tmp_BatchIDs.Batch_ID = RRB.ID
 
     SELECT @matchCount = COUNT(*)
     FROM #Tmp_BatchIDs
@@ -183,25 +184,50 @@ AS
 
     If @matchCount > 0
     Begin
-
-        Declare @invalidIDs varchar(64) = null
+        Declare @invalidIDs varchar(512) = null
 
         SELECT @invalidIDs = Coalesce(@invalidIDs + ', ', '') + BatchIDText
         FROM #Tmp_BatchIDs
         WHERE Valid = 0
+        ORDER BY BatchIDText
 
-        DELETE FROM #Tmp_BatchIDs WHERE Valid = 0
+        Set @message = 'Batch ID list contains ' +
+                       CASE WHEN CharIndex(',', @invalidIDs) > 0 
+                            THEN 'batch IDs that do not exist: ' 
+                            ELSE 'a batch ID that does not exist: '
+                       END +
+                       @invalidIDs
 
-        Set @logErrors = 0
-        Set @message = 'Batch ID list contains batch IDs that do not exist: ' + @invalidIDs
-        Set @myError = 50006
-        Set @returnCode = Cast(@myError As varchar(64))
+        RAISERROR (@message, 10, 24)
 
-        If @useRaiseError > 0
-            RAISERROR (@message, 11, 25)
-        Else
-            RETURN @myError
+        DELETE FROM #Tmp_BatchIDs
+        WHERE Valid = 0
 
+        If Not Exists (SELECT * FROM #Tmp_BatchIDs)
+        Begin
+            -- No valid Batch IDs remain
+
+            Set @logErrors = 0;
+            Set @message = @message + '; did not find any valid Batch IDs';
+            Set @myError = 50006
+            Set @returnCode = Cast(@myError As varchar(64))
+
+            If @useRaiseError > 0
+                RAISERROR (@message, 11, 25)
+            Else
+                RETURN @myError
+        End
+
+        Declare @validIDs varchar(512) = null
+
+        SELECT @validIDs = Coalesce(@validIDs + ', ', '') + BatchIDText
+        FROM #Tmp_BatchIDs
+        ORDER BY BatchIDText
+
+        Set @message = @message + 
+                       '; updating location for Batch ' + 
+                       CASE WHEN CharIndex(',', @validIDs) > 0 THEN 'IDs ' ELSE 'ID ' END +
+                       @validIDs
     End
 
     -- Start transaction
