@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_batch_location_scan]
 **  Date:   05/19/2023 bcg - Initial version
 **          05/23/2023 mem - Add missing error message and additional validation
 **          05/24/2023 mem - Update @message if any batch IDs are unrecognized, but continue processing
+**          05/24/2023 bcg - Correct table update logic to not store the same value to first_scan_date and last_scan_date
 **
 *****************************************************/
 (
@@ -242,12 +243,17 @@ AS
     WHEN MATCHED AND (t.first_scan_date < @scanDate OR t.last_scan_date IS NULL OR t.last_scan_date < @scanDate) THEN
         UPDATE SET
             last_scan_date =  CASE
+                                -- copy value from first_scan_date to last_scan_date if we will update first_scan_date
                                 WHEN t.last_scan_date IS NULL AND @scanDate < t.first_scan_date THEN t.first_scan_date
-                                WHEN t.last_scan_date IS NULL OR t.last_scan_date < @scanDate THEN @scanDate
+                                -- update last_scan_date if the value is later than both first_scan_date and last_scan_date (don't allowing storing the same value to both first_scan_date and last_scan_date)
+                                WHEN t.first_scan_date < @scanDate AND (t.last_scan_date IS NULL OR t.last_scan_date < @scanDate) THEN @scanDate
+                                -- otherwise keep the same value
                                 ELSE t.last_scan_date
                               END,
             first_scan_date = CASE
+                                -- update first_scan_date since the value is earlier
                                 WHEN @scanDate < t.first_scan_date THEN @scanDate
+                                -- otherwise keep the same value
                                 ELSE t.first_scan_date
                               END
     WHEN NOT MATCHED THEN
@@ -286,4 +292,6 @@ AS
     Set @returnCode = Cast(@myError As varchar(64))
     RETURN @myError
 
+GO
+GRANT EXECUTE ON [dbo].[add_requested_run_batch_location_scan] TO [DMS_LCMSNet_User] AS [dbo]
 GO
