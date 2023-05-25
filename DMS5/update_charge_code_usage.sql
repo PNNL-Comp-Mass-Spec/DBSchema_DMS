@@ -6,11 +6,10 @@ GO
 CREATE PROCEDURE [dbo].[update_charge_code_usage]
 /****************************************************
 **
-**  Desc:   Updates the Usage columns in T_Charge_Code
+**  Desc:
+**      Updates the Usage columns in T_Charge_Code
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   mem
 **  Date:   06/04/2013 mem - Initial version
@@ -26,11 +25,6 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-
-    -----------------------------------------------------------
-    -- Create the table to hold the data
-    -----------------------------------------------------------
-
 
     If @infoOnly <> 0
     Begin
