@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 401 ******/
+/****** RowCount: 404 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -402,4 +402,7 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1399,'A2CPS_Plate4','A2CPS Digested Peptides - Plate 4','7/27/2022 12:59:30 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1400,'A2CPS_Plate5','A2CPS Digested Peptides - Plate 5','5/3/2023 8:51:22 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1401,'A2CPS_Plate6','A2CPS Digested Peptides - Plate 6','5/3/2023 9:03:09 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1402,'A2CPS_Plate7','A2CPS Digested Peptides - Plate 7','5/23/2023 8:13:08 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1403,'A2CPS_Plate8','A2CPS Digested Peptides - Plate 8','5/23/2023 8:13:15 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1404,'A2CPS_Plate9','A2CPS Digested Peptides - Plate 9','5/23/2023 8:13:21 AM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
