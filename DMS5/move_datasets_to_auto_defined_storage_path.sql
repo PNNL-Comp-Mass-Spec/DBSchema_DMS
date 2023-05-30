@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[move_datasets_to_auto_defined_storage_path]
 **          08/19/2016 mem - Call update_cached_dataset_folder_paths
 **          09/02/2016 mem - Replace archive\dmsarch with simply dmsarch due to switch from \\aurora.emsl.pnl.gov\archive\dmsarch\ to \\adms.emsl.pnl.gov\dmsarch\
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/28/2023 mem - Remove unnecessary call to Replace()
 **
 *****************************************************/
 (
@@ -32,10 +33,8 @@ CREATE PROCEDURE [dbo].[move_datasets_to_auto_defined_storage_path]
 AS
     Set XACT_ABORT, nocount on
 
-    Declare @myRowCount int
-    Declare @myError int
-    Set @myRowCount = 0
-    Set @myError = 0
+    Declare @myRowCount int = 0
+    Declare @myError int = 0
 
     Declare @DatasetID int
     Declare @InstrumentID int
@@ -193,12 +192,12 @@ AS
                     SELECT @MoveCmd = OldStorage.Path + ' ' + NewStorage.Path
                     FROM ( SELECT '\\' + SP_machine_name + '\' + SUBSTRING(SP_vol_name_server, 1, 1) + '$\' + SP_path + @Dataset AS Path
                            FROM T_Storage_Path
-                           WHERE (SP_path_ID = @StoragePathID)
+                           WHERE SP_path_ID = @StoragePathID
                          ) OldStorage
                          CROSS JOIN
                          ( SELECT '\\' + SP_machine_name + '\' + SUBSTRING(SP_vol_name_server, 1, 1) + '$\' + SP_path + @Dataset AS Path
                            FROM T_Storage_Path
-                           WHERE (SP_path_ID = @StoragePathIDNew)
+                           WHERE SP_path_ID = @StoragePathIDNew
                          ) NewStorage
                     --
                     SELECT @myRowCount = @@rowcount, @myError = @@error
@@ -230,7 +229,7 @@ AS
 
                 SELECT @ArchivePathID = AS_storage_path_ID
                 FROM T_Dataset_Archive
-                WHERE (AS_Dataset_ID = @DatasetID)
+                WHERE AS_Dataset_ID = @DatasetID
 
 
                 If @ArchivePathID >= 0
@@ -246,14 +245,14 @@ AS
                     Begin -- <d2>
 
                         SELECT @MoveCmd = OldArchive.Path + ' ' + NewArchive.Path
-                        FROM ( SELECT REPLACE(AP_network_share_path + '\' + @Dataset, '\dmsarch\', '\dmsarch\') AS Path
+                        FROM ( SELECT AP_network_share_path + '\' + @Dataset AS Path
                                FROM T_Archive_Path
-                               WHERE (AP_path_ID = @ArchivePathID)
+                               WHERE AP_path_ID = @ArchivePathID
                              ) OldArchive
                              CROSS JOIN
-                             ( SELECT REPLACE(AP_network_share_path + '\' + @Dataset, '\dmsarch\', '\dmsarch\') AS Path
+                             ( SELECT AP_network_share_path + '\' + @Dataset AS Path
                                FROM T_Archive_Path
-                               WHERE (AP_path_ID = @ArchivePathIDNew)
+                               WHERE AP_path_ID = @ArchivePathIDNew
                              ) NewArchive
                         --
                         SELECT @myRowCount = @@rowcount, @myError = @@error
@@ -310,7 +309,7 @@ AS
     -- Exit
     -----------------------------------------
     --
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[move_datasets_to_auto_defined_storage_path] TO [DDL_Viewer] AS [dbo]
