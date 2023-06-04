@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[update_cached_dataset_links]
 **          07/31/2020 mem - Update MASIC_Directory_Name
 **          09/06/2022 mem - When @processingMode is 3, update datasets in batches (to decrease the likelihood of deadlock issues)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/03/2023 mem - Link to the SMAQC P_2C metric for QC_Mam datasets
 **
 *****************************************************/
 (
@@ -344,6 +345,8 @@ AS
             QC_Metric_Stats = CASE
                 WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
                         'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
+                WHEN Experiment_Num LIKE 'QC[_]Mam%' THEN
+                        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Mam'
                 WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
                         'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
                 ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
@@ -431,6 +434,8 @@ AS
                        CASE
                         WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
                                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
+                        WHEN Experiment_Num LIKE 'QC[_]Mam%' THEN
+                                'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Mam'
                         WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
                                 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
                         ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
