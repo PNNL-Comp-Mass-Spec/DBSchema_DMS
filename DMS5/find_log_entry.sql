@@ -9,6 +9,11 @@ CREATE PROCEDURE [dbo].[find_log_entry]
 **  Desc:
 **      Returns result set of main log satisfying the search parameters
 **
+**      This procedure is used by unit tests in class StoredProcedureTests in the PRISM Class Library
+**
+**  Example usage:
+**      exec find_log_entry @EntryType = 'Normal', @MessageText = 'Complete'
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -20,15 +25,14 @@ CREATE PROCEDURE [dbo].[find_log_entry]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          01/05/2023 mem - Use new column names in V_Log_Report
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/05/2023 mem - Rename procedure arguments
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
-    @entry varchar(20) = '',
+    @entryID varchar(20) = '',
     @postedBy varchar(64) = '',
-    @postingTime_After varchar(20) = '',
-    @postingTime_Before varchar(20) = '',
+    @postingTimeAfter varchar(20) = '',
+    @postingTimeBefore varchar(20) = '',
     @entryType varchar(32) = '',
     @messageText varchar(500) = '',
     @message varchar(512) ='' output
@@ -39,21 +43,21 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @sql nvarchar(4000)
-    Declare @W nvarchar(3800)
+    Declare @sqlWhere nvarchar(3800)
 
     ---------------------------------------------------
     -- Validate input fields
     ---------------------------------------------------
 
-    DECLARE @entryID int = Try_Parse(@Entry as int)
+    DECLARE @entryIDValue int = Try_Parse(@EntryID as int)
     --
     DECLARE @postedByWildcard varchar(64) = '%' + @PostedBy + '%'
     --
-    DECLARE @earlistPostingTime datetime = Try_Parse(@PostingTime_After as datetime)
-    DECLARE @latestPostingTime datetime = Try_Parse(@PostingTime_Before as datetime)
+    DECLARE @earlistPostingTime datetime = Try_Parse(@postingTimeAfter as datetime)
+    DECLARE @latestPostingTime datetime  = Try_Parse(@postingTimeBefore as datetime)
     --
     DECLARE @typeWildcard varchar(32) = '%' + @EntryType + '%'
     --
@@ -66,46 +70,46 @@ AS
     --
     Set @sql = ' SELECT * FROM V_Log_Report'
 
-    Set @W = ''
-    If Len(@Entry) > 0
-        Set @W = @W + ' AND ([Entry] = @entryID)'
+    Set @sqlWhere = ''
+    If @entryIDValue > 0
+        Set @sqlWhere = @sqlWhere + ' AND ([Entry] = @entryIDValue)'
     If Len(@PostedBy) > 0
-        Set @W = @W + ' AND ([Posted_By] LIKE @postedByWildcard )'
-    If Len(@PostingTime_After) > 0
-        Set @W = @W + ' AND ([Entered] >= @earlistPostingTime )'
-    If Len(@PostingTime_Before) > 0
-        Set @W = @W + ' AND ([Entered] < @latestPostingTime )'
+        Set @sqlWhere = @sqlWhere + ' AND ([Posted_By] LIKE @postedByWildcard )'
+    If Len(@postingTimeAfter) > 0
+        Set @sqlWhere = @sqlWhere + ' AND ([Entered] >= @earlistPostingTime )'
+    If Len(@postingTimeBefore) > 0
+        Set @sqlWhere = @sqlWhere + ' AND ([Entered] < @latestPostingTime )'
     If Len(@EntryType) > 0
-        Set @W = @W + ' AND ([Type] LIKE @typeWildcard )'
+        Set @sqlWhere = @sqlWhere + ' AND ([Type] LIKE @typeWildcard )'
     If Len(@MessageText) > 0
-        Set @W = @W + ' AND ([Message] LIKE @messageWildcard)'
+        Set @sqlWhere = @sqlWhere + ' AND ([Message] LIKE @messageWildcard)'
 
-    If Len(@W) > 0
+    If Len(@sqlWhere) > 0
     Begin
         -- One or more filters are defined
-        -- Remove the first AND from the start of @W and add the word WHERE
-        Set @W = 'WHERE ' + Substring(@W, 6, Len(@W) - 5)
-        Set @sql = @sql + ' ' + @W
+        -- Remove the first AND from the start of @sqlWhere and add the word WHERE
+        Set @sqlWhere = 'WHERE ' + Substring(@sqlWhere, 6, Len(@sqlWhere) - 5)
+        Set @sql = @sql + ' ' + @sqlWhere
     End
 
     ---------------------------------------------------
     -- Run the query
     ---------------------------------------------------
     --
-    Declare @sqlParams NVarchar(2000) = N'@entryID int, @postedByWildcard varchar(64), @earlistPostingTime datetime, @latestPostingTime datetime, @typeWildcard varchar(32), @messageWildcard varchar(500)'
+    Declare @sqlParams NVarchar(2000) = N'@entryIDValue int, @postedByWildcard varchar(64), @earlistPostingTime datetime, @latestPostingTime datetime, @typeWildcard varchar(32), @messageWildcard varchar(500)'
 
     EXEC sp_executesql @sql, @sqlParams, @entryID, @postedByWildcard, @earlistPostingTime, @latestPostingTime, @typeWildcard, @messageWildcard
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         set @message = 'Error occurred attempting to execute query'
         RAISERROR (@message, 10, 1)
-        return 51007
-    end
+        Return 51007
+    End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_log_entry] TO [DDL_Viewer] AS [dbo]
