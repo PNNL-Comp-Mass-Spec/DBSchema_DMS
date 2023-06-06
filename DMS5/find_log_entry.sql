@@ -12,7 +12,7 @@ CREATE PROCEDURE [dbo].[find_log_entry]
 **      This procedure is used by unit tests in class StoredProcedureTests in the PRISM Class Library
 **
 **  Example usage:
-**      exec find_log_entry @EntryType = 'Normal', @MessageText = 'Complete'
+**      exec find_log_entry @EntryType = 'Normal', @MessageText = 'Complete', @maxRowCount = 50
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[find_log_entry]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          01/05/2023 mem - Use new column names in V_Log_Report
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          06/05/2023 mem - Rename procedure arguments
+**          06/05/2023 mem - Add @maxRowCount and rename procedure arguments
 **
 *****************************************************/
 (
@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[find_log_entry]
     @postingTimeBefore varchar(20) = '',
     @entryType varchar(32) = '',
     @messageText varchar(500) = '',
+    @maxRowCount int = 50,
     @message varchar(512) ='' output
 )
 AS
@@ -53,22 +54,26 @@ AS
     ---------------------------------------------------
 
     DECLARE @entryIDValue int = Try_Parse(@EntryID as int)
-    --
+
     DECLARE @postedByWildcard varchar(64) = '%' + @PostedBy + '%'
-    --
-    DECLARE @earlistPostingTime datetime = Try_Parse(@postingTimeAfter as datetime)
+
+    DECLARE @earliestPostingTime datetime = Try_Parse(@postingTimeAfter as datetime)
     DECLARE @latestPostingTime datetime  = Try_Parse(@postingTimeBefore as datetime)
-    --
+
     DECLARE @typeWildcard varchar(32) = '%' + @EntryType + '%'
-    --
+
     DECLARE @messageWildcard varchar(500) = '%' + @MessageText + '%'
-    --
+
+    Set @maxRowCount = Coalesce(@maxRowCount, 0)
 
     ---------------------------------------------------
     -- Construct the query
     ---------------------------------------------------
     --
-    Set @sql = ' SELECT * FROM V_Log_Report'
+    If @maxRowCount > 0
+        Set @sql = ' SELECT TOP ' + Cast(@maxRowCount AS varchar(12)) + ' * FROM V_Log_Report'
+    Else
+        Set @sql = ' SELECT * FROM V_Log_Report'
 
     Set @sqlWhere = ''
     If @entryIDValue > 0
@@ -76,7 +81,7 @@ AS
     If Len(@PostedBy) > 0
         Set @sqlWhere = @sqlWhere + ' AND ([Posted_By] LIKE @postedByWildcard )'
     If Len(@postingTimeAfter) > 0
-        Set @sqlWhere = @sqlWhere + ' AND ([Entered] >= @earlistPostingTime )'
+        Set @sqlWhere = @sqlWhere + ' AND ([Entered] >= @earliestPostingTime )'
     If Len(@postingTimeBefore) > 0
         Set @sqlWhere = @sqlWhere + ' AND ([Entered] < @latestPostingTime )'
     If Len(@EntryType) > 0
@@ -92,13 +97,18 @@ AS
         Set @sql = @sql + ' ' + @sqlWhere
     End
 
+    If @maxRowCount > 0
+        Set @sql = @sql + ' ORDER BY entry Desc'
+    Else
+        Set @sql = @sql + ' ORDER BY entry Asc'
+
     ---------------------------------------------------
     -- Run the query
     ---------------------------------------------------
     --
-    Declare @sqlParams NVarchar(2000) = N'@entryIDValue int, @postedByWildcard varchar(64), @earlistPostingTime datetime, @latestPostingTime datetime, @typeWildcard varchar(32), @messageWildcard varchar(500)'
+    Declare @sqlParams NVarchar(2000) = N'@entryIDValue int, @postedByWildcard varchar(64), @earliestPostingTime datetime, @latestPostingTime datetime, @typeWildcard varchar(32), @messageWildcard varchar(500)'
 
-    EXEC sp_executesql @sql, @sqlParams, @entryID, @postedByWildcard, @earlistPostingTime, @latestPostingTime, @typeWildcard, @messageWildcard
+    EXEC sp_executesql @sql, @sqlParams, @entryID, @postedByWildcard, @earliestPostingTime, @latestPostingTime, @typeWildcard, @messageWildcard
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
