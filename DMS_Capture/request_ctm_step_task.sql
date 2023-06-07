@@ -53,12 +53,12 @@ CREATE PROCEDURE [dbo].[request_ctm_step_task]
 *****************************************************/
 (
     @processorName varchar(128),
-    @jobNumber int = 0 OUTPUT,            -- Job number assigned; 0 if no job available
+    @jobNumber int = 0 OUTPUT,                  -- Job number assigned; 0 if no job available
     @message varchar(512) OUTPUT,
-    @infoOnly tinyint = 0,                -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
+    @infoOnly tinyint = 0,                      -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
     @managerVersion varchar(128) = '',
     @jobCountToPreview int = 10,
-    @serverPerspectiveEnabled tinyint = 0,
+    @serverPerspectiveEnabled tinyint = 0,      -- The Capture Task Manager does not set the value for this parameter, meaning it is always 0
     @returnCode varchar(64) = '' output
 )
 AS

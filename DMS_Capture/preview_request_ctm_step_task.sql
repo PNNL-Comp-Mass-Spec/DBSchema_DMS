@@ -17,6 +17,8 @@ CREATE PROCEDURE [dbo].[preview_request_ctm_step_task]
 **          03/04/2023 mem - Use new T_Task tables
 **          03/06/2023 bcg - Rename the synonym used to access Manager_Control.V_Mgr_Params
 **          04/01/2023 mem - Rename procedures and functions
+**          06/07/2023 mem - No longer look up "perspective" for the given manager, since the Capture Task Manager 
+**                           does not customize the value of @serverPerspectiveEnabled when calling request_ctm_step_task
 **
 *****************************************************/
 (
@@ -25,7 +27,7 @@ CREATE PROCEDURE [dbo].[preview_request_ctm_step_task]
     @jobNumber int = 0 output,          -- Job number assigned; 0 if no job available
     @parameters varchar(max)='' output, -- job step parameters (in XML)
     @message varchar(512)='' output,
-    @infoOnly tinyint = 1               -- 1 to preview the assigned task; 2 to preview the task and see extra status messages; 3 to dump candidate tables and variables
+    @infoOnly tinyint = 1               -- 0 or 1 to preview the assigned task; 2 to preview the task and see extra status messages; 3 to dump candidate tables and variables
 )
 AS
     set nocount on
@@ -33,12 +35,17 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @serverPerspectiveEnabled tinyint = 0
-    Declare @perspective varchar(64) = ''
-
     Set @infoOnly = IsNull(@infoOnly, 1)
+
     If @infoOnly < 1
         Set @infoOnly = 1
+
+    /*
+     * Deprecated in June 2023
+     *
+
+    Declare @serverPerspectiveEnabled tinyint = 0
+    Declare @perspective varchar(64) = ''
 
     -- Lookup the value for "perspective" for this manager in the manager control DB
     SELECT @perspective = Parameter_Value
@@ -51,15 +58,19 @@ AS
     End
 
     If @perspective = 'server'
+    Begin
         Set @serverPerspectiveEnabled = 1
+    End
+
+    */
 
     Exec request_ctm_step_task
                     @processorName,
-                    @jobNumber = @jobNumber output,
-                    @message = @message output,
-                    @infoonly = @infoOnly,
-                    @JobCountToPreview=@JobCountToPreview,
-                    @serverPerspectiveEnabled=@serverPerspectiveEnabled
+                    @jobNumber =         @jobNumber output,
+                    @message =           @message output,
+                    @infoonly =          @infoOnly,
+                    @JobCountToPreview = @JobCountToPreview
+                    -- Deprecated: @serverPerspectiveEnabled = @serverPerspectiveEnabled
 
     If Exists (Select * FROM T_Tasks WHERE Job = @JobNumber)
         SELECT @jobNumber AS JobNumber,
