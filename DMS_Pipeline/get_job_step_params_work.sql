@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_work]
 **          07/27/2022 mem - Move check for missing ToolName parameter to after adding job parameters using T_Job_Parameters
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps
+**          06/07/2023 mem - Rename variables and update alias names
 **
 *****************************************************/
 (
@@ -78,26 +79,24 @@ AS
     -- Get basic job step parameters
     ---------------------------------------------------
     --
-    SELECT
-        @stepTool = Tool,
-        @inputFolderName = Input_Folder_Name,
-        @outputFolderName = Output_Folder_Name,
-        @remoteInfoId = Remote_Info_ID,
-        @remoteTimestamp = Remote_Timestamp
+    SELECT @stepTool = Tool,
+           @inputFolderName = Input_Folder_Name,
+           @outputFolderName = Output_Folder_Name,
+           @remoteInfoId = Remote_Info_ID,
+           @remoteTimestamp = Remote_Timestamp
     FROM T_Job_Steps
-    WHERE
-        Job = @jobNumber AND
-        Step = @stepNumber
+    WHERE Job = @jobNumber AND
+          Step = @stepNumber
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
         set @message = 'Error getting basic job step parameters'
         goto Done
     end
     --
-    if @myRowCount = 0
+    If @myRowCount = 0
     begin
         set @myError = 42
         set @message = 'Could not find basic job step parameters'
@@ -141,14 +140,14 @@ AS
                                         ISNULL(@sharedFolderList, '')) +
                                Output_Folder_Name
     FROM T_Job_Steps
-    WHERE (Job = @jobNumber) AND
-          (Shared_Result_Version > 0) AND
-          (State IN (3, 5))
+    WHERE Job = @jobNumber AND
+          Shared_Result_Version > 0 AND
+          State IN (3, 5)
     ORDER BY Step
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
         set @message = 'Error getting shared folder name list'
         goto Done
@@ -166,11 +165,11 @@ AS
     Declare @stepOutputFolderName varchar(128) = ''
     Declare @stepInputFolderName varchar(128) = ''
     Declare @paramFileStoragePath varchar(256) = ''
-    Declare @CpuLoad int = 1
+    Declare @cpuLoad int = 1
 
     SELECT @stepOutputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step) + '_' + ST.Tag,
            @paramFileStoragePath = ST.Param_File_Storage_Path,
-           @CpuLoad = JS.CPU_Load
+           @cpuLoad = JS.CPU_Load
     FROM T_Job_Steps JS
          INNER JOIN T_Step_Tools ST
            ON JS.Tool = ST.Name
@@ -178,48 +177,48 @@ AS
           JS.Step = @stepNumber
 
 
-    SELECT @stepInputFolderName = 'Step_' + CONVERT(varchar(6), TSD.Target_Step) + '_' + ST.Tag
-    FROM T_Job_Step_Dependencies AS TSD
+    SELECT @stepInputFolderName = 'Step_' + CONVERT(varchar(6), JSD.Target_Step) + '_' + ST.Tag
+    FROM T_Job_Step_Dependencies AS JSD
          INNER JOIN T_Job_Steps AS JS
-           ON TSD.Job = JS.Job AND
-              TSD.Target_Step = JS.Step
+           ON JSD.Job = JS.Job AND
+              JSD.Target_Step = JS.Step
          INNER JOIN T_Step_Tools AS ST
            ON JS.Tool = ST.Name
-    WHERE (TSD.Job = @jobNumber) AND
-          (TSD.Step = @stepNumber) AND
-          TSD.Enable_Only = 0
+    WHERE JSD.Job = @jobNumber AND
+          JSD.Step = @stepNumber AND
+          JSD.Enable_Only = 0
 
     ---------------------------------------------------
     -- Get job step parameters
     ---------------------------------------------------
     --
-    Declare @stepParmSectionName varchar(32) = 'StepParameters'
+    Declare @stepParamSectionName varchar(32) = 'StepParameters'
     --
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Job', @jobNumber)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Step', @stepNumber)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepTool', @stepTool)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'InputFolderName', @inputFolderName)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'OutputFolderName', @outputFolderName)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'SharedResultsFolders', @sharedFolderList)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'Job', @jobNumber)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'Step', @stepNumber)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepTool', @stepTool)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'InputFolderName', @inputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'OutputFolderName', @outputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'SharedResultsFolders', @sharedFolderList)
 
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepOutputFolderName', @stepOutputFolderName)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepInputFolderName', @stepInputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepOutputFolderName', @stepOutputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepInputFolderName', @stepInputFolderName)
 
     If IsNull(@paramFileStoragePath, '') <> ''
     Begin
-        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'ParamFileStoragePath', @paramFileStoragePath)
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'ParamFileStoragePath', @paramFileStoragePath)
     End
 
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'CPU_Load', @CpuLoad)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'CPU_Load', @cpuLoad)
 
     If IsNull(@remoteInfo, '') <> ''
     Begin
-        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'RemoteInfo', @remoteInfo)
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'RemoteInfo', @remoteInfo)
     End
 
     If IsNull(@remoteTimestamp, '') <> ''
     Begin
-        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'RemoteTimestamp', @remoteTimestamp)
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'RemoteTimestamp', @remoteTimestamp)
     End
 
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
@@ -249,32 +248,32 @@ AS
     --   ")"
 
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], [Value])
-    SELECT [Section], [Name], [Value]
-    FROM ( SELECT [Section],
-                  [Name],
+    SELECT Section, Name, [Value]
+    FROM ( SELECT Section,
+                  Name,
                   [Value],
                   IsNull(Try_Parse(Step as int), 0) AS StepNumber
-           FROM ( SELECT xmlNode.value('@Section', 'varchar(128)') AS [Section],
-                         xmlNode.value('@Name', 'varchar(128)') AS [Name],
+           FROM ( SELECT xmlNode.value('@Section', 'varchar(128)') AS Section,
+                         xmlNode.value('@Name', 'varchar(128)') AS Name,
                          xmlNode.value('@Value', 'varchar(4000)') AS [Value],
                          REPLACE(REPLACE(REPLACE( IsNull(xmlNode.value('@Step', 'varchar(128)'), '') , 'Yes (', ''), 'No (', ''), ')', '') AS Step
                   FROM T_Job_Parameters cross apply Parameters.nodes('//Param') AS R(xmlNode)
                   WHERE T_Job_Parameters.Job = @jobNumber
                 ) LookupQ
          ) ConvertQ
-    WHERE [Name] <> 'DataPackageID' AND
+    WHERE Name <> 'DataPackageID' AND
           (StepNumber = 0 OR
            StepNumber = @stepNumber)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
         set @message = 'Error getting job parameters'
         goto Done
     end
 
-     -- Add ToolName if not present in #Tmp_JobParamsTable
+    -- Add ToolName if not present in #Tmp_JobParamsTable
     -- This will be the case for jobs created directly in the pipeline database (including MAC jobs and MaxQuant_DataPkg jobs)
     If Not Exists (Select * from #Tmp_JobParamsTable Where [Section] = 'JobParameters' and [Name] = 'ToolName')
     Begin
@@ -282,7 +281,6 @@ AS
     End
 
 Done:
-
     return @myError
 
 GO

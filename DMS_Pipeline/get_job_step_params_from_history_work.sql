@@ -13,9 +13,9 @@ CREATE PROCEDURE [dbo].[get_job_step_params_from_history_work]
 **      The calling procedure must create temporary table #Tmp_JobParamsTable
 **
 **      Create Table #Tmp_JobParamsTable (
-**          [Section] Varchar(128),
-**          [Name] Varchar(128),
-**          [Value] Varchar(max)
+**          [Section] varchar(128),
+**          [Name] varchar(128),
+**          [Value] varchar(max)
 **      )
 **
 **  Return values: 0: success, otherwise, error code
@@ -23,7 +23,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_from_history_work]
 **  Auth:   mem
 **  Date:   07/31/2013 mem - Ported from get_job_step_params_work
 **          04/06/2016 mem - Now using Try_Convert to convert from text to int
-**          06/20/2016 mem - Update procedure name shown when using @DebugMode
+**          06/20/2016 mem - Update procedure name shown when using @debugMode
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
@@ -45,87 +45,85 @@ AS
     Declare @stepTool varchar(64) = ''
     Declare @inputFolderName varchar(128) = ''
     Declare @outputFolderName varchar(128) = ''
-    Declare @DataPackageID int = 0
+
+    Declare @dataPackageID int = 0
 
     set @myRowCount = 0
 
     -- Clear the outputs
     set @message = ''
-    set @DebugMode = IsNull(@DebugMode, 0)
+    set @debugMode = IsNull(@debugMode, 0)
 
-    If @DebugMode <> 0
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get basic job step parameters'
+    If @debugMode <> 0
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params: Get basic job step parameters'
 
     ---------------------------------------------------
     -- Get basic job step parameters
     ---------------------------------------------------
     --
-    SELECT
-        @stepTool = Tool,
-        @inputFolderName = Input_Folder_Name,
-        @outputFolderName = Output_Folder_Name
-    FROM  T_Job_Steps_History
-    WHERE
-        Job = @jobNumber AND
-        Step = @stepNumber AND
-        Most_Recent_Entry = 1
+    SELECT @stepTool = Tool,
+           @inputFolderName = Input_Folder_Name,
+           @outputFolderName = Output_Folder_Name
+    FROM T_Job_Steps_History
+    WHERE Job = @jobNumber AND
+          Step = @stepNumber AND
+          Most_Recent_Entry = 1
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
         set @message = 'Error getting basic job step parameters'
         goto Done
     end
     --
-    if @myRowCount = 0
+    If @myRowCount = 0
     begin
         set @myError = 42
         set @message = 'Could not find basic job step parameters'
         goto Done
     end
 
-    If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get shared results folder name list'
+    If @debugMode > 1
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params: Get shared results folder name list'
 
     ---------------------------------------------------
     -- Lookup data package ID in T_Jobs
     ---------------------------------------------------
     --
-    SELECT @DataPackageID = DataPkgID
+    SELECT @dataPackageID = DataPkgID,
     FROM T_Jobs_History
     WHERE Job = @jobNumber AND
-        Most_Recent_Entry = 1
+          Most_Recent_Entry = 1
 
-    Set @DataPackageID = IsNull(@DataPackageID, 0)
+    Set @dataPackageID = IsNull(@dataPackageID, 0)
 
     ---------------------------------------------------
     -- Get shared results folder name list
     -- Be sure to sort by increasing step number so that the newest shared result folder is last
     ---------------------------------------------------
-    declare @sharedFolderList varchar(1024)
-    set @sharedFolderList = Null
+    Declare @sharedFolderList varchar(1024) = Null
     --
     SELECT @sharedFolderList = COALESCE(@sharedFolderList + ', ',
                                         ISNULL(@sharedFolderList, '')) +
                                Output_Folder_Name
     FROM T_Job_Steps_History
-    WHERE (Job = @jobNumber) AND
-          (Shared_Result_Version > 0) AND
-          (State IN (3, 5)) AND
+    WHERE Job = @jobNumber AND
+          Shared_Result_Version > 0 AND
+          State IN (3, 5) AND
           Most_Recent_Entry = 1
     ORDER BY Step
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
         set @message = 'Error getting shared folder name list'
         goto Done
     end
 
-    If @DebugMode > 1
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get job step parameters'
+    If @debugMode > 1
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params: Get job step parameters'
 
     ---------------------------------------------------
     -- get input and output folder names for individual steps
@@ -156,25 +154,24 @@ AS
     -- Get job step parameters
     ---------------------------------------------------
     --
-    declare @stepParmSectionName varchar(32)
-    set @stepParmSectionName = 'StepParameters'
+    Declare @stepParamSectionName varchar(32) = 'StepParameters'
     --
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Job', @jobNumber)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'Step', @stepNumber)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepTool', @stepTool)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'InputFolderName', @inputFolderName)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'OutputFolderName', @outputFolderName)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'SharedResultsFolders', @sharedFolderList)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'Job', @jobNumber)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'Step', @stepNumber)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepTool', @stepTool)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'InputFolderName', @inputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'OutputFolderName', @outputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'SharedResultsFolders', @sharedFolderList)
 
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepOutputFolderName', @stepOutputFolderName)
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParmSectionName, 'StepInputFolderName', @stepInputFolderName)
-
-
-    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @DataPackageID)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepOutputFolderName', @stepOutputFolderName)
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepInputFolderName', @stepInputFolderName)
 
 
-    If @DebugMode <> 0
-        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params_from_history_work: Get job parameters using cross apply'
+    INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
+
+
+    If @debugMode <> 0
+        Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params: Get job parameters using cross apply'
 
     ---------------------------------------------------
     -- Get job parameters
@@ -188,7 +185,7 @@ AS
     -- Prior to June 2012, step locking would use notation like this:
     --  <Param Section="2_Ape" Name="ApeMTSDatabase" Value="MT_R_norvegicus_P748" Step="2" />
     --
-    -- We now use notatio like this:
+    -- We now use notation like this:
     --  <Param Section="2_Ape" Name="ApeMTSDatabase" Value="MT_R_norvegicus_P748" Step="Yes (2)" />
     --
     -- Thus, the following uses a series of REPLACE commands to remove text from the Step attribute,
@@ -218,7 +215,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
+    If @myError <> 0
     begin
         set @message = 'Error getting job parameters'
         goto Done
