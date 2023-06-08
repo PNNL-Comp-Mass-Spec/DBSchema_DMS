@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[get_job_step_params_from_history_work]
 **          04/11/2022 mem - Use varchar(4000) when extracting values from the XML
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps_History
+**          06/07/2023 mem - Set @stepInputFolderName to '' if step = 1 (matching the behavior of get_job_step_params_work)
 **
 *****************************************************/
 (
@@ -131,14 +132,6 @@ AS
     -- Also lookup the parameter file storage path
     ---------------------------------------------------
 
-
-    SELECT  @stepInputFolderName = 'Step_'
-            + CONVERT(VARCHAR(6), TJS.Step) + '_NotDefined'
-    FROM  T_Job_Steps_History AS TJS
-            INNER JOIN T_Step_Tools AS TST ON TJS.Tool = TST.Name
-    WHERE   ( TJS.Job = @jobNumber ) AND
-            ( TJS.Step = @stepNumber ) AND
-            TJS.Most_Recent_Entry = 1
     Declare @stepOutputFolderName varchar(128) = ''
     Declare @stepInputFolderName varchar(128) = ''
     Declare @paramFileStoragePath varchar(256) = ''
@@ -151,6 +144,17 @@ AS
     WHERE JS.Job = @jobNumber AND
           JS.Step = @stepNumber AND
           JS.Most_Recent_Entry = 1
+
+    If @stepNumber > 1
+    Begin
+        SELECT @stepInputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step - 1) + '_NotDefined'
+        FROM T_Job_Steps_History AS JS
+             INNER JOIN T_Step_Tools AS ST
+               ON JS.Tool = ST.Name
+        WHERE JS.Job = @jobNumber AND
+              JS.Step = @stepNumber AND
+              JS.Most_Recent_Entry = 1
+    End
 
     ---------------------------------------------------
     -- Get job step parameters
