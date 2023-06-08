@@ -29,6 +29,8 @@ CREATE PROCEDURE [dbo].[get_job_step_params_from_history_work]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps_History
 **          06/07/2023 mem - Set @stepInputFolderName to '' if step = 1 (matching the behavior of get_job_step_params_work)
+**                         - Add step parameter 'ParamFileStoragePath'
+**                         - Add job parameter 'ToolName' if not present in T_Job_Parameters_History
 **
 *****************************************************/
 (
@@ -48,6 +50,7 @@ AS
     Declare @outputFolderName varchar(128) = ''
 
     Declare @dataPackageID int = 0
+    Declare @scriptName varchar(128) = ''
 
     set @myRowCount = 0
 
@@ -89,10 +92,11 @@ AS
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params: Get shared results folder name list'
 
     ---------------------------------------------------
-    -- Lookup data package ID in T_Jobs
+    -- Lookup data package ID and script name in T_Jobs_History
     ---------------------------------------------------
     --
     SELECT @dataPackageID = DataPkgID,
+           @scriptName = Script
     FROM T_Jobs_History
     WHERE Job = @jobNumber AND
           Most_Recent_Entry = 1
@@ -230,6 +234,13 @@ AS
         set @message = 'Error getting job parameters'
         goto Done
     end
+
+    -- Add ToolName if not present in #Tmp_JobParamsTable
+    -- This will be the case for jobs created directly in the pipeline database (including MAC jobs and MaxQuant_DataPkg jobs)
+    If Not Exists (Select * from #Tmp_JobParamsTable Where [Section] = 'JobParameters' and [Name] = 'ToolName')
+    Begin
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'ToolName', @scriptName)
+    End
 
 Done:
     return @myError
