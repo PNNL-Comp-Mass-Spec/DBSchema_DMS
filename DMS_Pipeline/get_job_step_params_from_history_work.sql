@@ -126,20 +126,10 @@ AS
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'get_job_step_params: Get job step parameters'
 
     ---------------------------------------------------
-    -- get input and output folder names for individual steps
+    -- Get input and output folder names for individual steps
     -- (used by aggregation jobs created in broker)
+    -- Also lookup the parameter file storage path
     ---------------------------------------------------
-
-    DECLARE @stepOutputFolderName VARCHAR(128) = ''
-    DECLARE @stepInputFolderName VARCHAR(128) = ''
-
-    SELECT  @stepOutputFolderName = 'Step_' + CONVERT(VARCHAR(6), TJS.Step)
-            + '_' + TST.Tag
-    FROM    T_Job_Steps_History TJS
-            INNER JOIN T_Step_Tools TST ON TJS.Tool = TST.Name
-    WHERE   TJS.Job = @jobNumber AND
-            TJS.Step = @stepNumber AND
-            TJS.Most_Recent_Entry = 1
 
 
     SELECT  @stepInputFolderName = 'Step_'
@@ -149,6 +139,18 @@ AS
     WHERE   ( TJS.Job = @jobNumber ) AND
             ( TJS.Step = @stepNumber ) AND
             TJS.Most_Recent_Entry = 1
+    Declare @stepOutputFolderName varchar(128) = ''
+    Declare @stepInputFolderName varchar(128) = ''
+    Declare @paramFileStoragePath varchar(256) = ''
+
+    SELECT @stepOutputFolderName = 'Step_' + CONVERT(varchar(6), JS.Step) + '_' + ST.Tag,
+           @paramFileStoragePath = ST.Param_File_Storage_Path
+    FROM T_Job_Steps_History JS
+         INNER JOIN T_Step_Tools ST
+           ON JS.Tool = ST.Name
+    WHERE JS.Job = @jobNumber AND
+          JS.Step = @stepNumber AND
+          JS.Most_Recent_Entry = 1
 
     ---------------------------------------------------
     -- Get job step parameters
@@ -166,6 +168,10 @@ AS
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepOutputFolderName', @stepOutputFolderName)
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'StepInputFolderName', @stepInputFolderName)
 
+    If IsNull(@paramFileStoragePath, '') <> ''
+    Begin
+        INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES (@stepParamSectionName, 'ParamFileStoragePath', @paramFileStoragePath)
+    End
 
     INSERT INTO #Tmp_JobParamsTable ([Section], [Name], Value) VALUES ('JobParameters', 'DataPackageID', @dataPackageID)
 
