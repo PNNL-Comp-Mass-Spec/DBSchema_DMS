@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/06/2023 bcg - Use a synonym to access the Manager_Control database
+**          06/09/2023 mem - Send this procedure's name to verify_sp_authorized
 **
 *****************************************************/
 (
@@ -27,8 +28,8 @@ CREATE PROCEDURE [dbo].[set_update_required_for_running_managers]
 AS
     set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
@@ -38,7 +39,7 @@ AS
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
-    Exec @authorized = verify_sp_authorized 'request_step_task_xml', @raiseError = 1
+    Exec @authorized = verify_sp_authorized 'set_update_required_for_running_managers', @raiseError = 1
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
