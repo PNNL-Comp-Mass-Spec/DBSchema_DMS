@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Mage_Dataset_List] AS
 SELECT DS.Dataset_ID AS Dataset_ID,
        DS.Dataset_Num AS Dataset,
@@ -22,6 +21,7 @@ SELECT DS.Dataset_ID AS Dataset_ID,
        END AS Folder,
        DS.DS_comment AS Comment,
 	   Org.OG_name AS Organism,
+	   DFP.Dataset_Folder_Path AS Storage_Server_Folder,
        DTN.DST_name AS [Type],              -- Included for compatibility with older versions of Mage
        DTN.DST_name AS [Dataset Type]       -- Included for compatibility with older versions of Mage
 FROM T_Dataset DS
