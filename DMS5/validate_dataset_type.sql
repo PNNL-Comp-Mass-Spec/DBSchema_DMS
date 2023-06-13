@@ -34,9 +34,9 @@ CREATE PROCEDURE [dbo].[validate_dataset_type]
 **          07/01/2021 mem - Auto-switch from HMS-CID-MSn to HMS-MSn
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          06/12/2023 mem - Sum actual scan counts, not simply 0 or 1
 **
 *****************************************************/
-
 (
     @datasetID int,
     @message varchar(255) = '' output,
@@ -131,29 +131,29 @@ AS
     -----------------------------------------------------------
 
     SELECT
-           @actualCountMS = SUM(CASE WHEN ScanType = 'MS'  Then 1 Else 0 End),
-           @actualCountHMS  = SUM(CASE WHEN ScanType = 'HMS' Then 1 Else 0 End),
-           @actualCountGCMS   = SUM(CASE WHEN ScanType = 'GC-MS'  Then 1 Else 0 End),
+           @actualCountMS      = SUM(CASE WHEN ScanType = 'MS'     Then ScanCount Else 0 End),
+           @actualCountHMS     = SUM(CASE WHEN ScanType = 'HMS'    Then ScanCount Else 0 End),
+           @actualCountGCMS    = SUM(CASE WHEN ScanType = 'GC-MS'  Then ScanCount Else 0 End),
 
-           @actualCountAnyMSn  = SUM(CASE WHEN ScanType LIKE '%-MSn'    OR ScanType = 'MSn'  Then 1 Else 0 End),
-           @actualCountAnyHMSn = SUM(CASE WHEN ScanType LIKE '%-HMSn'   OR ScanType = 'HMSn'  Then 1 Else 0 End),
+           @actualCountAnyMSn  = SUM(CASE WHEN ScanType LIKE '%-MSn'    OR ScanType = 'MSn'   Then ScanCount Else 0 End),
+           @actualCountAnyHMSn = SUM(CASE WHEN ScanType LIKE '%-HMSn'   OR ScanType = 'HMSn'  Then ScanCount Else 0 End),
 
-           @actualCountCIDMSn  = SUM(CASE WHEN ScanType LIKE '%CID-MSn'  OR ScanType = 'MSn'  Then 1 Else 0 End),
-           @actualCountCIDHMSn = SUM(CASE WHEN ScanType LIKE '%CID-HMSn' OR ScanType = 'HMSn' Then 1 Else 0 End),
+           @actualCountCIDMSn  = SUM(CASE WHEN ScanType LIKE '%CID-MSn'  OR ScanType = 'MSn'  Then ScanCount Else 0 End),
+           @actualCountCIDHMSn = SUM(CASE WHEN ScanType LIKE '%CID-HMSn' OR ScanType = 'HMSn' Then ScanCount Else 0 End),
 
-           @actualCountETDMSn  = SUM(CASE WHEN ScanType LIKE '%ETD-MSn'  Then 1 Else 0 End),
-           @actualCountETDHMSn = SUM(CASE WHEN ScanType LIKE '%ETD-HMSn' Then 1 Else 0 End),
+           @actualCountETDMSn  = SUM(CASE WHEN ScanType LIKE '%ETD-MSn'  Then ScanCount Else 0 End),
+           @actualCountETDHMSn = SUM(CASE WHEN ScanType LIKE '%ETD-HMSn' Then ScanCount Else 0 End),
 
-           @actualCountHCDMSn  = SUM(CASE WHEN ScanType LIKE '%HCD-MSn'  Then 1 Else 0 End),
-           @actualCountHCDHMSn = SUM(CASE WHEN ScanType LIKE '%HCD-HMSn' Then 1 Else 0 End),
+           @actualCountHCDMSn  = SUM(CASE WHEN ScanType LIKE '%HCD-MSn'  Then ScanCount Else 0 End),
+           @actualCountHCDHMSn = SUM(CASE WHEN ScanType LIKE '%HCD-HMSn' Then ScanCount Else 0 End),
 
-           @actualCountETciDMSn  = SUM(CASE WHEN ScanType LIKE '%ETciD-MSn'  Then 1 Else 0 End),
-           @actualCountETciDHMSn = SUM(CASE WHEN ScanType LIKE '%ETciD-HMSn' Then 1 Else 0 End),
-           @actualCountEThcDMSn  = SUM(CASE WHEN ScanType LIKE '%EThcD-MSn'  Then 1 Else 0 End),
-           @actualCountEThcDHMSn = SUM(CASE WHEN ScanType LIKE '%EThcD-HMSn' Then 1 Else 0 End),
+           @actualCountETciDMSn  = SUM(CASE WHEN ScanType LIKE '%ETciD-MSn'  Then ScanCount Else 0 End),
+           @actualCountETciDHMSn = SUM(CASE WHEN ScanType LIKE '%ETciD-HMSn' Then ScanCount Else 0 End),
+           @actualCountEThcDMSn  = SUM(CASE WHEN ScanType LIKE '%EThcD-MSn'  Then ScanCount Else 0 End),
+           @actualCountEThcDHMSn = SUM(CASE WHEN ScanType LIKE '%EThcD-HMSn' Then ScanCount Else 0 End),
 
-           @actualCountMRM = SUM(CASE WHEN ScanType LIKE '%SRM' or ScanType LIKE '%MRM' OR ScanType LIKE 'Q[1-3]MS' Then 1 Else 0 End),
-           @actualCountPQD = SUM(CASE WHEN ScanType LIKE '%PQD%' Then 1 Else 0 End)
+           @actualCountMRM = SUM(CASE WHEN ScanType LIKE '%SRM' or ScanType LIKE '%MRM' OR ScanType LIKE 'Q[1-3]MS' Then ScanCount Else 0 End),
+           @actualCountPQD = SUM(CASE WHEN ScanType LIKE '%PQD%' Then ScanCount Else 0 End)
 
     FROM T_Dataset_ScanTypes
     WHERE Dataset_ID = @datasetID
@@ -161,23 +161,23 @@ AS
 
     If @InfoOnly <> 0
     Begin
-           SELECT @actualCountMS AS ActualCountMS,
-                  @actualCountHMS AS ActualCountHMS,
-                  @actualCountGCMS AS ActualCountGCMS,
-                  @actualCountAnyMSn As ActualCountAnyMSn,
-                  @actualCountAnyHMSn As ActualCountAnyHMSn,
-                  @actualCountCIDMSn AS ActualCountCIDMSn,
-                  @actualCountCIDHMSn AS ActualCountCIDHMSn,
-                  @actualCountETDMSn AS ActualCountETDMSn,
-                  @actualCountETDHMSn AS ActualCountETDHMSn,
-                  @actualCountHCDMSn AS ActualCountHCDMSn,
-                  @actualCountHCDHMSn AS ActualCountHCDHMSn,
-                  @actualCountETciDMSn AS ActualCountETciDMSn,
-                  @actualCountETciDHMSn AS ActualCountETciDHMSn,
-                  @actualCountEThcDMSn AS ActualCountEThcDMSn,
-                  @actualCountEThcDHMSn AS ActualCountEThcDHMSn,
-                  @actualCountMRM AS ActualCountMRM,
-                  @actualCountPQD AS ActualCountPQD
+       SELECT @actualCountMS AS ActualCountMS,
+              @actualCountHMS AS ActualCountHMS,
+              @actualCountGCMS AS ActualCountGCMS,
+              @actualCountAnyMSn As ActualCountAnyMSn,
+              @actualCountAnyHMSn As ActualCountAnyHMSn,
+              @actualCountCIDMSn AS ActualCountCIDMSn,
+              @actualCountCIDHMSn AS ActualCountCIDHMSn,
+              @actualCountETDMSn AS ActualCountETDMSn,
+              @actualCountETDHMSn AS ActualCountETDHMSn,
+              @actualCountHCDMSn AS ActualCountHCDMSn,
+              @actualCountHCDHMSn AS ActualCountHCDHMSn,
+              @actualCountETciDMSn AS ActualCountETciDMSn,
+              @actualCountETciDHMSn AS ActualCountETciDHMSn,
+              @actualCountEThcDMSn AS ActualCountEThcDMSn,
+              @actualCountEThcDHMSn AS ActualCountEThcDHMSn,
+              @actualCountMRM AS ActualCountMRM,
+              @actualCountPQD AS ActualCountPQD
 
     End
 
@@ -696,7 +696,6 @@ FixDSType:
     End
 
 Done:
-
     If @InfoOnly <> 0
     Begin
         If Len(@message) = 0
