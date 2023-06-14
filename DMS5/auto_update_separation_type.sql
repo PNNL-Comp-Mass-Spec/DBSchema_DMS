@@ -6,12 +6,15 @@ GO
 CREATE PROCEDURE [dbo].[auto_update_separation_type]
 /****************************************************
 **
-**  Desc:   Update the separation type based on the name and acquisition length
+**  Desc:
+**      Update the separation type based on the name and acquisition length
+**      Ignores datasets with an acquisition length under 6 minutes
 **
 **  Auth:   mem
 **  Date:   10/09/2020 mem - Initial version
 **          10/10/2020 mem - Adjust threshold for LC-Dionex-Formic_30min
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/13/2023 mem - Exit the procedure if the acquisition length is <= 5 minutes
 **
 *****************************************************/
 (
@@ -28,11 +31,23 @@ AS
     Set @acqLengthMinutes = ISNULL(@acqLengthMinutes, 0)
     Set @optimalSeparationType = ''
 
+    If @acqLengthMinutes <= 5
+    Begin
+        If @acqLengthMinutes <= 0
+            PRINT 'Acquisition length is 0 minutes; not updating separation type';
+        Else
+            PRINT 'Acquisition length is less than 5 minutes; not updating separation type';
+
+        Set @optimalSeparationType = @separationType;
+
+        Return 0
+    End
+
     ---------------------------------------------------
     -- Update the separation type name if it matches certain conditions
     ---------------------------------------------------
 
-    If @separationType Like 'LC-Waters-Formic%' AND @acqLengthMinutes > 5
+    If @separationType Like 'LC-Waters-Formic%'
     Begin
         If @acqLengthMinutes < 35
             Set @optimalSeparationType = 'LC-Waters-Formic_30min'
@@ -52,7 +67,7 @@ AS
             Set @separationType = 'LC-Waters-Formic_5hr'
     End
 
-    If @separationType Like 'LC-Dionex-Formic%' AND @acqLengthMinutes > 5
+    If @separationType Like 'LC-Dionex-Formic%'
     Begin
         If @acqLengthMinutes < 50
            Set @optimalSeparationType = 'LC-Dionex-Formic_30min'
@@ -66,7 +81,7 @@ AS
            Set @optimalSeparationType = 'LC-Dionex-Formic_5hr'
     End
 
-    If @separationType Like 'LC-Agilent-Formic%' AND @acqLengthMinutes > 5
+    If @separationType Like 'LC-Agilent-Formic%'
     Begin
         If @acqLengthMinutes < 35
            Set @optimalSeparationType = 'LC-Agilent-Formic_30minute'
@@ -98,6 +113,6 @@ AS
         SET @optimalSeparationType = @separationType
     End
 
-    return 0
+    Return 0
 
 GO
