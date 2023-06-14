@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[backfill_pipeline_jobs]
 **          02/06/2023 bcg - Update column names from views
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/27/2023 mem - Auto change script DiaNN_DataPkg to DiaNN
+**          06/13/2023 mem - Fix bug that used harded coded job number 1914830 instead of @job
 **
 *****************************************************/
 (
@@ -299,17 +300,17 @@ AS
                 --
                 SELECT @parameterFileName = Param_Value
                 FROM S_V_Pipeline_Job_Parameters
-                WHERE job = 1914830 AND
+                WHERE job = @job AND
                       Param_Name = 'ParamFileName'
 
                 SELECT @proteinCollectionList = Param_Value
                 FROM S_V_Pipeline_Job_Parameters
-                WHERE job = 1914830 AND
+                WHERE job = @job AND
                       Param_Name = 'ProteinCollectionList'
 
                 SELECT @legacyFastaFileName = Param_Value
                 FROM S_V_Pipeline_Job_Parameters
-                WHERE job = 1914830 AND
+                WHERE job = @job AND
                       Param_Name = 'LegacyFastaFileName'
 
                 If Coalesce(@parameterFileName, '') = ''
@@ -738,7 +739,6 @@ NextJob:
     End -- </f>
 
 Done:
-
     Return @myError
 
 GO
