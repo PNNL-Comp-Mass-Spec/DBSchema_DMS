@@ -58,6 +58,7 @@ CREATE PROCEDURE [dbo].[update_task_state]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
+**          06/13/2023 mem - No longer call update_dms_prep_state
 **
 *****************************************************/
 (
@@ -462,25 +463,27 @@ AS
 
             End -- </c>
 
-            If @bypassDMS = 0 AND @datasetID = 0
-            Begin -- <d>
-
-                If @infoOnly > 0
-                Begin
-                    Print 'Exec update_dms_prep_state @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
-                End
-                Else
-                Begin
-                    Exec @myError = update_dms_prep_state
-                                @job,
-                                @Script,
-                                @newJobStateInBroker,
-                                @message output
-
-                    If @myError <> 0
-                        Exec post_log_entry 'Error', @message, 'update_task_state'
-                End
-            End -- </d>
+            -- Deprecated in June 2023 since update_dms_prep_state only applies to script 'HPLCSequenceCapture', which was never implemented
+            --
+            -- If @bypassDMS = 0 AND @datasetID = 0
+            -- Begin
+            --
+            --     If @infoOnly > 0
+            --     Begin
+            --         Print 'Exec update_dms_prep_state @job=' + Cast(@job as varchar(12)) + ', @newJobStateInBroker=' + Cast(@newJobStateInBroker as varchar(6))
+            --     End
+            --     Else
+            --     Begin
+            --         Exec @myError = update_dms_prep_state
+            --                     @job,
+            --                     @Script,
+            --                     @newJobStateInBroker,
+            --                     @message output
+            --
+            --         If @myError <> 0
+            --             Exec post_log_entry 'Error', @message, 'update_task_state'
+            --     End
+            -- End
 
             ---------------------------------------------------
             -- Save job history
