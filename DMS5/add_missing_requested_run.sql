@@ -37,7 +37,7 @@ CREATE PROCEDURE [dbo].[add_missing_requested_run]
 (
     @dataset varchar(256),
     @eusProposalID varchar(64) = '',
-    @eusUsageType varchar(64) = 'Cap_Dev',
+    @eusUsageType varchar(64) = 'CAP_DEV',
     @eusUsersList varchar(64) = '',
     @infoOnly tinyint = 1,
     @message varchar(512) = '' output
@@ -191,7 +191,6 @@ Done:
         print @message
 
     return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_missing_requested_run] TO [DDL_Viewer] AS [dbo]
