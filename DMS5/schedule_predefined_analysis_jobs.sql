@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[schedule_predefined_analysis_jobs]
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/15/2023 mem - Exit the procedure if @datasetName is not found in T_Dataset
 **
 *****************************************************/
 (
@@ -71,7 +72,7 @@ As
     IF @datasetID = 0
     BEGIN
         SET @message = 'Could not find ID for dataset'
-        SET @state = 'Error'
+        RETURN 52000
     end
 
      ---------------------------------------------------
