@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Run_Interval_Detail_Report]
 AS
 SELECT R.id,
@@ -18,6 +17,7 @@ SELECT R.id,
        'Maintenance:' + U.Maintenance + '%|' +
        'StaffNotAvailable:' + U.Staff_Not_Available + '%|' +
        'CapDev:' + U.Cap_Dev + '%|' +
+       'ResourceOwner:' + U.Resource_Owner + '%|' +
        'InstrumentAvailable:' + U.Instrument_Available + '%' AS usage,
        R.entered,
 	   R.Last_Affected AS last_affected,
@@ -25,7 +25,6 @@ SELECT R.id,
 FROM dbo.T_Run_Interval R
      LEFT OUTER JOIN V_Run_Interval_Usage U
        ON R.ID = U.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Run_Interval_Detail_Report] TO [DDL_Viewer] AS [dbo]

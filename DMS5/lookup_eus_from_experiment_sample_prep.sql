@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[lookup_eus_from_experiment_sample_prep]
 **          08/02/2018 mem - T_Sample_Prep_Request now tracks EUS User ID as an integer
 **          05/25/2021 mem - Change @eusUsageType to USER_REMOTE if the prep request has UsageType USER_REMOTE, even if @eusUsageType is already USER_ONSITE
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/16/2023 mem - Change @eusUsageType to RESOURCE_OWNER if the prep request has UsageType RESOURCE_OWNER and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
 **
 *****************************************************/
 (
@@ -107,6 +108,12 @@ AS
     Begin
         Set @message = 'Changed Usage Type to USER_REMOTE based on Prep Request ID ' + Cast(@prepRequestID as varchar(12))
         Set @eusUsageType = 'USER_REMOTE'
+    End
+
+    If @usageTypeSamplePrep = 'RESOURCE_OWNER' And @eusUsageType In ('USER', 'USER_ONSITE', 'USER_REMOTE')
+    Begin
+        Set @message = 'Changed Usage Type to RESOURCE_OWNER based on Prep Request ID ' + Cast(@prepRequestID as varchar(12))
+        Set @eusUsageType = 'RESOURCE_OWNER'
     End
 
 GO

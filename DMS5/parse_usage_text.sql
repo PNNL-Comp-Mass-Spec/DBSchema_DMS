@@ -37,9 +37,10 @@ CREATE PROCEDURE [dbo].[parse_usage_text]
 **                         - Rename temp tables
 **                         - Additional comment cleanup logic
 **          08/29/2017 mem - Direct users to http://prismwiki.pnl.gov/wiki/Long_Interval_Notes
-**          05/25/2021 mem - Add support for usage types UserOnsite and UserRemote
+**          05/25/2021 mem - Add support for usage types 'UserOnsite' and 'UserRemote'
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/15/2023 mem - Add support for usage type 'ResourceOwner'
 **
 *****************************************************/
 (
@@ -99,7 +100,7 @@ AS
     -- Usage keywords
     ---------------------------------------------------
 
-    Declare @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, UserOnsite, UserRemote, Onsite, Remote, User'
+    Declare @usageKeys VARCHAR(256) = 'CapDev, Broken, Maintenance, StaffNotAvailable, OtherNotAvailable, InstrumentAvailable, UserOnsite, UserRemote, ResourceOwner, Onsite, Remote, User'
     Declare @nonPercentageKeys VARCHAR(256) = 'Operator, Proposal, PropUser'
     Declare @commentToSearch Varchar(4096)
 

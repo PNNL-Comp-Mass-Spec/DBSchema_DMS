@@ -24,6 +24,7 @@ CREATE FUNCTION [dbo].[check_emsl_usage_item_validity]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/15/2023 mem - Add support for usage type 'RESOURCE_OWNER'
 **
 *****************************************************/
 (
@@ -77,17 +78,30 @@ Begin
            ON InstUsage.Usage_Type = InstUsageType.ID
     WHERE (InstUsage.Seq = @Seq)
 
-    IF @Usage = 'CAP_DEV' AND @Operator Is Null
+    If @Usage = 'CAP_DEV' AND @Operator Is Null
+    Begin
         Set @Message = @Message + 'Capability Development requires an instrument operator ID' + ', '
+    End
 
-    IF NOT @Usage IN ('ONSITE', 'MAINTENANCE') AND ISNULL(@Comment, '') = ''
+    If @Usage = 'RESOURCE_OWNER' AND @Operator Is Null
+    Begin
+        Set @Message = @Message + 'Resource Owner requires an instrument operator ID' + ', '
+    End
+
+    If NOT @Usage IN ('ONSITE', 'MAINTENANCE') AND ISNULL(@Comment, '') = ''
+    Begin
         Set @Message = @Message + 'Missing Comment' + ', '
+    End
 
-    IF @Usage = 'OFFSITE' AND @Proposal = ''
+    If @Usage = 'OFFSITE' AND @Proposal = ''
+    Begin
         Set @Message = @Message + 'Missing Proposal' + ', '
+    End
 
-    IF @Usage = 'ONSITE' AND Try_Parse(SUBSTRING(@Proposal, 1, 1) as int) Is Null
+    If @Usage = 'ONSITE' AND Try_Parse(SUBSTRING(@Proposal, 1, 1) as int) Is Null
+    Begin
         Set @Message = @Message + 'Preliminary Proposal number' + ', '
+    End
 
     SELECT  @ProposalId = Proposal_ID ,
             @Title = Title ,
@@ -100,17 +114,19 @@ Begin
     FROM    T_EUS_Proposals
     WHERE   Proposal_ID = @Proposal
 
-    IF @Usage = 'ONSITE' AND @ProposalId IS null
+    If @Usage = 'ONSITE' AND @ProposalId IS null
+    Begin
         Set @Message = @Message + 'Proposal number is not in ERS' + ', '
+    End
 
-    IF NOT @ProposalId IS NULL
-    BEGIN
-    IF @Usage = 'ONSITE' AND  NOT ( @Start BETWEEN @ProposalStartDate AND @ProposalEndDate )
+    If NOT @ProposalId IS NULL
+    Begin
+    If @Usage = 'ONSITE' AND  NOT ( @Start BETWEEN @ProposalStartDate AND @ProposalEndDate )
         Set @Message = @Message + 'Run start not between proposal start/end dates' + ', '
-    END
+    End
 
-    IF NOT @ProposalId IS NULL
-    BEGIN
+    If NOT @ProposalId IS NULL
+    Begin
         Declare @hits int = 0
         If @Users Like '%,%'
         Begin
@@ -129,9 +145,9 @@ Begin
             WHERE Proposal_ID = @Proposal And Person_ID = Try_Parse(@Users as int)
         End
 
-        IF @hits = 0
+        If @hits = 0
             Set @Message = @Message + 'No users were listed for proposal' + ', '
-    END
+    End
 
     RETURN @Message
 End

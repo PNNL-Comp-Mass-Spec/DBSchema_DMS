@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[validate_eus_usage]
 **                         - Add additional debug messages
 **                         - Use Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/15/2023 mem - Add support for usage type 'RESOURCE_OWNER'
 **
 *****************************************************/
 (
@@ -113,6 +114,9 @@ AS
 
     If @eusUsageType Like 'Brok%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
         Set @eusUsageType = 'BROKEN'
+
+    If @eusUsageType Like 'Res%' AND Not Exists (SELECT * FROM T_EUS_UsageType WHERE [Name] = @eusUsageType)
+        Set @eusUsageType = 'RESOURCE_OWNER'
 
     If @eusUsageType Like 'USER_UNKOWN%'
         Set @eusUsageType = 'USER_UNKNOWN'
@@ -211,6 +215,8 @@ AS
         Set @eusProposalID = NULL
         Set @eusUsersList = ''
     End
+
+    Set @proposalType = ''
 
     If @eusUsageType In ('USER', 'USER_ONSITE', 'USER_REMOTE')
     Begin -- <a1>

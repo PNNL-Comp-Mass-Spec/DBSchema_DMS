@@ -39,6 +39,7 @@ CREATE PROCEDURE [dbo].[get_monthly_instrument_usage_report]
 **                         - Validate @year, @month, and @outputFormat
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/25/2023 bcg - Update output table column names to lower-case
+**          06/15/2023 mem - Add support for usage type 'RESOURCE_OWNER'
 **
 *****************************************************/
 (
@@ -283,8 +284,8 @@ AS
         SELECT
                 TRI.ID,
                 TRI.Start,
-                TRI.Usage,  -- Examples: 'Maintenance[100%]' or 'UserOnsite[100%], Proposal[50587], PropUser[45631]' or 'User[100%], Proposal[51667], PropUser[48542]'
-                TRI.Comment
+                TRI.Usage,      -- Examples: '<u Maintenance="100" />' or '<u UserOnsite="100" Proposal="60594" PropUser="60420" />'  or '<u User="100" Proposal="51667" PropUser="48542" />'
+                TRI.Comment     -- Examples: 'Maintenance[100%]'       or 'UserOnsite[100%], Proposal[60594], PropUser[60420]'        or 'User[100%], Proposal[51667], PropUser[48542]'
         FROM  T_Run_Interval TRI
                 INNER JOIN #TR ON TRI.ID = #TR.Dataset_ID
 
@@ -377,6 +378,23 @@ AS
         FROM #TI
         INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
                 CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
+
+        /*
+         * Future:
+
+        INSERT INTO #TQ (Dataset_ID, Start, [Interval], Operator, Proposal, [Usage], Comment)
+        SELECT
+            #TI.Dataset_ID,
+            #TI.Start,
+            CONVERT(FLOAT, ISNULL(xmlNode.value('@ResourceOwner', 'varchar(32)'), '0')) * #TR.[Interval] / 100   AS [Interval],
+            xmlNode.value('@Operator', 'varchar(32)') AS Operator,
+            '' AS Proposal,
+            'RESOURCE_OWNER' AS Usage,                    -- This is defined in T_EMSL_Instrument_Usage_Type
+            #TI.Comment
+        FROM #TI
+        INNER JOIN #TR ON #TR.Dataset_ID = #TI.Dataset_ID
+                CROSS APPLY BreakDown.nodes('//u') AS R ( xmlNode )
+         */
 
         INSERT INTO #TQ (Dataset_ID, Start, [Interval], Proposal, [Usage], Comment)
         SELECT
@@ -484,6 +502,8 @@ AS
         SET [Usage] = 'REMOTE'
         WHERE [Usage] = 'USER_REMOTE'
 
+        -- Starting in FY 24, [Usage] can also be 'RESOURCE_OWNER'
+
         ---------------------------------------------------
         -- Remove artifacts
         ---------------------------------------------------
@@ -568,7 +588,7 @@ AS
                    ON #TR.Dataset_ID = TRR.DatasetID
             WHERE #TR.[Type] = 'Dataset'
 
-            -- Get operator user ID for ONSITE and REMOTE intervals
+            -- Get operator user ID for ONSITE, REMOTE, and RESOURCE_OWNER intervals
             UPDATE #TR
             SET Operator = TEU.PERSON_ID
             FROM #TR
@@ -579,7 +599,7 @@ AS
                  INNER JOIN T_EUS_Users AS TEU
                    ON TU.U_HID = TEU.HID
             WHERE #TR.[Type] = 'Interval' AND
-                  #TR.[Usage] In ('ONSITE', 'REMOTE')
+                  #TR.[Usage] In ('ONSITE', 'REMOTE', 'RESOURCE_OWNER')
 
             -- Output report rows
             SELECT
@@ -657,8 +677,6 @@ AS
             FROM #TR
         END
 
-    ---------------------------------------------------
-    ---------------------------------------------------
     END TRY
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
