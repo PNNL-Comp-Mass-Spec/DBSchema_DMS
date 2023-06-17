@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
 **                         - Update error message
 **          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/16/2023 mem - Validate instrument group name
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ AS
         Begin
             Set @message = 'Must define a batch name'
             Set @myError = 50000
-            return @myError
+            Return @myError
         End
 
         ---------------------------------------------------
@@ -65,7 +66,7 @@ AS
             Begin
                 Set @message = 'Requested completion date is not a valid date: ' + @requestedCompletionDate
                 Set @myError = 50001
-                return @myError
+                Return @myError
             End
         End
 
@@ -73,7 +74,9 @@ AS
         -- Determine the Instrument Group
         ---------------------------------------------------
 
-        -- Set the instrument group to @requestedInstrument for now
+        Set @requestedInstrumentGroup = LTrim(RTrim(Coalesce(@requestedInstrumentGroup, '')))
+
+        -- Set the instrument group to @requestedInstrumentGroup for now
         Set @instrumentGroupToUse = @requestedInstrumentGroup
 
         If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroupToUse)
@@ -82,6 +85,15 @@ AS
             SELECT @instrumentGroupToUse = IN_Group
             FROM T_Instrument_Name
             WHERE IN_Name = @requestedInstrumentGroup
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+            
+            If @myRowCount = 0
+            Begin
+                Set @message = 'Invalid Instrument Group: ' + @requestedInstrumentGroup
+                Set @myError = 50002
+                Return @myError
+            End
         End
 
         ---------------------------------------------------
@@ -91,8 +103,8 @@ AS
         If @requestedBatchPriority = 'High' AND ISNULL(@justificationHighPriority, '') = ''
         Begin
             Set @message = 'Justification must be entered If high priority is being requested'
-            Set @myError = 50002
-            return @myError
+            Set @myError = 50003
+            Return @myError
         End
 
         ---------------------------------------------------
@@ -104,8 +116,8 @@ AS
             If Exists (SELECT * FROM T_Requested_Run_Batches WHERE Batch = @name)
             Begin
                 Set @message = 'Cannot add batch: "' + @name + '" already exists in database'
-                Set @myError = 50003
-                return @myError
+                Set @myError = 50004
+                Return @myError
             End
         End
 
@@ -116,8 +128,8 @@ AS
             If IsNull(@batchID, 0) = 0
             Begin
                 Set @message = 'Cannot update batch; ID must non-zero'
-                Set @myError = 50004
-                return @myError
+                Set @myError = 50005
+                Return @myError
             End
 
             Declare @locked varchar(12)
@@ -131,22 +143,22 @@ AS
             If @myError <> 0
             Begin
                 Set @message = 'Error trying to find existing entry in T_Requested_Run_Batches'
-                Set @myError = 50005
-                return @myError
+                Set @myError = 50006
+                Return @myError
             End
 
             If @myRowCount = 0
             Begin
                 Set @message = 'Cannot update: batch ' + Cast(@batchID As Varchar(12)) + ' does not exist in database'
-                Set @myError = 50006
-                return @myError
+                Set @myError = 50007
+                Return @myError
             End
 
             If @locked = 'yes'
             Begin
                 Set @message = 'Cannot update: batch is locked'
-                Set @myError = 50007
-                return @myError
+                Set @myError = 50008
+                Return @myError
             End
         End
 
@@ -183,8 +195,8 @@ AS
             Else
             Begin
                 Set @message = 'Could not find entry in database for username "' + @ownerUsername + '"'
-                Set @myError = 50008
-                return @myError
+                Set @myError = 50009
+                Return @myError
             End
         End
 
@@ -201,8 +213,8 @@ AS
         If @batchGroupID > 0 And Not Exists (Select * From T_Requested_Run_Batch_Group Where Batch_Group_ID = @batchGroupID)
         Begin
             Set @message = 'Requested run batch group does not exist: ' + Cast(@batchGroupID As varchar(12))
-            Set @myError = 50009
-            return @myError
+            Set @myError = 50010
+            Return @myError
         End
 
         If @batchGroupID > 0 And IsNull(@batchGroupOrder, 0) < 1
@@ -221,6 +233,6 @@ AS
         Exec post_log_entry 'Error', @message, 'validate_requested_run_batch_params'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
