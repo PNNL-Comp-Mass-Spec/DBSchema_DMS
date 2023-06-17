@@ -9,7 +9,7 @@ INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES 
 INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (8,'Database Backup Log Path        ','G:\SqlServerBackup\','G:\SqlServerBackup\','')
 INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (9,'Redgate Backup Transfer Folder  ','','','')
 INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (10,'DMSOrganismFiles                ','\\gigasax\DMS_Organism_Files\','F:\DMS_Organism_Files\','')
-INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (11,'DMSParameterFiles               ','\\gigasax\DMS_Parameter_Files\','F:\DMS_Parameter_Files\','The specific folder for each step tool is defiend in table AJT_parmFileStoragePath in DMS5 and in table T_Step_Tools in the DMS_Pipeline database')
-INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (12,'Email_alert_admins              ','EMSL-Prism.Users.DMS_Monitoring_Admins@pnnl.gov','n/a','Used by PostEmailAlert')
+INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (11,'DMSParameterFiles               ','\\gigasax\DMS_Parameter_Files\','F:\DMS_Parameter_Files\','The specific folder for each step tool is defined in table T_Analysis_Tool in DMS5 and in table T_Step_Tools in the DMS_Pipeline database')
+INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (12,'Email_alert_admins              ','EMSL-Prism.Users.DMS_Monitoring_Admins@pnnl.gov','n/a','Used by Post_Email_Alert')
 INSERT INTO [T_MiscPaths] (path_id, [Function], Server, Client, Comment) VALUES (13,'Spectral_Library_Files          ','\\proto-9\Spectral_Libraries\','\\proto-9\Spectral_Libraries\','Files tracked by T_Spectral_Library')
 SET IDENTITY_INSERT [T_MiscPaths] OFF

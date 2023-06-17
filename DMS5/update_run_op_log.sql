@@ -16,7 +16,6 @@ CREATE PROCEDURE [dbo].[update_run_op_log]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**
 **  Auth:   grk
 **  Date:   02/21/2013 grk - Initial release
 **          02/23/2016 mem - Add Set XACT_ABORT on
