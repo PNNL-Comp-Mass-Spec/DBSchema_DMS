@@ -28,7 +28,7 @@ CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
-    @requestedInstrumentGroup varchar(64),      -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+    @requestedInstrumentGroup varchar(64),      -- Will typically contain an instrument group, not an instrument name
     @comment varchar(512),
     @batchGroupID int = Null output,
     @batchGroupOrder Int = Null output,

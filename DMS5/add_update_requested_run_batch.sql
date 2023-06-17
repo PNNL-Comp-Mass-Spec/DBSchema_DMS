@@ -51,7 +51,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
-    @requestedInstrumentGroup varchar(64),          -- Will typically contain an instrument group, not an instrument name; could also contain "(lookup)"
+    @requestedInstrumentGroup varchar(64),          -- Will typically contain an instrument group, not an instrument name
     @comment varchar(512),
     @batchGroupID int = Null,
     @batchGroupOrder Int = Null,
@@ -490,7 +490,7 @@ AS
             Exec post_log_entry 'Error', @message, 'add_update_requested_run_batch'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run_batch] TO [DDL_Viewer] AS [dbo]
