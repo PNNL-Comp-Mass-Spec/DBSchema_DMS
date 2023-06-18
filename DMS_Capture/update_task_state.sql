@@ -59,6 +59,7 @@ CREATE PROCEDURE [dbo].[update_task_state]
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
 **          06/13/2023 mem - No longer call update_dms_prep_state
+**          06/17/2023 mem - Update if statement to remove conditions that are always true
 **
 *****************************************************/
 (
@@ -489,9 +490,7 @@ AS
             -- Save job history
             ---------------------------------------------------
             --
-            If @newJobStateInBroker IN (3, 5) AND
-               Not (@oldJobStateInBroker = 2 And @newJobStateInBroker = 2) AND
-               Not (@oldJobStateInBroker = 5 And @newJobStateInBroker = 2)
+            If @newJobStateInBroker IN (3, 5)
             Begin
                 If @infoOnly > 0
                 Begin
