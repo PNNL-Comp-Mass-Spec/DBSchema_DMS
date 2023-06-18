@@ -101,11 +101,6 @@ REFERENCES [dbo].[T_Archive_Path] ([AP_path_ID])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Path]
 GO
-ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name] FOREIGN KEY([AS_update_state_ID])
-REFERENCES [dbo].[T_Archive_Update_State_Name] ([AUS_stateID])
-GO
-ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Archive_Update_State_Name]
-GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset] FOREIGN KEY([AS_Dataset_ID])
 REFERENCES [dbo].[T_Dataset] ([Dataset_ID])
 GO
@@ -115,6 +110,11 @@ ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_
 REFERENCES [dbo].[T_Dataset_Archive_State_Name] ([archive_state_id])
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset_Archive_State_Name]
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_Dataset_Archive_Update_State_Name] FOREIGN KEY([AS_update_state_ID])
+REFERENCES [dbo].[T_Dataset_Archive_Update_State_Name] ([AUS_stateID])
+GO
+ALTER TABLE [dbo].[T_Dataset_Archive] CHECK CONSTRAINT [FK_T_Dataset_Archive_T_Dataset_Archive_Update_State_Name]
 GO
 ALTER TABLE [dbo].[T_Dataset_Archive]  WITH CHECK ADD  CONSTRAINT [FK_T_Dataset_Archive_T_MyEMSLState] FOREIGN KEY([MyEMSLState])
 REFERENCES [dbo].[T_MyEMSLState] ([MyEMSLState])
