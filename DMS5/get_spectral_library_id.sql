@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **          03/29/2023 mem - If the library state is 2 and @dmsSourceJob matches the Source_Job in T_Spectral_Library, assume the job failed and was re-started, and thus set @sourceJobShouldMakeLibrary to 1
 **                         - Change tinyint parameters to smallint or bit
 **          04/16/2023 mem - Auto-update @proteinCollectionList and @organismDbFile to 'na' if an empty string
+**          06/19/2023 mem - Set @organismDbFile to 'na' when @proteinCollectionList is defined; otherwise, set @proteinCollectionList to 'na' when @organismDbFile is defined
 **
 *****************************************************/
 (
@@ -150,6 +151,9 @@ Begin
 
         If dbo.validate_na_parameter(@proteinCollectionList, 1) <> 'na'
         Begin
+            -- Always set @organismDbFile to 'na' when a protein collection list is defined
+            Set @organismDbFile = 'na'
+
             Set @defaultLibraryName = @proteinCollectionList
 
             -- Lookup the organism associated with the first protein collection in the list
@@ -178,6 +182,9 @@ Begin
         End
         Else If dbo.validate_na_parameter(@organismDbFile, 1) <> 'na'
         Begin
+            -- Always set @proteinCollectionList to 'na' when an organism DB file is defined
+            Set @proteinCollectionList = 'na'
+
             Set @defaultLibraryName = @organismDbFile
 
             -- Remove the extension (which should be .fasta)
