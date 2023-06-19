@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **                         - Change tinyint parameters to smallint or bit
 **          04/16/2023 mem - Auto-update @proteinCollectionList and @organismDbFile to 'na' if an empty string
 **          06/19/2023 mem - Set @organismDbFile to 'na' when @proteinCollectionList is defined; otherwise, set @proteinCollectionList to 'na' when @organismDbFile is defined
+**                         - Set @returnCode to 'U5225' if an existing spectral library is not found, and @allowAddNew is 0
 **
 *****************************************************/
 (
@@ -483,6 +484,10 @@ Begin
         Begin
             Set @message = 'Spectral library not found, and @allowAddNew is 0; not creating ' + @libraryName
             Print @message
+
+            -- The analysis manager looks for return code 'U5225' in class AnalysisResourcesDiaNN
+            Set @returnCode = 'U5225'
+
             Return 0;
         End
 
