@@ -9,7 +9,7 @@ SELECT EL.Event_ID,
        EL.Target_Type,
        CASE EL.Target_Type
            WHEN 1 THEN 'Campaign'
-           WHEN 2 THEN 'Cell Culture'
+           WHEN 2 THEN 'Biomaterial'
            WHEN 3 THEN 'Experiment'
            WHEN 4 THEN 'Dataset'
            WHEN 5 THEN 'Job'
