@@ -96,7 +96,7 @@ FROM (
 	FROM dbo.T_Dataset_Archive DA
 		 INNER JOIN dbo.T_Dataset_Archive_State_Name DASN
 		   ON DA.AS_state_ID = DASN.archive_state_id
-		 INNER JOIN dbo.T_Archive_Update_State_Name AUSN
+		 INNER JOIN dbo.T_Dataset_Archive_Update_State_Name AUSN
 		   ON DA.AS_update_state_ID = AUSN.AUS_stateID
 		 INNER JOIN dbo.T_Dataset DS
 		   ON DA.AS_Dataset_ID = DS.Dataset_ID

@@ -62,12 +62,12 @@ FROM dbo.T_Event_Log EL
      LEFT OUTER JOIN DMS5.dbo.T_Dataset_State_Name DSSN
        ON EL.Target_State = DSSN.Dataset_state_ID AND
           EL.Target_Type = 4
-     LEFT OUTER JOIN DMS5.dbo.T_Archive_Update_State_Name AUSN
-       ON EL.Target_State = AUSN.AUS_stateID AND
-          EL.Target_Type = 7
      LEFT OUTER JOIN DMS5.dbo.T_Dataset_Archive_State_Name DASN
        ON EL.Target_State = DASN.archive_state_id AND
           EL.Target_Type = 6
+     LEFT OUTER JOIN DMS5.dbo.T_Dataset_Archive_Update_State_Name AUSN
+       ON EL.Target_State = AUSN.AUS_stateID AND
+          EL.Target_Type = 7
      LEFT OUTER JOIN DMS5.dbo.T_Analysis_State_Name AJSN
        ON EL.Target_State = AJSN.AJS_stateID AND
           EL.Target_Type = 5

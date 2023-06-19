@@ -10,7 +10,7 @@ SELECT DA.AS_Dataset_ID AS id,
        DS.Dataset_Num AS dataset,
        TIN.IN_name AS instrument,
        DASN.archive_state AS state,
-       AUS.AUS_name AS update_state,
+       AUSN.AUS_name AS update_state,
        DA.AS_datetime AS entered,
        DA.AS_state_Last_Affected AS state_last_affected,
        DA.AS_update_state_Last_Affected AS update_state_last_affected,
@@ -27,8 +27,8 @@ FROM dbo.T_Dataset_Archive AS DA
        ON DA.AS_storage_path_ID = TAP.AP_path_ID
      INNER JOIN dbo.T_Instrument_Name AS TIN
        ON DS.DS_instrument_name_ID = TIN.Instrument_ID
-     INNER JOIN dbo.T_Archive_Update_State_Name AS AUS
-       ON DA.AS_update_state_ID = AUS.AUS_stateID
+     INNER JOIN dbo.T_Dataset_Archive_Update_State_Name AS AUSN
+       ON DA.AS_update_state_ID = AUSN.AUS_stateID
      INNER JOIN dbo.T_Storage_Path AS SPath
        ON DS.DS_storage_path_ID = SPath.SP_path_ID
 

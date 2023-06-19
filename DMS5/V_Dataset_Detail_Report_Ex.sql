@@ -135,7 +135,7 @@ FROM S_V_BTO_ID_to_Name AS BTO
        ON RR.RDS_WorkPackage = CC.Charge_Code
      LEFT OUTER JOIN T_Dataset_Archive_State_Name AS TDASN
        ON DA.AS_state_ID = TDASN.archive_state_id
-     LEFT OUTER JOIN T_Archive_Update_State_Name AS AUSN
+     LEFT OUTER JOIN T_Dataset_Archive_Update_State_Name AS AUSN
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
      LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
        ON DS.Cart_Config_ID = CartConfig.Cart_Config_ID

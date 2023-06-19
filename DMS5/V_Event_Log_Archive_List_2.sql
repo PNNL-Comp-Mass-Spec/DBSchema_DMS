@@ -16,9 +16,9 @@ SELECT EL.event_id,
 FROM T_Event_Log EL
      INNER JOIN T_Dataset
        ON EL.Target_ID = T_Dataset.Dataset_ID
-     INNER JOIN T_Archive_Update_State_Name AS NewState
+     INNER JOIN T_Dataset_Archive_Update_State_Name AS NewState
        ON EL.Target_State = NewState.AUS_stateID
-     INNER JOIN T_Archive_Update_State_Name AS OldState
+     INNER JOIN T_Dataset_Archive_Update_State_Name AS OldState
        ON EL.Prev_Target_State = OldState.AUS_stateID
 WHERE EL.Target_Type = 7 AND
       EL.Entered > DateAdd(day, -4, GetDate())

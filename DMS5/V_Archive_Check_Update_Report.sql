@@ -14,7 +14,7 @@ FROM dbo.T_Dataset_Archive AS DA INNER JOIN
      dbo.T_Dataset_Archive_State_Name AS DASN ON DA.AS_state_ID = DASN.archive_state_id INNER JOIN
      dbo.T_Archive_Path AS AP ON DA.AS_storage_path_ID = AP.AP_path_ID INNER JOIN
      dbo.T_Instrument_Name AS InstName ON DS.DS_instrument_name_ID = InstName.Instrument_ID INNER JOIN
-     dbo.T_Archive_Update_State_Name AS AUSN ON DA.AS_update_state_ID = AUSN.AUS_stateID INNER JOIN
+     dbo.T_Dataset_Archive_Update_State_Name AS AUSN ON DA.AS_update_state_ID = AUSN.AUS_stateID INNER JOIN
      dbo.T_Storage_Path AS SP ON DS.DS_storage_path_ID = SP.sp_path_id
 WHERE (NOT (DA.AS_update_state_ID IN (4, 6)))
 

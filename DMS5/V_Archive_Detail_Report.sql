@@ -11,7 +11,7 @@ SELECT DS.Dataset_Num AS dataset,
        TIN.IN_name AS instrument,
        DS.DS_created AS created,
        DASN.archive_state AS state,
-       AUS.AUS_name AS [update],
+       AUSN.AUS_name AS [update],
        DA.AS_datetime AS entered,
        DA.AS_last_update AS last_update,
        DA.AS_last_verify AS last_verify,
@@ -36,8 +36,8 @@ FROM dbo.T_Dataset_Archive DA
        ON DA.AS_storage_path_ID = TAP.AP_path_ID
      INNER JOIN dbo.T_Instrument_Name TIN
        ON DS.DS_instrument_name_ID = TIN.Instrument_ID
-     INNER JOIN dbo.T_Archive_Update_State_Name AUS
-       ON DA.AS_update_state_ID = AUS.AUS_stateID
+     INNER JOIN dbo.T_Dataset_Archive_Update_State_Name AUSN
+       ON DA.AS_update_state_ID = AUSN.AUS_stateID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Archive_Detail_Report] TO [DDL_Viewer] AS [dbo]
