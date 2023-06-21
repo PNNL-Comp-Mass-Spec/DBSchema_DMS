@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Scripts_History] ******/
-/****** RowCount: 26 ******/
+/****** RowCount: 27 ******/
 SET IDENTITY_INSERT [T_Scripts_History] ON
 INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, Entered, Entered_By) VALUES (1,1,'DatasetCapture','CAP','<JobScript Name="DatasetCapture"><Step Number="1" Tool="DatasetCapture" /><Step Number="2" Tool="DatasetIntegrity"><Depends_On Step_Number="1" /></Step><Step Number="3" Tool="DatasetInfo"><Depends_On Step_Number="2" /></Step><Step Number="4" Tool="DatasetQuality"><Depends_On Step_Number="3" /></Step></JobScript>','9/15/2009 12:52:01 PM','PNL\D3J410')
 INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, Entered, Entered_By) VALUES (2,2,'ArchiveUpdate','CAP','<JobScript Name="ArchiveUpdate"><Step Number="1" Tool="ArchiveUpdate" /></JobScript>','9/15/2009 12:52:01 PM','PNL\D3J410')
@@ -27,4 +27,5 @@ INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, En
 INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, Entered, Entered_By) VALUES (26,12,'MyEMSLVerify','DSV','<JobScript Name="MyEMSLVerify"><Step Number="1" Tool="ArchiveStatusCheck" /></JobScript>','3/7/2018 1:29:01 PM','PNL\D3L243')
 INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, Entered, Entered_By) VALUES (27,3,'DatasetArchive','DSA','<JobScript Name="DatasetArchive"><Step Number="1" Tool="DatasetArchive" /><Step Number="2" Tool="ArchiveVerify"><Depends_On Step_Number="1" /></Step></JobScript>','6/24/2022 10:38:32 PM','PNL\D3L243')
 INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, Entered, Entered_By) VALUES (28,5,'HPLCSequenceCapture','CAP','<JobScript Name="HPLCSequenceCapture"><Step Number="1" Tool="DatasetCapture" /></JobScript>','6/24/2022 10:39:12 PM','PNL\D3L243')
+INSERT INTO [T_Scripts_History] (Entry_ID, ID, Script, Results_Tag, Contents, Entered, Entered_By) VALUES (29,2,'ArchiveUpdate','UPD','<JobScript Name="ArchiveUpdate"><Step Number="1" Tool="ArchiveUpdate" /><Step Number="2" Tool="ArchiveVerify"><Depends_On Step_Number="1" /></Step><Step Number="3" Tool="ArchiveStatusCheck"><Depends_On Step_Number="2" /></Step></JobScript>','6/20/2023 4:21:08 PM','D3L243 (via DMSWebUser)')
 SET IDENTITY_INSERT [T_Scripts_History] OFF
