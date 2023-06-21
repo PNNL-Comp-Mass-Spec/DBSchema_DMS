@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[set_purge_task_complete]
 **          09/09/2022 mem - Use new argument names when calling MakeNewArchiveUpdateJob
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
+**          06/21/2023 mem - Remove parameter @pushDatasetToMyEMSL in call to s_make_new_archive_update_task
 **
 *****************************************************/
 (
@@ -42,19 +43,19 @@ CREATE PROCEDURE [dbo].[set_purge_task_complete]
     @message varchar(512) output
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
-    declare @datasetID int
-    declare @storageServerName varchar(64)
-    declare @datasetState int
-    declare @completionState int
-    declare @result int
-    declare @instrumentClass varchar(32)
+    Declare @datasetID int
+    Declare @storageServerName varchar(64)
+    Declare @datasetState int
+    Declare @completionState int
+    Declare @result int
+    Declare @instrumentClass varchar(32)
 
     ---------------------------------------------------
     -- Resolve dataset into ID
@@ -70,111 +71,108 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         set @message = 'Could not get dataset ID for dataset ' + @datasetName
         goto done
-    end
+    End
 
     ---------------------------------------------------
     -- Determine current "Archive" state and current "ArchiveUpdate" state
     ---------------------------------------------------
 
-    declare @currentState as int
-    set @currentState = 0
-    --
-    declare @currentUpdateState as int
-    set @currentUpdateState = 0
-    --
-    SELECT
-        @currentState = AS_state_ID,
-        @currentUpdateState = AS_update_state_ID
+    Declare @currentState int = 0
+    Declare @currentUpdateState int = 0
+
+    SELECT @currentState = AS_state_ID,
+           @currentUpdateState = AS_update_state_ID
     FROM T_Dataset_Archive
     WHERE (AS_Dataset_ID = @datasetID)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
+
+    If @myError <> 0
+    Begin
         set @message = 'Could not get current archive state for dataset ' + @datasetName
         goto done
-    end
+    End
 
-    if @currentState <> 7
-    begin
+    If @currentState <> 7
+    Begin
         set @myError = 1
         set @message = 'Current archive state incorrect for dataset ' + @datasetName
         goto done
-    end
+    End
 
     ---------------------------------------------------
     -- choose archive state and archive update  state
     -- based upon completion code
     ---------------------------------------------------
-/*
-Code 0 (success)
-    Set T_Dataset_Archive.AS_state_ID to 4 (Purged).
-    Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 
-Code 1 (failed)
-    Set T_Dataset_Archive.AS_state_ID to 8 (Failed).
-    Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+    /*
+    Code 0 (success)
+        Set T_Dataset_Archive.AS_state_ID to 4 (Purged).
+        Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 
-Code 2 (update reqd)
-    Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
-    Set T_Dataset_Archive.AS_update_state_ID to 2 (Update Required)
-    Bump up Purge Holdoff Date by 90 minutes
+    Code 1 (failed)
+        Set T_Dataset_Archive.AS_state_ID to 8 (Failed).
+        Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 
-Code 3 (Stage MD5 file required)
-    Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
-    Leave T_Dataset_Archive.AS_update_state_ID unchanged.
-    Set AS_StageMD5_Required to 1
-    Bump up Purge Holdoff Date by 90 minutes
+    Code 2 (update reqd)
+        Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
+        Set T_Dataset_Archive.AS_update_state_ID to 2 (Update Required)
+        Bump up Purge Holdoff Date by 90 minutes
 
-Code 4 (Drive Missing)
-    Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
-    Leave T_Dataset_Archive.AS_update_state_ID unchanged.
-    Leave Purge Holdoff Date unchanged
+    Code 3 (Stage MD5 file required)
+        Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
+        Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+        Set AS_StageMD5_Required to 1
+        Bump up Purge Holdoff Date by 90 minutes
 
-Code 5 (Purged Instrument Data and any other auto-purge items)
-    Set T_Dataset_Archive.AS_state_ID to 14
-    Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+    Code 4 (Drive Missing)
+        Set T_Dataset_Archive.AS_state_ID to 3 (Complete).
+        Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+        Leave Purge Holdoff Date unchanged
 
-Code 6 (Purged all data except QC folder)
-    Set T_Dataset_Archive.AS_state_ID to 15
-    Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+    Code 5 (Purged Instrument Data and any other auto-purge items)
+        Set T_Dataset_Archive.AS_state_ID to 14
+        Leave T_Dataset_Archive.AS_update_state_ID unchanged.
 
-*/
+    Code 6 (Purged all data except QC folder)
+        Set T_Dataset_Archive.AS_state_ID to 15
+        Leave T_Dataset_Archive.AS_update_state_ID unchanged.
+
+    */
 
     -- (success)
-    if @completionCode = 0
-    begin
-        set @completionState = 4 -- purged
+    If @completionCode = 0
+    Begin
+        set @completionState = 4        -- Purged
         goto SetStates
-    end
+    End
 
     -- (failed)
-    if @completionCode = 1
-    begin
-        set @completionState = 8 -- purge failed
+    If @completionCode = 1
+    Begin
+        set @completionState = 8        -- Purge failed
         goto SetStates
-    end
+    End
 
     -- (update reqd)
-    if @completionCode = 2
-    begin
-        set @completionState = 3    -- complete
-        set @currentUpdateState = 2 -- Update Required
-        EXEC s_make_new_archive_update_task @datasetName, @resultsDirectoryName='', @allowBlankResultsDirectory=1, @PushDatasetToMyEMSL=0, @message=@message output
+    If @completionCode = 2
+    Begin
+        set @completionState = 3        -- Complete
+        set @currentUpdateState = 2     -- Update Required
+        EXEC s_make_new_archive_update_task @datasetName, @resultsDirectoryName='', @allowBlankResultsDirectory=1, @message=@message output
         goto SetStates
-    end
+    End
 
     -- (MD5 results file is missing; need to have stageMD5 file created by the DatasetPurgeArchiveHelper)
-    if @completionCode = 3
-    begin
+    If @completionCode = 3
+    Begin
         set @completionState = 3    -- complete
         goto SetStates
-    end
+    End
 
     If IsNull(@storageServerName, '') = ''
         Set @storageServerName = '??'
@@ -182,60 +180,60 @@ Code 6 (Purged all data except QC folder)
     Declare @postedBy varchar(128) = 'set_purge_task_complete: ' + @storageServerName
 
     -- (Drive Missing)
-    if @completionCode = 4
-    begin
+    If @completionCode = 4
+    Begin
         set @message = 'Drive not found for dataset ' + @datasetName
         Exec post_log_entry 'Error', @message, @postedBy
         set @message = ''
 
         set @completionState = 3    -- complete
         goto SetStates
-    end
+    End
 
     -- (Purged Instrument Data and any other auto-purge items)
-    if @completionCode = 5
-    begin
+    If @completionCode = 5
+    Begin
         set @completionState = 14    -- complete
         goto SetStates
-    end
+    End
 
     -- (Purged all data except QC folder)
-    if @completionCode = 6
-    begin
+    If @completionCode = 6
+    Begin
         set @completionState = 15    -- complete
         goto SetStates
-    end
+    End
 
     -- (Dataset folder missing in archive, either in MyEMSL or at \\adms.emsl.pnl.gov\dmsarch)
-    if @completionCode = 7
-    begin
+    If @completionCode = 7
+    Begin
         set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetName
         Exec post_log_entry 'Error', @message, @postedBy
         set @message = ''
 
         set @completionState = 3    -- complete
         goto SetStates
-    end
+    End
 
     -- (Archive is offline (Aurora is offline): \\adms.emsl.pnl.gov\dmsarch)
-    if @completionCode = 8
-    begin
+    If @completionCode = 8
+    Begin
         set @message = 'Archive is offline; cannot purge dataset ' + @datasetName
         Exec post_log_entry 'Error', @message, @postedBy
         set @message = ''
 
         set @completionState = 3    -- complete
         goto SetStates
-    end
+    End
 
     -- (Previewed purge)
-    if @completionCode = 9
-    begin
+    If @completionCode = 9
+    Begin
         set @completionState = 3    -- complete
         goto SetStates
-    end
+    End
 
-    -- if we got here, completion code was not recognized.  Bummer.
+    -- If we got here, completion code was not recognized.  Bummer.
     --
     set @message = 'Completion code was not recognized'
     goto Done
@@ -245,9 +243,9 @@ SetStates:
     SET
         AS_state_ID = @completionState,
         AS_update_state_ID = @currentUpdateState,
-        AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2    THEN DATEADD(  HOUR, 24, GETDATE())
-                                     WHEN @completionCode IN (2,3)   THEN DATEADD(MINUTE, 90, GETDATE())
-                                     WHEN @completionCode = 7        THEN DATEADD(  HOUR, 48, GETDATE())
+        AS_purge_holdoff_date = CASE WHEN @currentUpdateState = 2  THEN DATEADD(hour,   24, GETDATE())
+                                     WHEN @completionCode IN (2,3) THEN DATEADD(minute, 90, GETDATE())
+                                     WHEN @completionCode = 7      THEN DATEADD(hour,   48, GETDATE())
                                      ELSE AS_purge_holdoff_date
                                 END,
         AS_StageMD5_Required = CASE WHEN @completionCode = 3
@@ -258,12 +256,12 @@ SetStates:
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0 or @myRowCount <> 1
-    begin
+    If @myError <> 0 or @myRowCount <> 1
+    Begin
         set @message = 'Update operation failed'
         set @myError = 99
         goto done
-    end
+    End
 
     If @completionState in (4, 14)
     Begin
@@ -320,12 +318,12 @@ Done:
     Set @UsageMessage = 'Dataset: ' + @datasetName
     Exec post_usage_log_entry 'set_purge_task_complete', @UsageMessage
 
-    if @message <> ''
-    begin
+    If @message <> ''
+    Begin
         RAISERROR (@message, 10, 1)
-    end
+    End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[set_purge_task_complete] TO [DDL_Viewer] AS [dbo]
