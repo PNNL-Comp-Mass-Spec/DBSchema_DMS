@@ -27,14 +27,13 @@ CREATE PROCEDURE [dbo].[make_new_archive_update_task]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
+**          06/20/2023 mem - Remove parameters @pushDatasetToMyEMSL and @pushDatasetRecursive
 **
 *****************************************************/
 (
     @datasetName varchar(128),
     @resultsDirectoryName varchar(128) = '',
-    @allowBlankResultsDirectory tinyint = 0,       -- Set to 1 if you need to update the dataset file; the downside is that the archive update will involve a byte-to-byte comparison of all data in both the dataset directory and all subdirectories
-    @pushDatasetToMyEMSL tinyint = 0,           -- Set to 1 to push the dataset to MyEMSL instead of updating the data at \\aurora.emsl.pnl.gov\archive\dmsarch
-    @pushDatasetRecursive tinyint = 0,          -- Set to 1 to recursively push a directory and all subdirectories into MyEMSL
+    @allowBlankResultsDirectory tinyint = 0,    -- Set to 1 if you need to update the dataset file; the downside is that the archive update will involve a byte-to-byte comparison of all data in both the dataset directory and all subdirectories
     @infoOnly tinyint = 0,                      -- 0 To perform the update, 1 preview job that would be created
     @message varchar(512)='' output
 )
@@ -65,8 +64,6 @@ AS
 
     Set @resultsDirectoryName = IsNull(@resultsDirectoryName, '')
     Set @allowBlankResultsDirectory = IsNull(@allowBlankResultsDirectory, 0)
-    Set @pushDatasetToMyEMSL = IsNull(@pushDatasetToMyEMSL, 0)
-    Set @pushDatasetRecursive = IsNull(@pushDatasetRecursive, 0)
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
 
@@ -126,15 +123,7 @@ AS
         Goto Done
     End
 
-    If @pushDatasetToMyEMSL <> 0
-    Begin
-        If @pushDatasetRecursive <> 0
-            Set @Script = 'MyEMSLDatasetPushRecursive'
-        Else
-            Set @Script = 'MyEMSLDatasetPush'
-    End
-    Else
-        Set @Script = 'ArchiveUpdate'
+    Set @Script = 'ArchiveUpdate'
 
     ---------------------------------------------------
     -- create new Archive Update job for specified dataset
