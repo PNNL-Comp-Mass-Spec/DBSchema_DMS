@@ -23,7 +23,7 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DS.Dataset_ID = DA.AS_Dataset_ID
      INNER JOIN dbo.T_Dataset_Archive_State_Name AS DASN
        ON DA.AS_state_ID = DASN.archive_state_id
-     INNER JOIN dbo.T_Archive_Update_State_Name AS AUSN
+     INNER JOIN dbo.T_Dataset_Archive_Update_State_Name AS AUSN
        ON DA.AS_update_state_ID = AUSN.AUS_stateID
 WHERE (AJ.AJ_StateID = 1) AND
       (NOT (DA.AS_state_ID IN (2, 7, 8))) AND
