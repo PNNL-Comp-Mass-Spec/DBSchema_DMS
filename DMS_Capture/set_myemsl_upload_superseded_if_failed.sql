@@ -21,6 +21,8 @@ CREATE PROCEDURE [dbo].[set_myemsl_upload_superseded_if_failed]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/27/2023 mem - Update dataset_id validation to support multiple rows in T_MyEMSL_Uploads having the same status_num but different dataset IDs
+**                         - Store @ingestStepsCompleted in T_MyEMSL_Uploads if it is larger than the existing value
 **
 *****************************************************/
 (
@@ -32,8 +34,8 @@ CREATE PROCEDURE [dbo].[set_myemsl_upload_superseded_if_failed]
 AS
     set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -42,9 +44,9 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'set_myemsl_upload_superseded_if_failed', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -70,14 +72,14 @@ AS
         Goto Done
     End
 
-    Declare @StatusNumListTable as Table(StatusNum int NOT NULL)
+    Declare @StatusNumListTable as Table(StatusNum int NOT NULL, Dataset_ID_Validated tinyint NOT NULL)
 
     ---------------------------------------------------
     -- Split the StatusNumList on commas
     ---------------------------------------------------
 
-    INSERT INTO @StatusNumListTable (StatusNum)
-    SELECT DISTINCT Value
+    INSERT INTO @StatusNumListTable (StatusNum, Dataset_ID_Validated)
+    SELECT DISTINCT Value, 0
     FROM dbo.parse_delimited_integer_list(@StatusNumList, ',')
     ORDER BY Value
 
@@ -107,7 +109,14 @@ AS
     -- Make sure the Dataset_ID is correct
     ---------------------------------------------------
 
-    If Exists (Select * FROM T_MyEMSL_Uploads WHERE StatusNum IN (Select StatusNum From @StatusNumListTable) And Dataset_ID <> @DatasetID)
+    UPDATE @StatusNumListTable
+    SET Dataset_ID_Validated = 1
+    FROM @StatusNumListTable Target INNER JOIN 
+         T_MyEMSL_Uploads MU
+           ON Target.StatusNum = MU.StatusNum
+    WHERE MU.dataset_id = @datasetID
+          
+    If Exists (SELECT * FROM @StatusNumListTable WHERE Dataset_ID_Validated = 0)
     Begin
         Set @message = 'One or more StatusNums in @StatusNumList do not have Dataset_ID ' + Convert(varchar(12), @DatasetID) + ' in T_MyEMSL_Uploads: ' + @StatusNumList
         Set @myError = 60004
@@ -120,9 +129,14 @@ AS
     ---------------------------------------------------
 
     UPDATE T_MyEMSL_Uploads
-    SET ErrorCode = 101
+    SET ErrorCode = 101,
+        Ingest_Steps_Completed = CASE WHEN @ingestStepsCompleted > Coalesce(Ingest_Steps_Completed, 0)
+                                      THEN @ingestStepsCompleted
+                                      ELSE Ingest_Steps_Completed
+                                 END
     WHERE ErrorCode = 0 AND
           Verified = 0 AND
+          Dataset_ID = @datasetID AND
           StatusNum IN ( SELECT StatusNum FROM @StatusNumListTable )
 
 Done:
@@ -130,11 +144,11 @@ Done:
     If @myError <> 0
     Begin
         If @message = ''
-            Set @message = 'Error in UpdateSupersededURIs'
+            Set @message = 'Error in set_myemsl_upload_superseded_if_failed'
 
         Set @message = @message + '; error code = ' + Convert(varchar(12), @myError)
 
-        Exec post_log_entry 'Error', @message, 'UpdateSupersededURIs'
+        Exec post_log_entry 'Error', @message, 'set_myemsl_upload_superseded_if_failed'
     End
 
     Return @myError
