@@ -36,9 +36,9 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'store_quameter_results', @raiseError = 1;
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     exec @myError = s_store_quameter_results @DatasetID=@DatasetID, @ResultsXML=@ResultsXML, @message=@message output, @infoOnly=@infoOnly
 

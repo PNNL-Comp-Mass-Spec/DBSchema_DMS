@@ -15,15 +15,16 @@ CREATE PROCEDURE [dbo].[store_quameter_results]
 **      Typical XML file contents:
 **
 **      <Quameter_Results>
-**        <Dataset>Shew119-01_17july02_earth_0402-10_4-20</Dataset>
-**        <Job>780000</Job>
+**        <Dataset>QC_BTLE_01_Lipid_Pos_28Jun23_Crater_WCSH315309</Dataset>
+**        <Job>6041131</Job>
 **        <Measurements>
-**          <Measurement Name="XIC-WideFrac">0.35347</Measurement>
-**          <Measurement Name="XIC-FWHM-Q1">20.7009</Measurement>
-**          <Measurement Name="XIC-FWHM-Q2">22.3192</Measurement>
-**          <Measurement Name="XIC-FWHM-Q3">24.794</Measurement>
-**          <Measurement Name="XIC-Height-Q2">1.08473</Measurement>
-**          etc.
+**          <Measurement Name="XIC_WideFrac">0.150247</Measurement><Measurement Name="XIC_FWHM_Q1">154.879</Measurement><Measurement Name="XIC_FWHM_Q2">197.899</Measurement><Measurement Name="XIC_FWHM_Q3">236.983</Measurement><Measurement Name="XIC_Height_Q2">0.533508</Measurement><Measurement Name="XIC_Height_Q3">0.427546</Measurement><Measurement Name="XIC_Height_Q4">1.32528</Measurement>
+**          <Measurement Name="RT_Duration">2461.28</Measurement><Measurement Name="RT_TIC_Q1">0.520133</Measurement><Measurement Name="RT_TIC_Q2">0.11564</Measurement><Measurement Name="RT_TIC_Q3">0.147399</Measurement><Measurement Name="RT_TIC_Q4">0.216828</Measurement><Measurement Name="RT_MS_Q1">0.253362</Measurement><Measurement Name="RT_MS_Q2">0.25316</Measurement><Measurement Name="RT_MS_Q3">0.241555</Measurement><Measurement Name="RT_MS_Q4">0.251923</Measurement>
+**          <Measurement Name="RT_MSMS_Q1">0.252978</Measurement><Measurement Name="RT_MSMS_Q2">0.253037</Measurement><Measurement Name="RT_MSMS_Q3">0.242426</Measurement><Measurement Name="RT_MSMS_Q4">0.251559</Measurement><Measurement Name="MS1_TIC_Change_Q2">0.938397</Measurement><Measurement Name="MS1_TIC_Change_Q3">0.945567</Measurement><Measurement Name="MS1_TIC_Change_Q4">3.247</Measurement>
+**          <Measurement Name="MS1_TIC_Q2">0.551227</Measurement><Measurement Name="MS1_TIC_Q3">0.332419</Measurement><Measurement Name="MS1_TIC_Q4">1.43225</Measurement><Measurement Name="MS1_Count">936</Measurement><Measurement Name="MS1_Freq_Max">0.416628</Measurement><Measurement Name="MS1_Density_Q1">1789</Measurement><Measurement Name="MS1_Density_Q2">2287.5</Measurement><Measurement Name="MS1_Density_Q3">3086.5</Measurement>
+**          <Measurement Name="MS2_Count">7481</Measurement><Measurement Name="MS2_Freq_Max">3.31577</Measurement><Measurement Name="MS2_Density_Q1">18</Measurement><Measurement Name="MS2_Density_Q2">27</Measurement><Measurement Name="MS2_Density_Q3">47</Measurement>
+**          <Measurement Name="MS2_PrecZ_1">0.947868</Measurement><Measurement Name="MS2_PrecZ_2">0.00641625</Measurement><Measurement Name="MS2_PrecZ_3">0</Measurement><Measurement Name="MS2_PrecZ_4">0</Measurement><Measurement Name="MS2_PrecZ_5">0</Measurement><Measurement Name="MS2_PrecZ_more">0</Measurement>
+**          <Measurement Name="MS2_PrecZ_likely_1">0.0274028</Measurement><Measurement Name="MS2_PrecZ_likely_multi">0.0183131</Measurement>
 **        </Measurements>
 **      </Quameter_Results>
 **
