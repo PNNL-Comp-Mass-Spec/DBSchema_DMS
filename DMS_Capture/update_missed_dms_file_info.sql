@@ -6,8 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[update_missed_dms_file_info]
 /****************************************************
 **
-**  Desc:   Calls UpdateDatasetFileInfoXML for datasets
-**          that have info defined in T_Dataset_Info_XML
+**  Desc:   Calls UpdateDatasetFileInfoXML for datasets that have info defined in T_Dataset_Info_XML
 **          yet the dataset has a null value for File_Info_Last_Modified in DMS
 **
 **  Return values: 0: success, otherwise, error code
@@ -21,6 +20,7 @@ CREATE PROCEDURE [dbo].[update_missed_dms_file_info]
 **                         - Add parameter @datasetIDs
 **          08/09/2018 mem - Filter out dataset info XML entries where Ignore is 1
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/28/2023 mem - Fix bug that deleted all rows in the temporary table when @datasetIDs was an empty string
 **
 *****************************************************/
 (
@@ -80,11 +80,14 @@ AS
     -- Possibly filter on @datasetIDs
     --------------------------------------------
     --
-    DELETE #TmpDatasetsToProcess
-    WHERE NOT Dataset_ID IN ( SELECT Value
-                              FROM dbo.parse_delimited_integer_list ( @datasetIDs, ',' ) )
-    --
-    SELECT @myRowCount = @@RowCount
+    If @datasetIDs <> ''
+    Begin
+        DELETE #TmpDatasetsToProcess
+        WHERE NOT Dataset_ID IN ( SELECT Value
+                                  FROM dbo.parse_delimited_integer_list ( @datasetIDs, ',' ) )
+        --
+        SELECT @myRowCount = @@RowCount
+    End
 
     --------------------------------------------
     -- Delete any entries that don't exist in S_DMS_T_Dataset
@@ -200,7 +203,7 @@ AS
 
     End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_missed_dms_file_info] TO [DDL_Viewer] AS [dbo]
