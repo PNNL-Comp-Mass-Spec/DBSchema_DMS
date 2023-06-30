@@ -7,8 +7,7 @@ CREATE PROCEDURE [dbo].[remove_selected_jobs]
 /****************************************************
 **
 **  Desc:
-**  Delete jobs given in temp table #SJL
-**  that must be populated by the caller
+**      Delete jobs given in temp table #SJL (populated by the caller)
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,6 +21,7 @@ CREATE PROCEDURE [dbo].[remove_selected_jobs]
 **          09/24/2014 mem - Rename Job in T_Job_Step_Dependencies
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps and T_Job_Step_Dependencies
+**          06/29/2023 mem - Update table alias and update comments
 **
 *****************************************************/
 (
@@ -46,7 +46,7 @@ AS
     Set @LogDeletions = IsNull(@LogDeletions, 0)
 
     ---------------------------------------------------
-    -- bail If no candidates found
+    -- Bail If no candidates found
     ---------------------------------------------------
     --
     declare @numJobs int
@@ -61,34 +61,36 @@ AS
     Begin
         SELECT * FROM #SJL
     End
-    else
+    Else
     Begin -- <a>
 
         ---------------------------------------------------
-        -- preserve record of successfully completed
+        -- Preserve record of successfully completed
         -- shared results
         ---------------------------------------------------
-        --
-        -- for the jobs being deleted, finds all instances of
+
+        -- For the jobs being deleted, finds all instances of
         -- successfully completed results transfer steps that
         -- were directly dependent upon steps that generated
         -- shared results, and makes sure that their output folder
         -- name is entered into the shared results table
-        --
-        INSERT INTO T_Shared_Results
-        (Results_Name)
-        SELECT DISTINCT
-            TS.Output_Folder_Name
-        FROM
-            T_Job_Steps AS DS INNER JOIN
-            T_Job_Step_Dependencies AS JSD ON DS.Job = JSD.Job AND DS.Step = JSD.Step INNER JOIN
-            T_Job_Steps AS TS ON JSD.Job = TS.Job AND JSD.Target_Step = TS.Step
-        WHERE
-            DS.Tool = 'Results_Transfer' AND
-            DS.State = 5 AND
-            TS.Shared_Result_Version > 0 AND
-            NOT TS.Output_Folder_Name IN (SELECT Results_Name FROM T_Shared_Results) AND
-            DS.Job IN (SELECT Job FROM #SJL)
+
+        INSERT INTO T_Shared_Results (Results_Name)
+        SELECT DISTINCT JS.Output_Folder_Name
+        FROM T_Job_Steps AS TransferJS
+             INNER JOIN T_Job_Step_Dependencies AS JSD
+               ON TransferJS.Job = JSD.Job AND
+                  TransferJS.Step = JSD.Step
+             INNER JOIN T_Job_Steps AS JS
+               ON JSD.Job = JS.Job AND
+                  JSD.Target_Step = JS.Step
+        WHERE TransferJS.Tool = 'Results_Transfer' AND
+              TransferJS.State = 5 AND
+              JS.Shared_Result_Version > 0 AND
+              NOT JS.Output_Folder_Name IN ( SELECT Results_Name
+                                             FROM T_Shared_Results ) AND
+              TransferJS.Job IN ( SELECT Job
+                                  FROM #SJL )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
          --
@@ -99,11 +101,11 @@ AS
         End
 
         ---------------------------------------------------
-        -- delete job dependencies
+        -- Delete job dependencies
         ---------------------------------------------------
         --
         DELETE FROM T_Job_Step_Dependencies
-        WHERE (Job IN (SELECT Job FROM #SJL))
+        WHERE Job IN (SELECT Job FROM #SJL)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -117,7 +119,7 @@ AS
             print 'Deleted ' + Convert(varchar(12), @myRowCount) + ' rows from T_Job_Step_Dependencies'
 
         ---------------------------------------------------
-        -- delete job parameters
+        -- Delete job parameters
         ---------------------------------------------------
         --
         DELETE FROM T_Job_Parameters
@@ -137,14 +139,14 @@ AS
         disable trigger trig_ud_T_Job_Steps on T_Job_Steps;
 
         ---------------------------------------------------
-        -- delete job steps
+        -- Delete job steps
         ---------------------------------------------------
         --
         DELETE FROM T_Job_Steps
         WHERE Job IN (SELECT Job FROM #SJL)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-         --
+        --
         If @myError <> 0
         Begin
             Set @message = 'Error deleting T_Job_Steps'
@@ -180,6 +182,7 @@ AS
                 SELECT TOP 1 @Job = Job
                 FROM #SJL
                 WHERE Job > @Job
+                ORDER BY Job
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
