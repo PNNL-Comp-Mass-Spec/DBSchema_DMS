@@ -3,9 +3,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Instrument_List_Export]
-AS	
+AS
 SELECT Inst.Instrument_ID AS id,
        Inst.IN_name AS name,
        Inst.IN_Description AS description,
@@ -14,6 +13,7 @@ SELECT Inst.Instrument_ID AS id,
        Inst.IN_operations_role AS ops_role,
        Inst.IN_status AS status,
        Inst.IN_class AS class,
+       Inst.IN_Group AS instrument_group,
        Inst.IN_capture_method AS capture,
        InstClass.raw_data_type AS raw_data_type,
        SrcPath.Source_Path AS source_path,
@@ -40,7 +40,6 @@ FROM dbo.T_Instrument_Name Inst
        ON SrcPath.SP_path_ID = Inst.IN_source_path_ID
      INNER JOIN dbo.T_Instrument_Class InstClass
        ON Inst.IN_class = InstClass.IN_class
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_List_Export] TO [DDL_Viewer] AS [dbo]
