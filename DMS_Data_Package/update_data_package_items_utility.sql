@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[update_data_package_items_utility]
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/04/2023 mem - When adding datasets, do not add data package placeholder datasets (e.g. dataset DataPackage_3442_TestData)
 **          05/19/2023 mem - When adding analysis jobs, do not add data package placeholder datasets
+**          07/07/2023 mem - Replace synonym S_V_Experiment_Detail_Report_Ex with S_V_Experiment_List_Report
 **
 *****************************************************/
 (
@@ -789,7 +790,7 @@ AS
                     TX.Created
                 FROM
                     #TPI
-                    INNER JOIN S_V_Experiment_Detail_Report_Ex TX
+                    INNER JOIN S_V_Experiment_List_Report TX
                     ON #TPI.Identifier = TX.Experiment
                 WHERE #TPI.[Type] = 'Experiment'
             End
@@ -811,7 +812,7 @@ AS
                     TX.Created
                 FROM
                     #TPI
-                    INNER JOIN S_V_Experiment_Detail_Report_Ex TX
+                    INNER JOIN S_V_Experiment_List_Report TX
                     ON #TPI.Identifier = TX.Experiment
                 WHERE #TPI.[Type] = 'Experiment'
                 --
