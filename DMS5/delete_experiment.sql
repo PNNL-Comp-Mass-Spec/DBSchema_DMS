@@ -7,9 +7,8 @@ CREATE PROCEDURE [dbo].[delete_experiment]
 /****************************************************
 **
 **  Desc:
-**      Deletes given Experiment from the Experiment table
-**      and all referencing tables.  Experiment may not
-**      have any associated datasets or requested runs
+**      Deletes given experiment from the experiment table and all referencing tables.
+**      Experiment may not have any associated datasets or requested runs.
 **
 **      Return values: 0: success, otherwise, error code
 **
@@ -27,6 +26,7 @@ CREATE PROCEDURE [dbo].[delete_experiment]
 **                         - Prevent deletion if the experiment is a plex channel in T_Experiment_Plex_Members
 **                         - Add @infoOnly
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/11/2023 mem - Remove duplicate query of T_Requested_Run (unnecessary since T_Requested_Run_History was merged with T_Requested_Run in 2010)
 **
 *****************************************************/
 (
@@ -131,32 +131,6 @@ AS
         set @message = 'Cannot delete experiment that has associated requested runs'
         RAISERROR (@message, 10, 1)
         return 51142
-    End
-
-    ---------------------------------------------------
-    -- Can't delete experiment that has requested run history
-    ---------------------------------------------------
-
-    Declare @rrhCount Int = 0
-    --
-    SELECT @rrhCount = COUNT(*)
-    FROM T_Requested_Run
-    WHERE (Exp_ID = @experimentId) AND NOT (DatasetID IS NULL)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    If @myError <> 0
-    Begin
-        set @message = 'Could not get requested run history count for Experiment "' + @experimentName + '"'
-        RAISERROR (@message, 10, 1)
-        return 51143
-    End
-    --
-    If @rrhCount > 0
-    Begin
-        set @message = 'Cannot delete experiment that has associated requested run history'
-        RAISERROR (@message, 10, 1)
-        return 51143
     End
 
     ---------------------------------------------------
