@@ -6,89 +6,96 @@ GO
 CREATE PROCEDURE [dbo].[get_param_file_crosstab]
 /****************************************************
 **
-**  Desc:   Returns a crosstab table displaying modification details
-**          by Sequset or X!Tandem parameter file
+**  Desc:
+**      Returns a crosstab table displaying modification details
+**      for the parameter file(s) for the given analysis tool
+**
+**      Used by web page https://dms2.pnl.gov/get_paramfile_crosstab/param
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Date:   12/05/2006 mem - Initial version (Ticket #337)
 **          12/11/2006 mem - Renamed from GetSequestParamFileCrosstab to get_param_file_crosstab (Ticket #342)
-**                         - Added parameters @ParameterFileTypeName and @ShowValidOnly
+**                         - Added parameters @parameterFileTypeName and @showValidOnly
 **                         - Updated to call populate_param_file_info_table_sequest and populate_param_file_mod_info_table
-**          04/07/2008 mem - Added parameters @previewSql, @MassModFilterTextColumn, and @MassModFilterText
+**          04/07/2008 mem - Added parameters @previewSql, @massModFilterTextColumn, and @massModFilterText
 **          05/19/2009 mem - Now returning column Job_Usage_Count
-**          02/12/2010 mem - Expanded @ParameterFileFilter to varchar(255)
+**          02/12/2010 mem - Expanded @parameterFileFilter to varchar(255)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/14/2023 mem - Rename argument @parameterFileTypeName to @analysisToolName and rearrange procedure arguments
 **
 *****************************************************/
 (
-    @parameterFileTypeName varchar(64) = 'Sequest',     -- Should be 'Sequest' or 'XTandem'
+    @analysisToolName varchar(64) = 'MSGFPlus_MzML',    -- Analysis tool name
     @parameterFileFilter varchar(255) = '',             -- Optional parameter file name filter
     @showValidOnly tinyint = 0,                         -- Set to 1 to only show "Valid" parameter files
     @showModSymbol tinyint = 0,                         -- Set to 1 to display the modification symbol
     @showModName tinyint = 1,                           -- Set to 1 to display the modification name
     @showModMass tinyint = 1,                           -- Set to 1 to display the modification mass
     @useModMassAlternativeName tinyint = 1,
-    @message varchar(512) = '' output,
+    @massModFilterTextColumn varchar(64) = '',          -- If text is defined here, then the @massModFilterText filter is only applied to column(s) whose name matches this
+    @massModFilterText varchar(64) = '',                -- If text is defined here, then results are filtered to only show rows that contain this text in one of the mass mod columns
     @previewSql tinyint = 0,
-    @massModFilterTextColumn varchar(64) = '',          -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
-    @massModFilterText varchar(64) = ''                 -- If text is defined here, then results are filtered to only show rows that contain this text in one of the mass mod columns
+    @message varchar(512) = '' output
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    Declare @ParamFileInfoColumnList varchar(512)
-    Set @ParamFileInfoColumnList = ''
+    Declare @paramFileInfoColumnList varchar(512) = ''
 
-    Declare @S varchar(max)
-    Declare @MassModFilterSql varchar(4000)
-
-    Set @S = ''
-    Set @MassModFilterSql = ''
-
-    Declare @AddWildcardChars tinyint
-    Set @AddWildcardChars = 1
+    Declare @s varchar(max) = ''
+    Declare @massModFilterSql varchar(4000) = ''
 
     -----------------------------------------------------------
     -- Validate the inputs
     -----------------------------------------------------------
-    Set @ParameterFileTypeName = IsNull(@ParameterFileTypeName, 'Sequest')
-    Set @ParameterFileFilter = IsNull(@ParameterFileFilter, '')
-    Set @ShowValidOnly = IsNull(@ShowValidOnly, 0)
-    Set @ShowModSymbol = IsNull(@ShowModSymbol, 0)
-    Set @ShowModName = IsNull(@ShowModName, 1)
-    Set @ShowModMass = IsNull(@ShowModMass, 1)
-    Set @UseModMassAlternativeName = IsNull(@UseModMassAlternativeName, 1)
-    Set @message = ''
-    Set @previewSql = IsNull(@previewSql, 0)
-    Set @MassModFilterTextColumn = IsNull(@MassModFilterTextColumn, '')
-    Set @MassModFilterText = IsNull(@MassModFilterText, '')
 
-    -- Make sure @ParameterFileTypeName is of a known type
-    If @ParameterFileTypeName <> 'Sequest' and @ParameterFileTypeName <> 'XTandem'
+    Set @analysisToolName          = IsNull(@analysisToolName, 'MSGFPlus_MzML')
+    Set @parameterFileFilter       = IsNull(@parameterFileFilter, '')
+    Set @showValidOnly             = IsNull(@showValidOnly, 0)
+    Set @showModSymbol             = IsNull(@showModSymbol, 0)
+    Set @showModName               = IsNull(@showModName, 1)
+    Set @showModMass               = IsNull(@showModMass, 1)
+    Set @useModMassAlternativeName = IsNull(@useModMassAlternativeName, 1)
+    Set @massModFilterTextColumn   = IsNull(@massModFilterTextColumn, '')
+    Set @massModFilterText         = IsNull(@massModFilterText, '')
+    Set @previewSql                = IsNull(@previewSql, 0)
+    Set @message = ''
+
+    -- Make sure @analysisToolNames to an analysis tool with entries in T_Param_File_Mass_Mods
+    If Not Exists (
+        SELECT PFMM.Mod_Entry_ID
+        FROM T_Param_File_Mass_Mods PFMM
+             INNER JOIN T_Param_Files PF
+               ON PFMM.param_file_id = PF.param_file_id
+             INNER JOIN T_Analysis_Tool AnTool
+               ON PF.Param_File_Type_ID = AnTool.AJT_paramFileType
+        WHERE AnTool.AJT_toolName = @analysisToolName
+    )
     Begin
-        Set @message = 'Unknown parameter file type: ' + @ParameterFileTypeName + '; should be Sequest or XTandem'
+        Set @message = 'Unknown analysis tool: ' + @analysisToolName + ' (rows not found in T_Param_File_Mass_Mods); should be MSGFPlus_MzML, MaxQuant, DiaNN, XTandem, etc.'
         Set @myError = 50000
         Goto Done
     End
 
-    If Len(@ParameterFileFilter) > 0
+    If Len(@parameterFileFilter) > 0
     Begin
-        If @AddWildcardChars <> 0
-            If CharIndex('%', @ParameterFileFilter) = 0
-                Set @ParameterFileFilter = '%' + @ParameterFileFilter + '%'
+        If CharIndex('%', @parameterFileFilter) = 0
+        Begin
+            Set @parameterFileFilter = '%' + @parameterFileFilter + '%'
+        End
     End
     Else
-        Set @ParameterFileFilter = '%'
+    Begin
+        Set @parameterFileFilter = '%'
+    End
 
     -- Assure that one of the following is non-zero
-    If @ShowModSymbol = 0 AND @ShowModName = 0 AND @ShowModMass = 0
-        Set @ShowModName = 1
+    If @showModSymbol = 0 AND @showModName = 0 AND @showModMass = 0
+        Set @showModName = 1
 
 
     -----------------------------------------------------------
@@ -110,16 +117,20 @@ AS
 
     -----------------------------------------------------------
     -- Populate a temporary table with the parameter files
-    -- matching @ParameterFileFilter
+    -- that correspond to tool @analysisToolName and
+    -- match @parameterFileFilter (which will be '%' if it was '')
     -----------------------------------------------------------
 
     INSERT INTO #TmpParamFileInfo (Param_File_ID, Date_Created, Date_Modified, Job_Usage_Count)
+
+
     SELECT PF.Param_File_ID, PF.Date_Created, PF.Date_Modified, PF.Job_Usage_Count
-    FROM T_Param_File_Types PFT INNER JOIN
-         T_Param_Files PF ON PFT.Param_File_Type_ID = PF.Param_File_Type_ID
-    WHERE PFT.Param_File_Type = @ParameterFileTypeName AND
-          (PF.Valid = 1 OR @ShowValidOnly = 0) AND
-          PF.Param_File_Name LIKE @ParameterFileFilter
+    FROM T_Param_Files PF
+         INNER JOIN T_Analysis_Tool AnTool
+           ON PF.Param_File_Type_ID = AnTool.AJT_paramFileType
+    WHERE AnTool.AJT_toolName = @analysisToolName AND
+          (PF.Valid = 1 OR @showValidOnly = 0) AND
+          PF.Param_File_Name LIKE @parameterFileFilter
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -134,10 +145,10 @@ AS
     --  to be included at the beginning of the crosstab report
     -----------------------------------------------------------
 
-    If @ParameterFileTypeName = 'Sequest'
+    If @analysisToolName = 'Sequest'
     Begin
         Exec @myError = populate_param_file_info_table_sequest
-                                @ParamFileInfoColumnList = @ParamFileInfoColumnList output,
+                                @paramFileInfoColumnList = @paramFileInfoColumnList output,
                                 @message = @message output
         If @myError <> 0
             Goto Done
@@ -146,39 +157,41 @@ AS
     -----------------------------------------------------------
     -- Populate #TmpParamFileModResults
     -----------------------------------------------------------
-    Exec @myError = populate_param_file_mod_info_table   @ShowModSymbol, @ShowModName, @ShowModMass,
-                                                    @UseModMassAlternativeName,
-                                                    @MassModFilterTextColumn,
-                                                    @MassModFilterText,
-                                                    @MassModFilterSql = @MassModFilterSql output,
-                                                    @message = @message output
+    Exec @myError = populate_param_file_mod_info_table
+                        @showModSymbol, @showModName, @showModMass,
+                        @useModMassAlternativeName,
+                        @massModFilterTextColumn,
+                        @massModFilterText,
+                        @massModFilterSql = @massModFilterSql output,
+                        @message = @message output,
+                        @previewSql = @previewSql
     If @myError <> 0
         Goto Done
 
     -----------------------------------------------------------
     -- Return the results
     -----------------------------------------------------------
-    Set @S = ''
-    Set @S = @S + ' SELECT PF.Param_File_Name, PF.Param_File_Description, PF.Job_Usage_Count, '
+    Set @s = ''
+    Set @s = @s + ' SELECT PF.Param_File_Name, PF.Param_File_Description, PF.Job_Usage_Count, '
 
-    If Len(IsNull(@ParamFileInfoColumnList, '')) > 0
-        Set @S = @S +      @ParamFileInfoColumnList + ', '
+    If Len(IsNull(@paramFileInfoColumnList, '')) > 0
+        Set @s = @s +      @paramFileInfoColumnList + ', '
 
-    Set @S = @S +        ' PFMR.*,'
-    Set @S = @S +        ' PF.Date_Created, PF.Date_Modified, PF.Valid'
-    Set @S = @S + ' FROM #TmpParamFileInfo PFI INNER JOIN'
-    Set @S = @S +    ' T_Param_Files PF ON PFI.Param_File_ID = PF.Param_File_ID LEFT OUTER JOIN'
-    Set @S = @S +    ' #TmpParamFileModResults PFMR ON PFI.Param_File_ID = PFMR.Param_File_ID'
+    Set @s = @s +        ' PFMR.*,'
+    Set @s = @s +        ' PF.Date_Created, PF.Date_Modified, PF.Valid'
+    Set @s = @s + ' FROM #TmpParamFileInfo PFI INNER JOIN'
+    Set @s = @s +    ' T_Param_Files PF ON PFI.Param_File_ID = PF.Param_File_ID LEFT OUTER JOIN'
+    Set @s = @s +    ' #TmpParamFileModResults PFMR ON PFI.Param_File_ID = PFMR.Param_File_ID'
 
-    If Len(@MassModFilterSql) > 0
-        Set @S = @S + ' WHERE ' + @MassModFilterSql
+    If Len(@massModFilterSql) > 0
+        Set @s = @s + ' WHERE ' + @massModFilterSql
 
-    Set @S = @S + ' ORDER BY PF.Param_File_Name'
+    Set @s = @s + ' ORDER BY PF.Param_File_Name'
 
     If @previewSql <> 0
-        Print @S
+        Print @s
     Else
-        Exec (@S)
+        Exec (@s)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
