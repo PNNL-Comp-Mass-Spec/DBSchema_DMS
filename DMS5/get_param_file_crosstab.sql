@@ -65,7 +65,8 @@ AS
     Set @previewSql                = IsNull(@previewSql, 0)
     Set @message = ''
 
-    -- Make sure @analysisToolNames to an analysis tool with entries in T_Param_File_Mass_Mods
+    -- Make sure @analysisToolName corresponds to an analysis tool with entries in T_Param_File_Mass_Mods
+
     If Not Exists (
         SELECT PFMM.Mod_Entry_ID
         FROM T_Param_File_Mass_Mods PFMM
@@ -134,11 +135,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         set @message = 'Error finding matching parameter files: ' + Convert(varchar(19), @myError)
         goto done
-    end
+    End
 
     -----------------------------------------------------------
     -- Possibly append some additional columns to #TmpParamFileInfo,
@@ -157,6 +158,7 @@ AS
     -----------------------------------------------------------
     -- Populate #TmpParamFileModResults
     -----------------------------------------------------------
+
     Exec @myError = populate_param_file_mod_info_table
                         @showModSymbol, @showModName, @showModMass,
                         @useModMassAlternativeName,
@@ -195,11 +197,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         set @message = 'Error returning the results: ' + Convert(varchar(19), @myError)
         goto done
-    end
+    End
 
     -----------------------------------------------------------
     -- Exit
