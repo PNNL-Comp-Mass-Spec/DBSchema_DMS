@@ -6,11 +6,20 @@ GO
 CREATE PROCEDURE [dbo].[populate_param_file_mod_info_table]
 /****************************************************
 **
-**  Desc:   Populates temporary table #TmpParamFileModResults
-**            using the param file IDs in #TmpParamFileInfo
+**  Desc:
+**      Populates temporary table #TmpParamFileModResults using the param file IDs in #TmpParamFileInfo
+**      Both of these tables must be created by the calling procedure
 **
-**          Both of these tables needs to be created by
-**            the calling procedure
+**      CREATE TABLE #TmpParamFileInfo (
+**          Param_File_ID Int NOT NULL,
+**          Date_Created datetime NULL,
+**          Date_Modified datetime NULL,
+**          Job_Usage_Count int NULL
+**      )
+**
+**      CREATE TABLE #TmpParamFileModResults (
+**          Param_File_ID int
+**      )
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,16 +27,19 @@ CREATE PROCEDURE [dbo].[populate_param_file_mod_info_table]
 **          04/07/2008 mem - Added parameters @MassModFilterTextColumn, @MassModFilterText, and @MassModFilterSql
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/14/2023 mem - Add parameter @previewSql
+**                         - Use varchar(255) for columns dynamically added to #TmpParamFileModResults (required to avoid "String or binary data would be truncated" for parameter files with a large number of dynamic mods on a single residue)
 **
 *****************************************************/
 (
-    @showModSymbol tinyint = 1,                        -- Set to 1 to display the modification symbol
-    @showModName tinyint = 1,                        -- Set to 1 to display the modification name
-    @showModMass tinyint = 0,                        -- Set to 1 to display the modification mass
+    @showModSymbol tinyint = 1,                     -- Set to 1 to display the modification symbol
+    @showModName tinyint = 1,                       -- Set to 1 to display the modification name
+    @showModMass tinyint = 0,                       -- Set to 1 to display the modification mass
     @useModMassAlternativeName tinyint = 0,
-    @massModFilterTextColumn varchar(64) = '',        -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
+    @massModFilterTextColumn varchar(64) = '',      -- If text is defined here, then the @MassModFilterText filter is only applied to column(s) whose name matches this
     @massModFilterText varchar(64) = '',            -- If text is defined here, then @MassModFilterSql will be populated with SQL to filter the results to only show rows that contain this text in one of the mass mod columns
-    @massModFilterSql varchar(4000) = ''output,
+    @previewSql tinyint = 0,
+    @massModFilterSql varchar(4000) = '' output,
     @message varchar(512) = '' output
 )
 AS
@@ -62,9 +74,10 @@ AS
 
     Set @MassModFilterTextColumn = IsNull(@MassModFilterTextColumn, '')
     Set @MassModFilterText = IsNull(@MassModFilterText, '')
+    Set @previewSql = IsNull(@previewSql, 0)
 
-    Set @message = ''
     Set @MassModFilterSql = ''
+    Set @message = ''
 
     If Len(@MassModFilterTextColumn) > 0
         Set @MassModFilterComparison = '%' + @MassModFilterTextColumn + '%'
@@ -139,6 +152,11 @@ AS
     Set @S = @S +      ' T_Modification_Types MT ON PFMM.Mod_Type_Symbol = MT.Mod_Type_Symbol INNER JOIN'
     Set @S = @S +      ' T_Seq_Local_Symbols_List LSL ON PFMM.Local_Symbol_ID = LSL.Local_Symbol_ID'
 
+    If @previewSql > 0
+    Begin
+        Print @s
+    End
+
     Exec (@S)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -184,7 +202,7 @@ AS
         Set @S = ''
         Set @S = @S + ' ALTER TABLE #TmpParamFileModResults ADD '
 
-        SELECT @S = @S + '[' + ModType + '] varchar(128) DEFAULT ('''') WITH VALUES ' + ', '
+        SELECT @S = @S + '[' + ModType + '] varchar(255) DEFAULT ('''') WITH VALUES ' + ', '
         FROM #ColumnHeaders
         ORDER BY UniqueRowID
         --
@@ -192,6 +210,11 @@ AS
 
         -- Remove the trailing comma from @S
         Set @S = Left(@S, Len(@S)-1)
+
+        If @previewSql > 0
+        Begin
+            Print @s
+        End
 
         -- Execute the Sql to alter the table
         Exec (@S)
@@ -246,10 +269,14 @@ AS
                     Set @S = ''
                     Set @S = @S + ' UPDATE #TmpParamFileModResults'
                     Set @S = @S + ' SET [' + @CurrentColumn + '] = [' + @CurrentColumn + '] + '
-                    Set @S = @S +            ' CASE WHEN LEN([' + @CurrentColumn + ']) > 0'
-                    Set @S = @S +            ' THEN '', '' '
-                    Set @S = @S +            ' ELSE '''' '
-                    Set @S = @S +            ' END + SourceQ.Mod_Description'
+                    Set @S = @S +            ' CASE WHEN LEN([' + @CurrentColumn + ']) + 2 + Len(SourceQ.Mod_Description) > 255'
+                    Set @S = @S +            '      THEN [' + @CurrentColumn + ']'
+                    Set @S = @S +            '      ELSE '
+                    Set @S = @S +                      ' CASE WHEN LEN([' + @CurrentColumn + ']) > 0'
+                    Set @S = @S +                           ' THEN '', '' '
+                    Set @S = @S +                           ' ELSE '''' '
+                    Set @S = @S +                      ' END '
+                    Set @S = @S +                      ' END + SourceQ.Mod_Description'
                     Set @S = @S + ' FROM #TmpParamFileModResults PFMR INNER JOIN'
                     Set @S = @S +      ' (' + @MMD + ') SourceQ '
                     Set @S = @S +      ' ON PFMR.Param_File_ID = SourceQ.Param_File_ID'
