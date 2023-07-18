@@ -43,31 +43,32 @@ CREATE PROCEDURE [dbo].[add_new_instrument]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/19/2023 mem - Change severity level from 10 to 11 for RAISERROR() calls
+**          07/18/2023 mem - Expand @description to varchar(255)
 **
 *****************************************************/
 (
-    @instrumentName varchar(24),        -- name of new instrument
-    @instrumentClass varchar(32),       -- class of instrument
+    @instrumentName varchar(24),        -- Name of new instrument
+    @instrumentClass varchar(32),       -- Class of instrument
     @instrumentGroup varchar(64),       -- Item in T_Instrument_Group
-    @captureMethod varchar(10),         -- capture method of instrument
-    @roomNumber varchar(50),            -- where new instrument is located
-    @description varchar(50),           -- description of instrument
-    @usage varchar(50),                 -- optional description of instrument usage
+    @captureMethod varchar(10),         -- Capture method of instrument
+    @roomNumber varchar(50),            -- Where new instrument is located
+    @description varchar(255),          -- Description of instrument
+    @usage varchar(50),                 -- Optional description of instrument usage
     @operationsRole varchar(50),        -- Production, QC, Research, or Unused
 
     @percentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
     @autoDefineStoragePath varchar(32) = 'No',    -- Set to Yes to enable auto-defining the storage path based on the @spPath and @archivePath related parameters
 
     @sourceMachineName varchar(128),    -- Source Machine to capture data from
-    @sourcePath varchar(255),           -- transfer directory on source machine
+    @sourcePath varchar(255),           -- Transfer directory on source machine
 
     @spVolClient  varchar(128),         -- Storage server name, e.g. \\proto-8\
     @spVolServer  varchar(128),         -- Drive letter on storage server (local to server itself), e.g. F:\
-    @spPath varchar(255),               -- storage path on Storage Server; treated as @autoSPPathRoot if @autoDefineStoragePath is yes (e.g. Lumos01\)
+    @spPath varchar(255),               -- Storage path on Storage Server; treated as @autoSPPathRoot if @autoDefineStoragePath is yes (e.g. Lumos01\)
 
-    @archivePath varchar(128),          -- storage path on EMSL archive, e.g.
-    @archiveServer varchar(64),         -- archive server name
-    @archiveNote varchar(128),          -- note describing archive path
+    @archivePath varchar(128),          -- Storage path on EMSL archive, e.g.
+    @archiveServer varchar(64),         -- Archive server name
+    @archiveNote varchar(128),          -- Note describing archive path
 
     @message varchar(512) output
 )
@@ -79,10 +80,8 @@ AS
 
     Declare @result int
 
-    Declare @spSourcePathID int
-    Declare @spStoragePathID int
-    Set @spSourcePathID = 2 -- valid reference to 'na' storage path for initial entry
-    Set @spStoragePathID = 2 -- valid reference to 'na' storage path for initial entry
+    Declare @spSourcePathID int  = 2 -- valid reference to 'na' storage path for initial entry
+    Declare @spStoragePathID int = 2 -- valid reference to 'na' storage path for initial entry
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -103,8 +102,7 @@ AS
     -- Make sure instrument is not already in instrument table
     ---------------------------------------------------
     --
-    Declare @hit int
-    Set @hit = -1
+    Declare @hit int = -1
     --
     SELECT @hit = Instrument_ID
     FROM T_Instrument_Name
@@ -113,18 +111,18 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
-    begin
+    Begin
         Set @message = 'Failed to look for existing instrument'
         RAISERROR (@message, 11, 1)
         return 51007
-    end
+    End
 
     If @myRowCount <> 0
-    begin
+    Begin
         Set @message = 'Instrument name already in use'
         RAISERROR (@message, 11, 1)
         return 51008
-    end
+    End
 
     ---------------------------------------------------
     -- Derive shared path name
@@ -186,9 +184,9 @@ AS
     -- Start transaction
     ---------------------------------------------------
     --
-    Declare @transName varchar(32)
-    Set @transName = 'add_new_instrument'
-    begin transaction @transName
+    Declare @transName varchar(32) = 'add_new_instrument'
+
+    Begin transaction @transName
 
     ---------------------------------------------------
     -- Add new instrument ot instrument table
@@ -197,7 +195,9 @@ AS
     -- get new instrument ID
     --
     Declare @instrumentID int
-    SELECT @instrumentID = isnull(MAX(Instrument_ID), 0) + 1 FROM T_Instrument_Name
+
+    SELECT @instrumentID = isnull(MAX(Instrument_ID), 0) + 1 
+    FROM T_Instrument_Name
 
     -- make entry into instrument table
     --
@@ -248,11 +248,11 @@ AS
     SELECT @myRowCount = @@rowcount, @myError = @@error
 
     If @myError <> 0
-    begin
+    Begin
         rollback transaction @transName
         RAISERROR ('Insert into x table was unsuccessful for add instrument', 11, 1)
         return 51131
-    end
+    End
 
     ---------------------------------------------------
     -- Make sure the source machine exists in T_Storage_Path_Hosts
@@ -311,11 +311,11 @@ AS
 
     --
     If @result <> 0
-    begin
+    Begin
         rollback transaction @transName
         RAISERROR ('Creating storage path was unsuccessful for add instrument', 11, 1)
         return 51132
-    end
+    End
 
     ---------------------------------------------------
     -- Make new source (inbox) directory in storage table
@@ -335,11 +335,11 @@ AS
 
     --
     If @result <> 0
-    begin
+    Begin
         rollback transaction @transName
         RAISERROR ('Creating source path was unsuccessful for add instrument', 11, 1)
         return 51133
-    end
+    End
 
     If @valAutoDefineStoragePath = 0
     Begin -- <a>
@@ -379,20 +379,20 @@ AS
         End
 
         If @myError <> 0
-        begin
+        Begin
             rollback transaction @transName
             RAISERROR ('Insert into archive path table was unsuccessful for add instrument', 11, 1)
             return 51134
-        end
+        End
     End -- </a>
 
     ---------------------------------------------------
     -- Finalize the transaction
     ---------------------------------------------------
     --
-    commit transaction @transName
+    Commit Transaction @transName
 
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_new_instrument] TO [DDL_Viewer] AS [dbo]
