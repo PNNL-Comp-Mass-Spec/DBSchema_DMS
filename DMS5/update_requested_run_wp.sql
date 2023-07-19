@@ -10,9 +10,9 @@ CREATE PROCEDURE [dbo].[update_requested_run_wp]
 **      Updates the work package for requested runs
 **      from an old value to a new value
 **
-**      If @RequestedIdList is empty, then finds active requested runs that use @OldWorkPackage
+**      If @requestIdList is empty, then finds active requested runs that use @OldWorkPackage
 **
-**      If @RequestedIdList is defined, then finds all requested runs in the list that use @OldWorkPackage
+**      If @requestIdList is defined, then finds all requested runs in the list that use @OldWorkPackage
 **      regardless of the state
 **
 **      Changes will be logged to T_Log_Entries
@@ -28,12 +28,13 @@ CREATE PROCEDURE [dbo].[update_requested_run_wp]
 **          08/01/2017 mem - Use THROW if not authorized
 **          11/17/2020 mem - Fix typo in error message
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/19/2023 mem - Rename request ID list parameter
 **
 *****************************************************/
 (
     @oldWorkPackage varchar(50),
     @newWorkPackage varchar(50),
-    @requestedIdList varchar(max) = '',     -- Optional: if blank, finds active requested runs; if defined, updates all of the specified request IDs if they use @OldWorkPackage
+    @requestIdList varchar(max) = '',     -- Optional: if blank, finds active requested runs; if defined, updates all of the specified request IDs if they use @OldWorkPackage
     @message varchar(512) output,
     @callingUser varchar(128) = '',
     @infoOnly tinyint = 0
@@ -41,9 +42,10 @@ CREATE PROCEDURE [dbo].[update_requested_run_wp]
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
+    Declare @LogMessage varchar(2048)
     Declare @RequestCountToUpdate int = 0
 
     ---------------------------------------------------
@@ -65,7 +67,7 @@ AS
 
         Set @OldWorkPackage = dbo.scrub_whitespace(@OldWorkPackage)
         Set @NewWorkPackage = dbo.scrub_whitespace(@NewWorkPackage)
-        Set @RequestedIdList = IsNull(@RequestedIdList, '')
+        Set @requestIdList = IsNull(@requestIdList, '')
         Set @message = ''
         Set @callingUser = IsNull(@callingUser, '')
         Set @InfoOnly = IsNull(@InfoOnly, 0)
@@ -78,6 +80,10 @@ AS
 
         If @NewWorkPackage = ''
             RAISERROR ('New work package cannot be blank', 11, 16)
+
+        -- Uncomment to debug
+        -- Set @LogMessage = 'Updating work package from ' + @OldWorkPackage + ' to ' + @NewWorkPackage + ' for requests: ' + @requestIdList
+        -- Exec post_log_entry 'Debug', @LogMessage, 'update_requested_run_wp'
 
         ----------------------------------------------------------
         -- Create some temporary tables
@@ -102,14 +108,14 @@ AS
         -- Find the Requested Runs to update
         ----------------------------------------------------------
         --
-        If @RequestedIdList <> ''
+        If @requestIdList <> ''
         Begin
 
-            -- Find requested runs using @RequestedIdList
+            -- Find requested runs using @requestIdList
             --
             INSERT INTO #Tmp_RequestedRunList( ID )
             SELECT Value
-            FROM dbo.parse_delimited_list (@RequestedIdList, ',', 'update_requested_run_wp')
+            FROM dbo.parse_delimited_list (@requestIdList, ',', 'update_requested_run_wp')
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -198,7 +204,6 @@ AS
 
         Exec condense_integer_list_to_ranges @debugMode=0
 
-        Declare @LogMessage varchar(2048)
         If @InfoOnly = 0
             Set @LogMessage = 'Updated '
         Else
@@ -267,7 +272,7 @@ AS
 
 Done:
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_requested_run_wp] TO [DDL_Viewer] AS [dbo]
