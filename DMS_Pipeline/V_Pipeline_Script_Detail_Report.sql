@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Pipeline_Script_Detail_Report]
 AS
 SELECT id,
@@ -19,7 +18,6 @@ SELECT id,
        '<pre>' + REPLACE(REPLACE(LTRIM(RTRIM(REPLACE(CONVERT(varchar(MAX), Fields), '<', CHAR(13) + CHAR(10) + '<'))), '<', '&lt;'), '>', '&gt;')
        + '</pre>' AS fields_for_wizard
 FROM T_Scripts
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Pipeline_Script_Detail_Report] TO [DDL_Viewer] AS [dbo]
