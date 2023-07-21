@@ -3,8 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-
 CREATE VIEW [dbo].[V_Instrument_Tracked]
 AS
 SELECT Name,
@@ -23,9 +21,9 @@ SELECT Name,
        Tracked,
        Name + ' (' + Reporting + ')' As Name_with_Reporting
 FROM (SELECT TD.IN_name AS Name,
-             CASE WHEN TI.EUS_Primary_Instrument = 'Y'      THEN 'E' ELSE '' END + 
-             CASE WHEN TD.IN_operations_role = 'Production' THEN 'P' ELSE '' END + 
-             CASE WHEN TD.IN_Tracking = 1                   THEN 'T' ELSE '' END AS Reporting,
+             CASE WHEN TI.EUS_Primary_Instrument IN ('Y', '1') THEN 'E' ELSE '' END +
+             CASE WHEN TD.IN_operations_role = 'Production'    THEN 'P' ELSE '' END +
+             CASE WHEN TD.IN_Tracking = 1                      THEN 'T' ELSE '' END AS Reporting,
              TD.IN_Description AS Description,
              TD.IN_operations_role AS Ops_Role,
              TI.EUS_Primary_Instrument AS EMSL_Primary,
@@ -46,10 +44,9 @@ FROM (SELECT TD.IN_name AS Name,
       WHERE TD.IN_status = 'active' AND
             TD.IN_operations_role = 'Production' OR
             TD.IN_Tracking = 1 OR
-            TI.EUS_Primary_Instrument = 'Y' AND
+            TI.EUS_Primary_Instrument IN ('Y', '1') AND
             TI.EUS_Active_Sw = 'Y'
       ) FilterQ
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Instrument_Tracked] TO [DDL_Viewer] AS [dbo]

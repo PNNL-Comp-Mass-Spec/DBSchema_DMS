@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[update_dataset_interval_for_multiple_instruments]
 **          02/15/2022 mem - Fix major bug decrementing @instrumentUsageMonth when processing multiple instruments
 **                         - Add missing Order By clause
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/21/2023 mem - Look for both 'Y' and '1' when examining the eus_primary_instrument flag (aka EMSL_Primary_Instrument)
 **
 *****************************************************/
 (
@@ -106,7 +107,7 @@ AS
     CREATE TABLE #Tmp_Instruments (
         Entry_ID INT IDENTITY(1,1) NOT NULL,
         Instrument varchar(65),
-        EMSL CHAR(1),
+        EMSL_Primary_Instrument CHAR(1),
         Tracked tinyint,
         EUS_Instrument_ID Int Null,
         Use_EUS_ID tinyint Not Null
@@ -145,12 +146,12 @@ AS
 
 
             INSERT INTO #Tmp_Instruments( Instrument,
-                                          EMSL,
+                                          EMSL_Primary_Instrument,
                                           Tracked,
                                           EUS_Instrument_ID,
                                           Use_EUS_ID )
             SELECT InstList.[Name],
-                   InstList.EUS_Primary_Instrument AS EMSL,
+                   InstList.EUS_Primary_Instrument AS EMSL_Primary_Instrument,
                    InstList.Tracked,
                    InstList.EUS_Instrument_ID,
                    0
@@ -170,12 +171,12 @@ AS
             ---------------------------------------------------
 
             INSERT INTO #Tmp_Instruments( Instrument,
-                                          EMSL,
+                                          EMSL_Primary_Instrument,
                                           Tracked,
                                           EUS_Instrument_ID,
                                           Use_EUS_ID )
             SELECT [Name],
-                   EUS_Primary_Instrument AS EMSL,
+                   EUS_Primary_Instrument AS EMSL_Primary_Instrument,
                    Tracked,
                    EUS_Instrument_ID,
                    0
@@ -238,7 +239,7 @@ AS
         BEGIN -- <a>
             Set @instrument = NULL
             SELECT TOP 1 @instrument = Instrument,
-                         @emslInstrument = EMSL,
+                         @emslInstrument = EMSL_Primary_Instrument,
                          @tracked = Tracked,
                          @useEUSid = Use_EUS_ID,
                          @eusInstrumentId = EUS_Instrument_ID,
@@ -280,7 +281,7 @@ AS
                         EXEC update_dataset_interval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
                     End
 
-                    If @updateEMSLInstrumentUsage <> 0 AND (@emslInstrument = 'Y' OR @tracked = 1)
+                    If @updateEMSLInstrumentUsage <> 0 AND (@emslInstrument IN ('Y', '1') OR @tracked = 1)
                     Begin -- <d>
 
                         -- Call update_emsl_instrument_usage_report for this month, plus optionally previous months (if @instrumentUsageMonthsToUpdate is greater than 1)
