@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 404 ******/
+/****** RowCount: 409 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -405,4 +405,9 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1402,'A2CPS_Plate7','A2CPS Digested Peptides - Plate 7','5/23/2023 8:13:08 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1403,'A2CPS_Plate8','A2CPS Digested Peptides - Plate 8','5/23/2023 8:13:15 AM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1404,'A2CPS_Plate9','A2CPS Digested Peptides - Plate 9','5/23/2023 8:13:21 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1405,'OHSU_mac_Plate1','OHSU_mac Digested Peptides - Plate 1','7/18/2023 1:25:32 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1406,'OHSU_mac_Plate2','OHSU_mac Digested Peptides - Plate 2','7/18/2023 1:25:38 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1407,'OHSU_mac_Plate3','OHSU_mac Digested Peptides - Plate 3','7/18/2023 1:25:45 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1408,'OHSU_mac_Plate4','OHSU_mac Digested Peptides - Plate 4','7/18/2023 1:25:52 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1409,'OHSU_mac_Plate5','OHSU_mac Digested Peptides - Plate 5','7/18/2023 1:25:58 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
