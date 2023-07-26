@@ -25,6 +25,8 @@ CREATE PROCEDURE [dbo].[lookup_source_job_from_special_processing_text]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          06/30/2022 mem - Update comments to use [Param File]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/25/2023 mem - When parsing the special processing text, replace '[Param File]' with 'Param_File'
+**                         - Update comments to use Param_File
 **
 *****************************************************/
 (
@@ -106,10 +108,10 @@ AS
                 --  SourceJob:Auto{Tool = "Decon2LS_V2" AND Settings_File = "Decon2LS_FF_IMS_UseHardCodedFilters_20ppm_NoFlags_2011-02-04.xml"}
                 --
                 -- Example 2:
-                --  SourceJob:Auto{Tool = "XTandem" AND Settings_File = "IonTrapDefSettings_DeconMSN_CIDOnly.xml" AND [Param File] = "xtandem_Rnd1PartTryp_Rnd2DynMetOx.xml"}, Job2:Auto{Tool = "MASIC_Finnigan"}
+                --  SourceJob:Auto{Tool = "XTandem" AND Settings_File = "IonTrapDefSettings_DeconMSN_CIDOnly.xml" AND Param_File = "xtandem_Rnd1PartTryp_Rnd2DynMetOx.xml"}, Job2:Auto{Tool = "MASIC_Finnigan"}
                 --
                 -- Example 3:
-                --  SourceJob:Auto{Tool = "Decon2LS_V2" AND [Param File] = "LTQ_FT_Lipidomics_2012-04-16.xml"}, Job2:Auto{Tool = "Decon2LS_V2" AND [Param File] = "LTQ_FT_Lipidomics_2012-04-16.xml" AND Dataset LIKE "$Replace($ThisDataset,_Pos,)%NEG"}
+                --  SourceJob:Auto{Tool = "Decon2LS_V2" AND Param_File = "LTQ_FT_Lipidomics_2012-04-16.xml"}, Job2:Auto{Tool = "Decon2LS_V2" AND Param_File = "LTQ_FT_Lipidomics_2012-04-16.xml" AND Dataset LIKE "$Replace($ThisDataset,_Pos,%NEG%)"}
 
                 Set @AutoQueryUsed = 1
                 Set @IndexStart = CharIndex(@TagName + 'Auto', @SpecialProcessingText)
@@ -125,9 +127,20 @@ AS
                     Set @IndexEnd = CHARINDEX('}', @WhereClause)
 
                     If @IndexStart > 0 And @IndexEnd > @IndexStart
-                        Set @WhereClause = SUBSTRING(@WhereClause, @IndexStart+1, @IndexEnd-@IndexStart-1)
+                    Begin
+                        Set @WhereClause = SUBSTRING(@WhereClause, @IndexStart+1, @IndexEnd - @IndexStart - 1)
+                    End
                     Else
-                        Set @WhereClause= ''
+                    Begin
+                        Set @WhereClause = ''
+                    End
+
+                    -- Prior to July 2023, the special processing text used [Param File]
+                    -- If present, replace with Param_File
+                    If CharIndex('[Param File]', @WhereClause) > 0
+                    Begin
+                        Set @WhereClause = REPLACE(@WhereClause, '[Param File]', 'Param_File')
+                    End
 
                     If @WhereClause Like '%$ThisDataset%'
                     Begin
