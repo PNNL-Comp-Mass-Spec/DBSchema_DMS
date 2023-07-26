@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[lookup_source_job_from_special_processing_param]
 **          03/11/2013 mem - Now overriding @SourceJobResultsFolder if there is a problem determining the details for Job2
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/25/2023 mem - Use new column names in S_DMS_V_Analysis_Job_Info
 **
 *****************************************************/
 (
@@ -194,7 +195,7 @@ AS
 
                     -- Lookup the results folder for the source job
                     --
-                    SELECT @SourceJobResultsFolder = IsNull([Results Folder], '')
+                    SELECT @SourceJobResultsFolder = IsNull(Results_Folder, '')
                     FROM S_DMS_V_Analysis_Job_Info
                     WHERE Job = @SourceJob
                     --
@@ -288,15 +289,15 @@ AS
                     -- Lookup the results folder for @SourceJob2
                     --
                     SELECT @SourceJob2Dataset = Dataset,
-                           @SourceJob2FolderPath = dbo.combine_paths(dbo.combine_paths([Dataset Storage Path], [Dataset]), [Results Folder]),
-                           @SourceJob2FolderPathArchive = dbo.combine_paths(dbo.combine_paths([Archive Folder Path], [Dataset]), [Results Folder])
+                           @SourceJob2FolderPath = dbo.combine_paths(dbo.combine_paths(Dataset_Storage_Path, Dataset), Results_Folder),
+                           @SourceJob2FolderPathArchive = dbo.combine_paths(dbo.combine_paths(Archive_Folder_Path, Dataset), Results_Folder)
                     FROM S_DMS_V_Analysis_Job_Info
-                    WHERE Job = @SourceJob2 And Not [Results Folder] Is Null
+                    WHERE Job = @SourceJob2 And Not Results_Folder Is Null
                     --
                     SELECT @myError = @@error, @myRowCount = @@rowcount
 
                     If @myRowCount = 0
-                        Set @WarningMessage = 'Source Job #2 ' + Convert(varchar(12), @SourceJob2) +  'not found in DMS, or has a null value for [Results Folder]'
+                        Set @WarningMessage = 'Source Job #2 ' + Convert(varchar(12), @SourceJob2) +  'not found in DMS, or has a null value for Results_Folder'
                 End
 
                 If @SourceJob2 > 0 OR @WarningMessage <> ''

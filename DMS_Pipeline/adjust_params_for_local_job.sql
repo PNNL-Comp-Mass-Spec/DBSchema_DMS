@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[adjust_params_for_local_job]
 **          03/09/2023 mem - Use new column names in temporary tables
 **          03/22/2023 mem - Rename job parameter to DatasetName
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
+**          07/25/2023 mem - Use new column names in S_DMS_V_Analysis_Job_Info
 **
 *****************************************************/
 (
@@ -100,13 +101,13 @@ AS
         Declare @transferFolderPath varchar(260) = ''
         Declare @instrumentDataPurged tinyint = 0
         --
-        SELECT @archiveFolderPath = [Archive Folder Path],
+        SELECT @archiveFolderPath = Archive_Folder_Path,
                @dataset = Dataset,
-               @datasetStoragePath = [Dataset Storage Path],
-               @rawDataType = RawDataType,
-               @sourceResultsFolder = [Results Folder],
-               @transferFolderPath = transferFolderPath,
-               @instrumentDataPurged = InstrumentDataPurged
+               @datasetStoragePath = Dataset_Storage_Path,
+               @rawDataType = Raw_Data_Type,
+               @sourceResultsFolder = Results_Folder,
+               @transferFolderPath = Transfer_Folder_Path,
+               @instrumentDataPurged = Instrument_Data_Purged
         FROM S_DMS_V_Analysis_Job_Info
         WHERE Job = @sourceJob
 
