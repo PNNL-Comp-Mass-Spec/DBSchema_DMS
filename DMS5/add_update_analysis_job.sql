@@ -78,6 +78,7 @@ CREATE PROCEDURE [dbo].[add_update_analysis_job]
 **          07/29/2022 mem - Assure that the parameter file and settings file names are not null
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Rename column in temp table
+**          07/27/2023 mem - Update message sent to get_new_job_id()
 **
 *****************************************************/
 (
@@ -520,7 +521,7 @@ AS
         -- Get ID for new job
         ---------------------------------------------------
         --
-        exec @jobID = get_new_job_id 'Job created in DMS', @infoOnly
+        exec @jobID = get_new_job_id 'Created in t_analysis_job', @infoOnly
         If @jobID = 0
         Begin
             set @msg = 'Failed to get valid new job ID'
@@ -871,8 +872,7 @@ AS
     End Catch
 
 Done:
-
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_analysis_job] TO [DDL_Viewer] AS [dbo]

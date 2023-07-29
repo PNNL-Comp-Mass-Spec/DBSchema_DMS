@@ -86,6 +86,7 @@ CREATE PROCEDURE [dbo].[add_analysis_job_group]
 **                         - Rename column in temp table
 **          03/27/2023 mem - Synchronize protein collection options validation with add_update_analysis_job_request
 **                         - Remove dash from DiaNN tool name
+**          07/27/2023 mem - Update message sent to get_new_job_id()
 **
 *****************************************************/
 (
@@ -871,7 +872,7 @@ AS
         -- Stored procedure get_new_job_id_block will populate #TmpNewJobIDs
         CREATE TABLE #TmpNewJobIDs (ID int)
 
-        exec @myError = get_new_job_id_block @numDatasets, 'Job created in DMS'
+        exec @myError = get_new_job_id_block @numDatasets, 'Created in t_analysis_job'
         If @myError <> 0
             RAISERROR ('Error obtaining block of Job IDs', 11, 10)
 
@@ -1132,7 +1133,7 @@ Explain:
         End
     End Catch
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_analysis_job_group] TO [DDL_Viewer] AS [dbo]
