@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          03/09/2023 mem - Use new column names in temporary tables
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **          03/27/2022 mem - Require that data package ID is non-zero for DiaNN_DataPkg jobs
+**          07/27/2023 mem - Update message sent to get_new_job_id()
 **
 *****************************************************/
 (
@@ -156,7 +157,7 @@ AS
     --
     If @debugMode = 0
     Begin
-        exec @job = s_get_new_job_id 'Created in broker'
+        exec @job = s_get_new_job_id 'Created in t_jobs'
         --
         If @job = 0
         Begin
@@ -382,7 +383,7 @@ Done:
         End
     End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[make_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
