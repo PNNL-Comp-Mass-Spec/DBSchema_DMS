@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[sync_job_info]
 **          02/15/2016 mem - Re-enabled use of T_Local_Job_Processors
 **          02/06/2023 bcg - Use synonym rather than view that simply wraps the synonym
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/31/2023 mem - Exclude jobs from T_Jobs that are in state 7 or 14 (in addition to state 4)
 **
 *****************************************************/
 (
@@ -130,13 +131,13 @@ AS
             FROM V_DMS_PipelineJobProcessors AS VGP
             WHERE Job IN ( SELECT Job
                            FROM T_Jobs
-                           WHERE State NOT IN (4)
+                           WHERE Not state In (4, 7, 14)        -- 4=Complete, 7=No Intermediate Files Created, 14=No Export
                          )
           ) AS Source (Job, Processor, General_Processing)
            ON (target.Job = source.Job And
                target.Processor = source.Processor)
     WHEN Matched AND target.General_Processing <> source.General_Processing THEN
-        UPDATE set General_Processing = source.General_Processing
+        UPDATE SET General_Processing = source.General_Processing
     WHEN Not Matched THEN
         INSERT (Job, Processor, General_Processing)
         VALUES (source.Job, source.Processor, source.General_Processing)
