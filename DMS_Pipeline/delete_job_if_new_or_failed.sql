@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[delete_job_if_new_or_failed]
 **
 **  Desc:
 **      Deletes the given job from T_Jobs if the state is New, Failed, or Holding
-**      Does not delete the job if it has running job steps (though if the step started over 48 hours ago, ignore that job step)
+**      Does not delete the job if it has running job steps (though if the step started over 7 days ago, ignore that job step)
 **      This procedure is called by DeleteAnalysisJob in DMS5
 **
 **  Return values: 0: success, otherwise, error code
@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[delete_job_if_new_or_failed]
 **          08/08/2020 mem - Customize message shown when @infoOnly = 0
 **          10/18/2022 mem - Fix logic bugs for warning messages
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/01/2023 mem - Use a 7 day threshold for ignoring running job steps (previously 48 hours)
 **
 *****************************************************/
 (
@@ -60,17 +61,19 @@ AS
 
     If @infoonly > 0
     Begin
-        If Exists (SELECT * FROM T_Jobs
-                   WHERE Job = @job AND
-                         State IN (1, 5, 8) AND
-                         NOT Job IN ( SELECT JS.Job
-                                      FROM T_Job_Steps JS
-                                      WHERE JS.Job = @job AND
-                                            JS.State IN (4, 9) AND
-                                            JS.Start >= DateAdd(hour, -48, GetDate())) )
+        If Exists ( SELECT Job
+                    FROM T_Jobs
+                    WHERE Job = job AND
+                          State IN (1, 5, 8) AND
+                          NOT Job IN ( SELECT JS.Job
+                                       FROM T_Job_Steps JS
+                                       WHERE JS.Job = job AND
+                                             JS.State IN (4, 9) AND
+                                             JS.Start >= DateAdd(day, -7, GetDate()) ) )
+
         BEGIN
             ---------------------------------------------------
-            -- Preview deletion of jobs that are new, failed, or holding (job state 1, 5, or 8)
+            -- Job deletion is allowed since state is 1, 5, or 8 (new, failed, or holding), and no running job steps
             ---------------------------------------------------
             --
             SELECT 'DMS_Pipeline job to be deleted' as Action, *
@@ -107,8 +110,8 @@ AS
     Begin
 
         ---------------------------------------------------
-        -- Delete the jobs that are new, failed, or holding (job state 1, 5, or 8)
-        -- Skip any jobs with running job steps that started within the last 2 days
+        -- Delete the job if new, failed, or holding (job state 1, 5, or 8)
+        -- Skip any jobs with running job steps that started within the last 7 days
         ---------------------------------------------------
         --
         DELETE FROM T_Jobs
@@ -118,7 +121,7 @@ AS
                            FROM T_Job_Steps JS
                            WHERE JS.Job = @job AND
                                  JS.State IN (4, 9) AND
-                                 JS.Start >= DateAdd(hour, -48, GetDate()) )
+                                 JS.Start >= DateAdd(day, -7, GetDate()) )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
