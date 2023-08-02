@@ -7,9 +7,8 @@ CREATE PROCEDURE [dbo].[copy_history_to_job_multi]
 /****************************************************
 **
 **  Desc:
-**      For a list of jobs, copies the job details, steps,
-**      and parameters from the most recent successful
-**      run in the history tables back into the main tables
+**      For a list of jobs, copies the job details, steps, and parameters 
+**      from the most recent successful job in the history tables back into the main tables
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -28,6 +27,7 @@ CREATE PROCEDURE [dbo].[copy_history_to_job_multi]
 **          07/25/2019 mem - Add Remote_Start and Remote_Finish
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps
+**          07/31/2023 mem - Make sure the dependencies column is up-to-date in t_job_steps
 **
 *****************************************************/
 (
@@ -43,7 +43,7 @@ AS
 
     Set @message = ''
 
-    Declare @JobsCopied int = 0
+    Declare @jobsCopied int = 0
 
     ---------------------------------------------------
     -- Populate a temporary table with the jobs in @jobList
@@ -57,8 +57,7 @@ AS
     CREATE CLUSTERED INDEX #IX_Tmp_JobsToCopy ON #Tmp_JobsToCopy (Job)
 
     Declare @CallingProcName varchar(128)
-    Declare @CurrentLocation varchar(128)
-    Set @CurrentLocation = 'Start'
+    Declare @CurrentLocation varchar(128) = 'Start'
 
     Begin Try
 
@@ -167,6 +166,7 @@ AS
         ---------------------------------------------------
         --
         Declare @transName varchar(64) = 'copy_history_to_job'
+
         Begin transaction @transName
 
         ---------------------------------------------------
@@ -226,7 +226,7 @@ AS
             Goto Done
         End
         Else
-            Set @JobsCopied = @myRowCount
+            Set @jobsCopied = @myRowCount
 
         ---------------------------------------------------
         -- Copy Steps
@@ -458,11 +458,11 @@ AS
         -- Jobs successfully copied
         ---------------------------------------------------
         --
-        Set @message = 'Copied ' + Convert(varchar(12), @JobsCopied) + ' jobs from the history tables to the main tables'
+        Set @message = 'Copied ' + Convert(varchar(12), @jobsCopied) + ' jobs from the history tables to the main tables'
         exec post_log_entry 'Normal', @message, 'copy_history_to_job_multi'
 
-        Declare @Job int = 0
-        Declare @JobsRefreshed int = 0
+        Declare @job int = 0
+        Declare @jobsRefreshed int = 0
 
         Declare @continue tinyint = 1
         Declare @LastStatusTime datetime = GetDate()
@@ -472,9 +472,9 @@ AS
 
         While @continue = 1
         Begin
-            SELECT TOP 1 @Job = Job
+            SELECT TOP 1 @job = Job
             FROM #Tmp_JobsToCopy
-            WHERE Job > @Job
+            WHERE Job > @job
             ORDER BY Job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -489,7 +489,7 @@ AS
                 --
                 Set @CurrentLocation = 'Call update_job_parameters for job ' + Convert(varchar(12), @job)
                 --
-                exec @myError = update_job_parameters @Job, @infoOnly=0
+                exec @myError = update_job_parameters @job, @infoOnly=0
 
                 ---------------------------------------------------
                 -- Make sure Transfer_Folder_Path and Storage_Server are up-to-date in T_Jobs
@@ -497,14 +497,30 @@ AS
                 --
                 Set @CurrentLocation = 'Call validate_job_server_info for job ' + Convert(varchar(12), @job)
                 --
-                exec validate_job_server_info @Job, @UseJobParameters=1
+                exec validate_job_server_info @job, @UseJobParameters=1
 
-                Set @JobsRefreshed = @JobsRefreshed + 1
+                ---------------------------------------------------
+                -- Make sure the dependencies column is up-to-date in t_job_steps
+                ---------------------------------------------------
+
+                UPDATE t_job_steps
+                SET dependencies = CountQ.dependencies
+                FROM (  SELECT step,
+                                COUNT(target_step) AS dependencies
+                        FROM t_job_step_dependencies
+                        WHERE job = @job
+                        GROUP BY step
+                        ) CountQ
+                WHERE t_job_steps.Job = @job AND
+                        CountQ.Step = t_job_steps.Step AND
+                        CountQ.Dependencies > t_job_steps.Dependencies;
+
+                Set @jobsRefreshed = @jobsRefreshed + 1
 
                 If DateDiff(second, @LastStatusTime, GetDate()) >= 60
                 Begin
                     Set @LastStatusTime = GetDate()
-                    Set @ProgressMsg = 'Updating job parameters and storage info for copied jobs: ' + Convert(varchar(12), @JobsRefreshed) + ' / ' + Convert(varchar(12), @JobsCopied)
+                    Set @ProgressMsg = 'Updating job parameters and storage info for copied jobs: ' + Convert(varchar(12), @jobsRefreshed) + ' / ' + Convert(varchar(12), @jobsCopied)
                     exec post_log_entry 'Progress', @ProgressMsg, 'copy_history_to_job_multi'
                 End
             End
