@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[update_dataset_instrument]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new synonym names and T_Task tables
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
+**          08/02/2023 mem - Add call to update_cached_dataset_instruments
 **
 *****************************************************/
 (
@@ -145,7 +146,6 @@ AS
 
     Exec @storagePathIdNew = get_instrument_storage_path_for_new_datasets @instrumentIdNew, @datasetCreated, @AutoSwitchActiveStorage=0, @infoOnly=0
 
-
     SELECT @storagePathNew = dbo.combine_paths(vol_client, storage_path)
     FROM V_Storage_List_Report
     WHERE ID = @storagePathIdNew
@@ -269,6 +269,9 @@ AS
     Exec post_log_entry 'Normal', @message, 'update_dataset_instrument'
 
     Commit Tran @instrumentUpdateTran
+
+    -- Update T_Cached_Dataset_Instruments
+    Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
     ---------------------------------------------------
     -- Done
