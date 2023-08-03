@@ -118,6 +118,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          02/27/2023 mem - Use new argument name, @requestName
 **                         - Use calling user name for the dataset creator user
 **          03/02/2023 mem - Use renamed table names
+**          08/02/2023 mem - Prevent adding a dataset for an inactive instrument
 **
 *****************************************************/
 (
@@ -607,10 +608,12 @@ AS
 
     Declare @instrumentID int
     Declare @instrumentGroup varchar(64) = ''
+    Declare @instrumentStatus varchar(64) = ''
     Declare @defaultDatasetTypeID int
     Declare @msTypeOld varchar(50)
 
     execute @instrumentID = get_instrument_id @instrumentName
+
     If @instrumentID = 0
     Begin
         Set @msg = 'Could not find entry in database for instrument ' + @instrumentName
@@ -618,16 +621,23 @@ AS
     End
 
     ---------------------------------------------------
-    -- Lookup the Instrument Group
+    -- Lookup the instrument group and status
     ---------------------------------------------------
 
-    SELECT @instrumentGroup = IN_Group
+    SELECT @instrumentGroup = IN_Group,
+           @instrumentStatus = IN_Status
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentID
 
     If @instrumentGroup = ''
     Begin
-        Set @msg = 'Instrument group not defined for instrument ' + @instrumentName
+        Set @msg = 'Instrument group not defined for instrument ' + @instrumentName + '; contact a DMS administrator to fix this'
+        RAISERROR (@msg, 11, 14)
+    End
+
+    If @instrumentStatus <> 'active'
+    Begin
+        Set @msg = 'Instrument ' + @instrumentName + ' is not active; new datasets cannot be added for this instrument; contact a DMS administrator if the instrument status should be changed'
         RAISERROR (@msg, 11, 14)
     End
 
@@ -1664,7 +1674,6 @@ AS
     End CATCH
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_dataset] TO [DDL_Viewer] AS [dbo]
