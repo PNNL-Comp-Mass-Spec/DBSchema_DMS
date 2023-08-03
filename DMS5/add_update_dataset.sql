@@ -119,6 +119,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **                         - Use calling user name for the dataset creator user
 **          03/02/2023 mem - Use renamed table names
 **          08/02/2023 mem - Prevent adding a dataset for an inactive instrument
+**          08/03/2023 mem - Allow creation of datasets for instruments in group 'Data_Folders' (specifically, the DMS_Pipeline_Data instrument)
 **
 *****************************************************/
 (
@@ -607,6 +608,7 @@ AS
     ---------------------------------------------------
 
     Declare @instrumentID int
+    Declare @instrumentClass varchar(64) = ''
     Declare @instrumentGroup varchar(64) = ''
     Declare @instrumentStatus varchar(64) = ''
     Declare @defaultDatasetTypeID int
@@ -621,11 +623,12 @@ AS
     End
 
     ---------------------------------------------------
-    -- Lookup the instrument group and status
+    -- Lookup the instrument class, group, and status
     ---------------------------------------------------
 
-    SELECT @instrumentGroup = IN_Group,
-           @instrumentStatus = IN_Status
+    SELECT @instrumentClass = IN_Class,
+           @instrumentGroup = IN_Group,
+           @instrumentStatus = IN_Status           
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentID
 
@@ -635,7 +638,7 @@ AS
         RAISERROR (@msg, 11, 14)
     End
 
-    If @instrumentStatus <> 'active'
+    If @instrumentStatus <> 'active' And @instrumentClass <> 'Data_Folders'
     Begin
         Set @msg = 'Instrument ' + @instrumentName + ' is not active; new datasets cannot be added for this instrument; contact a DMS administrator if the instrument status should be changed'
         RAISERROR (@msg, 11, 14)
