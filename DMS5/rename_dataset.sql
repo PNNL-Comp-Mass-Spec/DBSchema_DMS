@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          03/29/2023 mem - No longer add job parameter DatasetNum
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **          04/25/2023 mem - Update Queue_State for the old and new requested runs
+**          08/07/2023 mem - Show a custom error message if the dataset does not exist in T_Requested_Run
 **
 *****************************************************/
 (
@@ -245,8 +246,16 @@ AS
 
     If @myRowCount = 0
     Begin
-        Set @message = 'Dataset ID not found in T_Requested_Run: ' + Cast(@datasetID As varchar(24))
-        Goto Done
+        If @newRequestedRunID > 0
+        Begin
+            Set @message = 'Dataset ID not found in T_Requested_Run: ' + Cast(@datasetID As varchar(24)) + '; cannot rename the dataset'
+            Goto Done
+        End
+        Else
+        Begin
+            Set @message = 'Dataset ID not found in T_Requested_Run: ' + Cast(@datasetID As varchar(24)) + '; it needs to be manually associated with a Requested Run'
+            SELECT @message As Message
+        End
     End
 
     -- Lookup the experiment name for @newExperimentID
@@ -373,7 +382,7 @@ AS
                RL.Dataset,
                RL.Instrument,
                RR.RDS_Run_Start,
-               RR.RDS_Run_Finish               
+               RR.RDS_Run_Finish
         FROM V_Requested_Run_List_Report_2 RL
              INNER JOIN T_Requested_Run RR
                ON RL.Request = RR.ID
@@ -415,7 +424,7 @@ AS
                RL.Dataset,
                RL.Instrument,
                RR.RDS_Run_Start,
-               RR.RDS_Run_Finish               
+               RR.RDS_Run_Finish
         FROM V_Requested_Run_List_Report_2 RL
              INNER JOIN T_Requested_Run RR
                ON RL.Request = RR.ID
@@ -763,7 +772,7 @@ Done:
 
     If @message <> ''
     Begin
-        Select @message as Message
+        SELECT @message As Message
     End
 
     return @myError
