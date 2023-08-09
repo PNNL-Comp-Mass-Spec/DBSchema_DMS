@@ -6,8 +6,9 @@ GO
 CREATE PROCEDURE [dbo].[synchronize_job_stats_with_job_steps]
 /****************************************************
 **
-**  Desc:   Makes sure the job stats (start and finish)
-**          agree with the job steps for the job
+**  Desc:
+**      Makes sure job start and finish times
+**      agree with job step start and finish times
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -17,6 +18,7 @@ CREATE PROCEDURE [dbo].[synchronize_job_stats_with_job_steps]
 **          01/22/2010 mem - Initial version
 **          03/10/2014 mem - Fixed logic related to @CompletedJobsOnly
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/08/2023 mem - Handle null values for Start and Finish in T_Jobs
 **
 *****************************************************/
 (
@@ -33,7 +35,7 @@ AS
     set @myRowCount = 0
 
     ---------------------------------------------------
-    -- Validate the inputs; clear the outputs
+    -- Validate the inputs
     ---------------------------------------------------
 
     Set @infoOnly = IsNull(@infoOnly, 0)
@@ -58,7 +60,8 @@ AS
          INNER JOIN T_Job_Steps JS
            ON J.Job = JS.Job
     WHERE (J.State = 4 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
-          J.Finish < JS.Finish
+          (J.finish < JS.finish OR
+           J.finish IS NULL AND NOT JS.finish IS NULL AND J.State > 2)  -- Do not update Finish for jobs that are New or In Progress
     GROUP BY J.job
     UNION
     SELECT J.Job
@@ -66,11 +69,11 @@ AS
          INNER JOIN T_Job_Steps JS
            ON J.Job = JS.Job
     WHERE (J.State = 4 And @CompletedJobsOnly <> 0 OR @CompletedJobsOnly = 0) AND
-          J.Start > JS.Start
+          (J.start > JS.start OR
+           J.start IS NULL AND NOT JS.start IS NULL)
     GROUP BY J.Job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-
 
     UPDATE #TmpJobsToUpdate
     SET StartNew = SourceQ.Step_Start,
@@ -90,14 +93,24 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
     If @InfoOnly <> 0
         SELECT J.Job,
                J.State,
                J.Start,
                J.Finish,
-               JTU.StartNew,
-               JTU.FinishNew
+               CONVERT(varchar(32), JTU.StartNew, 120) +
+                   CASE WHEN J.Start IS NULL AND NOT JTU.StartNew IS NULL THEN ' (was null)'
+                        WHEN NOT J.Start IS NULL AND J.Start <> JTU.StartNew THEN ' (updated)'
+                        ELSE ''
+                   END AS Start_New,
+               CASE WHEN J.State IN (1,2)
+                    THEN CONVERT(varchar(32), J.Finish, 120)
+                    ELSE CONVERT(varchar(32), JTU.FinishNew, 120) +
+                         CASE WHEN J.Finish IS NULL AND NOT JTU.FinishNew IS NULL THEN ' (was null)'
+                              WHEN NOT J.Finish IS NULL AND J.Finish <> JTU.FinishNew THEN ' (updated)'
+                              ELSE ''
+                         END
+               END AS Finish_New
         FROM T_Jobs J
              INNER JOIN #TmpJobsToUpdate JTU
                ON J.Job = JTU.Job
@@ -109,7 +122,10 @@ AS
 
         UPDATE T_Jobs
         SET Start = JTU.StartNew,
-            Finish = JTU.FinishNew
+            Finish = CASE WHEN J.State IN (1,2)
+                          THEN J.Finish
+                          ELSE JTU.FinishNew
+                     END
         FROM T_Jobs J
              INNER JOIN #TmpJobsToUpdate JTU
                ON J.Job = JTU.Job
@@ -118,13 +134,7 @@ AS
 
     End
 
-    ---------------------------------------------------
-    -- Exit
-    ---------------------------------------------------
-    --
-Done:
-    --
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[synchronize_job_stats_with_job_steps] TO [DDL_Viewer] AS [dbo]
