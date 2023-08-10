@@ -7,8 +7,7 @@ CREATE PROCEDURE [dbo].[backfill_pipeline_jobs]
 /****************************************************
 **
 **  Desc:
-**      Creates jobs in DMS5 for jobs that were originally
-**      created in the DMS_Pipeline database
+**      Creates jobs in DMS5 for jobs that were originally created in the DMS_Pipeline database
 **
 **  Return values: 0 if no error; otherwise error code
 **
@@ -34,6 +33,7 @@ CREATE PROCEDURE [dbo].[backfill_pipeline_jobs]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/27/2023 mem - Auto change script DiaNN_DataPkg to DiaNN
 **          06/13/2023 mem - Fix bug that used harded coded job number 1914830 instead of @job
+**          08/10/2023 mem - Add user MSDADMIN to T_Users if missing
 **
 *****************************************************/
 (
@@ -451,6 +451,16 @@ AS
                         -- Dataset does not exist; create it
                         ------------------------------------------------
 
+                        If Not Exists (SELECT ID FROM T_Users WHERE U_PRN = 'MSDADMIN')
+                        Begin
+                            -- MSDAdmin user not defined; add it
+
+                            Set @currentLocation = 'Add user MSDADMIN to T_Users'
+
+                            INSERT INTO T_Users (U_PRN, U_Name, U_HID, U_Status, U_email, U_domain, U_Payroll, U_active, U_update, U_comment)
+                            VALUES ('MSDADMIN', 'MSDADMIN', 'H0000000', 'Active', NULL, NULL, NULL, 'Y', 'N', '')
+                        End
+
                         Set @currentLocation = 'Call add_update_dataset to create dataset ' + @dataset
 
                         If @infoOnly > 0
@@ -459,7 +469,9 @@ AS
                             Print 'Check_add dataset ' + @dataset
                         End
                         Else
+                        Begin
                             Set @mode = 'add'
+                        End
 
                         Exec @myError = add_update_dataset
                                             @dataset,               -- Dataset
