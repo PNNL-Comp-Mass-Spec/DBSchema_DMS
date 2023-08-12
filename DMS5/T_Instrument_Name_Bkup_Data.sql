@@ -192,7 +192,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('15T_FTICR_I',190,'BrukerFT_BAF',42
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS12-AgQTOF09',191,'IMS_Agilent_TOF_DotD',4399,4490,'secfso',null,'EMSL 1430','Agilent 6560C IM-QTOF; warranty replacement for IMS11_AgQTOF08','3/2/2023 2:43:27 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Ascend01',192,'LTQ_FT',4440,4448,'secfso',null,'BSF 1229','Purchased by Leidos','4/18/2023 12:19:15 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris02',193,'LTQ_FT',4441,4449,'secfso',null,'BSF 1229','Exploris 240','4/18/2023 12:19:29 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('timsTOFScp01',194,'BrukerTOF_TDF',4442,2,'secfso',null,'EMSL 1314','Bruker timsTOF for single cell proteomics','4/19/2023 4:36:27 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('timsTOFScp01',194,'BrukerTOF_TDF',4442,4497,'secfso',null,'EMSL 1314','Bruker timsTOF for single cell proteomics','4/19/2023 4:36:27 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Ascend',195,'LTQ_FT',4491,4493,'fso',null,'Offsite','Data acquired offsite using a Thermo Ascend mass spec','7/18/2023 12:50:05 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Lumos',196,'LTQ_FT',4492,4494,'fso',null,'Offsite','Data acquired offsite using a Thermo Lumos mass spec','7/18/2023 12:51:28 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris03',197,'LTQ_FT',4496,2,'secfso',null,'BSF 1229','Exploris 480','7/27/2023 4:14:06 PM')
