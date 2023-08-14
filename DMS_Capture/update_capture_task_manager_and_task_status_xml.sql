@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[update_capture_task_manager_and_task_status_xml]
 **          03/07/2023 mem - Rename column in temporary table
 **          04/01/2023 mem - Rename procedures and functions
 **          05/04/2023 mem - Rename procedure arguments from @parameters, @result, and @debugMode to @managerStatusXML, @infoLevel, and @message
+**          08/14/2023 mem - Increase nvarchar() sizes used when parsing the XML
 **
 *****************************************************/
 (
@@ -94,26 +95,26 @@ AS
         CREATE TABLE #TPS (
             Processor_Name varchar(128),
             Mgr_Status varchar(50),
-            Status_Date varchar(50), -- datetime
+            Status_Date varchar(50),            -- datetime
             Status_Date_Value datetime NULL,
-            Last_Start_Time varchar(50), -- datetime
+            Last_Start_Time varchar(50),        -- datetime
             Last_Start_Time_Value datetime,
-            CPU_Utilization varchar(50), -- real
-            Free_Memory_MB varchar(50), -- real
-            Process_ID varchar(50), -- int
+            CPU_Utilization varchar(50),        -- real
+            Free_Memory_MB varchar(50),         -- real
+            Process_ID varchar(50),             -- int
             Most_Recent_Error_Message varchar(1024),
             Tool varchar(128),
             Task_Status varchar(50),
-            Duration_Minutes varchar(50), -- real
-            Progress varchar(50), -- real
+            Duration_Minutes varchar(50),       -- real
+            Progress varchar(50),               -- real
             Current_Operation varchar(256),
             Task_Detail_Status varchar(50),
-            Job varchar(50), -- int
-            Job_Step varchar(50), -- int
+            Job varchar(50),                    -- int
+            Job_Step varchar(50),               -- int
             Dataset varchar(256),
             Most_Recent_Log_Message varchar(1024),
             Most_Recent_Job_Info varchar(256),
-            Spectrum_Count varchar(50), -- int
+            Spectrum_Count varchar(50),         -- int
             Monitor_Processor tinyint,
             Remote_Status_Location varchar(256)
         )
@@ -147,28 +148,28 @@ AS
                           Monitor_Processor,
                           Remote_Status_Location)
         SELECT
-            xmlNode.value('data((Manager/MgrName)[1])', 'nvarchar(128)') Processor_Name,
-            xmlNode.value('data((Manager/MgrStatus)[1])', 'nvarchar(50)') Mgr_Status,
-            xmlNode.value('data((Manager/LastUpdate)[1])', 'nvarchar(50)') Status_Date,
-            xmlNode.value('data((Manager/LastStartTime)[1])', 'nvarchar(50)') Last_Start_Time,
+            xmlNode.value('data((Manager/MgrName)[1])', 'nvarchar(256)') Processor_Name,
+            xmlNode.value('data((Manager/MgrStatus)[1])', 'nvarchar(100)') Mgr_Status,
+            xmlNode.value('data((Manager/LastUpdate)[1])', 'nvarchar(100)') Status_Date,
+            xmlNode.value('data((Manager/LastStartTime)[1])', 'nvarchar(100)') Last_Start_Time,
             xmlNode.value('data((Manager/CPUUtilization)[1])', 'nvarchar(50)') CPU_Utilization,
             xmlNode.value('data((Manager/FreeMemoryMB)[1])', 'nvarchar(50)') Free_Memory_MB,
             xmlNode.value('data((Manager/ProcessID)[1])', 'nvarchar(50)') Process_ID,
-            xmlNode.value('data((Manager/RecentErrorMessages/ErrMsg)[1])', 'nvarchar(50)') Most_Recent_Error_Message,
+            xmlNode.value('data((Manager/RecentErrorMessages/ErrMsg)[1])', 'nvarchar(2048)') Most_Recent_Error_Message,
 
-            xmlNode.value('data((Task/Tool)[1])', 'nvarchar(128)') Tool,
-            xmlNode.value('data((Task/Status)[1])', 'nvarchar(50)') Task_Status,
-            xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(50)') Duration_Minutes, -- needs minutes/hours conversion
+            xmlNode.value('data((Task/Tool)[1])', 'nvarchar(256)') Tool,
+            xmlNode.value('data((Task/Status)[1])', 'nvarchar(100)') Task_Status,
+            xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(50)') Duration_Minutes,
             xmlNode.value('data((Task/Progress)[1])', 'nvarchar(50)') Progress,
-            xmlNode.value('data((Task/CurrentOperation)[1])', 'nvarchar(256)') Current_Operation,
+            xmlNode.value('data((Task/CurrentOperation)[1])', 'nvarchar(512)') Current_Operation,
 
-            xmlNode.value('data((Task/TaskDetails/Status)[1])', 'nvarchar(50)') Task_Detail_Status,
+            xmlNode.value('data((Task/TaskDetails/Status)[1])', 'nvarchar(100)') Task_Detail_Status,
             xmlNode.value('data((Task/TaskDetails/Job)[1])', 'nvarchar(50)') Job,
             xmlNode.value('data((Task/TaskDetails/Step)[1])', 'nvarchar(50)') Job_Step,
-            xmlNode.value('data((Task/TaskDetails/Dataset)[1])', 'nvarchar(256)')Dataset,
-            xmlNode.value('data((Task/TaskDetails/MostRecentLogMessage)[1])', 'nvarchar(1024)') Most_Recent_Log_Message,
-            xmlNode.value('data((Task/TaskDetails/MostRecentJobInfo)[1])', 'nvarchar(256)')Most_Recent_Job_Info ,
-            xmlNode.value('data((Task/TaskDetails/SpectrumCount)[1])', 'nvarchar(50)')Spectrum_Count,
+            xmlNode.value('data((Task/TaskDetails/Dataset)[1])', 'nvarchar(512)') Dataset,
+            xmlNode.value('data((Task/TaskDetails/MostRecentLogMessage)[1])', 'nvarchar(2048)') Most_Recent_Log_Message,
+            xmlNode.value('data((Task/TaskDetails/MostRecentJobInfo)[1])', 'nvarchar(512)') Most_Recent_Job_Info ,
+            xmlNode.value('data((Task/TaskDetails/SpectrumCount)[1])', 'nvarchar(50)') Spectrum_Count,
             '1' as Monitor_Processor,
             '' as Remote_Status_Location
         FROM  @paramXML.nodes('//Root') AS R(xmlNode)
