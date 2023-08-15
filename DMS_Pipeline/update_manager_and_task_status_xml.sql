@@ -36,12 +36,14 @@ CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 **          05/04/2023 mem - Rename procedure arguments from @parameters, @result, and @debugMode to @managerStatusXML, @infoLevel, and @message
 **                         - Add argument @logProcessorNames
 **          08/14/2023 mem - Increase nvarchar() sizes used when parsing the XML
+**                         - Add argument @logStatusXML
 **
 *****************************************************/
 (
     @managerStatusXML text = '',
     @infoLevel tinyint = 0,             -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @managerStatusXML, use test data, and update tables, 4 to ignore @managerStatusXML, use test data, and not update tables
     @logProcessorNames tinyint = 0,     -- 1 to log the names of updated processors (in T_Log_Entries)
+    @logStatusXML tinyint = 0,          -- 1 to log excerpts of @managerStatusXML in T_Log_Entries
     @message varchar(4096) output
 )
 AS
@@ -58,7 +60,8 @@ AS
 
     Set @message = ''
     Set @infoLevel = IsNull(@infoLevel, 0)
-    Set @logProcessorNames= IsNull(@logProcessorNames, 0)
+    Set @logProcessorNames = IsNull(@logProcessorNames, 0)
+    Set @logStatusXML = IsNull(@logStatusXML, 0)
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -93,8 +96,8 @@ AS
                             <SpectrumCount>31221</SpectrumCount></TaskDetails></Task></Root><ProgRunnerCoreUsage Count="2"><CoreUsageSample Date="2017-05-16 06:22:44 PM">5.4</CoreUsageSample><CoreUsageSample Date="2017-05-16 06:23:15 PM">4.8</CoreUsageSample></ProgRunnerCoreUsage>'
         End
 
-         ---------------------------------------------------
-        -- temporary table to hold processor status messages
+        ---------------------------------------------------
+        -- Temporary table to hold processor status messages
         ---------------------------------------------------
         --
         CREATE TABLE #TPS (
@@ -173,7 +176,7 @@ AS
 
             xmlNode.value('data((Task/Tool)[1])', 'nvarchar(256)') Step_Tool,
             xmlNode.value('data((Task/Status)[1])', 'nvarchar(100)') Task_Status,
-            xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(50)') Duration_Minutes, -- needs minutes/hours conversion
+            xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(50)') Duration_Minutes,
             xmlNode.value('data((Task/Progress)[1])', 'nvarchar(50)') Progress,
             xmlNode.value('data((Task/CurrentOperation)[1])', 'nvarchar(512)') Current_Operation,
 
@@ -220,7 +223,7 @@ AS
             ORDER BY Processor_Name
         End
 
-        Set @statusMessages = @statusMessages + 'Messages:' + Cast(@myRowCount as varchar(12))
+        Set @statusMessages = @statusMessages + 'Messages:' + Cast(@myRowCount As varchar(12))
 
         If @infoLevel IN (2, 4)
             Goto Done
@@ -329,8 +332,8 @@ AS
                                    ELSE Target.Most_Recent_Job_Info
                                    END
         FROM T_Processor_Status Target
-            INNER JOIN #TPS Src
-                ON Src.Processor_Name = Target.Processor_Name
+             INNER JOIN #TPS Src
+               ON Src.Processor_Name = Target.Processor_Name
         WHERE Src.Remote_Manager = ''
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -341,7 +344,7 @@ AS
             goto Done
         End
 
-        Set @statusMessages = @statusMessages + ', PreservedB:' + Cast(@myRowCount as varchar(12))
+        Set @statusMessages = @statusMessages + ', PreservedB:' + Cast(@myRowCount As varchar(12))
 
         ---------------------------------------------------
         -- Add missing processors to T_Processor_Status
@@ -365,18 +368,18 @@ AS
             Monitor_Processor
         )
         SELECT Src.Processor_Name,
-            Src.Remote_Manager,
-            Src.Mgr_Status,
-            Src.Status_Date_Value,
-            Src.Step_Tool,
-            Src.Task_Status,
-            Src.Current_Operation,
-            Src.Task_Detail_Status,
-            Try_Cast(Src.Job as Int),
-            Try_Cast(Src.Job_Step as Int),
-            Src.Dataset,
-            Try_Cast(Src.Spectrum_Count as Int),
-            1 AS Monitor_Processor
+               Src.Remote_Manager,
+               Src.Mgr_Status,
+               Src.Status_Date_Value,
+               Src.Step_Tool,
+               Src.Task_Status,
+               Src.Current_Operation,
+               Src.Task_Detail_Status,
+               Try_Cast(Src.Job as Int),
+               Try_Cast(Src.Job_Step as Int),
+               Src.Dataset,
+               Try_Cast(Src.Spectrum_Count as Int),
+               1 AS Monitor_Processor
         FROM T_Processor_Status Target
             INNER JOIN #TPS Src
                 ON Src.Processor_Name = Target.Processor_Name
@@ -421,32 +424,32 @@ AS
             Monitor_Processor
         )
         SELECT Src.Processor_Name,
-            Src.Remote_Manager,
-            Src.Mgr_Status,
-            Src.Status_Date_Value,
-            Src.Last_Start_Time_Value,
-            Try_Cast(Src.CPU_Utilization as real),
-            Try_Cast(Src.Free_Memory_MB as real),
-            Src.Process_ID,
-            Try_Cast(Src.ProgRunner_ProcessID as int),
-            Try_Cast(Src.ProgRunner_CoreUsage as real),
-            Src.Most_Recent_Error_Message,
-            Src.Step_Tool,
-            Src.Task_Status,
-            Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
-            Coalesce(Try_Cast(Src.Progress AS real), 0),
-            Src.Current_Operation,
-            Src.Task_Detail_Status,
-            Try_Cast(Src.Job as Int),
-            Try_Cast(Src.Job_Step as Int),
-            Src.Dataset,
-            Src.Most_Recent_Log_Message,
-            Src.Most_Recent_Job_Info,
-            Src.Spectrum_Count,
-            1 AS Monitor_Processor
+               Src.Remote_Manager,
+               Src.Mgr_Status,
+               Src.Status_Date_Value,
+               Src.Last_Start_Time_Value,
+               Try_Cast(Src.CPU_Utilization as real),
+               Try_Cast(Src.Free_Memory_MB as real),
+               Src.Process_ID,
+               Try_Cast(Src.ProgRunner_ProcessID as int),
+               Try_Cast(Src.ProgRunner_CoreUsage as real),
+               Src.Most_Recent_Error_Message,
+               Src.Step_Tool,
+               Src.Task_Status,
+               Coalesce(Try_Cast(Src.Duration_Minutes AS real) / 60.0, 0),
+               Coalesce(Try_Cast(Src.Progress AS real), 0),
+               Src.Current_Operation,
+               Src.Task_Detail_Status,
+               Try_Cast(Src.Job as Int),
+               Try_Cast(Src.Job_Step as Int),
+               Src.Dataset,
+               Src.Most_Recent_Log_Message,
+               Src.Most_Recent_Job_Info,
+               Src.Spectrum_Count,
+               1 AS Monitor_Processor
         FROM #TPS Src
-            LEFT OUTER JOIN T_Processor_Status Target
-            ON Src.Processor_Name = Target.Processor_Name
+             LEFT OUTER JOIN T_Processor_Status Target
+               ON Src.Processor_Name = Target.Processor_Name
         WHERE Src.IsNew = 1 AND Src.Remote_Manager = '' AND Target.Processor_Name IS NULL
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -457,33 +460,57 @@ AS
             goto Done
         End
 
-        Set @statusMessages = @statusMessages + ', InsertedB:' + Cast(@myRowCount as varchar(12))
+        Set @statusMessages = @statusMessages + ', InsertedB:' + Cast(@myRowCount As varchar(12))
 
-        If @logProcessorNames > 0
+        If @logProcessorNames > 0 Or @logStatusXML > 0
         Begin
+            Declare @updatedProcessors varchar(4096)
+            Declare @logMessage varchar(4096)
+            Declare @runningTaskIndex int
 
-            Declare @updatedProcessors varchar(4000) = null
+            If @logProcessorNames > 0
+            Begin
+                Set @updatedProcessors = null
 
-            SELECT @updatedProcessors = Coalesce(@updatedProcessors + ', ' + Processor_Name, Processor_Name)
-            FROM #TPS
-            ORDER BY Processor_Name
+                SELECT @updatedProcessors = Coalesce(@updatedProcessors + ', ' + Processor_Name, Processor_Name)
+                FROM #TPS
+                ORDER BY Processor_Name
 
-            Declare @logMessage varchar(4000) = @statusMessages + ', processors ' + @updatedProcessors
+                Set @logMessage = @statusMessages + ', processors ' + @updatedProcessors
 
-            Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
+                Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
+            End
+
+            If @logStatusXML > 0
+            Begin
+                Exec post_log_entry 'Debug', @managerStatusXML, 'update_manager_and_task_status_xml'
+
+                -- Look for a status message with <MgrStatus>Running</MgrStatus>
+                Set @runningTaskIndex = CharIndex('>Running<', @managerStatusXML)
+
+                If @runningTaskIndex > 0
+                Begin
+                    Set @logMessage = SubString(@managerStatusXML, @runningTaskIndex - 100, 4096)
+                    Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
+                End
+            End
         End
 
     End Try
     Begin Catch
         -- Error caught; log the error, then continue at the next section
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_manager_and_task_status_xml')
-        exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
-                                @ErrorNum = @myError output, @message = @message output
+        exec local_error_handler @CallingProcName, @CurrentLocation, @LogError = 1,
+                                 @ErrorNum = @myError output, @message = @message output
 
-        Set @message = @message
+        If @myError = 0
+        Begin
+            Set @myError = 52001
+        End
+
     End Catch
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
 Done:

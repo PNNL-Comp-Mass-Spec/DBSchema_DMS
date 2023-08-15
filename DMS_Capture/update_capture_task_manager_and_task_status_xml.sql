@@ -33,12 +33,14 @@ CREATE PROCEDURE [dbo].[update_capture_task_manager_and_task_status_xml]
 **          04/01/2023 mem - Rename procedures and functions
 **          05/04/2023 mem - Rename procedure arguments from @parameters, @result, and @debugMode to @managerStatusXML, @infoLevel, and @message
 **          08/14/2023 mem - Increase nvarchar() sizes used when parsing the XML
+**                         - Add argument @logStatusXML
 **
 *****************************************************/
 (
     @managerStatusXML text = '',
     @infoLevel tinyint = 0,             -- 1 to view debug messages and update the tables; 2 to preview the data but not update tables, 3 to ignore @managerStatusXML, use test data, and update tables, 4 to ignore @managerStatusXML, use test data, and not update tables
     @logProcessorNames tinyint = 0,     -- 1 to log the names of updated processors (in T_Log_Entries)
+    @logStatusXML tinyint = 0,          -- 1 to log excerpts of @managerStatusXML in T_Log_Entries
     @message varchar(4096) output
 )
 AS
@@ -55,20 +57,21 @@ AS
 
     Set @message = ''
     Set @infoLevel = IsNull(@infoLevel, 0)
-    Set @logProcessorNames= IsNull(@logProcessorNames, 0)
+    Set @logProcessorNames = IsNull(@logProcessorNames, 0)
+    Set @logStatusXML = IsNull(@logStatusXML, 0)
+
+    ---------------------------------------------------
+    -- Verify that the user can execute this procedure from the given client host
+    ---------------------------------------------------
+
+    Declare @authorized tinyint = 0
+    Exec @authorized = verify_sp_authorized 'update_capture_task_manager_and_task_status_xml', @raiseError = 1;
+    If @authorized = 0
+    Begin;
+        THROW 50000, 'Access denied', 1;
+    End;
 
     Begin Try
-
-        ---------------------------------------------------
-        -- Verify that the user can execute this procedure from the given client host
-        ---------------------------------------------------
-
-        Declare @authorized tinyint = 0
-        Exec @authorized = verify_sp_authorized 'update_capture_task_manager_and_task_status_xml', @raiseError = 1;
-        If @authorized = 0
-        Begin;
-            Throw 50000, 'Access denied', 1;
-        End;
 
         ---------------------------------------------------
         --  Extract parameters from XML input
@@ -177,7 +180,7 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-        begin
+        Begin
             Set @message = 'Error loading temp table'
             goto Done
         End
@@ -189,7 +192,7 @@ AS
             ORDER BY Processor_Name
         End
 
-        Set @statusMessages = @statusMessages + 'Messages:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + 'Messages:' + Cast(@myRowCount As varchar(12))
 
         If @infoLevel IN (2, 4)
             Goto Done
@@ -258,7 +261,7 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-         ---------------------------------------------------
+        ---------------------------------------------------
         -- Update status for existing processors
         ---------------------------------------------------
         --
@@ -298,15 +301,15 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-        begin
+        Begin
             Set @message = 'Error updating existing rows in status table'
             goto Done
         End
 
-        Set @statusMessages = @statusMessages + ', Preserved:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + ', Preserved:' + Cast(@myRowCount As varchar(12))
 
-         ---------------------------------------------------
-        -- Add missing processors to the table
+        ---------------------------------------------------
+        -- Add missing processors to T_Processor_Status
         ---------------------------------------------------
         --
         INSERT INTO T_Processor_Status (
@@ -363,25 +366,45 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         If @myError <> 0
-        begin
-            Set @message = 'Error updating status table'
+        Begin
+            Set @message = 'Error adding new rows to the status table'
             goto Done
         End
 
-        Set @statusMessages = @statusMessages + ', Inserted:' + convert(varchar(12), @myRowCount)
+        Set @statusMessages = @statusMessages + ', Inserted:' + Cast(@myRowCount As varchar(12))
 
-        If @logProcessorNames > 0
+        If @logProcessorNames > 0 Or @logStatusXML > 0
         Begin
+            Declare @updatedProcessors varchar(4096)
+            Declare @logMessage varchar(4096)
+            Declare @runningTaskIndex int
 
-            Declare @updatedProcessors varchar(4000) = null
+            If @logProcessorNames > 0
+            Begin
+                Set @updatedProcessors = null
 
-            SELECT @updatedProcessors = Coalesce(@updatedProcessors + ', ' + Processor_Name, Processor_Name)
-            FROM #TPS
-            ORDER BY Processor_Name
+                SELECT @updatedProcessors = Coalesce(@updatedProcessors + ', ' + Processor_Name, Processor_Name)
+                FROM #TPS
+                ORDER BY Processor_Name
 
-            Declare @logMessage varchar(4000) = @statusMessages + ', processors ' + @updatedProcessors
+                Set @logMessage = @statusMessages + ', processors ' + @updatedProcessors
 
-            Exec post_log_entry 'Debug', @logMessage, 'update_capture_task_manager_and_task_status_xml'
+                Exec post_log_entry 'Debug', @logMessage, 'update_capture_task_manager_and_task_status_xml'
+            End
+
+            If @logStatusXML > 0
+            Begin
+                Exec post_log_entry 'Debug', @managerStatusXML, 'update_manager_and_task_status_xml'
+
+                -- Look for a status message with <MgrStatus>Running</MgrStatus>
+                Set @runningTaskIndex = CharIndex('>Running<', @managerStatusXML)
+
+                If @runningTaskIndex > 0
+                Begin
+                    Set @logMessage = SubString(@managerStatusXML, @runningTaskIndex - 100, 4096)
+                    Exec post_log_entry 'Debug', @logMessage, 'update_manager_and_task_status_xml'
+                End
+            End
         End
 
     End Try
@@ -389,7 +412,7 @@ AS
         -- Error caught; log the error, then continue at the next section
         Set @CallingProcName = IsNull(ERROR_PROCEDURE(), 'update_capture_task_manager_and_task_status_xml')
         exec local_error_handler  @CallingProcName, @CurrentLocation, @LogError = 1,
-                                @ErrorNum = @myError output, @message = @message output
+                                  @ErrorNum = @myError output, @message = @message output
 
         If @myError = 0
         Begin
@@ -398,7 +421,7 @@ AS
 
     End Catch
 
-     ---------------------------------------------------
+    ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
 Done:
