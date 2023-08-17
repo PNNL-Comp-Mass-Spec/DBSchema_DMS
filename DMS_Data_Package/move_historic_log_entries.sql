@@ -6,9 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[move_historic_log_entries]
 /****************************************************
 **
-**  Desc:   Move log entries from main log into the
-**          historic log (insert and then delete)
-**          that are older than given by @intervalHrs
+**  Desc:   Move log entries from t_log_entries into into the historic log table (t_log_entries_data_package in DMSHistoricLog)
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -16,6 +14,7 @@ CREATE PROCEDURE [dbo].[move_historic_log_entries]
 **  Date:   03/07/2018 mem - Initial version
 **          08/26/2022 mem - Use new column name in T_Log_Entries
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/15/2023 mem - Update the where clause filter for finding unimporant log entries
 **
 *****************************************************/
 (
@@ -40,19 +39,18 @@ AS
     -- Delete log entries that we do not want to move to the DMS Historic Log DB
     DELETE FROM dbo.T_Log_Entries
     WHERE Entered < @cutoffDateTime AND
-         ( type = 'Normal' AND message Like 'Updated EUS_Proposal_ID, EUS_Instrument_ID, and/or Instrument name for % data packages%' OR
+         ( type = 'Normal' AND message Like 'Updated EUS_Proposal_ID, EUS_Instrument_ID, and/or Instrument name for % data package%' OR
            posted_by = 'rebuild_fragmented_indices' AND type = 'Normal' AND message LIKE 'Reindexed % due to Fragmentation%'
            )
-    --
-    if @@error <> 0
-    begin
+
+    If @@error <> 0
+    Begin
         rollback transaction @transName
         RAISERROR ('Error removing unwanted log entries from T_Log_Entries', 10, 1)
         return 51179
-    end
+    End
 
     -- Copy entries into the historic log database
-    --
     INSERT INTO DMSHistoricLog.dbo.T_Log_Entries_Data_Package
         (Entry_ID, posted_by, Entered, type, message)
     SELECT
@@ -60,27 +58,25 @@ AS
     FROM T_Log_Entries
     WHERE Entered < @cutoffDateTime
 
-    --
-    if @@error <> 0
-    begin
+    If @@error <> 0
+    Begin
         rollback transaction @transName
         RAISERROR ('Insert was unsuccessful for historic log entry table from T_Log_Entries',
             10, 1)
         return 51180
-    end
+    End
 
     -- Remove the old entries from T_Log_Entries
-    --
     DELETE FROM T_Log_Entries
     WHERE Entered < @cutoffDateTime
-    --
-    if @@error <> 0
-    begin
+
+    If @@error <> 0
+    Begin
         rollback transaction @transName
         RAISERROR ('Delete was unsuccessful for T_Log_Entries',
             10, 1)
         return 51181
-    end
+    End
 
     commit transaction @transName
 
