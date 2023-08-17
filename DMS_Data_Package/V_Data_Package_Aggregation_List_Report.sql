@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Aggregation_List_Report]
 AS
-SELECT dbo.get_xml_row(TD.Data_Package_ID, 'Job', TM.Job) AS sel,
+SELECT dbo.get_xml_row(TD.Data_Pkg_ID, 'Job', TM.Job) AS sel,
        TM.job,
        TM.state,
        TM.tool,
@@ -18,7 +17,7 @@ SELECT dbo.get_xml_row(TD.Data_Package_ID, 'Job', TM.Job) AS sel,
        END AS in_package,
        TM.param_file,
        TM.settings_file,
-       TD.data_package_id,
+       TD.Data_Pkg_ID AS data_package_id,
        TM.organism_db,
        TM.protein_collection_list,
        TM.protein_options,
@@ -32,7 +31,7 @@ FROM T_Data_Package_Datasets AS TD
      LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TJ
        ON TJ.Job = TM.Job AND
           TJ.Dataset_ID = TD.Dataset_ID AND
-          TJ.Data_Package_ID = TD.Data_Package_ID
+          TJ.Data_Pkg_ID = TD.Data_Pkg_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Aggregation_List_Report] TO [DDL_Viewer] AS [dbo]

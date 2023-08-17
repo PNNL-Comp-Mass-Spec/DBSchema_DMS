@@ -3,15 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_MyEMSL_Data_Package_Uploads]
 AS
 /*
 ** Note that this view is used by clsDataPackageArchiver in the DataPackage Archive Manager
 */
-
 SELECT MU.Entry_ID,
-       MU.Data_Package_ID,
+       MU.Data_Pkg_ID,
        MU.Subfolder,
        MU.FileCountNew As File_Count_New,
        MU.FileCountUpdated As File_Count_Updated,
@@ -23,11 +21,11 @@ SELECT MU.Entry_ID,
 	   P.URI_Path + CONVERT(varchar(12), MU.StatusNum) + CASE WHEN P.URI_Path LIKE '%/status/%' Then '/xml' ELSE '' End AS Status_URI,
        MU.Available,
        MU.Verified,
-       MU.Entered
+       MU.Entered,
+       MU.Data_Pkg_ID AS Data_Package_ID
 FROM T_MyEMSL_Uploads MU
      LEFT OUTER JOIN T_URI_Paths P
-       ON MU.StatusURI_PathID = P.URI_PathID     
-
+       ON MU.StatusURI_PathID = P.URI_PathID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_MyEMSL_Data_Package_Uploads] TO [DDL_Viewer] AS [dbo]

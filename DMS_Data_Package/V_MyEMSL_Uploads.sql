@@ -6,7 +6,7 @@ GO
 CREATE VIEW [dbo].[V_MyEMSL_Uploads]
 AS
 SELECT MU.Entry_ID,
-       MU.Data_Package_ID,
+       MU.Data_Pkg_ID,
        MU.Subfolder,
        MU.FileCountNew AS File_Count_New,
        MU.FileCountUpdated AS File_Count_Updated,
@@ -18,7 +18,8 @@ SELECT MU.Entry_ID,
        MU.ErrorCode AS Error_Code,
        StatusU.URI_Path + CONVERT(varchar(12), MU.StatusNum) + CASE WHEN StatusU.URI_Path LIKE '%/status/%' Then '/xml' ELSE '' End AS Status_URI,
        MU.Verified,
-       MU.Entered
+       MU.Entered,
+       MU.Data_Pkg_ID AS Data_Package_ID
 FROM T_MyEMSL_Uploads MU
      LEFT OUTER JOIN T_URI_Paths StatusU
        ON MU.StatusURI_PathID = StatusU.URI_PathID

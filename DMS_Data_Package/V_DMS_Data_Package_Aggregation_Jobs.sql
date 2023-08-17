@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
 AS
 -- Note that this view is used by V_DMS_Data_Package_Aggregation_Jobs in DMS_Pipeline
 -- and the PRIDE converter plugin uses that view to retrieve metadata for data package jobs
-SELECT TPJ.Data_Package_ID,
+SELECT TPJ.Data_Pkg_ID,
        JobInfo.Job,
        JobInfo.Tool,
        JobInfo.Dataset,
@@ -35,11 +34,11 @@ SELECT TPJ.Data_Package_ID,
        JobInfo.Experiment_Reason,
        JobInfo.Experiment_Comment,
        JobInfo.Experiment_NEWT_ID,
-       JobInfo.Experiment_NEWT_Name
+       JobInfo.Experiment_NEWT_Name,
+       TPJ.Data_Pkg_ID AS Data_Package_ID
 FROM S_V_Analysis_Job_Export_DataPkg JobInfo
      INNER JOIN dbo.T_Data_Package_Analysis_Jobs AS TPJ
        ON TPJ.Job = JobInfo.Job
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_Data_Package_Aggregation_Jobs] TO [DDL_Viewer] AS [dbo]

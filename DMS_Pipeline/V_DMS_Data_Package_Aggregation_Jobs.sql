@@ -6,7 +6,7 @@ GO
 CREATE VIEW [dbo].[V_DMS_Data_Package_Aggregation_Jobs]
 AS
 -- This view is used by function LoadDataPackageJobInfo in the DMS Analysis Manager
-SELECT Src.Data_Package_ID,
+SELECT Src.Data_Pkg_ID,
        Src.Job,
        Src.Tool,
        Src.Dataset,
@@ -35,7 +35,8 @@ SELECT Src.Data_Package_ID,
        Src.Experiment_Reason,
        Src.Experiment_Comment,
        Src.Experiment_NEWT_ID,
-       Src.Experiment_NEWT_Name
+       Src.Experiment_NEWT_Name,
+       Src.Data_Package_ID
 FROM dbo.S_Data_Package_Aggregation_Jobs Src
      LEFT OUTER JOIN dbo.T_Job_Steps_History JSH
        ON Src.Job = JSH.Job AND
