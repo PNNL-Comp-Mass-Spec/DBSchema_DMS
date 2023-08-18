@@ -15,10 +15,11 @@ SELECT VMD.Dataset_ID,
        VMD.Dataset_Type,
        VMD.Folder,
        VMD.Comment,
-       TPD.Data_Package_ID,
+       TPD.Data_Pkg_ID,
        TPD.Package_Comment,
        VMD.Storage_Server_Folder,
-       VMD.Dataset_Type AS Type         -- Included for compatibility with older versions of Mage
+       VMD.Dataset_Type AS Type,            -- Included for compatibility with older versions of Mage
+       TPD.Data_Pkg_ID AS Data_Package_ID   -- Included for compatibility with older versions of Mage
 FROM V_Mage_Dataset_List AS VMD
      INNER JOIN DMS_Data_Package.dbo.T_Data_Package_Datasets AS TPD
        ON VMD.Dataset_ID = TPD.Dataset_ID

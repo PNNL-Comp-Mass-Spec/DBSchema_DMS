@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Mage_Data_Package_Analysis_Jobs] AS
 SELECT VMA.Job,
        VMA.State,
@@ -22,14 +21,15 @@ SELECT VMA.Job,
        VMA.Comment,
        VMA.[Results Folder] AS Results_Folder,
        VMA.Folder,
-       DPJ.Data_Package_ID,
+       DPJ.Data_Pkg_ID,
        DPJ.Package_Comment,
        InstName.IN_class AS Instrument_Class,
        DTN.DST_name AS Dataset_Type,
-       VMA.[Organism DB],               -- Included for compatibility with older versions of Mage
-       VMA.[Protein Collection List],   -- Included for compatibility with older versions of Mage
-       VMA.[Protein Options],           -- Included for compatibility with older versions of Mage
-       VMA.[Results Folder]             -- Included for compatibility with older versions of Mage
+       VMA.[Organism DB],                   -- Included for compatibility with older versions of Mage
+       VMA.[Protein Collection List],       -- Included for compatibility with older versions of Mage
+       VMA.[Protein Options],               -- Included for compatibility with older versions of Mage
+       VMA.[Results Folder],                -- Included for compatibility with older versions of Mage
+       DPJ.Data_Pkg_ID AS Data_Package_ID   -- Included for compatibility with older versions of Mage
 FROM V_Mage_Analysis_Jobs VMA
      INNER JOIN S_V_Data_Package_Analysis_Jobs_Export DPJ
        ON VMA.Job = DPJ.Job
