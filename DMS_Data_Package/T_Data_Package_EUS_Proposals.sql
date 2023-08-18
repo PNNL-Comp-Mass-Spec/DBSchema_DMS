@@ -28,7 +28,7 @@ GO
 ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals] ADD  CONSTRAINT [DF_T_Data_Package_EUS_Proposals_Package Comment]  DEFAULT ('') FOR [Package_Comment]
 GO
 ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_EUS_Proposals_T_Data_Package] FOREIGN KEY([Data_Pkg_ID])
-REFERENCES [dbo].[T_Data_Package] ([ID])
+REFERENCES [dbo].[T_Data_Package] ([Data_Pkg_ID])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Data_Package_EUS_Proposals] CHECK CONSTRAINT [FK_T_Data_Package_EUS_Proposals_T_Data_Package]

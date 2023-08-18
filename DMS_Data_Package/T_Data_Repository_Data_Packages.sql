@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[T_Data_Repository_Data_Packages](
 
 GO
 ALTER TABLE [dbo].[T_Data_Repository_Data_Packages]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Repository_Data_Packages_T_Data_Package] FOREIGN KEY([Data_Pkg_ID])
-REFERENCES [dbo].[T_Data_Package] ([ID])
+REFERENCES [dbo].[T_Data_Package] ([Data_Pkg_ID])
 GO
 ALTER TABLE [dbo].[T_Data_Repository_Data_Packages] CHECK CONSTRAINT [FK_T_Data_Repository_Data_Packages_T_Data_Package]
 GO

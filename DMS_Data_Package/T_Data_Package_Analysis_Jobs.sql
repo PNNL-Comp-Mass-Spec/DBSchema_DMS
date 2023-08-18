@@ -47,7 +47,7 @@ GO
 ALTER TABLE [dbo].[T_Data_Package_Analysis_Jobs] ADD  CONSTRAINT [DF_T_Data_Package_Analysis_Jobs_Package Comment]  DEFAULT ('') FOR [Package_Comment]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Analysis_Jobs]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Analysis_Jobs_T_Data_Package] FOREIGN KEY([Data_Pkg_ID])
-REFERENCES [dbo].[T_Data_Package] ([ID])
+REFERENCES [dbo].[T_Data_Package] ([Data_Pkg_ID])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Data_Package_Analysis_Jobs] CHECK CONSTRAINT [FK_T_Data_Package_Analysis_Jobs_T_Data_Package]

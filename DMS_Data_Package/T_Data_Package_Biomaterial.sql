@@ -32,7 +32,7 @@ GO
 ALTER TABLE [dbo].[T_Data_Package_Biomaterial] ADD  CONSTRAINT [DF_T_Data_Package_Biomaterial_Package Comment]  DEFAULT ('') FOR [Package_Comment]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Biomaterial]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Biomaterial_T_Data_Package] FOREIGN KEY([Data_Pkg_ID])
-REFERENCES [dbo].[T_Data_Package] ([ID])
+REFERENCES [dbo].[T_Data_Package] ([Data_Pkg_ID])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Data_Package_Biomaterial] CHECK CONSTRAINT [FK_T_Data_Package_Biomaterial_T_Data_Package]

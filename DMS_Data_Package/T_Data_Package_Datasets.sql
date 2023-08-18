@@ -32,7 +32,7 @@ GO
 ALTER TABLE [dbo].[T_Data_Package_Datasets] ADD  CONSTRAINT [DF_T_Data_Package_Datasets_Package Comment]  DEFAULT ('') FOR [Package_Comment]
 GO
 ALTER TABLE [dbo].[T_Data_Package_Datasets]  WITH CHECK ADD  CONSTRAINT [FK_T_Data_Package_Datasets_T_Data_Package] FOREIGN KEY([Data_Pkg_ID])
-REFERENCES [dbo].[T_Data_Package] ([ID])
+REFERENCES [dbo].[T_Data_Package] ([Data_Pkg_ID])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[T_Data_Package_Datasets] CHECK CONSTRAINT [FK_T_Data_Package_Datasets_T_Data_Package]
