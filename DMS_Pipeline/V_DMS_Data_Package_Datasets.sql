@@ -26,7 +26,7 @@ SELECT Data_Pkg_ID,
        Experiment_Tissue_ID,
        Experiment_Tissue_Name,
        ISNULL(Package_Comment, '') AS Package_Comment,
-       Data_Package_ID
+       Data_Pkg_ID AS Data_Package_ID
 FROM S_Data_Package_Aggregation_Datasets
 
 GO

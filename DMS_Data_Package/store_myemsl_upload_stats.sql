@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[store_myemsl_upload_stats]
 **          05/20/2019 mem - Add Set XACT_ABORT
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in T_MyEMSL_Uploads
 **
 *****************************************************/
 (
@@ -251,16 +252,16 @@ AS
         -- Add a new row to T_MyEmsl_Uploads
         -----------------------------------------------
         --
-        INSERT INTO T_MyEmsl_Uploads(   Data_Package_ID,
-                                        Subfolder,
-                                        FileCountNew,
-                                        FileCountUpdated,
-                                        Bytes,
-                                        UploadTimeSeconds,
-                                        StatusURI_PathID,
-                                        StatusNum,
-                                        ErrorCode,
-                                        Entered )
+        INSERT INTO T_MyEmsl_Uploads( Data_Pkg_ID,
+                                      Subfolder,
+                                      FileCountNew,
+                                      FileCountUpdated,
+                                      Bytes,
+                                      UploadTimeSeconds,
+                                      StatusURI_PathID,
+                                      StatusNum,
+                                      ErrorCode,
+                                      Entered )
         SELECT  @DataPackageID,
                 @Subfolder,
                 @FileCountNew,

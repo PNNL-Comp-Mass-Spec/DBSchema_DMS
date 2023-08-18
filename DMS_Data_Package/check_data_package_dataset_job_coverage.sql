@@ -7,7 +7,7 @@ CREATE FUNCTION [dbo].[check_data_package_dataset_job_coverage]
 /****************************************************
 **
 **  Desc:
-**  Returns a table of dataset job coverage
+**      Returns a table of dataset job coverage
 **
 **  Return values:
 **
@@ -15,8 +15,9 @@ CREATE FUNCTION [dbo].[check_data_package_dataset_job_coverage]
 **
 **  Auth:   grk
 **  Date:   05/22/2010
-**          04/25/2018 - Now joining T_Data_Package_Datasets and T_Data_Package_Analysis_Jobs on Dataset_ID
+**          04/25/2018 mem - Now joining T_Data_Package_Datasets and T_Data_Package_Analysis_Jobs on Dataset_ID
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in data package item tables
 **
 *****************************************************/
 (
@@ -32,54 +33,50 @@ BEGIN
     --
     IF @mode = 'NoPackageJobs'
     BEGIN
-        INSERT INTO @table_variable
-            ( Dataset, Num )
-        SELECT Dataset,
-               NULL AS Num
+        INSERT INTO @table_variable ( Dataset, Num )
+        SELECT TD.Dataset,
+               NULL AS job_count
         FROM T_Data_Package_Datasets AS TD
-        WHERE (Data_Package_ID = @packageID) AND
-              (NOT EXISTS ( SELECT Dataset
-                            FROM T_Data_Package_Analysis_Jobs AS TA
-                            WHERE Tool = @tool AND
-                                  TD.Dataset = Dataset AND
-                                  TD.Data_Package_ID = Data_Package_ID
-                          ))
+             LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TA
+               ON TD.Dataset_ID = TA.Dataset_ID AND
+                  TD.Data_Pkg_ID = TA.Data_Pkg_ID AND
+                  TA.tool = @tool
+        WHERE TD.Data_Pkg_ID = @packageID AND TA.job Is Null;
     END
 
-    -- Package datasets with no dms jobs for tool
+    -- Package datasets with no DMS jobs for tool
     --
     IF @mode = 'NoDMSJobs'
     BEGIN
-        INSERT INTO @table_variable
-            ( Dataset, Num )
-        SELECT Dataset,
-               NULL AS Num
+        INSERT INTO @table_variable ( Dataset, Num )
+        SELECT TD.Dataset,
+               NULL AS job_count
         FROM T_Data_Package_Datasets AS TD
-        WHERE (Data_Package_ID = @packageID) AND
-              (NOT EXISTS ( SELECT Dataset
-                            FROM S_V_Analysis_Job_List_Report_2 AS TA
-                            WHERE Tool = @tool AND
-                                  TD.Dataset = Dataset AND
-                                  TD.Data_Package_ID = Data_Package_ID
-              ))
+        WHERE TD.Data_Pkg_ID = @packageID AND
+              NOT EXISTS ( SELECT J.Dataset_ID
+                           FROM S_V_Analysis_Job_List_Report_2 AS J
+                           WHERE J.Tool = @tool AND
+                                 J.Dataset_ID = TD.Dataset_ID
+                         );
     END
 
+    -- For each dataset, return the number of jobs for the given tool in the data package
+    --
     IF @mode = 'PackageJobCount'
     BEGIN
-        INSERT INTO @table_variable
-            ( Dataset, Num )
+        INSERT INTO @table_variable ( Dataset, Num )
         SELECT TD.Dataset,
                SUM(CASE
                        WHEN TJ.Job IS NULL THEN 0
                        ELSE 1
-                   END) AS Num
+                   END) AS job_count
         FROM T_Data_Package_Datasets AS TD
              LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TJ
                ON TD.Dataset_ID = TJ.Dataset_ID AND
-                  TD.Data_Package_ID = TJ.Data_Package_ID
-        GROUP BY TD.Data_Package_ID, TD.Dataset, TJ.Tool
-        HAVING TD.Data_Package_ID = @packageID AND
-               TJ.Tool = @tool
+                  TD.Data_Pkg_ID = TJ.Data_Pkg_ID AND
+                  TJ.Tool = @tool
+        WHERE TD.Data_Pkg_ID = @packageID
+        GROUP BY TD.Data_Pkg_ID, TD.Dataset, TJ.Tool
     END
 
     RETURN

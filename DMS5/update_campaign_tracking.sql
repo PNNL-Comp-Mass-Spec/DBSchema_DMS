@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[update_campaign_tracking]
 **          08/29/2018 mem - Added Sample_Submission_Count and Sample_Submission_Most_Recent
 **          08/30/2018 mem - Use merge instead of truncate
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column Data_Pkg_ID in S_V_Data_Package_Experiments_Export
 **
 *****************************************************/
 AS
@@ -239,7 +240,7 @@ AS
     SET Data_Package_Count = S.cnt
     FROM T_Campaign_Tracking
          INNER JOIN ( SELECT E.EX_campaign_ID ID,
-                             Count(DISTINCT Data_Package_ID) AS cnt
+                             Count(DISTINCT Data_Pkg_ID) AS cnt
                       FROM S_V_Data_Package_Experiments_Export DPE
                            INNER JOIN T_Experiments E
                              ON E.Exp_ID = DPE.Experiment_ID

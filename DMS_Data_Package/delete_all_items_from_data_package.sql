@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[delete_all_items_from_data_package]
 **          05/18/2016 mem - Log errors to T_Log_Entries
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
 **
 *****************************************************/
 (
@@ -49,24 +50,24 @@ AS
             RAISERROR ('Access denied', 11, 3)
         End
 
-        declare @transName varchar(32)
-        set @transName = 'delete_all_items_from_data_package'
+        Declare @transName varchar(32) = 'delete_all_items_from_data_package'
+
         begin transaction @transName
 
         DELETE FROM T_Data_Package_Analysis_Jobs
-        WHERE Data_Package_ID  = @packageID
+        WHERE Data_Pkg_ID  = @packageID
 
         DELETE FROM T_Data_Package_Datasets
-        WHERE Data_Package_ID  = @packageID
+        WHERE Data_Pkg_ID  = @packageID
 
         DELETE FROM T_Data_Package_Experiments
-        WHERE Data_Package_ID  = @packageID
+        WHERE Data_Pkg_ID  = @packageID
 
         DELETE FROM T_Data_Package_Biomaterial
-        WHERE Data_Package_ID = @packageID
+        WHERE Data_Pkg_ID = @packageID
 
         DELETE FROM T_Data_Package_EUS_Proposals
-        WHERE Data_Package_ID = @packageID
+        WHERE Data_Pkg_ID = @packageID
 
         ---------------------------------------------------
         commit transaction @transName

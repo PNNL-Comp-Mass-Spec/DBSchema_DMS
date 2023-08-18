@@ -17,7 +17,8 @@ CREATE FUNCTION [dbo].[get_data_package_xml]
 **          06/18/2022 mem - Add support for returning XML for all of the sections by setting @options to 'All'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/22/2023 mem - Use lowercase attribute names
-**                         - Coalesce null values to empty strings          
+**                         - Coalesce null values to empty strings
+**          08/17/2023 mem - Use renamed column Data_Pkg_ID in views V_Data_Package_Analysis_Jobs_Export, V_Data_Package_Dataset_Export, and V_Data_Package_Experiments_Export
 **
 *****************************************************/
 (
@@ -98,7 +99,7 @@ BEGIN
                  INNER JOIN T_Experiments TEX ON DPE.Experiment_ID = TEX.Exp_ID
                  INNER JOIN T_Campaign TC ON TC.Campaign_ID = TEX.EX_campaign_ID
                  INNER JOIN dbo.T_Organisms TRG ON TRG.Organism_ID = TEX.EX_organism_ID
-            WHERE DPE.Data_Package_ID = @DataPackageID
+            WHERE DPE.Data_Pkg_ID = @DataPackageID
             ) experiment
         FOR XML AUTO, TYPE
         )
@@ -127,7 +128,7 @@ BEGIN
                    Coalesce(DPD.Package_Comment, '') AS package_comment
             FROM S_V_Data_Package_Datasets_Export AS DPD
                  INNER JOIN T_Dataset AS DS ON DS.Dataset_ID = DPD.Dataset_ID
-            WHERE DPD.Data_Package_ID = @DataPackageID
+            WHERE DPD.Data_Pkg_ID = @DataPackageID
             ) dataset
         FOR XML AUTO, TYPE
         )
@@ -159,7 +160,7 @@ BEGIN
                    Coalesce(DPJ.Package_Comment, '') AS package_comment
             FROM S_V_Data_Package_Analysis_Jobs_Export AS DPJ
                  INNER JOIN V_Mage_Analysis_Jobs AS VMA  ON VMA.Job = DPJ.Job
-            WHERE DPJ.Data_Package_ID = @DataPackageID
+            WHERE DPJ.Data_Pkg_ID = @DataPackageID
             ) job
         FOR XML AUTO, TYPE
         )
@@ -206,7 +207,7 @@ BEGIN
                  INNER JOIN T_Dataset AS DS ON DS.Dataset_ID = TDPD.Dataset_ID
                  INNER JOIN T_Dataset_Archive AS DA ON DA.AS_Dataset_ID = DS.Dataset_ID
                  INNER JOIN T_Archive_Path AS AP ON AP.AP_path_ID = DA.AS_storage_path_ID
-            WHERE TDPD.Data_Package_ID = @DataPackageID
+            WHERE TDPD.Data_Pkg_ID = @DataPackageID
             ) dataset_path
         FOR XML AUTO, TYPE
         )
@@ -222,7 +223,7 @@ BEGIN
         DECLARE @jobPathXML XML
         SET @jobPathXML = (
         SELECT * FROM (
-            SELECT -- DPJ.data_package_id,
+            SELECT -- DPJ.Data_Pkg_ID,
                    DPJ.job,
                    -- DPJ.tool,
                    ISNULL(AP.AP_archive_path, '') + '/' +
@@ -233,7 +234,7 @@ BEGIN
                  INNER JOIN T_Dataset_Archive AS DA ON DA.AS_Dataset_ID = TDS.Dataset_ID
                  INNER JOIN T_Archive_Path AS AP ON AP.AP_path_ID = DA.AS_storage_path_ID
                  INNER JOIN T_Analysis_Job AS AJ ON AJ.AJ_jobID = DPJ.Job
-            WHERE DPJ.Data_Package_ID = @DataPackageID
+            WHERE DPJ.Data_Pkg_ID = @DataPackageID
             ) job_path
         FOR XML AUTO, TYPE
         )

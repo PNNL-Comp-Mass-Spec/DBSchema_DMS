@@ -138,19 +138,19 @@ As
     Begin
 
         alter table T_Data_Package_Analysis_Jobs add
-            constraint FK_T_Data_Package_Analysis_Jobs_T_Data_Package foreign key(Data_Package_ID) references T_Data_Package(ID) on delete cascade;
+            constraint FK_T_Data_Package_Analysis_Jobs_T_Data_Package foreign key(Data_Pkg_ID) references T_Data_Package(Data_Pkg_ID) on delete cascade;
 
         alter table T_Data_Package_Biomaterial add
-            constraint FK_T_Data_Package_Biomaterial_T_Data_Package foreign key(Data_Package_ID) references T_Data_Package(ID) on delete cascade;
+            constraint FK_T_Data_Package_Biomaterial_T_Data_Package foreign key(Data_Pkg_ID) references T_Data_Package(Data_Pkg_ID) on delete cascade;
 
         alter table T_Data_Package_Datasets add
-            constraint FK_T_Data_Package_Datasets_T_Data_Package foreign key(Data_Package_ID) references T_Data_Package(ID) on delete cascade;
+            constraint FK_T_Data_Package_Datasets_T_Data_Package foreign key(Data_Pkg_ID) references T_Data_Package(Data_Pkg_ID) on delete cascade;
 
         alter table T_Data_Package_EUS_Proposals add
-            constraint FK_T_Data_Package_EUS_Proposals_T_Data_Package foreign key(Data_Package_ID) references T_Data_Package(ID) on delete cascade;
+            constraint FK_T_Data_Package_EUS_Proposals_T_Data_Package foreign key(Data_Pkg_ID) references T_Data_Package(Data_Pkg_ID) on delete cascade;
 
         alter table T_Data_Package_Experiments add
-            constraint FK_T_Data_Package_Experiments_T_Data_Package foreign key(Data_Package_ID) references T_Data_Package(ID) on delete cascade;
+            constraint FK_T_Data_Package_Experiments_T_Data_Package foreign key(Data_Pkg_ID) references T_Data_Package(Data_Pkg_ID) on delete cascade;
 
     End
 

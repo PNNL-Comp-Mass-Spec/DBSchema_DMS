@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[get_package_dataset_job_tool_crosstab]
 **          10/31/2022 mem - Use new column name id in the temp table
 **          01/27/2023 mem - Change column names to lowercase
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
 **
 *****************************************************/
 (
@@ -68,7 +69,7 @@ AS
         SELECT DISTINCT Dataset,
                         @DataPackageID
         FROM T_Data_Package_Datasets
-        WHERE Data_Package_ID = @DataPackageID
+        WHERE Data_Pkg_ID = @DataPackageID
 
         -- Update job counts
         UPDATE #Datasets
@@ -77,7 +78,7 @@ AS
              INNER JOIN ( SELECT Dataset,
                                  COUNT(*) AS Total
                           FROM T_Data_Package_Analysis_Jobs
-                          WHERE Data_Package_ID = @DataPackageID
+                          WHERE Data_Pkg_ID = @DataPackageID
                           GROUP BY Dataset ) TX
                ON TX.Dataset = #Datasets.Dataset
 
@@ -88,7 +89,7 @@ AS
         INSERT INTO #Tools ( Tool )
         SELECT DISTINCT Tool
         FROM T_Data_Package_Analysis_Jobs
-        WHERE Data_Package_ID = @DataPackageID
+        WHERE Data_Pkg_ID = @DataPackageID
 
 
         ---------------------------------------------------
@@ -123,7 +124,7 @@ AS
                 SELECT Dataset,
                        COUNT(*) AS Total
                 FROM T_Data_Package_Analysis_Jobs
-                WHERE Data_Package_ID = @DataPackageID AND
+                WHERE Data_Pkg_ID = @DataPackageID AND
                       Tool = @colName
                 GROUP BY Dataset
 

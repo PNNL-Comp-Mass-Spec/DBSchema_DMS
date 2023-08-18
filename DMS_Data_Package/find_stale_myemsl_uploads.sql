@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[find_stale_myemsl_uploads]
 **  Auth:   mem
 **  Date:   05/20/2019 mem - Initial version
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in T_MyEMSL_Uploads
 **
 *****************************************************/
 (
@@ -54,15 +55,15 @@ AS
 
     Create Table #Tmp_StaleUploads (
         Entry_ID Int Not Null,
-        Data_Package_ID Int Not Null,
+        Data_Pkg_ID Int Not Null,
         Entered Datetime
     )
 
     INSERT INTO #Tmp_StaleUploads( Entry_ID,
-                                   Data_Package_ID,
+                                   Data_Pkg_ID,
                                    Entered)
     SELECT Entry_ID,
-           Data_Package_ID,
+           Data_Pkg_ID,
            Entered
     FROM T_MyEMSL_Uploads
     WHERE ErrorCode = 0 AND
@@ -110,7 +111,7 @@ AS
         If @myRowCount = 1
         Begin
             SELECT @entryID = Entry_ID,
-                   @dataPackageID = Data_Package_ID
+                   @dataPackageID = Data_Pkg_ID
             FROM #Tmp_StaleUploads
 
             -- MyEMSL upload task 3944 for data package 2967 has been unverified for over 45 days; ErrorCode set to 101
@@ -123,7 +124,7 @@ AS
             Set @dataPackageList = ''
 
             SELECT @entryIDList = @entryIDList + Cast(Entry_ID As Varchar(12)) + ',',
-                   @dataPackageList = @dataPackageList + Cast(Data_Package_ID As Varchar(12)) + ','
+                   @dataPackageList = @dataPackageList + Cast(Data_Pkg_ID As Varchar(12)) + ','
             FROM #Tmp_StaleUploads
 
             -- MyEMSL upload tasks 3944,4119,4120 for data packages 2967,2895,2896 have been unverified for over 45 days; ErrorCode set to 101

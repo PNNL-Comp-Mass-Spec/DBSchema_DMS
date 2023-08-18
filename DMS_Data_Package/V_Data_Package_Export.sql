@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Export]
 AS
-SELECT DP.ID,
+SELECT DP.Data_Pkg_ID,
        DP.Name,
        DP.Description,
        DP.Owner,
@@ -30,21 +29,21 @@ SELECT DP.ID,
 	   DP.EUS_Person_ID,
 	   DP.EUS_Proposal_ID,
 	   DP.EUS_Instrument_ID,
-       IsNull(UploadQ.MyEmsl_Uploads, 0) As MyEMSL_Uploads
+       IsNull(UploadQ.MyEmsl_Uploads, 0) As MyEMSL_Uploads,
+       DP.Data_Pkg_ID AS ID
 FROM T_Data_Package DP
      INNER JOIN V_Data_Package_Paths DPP
-       ON DP.ID = DPP.ID
-     LEFT OUTER JOIN ( SELECT Data_Package_ID,
+       ON DP.Data_Pkg_ID = DPP.Data_Pkg_ID
+     LEFT OUTER JOIN ( SELECT Data_Pkg_ID,
                               COUNT(*) AS MyEMSL_Uploads
                        FROM T_MyEMSL_Uploads
                        WHERE (ErrorCode = 0) AND
                              (StatusNum > 1) AND
                              (FileCountNew > 0 OR
                               FileCountUpdated > 0)
-                       GROUP BY Data_Package_ID 
+                       GROUP BY Data_Pkg_ID
 					 ) UploadQ
-       ON DP.ID = UploadQ.Data_Package_ID
-
+       ON DP.Data_Pkg_ID = UploadQ.Data_Pkg_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Export] TO [DDL_Viewer] AS [dbo]

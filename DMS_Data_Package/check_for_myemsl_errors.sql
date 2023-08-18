@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[check_for_myemsl_errors]
 **  Auth:   mem
 **  Date:   12/10/2013 mem - Initial version
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in T_MyEMSL_Uploads
 **
 *****************************************************/
 (
@@ -27,10 +28,8 @@ CREATE PROCEDURE [dbo].[check_for_myemsl_errors]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Set @message = ''
 
@@ -84,12 +83,12 @@ AS
                                        WHEN UploadAttempts > 1 THEN 1
                                        ELSE 0
                                    END)
-    FROM ( SELECT Data_Package_ID,
+    FROM ( SELECT Data_Pkg_ID,
                   Subfolder,
                   COUNT(*) AS UploadAttempts
            FROM T_MyEMSL_Uploads
            WHERE Entered BETWEEN @StartDate AND @EndDate
-           GROUP BY Data_Package_ID, Subfolder
+           GROUP BY Data_Pkg_ID, Subfolder
          ) UploadsByDataPkgAndFolder
 
 

@@ -18,9 +18,8 @@ CREATE PROCEDURE [dbo].[update_data_package_item_counts]
 **          06/10/2009 grk - Added update for total count
 **          12/31/2013 mem - Added support for EUS Proposals
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
     @packageID int,
@@ -54,23 +53,23 @@ AS
     --
     SELECT @JobCount = COUNT(*)
     FROM T_Data_Package_Analysis_Jobs
-    WHERE Data_Package_ID = @packageID
+    WHERE Data_Pkg_ID = @packageID
 
     SELECT @DatasetCount = COUNT(*)
     FROM T_Data_Package_Datasets
-    WHERE Data_Package_ID = @packageID
+    WHERE Data_Pkg_ID = @packageID
 
     SELECT @ProposalCount = COUNT(*)
     FROM T_Data_Package_EUS_Proposals
-    WHERE Data_Package_ID = @packageID
+    WHERE Data_Pkg_ID = @packageID
 
     SELECT @ExperimentCount = COUNT(*)
     FROM T_Data_Package_Experiments
-    WHERE Data_Package_ID = @packageID
+    WHERE Data_Pkg_ID = @packageID
 
     SELECT @BiomaterialCount = COUNT(*)
     FROM T_Data_Package_Biomaterial
-    WHERE Data_Package_ID = @packageID
+    WHERE Data_Pkg_ID = @packageID
 
     ---------------------------------------------------
     -- Update the item counts for this data package

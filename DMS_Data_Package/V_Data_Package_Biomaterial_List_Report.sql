@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Biomaterial_List_Report]
 AS
-SELECT DPB.Data_Package_ID AS id,
+SELECT DPB.Data_Pkg_ID AS id,
        DPB.Name AS biomaterial,
        DPB.campaign,
        DPB.type,
@@ -25,7 +24,6 @@ SELECT DPB.Data_Package_ID AS id,
 FROM dbo.T_Data_Package_Biomaterial DPB
      INNER JOIN S_V_Biomaterial_List_Report_2 CL
        ON DPB.Biomaterial_ID = CL.ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Biomaterial_List_Report] TO [DDL_Viewer] AS [dbo]

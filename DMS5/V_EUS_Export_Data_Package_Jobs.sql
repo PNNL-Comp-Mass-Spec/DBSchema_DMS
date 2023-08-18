@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_EUS_Export_Data_Package_Jobs]
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
@@ -18,7 +17,7 @@ SELECT D.Dataset_ID AS Dataset_ID,
        AnTool.AJT_toolName AS Analysis_Tool,
        AnTool.AJT_resultType AS Analysis_Result_Type,
        AJ.AJ_proteinCollectionList AS Protein_Collection_List,
-       DP.ID AS Data_Package_ID,
+       DP.Data_Pkg_ID AS Data_Package_ID,
        DP.Name AS Data_Package_Name,
        dbo.combine_paths('\\aurora.emsl.pnl.gov\archive\prismarch\DataPkgs', DP.Storage_Path_Relative) AS
          Data_Package_Path_Aurora
@@ -42,8 +41,8 @@ FROM T_Dataset D
      LEFT OUTER JOIN S_V_Data_Package_Analysis_Jobs_Export DPJ
        ON AJ.AJ_jobID = DPJ.Job
      INNER JOIN S_V_Data_Package_Export DP
-       ON DP.ID = DPJ.Data_Package_ID
-WHERE (AJ.AJ_StateID = 4)
+       ON DP.Data_Pkg_ID = DPJ.Data_Pkg_ID
+WHERE AJ.AJ_StateID = 4
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_EUS_Export_Data_Package_Jobs] TO [DDL_Viewer] AS [dbo]

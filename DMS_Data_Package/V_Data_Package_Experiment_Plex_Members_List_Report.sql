@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Experiment_Plex_Members_List_Report]
 AS
-SELECT DPE.Data_Package_ID AS id,
+SELECT DPE.Data_Pkg_ID AS id,
        DPE.experiment,
        PM.plex_exp_id,
        PM.organism,
@@ -25,6 +24,5 @@ SELECT DPE.Data_Package_ID AS id,
 FROM dbo.T_Data_Package_Experiments DPE
      INNER JOIN S_V_Experiment_Plex_Members_List_Report PM
        ON PM.Plex_Exp_ID = DPE.experiment_id
-
 
 GO

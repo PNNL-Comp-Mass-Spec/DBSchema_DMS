@@ -17,6 +17,7 @@ CREATE FUNCTION [dbo].[get_data_package_dataset_list]
 **  Auth:   mem
 **  Date:   10/22/2014 mem - Initial version
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in T_Data_Package_Datasets
 **
 *****************************************************/
 (
@@ -30,7 +31,7 @@ AS
 
         SELECT @list = Coalesce(@list + ', ' + Dataset, Dataset)
         FROM T_Data_Package_Datasets
-        WHERE (Data_Package_ID = @dataPackageID)
+        WHERE Data_Pkg_ID = @dataPackageID
         ORDER BY Dataset
 
         If @list Is Null

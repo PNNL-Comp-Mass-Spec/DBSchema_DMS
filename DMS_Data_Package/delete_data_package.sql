@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[delete_data_package]
 **          01/20/2023 mem - Use new column names in V_Data_Package_Detail_Report
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/04/2023 mem - Fix bug that used @myRowCount instead of @datasetOrExperimentCount
+**          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
 **
 *****************************************************/
 (
@@ -115,7 +116,7 @@ AS
                        @lastDatasetOrExperiment = Max(Dataset),
                        @datasetOrExperimentCount = Count(*)
                 FROM T_Data_Package_Datasets
-                WHERE Data_Package_ID = @packageID
+                WHERE Data_Pkg_ID = @packageID
 
                 If @datasetOrExperimentCount > 0
                 Begin
@@ -127,7 +128,7 @@ AS
                            @lastDatasetOrExperiment = Max(Experiment),
                            @datasetOrExperimentCount = Count(*)
                     FROM T_Data_Package_Experiments
-                    WHERE Data_Package_ID = @packageID
+                    WHERE Data_Pkg_ID = @packageID
 
                     If @datasetOrExperimentCount > 0
                     Begin

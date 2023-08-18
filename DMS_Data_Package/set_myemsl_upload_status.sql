@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[set_myemsl_upload_status]
 **  Date:   09/25/2013 mem - Initial version
 **          05/20/2019 mem - Add Set XACT_ABORT
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in T_MyEMSL_Uploads
 **
 *****************************************************/
 (
@@ -64,7 +65,7 @@ AS
     -- Make sure this is a valid entry
     ---------------------------------------------------
 
-    If Not Exists (SELECT * FROM T_MyEMSL_Uploads WHERE Entry_ID = @EntryID AND Data_Package_ID = @DataPackageID)
+    If Not Exists (SELECT Entry_ID FROM T_MyEMSL_Uploads WHERE Entry_ID = @EntryID AND Data_Pkg_ID = @DataPackageID)
     Begin
         Set @message = 'Entry ' + Convert(varchar(12), @EntryID) + ' does not correspond to data package ' + Convert(varchar(12), @DataPackageID)
         Set @myError = 60002

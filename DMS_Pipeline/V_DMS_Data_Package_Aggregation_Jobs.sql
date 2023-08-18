@@ -36,7 +36,7 @@ SELECT Src.Data_Pkg_ID,
        Src.Experiment_Comment,
        Src.Experiment_NEWT_ID,
        Src.Experiment_NEWT_Name,
-       Src.Data_Package_ID
+       Src.Data_Pkg_ID AS Data_Package_ID
 FROM dbo.S_Data_Package_Aggregation_Jobs Src
      LEFT OUTER JOIN dbo.T_Job_Steps_History JSH
        ON Src.Job = JSH.Job AND

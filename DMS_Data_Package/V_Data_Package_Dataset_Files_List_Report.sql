@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Dataset_Files_List_Report]
 AS
-SELECT DPD.Data_Package_ID AS id,
+SELECT DPD.Data_Pkg_ID AS id,
        DPD.dataset,
        DPD.dataset_id,
        DF.file_path,
@@ -44,6 +43,5 @@ FROM dbo.T_Data_Package_Datasets AS DPD
         FROM dbo.S_Dataset_Files
         WHERE Deleted = 0
      ) DF ON DPD.Dataset_ID = DF.Dataset_ID
-
 
 GO

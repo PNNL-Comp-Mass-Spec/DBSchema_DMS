@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Analysis_Jobs_List_Report]
 AS
-SELECT DPJ.Data_Package_ID AS id,
+SELECT DPJ.Data_Pkg_ID AS id,
        DPJ.job,
        DPJ.dataset,
        DPJ.dataset_id,
@@ -33,7 +32,6 @@ SELECT DPJ.Data_Package_ID AS id,
 FROM dbo.T_Data_Package_Analysis_Jobs AS DPJ
      INNER JOIN dbo.S_V_Analysis_Job_List_Report_2 AS AJL
        ON DPJ.Job = AJL.Job
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Jobs_List_Report] TO [DDL_Viewer] AS [dbo]

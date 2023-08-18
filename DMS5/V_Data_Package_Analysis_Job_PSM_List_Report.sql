@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Analysis_Job_PSM_List_Report]
 AS
-SELECT DPJ.Data_Package_ID As data_pkg,
+SELECT DPJ.Data_Pkg_ID As data_pkg,
         AJ.AJ_jobID AS job,
         AJ.AJ_StateNameCached AS state,
         AnalysisTool.AJT_toolName AS tool,

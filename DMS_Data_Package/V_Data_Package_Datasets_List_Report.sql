@@ -3,10 +3,9 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Datasets_List_Report]
 AS
-SELECT DPD.Data_Package_ID AS id,
+SELECT DPD.Data_Pkg_ID AS id,
        DPD.dataset,
        DPD.dataset_id,
        DPD.experiment,
@@ -38,7 +37,6 @@ FROM dbo.T_Data_Package_Datasets AS DPD
        ON DPD.Dataset_ID = DL.ID
 	 LEFT OUTER JOIN dbo.S_V_Analysis_Job_PSM_Summary_Export PSM
 	   ON DPD.Dataset_ID = PSM.Dataset_ID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Datasets_List_Report] TO [DDL_Viewer] AS [dbo]

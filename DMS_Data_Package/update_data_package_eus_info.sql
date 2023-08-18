@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[update_data_package_eus_info]
 **          05/18/2022 mem - Use new EUS Proposal column name
 **          06/08/2022 mem - Use new Item_Added column name
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
 **
 *****************************************************/
 (
@@ -31,8 +32,8 @@ CREATE PROCEDURE [dbo].[update_data_package_eus_info]
 AS
     set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @DataPackageCount int = 0
 
@@ -146,27 +147,27 @@ AS
     UPDATE #TmpDataPackagesToUpdate
     SET Best_EUS_Proposal_ID = FilterQ.EUS_Proposal_ID
     FROM #TmpDataPackagesToUpdate Target
-         INNER JOIN ( SELECT RankQ.Data_Package_ID,
+         INNER JOIN ( SELECT RankQ.Data_Pkg_ID,
                              RankQ.EUS_Proposal_ID
-                      FROM ( SELECT Data_Package_ID,
+                      FROM ( SELECT Data_Pkg_ID,
                                     EUS_Proposal_ID,
                                     ProposalCount,
-                                    Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By ProposalCount DESC ) AS CountRank
-                             FROM ( SELECT DPD.Data_Package_ID,
+                                    Row_Number() OVER ( Partition By SourceQ.Data_Pkg_ID Order By ProposalCount DESC ) AS CountRank
+                             FROM ( SELECT DPD.Data_Pkg_ID,
                                            DR.Proposal AS EUS_Proposal_ID,
                                            COUNT(*) AS ProposalCount
                                     FROM T_Data_Package_Datasets DPD
                                          INNER JOIN #TmpDataPackagesToUpdate Src
-                                           ON DPD.Data_Package_ID = Src.ID
+                                           ON DPD.Data_Pkg_ID = Src.ID
                                          INNER JOIN S_V_Dataset_List_Report_2 DR
                                            ON DPD.Dataset_ID = DR.ID
                                     WHERE NOT DR.Proposal IS NULL AND NOT DR.Proposal LIKE 'EPR%'
-                                    GROUP BY DPD.Data_Package_ID, DR.Proposal
+                                    GROUP BY DPD.Data_Pkg_ID, DR.Proposal
                                   ) SourceQ
                            ) RankQ
                       WHERE RankQ.CountRank = 1
                      ) FilterQ
-           ON Target.ID = FilterQ.Data_Package_ID
+           ON Target.ID = FilterQ.Data_Pkg_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -179,20 +180,20 @@ AS
     UPDATE #TmpDataPackagesToUpdate
     SET Best_EUS_Proposal_ID = FilterQ.Proposal_ID
     FROM #TmpDataPackagesToUpdate Target
-         INNER JOIN ( SELECT Data_Package_ID,
+         INNER JOIN ( SELECT Data_Pkg_ID,
                              Proposal_ID
-                      FROM ( SELECT Data_Package_ID,
+                      FROM ( SELECT Data_Pkg_ID,
                                     Proposal_ID,
                                     Item_Added,
-                                    Row_Number() OVER ( Partition By Data_Package_ID Order By Item_Added DESC ) AS IdRank
+                                    Row_Number() OVER ( Partition By Data_Pkg_ID Order By Item_Added DESC ) AS IdRank
                              FROM T_Data_Package_EUS_Proposals
-                             WHERE (Data_Package_ID IN ( SELECT ID
-                                                         FROM #TmpDataPackagesToUpdate
-                                                         WHERE Best_EUS_Proposal_ID IS NULL ))
+                             WHERE (Data_Pkg_ID IN ( SELECT ID
+                                                     FROM #TmpDataPackagesToUpdate
+                                                     WHERE Best_EUS_Proposal_ID IS NULL ))
                            ) RankQ
                       WHERE RankQ.IdRank = 1
                     ) FilterQ
-           ON Target.ID = FilterQ.Data_Package_ID
+           ON Target.ID = FilterQ.Data_Pkg_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -203,25 +204,25 @@ AS
     UPDATE #TmpDataPackagesToUpdate
     SET Best_Instrument_Name = FilterQ.Instrument
     FROM #TmpDataPackagesToUpdate Target
-         INNER JOIN ( SELECT RankQ.Data_Package_ID,
+         INNER JOIN ( SELECT RankQ.Data_Pkg_ID,
                              RankQ.Instrument
-                      FROM ( SELECT Data_Package_ID,
+                      FROM ( SELECT Data_Pkg_ID,
                                     Instrument,
                                     InstrumentCount,
-                                    Row_Number() OVER ( Partition By SourceQ.Data_Package_ID Order By InstrumentCount DESC ) AS CountRank
-                             FROM ( SELECT DPD.Data_Package_ID,
+                                    Row_Number() OVER ( Partition By SourceQ.Data_Pkg_ID Order By InstrumentCount DESC ) AS CountRank
+                             FROM ( SELECT DPD.Data_Pkg_ID,
                                            DPD.Instrument,
                                            COUNT(*) AS InstrumentCount
-         FROM T_Data_Package_Datasets DPD
+                                    FROM T_Data_Package_Datasets DPD
                                          INNER JOIN #TmpDataPackagesToUpdate Src
-                                           ON DPD.Data_Package_ID = Src.ID
+                                           ON DPD.Data_Pkg_ID = Src.ID
                                     WHERE NOT DPD.Instrument Is Null
-                                    GROUP BY DPD.Data_Package_ID, DPD.Instrument
+                                    GROUP BY DPD.Data_Pkg_ID, DPD.Instrument
                                   ) SourceQ
                            ) RankQ
                       WHERE RankQ.CountRank = 1
                      ) FilterQ
-           ON Target.ID = FilterQ.Data_Package_ID
+           ON Target.ID = FilterQ.Data_Pkg_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -264,7 +265,6 @@ AS
 Done:
 
     Return @myError
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_data_package_eus_info] TO [DDL_Viewer] AS [dbo]
