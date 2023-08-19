@@ -25,7 +25,7 @@ CREATE PROCEDURE [dbo].[add_output_file_archive_entry]
 **
 **  This procedure updates the filename in @archivedFilePath to replace 00000 with the file ID in T_Archived_Output_Files (padded using '000000')
 **  For example,  '\\gigasax\DMS_FASTA_File_Archive\Dynamic\Forward\ID_00000_C1CEE570.fasta'
-**  is changed to '\\gigasax\DMS_FASTA_File_Archive\Dynamic\Forward\ID_004226_C1CEE570.fasta'
+**  is changed to '\\gigasax\DMS_FASTA_File_Archive\Dynamic\Forward\ID_004226_C1CEE570.fasta'  
 **
 **  Auth:   kja
 **  Date:   03/10/2006
