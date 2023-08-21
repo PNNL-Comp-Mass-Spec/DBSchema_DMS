@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[add_update_protein_collection]
 **                         - Rename argument @fileName to @collectionName
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Remove underscores from variables
+**          08/21/2023 mem - Assure that text parameters are not null and validate mode
 **
 *****************************************************/
 (
@@ -39,7 +40,7 @@ CREATE PROCEDURE [dbo].[add_update_protein_collection]
     @message varchar(512) output
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
@@ -48,54 +49,64 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    set @myError = 0
+    Set @collectionName   = LTrim(RTrim(Coalesce(@collectionName, '')));
+    Set @description      = LTrim(RTrim(Coalesce(@description, '')));
+    Set @collectionSource = LTrim(RTrim(Coalesce(@collectionSource, '')));
 
-    if LEN(@collectionName) < 1
-    begin
-        set @myError = 51000
+    Set @mode = Lower(LTrim(RTrim(Coalesce(@mode, ''))));
+
+    If LEN(@collectionName) < 1
+    Begin
+        Set @myError = 51000
         Set @message = '@collectionName was blank'
         RAISERROR (@message, 10, 1)
-    end
-
-    -- Make sure @@collectionName does not contain a space
-    Set @collectionName = RTrim(@collectionName)
-
-    If @collectionName Like '% %'
-    begin
-        set @myError = 51001
-        Set @message = 'Protein collection name contains a space: "' + @collectionName + '"'
-        RAISERROR (@message, 10, 1)
-    end
-
-    if @myError <> 0
+    End
+    
+    If @myError = 0 And Not @mode In ('add', 'update')
     Begin
-        -- Return zero, since we did not create a protein collection
-        Return 0
+        Set @myError = 51001
+        Set @message = 'Invalid mode; should be "add" or "update"'
+        RAISERROR (@message, 10, 1)
     End
 
-    -- Make sure the Source and Description do not have text surrounded by < and >, since web browsers will treat that as an HTML tag
-    Set @collectionSource = REPLACE(REPLACE(Coalesce(@collectionSource, ''), '<', '('), '>', ')')
+    -- Make sure @collectionName does not contain a space
+
+    If @myError = 0 And @collectionName Like '% %'
+    Begin
+        Set @myError = 51002
+        Set @message = 'Protein collection name contains a space: "' + @collectionName + '"'
+        RAISERROR (@message, 10, 1)
+    End
+
+    If @myError <> 0
+    Begin
+        -- Return zero, since we did not create a protein collection
+        RETURN 0
+    End
+
+    -- Make sure the Description and Source do not have text surrounded by < and >, since web browsers will treat that as an HTML tag
     Set @description =      REPLACE(REPLACE(Coalesce(@description,      ''), '<', '('), '>', ')')
+    Set @collectionSource = REPLACE(REPLACE(Coalesce(@collectionSource, ''), '<', '('), '>', ')')
 
     ---------------------------------------------------
     -- Does entry already exist?
     ---------------------------------------------------
 
-    declare @collectionID Int = 0
+    Declare @collectionID Int = 0
 
     execute @collectionID = get_protein_collection_id @collectionName
 
-    if @collectionID > 0 and @mode = 'add'
-    begin
-        -- Collection already exists; change @mode to 'update'
+    If @collectionID > 0 and @mode = 'add'
+    Begin
+        -- Collection already exists; auto-change @mode to 'update'
         set @mode = 'update'
-    end
+    End
 
-    if @collectionID = 0 and @mode = 'update'
-    begin
-        -- Collection not found; change @mode to 'add'
+    If @collectionID = 0 and @mode = 'update'
+    Begin
+        -- Collection not found; auto-change @mode to 'add'
         set @mode = 'add'
-    end
+    End
 
     -- Uncomment to debug
     --
@@ -108,13 +119,13 @@ AS
     ---------------------------------------------------
 
     declare @transName varchar(32) = 'AddProteinCollectionEntry'
-    begin transaction @transName
+    Begin transaction @transName
 
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
-    if @mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
 
         INSERT INTO T_Protein_Collections (
             Collection_Name,
@@ -143,15 +154,16 @@ AS
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
+
+        If @myError <> 0
+        Begin
             rollback transaction @transName
             set @message = 'Insert operation failed: "' + @collectionName + '"'
             RAISERROR (@message, 10, 1)
+
             -- Return zero, since we did not create a protein collection
-            Return 0
-        end
+            RETURN 0
+        End
 
 --            INSERT INTO T_Annotation_Groups (
 --            Protein_Collection_ID,
@@ -163,10 +175,10 @@ AS
 --            @primaryAnnotationTypeId
 --            )
 
-    end
+    End
 
-    if @mode = 'update'
-    begin
+    If @mode = 'update'
+    Begin
 
         UPDATE T_Protein_Collections
         SET
@@ -180,26 +192,27 @@ AS
         WHERE Collection_Name = @collectionName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
+
+        If @myError <> 0
+        Begin
             rollback transaction @transName
             set @message = 'Update operation failed: "' + @collectionName + '"'
             RAISERROR (@message, 10, 1)
+
             -- Return zero, since we did not create a protein collection
-            Return 0
-        end
-    end
+            RETURN 0
+        End
+    End
 
     commit transaction @transName
 
     -- Lookup the collection ID
     execute @collectionID = get_protein_collection_id @collectionName
 
-    if @mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
         set @transName = 'AddProteinCollectionEntry'
-        begin transaction @transName
+        Begin transaction @transName
 
         INSERT INTO T_Annotation_Groups (
             Protein_Collection_ID,
@@ -212,20 +225,21 @@ AS
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
+
+        If @myError <> 0
+        Begin
             rollback transaction @transName
             set @message = 'Update operation failed: "' + @collectionName + '"'
             RAISERROR (@message, 10, 1)
+
             -- Return zero, since we did not create a protein collection
-            Return 0
-        end
+            RETURN 0
+        End
 
         commit transaction @transName
-    end
+    End
 
-    return @collectionID
+    RETURN @collectionID
 
 GO
 GRANT EXECUTE ON [dbo].[add_update_protein_collection] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
