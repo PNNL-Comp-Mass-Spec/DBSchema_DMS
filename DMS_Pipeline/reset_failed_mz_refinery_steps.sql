@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[reset_failed_mz_refinery_steps]
 **
 **  Auth:   mem
 **          08/23/2023 mem - Initial version
+**          08/24/2023 mem - Remove unused column from temp table and log a warning if no rows are updated
 **
 *****************************************************/
 (
@@ -51,7 +52,6 @@ AS
         Entry_ID int Identity(1,1),
         Manager_Description varchar(256) Not Null,
         Manager_Name varchar(128) Null,
-        Enable_Auto_Cleanup tinyint Not Null,
         Entry_ID_Min int
     )
 
@@ -60,8 +60,8 @@ AS
     -- (for example: Pub-15: Flag file exists in directory AnalysisToolManager5)
     -----------------------------------------------------------
 
-    INSERT INTO #Tmp_Managers (Manager_Description, Manager_Name, Enable_Auto_Cleanup, Entry_ID_Min)
-    SELECT posted_by, Null, 0, MIN(Entry_ID) As Entry_ID_Min
+    INSERT INTO #Tmp_Managers (Manager_Description, Manager_Name, Entry_ID_Min)
+    SELECT posted_by, Null, MIN(Entry_ID) As Entry_ID_Min
     FROM S_DMS_T_Log_Entries
     WHERE Entered >= DateAdd(hour, -48, GETDATE()) AND
           type = 'Error' AND
@@ -73,11 +73,10 @@ AS
 
     If @myRowCount = 0
     Begin
-        -- Nothing to do
+        Set @message = 'Did not find any flag file errors in T_Log_Entries in DMS5; nothing to reset'
 
         If @infoOnly > 0
         Begin
-            Set @message = 'Did not find any flag file errors in T_Log_Entries in DMS5; nothing to reset'
             SELECT @message As Message
         End
 
@@ -189,12 +188,12 @@ AS
 
                 If @myRowCount = 0
                 Begin
-                    Set @message = 'Attempted to reset ' + @baseMsg + ', but no rows were updated'
+                    Set @message = 'Attempted to reset ' + @baseMsg + ', but no rows were updated; this is unexpected'
+                    Exec post_log_entry 'Warning', @message, 'reset_failed_mz_refinery_steps'
                 End
                 Else
                 Begin
                     Set @message = 'Reset ' + @baseMsg
-
                     Exec post_log_entry 'Warning', @message, 'reset_failed_mz_refinery_steps'
 
                     -----------------------------------------------------------
