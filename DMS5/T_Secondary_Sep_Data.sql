@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 131 ******/
+/****** RowCount: 132 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -87,6 +87,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-PCR-Tube_2hr',124,'LC-PCR-Tube_2hr',1,
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Pentylammonium_highflow_High_pH',102,'Waters constant high flow, ion pairing pentylamine plus HFIP, high pH ',1,'LC-IonPairing',0,'10/9/2017 3:40:24 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-PFGRC-Standard',32,'Datasets acquired in the Pathogen Functional Genomics Resource Center at JCVI',0,'Other',0,'8/16/2010 6:21:54 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-ReproSil-75um',101,'75 um columns packed with 1.9 um Reprosil porous particles',1,'LC-ReproSil-75um',1,'11/23/2016 10:45:35 AM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Rush-Standard',133,'Datasets acquired at Rush University',0,'Other',0,'8/23/2023 1:07:28 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-UNC-Standard',79,'Datasets acquired at the University of North Carolina',0,'Other',0,'3/7/2014 3:54:39 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Unknown',55,'Unknown LC separation',0,'Other',0,'9/13/2010 1:38:29 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Vanderbilt-Standard',53,'Datasets acquired at Vanderbilt University',0,'Other',0,'3/20/2012 9:48:13 PM')

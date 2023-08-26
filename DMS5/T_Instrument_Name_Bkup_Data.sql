@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 195 ******/
+/****** RowCount: 196 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -195,4 +195,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris02',193,'LTQ_FT',4441,4449
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('timsTOFScp01',194,'BrukerTOF_TDF',4442,4497,'secfso',null,'EMSL 1314','Bruker timsTOF for single cell proteomics','4/19/2023 4:36:27 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Ascend',195,'LTQ_FT',4491,4493,'fso',null,'Offsite','Data acquired offsite using a Thermo Ascend mass spec','7/18/2023 12:50:05 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Lumos',196,'LTQ_FT',4492,4494,'fso',null,'Offsite','Data acquired offsite using a Thermo Lumos mass spec','7/18/2023 12:51:28 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris03',197,'LTQ_FT',4496,2,'secfso',null,'BSF 1229','Exploris 480','7/27/2023 4:14:06 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris03',197,'LTQ_FT',4496,4498,'secfso',null,'BSF 1229','Exploris 480','7/27/2023 4:14:06 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SLIM09_QExactP06',198,'LTQ_FT',4499,4500,'fso',null,'EMSL 1426','SLIM instrument connected to QExactP06, brought online in 2023','8/23/2023 4:15:45 PM')
