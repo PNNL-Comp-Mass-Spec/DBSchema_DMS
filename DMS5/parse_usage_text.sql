@@ -41,6 +41,7 @@ CREATE PROCEDURE [dbo].[parse_usage_text]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          06/15/2023 mem - Add support for usage type 'ResourceOwner'
+**          08/30/2023 mem - Only validate that values are numeric for percentage based usage types
 **
 *****************************************************/
 (
@@ -149,6 +150,7 @@ AS
         Declare @curVal varchar(24)
         Declare @keywordStartIndex int = 0
 
+        Declare @usageKey varchar(32)
         Declare @uniqueID int = 0, @nextID int = 0
         Declare @kw varchar(32)
         Declare @done tinyint = 0
@@ -161,6 +163,7 @@ AS
 
             Set @kw = ''
             SELECT TOP 1
+                @usageKey = UsageKey,
                 @kw = ',' + UsageKey + '[',
                 @curVal = UsageValue,
                 @uniqueID = UniqueID
@@ -214,11 +217,14 @@ AS
                     Set @val = REPLACE(@val, '%', '')
                     Set @val = REPLACE(@val, ',', '')
 
-                    If Try_Parse(@val as int) Is Null
+                    If Not Exists (SELECT * FROM #TmpNonPercentageKeys WHERE UsageKey = @usageKey)
                     Begin
-                        Set @logErrors = 0
-                        Set @invalidUsage = 1
-                        RAISERROR ('Percentage value for usage "%s" is not a valid integer; see ID %d', 11, 5, @kw, @seq)
+                        If Try_Parse(@val as int) Is Null
+                        Begin
+                            Set @logErrors = 0
+                            Set @invalidUsage = 1
+                            RAISERROR ('Percentage value for usage "%s" is not a valid integer; see ID %d', 11, 5, @usageKey, @seq)
+                        End
                     End
 
                     UPDATE #TmpUsageInfo
