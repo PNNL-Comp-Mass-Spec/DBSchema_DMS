@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[get_monthly_emsl_instrument_usage_report]
 **          02/14/2022 mem - Add new columns to temporary table #ZR (to match data returned by get_monthly_instrument_usage_report)
 **                         - Add @infoOnly parameter
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/31/2023 mem - Return Start times as actual DateTime values instead of strings
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -216,7 +217,9 @@ AS
             EMSL_Inst_ID,
             Instrument AS DMS_Instrument,
             [Type],
-            CONVERT(varchar(24), [Start], 100) AS [Start],
+            -- Prior to September 2023, dates were formatted as "Jan  8 2023  2:28PM" using: CONVERT(varchar(24), [Start], 100)
+            -- This prevents sorting by date, so we switched to returning Start as a true DateTime value
+            [Start],
             [Minutes],
             Proposal,
             Usage,

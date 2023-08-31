@@ -40,6 +40,7 @@ CREATE PROCEDURE [dbo].[get_monthly_instrument_usage_report]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/25/2023 bcg - Update output table column names to lower-case
 **          06/15/2023 mem - Add support for usage type 'RESOURCE_OWNER'
+**          08/31/2023 mem - Return Start times as actual DateTime values instead of strings
 **
 *****************************************************/
 (
@@ -605,7 +606,9 @@ AS
             SELECT
                 @instrument AS instrument,
                 @eusInstrumentId AS emsl_inst_id,
-                CONVERT(VARCHAR(32), [Start], 100) AS [start],
+                -- Prior to September 2023, dates were formatted as "Jan  8 2023  2:28PM" using: CONVERT(VARCHAR(32), [Start], 100)
+                -- This prevented users from sorting by date on the webpage, so we switched to returning Start as a true DateTime value
+                [Start] AS start,
                 [Type] AS type,
                 CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS [minutes],
                 Proposal AS proposal,
@@ -627,7 +630,9 @@ AS
             ---------------------------------------------------
 
             SELECT
-                CONVERT(VARCHAR(32), [Start], 100) AS start,
+                -- Prior to September 2023, dates were formatted as "Jan  8 2023  2:28PM" using: CONVERT(VARCHAR(32), [Start], 100)
+                -- This prevented users from sorting by date on the webpage, so we switched to returning Start as a true DateTime value
+                [Start] AS start,
                 [Type] AS type,
                 CASE WHEN [Type] = 'Interval' THEN [Interval] ELSE Duration END AS minutes,
                 Proposal AS proposal,
