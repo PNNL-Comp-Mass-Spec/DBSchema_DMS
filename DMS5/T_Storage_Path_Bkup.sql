@@ -9,7 +9,7 @@ CREATE TABLE [dbo].[T_Storage_Path_Bkup](
 	[SP_vol_name_client] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_vol_name_server] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_function] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[SP_instrument_name] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[SP_instrument_name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_code] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SP_description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Storage_Path_Bkup] PRIMARY KEY CLUSTERED 

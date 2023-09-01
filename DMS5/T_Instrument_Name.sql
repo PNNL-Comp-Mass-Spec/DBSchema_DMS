@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Instrument_Name](
-	[IN_name] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[IN_name] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Instrument_ID] [int] NOT NULL,
 	[IN_class] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_Group] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -13,8 +13,8 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_capture_method] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_status] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Room_Number] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[IN_Description] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[IN_usage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[IN_Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_usage] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_operations_role] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[IN_Tracking] [tinyint] NOT NULL,
 	[Percent_EMSL_Owned] [int] NOT NULL,

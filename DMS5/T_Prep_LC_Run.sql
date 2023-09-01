@@ -6,7 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Prep_LC_Run](
 	[ID] [int] IDENTITY(1000,1) NOT NULL,
 	[Prep_Run_Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Instrument] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Instrument] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Type] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[LC_Column] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[LC_Column_2] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
