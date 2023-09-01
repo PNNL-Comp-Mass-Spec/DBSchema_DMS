@@ -31,18 +31,19 @@ CREATE PROCEDURE [dbo].[add_update_instrument]
 **                         - Use Try_Cast instead of Try_Convert
 **          05/28/2019 mem - Add parameter @trackUsageWhenInactive
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/01/2023 mem - Expand @instrumentName to varchar(64), @description to varchar(1024), and @usage to varchar(128)
 **
 *****************************************************/
 (
     @instrumentID int Output,
-    @instrumentName varchar(24),
+    @instrumentName varchar(64),
     @instrumentClass varchar(32),
     @instrumentGroup varchar(64),
     @captureMethod varchar(10),
     @status varchar(8),
     @roomNumber varchar(50),
-    @description varchar(255),
-    @usage varchar(50),
+    @description varchar(1024),
+    @usage varchar(128),
     @operationsRole varchar(50),
     @trackUsageWhenInactive varchar(32) = 'No',
     @scanSourceDir varchar(32) = 'Yes',         -- Set to No to skip this instrument when the DMS_InstDirScanner looks for files and directories on the instrument's source share
@@ -82,11 +83,13 @@ AS
     BEGIN TRY
 
     ---------------------------------------------------
-    -- Validate input fields
+    -- Validate the inputs
     ---------------------------------------------------
 
-    If @usage is null
-        Set @usage = ''
+    Set @instrumentName = LTrim(RTrim(Coalesce(@instrumentName, '')))
+    Set @description    = LTrim(RTrim(Coalesce(@description, '')))
+    Set @usage          = LTrim(RTrim(Coalesce(@usage, '')))
+    Set @mode           = LTrim(RTrim(Coalesce(@mode, '')))
 
     Declare @percentEMSLOwnedVal int = Try_Cast(@percentEMSLOwned As int);
 
@@ -203,7 +206,7 @@ AS
 
     END Catch
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_instrument] TO [DDL_Viewer] AS [dbo]

@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[add_update_storage]
 **          10/27/2020 mem - Add parameter @urlDomain and update SP_URL_Domain
 **          06/24/2021 mem - Add support for re-using an existing storage path when @mode is 'add'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/01/2023 mem - Expand @instrumentName to varchar(64)
 **
 *****************************************************/
 (
@@ -52,7 +53,7 @@ CREATE PROCEDURE [dbo].[add_update_storage]
     @volNameClient varchar(128),
     @volNameServer varchar(128),
     @storFunction varchar(50),                -- 'inbox', 'old-storage', or 'raw-storage'
-    @instrumentName varchar(50),
+    @instrumentName varchar(64),
     @description varchar(255) = '(na)',
     @urlDomain varchar(64) = 'pnl.gov',
     @id varchar(32) output,
@@ -84,19 +85,26 @@ AS
     End;
 
     ---------------------------------------------------
-    -- Validate input fields
+    -- Validate the inputs
     ---------------------------------------------------
+
+    Set @path           = LTrim(RTrim(Coalesce(@path, '')))
+    Set @instrumentName = LTrim(RTrim(Coalesce(@instrumentName, '')))
+    Set @storFunction   = LTrim(RTrim(Coalesce(@storFunction, '')))
+    Set @mode           = LTrim(RTrim(Coalesce(@mode, '')))
+    Set @urlDomain      = LTrim(RTrim(Coalesce(@urlDomain, '')))
+    Set @id             = Coalesce(@id, '')
 
     If LEN(@path) < 1
     Begin
-        Set @msg = 'path was blank'
+        Set @msg = 'Storage path cannot be blank'
         RAISERROR (@msg, 10, 1)
         return 51036
     End
 
     If LEN(@instrumentName) < 1
     Begin
-        Set @msg = 'instrumentName was blank'
+        Set @msg = 'Instrument name cannot be blank'
         RAISERROR (@msg, 10, 1)
         return 51036
     End
@@ -108,23 +116,21 @@ AS
         return 51036
     End
 
-    If @mode not in ('add', 'update')
+    If Not @mode In ('add', 'update')
     Begin
-        Set @msg = 'Function "' + @mode + '" is not recognized'
+        Set @msg = 'Mode "' + @mode + '" is not recognized'
         RAISERROR (@msg, 10, 1)
         return 51036
     End
-
-    Set @urlDomain = ISNULL(@urlDomain, '')
 
     ---------------------------------------------------
     -- Resolve machine name
     ---------------------------------------------------
 
     If @storFunction = 'inbox'
-        Set @machineName = replace(@volNameServer, '\', '')
+        Set @machineName = Replace(@volNameServer, '\', '')
     Else
-        Set @machineName = replace(@volNameClient, '\', '')
+        Set @machineName = Replace(@volNameClient, '\', '')
 
     ---------------------------------------------------
     -- Verify instrument name
@@ -143,11 +149,10 @@ AS
 
     Declare @num int = 0
 
-    SELECT @num = count(SP_path_ID)
+    SELECT @num = COUNT(SP_path_ID)
     FROM T_Storage_Path
-    WHERE
-        (SP_instrument_name = @instrumentName) AND
-        (SP_function = @storFunction)
+    WHERE SP_instrument_name = @instrumentName AND
+          SP_function = @storFunction
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -164,11 +169,9 @@ AS
 
     Declare @tmpID int = 0
     --
-    Declare @oldFunction varchar(50)
-    Set @oldFunction = ''
+    Declare @oldFunction varchar(50) = ''
     --
-    Declare @spID int
-    Set @spID = cast(@ID as int)
+    Declare @spID int = cast(@ID as int)
 
     -- Cannot update a non-existent entry
     --
@@ -178,7 +181,7 @@ AS
             @tmpID = SP_path_ID,
             @oldFunction = SP_function
         FROM T_Storage_Path
-        WHERE (SP_path_ID = @spID)
+        WHERE SP_path_ID = @spID
         --
         If @tmpID = 0
         Begin
@@ -251,19 +254,18 @@ AS
                 --
                 Set @message = ''
                 --
-                SELECT @message = @message + cast(SP_path_ID as varchar(12)) + ', '
+                SELECT @message = @message + Cast(SP_path_ID as varchar(12)) + ', '
                 FROM T_Storage_Path
-                WHERE (SP_function = 'raw-storage') AND
-                   (SP_instrument_name = @instrumentName)
+                WHERE SP_function = 'raw-storage' AND
+                      SP_instrument_name = @instrumentName
 
                 -- Set any existing raw-storage paths for instrument
                 -- already in storage table to old-storage
                 --
                 UPDATE T_Storage_Path
                 SET SP_function = 'old-storage'
-                WHERE
-                    (SP_function = 'raw-storage') AND
-                    (SP_instrument_name = @instrumentName)
+                WHERE SP_function = 'raw-storage' AND
+                      SP_instrument_name = @instrumentName
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
@@ -288,9 +290,8 @@ AS
                 --
                 SELECT @tmpID = SP_path_ID
                 FROM T_Storage_Path
-                WHERE
-                    (SP_function = 'inbox') AND
-                    (SP_instrument_name = @instrumentName)
+                WHERE SP_function = 'inbox' AND
+                      SP_instrument_name = @instrumentName
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
@@ -353,7 +354,7 @@ AS
         Begin
             UPDATE T_Instrument_Name
             SET IN_storage_path_ID = @storagePathID
-            WHERE (IN_name = @instrumentName)
+            WHERE IN_name = @instrumentName
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -369,7 +370,7 @@ AS
         Begin
             UPDATE T_Instrument_Name
             SET IN_source_path_ID = @storagePathID
-            WHERE (IN_name = @instrumentName)
+            WHERE IN_name = @instrumentName
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -428,19 +429,18 @@ AS
             --
             Set @message = ''
             --
-            SELECT @message = @message + cast(SP_path_ID as varchar(12)) + ', '
+            SELECT @message = @message + Cast(SP_path_ID as varchar(12)) + ', '
             FROM T_Storage_Path
-            WHERE (SP_function = 'raw-storage') AND
-               (SP_instrument_name = @instrumentName)
+            WHERE SP_function = 'raw-storage' AND
+                  SP_instrument_name = @instrumentName
 
             -- Set any existing raw-storage paths for instrument
             -- already in storage table to old-storage
             --
             UPDATE T_Storage_Path
             SET SP_function = 'old-storage'
-            WHERE
-                (SP_function = 'raw-storage') AND
-                (SP_instrument_name = @instrumentName)
+            WHERE SP_function = 'raw-storage' AND
+                  SP_instrument_name = @instrumentName
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -458,7 +458,7 @@ AS
             --
             UPDATE T_Instrument_Name
             SET IN_storage_path_ID = @tmpID
-            WHERE (IN_name = @instrumentName)
+            WHERE IN_name = @instrumentName
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
@@ -511,7 +511,7 @@ AS
             SP_instrument_name =@instrumentName,
             SP_description =@description,
             SP_machine_name = @machineName
-        WHERE (SP_path_ID = @spID)
+        WHERE SP_path_ID = @spID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --

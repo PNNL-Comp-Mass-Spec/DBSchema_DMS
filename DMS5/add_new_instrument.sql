@@ -44,16 +44,17 @@ CREATE PROCEDURE [dbo].[add_new_instrument]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/19/2023 mem - Change severity level from 10 to 11 for RAISERROR() calls
 **          07/18/2023 mem - Expand @description to varchar(255)
+**          09/01/2023 mem - Expand @instrumentName to varchar(64), @description to varchar(1024), and @usage to varchar(128)
 **
 *****************************************************/
 (
-    @instrumentName varchar(24),        -- Name of new instrument
+    @instrumentName varchar(64),        -- Name of new instrument
     @instrumentClass varchar(32),       -- Class of instrument
     @instrumentGroup varchar(64),       -- Item in T_Instrument_Group
     @captureMethod varchar(10),         -- Capture method of instrument
     @roomNumber varchar(50),            -- Where new instrument is located
-    @description varchar(255),          -- Description of instrument
-    @usage varchar(50),                 -- Optional description of instrument usage
+    @description varchar(1024),         -- Description of instrument
+    @usage varchar(128),                -- Optional description of instrument usage
     @operationsRole varchar(50),        -- Production, QC, Research, or Unused
 
     @percentEMSLOwned varchar(24),      -- % of instrument owned by EMSL; number between 0 and 100
@@ -86,14 +87,18 @@ AS
     ---------------------------------------------------
     -- Validate the inputs
     ---------------------------------------------------
+
+    Set @instrumentName = LTrim(RTrim(Coalesce(@instrumentName, '')))
+    Set @description    = LTrim(RTrim(Coalesce(@description, '')))
+    Set @usage          = LTrim(RTrim(Coalesce(@usage, '')))
+
     Set @autoDefineStoragePath = IsNull(@autoDefineStoragePath, 'No')
 
     Declare @Value int = Try_Parse(@PercentEMSLOwned as int)
     If @Value Is Null
         RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
 
-    Declare @PercentEMSLOwnedVal int
-    Set @PercentEMSLOwnedVal = Convert(int, @PercentEMSLOwned)
+    Declare @PercentEMSLOwnedVal int = Convert(int, @PercentEMSLOwned)
 
     If @PercentEMSLOwnedVal < 0 Or @PercentEMSLOwnedVal > 100
         RAISERROR ('Percent EMSL Owned should be a number between 0 and 100', 11, 4)
@@ -103,13 +108,13 @@ AS
     ---------------------------------------------------
     --
     Declare @hit int = -1
-    --
+
     SELECT @hit = Instrument_ID
     FROM T_Instrument_Name
     WHERE IN_name = @instrumentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Failed to look for existing instrument'
@@ -196,7 +201,7 @@ AS
     --
     Declare @instrumentID int
 
-    SELECT @instrumentID = isnull(MAX(Instrument_ID), 0) + 1 
+    SELECT @instrumentID = isnull(MAX(Instrument_ID), 0) + 1
     FROM T_Instrument_Name
 
     -- make entry into instrument table
