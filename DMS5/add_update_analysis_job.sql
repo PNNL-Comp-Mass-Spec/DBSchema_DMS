@@ -79,6 +79,7 @@ CREATE PROCEDURE [dbo].[add_update_analysis_job]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Rename column in temp table
 **          07/27/2023 mem - Update message sent to get_new_job_id()
+**          09/09/2023 mem - Prevent updating a job's state to "Complete" using this procedure
 **
 *****************************************************/
 (
@@ -188,14 +189,30 @@ AS
 
     If @mode = 'update'
     Begin
+        Declare @currentStateName varchar(32)
+
         -- Changes are typically only allowed to jobs in 'new', 'failed', or 'holding' state
         -- However, we do allow the job comment or export mode to be updated
-        --
+
+        If @currentStateID <> 4 And @stateName = 'Complete'
+        Begin
+            SELECT @currentStateName = ASN.AJS_name
+            FROM T_Analysis_Job J
+                 INNER JOIN T_Analysis_State_Name ASN
+                   ON J.AJ_StateID = ASN.AJS_stateID
+            WHERE J.AJ_jobID = @jobID
+
+            Set @msg = 'State for Analysis Job ' + @job + ' cannot be changed from "' + @currentStateName + '" to "Complete"'
+            If @infoOnly <> 0
+                print @msg
+
+            RAISERROR (@msg, 11, 5)
+        End
+
         If Not @currentStateID IN (1,5,8,19)
         Begin
             -- Allow the job comment and Export Mode to be updated
 
-            Declare @currentStateName varchar(32)
             Declare @currentExportMode smallint
             Declare @currentComment varchar(512)
 
@@ -264,7 +281,7 @@ AS
                 Goto Done
             End
 
-            set @msg = 'Cannot update: Analysis Job "' + @job + '" is not in "new", "holding", or "failed" state'
+            Set @msg = 'Cannot update: Analysis Job "' + @job + '" is not in "new", "holding", or "failed" state'
             If @infoOnly <> 0
                 print @msg
 
@@ -297,13 +314,13 @@ AS
         --
         If @myError <> 0
         Begin
-            set @msg = 'Error trying to resolve processor group name'
+            Set @msg = 'Error trying to resolve processor group name'
             RAISERROR (@msg, 11, 8)
         End
         --
         If @gid = 0
         Begin
-            set @msg = 'Processor group name not found'
+            Set @msg = 'Processor group name not found'
             RAISERROR (@msg, 11, 9)
         End
     End
@@ -327,7 +344,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @msg = 'Failed to create temporary table #TD'
+        Set @msg = 'Failed to create temporary table #TD'
         If @infoOnly <> 0
             print @msg
 
@@ -345,7 +362,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @msg = 'Error populating temporary table with dataset name'
+        Set @msg = 'Error populating temporary table with dataset name'
         If @infoOnly <> 0
             print @msg
 
@@ -371,7 +388,7 @@ AS
         --
         If @myError <> 0
         Begin
-            set @msg = 'Error resolving default organism name'
+            Set @msg = 'Error resolving default organism name'
             If @infoOnly <> 0
                 print @msg
 
@@ -390,7 +407,7 @@ AS
     Declare @result int = 0
 
     Declare @Warning varchar(255) = ''
-    set @msg = ''
+    Set @msg = ''
     --
     exec @result = validate_analysis_job_parameters
                             @toolName = @toolName,
@@ -444,7 +461,7 @@ AS
     SELECT TOP 1 @datasetID = Dataset_ID FROM #TD
 
     ---------------------------------------------------
-    -- set up transaction variables
+    -- Set up transaction variables
     ---------------------------------------------------
     --
     Declare @transName varchar(32) = 'add_update_analysis_job'
@@ -496,7 +513,7 @@ AS
 
             If @ExistingJobCount > 0
             Begin
-                set @message = 'Job not created since duplicate job exists: ' + Convert(varchar(12), @ExistingMatchingJob)
+                Set @message = 'Job not created since duplicate job exists: ' + Convert(varchar(12), @ExistingMatchingJob)
 
                 If @infoOnly <> 0
                     print @message
@@ -524,13 +541,13 @@ AS
         exec @jobID = get_new_job_id 'Created in t_analysis_job', @infoOnly
         If @jobID = 0
         Begin
-            set @msg = 'Failed to get valid new job ID'
+            Set @msg = 'Failed to get valid new job ID'
             If @infoOnly <> 0
                 print @msg
 
             RAISERROR (@msg, 11, 15)
         End
-        set @job = cast(@jobID as varchar(32))
+        Set @job = cast(@jobID as varchar(32))
 
         Declare @newStateID int = 1
 
@@ -616,7 +633,7 @@ AS
             --
             If @myError <> 0
             Begin
-                set @msg = 'Insert new job operation failed'
+                Set @msg = 'Insert new job operation failed'
                 If @infoOnly <> 0
                     print @msg
 
@@ -641,7 +658,7 @@ AS
                 --
                 If @myError <> 0
                 Begin
-                    set @msg = 'Insert new job association failed'
+                    Set @msg = 'Insert new job association failed'
                     RAISERROR (@msg, 11, 14)
                 End
             End
@@ -651,12 +668,12 @@ AS
     End -- add mode
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
     --
     If @mode = 'update' or @mode = 'reset'
     Begin
-        set @myError = 0
+        Set @myError = 0
 
         ---------------------------------------------------
         -- Resolve state ID according to mode and state name
@@ -665,7 +682,7 @@ AS
         --
         If @mode = 'reset'
         Begin
-            set @updateStateID = 1
+            Set @updateStateID = 1
         End
         Else
         Begin
@@ -678,7 +695,7 @@ AS
             --
             If @myError <> 0
             Begin
-                set @msg = 'Error looking up state name'
+                Set @msg = 'Error looking up state name'
                 If @infoOnly <> 0
                     print @msg
 
@@ -687,7 +704,7 @@ AS
 
             If @updateStateID = -1
             Begin
-                set @msg = 'State name not recognized: ' + @stateName
+                Set @msg = 'State name not recognized: ' + @stateName
                 If @infoOnly <> 0
                     print @msg
 
@@ -712,7 +729,7 @@ AS
         --
         If @myError <> 0
         Begin
-            set @msg = 'Error looking up existing job association'
+            Set @msg = 'Error looking up existing job association'
             RAISERROR (@msg, 11, 16)
         End
 
@@ -754,8 +771,7 @@ AS
             -- make changes to database
             --
             UPDATE T_Analysis_Job
-            SET
-                AJ_priority = @priority,
+            SET AJ_priority = @priority,
                 AJ_analysisToolID = @analysisToolID,
                 AJ_parmFileName = @paramFileName,
                 AJ_settingsFileName = @settingsFileName,
@@ -771,13 +787,13 @@ AS
                 AJ_start = CASE WHEN @mode <> 'reset' THEN AJ_start ELSE NULL End,
                 AJ_finish = CASE WHEN @mode <> 'reset' THEN AJ_finish ELSE NULL End,
                 AJ_propagationMode = @propMode
-            WHERE (AJ_jobID = @jobID)
+            WHERE AJ_jobID = @jobID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
             If @myError <> 0
             Begin
-                set @msg = 'Update operation failed: "' + @job + '"'
+                Set @msg = 'Update operation failed: "' + @job + '"'
                 RAISERROR (@msg, 11, 17)
             End
 
@@ -816,17 +832,15 @@ AS
                 Set @AlterEnteredByRequired = 1
             End
 
-            -- If group is given, and an association for job does exist
-            -- update it
-            --
+            -- If group is given, and an association for job does exist update it
+
             If @gid <> 0 and @pgaAssocID <> 0 and @pgaAssocID <> @gid
             Begin
                 UPDATE T_Analysis_Job_Processor_Group_Associations
-                    SET Group_ID = @gid,
-                        Entered = GetDate(),
-                        Entered_By = suser_sname()
-                WHERE
-                    Job_ID = @jobID
+                SET Group_ID = @gid,
+                    Entered = GetDate(),
+                    Entered_By = suser_sname()
+                WHERE Job_ID = @jobID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
                 --
