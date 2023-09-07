@@ -87,6 +87,7 @@ CREATE PROCEDURE [dbo].[add_analysis_job_group]
 **          03/27/2023 mem - Synchronize protein collection options validation with add_update_analysis_job_request
 **                         - Remove dash from DiaNN tool name
 **          07/27/2023 mem - Update message sent to get_new_job_id()
+**          09/06/2023 mem - Remove leading space from messages
 **
 *****************************************************/
 (
@@ -751,19 +752,19 @@ AS
                 Exec alter_event_log_entry_user 12, @requestID, @requestStateID, @callingUser
             End
 
-            Set @message = ' Created aggregation job ' + Cast(@pipelineJob as varchar(12)) + ' for '
+            Set @message = 'Created aggregation job ' + Cast(@pipelineJob as varchar(12)) + ' for '
         End
         Else
         Begin
             If @myError = 0
             Begin
-                Set @message = ' Would create an aggregation job for '
+                Set @message = 'Would create an aggregation job for '
             End
         End
 
         If @myError = 0
         Begin
-            Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' datasets'
+            Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' ' + dbo.check_plural(@jobCountToBeCreated, 'dataset', 'datasets')
         End
 
         Return @myError
@@ -1093,16 +1094,16 @@ Explain:
     If @jobCountToBeCreated = 1
     Begin
         If @mode = 'add'
-            Set @message = ' There was 1 job created.'
+            Set @message = 'There was 1 job created.'
         Else
-            Set @message = ' There would be 1 job created.'
+            Set @message = 'There would be 1 job created.'
     End
     Else
     Begin
         If @mode = 'add'
-            Set @message = ' There were '
+            Set @message = 'There were '
         Else
-            Set @message = ' There would be '
+            Set @message = 'There would be '
 
         Set @message = @message + CONVERT(varchar(12), @jobCountToBeCreated) + ' jobs created.'
     End
