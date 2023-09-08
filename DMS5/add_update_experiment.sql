@@ -76,6 +76,7 @@ CREATE PROCEDURE [dbo].[add_update_experiment]
 **                         - Rename the Experiment, Campaign, and Wellplate name arguments
 **          11/26/2022 mem - Rename parameter to @biomaterialList
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -161,22 +162,22 @@ AS
     Set @mode = LTrim(RTrim(IsNull(@mode, '')))
 
     If LEN(@experimentName) < 1
-        RAISERROR ('Experiment name must be defined', 11, 30)
+        RAISERROR ('Experiment name must be specified', 11, 30)
     --
     If LEN(@campaignName) < 1
-        RAISERROR ('Campaign name must be defined', 11, 31)
+        RAISERROR ('Campaign name must be specified', 11, 31)
     --
     If LEN(@researcherUsername) < 1
-        RAISERROR ('Researcher username must be defined', 11, 32)
+        RAISERROR ('Researcher username must be specified', 11, 32)
     --
     If LEN(@organismName) < 1
-        RAISERROR ('Organism name must be defined', 11, 33)
+        RAISERROR ('Organism name must be specified', 11, 33)
     --
     If LEN(@reason) < 1
-        RAISERROR ('Reason cannot be blank', 11, 34)
+        RAISERROR ('Reason must be specified', 11, 34)
     --
     If LEN(@labelling) < 1
-        RAISERROR ('Labelling cannot be blank', 11, 35)
+        RAISERROR ('Labelling must be specified', 11, 35)
 
     If Not @alkylation IN ('Y', 'N')
         RAISERROR ('Alkylation must be Y or N', 11, 35)

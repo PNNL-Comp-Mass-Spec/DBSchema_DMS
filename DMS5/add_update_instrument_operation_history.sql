@@ -23,9 +23,8 @@ CREATE PROCEDURE [dbo].[add_update_instrument_operation_history]
 **          08/02/2017 mem - Assure that the username is properly capitalized
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @id int,
@@ -72,7 +71,7 @@ AS
 
     If @Note Is Null
     Begin
-        RAISERROR ('Note cannot be blank', 11, 16)
+        RAISERROR ('Note must be specified', 11, 16)
     End
 
     If @mode = 'update' and @ID is null

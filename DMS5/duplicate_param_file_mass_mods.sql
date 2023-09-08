@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[duplicate_param_file_mass_mods]
 **          07/22/2009 mem - Now returning the suggested query for tweaking the newly entered mass mods
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -49,7 +50,7 @@ AS
 
     If @SourceParamFileID Is Null Or @DestParamFileID Is Null
     Begin
-        Set @message = 'Both the source and target parameter file ID must be defined; unable to continue'
+        Set @message = 'Both the source and target parameter file ID must be specified; unable to continue'
         Set @myError = 53000
         Goto Done
     End

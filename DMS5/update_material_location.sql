@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[update_material_location]
 **  Auth:   mem
 **  Date:   08/27/2018 mem - Initial version
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -67,7 +68,7 @@ AS
             SET @callingUser = dbo.get_user_login_without_domain('')
 
         If LEN(@locationTag) < 1
-            RAISERROR ('Location tag must be defined', 11, 30)
+            RAISERROR ('Location tag must be specified', 11, 30)
 
         If Not @status In ('Active', 'Inactive')
             RAISERROR ('Status must be Active or Inactive', 11, 30)

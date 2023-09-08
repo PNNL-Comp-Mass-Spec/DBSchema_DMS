@@ -105,6 +105,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **          11/25/2022 mem - Rename parameter to @wellplateName
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -201,23 +202,23 @@ AS
     End
 
     If IsNull(@requestName, '') = ''
-        RAISERROR ('Request name was blank', 11, 110)
+        RAISERROR ('Request name must be specified', 11, 110)
     --
     If IsNull(@experimentName, '') = ''
-        RAISERROR ('Experiment number was blank', 11, 111)
+        RAISERROR ('Experiment number must be specified', 11, 111)
     --
     If IsNull(@requesterUsername, '') = ''
-        RAISERROR ('Requester username was blank', 11, 113)
+        RAISERROR ('Requester username must be specified', 11, 113)
     --
     Declare @instrumentGroup varchar(64) = @instrumentName
     If IsNull(@instrumentGroup, '') = ''
-        RAISERROR ('Instrument group was blank', 11, 114)
+        RAISERROR ('Instrument group must be specified', 11, 114)
     --
     If IsNull(@msType, '') = ''
-        RAISERROR ('Dataset type was blank', 11, 115)
+        RAISERROR ('Dataset type must be specified', 11, 115)
     --
     If IsNull(@workPackage, '') = ''
-        RAISERROR ('Work package was blank', 11, 116)
+        RAISERROR ('Work package must be specified', 11, 116)
 
     Set @requestIDForUpdate = IsNull(@requestIDForUpdate, 0)
 

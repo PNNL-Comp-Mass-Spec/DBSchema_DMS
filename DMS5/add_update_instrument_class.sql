@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[add_update_instrument_class]
 **          02/01/2023 mem - Rename argument to @isPurgeable and switch from text to int
 **                         - Remove argument @requiresPreparation
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -88,7 +89,7 @@ AS
 
     If LEN(@instrumentClass) < 1
     Begin;
-        THROW 51000, 'Instrument Class Name cannot be blank', 1;
+        THROW 51000, 'Instrument Class Name must be specified', 1;
     End;
 
     If @isPurgeable Is Null
@@ -98,7 +99,7 @@ AS
 
     If LEN(@rawDataType) < 1
     Begin;
-        THROW 51002, 'Raw Data Type cannot be blank', 1;
+        THROW 51002, 'Raw Data Type must be specified', 1;
     End;
 
     If @myError <> 0

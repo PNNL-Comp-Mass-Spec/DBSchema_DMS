@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[add_update_bionet_host]
 **          10/03/2018 mem - Add @comment
 **                         - Use @logErrors to toggle logging errors caught by the try/catch block
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -63,14 +64,14 @@ AS
         If @mode IS NULL OR Len(@mode) < 1
         Begin
             Set @myError = 51002
-            RAISERROR ('@mode cannot be blank',
+            RAISERROR ('@mode must be specified',
                 11, 1)
         End
 
         If @host IS NULL OR Len(@host) < 1
         Begin
             Set @myError = 51002
-            RAISERROR ('@host cannot be blank',
+            RAISERROR ('@host must be specified',
                 11, 1)
         End
 

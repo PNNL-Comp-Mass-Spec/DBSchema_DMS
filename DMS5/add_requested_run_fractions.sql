@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_fractions]
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -134,13 +135,13 @@ AS
         RAISERROR ('Source request ID not provided', 11, 110)
     --
     If IsNull(@requesterUsername, '') = ''
-        RAISERROR ('Requester username was blank', 11, 113)
+        RAISERROR ('Requester username must be specified', 11, 113)
     --
     If IsNull(@separationGroup, '') = ''
-        RAISERROR ('Separation group was blank', 11, 114)
+        RAISERROR ('Separation group must be specified', 11, 114)
     --
     If IsNull(@workPackage, '') = ''
-        RAISERROR ('Work package was blank', 11, 116)
+        RAISERROR ('Work package must be specified', 11, 116)
 
     Set @mode = ISNULL(@mode, '')
 

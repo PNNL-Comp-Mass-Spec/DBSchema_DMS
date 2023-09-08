@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[create_pending_predefined_analysis_tasks]
 **          05/30/2018 mem - Do not create predefined jobs for inactive datasets
 **          03/25/2020 mem - Append a row to T_Predefined_Analysis_Scheduling_Queue_History for each dataset processed
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -103,7 +104,7 @@ AS
             Begin
                 -- Dataset not defined; skip this entry
                 Set @myError = 50
-                Set @message = 'Invalid entry: dataset name is blank'
+                Set @message = 'Invalid entry: dataset name must be specified'
             End
             Else If @datasetStateId = 4
             Begin

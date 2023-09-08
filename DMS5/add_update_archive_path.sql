@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[add_update_archive_path]
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/16/2022 mem - Change RAISERROR severity to 11 (required so that the web page shows the error message)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ AS
     if LEN(@instrumentName) < 1
     begin
         set @myError = 51000
-        RAISERROR ('Instrument Name was blank', 11, 51000)
+        RAISERROR ('Instrument Name must be specified', 11, 51000)
     end
     --
     if @myError <> 0
@@ -71,7 +72,7 @@ AS
     if LEN(@ArchivePath) < 1
     begin
         set @myError = 51001
-        RAISERROR ('Archive Path was blank', 11, 51001)
+        RAISERROR ('Archive Path must be specified', 11, 51001)
     end
     --
     if @myError <> 0
@@ -81,7 +82,7 @@ AS
     if LEN(@ArchiveFunction) < 1
     begin
         set @myError = 51002
-        RAISERROR ('Archive Status was blank', 10, 51002)
+        RAISERROR ('Archive Status must be specified', 10, 51002)
     end
     --
     if @myError <> 0

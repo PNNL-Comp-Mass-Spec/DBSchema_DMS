@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[add_update_data_package]
 **          07/05/2022 mem - Include the data package ID when logging errors
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/10/2023 mem - Reword warning messages
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -97,14 +98,14 @@ AS
 
     If @team = ''
     Begin
-        Set @message = 'Data package team cannot be blank'
+        Set @message = 'Data package team must be specified'
         RAISERROR (@message, 10, 1)
         Return 51005
     End
 
     If @packageType = ''
     Begin
-        Set @message = 'Data package type cannot be blank'
+        Set @message = 'Data package type must be specified'
         RAISERROR (@message, 10, 1)
         Return 51006
     End

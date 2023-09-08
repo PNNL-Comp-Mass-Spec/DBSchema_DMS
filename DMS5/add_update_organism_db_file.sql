@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[add_update_organism_db_file]
 **          01/31/2020 mem - Add @returnCode, which duplicates the integer returned by this procedure; @returnCode is varchar for compatibility with Postgres error codes
 **          03/31/2021 mem - Expand @organismName to varchar(128)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -57,14 +58,14 @@ AS
 
     If IsNull(@fastaFileName, '') = ''
     begin
-        Set @message = '@fastaFileName cannot be blank'
+        Set @message = '@fastaFileName must be specified'
         Set @myError = 62000
         Goto Done
     End
 
     If IsNull(@organismName, '') = ''
     begin
-        Set @message = '@organismName cannot be blank'
+        Set @message = '@organismName must be specified'
         Set @myError = 62001
         Goto Done
     End

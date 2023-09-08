@@ -36,9 +36,8 @@ CREATE PROCEDURE [dbo].[update_instrument_usage_report]
 **                         - Changed the cutoff for reload to 60 days
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @factorList text,
@@ -108,7 +107,7 @@ AS
     Set @operation = Ltrim(Rtrim(IsNull(@operation, '')))
     If Len(@operation) = 0
     Begin
-        RAISERROR ('Operation must be defined', 11, 4)
+        RAISERROR ('Operation must be specified', 11, 4)
     End
 
     Set @month = Ltrim(Rtrim(IsNull(@month, '')))
@@ -116,12 +115,12 @@ AS
 
     If Len(@month) = 0
     Begin
-        RAISERROR ('Month must be defined', 11, 4)
+        RAISERROR ('Month must be specified', 11, 4)
     End
 
     If Len(@year) = 0
     Begin
-        RAISERROR ('Year must be defined', 11, 4)
+        RAISERROR ('Year must be specified', 11, 4)
     End
 
     Declare @monthValue int = Try_Cast(@month As int)

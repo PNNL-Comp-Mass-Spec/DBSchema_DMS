@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[add_update_protein_collection]
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Remove underscores from variables
 **          08/21/2023 mem - Assure that text parameters are not null and validate mode
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -58,10 +59,10 @@ AS
     If LEN(@collectionName) < 1
     Begin
         Set @myError = 51000
-        Set @message = '@collectionName was blank'
+        Set @message = '@collectionName must be specified'
         RAISERROR (@message, 10, 1)
     End
-    
+
     If @myError = 0 And Not @mode In ('add', 'update')
     Begin
         Set @myError = 51001

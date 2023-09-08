@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[add_update_param_file]
 **          02/23/2023 mem - Add mode 'previewadd'
 **                         - If the mode is 'previewadd', set @infoOnly to 1 when calling store_param_file_mass_mods
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -84,14 +85,14 @@ AS
     If @paramFileName = ''
     Begin
         Set @myError = 51000
-        RAISERROR ('ParamFileName was blank', 11, 1)
+        RAISERROR ('ParamFileName must be specified', 11, 1)
     End
 
     Set @paramFileDesc = LTrim(RTrim(IsNull(@paramFileDesc, '')))
     If @paramFileDesc = ''
     Begin
         Set @myError = 51001
-        RAISERROR ('ParamFileDesc was blank', 11, 1)
+        RAISERROR ('ParamFileDesc must be specified', 11, 1)
     End
 
     Set @paramFileType = LTrim(RTrim(IsNull(@paramFileType, '')))
@@ -379,7 +380,7 @@ AS
             ROLLBACK TRANSACTION;
 
         If Not @message Like '%already exists%' And
-           Not @message Like '%was blank%' And
+           Not @message Like '%must be specified%' And
            Not @message Like '%is used by%' And
            Not @message Like '%%'
         Begin

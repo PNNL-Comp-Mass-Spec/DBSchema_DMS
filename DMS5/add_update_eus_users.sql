@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[add_update_eus_users]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -62,13 +63,13 @@ AS
     if LEN(@EUSPersonID) < 1
     begin
         set @myError = 51000
-        RAISERROR ('EUS Person ID was blank', 10, 1)
+        RAISERROR ('EUS Person ID must be specified', 10, 1)
     end
     --
     if LEN(@EUSNameFm) < 1
     begin
         set @myError = 51000
-        RAISERROR ('EUS Persons Name was blank', 10, 1)
+        RAISERROR ('EUS Persons Name must be specified', 10, 1)
     end
     --
     if @myError <> 0
@@ -77,7 +78,7 @@ AS
     if LEN(@EUSSiteStatus) < 1
     begin
         set @myError = 51000
-        RAISERROR ('EUS Site Status was blank', 10, 1)
+        RAISERROR ('EUS Site Status must be specified', 10, 1)
     end
     --
     if @myError <> 0

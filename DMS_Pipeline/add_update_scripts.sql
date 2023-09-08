@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[add_update_scripts]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -76,7 +77,7 @@ AS
 
     If @Description = ''
     begin
-        set @message = 'Description cannot be blank'
+        set @message = 'Description must be specified'
         RAISERROR (@message, 10, 1)
         return 51005
     End

@@ -17,6 +17,7 @@ CREATE PROCEDURE [dbo].[add_mass_correction_entry]
 **          11/30/2018 mem - Renamed the Monoisotopic_Mass and Average_Mass columns
 **          04/02/2020 mem - Expand @modName to varchar(32)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
     if LEN(@modName) < 1
     begin
         set @myError = 51000
-        RAISERROR ('modName was blank', 10, 1)
+        RAISERROR ('modName must be specified', 10, 1)
     end
 
     --
@@ -50,7 +51,7 @@ AS
     if LEN(@modDescription) < 1
     begin
         set @myError = 51001
-        RAISERROR ('modDescription was blank', 10, 1)
+        RAISERROR ('modDescription must be specified', 10, 1)
     end
 
     if @myError <> 0
@@ -125,7 +126,6 @@ AS
             return 51007
         end
     end
-
 
     commit transaction @transName
 

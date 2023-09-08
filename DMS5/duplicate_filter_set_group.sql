@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[duplicate_filter_set_group]
 **  Auth:   mem
 **  Date:   02/17/2009
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -42,7 +43,7 @@ AS
 
     If @FilterSetID Is Null Or @FilterCriteriaGroupID Is Null
     Begin
-        Set @message = 'Both the filter set ID and the filter criteria group ID must be defined; unable to continue'
+        Set @message = 'Both the filter set ID and the filter criteria group ID must be specified; unable to continue'
         Set @myError = 53000
         Goto Done
     End

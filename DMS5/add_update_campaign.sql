@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[add_update_campaign]
 **          05/16/2022 mem - Fix potential arithmetic overflow error when parsing @fractionEMSLFunded
 **          02/13/2023 bcg - Rename parameters to progmgrUsername and piUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -118,16 +119,16 @@ AS
 
     Set @myError = 0
     If LEN(@campaignName) < 1
-        RAISERROR ('Campaign name is blank', 11, 1)
+        RAISERROR ('Campaign name must be specified', 11, 1)
     --
     If LEN(@projectName) < 1
-        RAISERROR ('Project name is blank', 11, 1)
+        RAISERROR ('Project name must be specified', 11, 1)
     --
     If LEN(@progmgrUsername) < 1
-        RAISERROR ('Project Manager username is blank', 11, 2)
+        RAISERROR ('Project Manager username must be specified', 11, 2)
     --
     If LEN(@piUsername) < 1
-        RAISERROR ('Principle Investigator username is blank', 11, 3)
+        RAISERROR ('Principle Investigator username must be specified', 11, 3)
 
     ---------------------------------------------------
     -- Is entry already in database?

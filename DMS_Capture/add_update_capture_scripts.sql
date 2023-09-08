@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[add_update_capture_scripts]
 **          08/01/2017 mem - Use THROW if not authorized
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Rename procedure to differentiate from DMS_Pipeline
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -67,7 +68,7 @@ AS
 
     If @Description = ''
     begin
-        set @message = 'Description cannot be blank'
+        set @message = 'Description must be specified'
         return 51005
     End
 

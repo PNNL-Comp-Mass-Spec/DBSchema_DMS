@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[add_update_predefined_analysis]
 **          12/08/2020 mem - Lookup U_PRN from T_Users using the validated user ID
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -125,31 +126,31 @@ AS
     if LEN(IsNull(@analysisToolName,'')) < 1
     begin
         set @myError = 51033
-        RAISERROR ('Analysis tool name was blank', 11, 1)
+        RAISERROR ('Analysis tool name must be specified', 11, 1)
     end
 
     if LEN(IsNull(@paramFileName,'')) < 1
     begin
         set @myError = 51033
-        RAISERROR ('Parameter file name was blank', 11, 1)
+        RAISERROR ('Parameter file name must be specified', 11, 1)
     end
 
     if LEN(IsNull(@settingsFileName,'')) < 1
     begin
         set @myError = 51033
-        RAISERROR ('Settings file name was blank', 11, 1)
+        RAISERROR ('Settings file name must be specified', 11, 1)
     end
 
     if LEN(IsNull(@organismName,'')) < 1
     begin
         set @myError = 51033
-        RAISERROR ('Organism name was blank; use "(default)" to auto-assign at job creation', 11, 1)
+        RAISERROR ('Organism name must be specified; use "(default)" to auto-assign at job creation', 11, 1)
     end
 
     if LEN(IsNull(@organismDBName,'')) < 1
     begin
         set @myError = 51033
-        RAISERROR ('Organism DB name was blank', 11, 1)
+        RAISERROR ('Organism DB name must be specified', 11, 1)
     end
 
     If @myError <> 0

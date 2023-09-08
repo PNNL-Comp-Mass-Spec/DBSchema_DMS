@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[add_update_user]
 **                         - Always add 'H' to @hanfordId if it starts with a number
 **          03/16/2022 mem - Replace tab characters with spaces
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -85,7 +86,7 @@ AS
         If LEN(@username) < 1
         Begin
             Set @myError = 51000
-            RAISERROR ('Username was blank', 11, 1)
+            RAISERROR ('Username must be specified', 11, 1)
         End
         Else
         Begin
@@ -99,7 +100,7 @@ AS
         If LEN(@lastNameFirstName) < 1
         Begin
             Set @myError = 51001
-            RAISERROR ('Last Name, First Name was blank', 11, 1)
+            RAISERROR ('Last Name, First Name must be specified', 11, 1)
         End
         --
         If LEN(@hanfordId) <= 1
@@ -111,7 +112,7 @@ AS
         If LEN(@userStatus) < 1
         Begin
             Set @myError = 51004
-            RAISERROR ('User status was blank', 11, 1)
+            RAISERROR ('User status must be specified', 11, 1)
         End
         --
         If @myError <> 0

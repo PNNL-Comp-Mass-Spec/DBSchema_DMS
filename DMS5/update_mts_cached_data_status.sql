@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[update_mts_cached_data_status]
 **  Date:   02/05/2010 mem - Initial Version
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
         -- Abort if @CachedDataTableName is blank
         If Len(@CachedDataTableName) = 0
         Begin
-            Set @message = '@CachedDataTableName is blank; unable to continue'
+            Set @message = '@CachedDataTableName not specified; unable to continue'
             SELECT @message AS Error_Message
             Goto Done
         End

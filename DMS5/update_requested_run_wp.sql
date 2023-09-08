@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_wp]
 **          11/17/2020 mem - Fix typo in error message
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          07/19/2023 mem - Rename request ID list parameter
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -76,10 +77,10 @@ AS
             Set @CallingUser = Suser_sname()
 
         If @OldWorkPackage = ''
-            RAISERROR ('Old work package cannot be blank', 11, 16)
+            RAISERROR ('Old work package must be specified', 11, 16)
 
         If @NewWorkPackage = ''
-            RAISERROR ('New work package cannot be blank', 11, 16)
+            RAISERROR ('New work package must be specified', 11, 16)
 
         -- Uncomment to debug
         -- Set @LogMessage = 'Updating work package from ' + @OldWorkPackage + ' to ' + @NewWorkPackage + ' for requests: ' + @requestIdList

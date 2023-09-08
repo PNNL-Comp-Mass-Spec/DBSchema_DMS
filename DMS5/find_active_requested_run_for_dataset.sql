@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[find_active_requested_run_for_dataset]
 **  Date:   06/10/2016 mem - Initial version
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -49,7 +50,7 @@ AS
     Set @showDebugMessages = IsNull(@showDebugMessages, 0)
 
     If @datasetName = ''
-        RAISERROR ('Dataset name cannot be blank', 11, 10)
+        RAISERROR ('Dataset name must be specified', 11, 10)
 
     ---------------------------------------------------
     -- Initialize some variables

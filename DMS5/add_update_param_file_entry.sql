@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[add_update_param_file_entry]
 **          01/20/2010 mem - Added support for dynamic peptide terminus mods (TermDynamicModification)
 **          06/13/2017 mem - Use SCOPE_IDENTITY()
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -55,7 +56,7 @@ AS
     if @paramFileID = 0
     begin
         set @myError = 51000
-        RAISERROR ('ParamFileID was blank', 10, 1)
+        RAISERROR ('ParamFileID must be specified', 10, 1)
     end
 
     --
@@ -63,7 +64,7 @@ AS
     if @entrySeqOrder = 0
     begin
         set @myError = 51001
-        RAISERROR ('EntrySeqOrder was blank', 10, 1)
+        RAISERROR ('EntrySeqOrder must be specified', 10, 1)
     end
 
     --
@@ -71,14 +72,14 @@ AS
     if LEN(@entryType) < 1
     begin
         set @myError = 51001
-        RAISERROR ('EntryType was blank', 10, 1)
+        RAISERROR ('EntryType must be specified', 10, 1)
     end
 
     --
         if LEN(@entrySpecifier) < 1
     begin
         set @myError = 51001
-        RAISERROR ('EntrySpecifier was blank', 10, 1)
+        RAISERROR ('EntrySpecifier must be specified', 10, 1)
     end
 
     --
@@ -86,7 +87,7 @@ AS
         if LEN(@entryValue) < 1
     begin
         set @myError = 51001
-        RAISERROR ('EntryValue was blank', 10, 1)
+        RAISERROR ('EntryValue must be specified', 10, 1)
     end
 
     --

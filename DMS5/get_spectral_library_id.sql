@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[get_spectral_library_id]
 **          04/16/2023 mem - Auto-update @proteinCollectionList and @organismDbFile to 'na' if an empty string
 **          06/19/2023 mem - Set @organismDbFile to 'na' when @proteinCollectionList is defined; otherwise, set @proteinCollectionList to 'na' when @organismDbFile is defined
 **                         - Set @returnCode to 'U5225' if an existing spectral library is not found, and @allowAddNew is 0
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -86,7 +87,7 @@ Begin
     Declare @actualSourceJob int
 
     Declare @logMessage varchar(1024)
-        
+
     Set @message = ''
     Set @returnCode = ''
 
@@ -393,12 +394,12 @@ Begin
             Else
             Begin
                 If @libraryStateID = 2 And @dmsSourceJob > 0 And @existingSourceJob = @dmsSourceJob
-                Begin                
+                Begin
                     Set @message = 'Found existing spectral library ID ' + Cast(@libraryId As varchar(12)) +
                                    ' with state 2, already associated with job ' + Cast(@dmsSourceJob as varchar(12)) + ': ' + @libraryName
 
                     Set @sourceJobShouldMakeLibrary = 1
-                End 
+                End
                 Else
                 Begin
                     Set @message = 'Found existing spectral library ID ' + Cast(@libraryId As varchar(12)) +
@@ -435,7 +436,7 @@ Begin
 
         If @defaultLibraryName = ''
         Begin
-            Set @message = 'Cannot create a new spectral library since both the protein collection list and organism DB file are blank or "na"'
+            Set @message = 'Cannot create a new spectral library since both the protein collection list and organism DB file are empty strings or "na"'
             Print @message
             Set @returnCode = 'U5204'
 

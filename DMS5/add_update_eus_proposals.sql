@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_update_eus_proposals]
 **                         - Add Try/Catch error handling
 **                         - Fix merge query bug
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -68,7 +69,7 @@ AS
     If LEN(@EUSPropID) < 1
     Begin
         Set @logErrors = 0
-        Set @msg = 'EUS Proposal ID was blank'
+        Set @msg = 'EUS Proposal ID must be specified'
         RAISERROR (@msg, 11, 1)
     End
 
@@ -82,7 +83,7 @@ AS
     If LEN(@EUSPropTitle) < 1
     Begin
         Set @logErrors = 0
-        Set @msg = 'EUS Proposal Title was blank'
+        Set @msg = 'EUS Proposal Title must be specified'
         RAISERROR (@msg, 11, 3)
     End
 
@@ -93,7 +94,7 @@ AS
     If ISDATE(@EUSPropImpDate) <> 1
     Begin
         Set @logErrors = 0
-        Set @msg = 'EUS Proposal Import Date was blank or an invalid date'
+        Set @msg = 'EUS Proposal Import Date must be specified or an invalid date'
         RAISERROR (@msg, 11, 4)
     End
 

@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[enable_disable_run_jobs_remotely]
 **          02/12/2020 mem - Rename parameter to @infoOnly
 **          02/03/2023 bcg - Use renamed view V_Mgr_Params
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -57,7 +58,7 @@ AS
     If Len(@managerNameList) = 0
     Begin
         set @myError  = 40003
-        Set @message = '@managerNameList cannot be blank'
+        Set @message = '@managerNameList must be specified'
         SELECT @message AS Message
         Goto Done
     End

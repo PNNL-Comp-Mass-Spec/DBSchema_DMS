@@ -54,6 +54,7 @@ CREATE PROCEDURE [dbo].[add_requested_runs]
 **          02/17/2023 mem - Use new parameter name when calling add_update_requested_run_batch
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -136,25 +137,25 @@ AS
     If LEN(@operatorUsername) < 1
     Begin
         Set @myError = 51113
-        RAISERROR ('Operator username was blank', 11, 22)
+        RAISERROR ('Operator username must be specified', 11, 22)
     End
     --
     If LEN(@instrumentGroup) < 1
     Begin
         Set @myError = 51114
-        RAISERROR ('Instrument group was blank', 11, 23)
+        RAISERROR ('Instrument group must be specified', 11, 23)
     End
     --
     If LEN(@msType) < 1
     Begin
         Set @myError = 51115
-        RAISERROR ('Dataset type was blank', 11, 24)
+        RAISERROR ('Dataset type must be specified', 11, 24)
     End
     --
     If LEN(@workPackage) < 1
     Begin
         Set @myError = 51115
-        RAISERROR ('Work package was blank', 11, 25)
+        RAISERROR ('Work package must be specified', 11, 25)
     End
     --
     If @myError <> 0

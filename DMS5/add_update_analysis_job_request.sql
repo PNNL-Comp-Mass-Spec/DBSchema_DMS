@@ -95,6 +95,7 @@ CREATE PROCEDURE [dbo].[add_update_analysis_job_request]
 **          03/22/2023 mem - Rename column in temp table
 **                         - Also auto-remove datasets named 'Dataset Name' and 'Dataset_Name' from #TD
 **          03/27/2023 mem - Add support for DIA-NN and synchronize protein collection options validation with add_analysis_job_group
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -158,7 +159,7 @@ AS
     Declare @msg varchar(512)
 
     If @requestName = ''
-        RAISERROR ('Cannot add: request name cannot be blank', 11, 4)
+        RAISERROR ('Cannot add: request name must be specified', 11, 4)
 
     Set @requesterUsername = Ltrim(Rtrim(Coalesce(@requesterUsername, '')))
 

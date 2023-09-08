@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[update_research_team_for_campaign]
 **          08/20/2021 mem - Use Select Distinct to avoid duplicates
 **          02/17/2022 mem - Update error message and convert tabs to spaces
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -78,7 +79,7 @@ AS
         If @campaignName = ''
         Begin
             Set @myerror = 51002
-            set @message = 'Campaign name is blank; cannot create a new research team'
+            set @message = 'Campaign name was not specified; cannot create a new research team'
             GOTO Done
         End
 

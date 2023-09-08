@@ -120,6 +120,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          03/02/2023 mem - Use renamed table names
 **          08/02/2023 mem - Prevent adding a dataset for an inactive instrument
 **          08/03/2023 mem - Allow creation of datasets for instruments in group 'Data_Folders' (specifically, the DMS_Pipeline_Data instrument)
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -213,25 +214,25 @@ AS
 
     If IsNull(@mode, '') = ''
     Begin
-        Set @msg = '@mode was blank'
+        Set @msg = '@mode must be specified'
         RAISERROR (@msg, 11, 17)
     End
 
     If IsNull(@secSep, '') = ''
     Begin
-        Set @msg = 'Separation type was blank'
+        Set @msg = 'Separation type must be specified'
         RAISERROR (@msg, 11, 17)
     End
     --
     If IsNull(@lcColumnName, '') = ''
     Begin
-        Set @msg = 'LC Column name was blank'
+        Set @msg = 'LC Column name must be specified'
         RAISERROR (@msg, 11, 16)
     End
     --
     If IsNull(@datasetName, '') = ''
     Begin
-        Set @msg = 'Dataset name was blank'
+        Set @msg = 'Dataset name must be specified'
         RAISERROR (@msg, 11, 10)
     End
     --
@@ -239,25 +240,25 @@ AS
     --
     If IsNull(@experimentName, '') = ''
     Begin
-        Set @msg = 'Experiment name was blank'
+        Set @msg = 'Experiment name must be specified'
         RAISERROR (@msg, 11, 11)
     End
     --
     If IsNull(@folderName, '') = ''
     Begin
-        Set @msg = 'Folder name was blank'
+        Set @msg = 'Folder name must be specified'
         RAISERROR (@msg, 11, 12)
     End
     --
     If IsNull(@operatorUsername, '') = ''
     Begin
-        Set @msg = 'Operator payroll number/HID was blank'
+        Set @msg = 'Operator payroll number/HID must be specified'
         RAISERROR (@msg, 11, 13)
     End
     --
     If IsNull(@instrumentName, '') = ''
     Begin
-        Set @msg = 'Instrument name was blank'
+        Set @msg = 'Instrument name must be specified'
         RAISERROR (@msg, 11, 14)
     End
     --
@@ -266,13 +267,13 @@ AS
     -- Allow @msType to be blank if @mode is Add or Bad but not if check_add or add_trigger or update
     If @msType = '' And NOT @mode In ('Add', 'Bad')
     Begin
-        Set @msg = 'Dataset type was blank'
+        Set @msg = 'Dataset type must be specified'
         RAISERROR (@msg, 11, 15)
     End
     --
     If IsNull(@lcCartName, '') = ''
     Begin
-        Set @msg = 'LC Cart name was blank'
+        Set @msg = 'LC Cart name must be specified'
         RAISERROR (@msg, 11, 15)
     End
 
@@ -284,7 +285,7 @@ AS
 
     If IsNull(@rating, '') = ''
     Begin
-        Set @msg = 'Rating was blank'
+        Set @msg = 'Rating must be specified'
         RAISERROR (@msg, 11, 15)
     End
 
@@ -628,7 +629,7 @@ AS
 
     SELECT @instrumentClass = IN_Class,
            @instrumentGroup = IN_Group,
-           @instrumentStatus = IN_Status           
+           @instrumentStatus = IN_Status
     FROM T_Instrument_Name
     WHERE Instrument_ID = @instrumentID
 

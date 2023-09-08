@@ -30,9 +30,8 @@ CREATE PROCEDURE [dbo].[add_update_tracking_dataset]
 **          12/24/2022 mem - Fix logic error evaluating @runDuration
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
+**          09/07/2023 mem - Update warning messages
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @datasetName varchar(128) = 'TrackingDataset1',
@@ -114,13 +113,13 @@ AS
 
     If IsNull(@mode, '') = ''
     Begin
-        Set @msg = '@mode was blank'
+        Set @msg = '@mode must be specified'
         RAISERROR (@msg, 11, 17)
     End
 
     If IsNull(@datasetName, '') = ''
     Begin
-        Set @msg = 'Dataset name was blank'
+        Set @msg = 'Dataset name must be specified'
         RAISERROR (@msg, 11, 10)
     End
 
@@ -128,25 +127,25 @@ AS
 
     If IsNull(@experimentName, '') = ''
     Begin
-        Set @msg = 'Experiment name was blank'
+        Set @msg = 'Experiment name must be specified'
         RAISERROR (@msg, 11, 11)
     End
 
     If IsNull(@folderName, '') = ''
     Begin
-        Set @msg = 'Folder name was blank'
+        Set @msg = 'Folder name must be specified'
         RAISERROR (@msg, 11, 12)
     End
 
     If IsNull(@operatorUsername, '') = ''
     Begin
-        Set @msg = 'Operator payroll number/HID was blank'
+        Set @msg = 'Operator payroll number/HID must be specified'
         RAISERROR (@msg, 11, 13)
     End
 
     If IsNull(@instrumentName, '') = ''
     Begin
-        Set @msg = 'Instrument name was blank'
+        Set @msg = 'Instrument name must be specified'
         RAISERROR (@msg, 11, 14)
     End
 

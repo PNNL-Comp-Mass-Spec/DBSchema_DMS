@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_protein_parameters]
 **          01/06/2023 mem - Use new column name in view
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Remove underscores from variables
+**          09/07/2023 mem - Update warning messages
 **
 **  Error Return Codes:
 **      (-50001) = both values cannot be blank or 'na'
@@ -72,7 +73,7 @@ AS
 
     If Len(@organismName) < 1
     Begin
-        Set @msg = 'Org DB validation failure: Organism Name cannot be blank'
+        Set @msg = 'Org DB validation failure: Organism Name was not specified'
         Set @myError = -50001
         RAISERROR(@msg, 10, 1)
     End
@@ -91,7 +92,7 @@ AS
 
     If (Len(@organismDBFileName) = 0 and Len(@protCollNameList) = 0) OR (@organismDBFileName = 'na' AND @protCollNameList = 'na')
     Begin
-        Set @msg = 'Org DB validation failure: Protein collection list and Legacy Fasta (OrgDBName) name cannot both be blank (or "na")'
+        Set @msg = 'Org DB validation failure: Protein collection list and Legacy Fasta (OrgDBName) name cannot both be undefined (or "na")'
         Set @myError = -50001
         RAISERROR(@msg, 10 ,1)
     End

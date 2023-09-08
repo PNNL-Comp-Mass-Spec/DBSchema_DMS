@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_update_lc_column]
 **          11/30/2018 mem - Make @columnNumber an output parameter
 **          03/21/2022 mem - Fix typo in comment and update capitalization of keywords
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -70,7 +71,7 @@ AS
     If LEN(IsNull(@columnNumber, '')) < 1
     Begin
         Set @myError = 51110
-        RAISERROR ('Column name was blank', 11, 1)
+        RAISERROR ('Column name must be specified', 11, 1)
     End
 
     ---------------------------------------------------

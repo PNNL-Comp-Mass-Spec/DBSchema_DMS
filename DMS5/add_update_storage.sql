@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[add_update_storage]
 **          06/24/2021 mem - Add support for re-using an existing storage path when @mode is 'add'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/01/2023 mem - Expand @instrumentName to varchar(64)
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -97,14 +98,14 @@ AS
 
     If LEN(@path) < 1
     Begin
-        Set @msg = 'Storage path cannot be blank'
+        Set @msg = 'Storage path must be specified'
         RAISERROR (@msg, 10, 1)
         return 51036
     End
 
     If LEN(@instrumentName) < 1
     Begin
-        Set @msg = 'Instrument name cannot be blank'
+        Set @msg = 'Instrument name must be specified'
         RAISERROR (@msg, 10, 1)
         return 51036
     End

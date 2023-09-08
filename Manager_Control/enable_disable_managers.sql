@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[enable_disable_managers]
 **          03/28/2018 mem - Use different messages when updating just one manager
 **          02/12/2020 mem - Rename parameter to @infoOnly
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -95,7 +96,7 @@ AS
 
     If @Enable <> 0 AND Len(@ManagerNameList) = 0
     Begin
-        Set @message = '@ManagerNameList cannot be blank when @Enable is non-zero; to update all managers, set @ManagerNameList to All'
+        Set @message = '@ManagerNameList must be specified when @Enable is non-zero; to update all managers, set @ManagerNameList to All'
         SELECT @message AS Message
         set @myError  = 40003
         Goto Done

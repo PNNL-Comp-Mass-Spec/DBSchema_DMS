@@ -54,9 +54,8 @@ CREATE PROCEDURE [dbo].[add_update_organisms]
 **          04/11/2022 mem - Check for whitespace in @orgName
 **          07/27/2022 mem - Switch from FileName to Collection_Name when querying S_V_Protein_Collections_by_Organism
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
     @orgName varchar(128),
@@ -150,7 +149,7 @@ AS
     Set @orgName = LTrim(RTrim(IsNull(@orgName, '')))
     If Len(@orgName) < 1
     Begin
-        RAISERROR ('Organism Name cannot be blank', 11, 0)
+        RAISERROR ('Organism Name must be specified', 11, 0)
     End
 
     If dbo.has_whitespace_chars(@orgName, 0) > 0

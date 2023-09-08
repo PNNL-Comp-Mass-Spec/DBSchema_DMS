@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[make_new_archive_update_task]
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
 **          06/20/2023 mem - Remove parameters @pushDatasetToMyEMSL and @pushDatasetRecursive
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -76,7 +77,7 @@ AS
 
     If @resultsDirectoryName = '' And @allowBlankResultsDirectory = 0
     Begin
-        Set @message = 'Results directory name is blank; to update the Dataset file and all subdirectories, set @allowBlankResultsDirectory to 1'
+        Set @message = 'Results directory name was not specified; to update the Dataset file and all subdirectories, set @allowBlankResultsDirectory to 1'
         Set @myError = 50001
         Goto Done
     End

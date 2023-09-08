@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_update_reference_compound]
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/13/2023 mem - Rename contact parameter to @contactUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -102,14 +103,14 @@ AS
 
     If LEN(@compoundName) < 1
     Begin
-        RAISERROR ('Compound Name must be defined', 11, 1)
+        RAISERROR ('Compound Name must be specified', 11, 1)
     End
 
     Set @compoundIdAndName = Cast(IsNull(@compoundID, 0) as varchar(12)) + ': ' + IsNull(@compoundName, '??')
 
     If LEN(@compoundTypeName) < 1
     Begin
-        RAISERROR ('Compound type name must be defined', 11, 7)
+        RAISERROR ('Compound type name must be specified', 11, 7)
     End
 
     If LEN(@organismName) < 1
@@ -119,17 +120,17 @@ AS
 
     If LEN(@campaignName) < 1
     Begin
-        RAISERROR ('Campaign Name must be defined', 11, 1)
+        RAISERROR ('Campaign Name must be specified', 11, 1)
     End
 
     If LEN(@contactUsername) < 1
     Begin
-        RAISERROR ('Contact Name cannot be blank', 11, 3)
+        RAISERROR ('Contact Name must be specified', 11, 3)
     End
 
     If LEN(@supplier) < 1
     Begin
-        RAISERROR ('Supplier cannot be blank', 11, 5)
+        RAISERROR ('Supplier must be specified', 11, 5)
     End
 
     Declare @pubChemIdValue int

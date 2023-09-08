@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[get_requested_runs_from_item_list]
 **          01/05/2023 mem - Use new column name in V_Requested_Run_Unified_List
 **          01/23/2023 mem - Add comment with list of supported item types
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -39,13 +40,13 @@ AS
 
     IF ISNULL(@itemType, '') = ''
     BEGIN
-        set @message = 'Item Type may not be blank'
+        set @message = 'Item Type must be specified'
         return 51051
     END
 
     IF DATALENGTH(@itemList) = 0
     BEGIN
-        set @message = 'Item List may not be blank'
+        set @message = 'Item List must be specified'
         return 51051
     END
 

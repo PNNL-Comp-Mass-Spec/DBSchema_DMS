@@ -28,9 +28,8 @@ CREATE PROCEDURE [dbo].[add_update_sample_submission]
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/18/2017 mem - Disable logging certain messages to T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2009, Battelle Memorial Institute
 *****************************************************/
 (
     @id int OUTPUT,
@@ -87,7 +86,7 @@ AS
 
     Set @Description = IsNull(@Description, '')
     If @Description = ''
-        RAISERROR('Description cannot be blank', 11, 18)
+        RAISERROR('Description must be specified', 11, 18)
 
     ---------------------------------------------------
     -- Resolve Campaign ID

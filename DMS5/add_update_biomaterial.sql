@@ -42,6 +42,7 @@ CREATE PROCEDURE [dbo].[add_update_biomaterial]
 **          07/08/2022 mem - Rename procedure from AddUpdateCellCulture to add_update_biomaterial and update argument names
 **          02/13/2023 bcg - Rename parameters to @contactUsername and @piUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -112,38 +113,38 @@ AS
 
     If LEN(@contactUsername) < 1
     Begin
-        RAISERROR ('Contact Name must be defined', 11, 3)
+        RAISERROR ('Contact Name must be specified', 11, 3)
     End
     --
     If LEN(@piUsername) < 1
     Begin
-        RAISERROR ('Principle Investigator Username must be defined', 11, 3)
+        RAISERROR ('Principle Investigator Username must be specified', 11, 3)
     End
     --
     If LEN(@biomaterialName) < 1
     Begin
-        RAISERROR ('Biomaterial Name must be defined', 11, 4)
+        RAISERROR ('Biomaterial Name must be specified', 11, 4)
     End
     --
     If LEN(@sourceName) < 1
     Begin
-        RAISERROR ('Source Name must be defined', 11, 5)
+        RAISERROR ('Source Name must be specified', 11, 5)
     End
     --
     If LEN(@biomaterialType) < 1
     Begin
         Set @myError = 51001
-        RAISERROR ('Biomaterial Type must be defined', 11, 6)
+        RAISERROR ('Biomaterial Type must be specified', 11, 6)
     End
     --
     If LEN(@reason) < 1
     Begin
-        RAISERROR ('Reason must be defined', 11, 7)
+        RAISERROR ('Reason must be specified', 11, 7)
     End
     --
     If LEN(@campaignName) < 1
     Begin
-        RAISERROR ('Campaign Name must be defined', 11, 8)
+        RAISERROR ('Campaign Name must be specified', 11, 8)
     End
 
     ---------------------------------------------------

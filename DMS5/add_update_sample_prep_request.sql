@@ -101,6 +101,7 @@ CREATE PROCEDURE [dbo].[add_update_sample_prep_request]
 **          02/08/2023 bcg - Update view column name
 **          02/13/2023 bcg - Rename parameter to requesterUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/07/2023 mem - Update warning messages
 **
 *****************************************************/
 (
@@ -200,7 +201,7 @@ AS
     Set @datasetType = IsNull(@datasetType, '')
 
     If Len(IsNull(@estimatedMSRuns, '')) < 1
-        RAISERROR ('Estimated number of MS runs was blank; it should be 0 or a positive number', 11, 116)
+        RAISERROR ('Estimated number of MS runs must be specified; it should be 0 or a positive number', 11, 116)
 
     If IsNull(@blockAndRandomizeSamples, '') NOT IN ('Yes', 'No', 'NA')
         RAISERROR ('Block And Randomize Samples must be Yes, No, or NA', 11, 116)
