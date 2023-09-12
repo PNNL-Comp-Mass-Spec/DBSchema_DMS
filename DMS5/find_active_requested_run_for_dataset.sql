@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[find_active_requested_run_for_dataset]
 **          10/19/2020 mem - Rename the instrument group column to RDS_instrument_group
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          09/11/2023 mem - Stop searching for matches once one or more requested runs are matched
 **
 *****************************************************/
 (
@@ -113,14 +114,21 @@ AS
                       RDS_Status = 'Active' AND
                       Exp_ID = @experimentID
 
-            If @requestMatchCount = 1
+            If @requestMatchCount > 0
             Begin
-                -- Match found; lookup the requested run's instrument group
-                --
-                SELECT @requestInstGroup = RDS_instrument_group,
-                       @requestName = RDS_Name
-                FROM T_Requested_Run
-                WHERE ID = @requestID
+                If @requestMatchCount = 1
+                Begin
+                    -- Single match found; lookup the requested run's instrument group
+                    SELECT @requestInstGroup = RDS_instrument_group,
+                           @requestName = RDS_Name
+                    FROM T_Requested_Run
+                    WHERE ID = @requestID
+                End
+                Else
+                Begin
+                    -- Multiple matches were found; set @requestID to 0
+                    Set @requestID = 0
+                End
 
                 Set @startPos = 0
             End
@@ -129,27 +137,32 @@ AS
                 Set @requestID = 0
                 Set @startPos = @startPos + 1
             End
-
         End -- </b>
 
     End -- </a>
 
     If @showDebugMessages > 0
     Begin
-        If @requestID > 0
+        If @requestID > 1
             SELECT 'Match found ' AS Status,
                    @datasetName As Dataset,
                    @requestID AS Request_ID,
                    @requestName AS Request,
                    @requestInstGroup AS Instrument_Group
         Else
-            SELECT 'Match not found' AS Status,
-                @datasetName As Dataset,
-                @requestMatchCount as Candidate_Count
+        Begin
+            If @requestMatchCount > 1
+                SELECT 'Multiple matches found' AS Status,
+                       @datasetName As Dataset,
+                       @requestMatchCount as Candidate_Count
+            Else
+                SELECT 'Match not found' AS Status,
+                       @datasetName As Dataset,
+                       @requestMatchCount as Candidate_Count
+        End
     End
 
 Done:
-
     Return @myError
 
 GO
