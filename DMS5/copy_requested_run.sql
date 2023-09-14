@@ -6,8 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[copy_requested_run]
 /****************************************************
 **
-**  Desc:   Make copy of given requested run and associate
-**          it with given dataset
+**  Desc:   Make copy of given requested run and associate it with the given dataset
+**          If @datasetID is 0 or null, the new requested run will have a null dataset ID
 **
 **  Auth:   grk
 **  Date:   02/26/2010
@@ -27,6 +27,8 @@ CREATE PROCEDURE [dbo].[copy_requested_run]
 **          01/19/2021 mem - Add parameters @requestNameOverride and @infoOnly
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/13/2023 mem - If there is an existing requested run with a conflicting name, use @requestNameOverride if defined
+**                         - Include an underscore before appending @iteration when generating a unique name for the new requested run
 **
 *****************************************************/
 (
@@ -132,14 +134,18 @@ AS
 
     While @continue = 1
     Begin
-        If Not Exists (Select * From T_Requested_Run Where RDS_Name = @newReqName)
+        If Not Exists (Select RDS_Name From T_Requested_Run Where RDS_Name = @newReqName)
         Begin
             Set @continue = 0
         End
         Else
         Begin
             Set @iteration = @iteration + 1
-            Set @newReqName = @oldReqName + @requestNameAppendText + Cast(@iteration as varchar(9))
+
+            If @requestNameOverride = ''
+                Set @newReqName = @oldReqName + @requestNameAppendText + '_' + Cast(@iteration as varchar(9))
+            Else
+                Set @newReqName = @requestNameOverride + '_' + Cast(@iteration as varchar(9))
         End
 
     End
