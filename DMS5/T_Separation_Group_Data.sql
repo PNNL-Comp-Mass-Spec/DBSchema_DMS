@@ -1,7 +1,9 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 63 ******/
+/****** RowCount: 65 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_Whisper_20_SPD_60min','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_Whisper_40_SPD_30min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('Glycans','',0,0,0)
 INSERT INTO [T_Separation_Group] VALUES ('Infusion','Direction infusion',1,1,0)

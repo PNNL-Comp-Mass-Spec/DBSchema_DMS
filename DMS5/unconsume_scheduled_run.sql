@@ -90,7 +90,7 @@ AS
     --
     if @datasetID = 0
     begin
-        set @message = 'Dataset does not exist"' + @datasetName + '"'
+        set @message = 'Dataset does not exist: "' + @datasetName + '"'
         return 51141
     end
 
@@ -165,17 +165,17 @@ AS
     Declare @notation varchar(256)
     Declare @addnlText varchar(1024)
 
-    Declare @transName varchar(32)
-    set @transName = 'unconsume_scheduled_run'
-    begin transaction @transName
+    Declare @transName varchar(32) = 'unconsume_scheduled_run'
+
+    Begin Transaction @transName
 
     ---------------------------------------------------
     -- Reset request
     -- if it was not automatically created
     ---------------------------------------------------
 
-    if @autoCreatedRequest = 0
-    BEGIN -- <a1>
+    If @autoCreatedRequest = 0
+    Begin -- <a1>
         ---------------------------------------------------
         -- original request was user-entered,
         -- We will copy it (if commanded to) and set status to 'Completed'
@@ -189,16 +189,16 @@ AS
             Set @copy_requested_run = 1
         End
 
-    END -- </a1>
-    ELSE
-    BEGIN -- <a2>
+    End -- </a1>
+    Else
+    Begin -- <a2>
         ---------------------------------------------------
         -- original request was auto created
         -- delete it (if commanded to)
         ---------------------------------------------------
         --
-        if @retainHistory = 0
-        BEGIN -- <b2>
+        If @retainHistory = 0
+        Begin -- <b2>
             EXEC @myError = delete_requested_run
                                  @requestID,
                                  @skipDatasetCheck=1,
@@ -211,7 +211,7 @@ AS
                 rollback transaction @transName
                 return 51052
             end
-        END -- </b2>
+        End -- </b2>
         Else
         Begin -- <b3>
 
@@ -305,10 +305,10 @@ AS
 
         End -- </b3>
 
-    END -- <a2>
+    End -- <a2>
 
     If @requestIDOriginal > 0 And @copy_requested_run = 1
-    BEGIN -- <a3>
+    Begin -- <a3>
 
         ---------------------------------------------------
         -- Copy the request and associate the dataset with the newly created request
@@ -334,7 +334,7 @@ AS
             rollback transaction @transName
             return @myError
         end
-    END -- </a3>
+    End -- </a3>
 
     If @requestIDOriginal > 0 And @recycleOriginalRequest = 1
     Begin -- <a4>
@@ -346,11 +346,12 @@ AS
         -- Create annotation to be appended to comment
         --
         set @notation = '(recycled from dataset ' + cast(@datasetID as varchar(12)) + ' on ' + CONVERT (varchar(12), getdate(), 101) + ')'
-        if len(@requestComment) + len(@notation) > 1024
-        begin
+
+        If len(@requestComment) + len(@notation) > 1024
+        Begin
             -- Dataset comment could become too long; do not append the additional note
             set @notation = ''
-        end
+        End
 
         -- Reset the requested run to 'Active'
         -- Do not update RDS_Created; we want to keep it as the original date for planning purposes
@@ -363,9 +364,8 @@ AS
         Else
             Set @newQueueState = 1      -- Unassigned
 
-        Update T_Requested_Run
-        SET
-            RDS_Status = @newStatus,
+        UPDATE T_Requested_Run
+        SET RDS_Status = @newStatus,
             RDS_Run_Start = NULL,
             RDS_Run_Finish = NULL,
             DatasetID = NULL,
@@ -407,8 +407,9 @@ AS
     -- Commit the changes
     ---------------------------------------------------
 
-    commit transaction @transName
-    return 0
+    Commit Transaction @transName
+
+    Return 0
 
 GO
 GRANT EXECUTE ON [dbo].[unconsume_scheduled_run] TO [D3L243] AS [dbo]
