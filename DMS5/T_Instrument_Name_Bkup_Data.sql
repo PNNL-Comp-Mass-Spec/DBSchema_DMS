@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 196 ******/
+/****** RowCount: 197 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -128,7 +128,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_6',125,'Triple_Quad',1503,4480
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_5',126,'Triple_Quad',1504,3270,'secfso',null,'EMSL 1401','Thermo TSQ Vantage, MS:1001510','6/26/2014 12:04:38 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF03',127,'LTQ_FT',1633,4459,'secfso',null,'EMSL 1526','Q Exactive HF, MS:1002523	','2/19/2015 10:12:31 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactP04',128,'LTQ_FT',1662,4452,'secfso',null,'EMSL 1444','Q Exactive Plus, MS:1002634','4/8/2015 2:47:10 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_Agilent',129,'Agilent_Ion_Trap',1701,2,'secfso',null,'EMSL 1621','Agilent 12T FTICR magnet. Originally had a Velos Pro front end, but that was later moved to the 21T and this instrument had Exploris01 as its front end. In FY24 the Velos Pro will move back to this instrument and Exploris01 will move to the 21T. This instrument is active so that helium refills can be tracked.  Datasets are uploaded via either the Velos Pro or the Exploris front end.','6/13/2015 6:12:48 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_Agilent',129,'Agilent_Ion_Trap',1701,4501,'secfso',null,'EMSL 1621','Agilent 12T FTICR magnet. Originally had a Velos Pro front end, but that was later moved to the 21T and this instrument had Exploris01 as its front end. In FY24 the Velos Pro will move back to this instrument and Exploris01 will move to the 21T. This instrument is active so that helium refills can be tracked.  Datasets are uploaded via either the Velos Pro or the Exploris front end.','6/13/2015 6:12:48 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExactHF05',130,'LTQ_FT',1706,4481,'secfso',null,'EMSL 1621','Q Exactive HF, MS:1002523. Has HMR/UHMR configuration (boards swapped). Supports MALDI (Spectroglyph), UVPD, and ECD/ETD, depending on the connected hardware. While the MALDI source is attached, use instrument QExactHF05_Imaging for new datasets.','6/29/2015 10:54:50 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GC01',131,'Agilent_Ion_Trap',1754,2,'secfso',null,'BSF 1229','GC with FID','7/6/2015 4:23:30 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GCMS01',132,'Agilent_Ion_Trap',1755,2,'secfso',null,'BSF 1229','GC-MS','7/6/2015 4:24:23 PM')
@@ -197,3 +197,4 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Ascend',195,'LTQ_FT',4491
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Lumos',196,'LTQ_FT',4492,4494,'fso',null,'Offsite','Data acquired offsite using a Thermo Lumos mass spec','7/18/2023 12:51:28 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris03',197,'LTQ_FT',4496,4498,'secfso',null,'BSF 1229','Exploris 480','7/27/2023 4:14:06 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('SLIM09_QExactP06',198,'LTQ_FT',4499,4500,'fso',null,'EMSL 1426','SLIM instrument connected to QExactP06, brought online in 2023','8/23/2023 4:15:45 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('EMSL-NMR-LC',199,'PrepHPLC',2,2,'secfso',null,'EMSL 1430','EMSL-NMR-LC, or Tonga; for uploading occasional files with DAD data','9/22/2023 10:23:35 AM')
