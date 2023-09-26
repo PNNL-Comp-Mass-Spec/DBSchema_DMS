@@ -8,7 +8,9 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **
 **  Desc:
 **      Renames a dataset in T_Dataset
-**      Renames associated jobs in the DMS_Capture and DMS_Pipeline databases
+**
+**      Also updates associated jobs in the DMS_Capture and DMS_Pipeline databases,
+**      and updates T_Data_Package_Datasets in the DMS_Data_Package database
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -38,6 +40,7 @@ CREATE PROCEDURE [dbo].[rename_dataset]
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **          04/25/2023 mem - Update Queue_State for the old and new requested runs
 **          08/07/2023 mem - Show a custom error message if the dataset does not exist in T_Requested_Run
+**          09/26/2023 mem - Update cached dataset names in T_Data_Package_Datasets
 **
 *****************************************************/
 (
@@ -269,7 +272,7 @@ AS
         -- Rename the dataset in T_Dataset
         --------------------------------------------
         --
-        If @datasetAlreadyRenamed = 0 And Not Exists (Select * from T_Dataset WHERE Dataset_Num = @datasetNameNew)
+        If @datasetAlreadyRenamed = 0 And Not Exists (SELECT Dataset_ID FROM T_Dataset WHERE Dataset_Num = @datasetNameNew)
         Begin
             -- Show the old and new values
             SELECT DS.Dataset_Num  AS Dataset_Name_Old,
@@ -307,7 +310,7 @@ AS
         End
 
         -- Rename any files in T_Dataset_Files
-        If Exists (Select * from T_Dataset_Files WHERE Dataset_ID = @datasetID)
+        If Exists (SELECT Dataset_ID FROM T_Dataset_Files WHERE Dataset_ID = @datasetID)
         Begin
             UPDATE T_Dataset_Files
             SET File_Path = REPLACE(File_Path, @datasetNameOld, @datasetNameNew)
@@ -318,7 +321,7 @@ AS
     Else
     Begin
         -- Preview the changes
-        If Exists (Select * from T_Dataset WHERE Dataset_Num = @datasetNameNew)
+        If Exists (SELECT Dataset_ID FROM T_Dataset WHERE Dataset_Num = @datasetNameNew)
         Begin
             -- The dataset was already renamed
             SELECT @datasetNameOld  AS Dataset_Name_Old,
@@ -353,7 +356,7 @@ AS
             WHERE Dataset_Num = @datasetNameOld
         End
 
-        If Exists (Select * from T_Dataset_Files WHERE Dataset_ID = @datasetID)
+        If Exists (SELECT Dataset_ID FROM T_Dataset_Files WHERE Dataset_ID = @datasetID)
         Begin
             SELECT Dataset_File_ID,
                    Dataset_ID,
@@ -451,7 +454,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @infoOnly = 0 And Exists (Select * From @jobsToUpdate)
+    If @infoOnly = 0 And Exists (SELECT * FROM @jobsToUpdate)
     Begin
         Set @continue = 1
         Set @job = 0
@@ -483,7 +486,7 @@ AS
             exec DMS_Capture.dbo.add_update_task_parameter @job, 'JobParameters', 'Directory', @datasetNameNew, @infoOnly=0
 
             UPDATE DMS_Capture.dbo.T_Tasks
-            Set Dataset = @datasetNameNew
+            SET Dataset = @datasetNameNew
             WHERE Job = @job
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -506,13 +509,13 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    SELECT Job AS Pipeline_Job, Script, State, Dataset, @datasetNameNew as Dataset_Name_New, Dataset_ID, Imported
+    SELECT Job AS Pipeline_Job, Script, State, Dataset, @datasetNameNew As Dataset_Name_New, Dataset_ID, Imported
     FROM DMS_Pipeline.dbo.T_Jobs
     WHERE Job In (Select Job from @jobsToUpdate)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @infoOnly = 0 And Exists (Select * From @jobsToUpdate)
+    If @infoOnly = 0 And Exists (SELECT * FROM @jobsToUpdate)
     Begin
         Set @continue = 1
         Set @job = 0
@@ -546,6 +549,18 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
         End
+    End
+
+    If @infoOnly = 0
+    Begin
+        --------------------------------------------
+        -- Update cached dataset names in T_Data_Package_Datasets in the DMS_Data_Package database
+        --------------------------------------------
+
+        UPDATE DMS_Data_Package.dbo.T_Data_Package_Datasets
+        SET Dataset = @datasetNameNew
+        WHERE Dataset_ID = @datasetID AND
+              Coalesce(Dataset, '') <> @datasetNameNew
     End
 
     --------------------------------------------
