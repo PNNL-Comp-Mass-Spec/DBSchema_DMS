@@ -7,32 +7,31 @@ CREATE PROCEDURE [dbo].[add_update_experiment]
 /****************************************************
 **
 **  Desc:
-**      Adds a new experiment to DB
+**      Adds a new experiment to the database
 **
-**      Note that the Experiment Detail Report web page
-**      uses do_material_item_operation to retire an experiment
+**      Note that the Experiment Detail Report web page uses do_material_item_operation to retire an experiment
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   01/8/2002 - initial release
-**          08/25/2004 jds - updated proc to add T_Enzyme table value
-**          06/10/2005 grk - added handling for sample prep request
-**          10/28/2005 grk - added handling for internal standard
-**          11/11/2005 grk - added handling for postdigest internal standard
-**          11/21/2005 grk - fixed update error for postdigest internal standard
-**          01/12/2007 grk - added verification mode
-**          01/13/2007 grk - switched to organism ID instead of organism name (Ticket #360)
-**          04/30/2007 grk - added better name validation (Ticket #450)
+**  Date:   01/08/2002 grk - Initial release
+**          08/25/2004 jds - Updated proc to add T_Enzyme table value
+**          06/10/2005 grk - Added handling for sample prep request
+**          10/28/2005 grk - Added handling for internal standard
+**          11/11/2005 grk - Added handling for postdigest internal standard
+**          11/21/2005 grk - Fixed update error for postdigest internal standard
+**          01/12/2007 grk - Added verification mode
+**          01/13/2007 grk - Switched to organism ID instead of organism name (Ticket #360)
+**          04/30/2007 grk - Added better name validation (Ticket #450)
 **          02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
-**          03/13/2008 grk - added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
+**          03/13/2008 grk - Added material tracking stuff (http://prismtrac.pnl.gov/trac/ticket/603); also added optional parameter @callingUser
 **          03/25/2008 mem - Now calling alter_event_log_entry_user if @callingUser is not blank (Ticket #644)
-**          07/16/2009 grk - added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
-**          12/01/2009 grk - modified to skip checking of existing well occupancy if updating existing experiment
-**          04/22/2010 grk - try-catch for error handling
+**          07/16/2009 grk - Added wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**          12/01/2009 grk - Modified to skip checking of existing well occupancy if updating existing experiment
+**          04/22/2010 grk - Try-catch for error handling
 **          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @researcherUsername contains a person's real name rather than their username
 **          05/18/2010 mem - Now validating that @internalStandard and @postdigestIntStd are active internal standards when creating a new experiment (@mode is 'add' or 'check_add')
-**          11/15/2011 grk - added alkylation field
+**          11/15/2011 grk - Added alkylation field
 **          12/19/2011 mem - Now auto-replacing &quot; with a double-quotation mark in @comment
 **          03/26/2012 mem - Now validating @container
 **                         - Updated to validate additional terms when @mode = 'check_add'
@@ -57,10 +56,10 @@ CREATE PROCEDURE [dbo].[add_update_experiment]
 **          08/18/2017 mem - Add parameter @tissue (tissue name, e.g. hypodermis)
 **          09/01/2017 mem - Allow @tissue to be a BTO ID (e.g. BTO:0000131)
 **          11/29/2017 mem - Call parse_delimited_list instead of make_table_from_list_delim
-**                           Rename #CC to #Tmp_ExpToCCMap
-**                           No longer pass @biomaterialList to add_experiment_biomaterial since it uses #Tmp_ExpToCCMap
-**                           Remove references to the Cell_Culture_List field in T_Experiments (procedure add_experiment_biomaterial calls update_cached_experiment_component_names)
-**                           Add argument @referenceCompoundList
+**                         - Rename #CC to #Tmp_ExpToCCMap
+**                         - No longer pass @biomaterialList to add_experiment_biomaterial since it uses #Tmp_ExpToCCMap
+**                         - Remove references to the Cell_Culture_List field in T_Experiments (procedure add_experiment_biomaterial calls update_cached_experiment_component_names)
+**                         - Add argument @referenceCompoundList
 **          01/04/2018 mem - Entries in @referenceCompoundList are now assumed to be in the form Compound_ID:Compound_Name, though we also support only Compound_ID or only Compound_Name
 **          07/30/2018 mem - Expand @reason and @comment to varchar(500)
 **          11/27/2018 mem - Check for @referenceCompoundList having '100:(none)'
@@ -77,6 +76,7 @@ CREATE PROCEDURE [dbo].[add_update_experiment]
 **          11/26/2022 mem - Rename parameter to @biomaterialList
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          09/26/2023 mem - Update cached experiment names in T_Data_Package_Experiments
 **
 *****************************************************/
 (
@@ -259,30 +259,31 @@ AS
         Begin
             -- Allow renaming if the experiment is not associated with a dataset or requested run, and if the new name is unique
 
-            If Exists (Select * From T_Experiments Where Experiment_Num = @experimentName)
+            If Exists (SELECT Exp_ID FROM T_Experiments WHERE Experiment_Num = @experimentName)
             Begin
-                SELECT
-                    @existingExperimentID = Exp_ID
+                SELECT @existingExperimentID = Exp_ID
                 FROM T_Experiments
                 WHERE Experiment_Num = @experimentName
                 --
                 RAISERROR ('Cannot rename: Experiment "%s" already exists, with ID %d', 11, 40, @experimentName, @existingExperimentID)
             End
 
-            If Exists (Select * From T_Dataset Where Exp_ID = @experimentID)
+            If Exists (SELECT Exp_ID FROM T_Dataset WHERE Exp_ID = @experimentID)
             Begin
-                SELECT @existingDataset = Dataset_Num
+                SELECT TOP 1 @existingDataset = Dataset_Num
                 FROM T_Dataset
                 WHERE Exp_ID = @experimentID
+                ORDER BY Dataset_ID ASC
                 --
                 RAISERROR ('Cannot rename: Experiment ID %d is associated with dataset "%s"', 11, 40, @experimentID, @existingDataset)
             End
 
-            If Exists (Select * From T_Requested_Run Where Exp_ID = @experimentID)
+            If Exists (SELECT Exp_ID FROM T_Requested_Run WHERE Exp_ID = @experimentID)
             Begin
-                SELECT @existingRequestedRun = RDS_Name
+                SELECT TOP 1 @existingRequestedRun = RDS_Name
                 FROM T_Requested_Run
                 WHERE Exp_ID = @experimentID
+                ORDER BY ID ASC
                 --
                 RAISERROR ('Cannot rename: Experiment ID %d is associated with requested run "%s"', 11, 40, @experimentID, @existingRequestedRun)
             End
@@ -907,6 +908,15 @@ AS
         If Len(@existingExperimentName) > 0 And @existingExperimentName <> @experimentName
         Begin
             Set @message = 'Renamed experiment from "' + @existingExperimentName + '" to "' + @experimentName + '"'
+
+            --------------------------------------------
+            -- Update cached experiment names in T_Data_Package_Experiments in the DMS_Data_Package database
+            --------------------------------------------
+
+            UPDATE DMS_Data_Package.dbo.T_Data_Package_Experiments
+            SET Experiment = @experimentName
+            WHERE Experiment_ID = @experimentID AND
+                  Coalesce(Experiment, '') <> @experimentName
         End
 
         -- We made it this far, commit
@@ -920,7 +930,7 @@ AS
         EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
@@ -931,7 +941,7 @@ AS
 
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_experiment] TO [DDL_Viewer] AS [dbo]
