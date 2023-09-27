@@ -6,9 +6,9 @@ GO
 CREATE VIEW [dbo].[V_Data_Package_Biomaterial_List_Report]
 AS
 SELECT DPB.Data_Pkg_ID AS id,
-       DPB.Name AS biomaterial,
-       DPB.campaign,
-       DPB.type,
+       CL.Name AS biomaterial,
+       CL.campaign,
+       CL.type,
        DPB.package_comment,
        CL.source,
        CL.contact,

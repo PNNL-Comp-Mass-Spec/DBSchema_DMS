@@ -6,14 +6,14 @@ GO
 CREATE VIEW [dbo].[V_Data_Package_Dataset_Files_List_Report]
 AS
 SELECT DPD.Data_Pkg_ID AS id,
-       DPD.dataset,
+       DL.dataset,
        DPD.dataset_id,
        DF.file_path,
        DF.file_size_bytes,
        DF.file_hash,
        DF.file_size_rank,
-       DPD.experiment,
-       DPD.instrument,
+       DL.experiment,
+       DL.instrument,
        DPD.package_comment,
        DL.campaign,
        DL.state,

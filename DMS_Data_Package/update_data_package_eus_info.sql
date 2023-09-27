@@ -10,8 +10,6 @@ CREATE PROCEDURE [dbo].[update_data_package_eus_info]
 **      Updates EUS-related fields in T_Data_Package for one or more data packages
 **      Also updates Instrument_ID
 **
-**  Return values: 0: success, otherwise, error code
-**
 **  Auth:   mem
 **  Date:   10/18/2016 mem - Initial version
 **          10/19/2016 mem - Replace parameter @DataPackageID with @DataPackageList
@@ -23,6 +21,7 @@ CREATE PROCEDURE [dbo].[update_data_package_eus_info]
 **          06/08/2022 mem - Use new Item_Added column name
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
+**          09/26/2023 mem - Obtain dataset names and instrument names from T_Dataset and T_Instrument_Name
 **
 *****************************************************/
 (
@@ -153,16 +152,16 @@ AS
                                     EUS_Proposal_ID,
                                     ProposalCount,
                                     Row_Number() OVER ( Partition By SourceQ.Data_Pkg_ID Order By ProposalCount DESC ) AS CountRank
-                             FROM ( SELECT DPD.Data_Pkg_ID,
+                             FROM ( SELECT TD.Data_Pkg_ID,
                                            DR.Proposal AS EUS_Proposal_ID,
                                            COUNT(*) AS ProposalCount
-                                    FROM T_Data_Package_Datasets DPD
+                                    FROM T_Data_Package_Datasets TD
                                          INNER JOIN #TmpDataPackagesToUpdate Src
-                                           ON DPD.Data_Pkg_ID = Src.ID
+                                           ON TD.Data_Pkg_ID = Src.ID
                                          INNER JOIN S_V_Dataset_List_Report_2 DR
-                                           ON DPD.Dataset_ID = DR.ID
+                                           ON TD.Dataset_ID = DR.ID
                                     WHERE NOT DR.Proposal IS NULL AND NOT DR.Proposal LIKE 'EPR%'
-                                    GROUP BY DPD.Data_Pkg_ID, DR.Proposal
+                                    GROUP BY TD.Data_Pkg_ID, DR.Proposal
                                   ) SourceQ
                            ) RankQ
                       WHERE RankQ.CountRank = 1
@@ -210,14 +209,18 @@ AS
                                     Instrument,
                                     InstrumentCount,
                                     Row_Number() OVER ( Partition By SourceQ.Data_Pkg_ID Order By InstrumentCount DESC ) AS CountRank
-                             FROM ( SELECT DPD.Data_Pkg_ID,
-                                           DPD.Instrument,
+                             FROM ( SELECT TD.Data_Pkg_ID,
+                                           InstName.IN_Name AS Instrument,
                                            COUNT(*) AS InstrumentCount
-                                    FROM T_Data_Package_Datasets DPD
+                                    FROM T_Data_Package_Datasets TD
+                                         INNER JOIN S_Dataset DS
+                                           ON TD.Dataset_ID = DS.Dataset_ID
+                                         INNER JOIN S_Instrument_Name InstName
+                                           ON DS.DS_instrument_name_ID = InstName.Instrument_ID
                                          INNER JOIN #TmpDataPackagesToUpdate Src
-                                           ON DPD.Data_Pkg_ID = Src.ID
-                                    WHERE NOT DPD.Instrument Is Null
-                                    GROUP BY DPD.Data_Pkg_ID, DPD.Instrument
+                                           ON TD.Data_Pkg_ID = Src.ID
+                                    WHERE NOT InstName.IN_Name Is Null
+                                    GROUP BY TD.Data_Pkg_ID, InstName.IN_Name
                                   ) SourceQ
                            ) RankQ
                       WHERE RankQ.CountRank = 1

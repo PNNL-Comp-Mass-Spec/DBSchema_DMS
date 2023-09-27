@@ -6,7 +6,7 @@ GO
 CREATE VIEW [dbo].[V_Data_Package_Experiments_List_Report]
 AS
 SELECT DPE.Data_Pkg_ID AS id,
-       DPE.experiment,
+       EL.experiment,
        EL.campaign,
        DPE.package_comment,
        EL.researcher,

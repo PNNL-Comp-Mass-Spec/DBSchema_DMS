@@ -7,9 +7,9 @@ CREATE VIEW [dbo].[V_Data_Package_Analysis_Jobs_List_Report]
 AS
 SELECT DPJ.Data_Pkg_ID AS id,
        DPJ.job,
-       DPJ.dataset,
-       DPJ.dataset_id,
-       DPJ.tool,
+       AJL.dataset,
+       AJL.dataset_id,
+       AJL.tool,
        DPJ.package_comment,
        AJL.campaign,
        AJL.experiment,

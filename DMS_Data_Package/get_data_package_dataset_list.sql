@@ -7,8 +7,7 @@ CREATE FUNCTION [dbo].[get_data_package_dataset_list]
 /****************************************************
 **
 **  Desc:
-**  Builds delimited list of datasets
-**  for given data package
+**      Builds delimited list of datasets for given data package
 **
 **  Return value: delimited list
 **
@@ -18,6 +17,7 @@ CREATE FUNCTION [dbo].[get_data_package_dataset_list]
 **  Date:   10/22/2014 mem - Initial version
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          08/17/2023 mem - Use renamed column data_pkg_id in T_Data_Package_Datasets
+**          09/26/2023 mem - Obtain dataset names from T_Dataset
 **
 *****************************************************/
 (
@@ -26,18 +26,16 @@ CREATE FUNCTION [dbo].[get_data_package_dataset_list]
 RETURNS varchar(max)
 AS
     BEGIN
-        declare @list varchar(max)
-        set @list = NULL
+        Declare @list varchar(max) = Null
 
-        SELECT @list = Coalesce(@list + ', ' + Dataset, Dataset)
-        FROM T_Data_Package_Datasets
-        WHERE Data_Pkg_ID = @dataPackageID
-        ORDER BY Dataset
+        SELECT @list = Coalesce(@list + ', ' + DS.Dataset_Num, DS.Dataset_Num)
+        FROM T_Data_Package_Datasets TD
+             INNER JOIN S_Dataset DS
+               ON TD.Dataset_ID = DS.Dataset_ID
+        WHERE TD.Data_Pkg_ID = @dataPackageID
+        ORDER BY DS.Dataset_Num
 
-        If @list Is Null
-            Set @list = ''
-
-        RETURN @list
+        RETURN Coalesce(@list, '')
     END
 
 GO

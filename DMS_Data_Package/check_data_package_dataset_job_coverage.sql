@@ -9,15 +9,12 @@ CREATE FUNCTION [dbo].[check_data_package_dataset_job_coverage]
 **  Desc:
 **      Returns a table of dataset job coverage
 **
-**  Return values:
-**
-**  Parameters:
-**
 **  Auth:   grk
 **  Date:   05/22/2010
 **          04/25/2018 mem - Now joining T_Data_Package_Datasets and T_Data_Package_Analysis_Jobs on Dataset_ID
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          08/17/2023 mem - Use renamed column data_pkg_id in data package item tables
+**          09/26/2023 mem - Obtain dataset names from T_Dataset
 **
 *****************************************************/
 (
@@ -34,9 +31,11 @@ BEGIN
     IF @mode = 'NoPackageJobs'
     BEGIN
         INSERT INTO @table_variable ( Dataset, Num )
-        SELECT TD.Dataset,
+        SELECT DS.Dataset_Num AS Dataset,
                NULL AS job_count
         FROM T_Data_Package_Datasets AS TD
+             INNER JOIN S_Dataset DS
+               ON TD.Dataset_ID = DS.Dataset_ID
              LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TA
                ON TD.Dataset_ID = TA.Dataset_ID AND
                   TD.Data_Pkg_ID = TA.Data_Pkg_ID AND
@@ -49,9 +48,11 @@ BEGIN
     IF @mode = 'NoDMSJobs'
     BEGIN
         INSERT INTO @table_variable ( Dataset, Num )
-        SELECT TD.Dataset,
+        SELECT DS.Dataset_Num AS Dataset,
                NULL AS job_count
         FROM T_Data_Package_Datasets AS TD
+             INNER JOIN S_Dataset DS
+               ON TD.Dataset_ID = DS.Dataset_ID
         WHERE TD.Data_Pkg_ID = @packageID AND
               NOT EXISTS ( SELECT J.Dataset_ID
                            FROM S_V_Analysis_Job_List_Report_2 AS J
@@ -65,18 +66,20 @@ BEGIN
     IF @mode = 'PackageJobCount'
     BEGIN
         INSERT INTO @table_variable ( Dataset, Num )
-        SELECT TD.Dataset,
+        SELECT DS.Dataset_Num AS Dataset,
                SUM(CASE
                        WHEN TJ.Job IS NULL THEN 0
                        ELSE 1
                    END) AS job_count
         FROM T_Data_Package_Datasets AS TD
+             INNER JOIN S_Dataset DS
+               ON TD.Dataset_ID = DS.Dataset_ID
              LEFT OUTER JOIN T_Data_Package_Analysis_Jobs AS TJ
                ON TD.Dataset_ID = TJ.Dataset_ID AND
                   TD.Data_Pkg_ID = TJ.Data_Pkg_ID AND
                   TJ.Tool = @tool
         WHERE TD.Data_Pkg_ID = @packageID
-        GROUP BY TD.Data_Pkg_ID, TD.Dataset, TJ.Tool
+        GROUP BY TD.Data_Pkg_ID, DS.Dataset_Num, TJ.Tool;
     END
 
     RETURN

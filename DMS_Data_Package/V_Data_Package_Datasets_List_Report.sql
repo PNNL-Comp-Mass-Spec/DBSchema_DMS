@@ -6,10 +6,10 @@ GO
 CREATE VIEW [dbo].[V_Data_Package_Datasets_List_Report]
 AS
 SELECT DPD.Data_Pkg_ID AS id,
-       DPD.dataset,
+       DL.dataset,
        DPD.dataset_id,
-       DPD.experiment,
-       DPD.instrument,
+       DL.experiment,
+       DL.instrument,
        DPD.package_comment,
        DL.campaign,
        DL.state,
