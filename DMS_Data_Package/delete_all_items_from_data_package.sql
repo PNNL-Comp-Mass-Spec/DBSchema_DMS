@@ -7,11 +7,7 @@ CREATE PROCEDURE [dbo].[delete_all_items_from_data_package]
 /****************************************************
 **
 **  Desc:
-**  removes all existing items from data package
-**
-**  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
+**      Removes all existing items from a data package
 **
 **  Auth:   grk
 **  Date:   06/10/2009 grk - initial release
@@ -32,10 +28,10 @@ CREATE PROCEDURE [dbo].[delete_all_items_from_data_package]
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     BEGIN TRY
 
@@ -52,7 +48,7 @@ AS
 
         Declare @transName varchar(32) = 'delete_all_items_from_data_package'
 
-        begin transaction @transName
+        Begin Transaction @transName
 
         DELETE FROM T_Data_Package_Analysis_Jobs
         WHERE Data_Pkg_ID  = @packageID
@@ -69,21 +65,18 @@ AS
         DELETE FROM T_Data_Package_EUS_Proposals
         WHERE Data_Pkg_ID = @packageID
 
-        ---------------------------------------------------
-        commit transaction @transName
+        Commit Transaction @transName
 
         ---------------------------------------------------
         -- update item counts
         ---------------------------------------------------
 
-        exec update_data_package_item_counts @packageID, @message output, @callingUser
+        Exec update_data_package_item_counts @packageID, @message output, @callingUser
 
         UPDATE T_Data_Package
         SET Last_Modified = GETDATE()
         WHERE ID = @packageID
 
-    ---------------------------------------------------
-    ---------------------------------------------------
     END TRY
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
@@ -100,7 +93,7 @@ AS
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[delete_all_items_from_data_package] TO [DDL_Viewer] AS [dbo]
