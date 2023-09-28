@@ -150,7 +150,7 @@ AS
                          NOT DataPackageID IS NULL ) SourceQ
             WHERE NOT DatasetID IS NULL
 
-            If Exists (SELECT * FROM #Tmp_DatasetIDsToAdd)
+            If Exists (SELECT DataPackageID FROM #Tmp_DatasetIDsToAdd)
             Begin
                 -- Add the dataset names
                 INSERT INTO #TPI( DataPackageID,
@@ -220,7 +220,7 @@ AS
                   ON J.Job = TX.Job
             WHERE
                 NOT EXISTS (
-                    SELECT *
+                    SELECT DataPackageID
                     FROM #TPI
                     WHERE #TPI.[Type] = 'Dataset' AND #TPI.Identifier = TX.Dataset AND #TPI.DataPackageID = J.DataPackageID
                 ) AND
@@ -240,7 +240,7 @@ AS
             WHERE
                 TP.[Type] = 'Dataset'
                 AND NOT EXISTS (
-                    SELECT *
+                    SELECT DataPackageID
                     FROM #TPI
                     WHERE #TPI.[Type] = 'Experiment' AND #TPI.Identifier = TX.Experiment AND #TPI.DataPackageID = TP.DataPackageID
                 )
@@ -251,7 +251,7 @@ AS
             SELECT DISTINCT
                 TP.DataPackageID,
                 'EUSProposal',
-                TX.Proposal
+                TX.Proposal      -- This is typically a number, but is stored as text
             FROM
                 #TPI TP
                 INNER JOIN S_V_Dataset_List_Report_2 TX
@@ -259,7 +259,7 @@ AS
             WHERE
                 TP.[Type] = 'Dataset'
                 AND NOT EXISTS (
-                    SELECT *
+                    SELECT DataPackageID
                     FROM #TPI
                     WHERE #TPI.[Type] = 'EUSProposal' AND #TPI.Identifier = TX.Proposal AND #TPI.DataPackageID = TP.DataPackageID
                 )
@@ -279,7 +279,7 @@ AS
                 TP.[Type] = 'Experiment' AND
                 TX.Biomaterial_Name NOT IN ('(none)')
                 AND NOT EXISTS (
-                    SELECT *
+                    SELECT DataPackageID
                     FROM #TPI
                     WHERE #TPI.[Type] = 'Biomaterial' AND #TPI.Identifier = TX.Biomaterial_Name AND #TPI.DataPackageID = TP.DataPackageID
                 )
