@@ -741,7 +741,10 @@ AS
         Begin -- <delete experiments>
             If @infoOnly > 0
             Begin
-                SELECT 'Experiment to delete' AS Experiment_Msg, DPE.*
+                SELECT 'Experiment to delete' AS Experiment_Msg,
+                       DPE.Data_Pkg_ID,
+                       DPE.Experiment_ID,
+                       E.Experiment_Num AS Experiment
                 FROM T_Data_Package_Experiments DPE
                      INNER JOIN S_Experiment_List E
                        ON DPE.Experiment_ID = E.Exp_ID
@@ -777,9 +780,12 @@ AS
         Begin -- <comment experiments>
             If @infoOnly > 0
             Begin
-                SELECT 'Update Experiment comment' AS Item_Type,
+                SELECT 'Update Experiment comment' AS Action,
                        @comment AS New_Comment,
-                       DPE.*
+                       DPE.Data_Pkg_ID,
+                       DPE.Experiment_ID,
+                       E.Experiment_Num AS Experiment,
+                       DPE.package_comment AS Old_Comment
                 FROM T_Data_Package_Experiments DPE
                      INNER JOIN S_Experiment_List E
                        ON DPE.Experiment_ID = E.Exp_ID
@@ -885,10 +891,16 @@ AS
         Begin -- <delete datasets>
             If @infoOnly > 0
             Begin
-                SELECT 'Dataset to delete' AS Dataset_Msg, DPD.*
+                SELECT 'Dataset to delete' AS Dataset_Msg,
+                        DPD.Data_Pkg_ID,
+                        DPD.Dataset_ID,
+                        DS.Dataset_Num AS Dataset,
+                        E.Experiment_Num AS Experiment
                 FROM T_Data_Package_Datasets DPD
                      INNER JOIN S_Dataset DS
                        ON DPD.Dataset_ID = DS.Dataset_ID
+                     INNER JOIN S_Experiment_List E
+                       ON DS.Exp_ID = E.Exp_ID
                      INNER JOIN #TPI PkgItems
                        ON PkgItems.DataPackageID = DPD.Data_Pkg_ID AND
                           PkgItems.Identifier = DS.Dataset_Num AND
@@ -921,9 +933,12 @@ AS
         Begin -- <comment datasets>
             If @infoOnly > 0
             Begin
-                SELECT 'Update Dataset comment' AS Item_Type,
+                SELECT 'Update Dataset comment' AS Action,
                        @comment AS New_Comment,
-                       DPD.*
+                       DPD.Data_Pkg_ID,
+                       DPD.Dataset_ID,
+                       DS.Dataset_Num AS Dataset,
+                       DPD.package_comment AS Old_Comment
                 FROM T_Data_Package_Datasets DPD
                      INNER JOIN S_Dataset DS
                        ON DPD.Dataset_ID = DS.Dataset_ID
@@ -1034,11 +1049,22 @@ AS
         Begin -- <delete analysis_jobs>
             If @infoOnly > 0
             Begin
-                SELECT 'Job to delete' AS Job_Msg, DPJ.*
+                SELECT 'Job to delete' AS Job_Msg,
+                       DPJ.Data_Pkg_ID,
+                       DPJ.Job,
+                       T.AJT_toolName AS Tool,
+                       AJ.AJ_datasetID AS Dataset_ID,
+                       DS.Dataset_Num AS Dataset
                 FROM T_Data_Package_Analysis_Jobs DPJ
                      INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
                        ON DPJ.Data_Pkg_ID = ItemsQ.DataPackageID AND
                           DPJ.Job = ItemsQ.Job
+                         INNER JOIN S_Analysis_Job AJ
+                           ON AJ.AJ_JobID = ItemsQ.Job
+                         INNER JOIN S_Dataset DS
+                           ON AJ.AJ_DatasetID = DS.dataset_ID
+                         INNER JOIN S_Analysis_Tool T
+                           ON AJ.AJ_analysisToolID = T.AJT_toolID
             End
             Else
             Begin
@@ -1065,11 +1091,21 @@ AS
             Begin
                 SELECT 'Update Job comment' AS Action,
                        @comment AS New_Comment,
-                       DPJ.*
+                       DPJ.Data_Pkg_ID,
+                       DPJ.Job,
+                       T.Analysis_Tool AS Tool,
+                       AJ.Dataset_ID,
+                       DPJ.package_comment AS Old_Comment
                 FROM T_Data_Package_Analysis_Jobs DPJ
                      INNER JOIN #Tmp_JobsToAddOrDelete ItemsQ
                        ON DPJ.Data_Pkg_ID = ItemsQ.DataPackageID AND
                           DPJ.Job = ItemsQ.Job
+                         INNER JOIN S_Analysis_Job AJ
+                           ON AJ.AJ_JobID = ItemsQ.Job
+                         INNER JOIN S_Dataset DS
+                           ON AJ.AJ_DatasetID = DS.dataset_ID
+                         INNER JOIN S_Analysis_Tool T
+                           ON AJ.AJ_analysisToolID = T.AJT_toolID
             End
             Else
             Begin
