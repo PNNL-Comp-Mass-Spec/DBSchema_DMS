@@ -158,10 +158,13 @@ AS
                                   Identifier )
                 SELECT Source.DataPackageID,
                        'Dataset' AS [Type],
-                       DL.Dataset
+                       DS.Dataset_Num
                 FROM #Tmp_DatasetIDsToAdd Source
-                     INNER JOIN S_V_Dataset_List_Report_2 DL
-                       ON Source.DatasetID = DL.ID
+                     INNER JOIN S_Dataset DS
+                       ON Source.DatasetID = DS.Dataset_ID
+                WHERE NOT EXISTS ( SELECT 1
+                                   FROM #TPI PkgItems
+                                   WHERE PkgItems.Identifier = DS.Dataset_Num);
 
                 -- Update the Type of the Dataset IDs so that they will be ignored
                 UPDATE #TPI
