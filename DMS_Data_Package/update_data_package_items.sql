@@ -24,11 +24,12 @@ CREATE PROCEDURE [dbo].[update_data_package_items]
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          03/10/2022 mem - Replace spaces and tabs in the item list with commas
 **          02/15/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          09/27/2023 mem - Add support for @itemType = 'EUSProposal'
 **
 *****************************************************/
 (
     @packageID int,                         -- Data package ID
-    @itemType varchar(128),                 -- analysis_jobs, datasets, experiments, biomaterial, or proposals
+    @itemType varchar(128),                 -- 'analysis_jobs', 'jobs', 'job', 'datasets', 'dataset', 'experiments', 'experiment', 'biomaterial', 'proposals', 'EUSProposal'
     @itemList varchar(max),                 -- Comma separated list of items
     @comment varchar(512),
     @mode varchar(12) = 'update',           -- 'add', 'update', 'comment', 'delete'
@@ -65,10 +66,10 @@ AS
 
         SELECT @entityName = CASE
                                  WHEN @itemType IN ('analysis_jobs', 'job', 'jobs') THEN 'Job'
-                                 WHEN @itemType IN ('datasets', 'dataset') THEN 'Dataset'
-                                 WHEN @itemType IN ('experiments', 'experiment') THEN 'Experiment'
-                                 WHEN @itemType = 'biomaterial' THEN 'Biomaterial'
-                                 WHEN @itemType = 'proposals' THEN 'EUSProposal'
+                                 WHEN @itemType IN ('datasets', 'dataset')          THEN 'Dataset'
+                                 WHEN @itemType IN ('experiments', 'experiment')    THEN 'Experiment'
+                                 WHEN @itemType IN ('biomaterial')                  THEN 'Biomaterial'
+                                 WHEN @itemType IN ('proposals', 'EUSProposal')     THEN 'EUSProposal'
                                  ELSE ''
                              END
         --
@@ -130,8 +131,7 @@ AS
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
-    return @myError
-
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_data_package_items] TO [DDL_Viewer] AS [dbo]
