@@ -308,13 +308,13 @@ AS
                  LEFT OUTER JOIN (
                         -- Datasets associated with the data package; skipping the jobs that we're deleting
                         SELECT DS.Dataset_Num AS Dataset,
-                               TD.Data_Pkg_ID
+                               DPD.Data_Pkg_ID
                         FROM T_Data_Package_Analysis_Jobs DPJ
-                             INNER JOIN T_Data_Package_Datasets TD
-                               ON DPJ.Data_Pkg_ID = TD.Data_Pkg_ID AND
-                                  DPJ.Dataset_ID = TD.Dataset_ID
+                             INNER JOIN T_Data_Package_Datasets DPD
+                               ON DPJ.Data_Pkg_ID = DPD.Data_Pkg_ID AND
+                                  DPJ.Dataset_ID = DPD.Dataset_ID
                              INNER JOIN S_Dataset DS
-                               ON TD.Dataset_ID = DS.Dataset_ID
+                               ON DPD.Dataset_ID = DS.Dataset_ID
                              LEFT OUTER JOIN #Tmp_JobsToAddOrDelete ItemsQ
                                ON DPJ.Data_Pkg_ID = ItemsQ.DataPackageID AND
                                   DPJ.Job = ItemsQ.Job
@@ -352,17 +352,17 @@ AS
                  LEFT OUTER JOIN (
                         -- Experiments associated with the data package; skipping any jobs that we're deleting
                         SELECT E.Experiment_Num AS Experiment,
-                               TD.Data_Pkg_ID
+                               DPD.Data_Pkg_ID
                         FROM T_Data_Package_Analysis_Jobs DPJ
-                             INNER JOIN T_Data_Package_Datasets TD
-                               ON DPJ.Data_Pkg_ID = TD.Data_Pkg_ID AND
-                                  DPJ.Dataset_ID = TD.Dataset_ID
+                             INNER JOIN T_Data_Package_Datasets DPD
+                               ON DPJ.Data_Pkg_ID = DPD.Data_Pkg_ID AND
+                                  DPJ.Dataset_ID = DPD.Dataset_ID
                              INNER JOIN S_Dataset DS
-                               ON TD.Dataset_ID = DS.Dataset_ID
+                               ON DPD.Dataset_ID = DS.Dataset_ID
                              INNER JOIN S_Experiment_List E
                                ON DS.Exp_ID = E.Exp_ID
                              INNER JOIN T_Data_Package_Experiments DPE
-                               ON TD.Data_Pkg_ID = DPE.Data_Pkg_ID AND
+                               ON DPD.Data_Pkg_ID = DPE.Data_Pkg_ID AND
                                   E.Exp_ID = DPE.Experiment_ID
                              LEFT OUTER JOIN #Tmp_JobsToAddOrDelete ItemsQ
                                ON DPJ.Data_Pkg_ID = ItemsQ.DataPackageID AND
@@ -375,20 +375,20 @@ AS
                  LEFT OUTER JOIN (
                         -- Experiments associated with the data package; skipping any datasets that we're deleting
                         SELECT E.Experiment_Num AS Experiment,
-                               TD.Data_Pkg_ID
-                        FROM T_Data_Package_Datasets TD
+                               DPD.Data_Pkg_ID
+                        FROM T_Data_Package_Datasets DPD
                              INNER JOIN S_Dataset DS
-                               ON TD.Dataset_ID = DS.Dataset_ID
+                               ON DPD.Dataset_ID = DS.Dataset_ID
                              INNER JOIN S_Experiment_List E
                                ON DS.Exp_ID = E.Exp_ID
                              INNER JOIN T_Data_Package_Experiments DPE
-                               ON TD.Data_Pkg_ID = DPE.Data_Pkg_ID AND
+                               ON DPD.Data_Pkg_ID = DPE.Data_Pkg_ID AND
                                   E.Exp_ID = DPE.Experiment_ID
                              LEFT OUTER JOIN #TPI ItemsQ
-                               ON TD.Data_Pkg_ID = ItemsQ.DataPackageID AND
+                               ON DPD.Data_Pkg_ID = ItemsQ.DataPackageID AND
                                    ItemsQ.[Type] = 'Dataset' AND
                                    ItemsQ.Identifier = DS.Dataset_Num
-                        WHERE TD.Data_Pkg_ID IN (SELECT DISTINCT DataPackageID FROM #TPI) AND
+                        WHERE DPD.Data_Pkg_ID IN (SELECT DISTINCT DataPackageID FROM #TPI) AND
                               ItemsQ.Identifier IS NULL
                  ) AS ToKeep2
                    ON ToDelete.DataPackageID = ToKeep2.Data_Pkg_ID AND
@@ -417,17 +417,17 @@ AS
                  LEFT OUTER JOIN (
                         -- Biomaterial associated with the data package; skipping the jobs that we're deleting
                         SELECT DISTINCT BioList.CC_Name AS Biomaterial_Name,
-                                        TD.Data_Pkg_ID
+                                        DPD.Data_Pkg_ID
                         FROM T_Data_Package_Analysis_Jobs DPJ
-                             INNER JOIN T_Data_Package_Datasets TD
-                               ON DPJ.Data_Pkg_ID = TD.Data_Pkg_ID AND
-                                  DPJ.Dataset_ID = TD.Dataset_ID
+                             INNER JOIN T_Data_Package_Datasets DPD
+                               ON DPJ.Data_Pkg_ID = DPD.Data_Pkg_ID AND
+                                  DPJ.Dataset_ID = DPD.Dataset_ID
                              INNER JOIN S_Dataset DS
-                               ON TD.Dataset_ID = DS.Dataset_ID
+                               ON DPD.Dataset_ID = DS.Dataset_ID
                              INNER JOIN S_Experiment_List E
                                ON DS.Exp_ID = E.Exp_ID
                              INNER JOIN T_Data_Package_Experiments DPE
-                               ON TD.Data_Pkg_ID = DPE.Data_Pkg_ID AND
+                               ON DPD.Data_Pkg_ID = DPE.Data_Pkg_ID AND
                                   E.Exp_ID = DPE.Experiment_ID
                              INNER JOIN T_Data_Package_Biomaterial DPB
                                ON DPE.Data_Pkg_ID = DPB.Data_Pkg_ID
@@ -509,7 +509,7 @@ AS
         Begin -- <comment biomaterial>
             If @infoOnly > 0
             Begin
-                SELECT 'Update biomaterial comment' AS Item_Type,
+                SELECT 'Update biomaterial comment' AS Action,
                        @comment AS New_Comment,
                        DPB.*
                 FROM T_Data_Package_Biomaterial DPB
@@ -654,7 +654,7 @@ AS
         Begin -- <comment EUS Proposals>
             If @infoOnly > 0
             Begin
-                SELECT 'Update EUS Proposal comment' AS Item_Type,
+                SELECT 'Update EUS Proposal comment' AS Action,
                        @comment AS New_Comment,
                        DPP.*
                 FROM T_Data_Package_EUS_Proposals DPP
@@ -1063,7 +1063,7 @@ AS
         Begin -- <comment analysis_jobs>
             If @infoOnly > 0
             Begin
-                SELECT 'Update Job comment' AS Item_Type,
+                SELECT 'Update Job comment' AS Action,
                        @comment AS New_Comment,
                        DPJ.*
                 FROM T_Data_Package_Analysis_Jobs DPJ
