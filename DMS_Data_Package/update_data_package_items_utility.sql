@@ -55,6 +55,9 @@ CREATE PROCEDURE [dbo].[update_data_package_items_utility]
 **          07/07/2023 mem - Replace synonym S_V_Experiment_Detail_Report_Ex with S_V_Experiment_List_Report
 **          08/17/2023 mem - Use renamed column data_pkg_id in data package tables
 **          09/27/2023 mem - Resolve identifier names to IDs using tables in the DMS5 database
+**          09/28/2023 mem - Use the parent tables to obtain dataset and experiment names when previewing updates
+**                         - Get dataset names from T_Dataset instead of V_Dataset_List_Report_2
+**                         - Do not create an "item count updated" message if previewing updates
 **
 *****************************************************/
 (
@@ -1241,16 +1244,16 @@ AS
         -- Update the last modified date for affected data packages
         ---------------------------------------------------
 
-        if @itemCountChanged > 0
-        begin
+        If @itemCountChanged > 0
+        Begin
             UPDATE T_Data_Package
             SET Last_Modified = GETDATE()
             WHERE ID IN (
                 SELECT DISTINCT DataPackageID FROM #TPI
             )
-        end
+        End
 
-        If @message = ''
+        If @message = '' And @infoOnly = 0
         Begin
             Set @message = 'No items were updated'
 
