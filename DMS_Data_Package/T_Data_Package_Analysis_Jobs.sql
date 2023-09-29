@@ -6,10 +6,7 @@ GO
 CREATE TABLE [dbo].[T_Data_Package_Analysis_Jobs](
 	[Data_Pkg_ID] [int] NOT NULL,
 	[Job] [int] NOT NULL,
-	[Tool] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Dataset_ID] [int] NOT NULL,
-	[Dataset] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Created] [datetime] NULL,
 	[Item_Added] [datetime] NOT NULL,
 	[Package_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Data_Package_ID]  AS ([Data_Pkg_ID]),

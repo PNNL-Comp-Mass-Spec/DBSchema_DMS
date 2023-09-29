@@ -7,7 +7,6 @@ CREATE TABLE [dbo].[T_Data_Package_Experiments](
 	[Data_Pkg_ID] [int] NOT NULL,
 	[Experiment_ID] [int] NOT NULL,
 	[Experiment] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Created] [datetime] NULL,
 	[Item_Added] [datetime] NOT NULL,
 	[Package_Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Data_Package_ID]  AS ([Data_Pkg_ID]),
