@@ -79,7 +79,7 @@ AS
     Begin Try
 
         ---------------------------------------------------
-        --  Extract parameters from XML input
+        -- Extract parameters from XML input
         ---------------------------------------------------
 
         Set @CurrentLocation = 'Store @managerStatusXML in @paramXML'
@@ -277,7 +277,7 @@ AS
         ---------------------------------------------------
 
         Set @CurrentLocation = 'Update status for existing processors that have Remote_Manager defined'
-        
+
         -- First update managers with a Remote_Manager defined
         --
         UPDATE T_Processor_Status
@@ -363,7 +363,7 @@ AS
         ---------------------------------------------------
 
         Set @CurrentLocation = 'Add missing processors'
-        
+
         -- Add managers with a Remote_Manager defined
         --
         INSERT INTO T_Processor_Status (

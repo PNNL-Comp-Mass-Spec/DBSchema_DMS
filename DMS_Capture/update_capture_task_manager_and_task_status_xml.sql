@@ -76,7 +76,7 @@ AS
     Begin Try
 
         ---------------------------------------------------
-        --  Extract parameters from XML input
+        -- Extract parameters from XML input
         ---------------------------------------------------
 
         Set @CurrentLocation = 'Store @managerStatusXML in @paramXML'
