@@ -37,6 +37,8 @@ CREATE PROCEDURE [dbo].[update_manager_and_task_status_xml]
 **                         - Add argument @logProcessorNames
 **          08/14/2023 mem - Increase nvarchar() sizes used when parsing the XML
 **                         - Add argument @logStatusXML
+**          09/29/2023 mem - Increase nvarchar() sizes used when parsing the XML
+**                         - Update text in @CurrentLocation
 **
 *****************************************************/
 (
@@ -80,6 +82,8 @@ AS
         --  Extract parameters from XML input
         ---------------------------------------------------
 
+        Set @CurrentLocation = 'Store @managerStatusXML in @paramXML'
+
         Declare @paramXML xml
         Set @paramXML = @managerStatusXML
 
@@ -113,7 +117,7 @@ AS
             Process_ID varchar(50),             -- int
             ProgRunner_ProcessID varchar(50),   -- int
             ProgRunner_CoreUsage varchar(50),   -- real
-            Most_Recent_Error_Message varchar(1024),
+            Most_Recent_Error_Message varchar(2048),
             Step_Tool varchar(128),
             Task_Status varchar(50),
             Duration_Minutes varchar(50),       -- real
@@ -123,7 +127,7 @@ AS
             Job varchar(50),                    -- int
             Job_Step varchar(50),               -- int
             Dataset varchar(256),
-            Most_Recent_Log_Message varchar(1024),
+            Most_Recent_Log_Message varchar(2048),
             Most_Recent_Job_Info varchar(256),
             Spectrum_Count varchar(50),         -- int
             IsNew tinyint
@@ -134,7 +138,9 @@ AS
         ---------------------------------------------------
         -- Load status messages into temp table
         ---------------------------------------------------
-        --
+
+        Set @CurrentLocation = 'Populate temp table #TPS'
+
         INSERT INTO #TPS( Processor_Name,
                           Remote_Manager,
                           Mgr_Status,
@@ -165,10 +171,10 @@ AS
             xmlNode.value('data((Manager/MgrStatus)[1])', 'nvarchar(100)') Mgr_Status,
             xmlNode.value('data((Manager/LastUpdate)[1])', 'nvarchar(100)') Status_Date,
             xmlNode.value('data((Manager/LastStartTime)[1])', 'nvarchar(100)') Last_Start_Time,
-            xmlNode.value('data((Manager/CPUUtilization)[1])', 'nvarchar(50)') CPU_Utilization,
-            xmlNode.value('data((Manager/FreeMemoryMB)[1])', 'nvarchar(50)') Free_Memory_MB,
+            xmlNode.value('data((Manager/CPUUtilization)[1])', 'nvarchar(100)') CPU_Utilization,
+            xmlNode.value('data((Manager/FreeMemoryMB)[1])', 'nvarchar(100)') Free_Memory_MB,
 
-            xmlNode.value('data((Manager/ProcessID)[1])', 'nvarchar(50)') Process_ID,
+            xmlNode.value('data((Manager/ProcessID)[1])', 'nvarchar(100)') Process_ID,
             xmlNode.value('data((Manager/ProgRunnerProcessID)[1])', 'nvarchar(50)') ProgRunner_ProcessID,
             xmlNode.value('data((Manager/ProgRunnerCoreUsage)[1])', 'nvarchar(50)') ProgRunner_CoreUsage,
 
@@ -176,15 +182,15 @@ AS
 
             xmlNode.value('data((Task/Tool)[1])', 'nvarchar(256)') Step_Tool,
             xmlNode.value('data((Task/Status)[1])', 'nvarchar(100)') Task_Status,
-            xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(50)') Duration_Minutes,
-            xmlNode.value('data((Task/Progress)[1])', 'nvarchar(50)') Progress,
+            xmlNode.value('data((Task/DurationMinutes)[1])', 'nvarchar(100)') Duration_Minutes,
+            xmlNode.value('data((Task/Progress)[1])', 'nvarchar(100)') Progress,
             xmlNode.value('data((Task/CurrentOperation)[1])', 'nvarchar(512)') Current_Operation,
 
             xmlNode.value('data((Task/TaskDetails/Status)[1])', 'nvarchar(100)') Task_Detail_Status,
             xmlNode.value('data((Task/TaskDetails/Job)[1])', 'nvarchar(50)') Job,
             xmlNode.value('data((Task/TaskDetails/Step)[1])', 'nvarchar(50)') Job_Step,
             xmlNode.value('data((Task/TaskDetails/Dataset)[1])', 'nvarchar(512)') Dataset,
-            xmlNode.value('data((Task/TaskDetails/MostRecentLogMessage)[1])', 'nvarchar(2048)') Most_Recent_Log_Message,
+            xmlNode.value('data((Task/TaskDetails/MostRecentLogMessage)[1])', 'nvarchar(4000)') Most_Recent_Log_Message,
             xmlNode.value('data((Task/TaskDetails/MostRecentJobInfo)[1])', 'nvarchar(512)') Most_Recent_Job_Info ,
             xmlNode.value('data((Task/TaskDetails/SpectrumCount)[1])', 'nvarchar(50)') Spectrum_Count,
             1 AS IsNew
@@ -234,6 +240,8 @@ AS
         -- 2017-07-06T08:27:52Z
         ---------------------------------------------------
 
+        Set @CurrentLocation = 'Populate columns Status_Date_Value and Last_Start_Time_Value'
+
         -- Compute the difference for our time zone vs. UTC
         --
         Declare @hourOffset INT
@@ -268,6 +276,8 @@ AS
         -- Update status for existing processors
         ---------------------------------------------------
 
+        Set @CurrentLocation = 'Update status for existing processors that have Remote_Manager defined'
+        
         -- First update managers with a Remote_Manager defined
         --
         UPDATE T_Processor_Status
@@ -296,6 +306,8 @@ AS
         End
 
         Set @statusMessages = @statusMessages + ', PreservedA:' + Cast(@myRowCount as varchar(12))
+
+        Set @CurrentLocation = 'Update status for existing processors that do not contact a remote manager'
 
         -- Next update managers where Remote_Manager is empty
         --
@@ -350,6 +362,8 @@ AS
         -- Add missing processors to T_Processor_Status
         ---------------------------------------------------
 
+        Set @CurrentLocation = 'Add missing processors'
+        
         -- Add managers with a Remote_Manager defined
         --
         INSERT INTO T_Processor_Status (
@@ -467,6 +481,8 @@ AS
             Declare @updatedProcessors varchar(4096)
             Declare @logMessage varchar(4096)
             Declare @runningTaskIndex int
+
+            Set @CurrentLocation = 'Log status messages'
 
             If @logProcessorNames > 0
             Begin
