@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 409 ******/
+/****** RowCount: 417 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -410,4 +410,12 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1407,'OHSU_mac_Plate3','OHSU_mac Digested Peptides - Plate 3','7/18/2023 1:25:45 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1408,'OHSU_mac_Plate4','OHSU_mac Digested Peptides - Plate 4','7/18/2023 1:25:52 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1409,'OHSU_mac_Plate5','OHSU_mac Digested Peptides - Plate 5','7/18/2023 1:25:58 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1410,'Exo_Laurent_Plate1','Timecourse, Non-Pregnant Plasma 200 ug','9/25/2023 10:40:37 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1411,'Exo_Laurent_Plate2','PES, Non-Pregnant Plasma >50 ug','9/25/2023 10:40:56 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1412,'Exo_Laurent_Plate3','SEC-Izon-DiFi Peptide plate','9/25/2023 10:49:48 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1413,'A2CPS_Plate10','A2CPS Digested Peptides - Plate 10','9/25/2023 12:34:14 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1414,'A2CPS_Plate11','A2CPS Digested Peptides - Plate 11','9/25/2023 12:34:21 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1415,'A2CPS_Plate12','A2CPS Digested Peptides - Plate 12','9/25/2023 12:34:29 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1416,'A2CPS_Plate13','A2CPS Digested Peptides - Plate 13','9/25/2023 12:34:36 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1417,'A2CPS_Plate14','A2CPS Digested Peptides - Plate 14','9/25/2023 12:34:43 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF
