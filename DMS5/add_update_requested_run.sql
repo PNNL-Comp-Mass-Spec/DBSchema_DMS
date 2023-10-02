@@ -12,41 +12,41 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   01/11/2002
-**          02/15/2003
-**          12/05/2003 grk - added wellplate stuff
-**          01/05/2004 grk - added internal standard stuff
-**          03/01/2004 grk - added manual identity calculation (removed identity column)
-**          03/10/2004 grk - repaired manual identity calculation to include history table
-**          07/15/2004 grk - added verification of experiment location aux info
-**          11/26/2004 grk - changed type of @comment from text to varchar
-**          01/12/2004 grk - fixed null return on check existing when table is empty
+**  Date:   01/11/2002 grk - Initial version
+**          02/15/2003 grk
+**          12/05/2003 grk - Added wellplate stuff
+**          01/05/2004 grk - Added internal standard stuff
+**          03/01/2004 grk - Added manual identity calculation (removed identity column)
+**          03/10/2004 grk - Repaired manual identity calculation to include history table
+**          07/15/2004 grk - Added verification of experiment location aux info
+**          11/26/2004 grk - Changed type of @comment from text to varchar
+**          01/12/2004 grk - Fixed null return on check existing when table is empty
 **          10/12/2005 grk - Added stuff for new work package and proposal fields.
 **          02/21/2006 grk - Added stuff for EUS proposal and user tracking.
 **          11/09/2006 grk - Fixed error message handling (Ticket #318)
-**          01/12/2007 grk - added verification mode
-**          01/31/2007 grk - added verification for @requestorUsername (Ticket #371)
-**          03/19/2007 grk - added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
-**          04/25/2007 grk - get new ID from UDF (Ticket #446)
-**          04/30/2007 grk - added better name validation (Ticket #450)
-**          07/11/2007 grk - factored out EUS proposal validation (Ticket #499)
-**          07/11/2007 grk - modified to look up EUS fields from sample prep request (Ticket #499)
+**          01/12/2007 grk - Added verification mode
+**          01/31/2007 grk - Added verification for @requestorUsername (Ticket #371)
+**          03/19/2007 grk - Added @defaultPriority (Ticket #421) (set it back to 0 on 04/25/2007)
+**          04/25/2007 grk - Get new ID from UDF (Ticket #446)
+**          04/30/2007 grk - Added better name validation (Ticket #450)
+**          07/11/2007 grk - Factored out EUS proposal validation (Ticket #499)
+**          07/11/2007 grk - Modified to look up EUS fields from sample prep request (Ticket #499)
 **          07/17/2007 grk - Increased size of comment field (Ticket #500)
 **          07/30/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
-**          09/06/2007 grk - factored out instrument name and dataset type validation to ValidateInstrumentAndDatasetType (Ticket #512)
-**          09/06/2007 grk - added call to lookup_instrument_run_info_from_experiment_sample_prep (Ticket #512)
+**          09/06/2007 grk - Factored out instrument name and dataset type validation to ValidateInstrumentAndDatasetType (Ticket #512)
+**          09/06/2007 grk - Added call to lookup_instrument_run_info_from_experiment_sample_prep (Ticket #512)
 **          09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **          02/13/2008 mem - Now checking for @badCh = '[space]' (Ticket #602)
 **          04/09/2008 grk - Added secondary separation field (Ticket #658)
 **          03/26/2009 grk - Added MRM transition list attachment (Ticket #727)
-**          06/03/2009 grk - look up work package (Ticket #739)
-**          07/27/2009 grk - added lookup for wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
-**          02/28/2010 grk - added add-auto mode
-**          03/02/2010 grk - added status field to requested run
-**          03/10/2010 grk - fixed issue with status validation
-**          03/27/2010 grk - fixed problem creating new requests with "Completed" status.
-**          04/20/2010 grk - fixed problem with experiment lookup validation
-**          04/21/2010 grk - try-catch for error handling
+**          06/03/2009 grk - Look up work package (Ticket #739)
+**          07/27/2009 grk - Added lookup for wellplate and well fields (http://prismtrac.pnl.gov/trac/ticket/741)
+**          02/28/2010 grk - Added add-auto mode
+**          03/02/2010 grk - Added status field to requested run
+**          03/10/2010 grk - Fixed issue with status validation
+**          03/27/2010 grk - Fixed problem creating new requests with "Completed" status.
+**          04/20/2010 grk - Fixed problem with experiment lookup validation
+**          04/21/2010 grk - Try-catch for error handling
 **          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @requestorUsername contains a person's real name rather than their username
 **          08/27/2010 mem - Now auto-switching @instrumentName to be instrument group instead of instrument name
 **          09/01/2010 mem - Added parameter @SkipTransactionRollback
@@ -198,7 +198,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Validate input fields'
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     If IsNull(@requestName, '') = ''
@@ -429,7 +429,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Call get_user_id for ' + @requesterUsername
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @userID int
@@ -452,7 +452,7 @@ AS
         Declare @matchCount int
         Declare @newUsername varchar(64)
 
-        exec auto_resolve_name_to_username @requesterUsername, @matchCount output, @newUsername output, @userID output
+        Exec auto_resolve_name_to_username @requesterUsername, @matchCount output, @newUsername output, @userID output
 
         If @matchCount = 1
         Begin
@@ -474,10 +474,10 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'lookup_instrument_run_info_from_experiment_sample_prep for ' + @experimentName
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
-    exec @myError = lookup_instrument_run_info_from_experiment_sample_prep
+    Exec @myError = lookup_instrument_run_info_from_experiment_sample_prep
                         @experimentName,
                         @instrumentGroup output,
                         @msType output,
@@ -507,12 +507,12 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'validate_instrument_group_and_dataset_type for ' + @msType
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @datasetTypeID int
     --
-    exec @myError = validate_instrument_group_and_dataset_type
+    Exec @myError = validate_instrument_group_and_dataset_type
                             @msType,
                             @instrumentGroup output,
                             @datasetTypeID output,
@@ -528,7 +528,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Resolve separation group: ' + @separationGroup
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @sepID int = 0
@@ -590,10 +590,10 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Lookup EUS info for: ' + @experimentName
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
     --
-    exec @myError = lookup_eus_from_experiment_sample_prep
+    Exec @myError = lookup_eus_from_experiment_sample_prep
                         @experimentName,
                         @eusUsageType output,
                         @eusProposalID output,
@@ -619,7 +619,7 @@ AS
             'proposal ' + IsNull(@eusProposalID, '?Null?') + ', and ' +
             'user list ' + IsNull(@eusUsersList, '?Null?')
 
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     -- Note that if @eusUsersList contains a list of names in the form "Baker, Erin (41136)",
@@ -638,7 +638,7 @@ AS
         Set @addingItem = 1
     End
 
-    exec @myError = validate_eus_usage
+    Exec @myError = validate_eus_usage
                         @eusUsageType output,
                         @eusProposalID output,
                         @eusUsersList output,
@@ -683,10 +683,10 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Lookup misc fields for the experiment'
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
-    exec @myError = lookup_other_from_experiment_sample_prep
+    Exec @myError = lookup_other_from_experiment_sample_prep
                         @experimentName,
                         @workPackage output,
                         @msg output
@@ -736,7 +736,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Validate the WP'
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     Declare @allowNoneWP tinyint = @autoPopulateUserListIfBlank
@@ -756,7 +756,7 @@ AS
         Set @allowNoneWP = 1
     End
 
-    exec @myError = validate_wp
+    Exec @myError = validate_wp
                         @workPackage,
                         @allowNoneWP,
                         @msg output
@@ -789,7 +789,7 @@ AS
     If @logDebugMessages > 0
     Begin
         Set @debugMsg = 'Start a new transaction'
-        exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+        Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
     End
 
     ---------------------------------------------------
@@ -878,7 +878,7 @@ AS
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Call assign_eus_users_to_requested_run'
-            exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+            Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
         End
 
         -- assign users to the request
@@ -899,13 +899,13 @@ AS
         Else
         Begin
             Set @debugMsg = '@@trancount is 0; this is unexpected'
-            exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run'
+            Exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run'
         End
 
         If @logDebugMessages > 0
         Begin
             Set @debugMsg = 'Transaction committed'
-            exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
+            Exec post_log_entry 'Debug', @debugMsg, 'add_update_requested_run'
         End
 
         If @status = 'Active'
@@ -971,7 +971,7 @@ AS
 
         -- assign users to the request
         --
-        exec @myError = assign_eus_users_to_requested_run
+        Exec @myError = assign_eus_users_to_requested_run
                                 @requestID,
                                 @eusProposalID,
                                 @eusUsersList,
@@ -987,7 +987,7 @@ AS
         Else
         Begin
             Set @debugMsg = '@@trancount is 0; this is unexpected'
-            exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run'
+            Exec post_log_entry 'Error', @debugMsg, 'add_update_requested_run'
         End
 
         -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
@@ -1016,7 +1016,7 @@ AS
 
     END TRY
     BEGIN CATCH
-        EXEC format_error_message @message output, @myError output
+        Exec format_error_message @message output, @myError output
 
         -- rollback any open transactions
         If (XACT_STATE()) <> 0 And IsNull(@skipTransactionRollback, 0) = 0
@@ -1025,12 +1025,12 @@ AS
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1500) = @message + '; Req Name ' + @requestName
-            exec post_log_entry 'Error', @logMessage, 'add_update_requested_run'
+            Exec post_log_entry 'Error', @logMessage, 'add_update_requested_run'
         End
 
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run] TO [DDL_Viewer] AS [dbo]
