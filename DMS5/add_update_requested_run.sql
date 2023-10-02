@@ -106,6 +106,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          10/02/2023 mem - Use @requestID when calling update_cached_requested_run_eus_users
 **
 *****************************************************/
 (
@@ -869,10 +870,12 @@ AS
 
         Set @request = SCOPE_IDENTITY()
 
+        Set @requestID = @request
+
         -- If @callingUser is defined, then call alter_event_log_entry_user to alter the Entered_By field in T_Event_Log
         If Len(@callingUser) > 0
         Begin
-            Exec alter_event_log_entry_user 11, @request, @statusID, @callingUser
+            Exec alter_event_log_entry_user 11, @requestID, @statusID, @callingUser
         End
 
         If @logDebugMessages > 0
@@ -883,8 +886,8 @@ AS
 
         -- assign users to the request
         --
-        exec @myError = assign_eus_users_to_requested_run
-                                @request,
+        Exec @myError = assign_eus_users_to_requested_run
+                                @requestID,
                                 @eusProposalID,
                                 @eusUsersList,
                                 @msg output
@@ -911,7 +914,7 @@ AS
         If @status = 'Active'
         Begin
             -- Add a new row to T_Active_Requested_Run_Cached_EUS_Users
-            exec update_cached_requested_run_eus_users @request
+            Exec update_cached_requested_run_eus_users @requestID
         End
 
     End -- </add>
@@ -991,11 +994,11 @@ AS
         End
 
         -- Make sure that T_Active_Requested_Run_Cached_EUS_Users is up-to-date
-        exec update_cached_requested_run_eus_users @request
+        Exec update_cached_requested_run_eus_users @requestID
 
         If @batch = 0 And @currentBatch <> 0
         Begin
-            Set @msg = 'Removed request ' + Cast(@request As Varchar(12)) + ' from batch ' + Cast(@currentBatch As Varchar(12))
+            Set @msg = 'Removed request ' + Cast(@requestID As Varchar(12)) + ' from batch ' + Cast(@currentBatch As Varchar(12))
             Set @message = dbo.append_to_text(@message, @msg, 0, '; ', 1024)
         End
     End -- </update>
