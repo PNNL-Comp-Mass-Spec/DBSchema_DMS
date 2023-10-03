@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_list_for_data_package]
 **                         - Add argument @debugMode
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Rename column in temp table
+**          10/03/2023 mem - Obtain dataset name from S_Dataset since the name in S_Data_Package_Datasets is a cached name and could be an old dataset name
 **
 *****************************************************/
 (
@@ -68,9 +69,11 @@ AS
     ---------------------------------------------------
     --
     INSERT INTO #TmpDatasets (Dataset_Name)
-    SELECT Dataset
-    FROM dbo.S_Data_Package_Datasets
-    WHERE Data_Package_ID = @dataPackageID
+    SELECT DS.Dataset_Num
+    FROM S_Data_Package_Datasets AS TPKG
+         INNER JOIN S_Dataset DS
+           ON TPKG.Dataset_ID = DS.Dataset_ID
+    WHERE TPKG.Data_Package_ID = @dataPackageID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -87,6 +90,6 @@ AS
                         @message = @message output,
                         @showDebug = 0
 
-    return @myError
+    Return @myError
 
 GO

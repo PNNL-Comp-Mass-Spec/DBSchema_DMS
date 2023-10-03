@@ -38,6 +38,8 @@ CREATE PROCEDURE [dbo].[validate_data_package_for_mac_job]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/27/2023 mem - Add support for DiaNN
 **          07/25/2023 mem - Use new column name in S_DMS_V_Analysis_Job_Info
+**          10/03/2023 mem - Obtain dataset name from S_DMS_V_Analysis_Job_Info since it is no longer in S_Data_Package_Analysis_Jobs
+**                         - Obtain dataset name from S_Dataset since the name in S_Data_Package_Datasets is a cached name and could be an old dataset name
 **
 *****************************************************/
 (
@@ -79,10 +81,12 @@ AS
 
         INSERT INTO #Tmp_DataPackageItems( Dataset_ID,
                                            Dataset )
-        SELECT DISTINCT Dataset_ID,
-                        Dataset
+        SELECT DISTINCT DS.Dataset_ID,
+                        DS.Dataset_Num
         FROM S_Data_Package_Datasets AS TPKG
-        WHERE (TPKG.Data_Package_ID = @dataPackageID)
+             INNER JOIN S_Dataset DS
+               ON TPKG.Dataset_ID = DS.Dataset_ID
+        WHERE TPKG.Data_Package_ID = @dataPackageID
 
         ---------------------------------------------------
         -- Determine job counts per dataset for required tools
@@ -97,16 +101,16 @@ AS
         FROM #Tmp_DataPackageItems INNER JOIN
         (
             SELECT
-                TPKG.Dataset,
-                SUM(CASE WHEN TPKG.Tool = 'Decon2LS_V2' THEN 1 ELSE 0 END) AS Decon2LS_V2,
-                SUM(CASE WHEN TPKG.Tool = 'MASIC_Finnigan' AND TD.Param_File LIKE '%ReporterTol%' THEN 1 ELSE 0 END) AS MASIC,
-                SUM(CASE WHEN TPKG.Tool LIKE 'MSGFPlus%' THEN 1 ELSE 0 END) AS MSGFPlus,
-                SUM(CASE WHEN TPKG.Tool LIKE 'SEQUEST%' THEN 1 ELSE 0 END) AS SEQUEST
+                TD.Dataset,
+                SUM(CASE WHEN TD.Tool = 'Decon2LS_V2' THEN 1 ELSE 0 END) AS Decon2LS_V2,
+                SUM(CASE WHEN TD.Tool = 'MASIC_Finnigan' AND TD.Param_File LIKE '%ReporterTol%' THEN 1 ELSE 0 END) AS MASIC,
+                SUM(CASE WHEN TD.Tool LIKE 'MSGFPlus%' THEN 1 ELSE 0 END) AS MSGFPlus,
+                SUM(CASE WHEN TD.Tool LIKE 'SEQUEST%' THEN 1 ELSE 0 END) AS SEQUEST
             FROM S_Data_Package_Analysis_Jobs AS TPKG
                  INNER JOIN S_DMS_V_Analysis_Job_Info AS TD
                    ON TPKG.Job = TD.Job
-            WHERE   ( TPKG.Data_Package_ID = @dataPackageID )
-            GROUP BY TPKG.Dataset
+            WHERE TPKG.Data_Package_ID = @dataPackageID
+            GROUP BY TD.Dataset
         ) TargetTable ON #Tmp_DataPackageItems.Dataset = TargetTable.Dataset
 
 
@@ -236,7 +240,7 @@ AS
 
     End Catch
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_data_package_for_mac_job] TO [DDL_Viewer] AS [dbo]
