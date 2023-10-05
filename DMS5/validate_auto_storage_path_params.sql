@@ -6,16 +6,26 @@ GO
 CREATE PROCEDURE [dbo].[validate_auto_storage_path_params]
 /****************************************************
 **
-**  Desc:   Validates that the Auto storage path parameters are correct
+**  Desc:
+**      Validates that the Auto storage path parameters are correct
+**      Raises an error using RAISERROR('...', 11) if there is a problem (this will cause an exception to be thrown)
 **
-**  Returns: The storage path ID; 0 if an error
+**  Arguments:
+**    @autoDefineStoragePath        When 1, storage paths are auto-defined for the given instrument
+**    @autoSPVolNameClient          Storage server name,                                     e.g. \\proto-8\
+**    @autoSPVolNameServer          Drive letter on storage server (local to server itself), e.g. F:\
+**    @autoSPPathRoot               Storage path (share name) on storage server,             e.g. Lumos01\
+**    @autoSPArchiveServerName      Archive server name           (validated, but obsolete), e.g. agate.emsl.pnl.gov
+**    @autoSPArchivePathRoot        Storage path on EMSL archive  (validated, but obsolete), e.g. /archive/dmsarch/Lumos01
+**    @autoSPArchiveSharePathRoot   Archive share path            (validated, but obsolete), e.g. \\agate.emsl.pnl.gov\dmsarch\Lumos01
 **
 **  Auth:   mem
 **  Date:   05/13/2011 mem - Initial version
-**          07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov\archive\dmsarch\
-**          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov\dmsarch\
+**          07/05/2016 mem - Archive path is now \\aurora.emsl.pnl.gov\archive\dmsarch\
+**          09/02/2016 mem - Archive path is now \\adms.emsl.pnl.gov\dmsarch\
 **          09/08/2020 mem - When @AutoDefineStoragePath is positive, raise an error if any of the paths are \ or /
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/05/2023 mem - Archive path is now \\agate.emsl.pnl.gov\dmsarch\  (only used for accessing files added to the archive before MyEMSL)
 **
 *****************************************************/
 (
@@ -74,17 +84,17 @@ AS
     If @AutoSPArchivePathRoot <> ''
     Begin
         If @AutoSPArchivePathRoot Not Like '/%'
-            RAISERROR ('Auto Storage Archive Path Root should be a linux path, for example: /archive/dmsarch/Broad_Orb1', 11, 4)
+            RAISERROR ('Auto Storage Archive Path Root should be a linux path, for example: /archive/dmsarch/VOrbiETD01', 11, 4)
 
     End
 
     If @AutoSPArchiveSharePathRoot <> ''
     Begin
         If @AutoSPArchiveSharePathRoot Not Like '\\%'
-            RAISERROR ('Auto Storage Archive Share Path Root should be a network share, for example: \\adms.emsl.pnl.gov\dmsarch\VOrbiETD01', 11, 4)
+            RAISERROR ('Auto Storage Archive Share Path Root should be a network share, for example: \\agate.emsl.pnl.gov\dmsarch\VOrbiETD01', 11, 4)
     End
 
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_auto_storage_path_params] TO [DDL_Viewer] AS [dbo]

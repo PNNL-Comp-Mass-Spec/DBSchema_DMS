@@ -45,6 +45,7 @@ CREATE PROCEDURE [dbo].[add_new_instrument]
 **          04/19/2023 mem - Change severity level from 10 to 11 for RAISERROR() calls
 **          07/18/2023 mem - Expand @description to varchar(255)
 **          09/01/2023 mem - Expand @instrumentName to varchar(64), @description to varchar(1024), and @usage to varchar(128)
+**          10/05/2023 mem - Archive path is now agate.emsl.pnl.gov
 **
 *****************************************************/
 (
@@ -134,7 +135,7 @@ AS
     ---------------------------------------------------
     --
     Declare @archiveNetworkSharePath varchar(128)
-    Set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'adms.emsl.pnl.gov'), '/', '\')
+    Set @archiveNetworkSharePath = '\' + REPLACE(REPLACE(@archivePath, 'archive', 'agate.emsl.pnl.gov'), '/', '\')
 
     ---------------------------------------------------
     -- Resolve Yes/No parameters to 0 or 1

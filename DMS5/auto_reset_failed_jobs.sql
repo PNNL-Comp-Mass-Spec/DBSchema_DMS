@@ -40,6 +40,7 @@ CREATE PROCEDURE [dbo].[auto_reset_failed_jobs]
 **          09/05/2017 mem - Check for Mz_Refinery reporting Not enough free memory
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/05/2023 mem - Switch the archive server path from \\adms to \\agate
 **
 *****************************************************/
 (
@@ -350,7 +351,9 @@ AS
                         If @RetryJob = 0 And @RetryCount < 5
                         Begin
                             -- Check for file copy errors from the Archive
-                            If @Comment Like '%Error copying file \\adms%' Or
+                            If @Comment Like '%Error copying file \\agate%' Or
+                               @Comment Like '%Error copying file \\adms%' Or
+                               @Comment Like '%File not found: \\agate%' Or
                                @Comment Like '%File not found: \\adms%' Or
                                @Comment Like '%Error copying %dta.zip%' Or
                                @Comment Like '%Source dataset file file not found%'
@@ -511,7 +514,7 @@ AS
         Exec post_log_entry 'Error', @message, 'auto_reset_failed_jobs'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[auto_reset_failed_jobs] TO [DDL_Viewer] AS [dbo]

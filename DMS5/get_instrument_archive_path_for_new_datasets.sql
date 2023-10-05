@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[get_instrument_archive_path_for_new_datasets]
 **          07/05/2016 mem - Archive path is now aurora.emsl.pnl.gov
 **          09/02/2016 mem - Archive path is now adms.emsl.pnl.gov
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/05/2023 mem - Archive path is now agate.emsl.pnl.gov
 **
 *****************************************************/
 (
@@ -217,7 +218,7 @@ AS
     --
     Set @ArchivePathID = IsNull(@ArchivePathID, 0)
 
-    return @ArchivePathID
+    Return @ArchivePathID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_instrument_archive_path_for_new_datasets] TO [DDL_Viewer] AS [dbo]

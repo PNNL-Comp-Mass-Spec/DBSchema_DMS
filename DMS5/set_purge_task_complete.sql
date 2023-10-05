@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[set_purge_task_complete]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **          06/21/2023 mem - Remove parameter @pushDatasetToMyEMSL in call to s_make_new_archive_update_task
+**          10/05/2023 mem - Archive path is now agate.emsl.pnl.gov
 **
 *****************************************************/
 (
@@ -204,7 +205,7 @@ AS
         goto SetStates
     End
 
-    -- (Dataset folder missing in archive, either in MyEMSL or at \\adms.emsl.pnl.gov\dmsarch)
+    -- (Dataset folder missing in archive, either in MyEMSL or at \\agate.emsl.pnl.gov\dmsarch)
     If @completionCode = 7
     Begin
         set @message = 'Dataset folder not found in archive or in MyEMSL; most likely a MyEMSL timeout, but could be a permissions error; dataset ' + @datasetName
@@ -215,7 +216,7 @@ AS
         goto SetStates
     End
 
-    -- (Archive is offline (Aurora is offline): \\adms.emsl.pnl.gov\dmsarch)
+    -- (Archive is offline (Aurora is offline): \\agate.emsl.pnl.gov\dmsarch)
     If @completionCode = 8
     Begin
         set @message = 'Archive is offline; cannot purge dataset ' + @datasetName
