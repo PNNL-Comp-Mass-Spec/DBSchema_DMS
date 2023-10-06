@@ -7,7 +7,8 @@ CREATE PROCEDURE [dbo].[add_update_instrument]
 /****************************************************
 **
 **  Desc:
-**      Edits existing Instrument
+**      Edits an existing instrument (the only supported value for _mode is 'update')
+**      To add a new instrument, use procedure add_new_instrument
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -33,6 +34,7 @@ CREATE PROCEDURE [dbo].[add_update_instrument]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/01/2023 mem - Expand @instrumentName to varchar(64), @description to varchar(1024), and @usage to varchar(128)
 **          10/05/2023 mem - Make @instrumentID an input parameter
+**                         - Do not allow renaming the instrument with this procedure
 **
 *****************************************************/
 (
@@ -160,7 +162,7 @@ AS
     Begin
 
         UPDATE T_Instrument_Name
-        SET IN_name = @instrumentName,
+        SET -- IN_name = @instrumentName,       -- If an instrument needs to be renamed, manually update table t_instrument_name
             IN_class = @instrumentClass,
             IN_Group = @instrumentGroup,
             IN_capture_method = @captureMethod,
@@ -180,7 +182,7 @@ AS
             Auto_SP_Archive_Server_Name = @autoSPArchiveServerName,
             Auto_SP_Archive_Path_Root = @autoSPArchivePathRoot,
             Auto_SP_Archive_Share_Path_Root = @autoSPArchiveSharePathRoot
-        WHERE (Instrument_ID = @instrumentID)
+        WHERE Instrument_ID = @instrumentID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount;
         --
