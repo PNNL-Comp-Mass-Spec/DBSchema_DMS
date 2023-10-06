@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[add_update_instrument]
 **          09/01/2023 mem - Expand @instrumentName to varchar(64), @description to varchar(1024), and @usage to varchar(128)
 **          10/05/2023 mem - Make @instrumentID an input parameter
 **                         - Do not allow renaming the instrument with this procedure
+**                         - Validate instrument name specified by @instrumentName vs. the instrument name associated with @instrumentID
 **
 *****************************************************/
 (
@@ -98,7 +99,7 @@ AS
 
     If @percentEMSLOwnedVal Is Null Or @percentEMSLOwnedVal < 0 Or @percentEMSLOwnedVal > 100
     Begin;
-        THROW 51001, 'Percent EMSL Owned should be a number between 0 and 100', 1
+        THROW 51001, 'Percent EMSL Owned should be a number between 0 and 100', 1;
     End;
 
     ---------------------------------------------------
@@ -107,20 +108,27 @@ AS
 
     If @mode = 'update'
     Begin
-        -- cannot update a non-existent entry
-        --
-        Declare @tmp int
-        Set @tmp = 0
-        --
-        SELECT @tmp = Instrument_ID
-        FROM  T_Instrument_Name
-        WHERE (IN_name = @instrumentName)
+        -- Cannot update a non-existent entry
+
+        Declare @existingName varchar(64)
+        Declare @msg varchar(256)
+
+        SELECT @existingName = IN_Name
+        FROM t_instrument_name
+        WHERE Instrument_ID = @instrumentID;
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount;
-        --
-        If @myError <> 0 OR @tmp = 0
+
+        If @myRowCount = 0 OR @myError <> 0
         Begin;
-            THROW 51002, 'No entry could be found in database for update', 1
+            Set @msg = 'No entry could be found in database for instrument ID ' + Cast(@instrumentID AS varchar(12));
+            THROW 51002, @msg, 1;
+        End;
+
+        If @existingName <> @instrumentName
+        Begin;
+            Set @msg = 'Instrument ID ' + Cast(@instrumentID AS varchar(12)) + ' is instrument "' + @existingName + '", which does not match the name specified by @instrumentName ("' + @instrumentName + '")';
+            THROW 51003, @msg, 1;
         End;
     End
 
@@ -131,16 +139,17 @@ AS
     ---------------------------------------------------
     --
     Declare @valTrackUsageWhenInactive tinyint = dbo.boolean_text_to_tinyint(@trackUsageWhenInactive)
-    Declare @valScanSourceDir tinyint = dbo.boolean_text_to_tinyint(@scanSourceDir)
-    Declare @valAutoDefineStoragePath tinyint = dbo.boolean_text_to_tinyint(@autoDefineStoragePath)
+    Declare @valScanSourceDir tinyint          = dbo.boolean_text_to_tinyint(@scanSourceDir)
+    Declare @valAutoDefineStoragePath tinyint  = dbo.boolean_text_to_tinyint(@autoDefineStoragePath)
 
     ---------------------------------------------------
-    -- Validate the @autoSP parameteres
+    -- Validate the @autoSP parameters
+    -- Procedure validate_auto_storage_path_params will raise an exception using RAISERROR if there is a problem
     ---------------------------------------------------
 
-    exec @myError = validate_auto_storage_path_params  @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
-                                                   @autoSPPathRoot, @autoSPArchiveServerName,
-                                                   @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
+    exec @myError = validate_auto_storage_path_params @valAutoDefineStoragePath, @autoSPVolNameClient, @autoSPVolNameServer,
+                                                      @autoSPPathRoot, @autoSPArchiveServerName,
+                                                      @autoSPArchivePathRoot, @autoSPArchiveSharePathRoot
 
     If @myError <> 0
         return @myError;
@@ -151,7 +160,7 @@ AS
     If @mode = 'add'
     Begin;
         Set @logErrors = 0;
-        THROW 51003, 'The "add" instrument mode is disabled for this page; instead, use https://dms2.pnl.gov/new_instrument/create', 1
+        THROW 51004, 'The "add" instrument mode is disabled for this page; instead, use https://dms2.pnl.gov/new_instrument/create', 1;
     End;
 
     ---------------------------------------------------
@@ -188,10 +197,10 @@ AS
         --
         If @myError <> 0
         Begin;
-            THROW 51004, 'Update operation failed', 1
+            THROW 51005, 'Update operation failed', 1;
         End;
 
-    End -- update mode
+    End
 
     END Try
     BEGIN CATCH
