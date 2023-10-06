@@ -32,10 +32,11 @@ CREATE PROCEDURE [dbo].[add_update_instrument]
 **          05/28/2019 mem - Add parameter @trackUsageWhenInactive
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/01/2023 mem - Expand @instrumentName to varchar(64), @description to varchar(1024), and @usage to varchar(128)
+**          10/05/2023 mem - Make @instrumentID an input parameter
 **
 *****************************************************/
 (
-    @instrumentID int Output,
+    @instrumentID int,
     @instrumentName varchar(64),
     @instrumentClass varchar(32),
     @instrumentGroup varchar(64),
