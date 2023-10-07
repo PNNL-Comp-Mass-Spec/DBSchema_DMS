@@ -63,7 +63,7 @@ AS
 
 
     ------------------------------------------------
-    -- Add new datasets to T_Cached_Dataset_Folder_Paths
+    -- Add new datasets to T_Cached_Dataset_Instruments
     ------------------------------------------------
     --
     If @processingMode = 0 Or @infoOnly > 0
@@ -85,7 +85,7 @@ AS
                  LEFT OUTER JOIN T_Cached_Dataset_Instruments CachedInst
                    ON DS.Dataset_ID = CachedInst.Dataset_ID
             WHERE CachedInst.Dataset_ID IS Null
-            Order By DS.Dataset_ID
+            ORDER BY DS.Dataset_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -144,12 +144,12 @@ AS
                    ON t.Dataset_ID = s.Dataset_ID
             WHERE t.[Instrument_ID] <> s.[Instrument_ID] OR
                   t.[Instrument] <> s.[Instrument]
-            Order By t.Dataset_ID
+            ORDER BY t.Dataset_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount = 0
-                Select 'No data in T_Cached_Dataset_Instruments needs to be updated' As Status
+                SELECT 'No data in T_Cached_Dataset_Instruments needs to be updated' As Status
 
         End
         Else
@@ -191,7 +191,7 @@ AS
 
 Done:
     -- Exec post_log_entry 'Debug', @message, 'update_cached_dataset_instruments'
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_cached_dataset_instruments] TO [DDL_Viewer] AS [dbo]
