@@ -6,8 +6,16 @@ GO
 CREATE PROCEDURE [dbo].[update_cached_dataset_links]
 /****************************************************
 **
-**  Desc:   Updates T_Cached_Dataset_Links, which is used by the
-**          Dataset Detail Report view (V_Dataset_Detail_Report_Ex)
+**  Desc:
+**      Updates T_Cached_Dataset_Links, which is used by the dataset detail report view (V_Dataset_Detail_Report_Ex)
+**
+**  Arguments:
+**    @processingMode   Processing mode:
+**                      0 to only process new datasets and datasets with update_required = 1
+**                      1 to process new datasets, those with update_required = 1, and the 10,000 most recent datasets in DMS (looking for dataset_row_version or storage_path_row_version differing)
+**                      2 to process new datasets, those with update_required = 1, and all datasets in DMS (looking for dataset_row_version or storage_path_row_version differing)
+**                      3 to re-process all of the entries in T_Cached_Dataset_Links (this is the slowest update and will take ~20 seconds)
+**    @showDebug        When true, show debug info
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,6 +26,7 @@ CREATE PROCEDURE [dbo].[update_cached_dataset_links]
 **          09/06/2022 mem - When @processingMode is 3, update datasets in batches (to decrease the likelihood of deadlock issues)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          06/03/2023 mem - Link to the SMAQC P_2C metric for QC_Mam datasets
+**          10/06/2023 mem - Update SMAQC metric URLs
 **
 *****************************************************/
 (
@@ -344,12 +353,12 @@ AS
                 END,
             QC_Metric_Stats = CASE
                 WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
-                        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
+                        'https://prismsupport.pnl.gov/smaqc/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
                 WHEN Experiment_Num LIKE 'QC[_]Mam%' THEN
-                        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Mam'
+                        'https://prismsupport.pnl.gov/smaqc/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Mam'
                 WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
-                        'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
-                ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
+                        'https://prismsupport.pnl.gov/smaqc/smaqc/metric/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
+                ELSE 'https://prismsupport.pnl.gov/smaqc/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
                 END,
             UpdateRequired = 0,
             Last_Affected = GetDate()
@@ -412,34 +421,34 @@ AS
                        DFP.DS_RowVersion,
                        DFP.SPath_RowVersion,
                        CASE
-                        WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
-                        ELSE CASE
-                                WHEN DA.AS_instrument_data_purged > 0 THEN 'Raw Data Purged: ' + DFP.Dataset_Folder_Path
-                                ELSE DFP.Dataset_Folder_Path
-                            END
-                        END AS Dataset_Folder_Path,
+                           WHEN DA.AS_state_ID = 4 THEN 'Purged: ' + DFP.Dataset_Folder_Path
+                           ELSE CASE
+                                   WHEN DA.AS_instrument_data_purged > 0 THEN 'Raw Data Purged: ' + DFP.Dataset_Folder_Path
+                                   ELSE DFP.Dataset_Folder_Path
+                               END
+                           END AS Dataset_Folder_Path,
                        CASE
-                        WHEN DA.MyEMSLState > 0 And DS.DS_created >= '9/17/2013' Then ''
-                        ELSE DFP.Archive_Folder_Path
-                        END AS Archive_Folder_Path,
-                       'https://metadata.my.emsl.pnl.gov/fileinfo/files_for_keyvalue/omics.dms.dataset_id/' + Cast(DS.Dataset_ID as Varchar(9)) AS MyEMSL_URL,
+                           WHEN DA.MyEMSLState > 0 And DS.DS_created >= '9/17/2013' Then ''
+                           ELSE DFP.Archive_Folder_Path
+                           END AS Archive_Folder_Path,
+                           'https://metadata.my.emsl.pnl.gov/fileinfo/files_for_keyvalue/omics.dms.dataset_id/' + Cast(DS.Dataset_ID as Varchar(9)) AS MyEMSL_URL,
                        CASE
-                        WHEN DA.QC_Data_Purged > 0 THEN ''
-                        ELSE DFP.Dataset_URL + 'QC/index.html'
-                        END AS QC_Link,
+                           WHEN DA.QC_Data_Purged > 0 THEN ''
+                           ELSE DFP.Dataset_URL + 'QC/index.html'
+                           END AS QC_Link,
                        CASE
-                        WHEN DA.QC_Data_Purged > 0 THEN ''
-                        ELSE DFP.Dataset_URL + J.AJ_resultsFolderName + '/'
-                        END AS QC_2D,
+                           WHEN DA.QC_Data_Purged > 0 THEN ''
+                           ELSE DFP.Dataset_URL + J.AJ_resultsFolderName + '/'
+                           END AS QC_2D,
                        CASE
-                        WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
-                                'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
-                        WHEN Experiment_Num LIKE 'QC[_]Mam%' THEN
-                                'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Mam'
-                        WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
-                                'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
-                        ELSE 'http://prismsupport.pnl.gov/smaqc/index.php/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
-                        END AS QC_Metric_Stats
+                           WHEN Experiment_Num LIKE 'QC[_]Shew%' THEN
+                                   'https://prismsupport.pnl.gov/smaqc/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Shew'
+                           WHEN Experiment_Num LIKE 'QC[_]Mam%' THEN
+                                   'https://prismsupport.pnl.gov/smaqc/smaqc/metric/P_2C/inst/' + Inst.IN_Name + '/filterDS/QC_Mam'
+                           WHEN Experiment_Num LIKE 'TEDDY[_]DISCOVERY%' THEN
+                                   'https://prismsupport.pnl.gov/smaqc/smaqc/metric/qcart/inst/' + Inst.IN_Name + '/filterDS/TEDDY_DISCOVERY'
+                           ELSE 'https://prismsupport.pnl.gov/smaqc/smaqc/metric/MS2_Count/inst/' + Inst.IN_Name + '/filterDS/' + SUBSTRING(DS.Dataset_Num, 1, 4)
+                           END AS QC_Metric_Stats
                 FROM T_Dataset DS
                     INNER JOIN T_Cached_Dataset_Links DL
                       ON DL.Dataset_ID = DS.Dataset_ID
@@ -458,16 +467,15 @@ AS
                 WHERE DS.Dataset_ID BETWEEN @datasetIdStart AND @datasetIdEnd
             ) AS Source (Dataset_ID, DS_RowVersion, SPath_RowVersion, Dataset_Folder_Path, Archive_Folder_Path, MyEMSL_URL, QC_Link, QC_2D, QC_Metric_Stats)
             ON (target.Dataset_ID = source.Dataset_ID)
-            WHEN Matched AND
-                            (   target.DS_RowVersion <> source.DS_RowVersion OR
-                                target.SPath_RowVersion <> source.SPath_RowVersion OR
-                                IsNull(target.Dataset_Folder_Path, '') <> IsNull(source.Dataset_Folder_Path, '') OR
-                                IsNull(target.Archive_Folder_Path, '') <> IsNull(source.Archive_Folder_Path, '') OR
-                                IsNull(target.MyEMSL_URL, '') <> IsNull(source.MyEMSL_URL, '') Or
-                                IsNull(target.QC_Link, '') <> IsNull(source.QC_Link, '') OR
-                                IsNull(target.QC_2D, '') <> IsNull(source.QC_2D, '') OR
-                                IsNull(target.QC_Metric_Stats, '') <> IsNull(source.QC_Metric_Stats, '')
-                            )
+            WHEN Matched AND ( target.DS_RowVersion <> source.DS_RowVersion OR
+                               target.SPath_RowVersion <> source.SPath_RowVersion OR
+                               IsNull(target.Dataset_Folder_Path, '') <> IsNull(source.Dataset_Folder_Path, '') OR
+                               IsNull(target.Archive_Folder_Path, '') <> IsNull(source.Archive_Folder_Path, '') OR
+                               IsNull(target.MyEMSL_URL, '') <> IsNull(source.MyEMSL_URL, '') Or
+                               IsNull(target.QC_Link, '') <> IsNull(source.QC_Link, '') OR
+                               IsNull(target.QC_2D, '') <> IsNull(source.QC_2D, '') OR
+                               IsNull(target.QC_Metric_Stats, '') <> IsNull(source.QC_Metric_Stats, '')
+                             )
             THEN UPDATE
                  Set DS_RowVersion = source.DS_RowVersion,
                      SPath_RowVersion = source.SPath_RowVersion,
