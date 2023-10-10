@@ -7,22 +7,27 @@ CREATE PROCEDURE [dbo].[lookup_instrument_run_info_from_experiment_sample_prep]
 /****************************************************
 **
 **  Desc:
-**    Get values for instrument related fields
-**    from the sample prep request associated with
-**    the given experiment (if there is one)
+**      Get values for instrument related fields from the sample prep request associated with the given experiment (if there is one)
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**  Arguments:
+**    @experimentName       Experiment name
+**    @instrumentGroup      Input/output: Instrument group;    if this is '(lookup)', will override with the instrument info from the sample prep request (if found)
+**    @datasetType          Input/output: Dataset type;        if this is '(lookup)', will override with the instrument info from the sample prep request (if found)
+**    @instrumentSettings   Input/output: Instrument settings; if this is '(lookup)', will be set to 'na'
+**    @separationGroup      Input/Output: LC separation group
+**    @message              Status message
 **
 **  Auth:   grk
-**  Date:   09/06/2007 (Ticket #512 http://prismtrac.pnl.gov/trac/ticket/512)
-**          01/09/2012 grk - added @secSep
+**  Date:   09/06/2007 grk - Ticket #512 (http://prismtrac.pnl.gov/trac/ticket/512)
+**          01/09/2012 grk - Added @secSep
 **          03/28/2013 mem - Now returning more explicit error messages when the experiment does not have an associated sample prep request
 **          06/10/2014 mem - Now using Instrument_Group in T_Sample_Prep_Request
-**          08/20/2014 mem - Switched from Instrument_Name to Instrument_Group
-**                         - Renamed parameter @instrumentName to @instrumentGroup
+**          08/20/2014 mem - Switch from Instrument_Name to Instrument_Group
+**                         - Rename parameter @instrumentName to @instrumentGroup
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/09/2023 mem - Rename parameter @secSep to @separationGroup
 **
 *****************************************************/
 (
@@ -30,105 +35,99 @@ CREATE PROCEDURE [dbo].[lookup_instrument_run_info_from_experiment_sample_prep]
     @instrumentGroup varchar(64) output,
     @datasetType varchar(20) output,
     @instrumentSettings varchar(512) output,
-    @secSep varchar(64) output,
+    @separationGroup varchar(64) output,
     @message varchar(512) output
 )
 AS
     set nocount on
 
-    declare @myError int
-    set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @myRowCount int
-    set @myRowCount = 0
+    Declare @n int
 
-    declare @n int
+    Set @message = ''
 
-    set @message = ''
-
-    declare @ovr varchar(10) = '(lookup)'
+    Declare @ovr varchar(10) = '(lookup)'
 
     ---------------------------------------------------
     -- Find associated sample prep request for experiment
     ---------------------------------------------------
-    declare @samPrepID int
-    set @samPrepID = 0
-    --
+
+    Declare @samPrepID int = 0
+
     SELECT @samPrepID = EX_sample_prep_request_ID
     FROM T_Experiments
     WHERE Experiment_Num = @experimentName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error trying to find sample prep request for experiment ' + @experimentName + ': ' + Convert(varchar(12), @myError)
-      return @myError
-    end
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Error trying to find sample prep request for experiment ' + @experimentName + ': ' + Convert(varchar(12), @myError)
+        Return @myError
+    End
 
     ---------------------------------------------------
     -- If there is no associated sample prep request
     -- we are done
     ---------------------------------------------------
-    if @samPrepID = 0
-    begin
-        if (@instrumentGroup = @ovr)
-        begin
-            set @message = 'Instrument group is set to "' + @ovr + '"; the experiment (' + @experimentName + ') does not have a sample prep request, therefore we cannot auto-define the instrument group.'
-            return 50966
-        end
-        if (@DatasetType = @ovr)
-        begin
-            set @message = 'Run Type (Dataset Type) is set to "' + @ovr + '"; the experiment (' + @experimentName + ') does not have a sample prep request, therefore we cannot auto-define the run type.'
-            return 50966
-        end
 
-        if (@instrumentSettings = @ovr)
-        begin
-            set @instrumentSettings = 'na'
-        end
+    If @samPrepID = 0
+    Begin
+        If @instrumentGroup = @ovr
+        Begin
+            Set @message = 'Instrument group is set to "' + @ovr + '"; the experiment (' + @experimentName + ') does not have a sample prep request, therefore we cannot auto-define the instrument group.'
+            Return 50966
+        End
+        If @datasetType = @ovr
+        Begin
+            Set @message = 'Run Type (dataset type) is set to "' + @ovr + '"; the experiment (' + @experimentName + ') does not have a sample prep request, therefore we cannot auto-define the run type.'
+            Return 50966
+        End
 
-        return  0
-    end
+        If @instrumentSettings = @ovr
+        Begin
+            Set @instrumentSettings = 'na'
+        End
+
+        Return 0
+    End
 
     ---------------------------------------------------
     -- Lookup instrument fields from sample prep request
     ---------------------------------------------------
 
-    Declare
-        @irInstGroup varchar(64),
-        @irDSType varchar(20),
-        @irInstSettings varchar(512),
-        @irSecSep varchar(64)
+    Declare @prepReqInstrumentGroup varchar(64)
+    Declare @prepReqDatasetType varchar(20)
+    Declare @prepReqInstrumentSettings varchar(512)
+    Declare @prepReqSeparationGroup varchar(64)
 
-    SELECT
-        @irInstGroup = COALESCE(Instrument_Group, Instrument_Name, ''),
-        @irDSType = ISNULL(Dataset_Type, ''),
-        @irInstSettings = ISNULL(Instrument_Analysis_Specifications, ''),
-        @irSecSep = ISNULL(Separation_Type, '')
-    FROM
-        T_Sample_Prep_Request
-    WHERE
-        (ID = @samPrepID)
+    SELECT @prepReqInstrumentGroup = COALESCE(Instrument_Group, Instrument_Name, ''),
+           @prepReqDatasetType = ISNULL(Dataset_Type, ''),
+           @prepReqInstrumentSettings = ISNULL(Instrument_Analysis_Specifications, ''),
+           @prepReqSeparationGroup = ISNULL(Separation_Type, '')
+    FROM T_Sample_Prep_Request
+    WHERE ID = @samPrepID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error looking up EUS fields for sample prep request ' + Convert(varchar(12), @samPrepID)
-      return  @myError
-    end
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Error looking up EUS fields for sample prep request ' + Convert(varchar(12), @samPrepID)
+        Return @myError
+    End
 
     ---------------------------------------------------
-    -- handle overrides
-    --
+    -- Handle overrides
     ---------------------------------------------------
-    set @instrumentGroup = CASE WHEN @instrumentGroup = @ovr THEN @irInstGroup ELSE @instrumentGroup END
-    set @DatasetType = CASE WHEN @DatasetType = @ovr THEN @irDSType ELSE @DatasetType END
-    set @instrumentSettings = CASE WHEN @instrumentSettings = @ovr THEN @irInstSettings ELSE @instrumentSettings END
-    set @secSep = CASE WHEN @secSep = @ovr THEN @irSecSep ELSE @secSep END
 
-    return 0
+    Set @instrumentGroup    = CASE WHEN @instrumentGroup    = @ovr THEN @prepReqInstrumentGroup    ELSE @instrumentGroup END
+    Set @datasetType        = CASE WHEN @datasetType        = @ovr THEN @prepReqDatasetType        ELSE @datasetType END
+    Set @instrumentSettings = CASE WHEN @instrumentSettings = @ovr THEN @prepReqInstrumentSettings ELSE @instrumentSettings END
+    Set @separationGroup    = CASE WHEN @separationGroup    = @ovr THEN @prepReqSeparationGroup    ELSE @separationGroup END
+
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[lookup_instrument_run_info_from_experiment_sample_prep] TO [DDL_Viewer] AS [dbo]
