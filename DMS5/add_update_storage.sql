@@ -47,6 +47,8 @@ CREATE PROCEDURE [dbo].[add_update_storage]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/01/2023 mem - Expand @instrumentName to varchar(64)
 **          09/07/2023 mem - Update warning messages
+**          10/12/2023 mem - Prevent adding a second inbox for an instrument
+**                         - Validate host name vs. t_storage_path_hosts
 **
 *****************************************************/
 (
@@ -91,8 +93,8 @@ AS
 
     Set @path           = LTrim(RTrim(Coalesce(@path, '')))
     Set @instrumentName = LTrim(RTrim(Coalesce(@instrumentName, '')))
-    Set @storFunction   = LTrim(RTrim(Coalesce(@storFunction, '')))
-    Set @mode           = LTrim(RTrim(Coalesce(@mode, '')))
+    Set @storFunction   = Lower(LTrim(RTrim(Coalesce(@storFunction, ''))))
+    Set @mode           = Lower(LTrim(RTrim(Coalesce(@mode, ''))))
     Set @urlDomain      = LTrim(RTrim(Coalesce(@urlDomain, '')))
     Set @id             = Coalesce(@id, '')
 
@@ -100,32 +102,32 @@ AS
     Begin
         Set @msg = 'Storage path must be specified'
         RAISERROR (@msg, 10, 1)
-        return 51036
+        Return 51036
     End
 
     If LEN(@instrumentName) < 1
     Begin
         Set @msg = 'Instrument name must be specified'
         RAISERROR (@msg, 10, 1)
-        return 51036
+        Return 51037
     End
 
     If @storFunction not in ('inbox', 'old-storage', 'raw-storage')
     Begin
         Set @msg = 'Function "' + @storFunction + '" is not recognized'
         RAISERROR (@msg, 10, 1)
-        return 51036
+        Return 51038
     End
 
     If Not @mode In ('add', 'update')
     Begin
         Set @msg = 'Mode "' + @mode + '" is not recognized'
         RAISERROR (@msg, 10, 1)
-        return 51036
+        Return 51039
     End
 
     ---------------------------------------------------
-    -- Resolve machine name
+    -- Resolve machine name (e.g. 'Lumos02.bionet' or 'Proto-2')
     ---------------------------------------------------
 
     If @storFunction = 'inbox'
@@ -134,23 +136,34 @@ AS
         Set @machineName = Replace(@volNameClient, '\', '')
 
     ---------------------------------------------------
-    -- Verify instrument name
+    -- Validate instrument name
     ---------------------------------------------------
 
-    IF NOT Exists (SELECT * FROM T_Instrument_Name WHERE IN_name = @instrumentName)
+    If Not Exists (SELECT IN_name FROM T_Instrument_Name WHERE IN_name = @instrumentName)
     Begin
         Set @msg = 'Unknown instrument "' + @instrumentName + '"'
         RAISERROR (@msg, 10, 1)
-        return 51038
+        Return 51040
+    End
+
+    ---------------------------------------------------
+    -- Validate machine name
+    ---------------------------------------------------
+
+    If Not Exists (SELECT SP_machine_name FROM T_Storage_Path_Hosts WHERE SP_machine_name = @machineName)
+    Begin
+        Set @msg = 'Unknown machine name "' + @machineName + '" (not in T_Storage_Path_Hosts)'
+        RAISERROR (@msg, 10, 1)
+        Return 51041
     End
 
     ---------------------------------------------------
     -- Only one input path allowed for given instrument
     ---------------------------------------------------
 
-    Declare @num int = 0
+    Declare @matchCount int = 0
 
-    SELECT @num = COUNT(SP_path_ID)
+    SELECT @matchCount = COUNT(SP_path_ID)
     FROM T_Storage_Path
     WHERE SP_instrument_name = @instrumentName AND
           SP_function = @storFunction
@@ -161,7 +174,14 @@ AS
     Begin
         Set @msg = 'Could not check existing storage record'
         RAISERROR (@msg, 10, 1)
-        return 51012
+        Return 51042
+    End
+
+    If @storFunction = 'inbox' And @matchCount > 0
+    Begin
+        Set @message = 'Inbox already defined for instrument "' + @instrumentName + '"; change the old inbox to function "old-inbox" in t_storage_path)'
+        RAISERROR (@msg, 10, 1)
+        Return 51043
     End
 
     ---------------------------------------------------
@@ -188,7 +208,7 @@ AS
         Begin
             Set @msg = 'Cannot update:  Storage path "' + @ID + '" is not in database '
             RAISERROR (@msg, 10, 1)
-            return 51004
+            Return 51044
         End
     End
 
@@ -240,7 +260,7 @@ AS
                 rollback transaction @transName
                 Set @msg = 'Backup failed: ' + @msg
                 RAISERROR (@msg, 10, 1)
-                return 51028
+                Return 51045
             End
 
             ---------------------------------------------------
@@ -275,7 +295,7 @@ AS
                     rollback transaction @transName
                     Set @msg = 'Changing existing raw-storage failed'
                     RAISERROR (@msg, 10, 1)
-                    return 51042
+                    Return 51046
                 End
 
                 Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage'
@@ -303,7 +323,7 @@ AS
                     rollback transaction @transName
                     Set @msg = 'Cannot add new inbox path if one (' + cast(@tmpID as varchar(12))+ ') already exists for instrument'
                     RAISERROR (@msg, 10, 1)
-                    return 51036
+                    Return 51047
                 End
             End
 
@@ -339,7 +359,7 @@ AS
                 rollback transaction @transName
                 Set @msg = 'Insert new operation failed'
                 RAISERROR (@msg, 10, 1)
-                return 51007
+                Return 51048
             End
 
             commit transaction @transName
@@ -363,7 +383,7 @@ AS
             Begin
                 Set @msg = 'Update of instrument assigned storage failed'
                 RAISERROR (@msg, 10, 1)
-                return 51043
+                Return 51049
             End
         End
 
@@ -379,7 +399,7 @@ AS
             Begin
                 Set @msg = 'Update of instrument assigned source failed'
                 RAISERROR (@msg, 10, 1)
-                return 51043
+                Return 51050
             End
         End
 
@@ -415,7 +435,7 @@ AS
             rollback transaction @transName
             Set @msg = 'Backup failed: ' + @msg
             RAISERROR (@msg, 10, 1)
-            return 51028
+            Return 51051
         End
 
         ---------------------------------------------------
@@ -450,7 +470,7 @@ AS
                 rollback transaction @transName
                 Set @msg = 'Changing existing raw-storage failed'
                 RAISERROR (@msg, 10, 1)
-                return 51042
+                Return 51052
             End
 
             ---------------------------------------------------
@@ -468,7 +488,7 @@ AS
                 rollback transaction @transName
                 Set @msg = 'Update of instrument assigned storage failed'
                 RAISERROR (@msg, 10, 1)
-                return 51043
+                Return 51053
             End
 
             Set @message = cast(@myRowCount as varchar(12)) + ' path(s) (' + @message + ') were changed from raw-storage to old-storage'
@@ -484,7 +504,7 @@ AS
             rollback transaction @transName
             Set @msg = 'Cannot change existing raw-storage path to old-storage'
             RAISERROR (@msg, 10, 1)
-            return 51037
+            Return 51054
         End
 
         ---------------------------------------------------
@@ -496,7 +516,7 @@ AS
             rollback transaction @transName
             Set @msg = 'Cannot change existing inbox path to another function'
             RAISERROR (@msg, 10, 1)
-            return 51037
+            Return 51055
         End
 
         ---------------------------------------------------
@@ -521,7 +541,7 @@ AS
             rollback transaction @transName
             Set @msg = 'Update operation failed: "' + @ID + '"'
             RAISERROR (@msg, 10, 1)
-            return 51004
+            Return 51056
         End
 
         commit transaction @transName
@@ -530,7 +550,7 @@ AS
 
 Done:
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_storage] TO [DDL_Viewer] AS [dbo]
