@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Instrument_Name](
 	[IN_source_path_ID] [int] NULL,
 	[IN_storage_path_ID] [int] NULL,
 	[IN_capture_method] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[IN_status] [char](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[IN_status] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Room_Number] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_Description] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[IN_usage] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -66,7 +66,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Instrument_Name_Class_Name_InstrumentID] ON [dbo
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_Group]  DEFAULT ('Other') FOR [IN_Group]
 GO
-ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_status]  DEFAULT ('active') FOR [IN_status]
+ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_status]  DEFAULT ('Active') FOR [IN_status]
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] ADD  CONSTRAINT [DF_T_Instrument_Name_IN_usage]  DEFAULT ('') FOR [IN_usage]
 GO
@@ -113,6 +113,11 @@ REFERENCES [dbo].[T_Instrument_Ops_Role] ([Role])
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_Ops_Role]
 GO
+ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_Instrument_State_Name] FOREIGN KEY([IN_status])
+REFERENCES [dbo].[T_Instrument_State_Name] ([State_Name])
+GO
+ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_Instrument_State_Name]
+GO
 ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrument_Name_T_storage_path_SourcePathID] FOREIGN KEY([IN_source_path_ID])
 REFERENCES [dbo].[T_Storage_Path] ([SP_path_ID])
 GO
@@ -127,8 +132,4 @@ ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [FK_T_Instrume
 REFERENCES [dbo].[T_YesNo] ([Flag])
 GO
 ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [FK_T_Instrument_Name_T_YesNo]
-GO
-ALTER TABLE [dbo].[T_Instrument_Name]  WITH CHECK ADD  CONSTRAINT [CK_T_Instrument_Name_Status] CHECK  (([IN_Status]='offline' OR [IN_Status]='inactive' OR [IN_Status]='active' OR [IN_Status]='broken'))
-GO
-ALTER TABLE [dbo].[T_Instrument_Name] CHECK CONSTRAINT [CK_T_Instrument_Name_Status]
 GO
