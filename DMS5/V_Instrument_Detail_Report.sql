@@ -18,11 +18,11 @@ SELECT InstName.Instrument_ID AS id,
        InstName.IN_Group AS instrument_group,
        InstName.IN_Room_Number AS room,
        InstName.IN_capture_method AS capture,
-       InstName.IN_status AS status,
+       InstName.IN_status + ' (' + StateName.Description + ')' AS status,
        InstName.IN_usage AS usage,
        InstName.IN_operations_role AS ops_role,
        TrackingYesNo.Description As track_usage_when_inactive,
-       Case When InstName.IN_status = 'active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS scan_source,
+       Case When InstName.IN_status = 'Active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS scan_source,
        InstGroup.Allocation_Tag AS allocation_tag,
        InstName.Percent_EMSL_Owned AS percent_emsl_owned,
        dbo.get_instrument_dataset_type_list(InstName.Instrument_ID) AS allowed_dataset_types,
@@ -46,6 +46,8 @@ SELECT InstName.Instrument_ID AS id,
        InstName.Default_Purge_Priority AS default_purge_priority,
        InstName.Storage_Purge_Holdoff_Months AS storage_purge_holdoff_months
 FROM T_Instrument_Name InstName
+     INNER JOIN T_Instrument_State_Name StateName
+       ON InstName.IN_Status = StateName.State_Name
      LEFT OUTER JOIN T_Storage_Path SPath
        ON InstName.IN_storage_path_ID = SPath.SP_path_ID
      LEFT OUTER JOIN ( SELECT SP_path_ID,
