@@ -40,7 +40,7 @@ INSERT INTO [T_Instrument_Group] VALUES ('MALDI-TOF','MALDI Spot',null,0,26,'MAL
 INSERT INTO [T_Instrument_Group] VALUES ('NMR','Research','For use in sample prep requests',1,51,'NMR',1,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Orbitrap','LC-HMS with MS/MS','',0,3,'ORB',1,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Other','Research','',1,null,'None',0,1,null)
-INSERT INTO [T_Instrument_Group] VALUES ('PrepHPLC','Prep HPLC Data folders','',1,31,'None',0,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('PrepHPLC','Prep HPLC Data folders','',1,31,'None',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('QEHFX','LC-HMS with MS/MS; optionally HCD','',1,5,'ORB',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('QEHFX_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,5,'ORB',0,1,'QEHFX')
 INSERT INTO [T_Instrument_Group] VALUES ('QExactive','LC-HMS with MS/MS; optionally HCD','Was originally used by LTQ_Orb_3, but changed LTQ_Orb_3 to the "Orbitrap" group in May 2012.  Renamed this group from Orbitrap-HCD to QExactive in December 2012',1,5,'ORB',1,1,null)
