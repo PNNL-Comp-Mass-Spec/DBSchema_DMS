@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[undelete_requested_run]
 **  Auth:   mem
 **  Date:   03/30/2023 mem - Initial version
 **          03/31/2023 mem - Restore requested run batches and batch groups if the requested run refers to a deleted batch or batch group
+**          10/18/2023 mem - Add support for a deleted requested run referencing a non-existent dataset
 **
 *****************************************************/
 (
@@ -24,10 +25,11 @@ AS
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
-    
+
     Declare @entryID int
     Declare @batchID int
     Declare @eusPersonID int
+    Declare @datasetID int
     Declare @batchGroupID int
 
     Declare @deletedBatchEntryID int = 0
@@ -58,11 +60,12 @@ AS
         goto Done
     End
 
-    -- Verify that the deleted requested run exists, and lookup the batch ID and EUS person ID
+    -- Verify that the deleted requested run exists, and lookup the batch ID, EUS person ID, and dataset ID (which may be null)
     --
     SELECT TOP 1 @entryID = Entry_ID,
-                 @batchID = Batch_Id,
-                 @eusPersonID = EUS_Person_Id
+                 @batchID = Batch_ID,
+                 @eusPersonID = EUS_Person_ID,
+                 @datasetID = Dataset_ID
     FROM dbo.T_Deleted_Requested_Run
     WHERE Request_ID = @requestID
     ORDER BY Entry_Id DESC
@@ -79,7 +82,7 @@ AS
     ---------------------------------------------------
     -- Make sure the requested run does not already exist
     ---------------------------------------------------
-    
+
     If Exists (SELECT ID FROM T_Requested_Run WHERE ID = @requestID)
     Begin
         Set @message = 'Requested Run ID ' + Cast(@requestID as varchar(9)) + ' already exists in T_Requested_Run; unable to undelete'
@@ -126,7 +129,7 @@ AS
         If @myRowCount = 0
         Begin
             Set @message = 'Requested run ID ' + Cast(@requestID as varchar(9)) + ' refers to batch ' + Cast(@batchID as varchar(9)) + ', ' +
-                           'which does not exist, and cannot be restored from T_Deleted_Requested_Run_Batch; ' + 
+                           'which does not exist, and cannot be restored from T_Deleted_Requested_Run_Batch; ' +
                            'see entry ' + Cast(@entryID as varchar(9)) + ' in T_Deleted_Requested_Run';
             print @message
             goto Done
@@ -150,7 +153,7 @@ AS
             Begin
                 Set @message = 'Requested run ID ' + Cast(@requestID as varchar(9)) + ' refers to batch ' + Cast(@batchID as varchar(9)) + ', ' +
                                'which refers to batch group ' + Cast(@batchGroupID as varchar(9)) + ', ' +
-                               'but that batch group does not exist and cannot be restored from T_Deleted_Requested_Run_Batch_Group; ' + 
+                               'but that batch group does not exist and cannot be restored from T_Deleted_Requested_Run_Batch_Group; ' +
                                'see entry ' + Cast(@entryID as varchar(9)) + ' in T_Deleted_Requested_Run ' +
                                'and entry ' + Cast(@deletedBatchEntryID as varchar(9)) + ' in T_Deleted_Requested_Run_Batch';
                 print @message
@@ -160,18 +163,27 @@ AS
     End
 
     ---------------------------------------------------
+    -- See if the deleted requested run references a deleted dataset
+    ---------------------------------------------------
+
+    If Not Exists (SELECT dataset_id FROM T_Dataset WHERE dataset_id = @datasetID)
+    Begin
+        Set @datasetID = null;
+    End
+
+    ---------------------------------------------------
     -- Start a transaction
     ---------------------------------------------------
 
     Declare @transName varchar(32) = 'undelete_requested_run'
     begin transaction @transName
-   
+
     If @deletedBatchGroupEntryID > 0
     Begin
         ---------------------------------------------------
         -- Add the deleted requested run batch group to T_Requested_Run_Batch_Group
         ---------------------------------------------------
-    
+
         Set IDENTITY_INSERT T_Requested_Run_Batch_Group ON;
 
         INSERT INTO T_Requested_Run_Batch_Group (Batch_Group_ID, Batch_Group, Description, Owner_User_ID, Created)
@@ -187,18 +199,18 @@ AS
         ---------------------------------------------------
         -- Add the deleted requested run batch to T_Requested_Run_Batches
         ---------------------------------------------------
-    
+
         Set IDENTITY_INSERT T_Requested_Run_Batches ON;
 
         INSERT INTO T_Requested_Run_Batches (
-               ID, Batch, Description, Owner, Created, Locked, 
-               Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
-               Requested_Completion_Date, Justification_for_High_Priority, Comment, 
+               ID, Batch, Description, Owner, Created, Locked,
+               Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority,
+               Requested_Completion_Date, Justification_for_High_Priority, Comment,
                Requested_Instrument, Batch_Group_ID, Batch_Group_Order
             )
-        SELECT Batch_ID, Batch, Description, Owner_User_ID, Created, Locked, 
-               Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
-               Requested_Completion_Date, Justification_for_High_Priority, Comment, 
+        SELECT Batch_ID, Batch, Description, Owner_User_ID, Created, Locked,
+               Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority,
+               Requested_Completion_Date, Justification_for_High_Priority, Comment,
                Requested_Instrument_Group, Batch_Group_ID, Batch_Group_Order
         FROM T_Deleted_Requested_Run_Batch
         WHERE Entry_ID = @deletedBatchEntryID
@@ -209,30 +221,30 @@ AS
     ---------------------------------------------------
     -- Add the deleted requested run to T_Requested_Run
     ---------------------------------------------------
-    
+
     Set IDENTITY_INSERT T_Requested_Run ON;
 
     INSERT INTO T_Requested_Run (
-           ID, RDS_Name, RDS_Requestor_PRN, RDS_comment, RDS_created, RDS_instrument_group, 
-           RDS_type_ID, RDS_instrument_setting, RDS_special_instructions, RDS_Well_Plate_Num, RDS_Well_Num, RDS_priority, RDS_note, Exp_ID, 
-           RDS_Run_Start, RDS_Run_Finish, RDS_Internal_Standard, RDS_WorkPackage, RDS_BatchID, 
+           ID, RDS_Name, RDS_Requestor_PRN, RDS_comment, RDS_created, RDS_instrument_group,
+           RDS_type_ID, RDS_instrument_setting, RDS_special_instructions, RDS_Well_Plate_Num, RDS_Well_Num, RDS_priority, RDS_note, Exp_ID,
+           RDS_Run_Start, RDS_Run_Finish, RDS_Internal_Standard, RDS_WorkPackage, RDS_BatchID,
            RDS_Blocking_Factor, RDS_Block, RDS_Run_Order, RDS_EUS_Proposal_ID, RDS_EUS_UsageType,
-           RDS_Cart_ID, RDS_Cart_Config_ID, RDS_Cart_Col, RDS_Sec_Sep, RDS_MRM_Attachment, 
-           DatasetID, RDS_Origin, RDS_Status, RDS_NameCode, Vialing_Conc, Vialing_Vol, Location_ID, 
+           RDS_Cart_ID, RDS_Cart_Config_ID, RDS_Cart_Col, RDS_Sec_Sep, RDS_MRM_Attachment,
+           DatasetID, RDS_Origin, RDS_Status, RDS_NameCode, Vialing_Conc, Vialing_Vol, Location_ID,
            Queue_State, Queue_Instrument_ID, Queue_Date, Entered, Updated, Updated_By
         )
-    SELECT Request_Id, Request_Name, Requester_Username, Comment, Created, Instrument_Group, 
-           Request_Type_Id, Instrument_Setting, Special_Instructions, Wellplate, Well, Priority, Note, Exp_Id, 
-           Request_Run_Start, Request_Run_Finish, Request_Internal_Standard, Work_Package, Batch_Id, 
+    SELECT Request_Id, Request_Name, Requester_Username, Comment, Created, Instrument_Group,
+           Request_Type_Id, Instrument_Setting, Special_Instructions, Wellplate, Well, Priority, Note, Exp_Id,
+           Request_Run_Start, Request_Run_Finish, Request_Internal_Standard, Work_Package, Batch_Id,
            Blocking_Factor, Block, Run_Order, EUS_Proposal_Id, EUS_Usage_Type_Id,
-           Cart_Id, Cart_Config_Id, Cart_Column, Separation_Group, Mrm_Attachment, 
-           Dataset_Id, Origin, State_Name, Request_Name_Code, Vialing_Conc, Vialing_Vol, Location_Id, 
-           Queue_State, Queue_Instrument_Id, Queue_Date, Entered, Updated, Updated_By    
+           Cart_Id, Cart_Config_Id, Cart_Column, Separation_Group, Mrm_Attachment,
+           @datasetID, Origin, State_Name, Request_Name_Code, Vialing_Conc, Vialing_Vol, Location_Id,
+           Queue_State, Queue_Instrument_Id, Queue_Date, Entered, Updated, Updated_By
     FROM T_Deleted_Requested_Run
     WHERE Entry_ID = @entryID
 
     Set IDENTITY_INSERT T_Requested_Run OFF;
-    
+
     If Coalesce(@eusPersonID, 0) > 0
     Begin
         Insert Into T_Requested_Run_EUS_Users (Request_id, EUS_Person_ID)
@@ -244,7 +256,7 @@ AS
     ---------------------------------------------------
 
     Set IDENTITY_INSERT T_Factor ON;
-    
+
     INSERT INTO T_Factor (FactorID, Type, TargetID, Name, Value, Last_Updated)
     SELECT Factor_ID, Type, Target_ID, Name, Value, Last_Updated
     FROM T_Deleted_Factor
