@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[sync_with_dms5]
 /****************************************************
 **
 **  Desc:   Synchronize data with database DMS5
-**          Intended to be run in database DMS5_t3 or DMS5_Beta
+**          Intended to be run in database DMS5_T3 or DMS5_Beta
 **
 **  Auth:   mem
 **  Date:   10/26/2015 mem - Initial version
@@ -31,6 +31,7 @@ CREATE PROCEDURE [dbo].[sync_with_dms5]
 **          07/29/2022 mem - Update logic now that settings file name cannot be null in T_Analysis_Job or T_Analysis_Job_Request
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          10/10/2023 mem - Remove column Sample_Submission_Item_Count from T_Sample_Prep_Request
 **
 *****************************************************/
 (
@@ -2229,8 +2230,6 @@ AS
                         NULLIF(s.[IOPSPermitsCurrent], t.[IOPSPermitsCurrent])) IS NOT NULL OR
                 Coalesce( NULLIF(t.[Reason_For_High_Priority], s.[Reason_For_High_Priority]),
                         NULLIF(s.[Reason_For_High_Priority], t.[Reason_For_High_Priority])) IS NOT NULL OR
-                Coalesce( NULLIF(t.[Sample_Submission_Item_Count], s.[Sample_Submission_Item_Count]),
-                        NULLIF(s.[Sample_Submission_Item_Count], t.[Sample_Submission_Item_Count])) IS NOT NULL OR
                 Coalesce( NULLIF(t.[Biomaterial_Item_Count], s.[Biomaterial_Item_Count]),
                         NULLIF(s.[Biomaterial_Item_Count], t.[Biomaterial_Item_Count])) IS NOT NULL OR
                 Coalesce( NULLIF(t.[Experiment_Item_Count], s.[Experiment_Item_Count]),
@@ -2297,7 +2296,6 @@ AS
                 [IOPSPermitsCurrent] = s.[IOPSPermitsCurrent],
                 [Reason_For_High_Priority] = s.[Reason_For_High_Priority],
                 [Number_Of_Biomaterial_Reps_Received] = s.[Number_Of_Biomaterial_Reps_Received],
-                [Sample_Submission_Item_Count] = s.[Sample_Submission_Item_Count],
                 [Biomaterial_Item_Count] = s.[Biomaterial_Item_Count],
                 [Experiment_Item_Count] = s.[Experiment_Item_Count],
                 [Experiment_Group_Item_Count] = s.[Experiment_Group_Item_Count],
@@ -2308,8 +2306,8 @@ AS
                 [Total_Item_Count] = s.[Total_Item_Count],
                 [Material_Container_List] = s.[Material_Container_List]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([ID], [Request_Type], [Request_Name], [Requester_PRN], [Reason], [Cell_Culture_List], [Organism], [Biohazard_Level], [Campaign], [Number_of_Samples], [Sample_Name_List], [Sample_Type], [Prep_Method], [Prep_By_Robot], [Special_Instructions], [Sample_Naming_Convention], [Assigned_Personnel], [Work_Package_Number], [User_Proposal_Number], [Replicates_of_Samples], [Technical_Replicates], [Instrument_Group], [Instrument_Name], [Dataset_Type], [Instrument_Analysis_Specifications], [Comment], [Priority], [Created], [State], [Requested_Personnel], [StateChanged], [UseSingleLCColumn], [Internal_standard_ID], [Postdigest_internal_std_ID], [Estimated_Completion], [Estimated_MS_runs], [EUS_UsageType], [EUS_Proposal_ID], [EUS_User_ID], [Project_Number], [Facility], [Separation_Type], [BlockAndRandomizeSamples], [BlockAndRandomizeRuns], [IOPSPermitsCurrent], [Reason_For_High_Priority], [Number_Of_Biomaterial_Reps_Received], [Sample_Submission_Item_Count], [Biomaterial_Item_Count], [Experiment_Item_Count], [Experiment_Group_Item_Count], [Material_Containers_Item_Count], [Requested_Run_Item_Count], [Dataset_Item_Count], [HPLC_Runs_Item_Count], [Total_Item_Count], [Material_Container_List])
-                VALUES(s.[ID], s.[Request_Type], s.[Request_Name], s.[Requester_PRN], s.[Reason], s.[Cell_Culture_List], s.[Organism], s.[Biohazard_Level], s.[Campaign], s.[Number_of_Samples], s.[Sample_Name_List], s.[Sample_Type], s.[Prep_Method], s.[Prep_By_Robot], s.[Special_Instructions], s.[Sample_Naming_Convention], s.[Assigned_Personnel], s.[Work_Package_Number], s.[User_Proposal_Number], s.[Replicates_of_Samples], s.[Technical_Replicates], s.[Instrument_Group], s.[Instrument_Name], s.[Dataset_Type], s.[Instrument_Analysis_Specifications], s.[Comment], s.[Priority], s.[Created], s.[State], s.[Requested_Personnel], s.[StateChanged], s.[UseSingleLCColumn], s.[Internal_standard_ID], s.[Postdigest_internal_std_ID], s.[Estimated_Completion], s.[Estimated_MS_runs], s.[EUS_UsageType], s.[EUS_Proposal_ID], s.[EUS_User_ID], s.[Project_Number], s.[Facility], s.[Separation_Type], s.[BlockAndRandomizeSamples], s.[BlockAndRandomizeRuns], s.[IOPSPermitsCurrent], s.[Reason_For_High_Priority], s.[Number_Of_Biomaterial_Reps_Received], s.[Sample_Submission_Item_Count], s.[Biomaterial_Item_Count], s.[Experiment_Item_Count], s.[Experiment_Group_Item_Count], s.[Material_Containers_Item_Count], s.[Requested_Run_Item_Count], s.[Dataset_Item_Count], s.[HPLC_Runs_Item_Count], s.[Total_Item_Count], s.[Material_Container_List])
+                INSERT([ID], [Request_Type], [Request_Name], [Requester_PRN], [Reason], [Cell_Culture_List], [Organism], [Biohazard_Level], [Campaign], [Number_of_Samples], [Sample_Name_List], [Sample_Type], [Prep_Method], [Prep_By_Robot], [Special_Instructions], [Sample_Naming_Convention], [Assigned_Personnel], [Work_Package_Number], [User_Proposal_Number], [Replicates_of_Samples], [Technical_Replicates], [Instrument_Group], [Instrument_Name], [Dataset_Type], [Instrument_Analysis_Specifications], [Comment], [Priority], [Created], [State], [Requested_Personnel], [StateChanged], [UseSingleLCColumn], [Internal_standard_ID], [Postdigest_internal_std_ID], [Estimated_Completion], [Estimated_MS_runs], [EUS_UsageType], [EUS_Proposal_ID], [EUS_User_ID], [Project_Number], [Facility], [Separation_Type], [BlockAndRandomizeSamples], [BlockAndRandomizeRuns], [IOPSPermitsCurrent], [Reason_For_High_Priority], [Number_Of_Biomaterial_Reps_Received], [Biomaterial_Item_Count], [Experiment_Item_Count], [Experiment_Group_Item_Count], [Material_Containers_Item_Count], [Requested_Run_Item_Count], [Dataset_Item_Count], [HPLC_Runs_Item_Count], [Total_Item_Count], [Material_Container_List])
+                VALUES(s.[ID], s.[Request_Type], s.[Request_Name], s.[Requester_PRN], s.[Reason], s.[Cell_Culture_List], s.[Organism], s.[Biohazard_Level], s.[Campaign], s.[Number_of_Samples], s.[Sample_Name_List], s.[Sample_Type], s.[Prep_Method], s.[Prep_By_Robot], s.[Special_Instructions], s.[Sample_Naming_Convention], s.[Assigned_Personnel], s.[Work_Package_Number], s.[User_Proposal_Number], s.[Replicates_of_Samples], s.[Technical_Replicates], s.[Instrument_Group], s.[Instrument_Name], s.[Dataset_Type], s.[Instrument_Analysis_Specifications], s.[Comment], s.[Priority], s.[Created], s.[State], s.[Requested_Personnel], s.[StateChanged], s.[UseSingleLCColumn], s.[Internal_standard_ID], s.[Postdigest_internal_std_ID], s.[Estimated_Completion], s.[Estimated_MS_runs], s.[EUS_UsageType], s.[EUS_Proposal_ID], s.[EUS_User_ID], s.[Project_Number], s.[Facility], s.[Separation_Type], s.[BlockAndRandomizeSamples], s.[BlockAndRandomizeRuns], s.[IOPSPermitsCurrent], s.[Reason_For_High_Priority], s.[Number_Of_Biomaterial_Reps_Received], s.[Biomaterial_Item_Count], s.[Experiment_Item_Count], s.[Experiment_Group_Item_Count], s.[Material_Containers_Item_Count], s.[Requested_Run_Item_Count], s.[Dataset_Item_Count], s.[HPLC_Runs_Item_Count], s.[Total_Item_Count], s.[Material_Container_List])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                    Cast(Inserted.[ID] as varchar(12)),

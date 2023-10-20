@@ -54,7 +54,6 @@ CREATE TABLE [dbo].[T_Sample_Prep_Request](
 	[IOPSPermitsCurrent] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Reason_For_High_Priority] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Number_Of_Biomaterial_Reps_Received] [int] NOT NULL,
-	[Sample_Submission_Item_Count] [int] NULL,
 	[Biomaterial_Item_Count] [int] NULL,
 	[Experiment_Item_Count] [int] NULL,
 	[Experiment_Group_Item_Count] [int] NULL,
