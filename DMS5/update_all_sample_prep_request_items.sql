@@ -7,18 +7,20 @@ CREATE PROCEDURE [dbo].[update_all_sample_prep_request_items]
 /****************************************************
 **
 **  Desc:
-**      Calls update sample prep request items for all active sample prep requests
+**      Calls update_sample_prep_request_items for all active sample prep requests, updating table T_Sample_Prep_Request_Items
+**      It also updates items for closed sample prep requests where the state was changed within the last year
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   07/05/2013 grk - initial release
+**  Date:   07/05/2013 grk - Initial release
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          06/15/2021 mem - Also update counts for prep requests whose state changed within the last year
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/19/2023 mem - Also update counts for prep requests with state 1 (New)
 **
 *****************************************************/
 (
@@ -48,18 +50,18 @@ AS
     BEGIN TRY
 
         ---------------------------------------------------
-        -- Create and populate table to hold active package IDs
+        -- Create and populate table to hold prep request IDs to process
         ---------------------------------------------------
 
         CREATE TABLE #SPRS (
             ID INT
         )
 
-        -- Update counts for active prep requests
+        -- Update counts for new and active prep requests
         INSERT INTO #SPRS ( ID )
         SELECT ID
         FROM T_Sample_Prep_Request
-        WHERE State IN (2, 3, 4)
+        WHERE State IN (1, 2, 3, 4)
 
         -- Also update counts for closed prep requests where the state changed within the last year
         INSERT INTO #SPRS ( ID )
@@ -68,8 +70,7 @@ AS
         WHERE State = 5 And StateChanged >= DateAdd(Day, -@daysPriorToUpdateClosedRequests, GetDate())
 
         ---------------------------------------------------
-        -- Cycle through active packages and do auto import
-        -- for each one
+        -- Process the sample prep requests in #SPRS
         ---------------------------------------------------
 
         Declare @itemType varchar(128) = ''
@@ -102,16 +103,7 @@ AS
                         @mode,
                         @message OUTPUT,
                         @callingUser
-/*
-                EXEC @myError = UpdateOSMPackageItems
-                                    @currentId,
-                                    @itemType,
-                                    @itemList,
-                                    @comment,
-                                    @mode,
-                                    @message output,
-                                    @callingUser
-*/
+
             End
         End
 
@@ -128,6 +120,7 @@ AS
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
+
     Return @myError
 
 GO
