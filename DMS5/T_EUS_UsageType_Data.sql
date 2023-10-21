@@ -9,5 +9,5 @@ INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign,
 INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (19,'USER_UNKNOWN','EMSL Usage - To be specified later (should rarely be used)',0,0,0)
 INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (20,'USER_ONSITE','Samples analyzed onsite by originating user; prior to FY24, also used for samples associated with Resource Owner proposals',1,1,1)
 INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (21,'USER_REMOTE','Samples analyzed by instrumentation staff for an EMSL user',1,1,1)
-INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (22,'RESOURCE_OWNER','Resource Owner samples (which no longer need to have a proposal, effective FY24)',1,1,1)
+INSERT INTO [T_EUS_UsageType] (ID, Name, Description, Enabled, Enabled_Campaign, Enabled_Prep_Request) VALUES (22,'RESOURCE_OWNER','Samples analyzed on instrumentation owned by the project (non-EMSL); effective FY24, EUS project numbers are optional for Resource Owner samples',1,1,1)
 SET IDENTITY_INSERT [T_EUS_UsageType] OFF
