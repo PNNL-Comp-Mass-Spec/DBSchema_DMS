@@ -13,28 +13,28 @@ CREATE PROCEDURE [dbo].[update_cart_parameters]
 **  Return values: 0: success, otherwise, error code
 **
 **  Parameters:
-**    @mode      - type of update begin performed
-**    @requestID - ID of scheduled run being updated
-**    @newValue  - new vale that is being set, or value retured
-**                 depending on mode
-**    @message   - blank if update was successful,
-**                 description of error if not
+**    @mode         Type of update begin performed (note that 'CartConfigID' mode only updates the database if @newValue corresponds to a row in T_LC_Cart_Configuration)
+**    @requestID    ID of requested run being updated
+**    @newValue     New value to store
+**    @message      Blank if update was successful, error description of error if not
 **
 **  Auth:   grk
 **  Date:   12/16/2003
-**          02/27/2006 grk - added cart ID stuff
-**          05/10/2006 grk - added verification of request ID
+**          02/27/2006 grk - Added cart ID stuff
+**          05/10/2006 grk - Added verification of request ID
 **          09/02/2011 mem - Now calling post_usage_log_entry
 **          04/02/2013 mem - Now using @message to return errors looking up cart name from T_LC_Cart
 **          01/09/2017 mem - Update @message when using RAISERROR
 **          01/10/2023 mem - Include previous @message text when updating @message
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/24/2023 mem - Add mode 'CartConfigID'
+**                         - Change @newValue to a normal input parameter since none of the modes uses it as an output parameter
 **
 *****************************************************/
 (
-    @mode varchar(32), -- 'CartName', 'RunStart', 'RunFinish', 'RunStatus', 'InternalStandard'
+    @mode varchar(32), -- 'CartName', 'CartConfigID', 'RunStart', 'RunFinish', 'RunStatus', 'InternalStandard'
     @requestID int,
-    @newValue varchar(512) output,
+    @newValue varchar(512),
     @message varchar(512) output
 )
 AS
@@ -43,7 +43,7 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @msg varchar(256)
     Declare @dt datetime
@@ -52,143 +52,171 @@ AS
     Set @requestID = Coalesce(@requestID, 0)
 
     ---------------------------------------------------
-    -- verify that request ID is correct
+    -- Verify that request ID is correct
     ---------------------------------------------------
     Declare @tmp int = 0
-    --
+    
     SELECT @tmp = ID
     FROM T_Requested_Run
-    WHERE (ID = @requestID)
+    WHERE ID = @requestID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-        set @msg = 'Error trying verify request ID'
+
+    If @myError <> 0
+    Begin
+        Set @msg = 'Error trying to verify requested run ID'
         Set @message = @msg
         RAISERROR (@msg, 10, 1)
-        return @myError
+        Return @myError
     End
 
-    if @tmp = 0
-    begin
-        set @msg = 'Request ID not found'
+    If @tmp = 0
+    Begin
+        Set @msg = 'Requested run ID not found: ' + CAST(@requestID as varchar(12))
         Set @message = @msg
         RAISERROR (@msg, 10, 1)
-        return 52131
-    end
+        Return 52131
+    End
 
-    if @mode = 'CartName'
-    begin
+    If @mode = 'CartName'
+    Begin
         ---------------------------------------------------
         -- Resolve ID for LC Cart and update requested run table
         ---------------------------------------------------
 
-        declare @cartID int
-        set @cartID = 0
+        Declare @cartID int = 0
         --
         SELECT @cartID = ID
         FROM T_LC_Cart
-        WHERE (Cart_Name = @newValue)
+        WHERE Cart_Name = @newValue
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
-            set @message = 'Error trying to look up cart ID using "' + @newValue + '"'
-        end
-        else
-        if @cartID = 0
-        begin
-            set @myError = 52117
-            set @message = 'Invalid LC Cart name "' + @newValue + '"'
-        end
-        else
-        begin
+
+        If @myError <> 0
+        Begin
+            Set @message = 'Error trying to look up cart ID using "' + @newValue + '"'
+        End
+        Else If @cartID = 0
+        Begin
+            Set @message = 'Invalid LC Cart name: ' + @newValue
+            Set @myError = 52117
+        End
+        Else
+        Begin
             -- Note: Only update the value if RDS_Cart_ID has changed
             --
             UPDATE T_Requested_Run
             SET    RDS_Cart_ID = @cartID
-            WHERE (ID = @requestID AND RDS_Cart_ID <> @cartID)
+            WHERE ID = @requestID AND Coalesce(RDS_Cart_ID, 0) <> @cartID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myError = 0 And @myRowCount < 1
+            Begin
                 Set @myRowCount = 1
+            End
 
             If @myError <> 0
             Begin
                 Set @message = 'Update query reported error code ' + Cast(@myError As Varchar(12))
             End
-        end
-    end
+        End
+    End
+        
+    If @mode = 'CartConfigID'
+    Begin
+        ---------------------------------------------------
+        -- Resolve ID for Cart Config ID and update requested run table
+        ---------------------------------------------------
 
-    if @mode = 'RunStatus'
-    begin
+        Declare @cartConfigID int = TRY_CAST(@newValue AS int)
+
+        If @cartConfigID Is Null
+        Begin
+            Set @message = 'Cannot update T_Requested_Run since cart config ID is not an integer: ' + Coalesce(@newValue, '??')
+            Set @myError = 52118
+        End
+        Else If Not Exists (SELECT Cart_Config_ID FROM T_LC_Cart_Configuration WHERE Cart_Config_ID = @cartConfigID)
+        Begin
+            Set @message = 'Invalid Cart Config ID: ' + @newValue
+            Set @myError = 52119
+        End
+        Else
+        Begin
+            UPDATE T_Requested_Run
+            SET    RDS_Cart_Config_ID = @cartConfigID
+            WHERE ID = @requestID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+        End
+    End
+
+    If @mode = 'RunStatus'
+    Begin
         UPDATE T_Requested_Run
         SET    RDS_note = @newValue
-        WHERE (ID = @requestID)
+        WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-    end
+    End
 
-    if @mode = 'RunStart'
-    begin
-        if @newValue = ''
-            set @dt = getdate()
+    If @mode = 'RunStart'
+    Begin
+        If @newValue = ''
+            Set @dt = getdate()
         else
-            set @dt = cast(@newValue as datetime)
+            Set @dt = cast(@newValue as datetime)
 
         UPDATE T_Requested_Run
         SET    RDS_Run_Start = @dt
-        WHERE (ID = @requestID)
+        WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-    end
+    End
 
-    if @mode = 'RunFinish'
-    begin
-        if @newValue = ''
-            set @dt = getdate()
+    If @mode = 'RunFinish'
+    Begin
+        If @newValue = ''
+            Set @dt = getdate()
         else
-            set @dt = cast(@newValue as datetime)
+            Set @dt = cast(@newValue as datetime)
 
         UPDATE T_Requested_Run
         SET     RDS_Run_Finish = @dt
-        WHERE (ID = @requestID)
+        WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-    end
+    End
 
-    if @mode = 'InternalStandard'
-    begin
+    If @mode = 'InternalStandard'
+    Begin
         UPDATE T_Requested_Run
         SET    RDS_Internal_Standard = @newValue
-        WHERE (ID = @requestID)
+        WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-    end
-
+    End
 
     ---------------------------------------------------
     -- Log SP usage
     ---------------------------------------------------
 
-    Declare @UsageMessage varchar(512)
-    Set @UsageMessage = 'Request ' + Convert(varchar(12), @requestID)
+    Declare @UsageMessage varchar(512) = 'Request ' + Convert(varchar(12), @requestID)
+
     Exec post_usage_log_entry 'update_cart_parameters', @UsageMessage
 
     ---------------------------------------------------
-    -- report any errors
+    -- Report any errors
     ---------------------------------------------------
-    if @myError <> 0 or @myRowCount = 0
-    begin
+
+    If @myError <> 0 or @myRowCount = 0
+    Begin
         Set @message = 'operation failed for mode ' + @mode + ' (' + Coalesce(@message, '??') + ')'
         RAISERROR ('operation failed: "%s"', 10, 1, @mode)
-        return 51310
-    end
+        Return 51310
+    End
 
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_cart_parameters] TO [DDL_Viewer] AS [dbo]
