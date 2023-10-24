@@ -9,7 +9,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **  Desc:
 **      Adds new dataset entry to DMS database
 **
-**      This is called from the Dataset Entry page (https://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
+**      This procedure is called from the Dataset Entry page (https://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
 **      It is also called from the Spreadsheet Loader with @mode as 'add, 'check_update', or 'check_add'
 **
 **  Return values: 0: success, otherwise, error code
@@ -270,7 +270,7 @@ AS
         Set @msg = 'Dataset type must be specified'
         RAISERROR (@msg, 11, 15)
     End
-    --
+
     If IsNull(@lcCartName, '') = ''
     Begin
         Set @msg = 'LC Cart name must be specified'
@@ -306,11 +306,12 @@ AS
 
     If @captureSubfolder LIKE '\\%' OR @captureSubfolder LIKE '[A-Z]:\%'
     Begin
-     Set @msg = 'Capture subfolder should be a subdirectory name below the source share for this instrument; it is currently a full path'
+        Set @msg = 'Capture subfolder should be a subdirectory name below the source share for this instrument; it is currently a full path'
         RAISERROR (@msg, 11, 15)
     End
 
     Set @lcCartConfig = LTrim(RTrim(IsNull(@lcCartConfig, '')))
+
     If @lcCartConfig = ''
     Begin
         Set @lcCartConfig = null
@@ -463,13 +464,13 @@ AS
     ---------------------------------------------------
 
     Declare @columnID int = -1
-    --
+
     SELECT @columnID = ID
     FROM T_LC_Column
     WHERE SC_Column_Number = @lcColumnName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @msg = 'Error trying to look up column ID'
@@ -487,6 +488,7 @@ AS
     ---------------------------------------------------
 
     Declare @cartConfigID int
+
     If @lcCartConfig Is Null
     Begin
         Set @cartConfigID = null
@@ -500,12 +502,13 @@ AS
         WHERE Cart_Config_Name = @lcCartConfig
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @msg = 'Error trying to look up LC cart config ID'
             RAISERROR (@msg, 11, 95)
         End
+
         If @cartConfigID = -1
         Begin
             Set @msg = 'Unknown LC cart config: ' + @lcCartConfig
@@ -518,13 +521,13 @@ AS
     ---------------------------------------------------
 
     Declare @sepID int = 0
-    --
+
     SELECT @sepID = SS_ID
     FROM T_Secondary_Sep
     WHERE SS_name = @secSep
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @msg = 'Error trying to look up separation type ID'
@@ -542,13 +545,13 @@ AS
     ---------------------------------------------------
 
     Declare @intStdID int = -1
-    --
+
     SELECT @intStdID = Internal_Std_Mix_ID
     FROM [T_Internal_Standards]
     WHERE [Name] = @internalStandards
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @msg = 'Error trying to look up internal standards ID'
@@ -872,7 +875,7 @@ AS
 
             SELECT @experimentCheck = E.Experiment_Num
             FROM T_Experiments E INNER JOIN
-                T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID
+                 T_Requested_Run RR ON E.Exp_ID = RR.Exp_ID
             WHERE RR.ID = @requestID
 
             If @experimentCheck <> @experimentName
@@ -968,9 +971,10 @@ AS
 
         If @requestID <> 0
         Begin
-            --**Check code taken from consume_scheduled_run stored procedure**
+
             ---------------------------------------------------
             -- Validate that experiments match
+            -- (check code taken from consume_scheduled_run stored procedure)
             ---------------------------------------------------
 
             -- Get experiment ID from dataset;
@@ -979,13 +983,13 @@ AS
             -- Get experiment ID from scheduled run
             --
             Declare @reqExperimentID int = 0
-            --
+
             SELECT @reqExperimentID = Exp_ID
             FROM T_Requested_Run
             WHERE ID = @requestID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            --
+
             If @myError <> 0
             Begin
                 Set @message = 'Error trying to look up experiment for request'
@@ -1001,19 +1005,18 @@ AS
             End
         End
 
-        --**Check code taken from update_cart_parameters stored procedure**
         ---------------------------------------------------
         -- Resolve ID for LC Cart and update requested run table
         ---------------------------------------------------
 
         Declare @cartID int = 0
-        --
+
         SELECT @cartID = ID
         FROM T_LC_Cart
         WHERE Cart_Name = @lcCartName
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @msg = 'Error trying to look up cart ID'
@@ -1032,7 +1035,7 @@ AS
             -- RequestID not specified
             -- Try to determine EUS information using Experiment name
 
-            --**Check code taken from add_update_requested_run stored procedure**
+            -- Check code taken from add_update_requested_run stored procedure
 
             ---------------------------------------------------
             -- Lookup EUS field (only effective for experiments that have associated sample prep requests)
@@ -1248,7 +1251,7 @@ AS
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0 or @myRowCount <> 1
         Begin
             Set @msg = 'Insert operation failed for dataset ' + @datasetName
@@ -1369,8 +1372,7 @@ AS
         End -- </b3>
 
         ---------------------------------------------------
-        -- If a cart name is specified, update it for the
-        -- requested run
+        -- If a cart name is specified, update it for the requested run
         ---------------------------------------------------
         --
         If @lcCartName NOT IN ('', 'no update') And @requestID > 0
@@ -1462,9 +1464,9 @@ AS
         End
 
         Set @myError = 0
-        --
+
         UPDATE T_Dataset
-        Set     DS_Oper_PRN = @operatorUsername,
+        SET     DS_Oper_PRN = @operatorUsername,
                 DS_comment = @comment,
                 DS_type_ID = @datasetTypeID,
                 DS_well_num = @wellNumber,
@@ -1480,7 +1482,7 @@ AS
         WHERE Dataset_ID = @datasetID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @msg = 'Update operation failed: dataset ' + @datasetName
@@ -1553,7 +1555,7 @@ AS
             SELECT @batch = RDS_BatchID,
                    @block = RDS_Block,
                    @runOrder = RDS_Run_Order
-            FROM t_requested_run
+            FROM T_Requested_Run
             WHERE ID = @requestID
 
             Set @batch = IsNull(@batch, 0)

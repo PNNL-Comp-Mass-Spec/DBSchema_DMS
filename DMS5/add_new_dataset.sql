@@ -3,19 +3,15 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[add_new_dataset]
 /****************************************************
 **
 **  Desc:
-**      Adds new dataset entry to DMS database from contents of XML.
+**      Adds new dataset entry to DMS database from contents of XML
 **
-**      This is for use by sample automation software
-**      associated with the mass spec instrument to
-**      create new datasets automatically following
-**      an instrument run.
+**      This procedure is called by the Data Import Manager (DIM) while processing dataset trigger files
 **
-**      This procedure is called by the DataImportManager (DIM)
+**      This procedure extracts the metadata from the XML then calls add_update_dataset
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -26,7 +22,7 @@ CREATE PROCEDURE [dbo].[add_new_dataset]
 **          10/16/2007 mem - Added support for the 'DS Creator (PRN)' field
 **          01/02/2008 mem - Now setting the rating to 'Released' for datasets that start with "Blank" (Ticket #593)
 **          02/13/2008 mem - Increased size of @datasetName to varchar(128) (Ticket #602)
-**          02/26/2010 grk - merged T_Requested_Run_History with T_Requested_Run
+**          02/26/2010 grk - Merged T_Requested_Run_History with T_Requested_Run
 **          09/09/2010 mem - Now always looking up the request number associated with the new dataset
 **          03/04/2011 mem - Now validating that @runFinish is not a future date
 **          03/07/2011 mem - Now auto-defining experiment name if empty for QC_Shew and Blank datasets
@@ -114,13 +110,13 @@ AS
     --  Create temporary table to hold list of parameters
     ---------------------------------------------------
 
-     CREATE TABLE #TPAR (
+    CREATE TABLE #TPAR (
         paramName varchar(128),
         paramValue varchar(512)
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Failed to create temporary parameter table'
@@ -147,7 +143,7 @@ AS
     WHERE NOT [Name] IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error populating temporary parameter table'
@@ -286,6 +282,7 @@ AS
     ---------------------------------------------------
     -- Create new dataset
     ---------------------------------------------------
+
     exec @myError = add_update_dataset
                         @datasetName,
                         @experimentName,
@@ -327,7 +324,7 @@ AS
         */
 
         RAISERROR (@message, 10, 1)
-        return 51032
+        Return 51032
     End
 
     ---------------------------------------------------
@@ -383,14 +380,14 @@ AS
     Begin
         Set @message = 'Error trying to resolve dataset ID'
         RAISERROR (@message, 10, 1)
-        return 51034
+        Return 51034
     End
 
     If @datasetId = 0
     Begin
         Set @message = 'Could not resolve dataset ID'
         RAISERROR (@message, 10, 1)
-        return 51035
+        Return 51035
     End
 
     ---------------------------------------------------
@@ -409,7 +406,7 @@ AS
     Begin
         Set @message = 'Error trying to resolve request ID'
         RAISERROR (@message, 10, 1)
-        return 51036
+        Return 51036
     End
 
     If @existingRequestID <> 0
@@ -430,7 +427,6 @@ AS
               Entered Between @addUpdateTimeStamp AND DateAdd(minute, 1, @addUpdateTimeStamp)
 
     End
-
 
     ---------------------------------------------------
     -- Update the associated request with run start/finish values
@@ -466,12 +462,12 @@ AS
         WHERE (ID = @requestID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             set @message = 'Error trying to update run times'
             RAISERROR (@message, 10, 1)
-            return 51033
+            Return 51033
         End
     End
 
@@ -479,7 +475,7 @@ AS
     -- Done
     ---------------------------------------------------
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_new_dataset] TO [DDL_Viewer] AS [dbo]
