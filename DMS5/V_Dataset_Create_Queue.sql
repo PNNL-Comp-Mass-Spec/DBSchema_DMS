@@ -34,7 +34,8 @@ SELECT TFCQ.entry_id,
        TFCQ.created,               
        TFCQ.start,                 
        TFCQ.finish,                
-       TFCQ.completion_code        
+       TFCQ.completion_code,
+       TFCQ.completion_message
 FROM T_Dataset_Create_Queue TFCQ
      INNER JOIN T_Dataset_Create_Queue_State QS
        ON TFCQ.State_ID = QS.Queue_State_ID

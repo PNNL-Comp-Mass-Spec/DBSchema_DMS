@@ -33,6 +33,7 @@ CREATE TABLE [dbo].[T_Dataset_Create_Queue](
 	[Start] [datetime] NULL,
 	[Finish] [datetime] NULL,
 	[Completion_Code] [int] NULL,
+	[Completion_Message] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_Dataset_Create_Queue] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
