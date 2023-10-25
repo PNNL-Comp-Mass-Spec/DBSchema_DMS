@@ -7,10 +7,11 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 /****************************************************
 **
 **  Desc:
-**      Adds new dataset entry to DMS database
-**
-**      This procedure is called from the Dataset Entry page (https://dms2.pnl.gov/dataset/create) with @mode = 'add_trigger'
-**      It is also called from the Spreadsheet Loader with @mode as 'add, 'check_update', or 'check_add'
+**      This procedure is called from both web pages and from other procedures
+**      - The Dataset Entry page (https://dms2.pnl.gov/dataset/create) calls it with @mode = 'add_trigger'
+**      - Dataset Detail Report pages call it with @mode = 'update'
+**      - Spreadsheet Loader (https://dms2.pnl.gov/upload/main) calls it with with @mode as 'add, 'check_update', or 'check_add'
+**      - It is also called with @mode = 'add' when the Data Import Manager (DIM) calls add_new_dataset while processing dataset trigger files
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -121,6 +122,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          08/02/2023 mem - Prevent adding a dataset for an inactive instrument
 **          08/03/2023 mem - Allow creation of datasets for instruments in group 'Data_Folders' (specifically, the DMS_Pipeline_Data instrument)
 **          09/07/2023 mem - Update warning messages
+**          10/24/2023 mem - Use update_cart_parameters to add/update Cart Config ID in T_Requested_Run
 **
 *****************************************************/
 (
@@ -176,7 +178,9 @@ AS
 
     Declare @batch int
     Declare @block int
-    Declare @runOrder Int
+    Declare @runOrder int
+
+    Declare @newValue varchar(12)
 
     Set @message = ''
     Set @warning = ''
@@ -1094,7 +1098,7 @@ AS
             -- Verify that request ID is correct
             ---------------------------------------------------
 
-            If NOT EXISTS (SELECT * FROM T_Requested_Run WHERE ID = @requestID)
+            If NOT EXISTS (SELECT ID FROM T_Requested_Run WHERE ID = @requestID)
             Begin
                 Set @msg = 'Request ID not found'
                 RAISERROR (@msg, 11, 52)
@@ -1374,8 +1378,8 @@ AS
         ---------------------------------------------------
         -- If a cart name is specified, update it for the requested run
         ---------------------------------------------------
-        --
-        If @lcCartName NOT IN ('', 'no update') And @requestID > 0
+
+        If @requestID > 0 And @lcCartName NOT IN ('', 'no update')
         Begin
 
             If IsNull(@message, '') <> '' and IsNull(@warning, '') = ''
@@ -1383,20 +1387,52 @@ AS
 
             If @logDebugMessages > 0
             Begin
-                Print 'Call update_cart_parameters'
+                Print 'Call update_cart_parameters with @mode="CartName"'
             End
 
             exec @result = update_cart_parameters
                                 'CartName',
                                 @requestID,
-                                @lcCartName output,
+                                @lcCartName,
                                 @message output
-            --
+
             Set @myError = @result
-            --
+
             If @myError <> 0
             Begin
                 Set @msg = 'Update LC cart name failed: dataset ' + @datasetName + ' -> ' + @message
+                RAISERROR (@msg, 11, 21)
+            End
+        End
+
+        ---------------------------------------------------
+        -- If @cartConfigID is a positive number, update it for the requested run
+        ---------------------------------------------------
+
+        If @requestID > 0 And @cartConfigID > 0
+        Begin
+
+            If IsNull(@message, '') <> '' And IsNull(@warning, '') = ''
+                Set @warning = @message
+
+            If @logDebugMessages > 0
+            Begin
+                Print 'Call update_cart_parameters with @mode="CartConfigID"'
+            End
+
+            Set @newValue = Cast(@cartConfigID As varchar(12))
+
+            exec @result = update_cart_parameters
+                                'CartConfigID',
+                                @requestID,
+                                @newValue,
+                                @message output
+
+            Set @myError = @result
+
+            If @myError <> 0
+            Begin
+                Set @msg = 'Update cart config ID: dataset ' + @datasetName + ' -> ' + @message
                 RAISERROR (@msg, 11, 21)
             End
         End
@@ -1516,14 +1552,13 @@ AS
             Set @requestID = 0
 
         ---------------------------------------------------
-        -- If a cart name is specified, update it for the
-        -- requested run
+        -- If a cart name is specified, update it for the requested run
         ---------------------------------------------------
         --
         If @lcCartName NOT IN ('', 'no update')
         Begin
 
-            If IsNull(@requestID, 0) = 0
+            If @requestID <= 0
             Begin
                 Set @warningAddon = 'Dataset is not associated with a requested run; cannot update the LC Cart Name'
                 Set @warning = dbo.append_to_text(@warning, @warningAddon, 0, '; ', 512)
@@ -1534,9 +1569,9 @@ AS
                 exec @result = update_cart_parameters
                                     'CartName',
                                     @requestID,
-                                    @lcCartName output,
+                                    @lcCartName,
                                     @warningAddon output
-                --
+
                 Set @myError = @result
                 --
                 If @myError <> 0
@@ -1545,6 +1580,33 @@ AS
                     Set @warning = dbo.append_to_text(@warning, @warningAddon, 0, '; ', 512)
                     Set @myError = 0
                 End
+            End
+        End
+
+        ---------------------------------------------------
+        -- If @cartConfigID is a positive number, update it for the requested run
+        ---------------------------------------------------
+
+        If @requestID > 0 And @cartConfigID > 0
+        Begin
+
+            Set @warningAddon = ''
+
+            Set @newValue = Cast(@cartConfigID As varchar(12))
+
+            exec @result = update_cart_parameters
+                                'CartConfigID',
+                                @requestID,
+                                @newValue,
+                                @warningAddon output
+
+            Set @myError = @result
+            --
+            If @myError <> 0
+            Begin
+                Set @warningAddon = 'Update cart config ID failed: ' + @warningAddon
+                Set @warning = dbo.append_to_text(@warning, @warningAddon, 0, '; ', 512)
+                Set @myError = 0
             End
         End
 
