@@ -55,7 +55,7 @@ AS
     -- Verify that request ID is correct
     ---------------------------------------------------
     Declare @tmp int = 0
-    
+
     SELECT @tmp = ID
     FROM T_Requested_Run
     WHERE ID = @requestID
@@ -103,10 +103,10 @@ AS
         End
         Else
         Begin
-            -- Note: Only update the value if RDS_Cart_ID has changed
+            -- Note: Only update the value if the Cart ID has changed
             --
             UPDATE T_Requested_Run
-            SET    RDS_Cart_ID = @cartID
+            SET RDS_Cart_ID = @cartID
             WHERE ID = @requestID AND Coalesce(RDS_Cart_ID, 0) <> @cartID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -122,7 +122,7 @@ AS
             End
         End
     End
-        
+
     If @mode = 'CartConfigID'
     Begin
         ---------------------------------------------------
@@ -144,10 +144,15 @@ AS
         Else
         Begin
             UPDATE T_Requested_Run
-            SET    RDS_Cart_Config_ID = @cartConfigID
-            WHERE ID = @requestID
+            SET RDS_Cart_Config_ID = @cartConfigID
+            WHERE ID = @requestID AND Coalesce(RDS_Cart_Config_ID, 0) <> @cartConfigID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myError = 0 And @myRowCount < 1
+            Begin
+                Set @myRowCount = 1
+            End
         End
     End
 
@@ -164,11 +169,11 @@ AS
     Begin
         If @newValue = ''
             Set @dt = getdate()
-        else
+        Else
             Set @dt = cast(@newValue as datetime)
 
         UPDATE T_Requested_Run
-        SET    RDS_Run_Start = @dt
+        SET RDS_Run_Start = @dt
         WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -178,7 +183,7 @@ AS
     Begin
         If @newValue = ''
             Set @dt = getdate()
-        else
+        Else
             Set @dt = cast(@newValue as datetime)
 
         UPDATE T_Requested_Run
@@ -191,7 +196,7 @@ AS
     If @mode = 'InternalStandard'
     Begin
         UPDATE T_Requested_Run
-        SET    RDS_Internal_Standard = @newValue
+        SET RDS_Internal_Standard = @newValue
         WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
