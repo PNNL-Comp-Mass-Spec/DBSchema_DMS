@@ -9,7 +9,7 @@ AS
 SELECT DS.Dataset_Num AS Dataset,
        DS.Dataset_ID,
        TDT.DST_Name AS [Type],
-       DS.DS_folder_name AS Folder,
+       DS.DS_folder_name AS Directory,
        TIN.IN_class AS Instrument_Class,
        TIN.IN_name AS Instrument_Name,
        TIN.IN_capture_method AS Method,

@@ -47,6 +47,7 @@ CREATE PROCEDURE [dbo].[get_task_param_table]
 **          02/03/2023 bcg - Replace Operator_PRN with Operator_Username
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/01/2023 mem - Rename procedures and functions
+**          10/25/2023 bcg - Update column name on V_DMS_Dataset_Metadata
 **
 *****************************************************/
 (
@@ -125,7 +126,7 @@ AS
     FROM
       ( SELECT
           CONVERT(varchar(2000), Type) AS Dataset_Type,
-          CONVERT(varchar(2000), Folder) AS Directory,
+          CONVERT(varchar(2000), Directory) AS Directory,
           CONVERT(varchar(2000), Method) AS Method,
           CONVERT(varchar(2000), Capture_Exclusion_Window) AS Capture_Exclusion_Window,
           CONVERT(varchar(2000), Created) AS Created ,
