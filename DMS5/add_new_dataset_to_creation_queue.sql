@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[add_new_dataset_to_creation_queue]
 /****************************************************
 **
 **  Desc:
-**      Adds a new dataset to T_Dataset_Create_Queue
+**      Adds a new dataset creation task to T_Dataset_Create_Queue
 **
 **      The Data Import Manager looks for entries with state 1 in T_Dataset_Create_Queue
 **      For each one, it validates that the dataset file(s) are available, then creates the dataset in DMS
@@ -177,7 +177,7 @@ AS
     If @myError <> 0
     Begin
         Set @myError = 76
-        Set @message = 'Error adding dataset ' + @datasetName + '; @myError = ' + Cast(@myError AS varchar(12))
+        Set @message = 'Error adding dataset creation task for ' + @datasetName + '; @myError = ' + Cast(@myError AS varchar(12))
 
         Exec post_log_entry 'Error', @message, 'add_new_dataset_to_creation_queue'
         Return @myError
