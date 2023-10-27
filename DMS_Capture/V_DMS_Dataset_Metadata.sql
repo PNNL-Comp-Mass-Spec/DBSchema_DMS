@@ -20,6 +20,8 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.DS_Oper_PRN AS Operator_Username,
        IsNull(EUSProposalUser.EUS_User_ID, EUSUser.EUS_Person_ID) AS EUS_Operator_ID,
        DS.DS_created AS Created,
+       DS.Acq_Time_Start,
+       DS.Acq_Time_End,
        TSrc.SP_path AS source_Path,
        TSrc.SP_vol_name_server AS source_Vol,
        TSrc.SP_path_ID AS Source_path_ID,
@@ -56,7 +58,6 @@ FROM S_DMS_T_Dataset AS DS
        ON EUSProposalUser.Proposal_ID = RR.RDS_EUS_Proposal_ID And
           DS.DS_Oper_PRN = EUSProposalUser.Username And 
           EUSProposalUser.Valid_EUS_ID > 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_DMS_Dataset_Metadata] TO [DDL_Viewer] AS [dbo]
