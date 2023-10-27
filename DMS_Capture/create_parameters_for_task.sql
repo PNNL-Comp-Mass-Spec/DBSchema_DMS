@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[create_parameters_for_task]
 /****************************************************
 **
@@ -21,6 +22,7 @@ CREATE PROCEDURE [dbo].[create_parameters_for_task]
 **          07/11/2013 mem - Added support for script 'MyEMSLDatasetPushRecursive'
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/01/2023 mem - Rename procedures and functions
+**          10/25/2023 bcg - Add new argument to get_task_param_table call
 **
 *****************************************************/
 (
@@ -57,7 +59,7 @@ AS
     --
     INSERT INTO @Job_Parameters
         (Job, Step_Number, [Section], [Name], Value)
-    execute get_task_param_table @job, @datasetID
+    execute get_task_param_table @job, @datasetID, @scriptName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --

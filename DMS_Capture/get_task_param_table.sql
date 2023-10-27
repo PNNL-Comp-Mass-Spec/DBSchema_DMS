@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[get_task_param_table]
 /****************************************************
 **
@@ -48,11 +49,15 @@ CREATE PROCEDURE [dbo].[get_task_param_table]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/01/2023 mem - Rename procedures and functions
 **          10/25/2023 bcg - Update column name on V_DMS_Dataset_Metadata
+**          10/26/2023 bcg - Add @scriptName argument
+**                         - Add parameter modifications for script 'LCDatasetCapture'
+**                         - Store dates in ODBC canonical style: yyyy-MM-dd hh:mm:ss
 **
 *****************************************************/
 (
     @job int,
-    @datasetID int
+    @datasetID int,
+    @scriptName varchar(64) = ''
 )
 AS
     Declare @myError int = 0
@@ -82,7 +87,10 @@ AS
         @instrument_name varchar(255),
         @instrument_class varchar(255),
         @max_simultaneous_captures varchar(255),
-        @capture_subdirectory varchar(255)
+        @capture_subdirectory varchar(255),
+        @captureMethod varchar(255),
+        @sourceVolume varchar(255),
+        @sourcePath varchar(255)
     --
 
     SELECT
@@ -99,6 +107,23 @@ AS
         Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
+    
+    ---------------------------------------------------
+    -- Get needed values when the script is 'LCDatasetCapture'
+    ---------------------------------------------------
+    If @ScriptName = 'LCDatasetCapture'
+    Begin
+        SELECT
+            @instrument_name = LC_Instrument_Name,
+            @instrument_class = LC_Instrument_Class,
+            @captureMethod = LC_Instrument_Capture_Method,
+            @sourceVolume = Source_Vol,
+            @sourcePath = Source_Path
+        FROM
+            V_DMS_Dataset_LC_Instrument
+        WHERE
+            Dataset_ID = @datasetID
+    End
 
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Dataset_ID', @datasetID)
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Dataset', @dataset)
@@ -129,7 +154,7 @@ AS
           CONVERT(varchar(2000), Directory) AS Directory,
           CONVERT(varchar(2000), Method) AS Method,
           CONVERT(varchar(2000), Capture_Exclusion_Window) AS Capture_Exclusion_Window,
-          CONVERT(varchar(2000), Created) AS Created ,
+          CONVERT(varchar(2000), Created, 120) AS Created ,
           CONVERT(varchar(2000), Source_Vol) AS Source_Vol,
           CONVERT(varchar(2000), Source_Path) AS Source_Path,
           CONVERT(varchar(2000), Storage_Vol) AS Storage_Vol,
@@ -141,19 +166,45 @@ AS
           CONVERT(varchar(2000), EUS_Instrument_ID) AS EUS_Instrument_ID,
           CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID,
           CONVERT(varchar(2000), EUS_Operator_ID) AS EUS_Operator_ID,
-          CONVERT(varchar(2000), Operator_Username) AS Operator_Username
+          CONVERT(varchar(2000), Operator_Username) AS Operator_Username,
+          CONVERT(varchar(2000), Acq_Time_Start, 120) AS Acq_Time_Start,
+          CONVERT(varchar(2000), Acq_Time_End, 120) AS Acq_Time_End
 
         FROM
           V_DMS_Dataset_Metadata
         WHERE
           Dataset_ID = @datasetID
-      ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Directory, Method, Capture_Exclusion_Window, Created ,
+      ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Directory, Method, Capture_Exclusion_Window, Created,
                                            Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External,
                                            Archive_Server, Archive_Path, Archive_Network_Share_Path,
-                                           EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_Username
+                                           EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_Username,
+                                           Acq_Time_Start, Acq_Time_End
                    ) ) as TP
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    ---------------------------------------------------
+    -- Update parameters as needed when the script is 'LCDatasetCapture'
+    ---------------------------------------------------
+
+    If @ScriptName = 'LCDatasetCapture'
+    Begin
+        UPDATE @paramTab
+        SET [Value] = [Value] + '\LC'
+        WHERE Section = 'JobParameters' AND 'Name' = 'Directory'
+
+        UPDATE @paramTab
+        SET [Value] = @captureMethod
+        WHERE Section = 'JobParameters' AND 'Name' = 'Method'
+
+        UPDATE @paramTab
+        SET [Value] = @sourceVolume
+        WHERE Section = 'JobParameters' AND 'Name' = 'Source_Vol'
+
+        UPDATE @paramTab
+        SET [Value] = @sourcePath
+        WHERE Section = 'JobParameters' AND 'Name' = 'Source_Path'
+    End
 
     ---------------------------------------------------
     -- Instrument class params from DMS5.T_Instrument_Class
