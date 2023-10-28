@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 56 ******/
+/****** RowCount: 57 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag, Sample_Prep_Visible, Requested_Run_Visible, Target_Instrument_Group ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('21T','Research','',1,1,'FT',1,1,null)
@@ -50,6 +50,7 @@ INSERT INTO [T_Instrument_Group] VALUES ('QTrap','Research','MRM',0,3,'QQQ',0,1,
 INSERT INTO [T_Instrument_Group] VALUES ('Sciex_TripleTOF','Research','',0,5,null,0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Shimadzu_GC','Real-time atmospheric monitoring','',1,18,'GC',0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('SLIM','Ion-mobility LC-IMS-MS with SLIM','',1,6,'IMS',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Thermo_SII_LC','LC instruments controlled using SII for Xcalibur','SII - Standard Instrument Integration, allows controlling Chromeleon-supported LC modules from Xcalibur',1,31,'None',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('timsTOF','LC-IMS-MS with MS/MS','Bruker timsTOF',1,30,'TOF',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('TSQ','MRM','',1,9,'QQQ',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('TSQ_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,9,'QQQ',0,1,'TSQ')
