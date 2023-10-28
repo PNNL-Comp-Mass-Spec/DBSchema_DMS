@@ -18,7 +18,7 @@ SELECT AJ.AJ_jobID AS Job,
        InstClass.Raw_Data_Type,
        SPath.SP_vol_name_client + 'DMS3_XFER\' AS Transfer_Folder_Path,
        ArchPath.AP_network_share_path AS Archive_Folder_Path,
-       SP.SP_vol_name_client + SP.SP_path AS Dataset_Storage_Path,
+       SPath.SP_vol_name_client + SPath.SP_path AS Dataset_Storage_Path,
        DSArch.AS_instrument_data_purged As Instrument_Data_Purged,
        -- Legacy column names
        AJ.AJ_parmFileName AS [Param File],
@@ -27,7 +27,7 @@ SELECT AJ.AJ_jobID AS Job,
        InstClass.raw_data_type AS RawDataType,
        SPath.SP_vol_name_client + 'DMS3_XFER\' AS transferFolderPath,
        ArchPath.AP_network_share_path AS [Archive Folder Path],
-       SP.SP_vol_name_client + SP.SP_path AS [Dataset Storage Path],
+       SPath.SP_vol_name_client + SPath.SP_path AS [Dataset Storage Path],
        DSArch.AS_instrument_data_purged As InstrumentDataPurged
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Dataset AS DS
@@ -46,8 +46,6 @@ FROM dbo.T_Analysis_Job AS AJ
        ON DS.Dataset_ID = DSArch.AS_Dataset_ID
      INNER JOIN dbo.T_Archive_Path AS ArchPath
        ON DSArch.AS_storage_path_ID = ArchPath.AP_path_ID
-     INNER JOIN dbo.t_storage_path AS SP
-       ON DS.DS_storage_path_ID = SP.SP_path_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Source_Analysis_Job] TO [DDL_Viewer] AS [dbo]
