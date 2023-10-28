@@ -191,19 +191,19 @@ AS
     Begin
         UPDATE @paramTab
         SET [Value] = [Value] + '\LC'
-        WHERE Section = 'JobParameters' AND 'Name' = 'Directory'
+        WHERE [Section] = 'JobParameters' AND [Name] = 'Directory'
 
         UPDATE @paramTab
         SET [Value] = @captureMethod
-        WHERE Section = 'JobParameters' AND 'Name' = 'Method'
+        WHERE [Section] = 'JobParameters' AND [Name] = 'Method'
 
         UPDATE @paramTab
         SET [Value] = @sourceVolume
-        WHERE Section = 'JobParameters' AND 'Name' = 'Source_Vol'
+        WHERE [Section] = 'JobParameters' AND [Name] = 'Source_Vol'
 
         UPDATE @paramTab
         SET [Value] = @sourcePath
-        WHERE Section = 'JobParameters' AND 'Name' = 'Source_Path'
+        WHERE [Section] = 'JobParameters' AND [Name] = 'Source_Path'
     End
 
     ---------------------------------------------------

@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Step_Tools] ******/
-/****** RowCount: 11 ******/
+/****** RowCount: 13 ******/
 SET IDENTITY_INSERT [T_Step_Tools] ON
 INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (1,'DatasetCapture','Create dataset folder on storage server and copy instrument data into it','Y','N','Y',0,0,'Y')
 INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (2,'DatasetArchive','Create dataset folder on archive and copy everything from storage dataset folder into it','N','Y','N',60,1,'N')
@@ -12,4 +12,6 @@ INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Stor
 INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (11,'ArchiveUpdateTest','Test instance of the ArchiveUpdate tool','N','Y','N',1,10,'N')
 INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (12,'ArchiveVerify','Verify that checksums reported by MyEMSL match those of the ingested data (using https://metadata.my.emsl.pnl.gov/fileinfo/files_for_keyvalue/omics.dms.dataset_id/598409)','N','N','N',10,90,'N')
 INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (13,'ArchiveStatusCheck','Verify that all of the ingest jobs associated with the given dataset are complete (look for task_percent = 100 at https://ingestdms.my.emsl.pnl.gov/get_state?job_id=1300940)','N','N','N',20,90,'N')
+INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (14,'LCDatasetCapture','Copy LC instrument data into dataset LC subfolder on storage server','Y','N','Y',0,0,'Y')
+INSERT INTO [T_Step_Tools] (ID, Name, Description, Bionet_Required, Only_On_Storage_Server, Instrument_Capacity_Limited, Holdoff_Interval_Minutes, Number_Of_Retries, Processor_Assignment_Applies) VALUES (15,'LCDatasetInfo','Create QC graphics using MSFileInfoScanner, but do not overwrite the MS dataset info','N','N','N',0,0,'N')
 SET IDENTITY_INSERT [T_Step_Tools] OFF
