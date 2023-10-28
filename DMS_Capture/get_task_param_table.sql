@@ -3,15 +3,13 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[get_task_param_table]
 /****************************************************
 **
 **  Desc:
-**      Returns a table filled with the parameters for the
-**      given job (from #Jobs) in Section/Name/Value rows
+**      Returns a table filled with the parameters for the given job (from #Jobs) in Section/Name/Value rows
 **
-**  The calling procedure must create table #Jobs
+**      The calling procedure must create table #Jobs
 **
 **      CREATE TABLE #Jobs (
 **          [Job] int NOT NULL,
@@ -93,36 +91,31 @@ AS
         @sourcePath varchar(255)
     --
 
-    SELECT
-        @dataset = Dataset,
-        @storage_server_name = Storage_Server,
-        @instrument_name = Instrument,
-        @instrument_class = Instrument_Class,
-        @max_simultaneous_captures = Max_Simultaneous_Captures,
-        @capture_subdirectory = Capture_Subdirectory
-    FROM
-        #Jobs
-    WHERE
-        Dataset_ID = @datasetID AND
-        Job = @job
+    SELECT @dataset = Dataset,
+           @storage_server_name = Storage_Server,
+           @instrument_name = Instrument,
+           @instrument_class = Instrument_Class,
+           @max_simultaneous_captures = Max_Simultaneous_Captures,
+           @capture_subdirectory = Capture_Subdirectory
+    FROM #Jobs
+    WHERE Dataset_ID = @datasetID AND
+          Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    
+
     ---------------------------------------------------
-    -- Get needed values when the script is 'LCDatasetCapture'
+    -- Get alternate values to use when the script is 'LCDatasetCapture'
     ---------------------------------------------------
+
     If @ScriptName = 'LCDatasetCapture'
     Begin
-        SELECT
-            @instrument_name = LC_Instrument_Name,
-            @instrument_class = LC_Instrument_Class,
-            @captureMethod = LC_Instrument_Capture_Method,
-            @sourceVolume = Source_Vol,
-            @sourcePath = Source_Path
-        FROM
-            V_DMS_Dataset_LC_Instrument
-        WHERE
-            Dataset_ID = @datasetID
+        SELECT @instrument_name = LC_Instrument_Name,
+               @instrument_class = LC_Instrument_Class,
+               @captureMethod = LC_Instrument_Capture_Method,
+               @sourceVolume = Source_Vol,
+               @sourcePath = Source_Path
+        FROM V_DMS_Dataset_LC_Instrument
+        WHERE Dataset_ID = @datasetID
     End
 
     INSERT INTO @paramTab ([Step_Number], [Section], [Name], [Value]) VALUES (NULL, 'JobParameters', 'Dataset_ID', @datasetID)
@@ -143,11 +136,10 @@ AS
     ---------------------------------------------------
     --
     INSERT INTO @paramTab
-    SELECT
-      NULL AS Step_Number,
-      'JobParameters' AS [Section],
-      TP.Name,
-      TP.Value
+    SELECT NULL AS Step_Number,
+           'JobParameters' AS [Section],
+           TP.Name,
+           TP.Value
     FROM
       ( SELECT
           CONVERT(varchar(2000), Type) AS Dataset_Type,
@@ -170,10 +162,8 @@ AS
           CONVERT(varchar(2000), Acq_Time_Start, 120) AS Acq_Time_Start,
           CONVERT(varchar(2000), Acq_Time_End, 120) AS Acq_Time_End
 
-        FROM
-          V_DMS_Dataset_Metadata
-        WHERE
-          Dataset_ID = @datasetID
+        FROM V_DMS_Dataset_Metadata
+        WHERE Dataset_ID = @datasetID
       ) TD UNPIVOT ( Value FOR [Name] IN ( Dataset_Type, Directory, Method, Capture_Exclusion_Window, Created,
                                            Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External,
                                            Archive_Server, Archive_Path, Archive_Network_Share_Path,
@@ -184,7 +174,7 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ---------------------------------------------------
-    -- Update parameters as needed when the script is 'LCDatasetCapture'
+    -- Use  alternate values when the script is 'LCDatasetCapture'
     ---------------------------------------------------
 
     If @ScriptName = 'LCDatasetCapture'
@@ -226,27 +216,20 @@ AS
     Declare @paramXML XML
     Declare @rawDataType varchar(32)
     --
-    SELECT
-        @rawDataType = raw_data_type,
-        @paramXML = Params
-    FROM
-        S_DMS_T_Instrument_Class
-    WHERE
-        IN_class = @instrument_class
+    SELECT @rawDataType = raw_data_type,
+           @paramXML = Params
+    FROM S_DMS_T_Instrument_Class
+    WHERE IN_class = @instrument_class
 
-    INSERT INTO @paramTab
-    (Step_Number, [Section], [Name], Value )
-    SELECT
-        NULL AS  [Step_Number],
-        xmlNode.value('../@name', 'nvarchar(256)') [Section],
-        xmlNode.value('@key', 'nvarchar(256)') [Name],
-        xmlNode.value('@value', 'nvarchar(4000)') [Value]
+    INSERT INTO @paramTab (Step_Number, [Section], [Name], Value )
+    SELECT NULL AS  [Step_Number],
+           xmlNode.value('../@name', 'nvarchar(256)') [Section],
+           xmlNode.value('@key', 'nvarchar(256)') [Name],
+           xmlNode.value('@value', 'nvarchar(4000)') [Value]
     FROM   @paramXML.nodes('//item') AS R(xmlNode)
 
-    INSERT INTO @paramTab
-        ( Step_Number, [Section], [Name], Value )
-    VALUES
-        (NULL, 'JobParameters', 'RawDataType', @rawDataType)
+    INSERT INTO @paramTab ( Step_Number, [Section], [Name], Value )
+    VALUES (NULL, 'JobParameters', 'RawDataType', @rawDataType)
 
 
     ---------------------------------------------------
@@ -266,11 +249,8 @@ AS
     Else
         Set @PerformCalibrationText = 'True'
 
-    INSERT INTO @paramTab
-        ( Step_Number, [Section], [Name], Value )
-    VALUES
-        (NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)
-
+    INSERT INTO @paramTab ( Step_Number, [Section], [Name], Value )
+    VALUES (NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)
 
     ---------------------------------------------------
     -- Lookup the Analysis Transfer directory (e.g. \\proto-6\DMS3_Xfer)
@@ -299,10 +279,8 @@ AS
 
     Set @TransferDirectoryPath = IsNull(@TransferDirectoryPath, '')
 
-    INSERT INTO @paramTab
-        ( Step_Number, [Section], [Name], Value )
-    VALUES
-        (NULL, 'JobParameters', 'TransferDirectoryPath', @TransferDirectoryPath)
+    INSERT INTO @paramTab ( Step_Number, [Section], [Name], Value )
+    VALUES (NULL, 'JobParameters', 'TransferDirectoryPath', @TransferDirectoryPath)
 
     ---------------------------------------------------
     -- Add the SHA-1 hash for the first instrument file, if defined
@@ -319,10 +297,8 @@ AS
 
     If @myRowCount > 0
     Begin
-        INSERT INTO @paramTab
-            ( Step_Number, [Section], [Name], Value )
-        VALUES
-            (NULL, 'JobParameters', 'Instrument_File_Hash', @fileHash)
+        INSERT INTO @paramTab ( Step_Number, [Section], [Name], Value )
+        VALUES (NULL, 'JobParameters', 'Instrument_File_Hash', @fileHash)
     End
 
     ---------------------------------------------------
