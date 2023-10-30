@@ -9,8 +9,31 @@ CREATE PROCEDURE [dbo].[add_new_dataset_to_creation_queue]
 **  Desc:
 **      Adds a new dataset creation task to T_Dataset_Create_Queue
 **
-**      The Data Import Manager looks for entries with state 1 in T_Dataset_Create_Queue
+**      The Data Import Manager uses procedure request_dataset_create_task to look for entries with state 1 in T_Dataset_Create_Queue
 **      For each one, it validates that the dataset file(s) are available, then creates the dataset in DMS
+**
+**  Arguments:
+**    @datasetName          Dataset name
+**    @experimentName       Experiment name
+**    @instrumentName       Instrument name
+**    @separationType       Separation type
+**    @lcCartName           LC cart
+**    @lcCartConfig         LC cart config
+**    @lcColumnName         LC column
+**    @wellplateName        Wellplate
+**    @wellNumber           Well number
+**    @datasetType          Datset type
+**    @operatorUsername     Operator username
+**    @dsCreatorUsername    Dataset creator username
+**    @comment              Comment
+**    @interestRating       Interest rating
+**    @requestID            Requested run ID
+**    @workPackage          Work package
+**    @eusUsageType         EUS usage type
+**    @eusProposalID        EUS proposal id
+**    @eusUsersList         EUS users list
+**    @captureSubfolder     Capture subfolder
+**    @message              Output message
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -32,7 +55,7 @@ CREATE PROCEDURE [dbo].[add_new_dataset_to_creation_queue]
     @operatorUsername   varchar(64),
     @dsCreatorUsername  varchar(64),
     @comment            varchar(512),
-    @interestRating     varchar(32),        -- Corresponds to @rating in add_update_dataset
+    @interestRating     varchar(32),        -- Corresponds to @rating (rating name) in add_update_dataset
     @requestID          int,
     @workPackage        varchar(50) = '',
     @eusUsageType       varchar(50) = '',
