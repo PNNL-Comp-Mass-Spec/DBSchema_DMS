@@ -123,6 +123,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          08/03/2023 mem - Allow creation of datasets for instruments in group 'Data_Folders' (specifically, the DMS_Pipeline_Data instrument)
 **          09/07/2023 mem - Update warning messages
 **          10/24/2023 mem - Use update_cart_parameters to add/update Cart Config ID in T_Requested_Run
+**          10/29/2023 mem - Call add_new_dataset_to_creation_queue instead of create_xml_dataset_trigger_file
 **
 *****************************************************/
 (
@@ -403,7 +404,8 @@ AS
     End
     Else
     Begin
-        execute @ratingID = get_dataset_rating_id @rating
+        Exec @ratingID = get_dataset_rating_id @rating
+
         If @ratingID = 0
         Begin
             Set @msg = 'Could not find entry in database for rating ' + @rating
@@ -1125,34 +1127,32 @@ AS
             exec post_log_entry 'Debug', @debugMsg, 'add_update_dataset'
         End
 
-        exec @result = create_xml_dataset_trigger_file
-                        @datasetName,
-                        @experimentName,
-                        @instrumentName,
-                        @secSep,
-                        @lcCartName,
-                        @lcColumnName,
-                        @wellplateName,
-                        @wellNumber,
-                        @msType,
-                        @operatorUsername,
-                        @dsCreatorUsername,
-                        @comment,
-                        @rating,
-                        @requestID,
-                        @workPackage,
-                        @eusUsageType,
-                        @eusProposalID,
-                        @eusUsersList,
-                        @run_Start,
-                        @run_Finish,
-                        @captureSubfolder,
-                        @lcCartConfig,
+        Exec @result = add_new_dataset_to_creation_queue
+                        @datasetName,           -- Dataset name
+                        @experimentName,        -- Experiment name
+                        @instrumentName,        -- Instrument name
+                        @secSep,                -- Separation type
+                        @lcCartName,            -- LC cart
+                        @lcCartConfig,          -- LC cart config
+                        @lcColumnName,          -- LC column
+                        @wellplateName,         -- Wellplate
+                        @wellNumber,            -- Well number
+                        @msType,                -- Datset type
+                        @operatorUsername,      -- Operator username
+                        @dsCreatorUsername,     -- Dataset creator username
+                        @comment,               -- Comment
+                        @rating,                -- Interest rating
+                        @requestID,             -- Requested run ID
+                        @workPackage,           -- Work package
+                        @eusUsageType,          -- EUS usage type
+                        @eusProposalID,         -- EUS proposal id
+                        @eusUsersList,          -- EUS users list
+                        @captureSubfolder,      -- Capture subfolder
                         @message output
 
         If @result > 0
         Begin
-            -- create_xml_dataset_trigger_file should have already logged critical errors to T_Log_Entries
+            -- add_new_dataset_to_creation_queue should have already logged critical errors to T_Log_Entries
             -- No need for this procedure to log the message again
             Set @logErrors = 0
             Set @msg = 'There was an error while creating the XML Trigger file: ' + @message
