@@ -531,7 +531,7 @@ AS
     If @handleSkippedStep <> 0
     Begin
         -- This step was skipped
-        -- Update T_Job_Step_Dependencies and T_Job_Steps
+        -- Update T_Job_Step_Dependencies
 
         Declare @newTargetStep int = -1
         Declare @nextStep int = -1
