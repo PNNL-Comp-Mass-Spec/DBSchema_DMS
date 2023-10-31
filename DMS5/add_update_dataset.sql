@@ -8,9 +8,9 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **
 **  Desc:
 **      This procedure is called from both web pages and from other procedures
-**      - The Dataset Entry page (https://dms2.pnl.gov/dataset/create) calls it with @mode = 'add_trigger'
+**      - The Dataset Entry page (https://dms2.pnl.gov/dataset/create) calls it with @mode = 'add_dataset_create_task'
 **      - Dataset Detail Report pages call it with @mode = 'update'
-**      - Spreadsheet Loader (https://dms2.pnl.gov/upload/main) calls it with with @mode as 'add, 'check_update', or 'check_add'
+**      - Spreadsheet Loader (https://dms2.pnl.gov/upload/main) calls it with with @mode as 'add_dataset_create_task, 'check_update', or 'check_add'
 **      - It is also called with @mode = 'add' when the Data Import Manager (DIM) calls add_new_dataset while processing dataset trigger files
 **
 **  Return values: 0: success, otherwise, error code
@@ -124,6 +124,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          09/07/2023 mem - Update warning messages
 **          10/24/2023 mem - Use update_cart_parameters to add/update Cart Config ID in T_Requested_Run
 **          10/29/2023 mem - Call add_new_dataset_to_creation_queue instead of create_xml_dataset_trigger_file
+**          10/30/2023 mem - Replace mode 'add_trigger' with 'add_dataset_create_task', expanding @mode to varchar(32)
 **
 *****************************************************/
 (
@@ -143,9 +144,9 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
     @eusProposalID varchar(10) = 'na',
     @eusUsageType varchar(50),
     @eusUsersList varchar(1024) = '',
-    @requestID int = 0,                         -- Only valid if @mode is 'add', 'check_add', or 'add_trigger'; ignored if @mode is 'update' or 'check_update'
-    @workPackage varchar(50) = 'none',          -- Only valid if @mode is 'add', 'check_add', or 'add_trigger'
-    @mode varchar(12) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_trigger'
+    @requestID int = 0,                         -- Only valid if @mode is 'add', 'check_add', or 'add_dataset_create_task'; ignored if @mode is 'update' or 'check_update'
+    @workPackage varchar(50) = 'none',          -- Only valid if @mode is 'add', 'check_add', or 'add_dataset_create_task'
+    @mode varchar(32) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_dataset_create_task'
     @message varchar(1024) output,
     @callingUser varchar(128) = '',
     @aggregationJobDataset tinyint = 0,         -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
@@ -200,7 +201,7 @@ AS
     BEGIN TRY
 
     ---------------------------------------------------
-    -- Validate input fields
+    -- Validate the inputs
     ---------------------------------------------------
 
     Set @mode = LTrim(RTrim(IsNull(@mode, '')))
@@ -269,7 +270,7 @@ AS
     --
     Set @msType = IsNull(@msType, '')
 
-    -- Allow @msType to be blank if @mode is Add or Bad but not if check_add or add_trigger or update
+    -- Allow @msType to be blank if @mode is Add or Bad but not if check_add or add_dataset_create_task or update
     If @msType = '' And NOT @mode In ('Add', 'Bad')
     Begin
         Set @msg = 'Dataset type must be specified'
@@ -329,7 +330,7 @@ AS
     -- Determine if we are adding or check_adding a dataset
     ---------------------------------------------------
     --
-    If @mode IN ('add', 'check_add', 'add_trigger')
+    If @mode IN ('add', 'check_add', 'add_dataset_create_task', 'add_trigger')
         Set @addingDataset = 1
     Else
         Set @addingDataset = 0
@@ -391,7 +392,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve id for rating
+    -- Resolve ID for rating
     ---------------------------------------------------
 
     Declare @ratingID int
@@ -890,7 +891,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- If the dataset starts with "blank" and @requestID is zero, perform some additional checks
+    -- If the dataset starts with 'Blank' and @requestID is zero, perform some additional checks
     ---------------------------------------------------
     --
     If @requestID = 0 AND @addingDataset = 1
@@ -969,11 +970,11 @@ AS
     Set @logErrors = 1
 
     ---------------------------------------------------
-    -- Action for add trigger mode
+    -- Action for dataset create task mode
     ---------------------------------------------------
 
-    If @mode = 'add_trigger'
-    Begin -- <AddTrigger>
+    If @mode = 'add_dataset_create_task' Or @mode = 'add_trigger'
+    Begin
 
         If @requestID <> 0
         Begin
@@ -1158,14 +1159,14 @@ AS
             Set @msg = 'There was an error while creating the XML Trigger file: ' + @message
             RAISERROR (@msg, 11, 55)
         End
-    End -- </AddTrigger>
+    End
 
     ---------------------------------------------------
     -- Action for add mode
     ---------------------------------------------------
 
     If @mode = 'add'
-    Begin -- <AddMode>
+    Begin
 
         ---------------------------------------------------
         -- Lookup storage path ID
@@ -1484,14 +1485,14 @@ AS
         -- Update T_Cached_Dataset_Instruments
         Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
-    End -- </AddMode>
+    End
 
     ---------------------------------------------------
     -- Action for update mode
     ---------------------------------------------------
     --
     If @mode = 'update'
-    Begin -- <UpdateMode>
+    Begin
 
         If @logDebugMessages > 0
         Begin
@@ -1675,8 +1676,8 @@ AS
             Begin
                 Exec schedule_predefined_analysis_jobs @datasetName, @callingUser=@callingUser
 
-                -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field in
-                --  T_Event_Log for any newly created jobs for this dataset
+                -- If @callingUser is defined, call alter_event_log_entry_user to alter the Entered_By field
+                -- in T_Event_Log for any newly created jobs for this dataset
                 If Len(@callingUser) > 0
                 Begin
                     Declare @jobStateID int
@@ -1702,7 +1703,7 @@ AS
         -- Update T_Cached_Dataset_Instruments
         Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
-    End -- </UpdateMode>
+    End
 
     -- Update @message if @warning is not empty
     If IsNull(@warning, '') <> ''
