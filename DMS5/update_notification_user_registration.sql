@@ -36,12 +36,12 @@ CREATE PROCEDURE [dbo].[update_notification_user_registration]
     @callingUser varchar(128) = ''
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -58,24 +58,24 @@ AS
     -- Lookup user
     ---------------------------------------------------
     --
-    DECLARE @userID INT = 0
+    Declare @userID INT = 0
     --
     SELECT @userID = ID
     FROM T_Users
     WHERE U_PRN = @username
     --
-    IF @userID = 0
-    BEGIN
-        SET @message = 'Username "' + @username + '" is not valid'
-        SET @myError = 15
-        GOTO Done
-    END
+    If @userID = 0
+    Begin
+        Set @message = 'Username "' + @username + '" is not valid'
+        Set @myError = 15
+        Goto Done
+    End
 
     ---------------------------------------------------
     -- Populate a temporary table with Entity Type IDs and Entity Type Params
     ---------------------------------------------------
 
-    DECLARE @tblNotificationOptions AS table (
+    Declare @tblNotificationOptions AS table (
         EntityTypeID int,
         NotifyUser varchar(15)
     )
@@ -109,30 +109,26 @@ AS
         Begin
 
             IF @NotifyUser = 'Yes'
-            BEGIN
-            IF NOT EXISTS ( SELECT
-                                *
-                            FROM
-                                T_Notification_Entity_User
-                            WHERE
-                                User_ID = @userID
-                                AND Entity_Type_ID = @entityTypeID )
-                BEGIN
-                INSERT  INTO dbo.T_Notification_Entity_User
-                        ( User_ID, Entity_Type_ID )
-                VALUES
-                        ( @userID, @entityTypeID )
-                END
-            END
+            Begin
+                IF NOT EXISTS ( SELECT *
+                                FROM T_Notification_Entity_User
+                                WHERE User_ID = @userID AND Entity_Type_ID = @entityTypeID )
+                Begin
+                    INSERT  INTO dbo.T_Notification_Entity_User
+                            ( User_ID, Entity_Type_ID )
+                    VALUES
+                            ( @userID, @entityTypeID )
+                End
+            End
 
-            IF @NotifyUser = 'No'
-            BEGIN
+            If @NotifyUser = 'No'
+            Begin
                 DELETE FROM
                     T_Notification_Entity_User
                 WHERE
                     User_ID = @userID
                     AND Entity_Type_ID = @entityTypeID
-            END
+            End
 
         End
     End
@@ -148,8 +144,7 @@ Done:
     Set @UsageMessage = 'User ' + IsNull(@username, 'NULL')
     Exec post_usage_log_entry 'update_notification_user_registration', @UsageMessage
 
-
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_notification_user_registration] TO [DDL_Viewer] AS [dbo]

@@ -107,7 +107,7 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error trying to convert list'
-        GOTO DoneNoLog
+        Goto DoneNoLog
     End
 
     If @debugEnabled > 0
@@ -132,28 +132,28 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error trying to get status'
-        GOTO DoneNoLog
+        Goto DoneNoLog
     End
 
-    IF EXISTS (SELECT * FROM #TMP WHERE Status IS NULL)
+    If Exists (SELECT * FROM #TMP WHERE Status IS NULL)
     Begin
         Set @myError = 51012
         Set @message = 'There were invalid request IDs'
-        GOTO DoneNoLog
+        Goto DoneNoLog
     End
 
-    IF EXISTS (SELECT * FROM #TMP WHERE not Status IN ('Active', 'Inactive'))
+    If Exists (SELECT * FROM #TMP WHERE not Status IN ('Active', 'Inactive'))
     Begin
         Set @myError = 51013
         Set @message = 'Cannot change requests that are in status other than "Active" or "Inactive"'
-        GOTO DoneNoLog
+        Goto DoneNoLog
     End
 
-    IF EXISTS (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction') And @mode <> 'Delete')
+    If Exists (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction') And @mode <> 'Delete')
     Begin
         Set @myError = 51013
         Set @message = 'Cannot change requests that were not entered by user'
-        GOTO DoneNoLog
+        Goto DoneNoLog
     End
 
     -----------------------------------------------------------
@@ -195,7 +195,7 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error trying to update status'
-            GOTO done
+            Goto Done
         End
 
         Set @UsageMessage = 'Updated ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests')
@@ -238,8 +238,8 @@ AS
 
         End
 
-        GOTO Done
-    END
+        Goto Done
+    End
 
     -----------------------------------------------------------
     -- Delete requests
@@ -256,7 +256,7 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error trying to delete requests'
-            GOTO done
+            Goto Done
         End
 
         Set @UsageMessage = 'Deleted ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests')
@@ -279,8 +279,8 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        GOTO Done
-    END
+        Goto Done
+    End
 
     -----------------------------------------------------------
     -- Unassign requests
@@ -301,13 +301,13 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error trying to unassign requests'
-            GOTO done
+            Goto Done
         End
 
         Set @UsageMessage = 'Unassigned ' + Convert(varchar(12), @myRowCount) + ' ' + dbo.check_plural(@myRowCount, 'request', 'requests') + ' from the queued instrument'
 
-        GOTO Done
-    END
+        Goto Done
+    End
 
 Done:
     ---------------------------------------------------
@@ -317,7 +317,7 @@ Done:
     Exec post_usage_log_entry 'update_requested_run_admin', @UsageMessage
 
 DoneNoLog:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_requested_run_admin] TO [DDL_Viewer] AS [dbo]

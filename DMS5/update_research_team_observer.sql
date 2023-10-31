@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[update_research_team_observer]
     @callingUser varchar(128) = ''
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
@@ -59,7 +59,7 @@ AS
     Begin
         Set @myError = 50
         Set @message = 'User ID is missing'
-        GOTO Done
+        Goto Done
     End
     --
     Declare @username varchar(15) = @callingUser
@@ -82,7 +82,7 @@ AS
     Begin
         Set @myError = 51
         Set @message = 'Campaign "' + @campaignName + '" is not valid'
-        GOTO Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -99,7 +99,7 @@ AS
     Begin
         Set @myError = 52
         Set @message = 'User "' + @username + '" is not valid'
-        GOTO Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -144,7 +144,7 @@ Done:
     Set @UsageMessage = 'Campaign: ' + @campaignName + '; user: ' + @username + '; mode: ' + @mode
     Exec post_usage_log_entry 'update_research_team_observer', @UsageMessage
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_research_team_observer] TO [DDL_Viewer] AS [dbo]

@@ -45,28 +45,28 @@ CREATE PROCEDURE [dbo].[copy_history_to_job]
     @message varchar(512)='' output
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError Int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
     -- Bail if no candidates found
     ---------------------------------------------------
     --
-    if IsNull(@job, 0) = 0
-        goto Done
+    If IsNull(@job, 0) = 0
+        Goto Done
 
     ---------------------------------------------------
     -- Bail if job already exists in main tables
     ---------------------------------------------------
     --
-    if exists (select * from T_Jobs where Job = @job)
-    begin
-        GOTO Done
-    end
+    If exists (select * from T_Jobs where Job = @job)
+    Begin
+        Goto Done
+    End
 
     ---------------------------------------------------
     -- Get job status from most recent completed historic job
@@ -83,11 +83,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error '
-        goto Done
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Error '
+        Goto Done
+    End
 
     If @dateStamp Is Null
     Begin
@@ -117,7 +117,7 @@ AS
     ---------------------------------------------------
     --
     Declare @transName varchar(64) = 'copy_history_to_job'
-    begin transaction @transName
+    Begin transaction @transName
 
     ---------------------------------------------------
     -- Copy jobs
@@ -168,12 +168,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
     ---------------------------------------------------
     -- Copy Steps
@@ -233,12 +233,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
     -- Change any waiting, enabled, or running steps to state 7 (holding)
     -- This is a safety feature to avoid job steps from starting inadvertently
@@ -264,12 +264,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
 
     ---------------------------------------------------
@@ -289,12 +289,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
     -- Check whether this job has entries in T_Job_Step_Dependencies_History
     --
@@ -435,7 +435,8 @@ AS
     ---------------------------------------------------
     --
 Done:
-    return @myError
+    Return @myError
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[copy_history_to_job] TO [DDL_Viewer] AS [dbo]

@@ -113,8 +113,8 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    IF EXISTS (SELECT * FROM #TMP WHERE cartID IS NULL)
-    BEGIN
+    If Exists (SELECT * FROM #TMP WHERE cartID IS NULL)
+    Begin
         Declare @invalidCart varchar(64) = ''
 
         SELECT Top 1 @invalidCart = cart
@@ -126,8 +126,8 @@ AS
         Else
             Set @message = 'Invalid cart name: ' + @invalidCart
         Set @myError = 510027
-        GOTO Done
-    END
+        Goto Done
+    End
 
     -----------------------------------------------------------
     -- Resolve cart config name to cart config ID
@@ -141,8 +141,8 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    IF EXISTS (SELECT * FROM #TMP WHERE cartConfig <> '' AND cartConfigID IS NULL)
-    BEGIN
+    If Exists (SELECT * FROM #TMP WHERE cartConfig <> '' AND cartConfigID IS NULL)
+    Begin
         Declare @invalidCartConfig varchar(128) = ''
 
         SELECT Top 1 @invalidCartConfig = cartConfig
@@ -151,8 +151,8 @@ AS
 
         Set @message = 'Invalid cart config name: ' + @invalidCartConfig
         Set @myError = 510028
-        GOTO Done
-    END
+        Goto Done
+    End
 
     -----------------------------------------------------------
     -- Batch info
@@ -172,8 +172,8 @@ AS
     -- Check for locked batches
     -----------------------------------------------------------
 
-    IF EXISTS (SELECT * FROM #TMP WHERE locked = 'Yes')
-    BEGIN
+    If Exists (SELECT * FROM #TMP WHERE locked = 'Yes')
+    Begin
         Declare @firstLocked int
         Declare @lastLocked int
 
@@ -188,8 +188,8 @@ AS
             Set @message = 'Cannot change requests in locked batches; locked requests include ' + Cast(@firstLocked as varchar(12)) + ' and ' + + Cast(@lastLocked as varchar(12))
 
         Set @myError = 510012
-        GOTO Done
-    END
+        Goto Done
+    End
 
     -----------------------------------------------------------
     -- Disregard unchanged requests
@@ -209,11 +209,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         Set @message = 'Error trying to remove unchanged requests'
-        GOTO Done
-    end
+        Goto Done
+    End
 
     If @debugMode > 0
     Begin
@@ -242,11 +242,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         Set @message = 'Error updating requested runs'
-        GOTO Done
-    end
+        Goto Done
+    End
 
 Done:
 
@@ -258,7 +258,7 @@ Done:
     Set @UsageMessage = Convert(varchar(12), @myRowCount) + ' requested runs updated'
     Exec post_usage_log_entry 'update_lc_cart_request_assignments', @UsageMessage
 
-    RETURN @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_lc_cart_request_assignments] TO [DDL_Viewer] AS [dbo]

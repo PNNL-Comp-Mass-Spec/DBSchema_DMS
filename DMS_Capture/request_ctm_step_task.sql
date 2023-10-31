@@ -62,7 +62,7 @@ CREATE PROCEDURE [dbo].[request_ctm_step_task]
     @returnCode varchar(64) = '' output
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
@@ -130,7 +130,7 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error looking for processor in T_Local_Processors'
-        GOTO Done
+        Goto Done
     End
 
     -- check if no processor found?
@@ -138,7 +138,7 @@ AS
     Begin
         Set @message = 'Processor not defined in T_Local_Processors: ' + @processorName
         Set @myError = @jobNotAvailableErrorCode
-        GOTO Done
+        Goto Done
     End
 
 
@@ -166,7 +166,7 @@ AS
         If @myError <> 0
         Begin
             Set @message = 'Error updating latest processor request time'
-            GOTO Done
+            Goto Done
         End
     End
 
@@ -219,7 +219,7 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error getting processor tools'
-        GOTO Done
+        Goto Done
     End
 
     If @infoOnly > 1
@@ -242,7 +242,7 @@ AS
     Begin
           Set @message = 'No tools presently available for processor "'+ @processorName +'"'
           Set @myError = @jobNotAvailableErrorCode
-          GOTO Done
+          Goto Done
     End
 
     ---------------------------------------------------
@@ -286,7 +286,7 @@ AS
     If @myError <> 0
     Begin
           Set @message = 'Error populating #InstrumentLoading temp table'
-          GOTO Done
+          Goto Done
     End
 
     ---------------------------------------------------
@@ -330,7 +330,7 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error populating #InstrumentProcessor temp table'
-        GOTO Done
+        Goto Done
     End
 
     If @processorIsAssigned = 0 And @serverPerspectiveEnabled <> 0
@@ -425,7 +425,7 @@ AS
     Begin
         Set @message = 'No candidates presently available'
         Set @myError = @jobNotAvailableErrorCode
-        GOTO Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -471,7 +471,7 @@ AS
     Begin
         ROLLBACK TRANSACTION @transName
         Set @message = 'Error searching for job step'
-        GOTO Done
+        Goto Done
     End
 
     If @myRowCount > 0
@@ -499,7 +499,7 @@ AS
         Begin
             ROLLBACK TRANSACTION @transName
             Set @message = 'Error updating job step'
-            GOTO Done
+            Goto Done
         End
     End --<e>
 
@@ -625,7 +625,7 @@ AS
     --
 Done:
     Set @returnCode = Cast(@myError As varchar(64))
-    RETURN @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[request_ctm_step_task] TO [DDL_Viewer] AS [dbo]

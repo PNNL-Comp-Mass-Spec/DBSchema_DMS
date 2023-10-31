@@ -30,7 +30,7 @@ CREATE PROCEDURE [dbo].[validate_wellplate_loading]
     @message varchar(512) output
 )
 AS
-    SET NOCOUNT On
+    Set NOCOUNT On
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
@@ -42,79 +42,80 @@ AS
     -- normalize values meaning 'empty' to null
     --
     If @wellplateName = '' Or @wellplateName = 'na'
-    begin
-        set @wellplateName = null
+    Begin
+        Set @wellplateName = null
     End
 
     If @wellNumber = '' Or @wellNumber = 'na'
-    begin
-        set @wellNumber = null
+    Begin
+        Set @wellNumber = null
     End
 
-    set @wellNumber = UPPER(@wellNumber)
+    Set @wellNumber = UPPER(@wellNumber)
 
     -- Make sure that wellplate and well values are consistent
     -- with each other
     --
     If (@wellNumber is null And Not @wellplateName is null) Or (Not @wellNumber is null And @wellplateName is null)
-    begin
-        set @message = 'Wellplate and well must either both be empty or both be set'
-        return 51042
-    end
+    Begin
+        Set @message = 'Wellplate and well must either both be empty or both be set'
+        Return 51042
+    End
 
     ---------------------------------------------------
     -- Get wellplate index
     ---------------------------------------------------
     --
-    set @wellIndex = 0
+    Set @wellIndex = 0
 
     -- Check for overflow
     --
     If Not @wellNumber is null
-    begin
-        set @wellIndex = dbo.get_well_index(@wellNumber)
+    Begin
+        Set @wellIndex = dbo.get_well_index(@wellNumber)
 
         If @wellIndex = 0
-        begin
-            set @message = 'Well number is not valid; should be in the format A4 or C12'
-            return 51043
-        end
+        Begin
+            Set @message = 'Well number is not valid; should be in the format A4 or C12'
+            Return 51043
+        End
 
         If @wellIndex + @totalCount > 97 -- index is first new well, which understates available space by one
-        begin
-            set @message = 'Wellplate capacity would be exceeded'
-            return 51044
-        end
-    end
+        Begin
+            Set @message = 'Wellplate capacity would be exceeded'
+            Return 51044
+        End
+    End
 
     ---------------------------------------------------
     -- Make sure wells are not in current use
     ---------------------------------------------------
 
     -- don't bother if we are not adding new item
-    If @totalCount = 0 GOTO Done
+    If @totalCount = 0 Goto Done
     --
-    declare @wells TABLE (
+    Declare @wells TABLE (
         wellIndex int
     )
 
     Declare @index int
     Declare @count smallint
-    set @count = @totalCount
-    set @index = @wellIndex
+    Set @count = @totalCount
+    Set @index = @wellIndex
 
     while @count > 0
-    begin
+    Begin
         insert into @wells (wellIndex) values (@index)
-        set @count = @count - 1
-        set @index = @index + 1
-    end
+        Set @count = @count - 1
+        Set @index = @index + 1
+    End
     --
     Declare @hits int
-    DECLARE @wellList VARCHAR(8000)
+    Declare @wellList VARCHAR(8000)
     --
-    SET @wellList = ''
-    set @hits = 0
+    Set @wellList = ''
+    Set @hits = 0
+
     SELECT
         @hits = @hits + 1,
         @wellList = CASE WHEN @wellList = '' THEN EX_well_num ELSE ', ' + EX_well_num END
@@ -127,22 +128,22 @@ AS
         )
 
     If @hits > 0
-    begin
-        SET @wellList = SUBSTRING(@wellList, 0, 256)
+    Begin
+        Set @wellList = SUBSTRING(@wellList, 0, 256)
 
         If @hits = 1
-            set @message = 'Well ' + @wellList + ' on wellplate "' + @wellplateName + '" is currently filled'
+            Set @message = 'Well ' + @wellList + ' on wellplate "' + @wellplateName + '" is currently filled'
         else
-            set @message = 'Wells ' + @wellList + ' on wellplate "' + @wellplateName + '" are currently filled'
+            Set @message = 'Wells ' + @wellList + ' on wellplate "' + @wellplateName + '" are currently filled'
 
-        return 51045
-    end
+        Return 51045
+    End
 
     ---------------------------------------------------
     -- OK
     ---------------------------------------------------
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_wellplate_loading] TO [DDL_Viewer] AS [dbo]

@@ -35,17 +35,17 @@ CREATE PROCEDURE [dbo].[update_multiple_capture_tasks]
     @callingUser varchar(128) = ''
 )
 AS
-    set nocount on
+    Set nocount on
 
     -- Required to avoid warnings when retry_selected_tasks is called
     SET CONCAT_NULL_YIELDS_NULL ON
     SET ANSI_WARNINGS ON
     SET ANSI_PADDING ON
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -63,51 +63,51 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
 
-    if IsNull(@JobList, '') = ''
+    If IsNull(@JobList, '') = ''
     Begin;
-        set @message = 'Job list is empty';
+        Set @message = 'Job list is empty';
         THROW 51001, @message, 1;
     End;
 
     Set @Mode = IsNull(@mode, '')
 
     If Not @Mode IN ('Update', 'Preview')
-    begin
+    Begin
         If @action = 'Retry'
-            set @message = 'Mode should be Update when Action is Retry';
+            Set @message = 'Mode should be Update when Action is Retry';
         Else
-            set @message = 'Mode should be Update or Preview';
+            Set @message = 'Mode should be Update or Preview';
 
         THROW 51002, @message, 1;
-    end
+    End
 
     ---------------------------------------------------
     --
     ---------------------------------------------------
     --
-    declare @transName varchar(32)
-    set @transName = 'update_multiple_capture_tasks'
+    Declare @transName varchar(32)
+    Set @transName = 'update_multiple_capture_tasks'
 
     ---------------------------------------------------
     -- update parameters for jobs
     ---------------------------------------------------
 
-    IF @action = 'UpdateParameters' AND @mode = 'update'
-    BEGIN --<update params>
-        begin transaction @transName
+    If @action = 'UpdateParameters' AND @mode = 'update'
+    Begin --<update params>
+        Begin transaction @transName
         EXEC @myError = update_parameters_for_task @jobList, @message  output, 0
-        IF @myError <> 0
+        If @myError <> 0
             rollback transaction @transName
-        ELSE
+        Else
             commit transaction @transName
-        GOTO Done
-    END --<update params>
+        Goto Done
+    End --<update params>
 
 
-    IF @action = 'UpdateParameters' AND @mode = 'preview'
-    BEGIN --<update params>
-        GOTO Done
-    END --<update params>
+    If @action = 'UpdateParameters' AND @mode = 'preview'
+    Begin --<update params>
+        Goto Done
+    End --<update params>
 
     ---------------------------------------------------
     --  Create temporary table to hold list of jobs
@@ -120,11 +120,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Failed to create temporary job table';
+    If @myError <> 0
+    Begin
+        Set @message = 'Failed to create temporary job table';
         THROW 51003, @message, 1;
-    end
+    End
 
     ---------------------------------------------------
     -- Populate table from job list
@@ -137,11 +137,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    if @myError <> 0
-    begin
-        set @message = 'Error populating temporary job table';
+    If @myError <> 0
+    Begin
+        Set @message = 'Error populating temporary job table';
         THROW 51004, @message, 1;
-    end
+    End
 
     ---------------------------------------------------
     -- future: verify that jobs exist?
@@ -153,94 +153,82 @@ AS
     -- retry jobs
     ---------------------------------------------------
 
-    IF @action = 'Retry' AND @mode = 'update'
-    BEGIN --<retry>
-        begin transaction @transName
+    If @action = 'Retry' AND @mode = 'update'
+    Begin --<retry>
+        Begin transaction @transName
         EXEC @myError = retry_selected_tasks @message output
-        IF @myError <> 0
+        If @myError <> 0
             rollback transaction @transName
-        ELSE
+        Else
             commit transaction @transName
-        GOTO Done
-    END --<retry>
+        Goto Done
+    End --<retry>
 
     ---------------------------------------------------
     -- Hold
     ---------------------------------------------------
-    IF @action = 'Hold' AND @mode = 'update'
-    BEGIN --<hold>
-        begin transaction @transName
+    If @action = 'Hold' AND @mode = 'update'
+    Begin --<hold>
+        Begin transaction @transName
 
-        UPDATE
-          T_Tasks
-        SET
-          State = 100
-        WHERE
-          Job IN ( SELECT
-                    Job
-                   FROM
-                    #SJL )
+        UPDATE T_Tasks
+        SET State = 100
+        WHERE Job IN ( SELECT Job
+                       FROM
+                       #SJL )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        IF @myError <> 0
+        If @myError <> 0
             rollback transaction @transName
-        ELSE
+        Else
             commit transaction @transName
-        GOTO Done
-    END --<hold>
+        Goto Done
+    End --<hold>
 
     ---------------------------------------------------
     -- Ignore
     ---------------------------------------------------
-    IF @action = 'Ignore' AND @mode = 'update'
-    BEGIN --<Ignore>
-        begin transaction @transName
+    If @action = 'Ignore' AND @mode = 'update'
+    Begin --<Ignore>
+        Begin transaction @transName
 
-        UPDATE
-          T_Tasks
-        SET
-          State = 101
-        WHERE
-          Job IN ( SELECT
-                    Job
-                   FROM
-                    #SJL )
+        UPDATE T_Tasks
+        SET State = 101
+        WHERE Job IN ( SELECT Job
+                       FROM
+                       #SJL )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        IF @myError <> 0
+        If @myError <> 0
             rollback transaction @transName
-        ELSE
+        Else
             commit transaction @transName
-        GOTO Done
-    END --<Ignore>
+        Goto Done
+    End --<Ignore>
 
     ---------------------------------------------------
     -- Release
     ---------------------------------------------------
-    IF @action = 'Release' AND @mode = 'update'
-    BEGIN --<Release>
-        begin transaction @transName
+    If @action = 'Release' AND @mode = 'update'
+    Begin --<Release>
+        Begin transaction @transName
 
-        UPDATE
-          T_Tasks
-        SET
-          State = 1
-        WHERE
-          Job IN ( SELECT
-                    Job
-                   FROM
-                    #SJL )
+        UPDATE T_Tasks
+        SET State = 1
+        WHERE Job IN ( SELECT Job
+                       FROM
+                       #SJL )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        IF @myError <> 0
+        If @myError <> 0
             rollback transaction @transName
-        ELSE
+        Else
             commit transaction @transName
-        GOTO Done
-    END --<Release>
+        Goto Done
+    End --<Release>
 
     ---------------------------------------------------
     -- delete?
@@ -252,15 +240,15 @@ AS
     -- if we reach this point, action was not implemented
     ---------------------------------------------------
 
-    SET @message = 'The ACTION "' + @action + '" is not implemented.'
-    SET @myError = 1
+    Set @message = 'The ACTION "' + @action + '" is not implemented.'
+    Set @myError = 1
 
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_multiple_capture_tasks] TO [DDL_Viewer] AS [dbo]

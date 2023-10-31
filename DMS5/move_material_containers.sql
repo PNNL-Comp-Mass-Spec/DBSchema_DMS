@@ -191,12 +191,12 @@ AS
 
         If @myRowCount= 0
         Begin
-            SET @continue = 0
+            Set @continue = 0
         End
         Else
         Begin -- <b>
-            SET @LocationTagNew = @freezerTagNew + '.' + CAST(@ShelfNew as varchar(20)) + '.' + CAST(@RackNew as varchar(20)) + '.' + @Row + '.' + @Col
-            SET @numContainers = 1
+            Set @LocationTagNew = @freezerTagNew + '.' + CAST(@ShelfNew as varchar(20)) + '.' + CAST(@RackNew as varchar(20)) + '.' + @Row + '.' + @Col
+            Set @numContainers = 1
 
             SELECT
                 @LocationIDNew = id,
@@ -208,9 +208,9 @@ AS
             --
             If @LocationIDNew = 0
             Begin
-                set @message = 'Destination location "' + @LocationTagNew + '" could not be found in database'
+                Set @message = 'Destination location "' + @LocationTagNew + '" could not be found in database'
                 rollback transaction @transName
-                GOTO Done
+                Goto Done
             End
 
             ---------------------------------------------------
@@ -219,16 +219,16 @@ AS
 
             If @locStatus <> 'Active'
             Begin
-                set @message = 'Location "' + @LocationTagNew + '" is not in the "Active" state'
+                Set @message = 'Location "' + @LocationTagNew + '" is not in the "Active" state'
                 rollback transaction @transName
-                GOTO Done
+                Goto Done
             End
 
             If @contCount + @numContainers > @locLimit
             Begin
-                set @message = 'The maximum container capacity (' + cast(@locLimit as varchar(12)) + ') of location "' + @LocationTagNew + '" would be exceeded by the move'
+                Set @message = 'The maximum container capacity (' + cast(@locLimit as varchar(12)) + ') of location "' + @LocationTagNew + '" would be exceeded by the move'
                 rollback transaction @transName
-                GOTO Done
+                Goto Done
             End
 
             If @infoOnly <> 0
@@ -253,8 +253,8 @@ AS
                 If @myError <> 0
                 Begin
                     rollback transaction @transName
-                    set @message = 'Error updating location reference'
-                    GOTO Done
+                    Set @message = 'Error updating location reference'
+                    Goto Done
                 End
 
                 INSERT INTO T_Material_Log (
@@ -279,8 +279,8 @@ AS
                 If @myError <> 0
                 Begin
                     rollback transaction @transName
-                    set @message = 'Error making log entries'
-                    GOTO Done
+                    Set @message = 'Error making log entries'
+                    Goto Done
                 End
 
             End -- </c>
@@ -317,7 +317,7 @@ Done:
         Select @message as Message
     End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[move_material_containers] TO [DDL_Viewer] AS [dbo]

@@ -32,11 +32,8 @@ CREATE PROCEDURE [dbo].[set_manager_params]
 AS
     set nocount on
 
-    declare @myError int
-    set @myError = 0
-
-    declare @myRowCount int
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     set @message = ''
 
@@ -56,14 +53,14 @@ AS
     if @myError <> 0
     begin
       set @message = 'Error trying to resolve manager name to ID'
-      goto DONE
+      Goto Done
     end
     --
     if @mgrID = 0
     begin
       set @message = 'Could not find manager ID'
         set @myError = 51000
-      goto DONE
+      Goto Done
     end
 
     ---------------------------------------------------
@@ -81,7 +78,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Failed to create temporary parameter table'
-        goto DONE
+        Goto Done
     end
     ---------------------------------------------------
     -- Parse the XML input
@@ -103,7 +100,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Error populating temporary parameter table'
-        goto DONE
+        Goto Done
     end
 
     -- Remove the internal representation of the XML document.
@@ -132,7 +129,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Error getting parameter IDs'
-        goto DONE
+        Goto Done
     end
 
     ---------------------------------------------------
@@ -141,7 +138,7 @@ AS
     if @mode = 'InfoOnly'
     begin
         select * from #TDS
-        goto DONE
+        Goto Done
     end
 
     ---------------------------------------------------
@@ -157,7 +154,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Cleaning up parameter IDs'
-        goto DONE
+        Goto Done
     end
 
     ---------------------------------------------------
@@ -176,7 +173,7 @@ AS
     if @myError <> 0
     begin
         set @message = 'Error inserting new parameteres'
-        goto DONE
+        Goto Done
     end
 
 
@@ -194,16 +191,10 @@ AS
     if @myError <> 0
     begin
         set @message = 'Error updating parameteres'
-        goto DONE
+        Goto Done
     end
-
-    ---------------------------------------------------
-    --
-    ---------------------------------------------------
-    ---------------------------------------------------
-    --
-    ---------------------------------------------------
-DONE:
+    
+Done:
     return @myError
 
 GO

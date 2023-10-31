@@ -35,20 +35,20 @@ CREATE PROCEDURE [dbo].[copy_history_to_task]
     @debugMode tinyint = 0
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
-    set @debugMode = IsNull(@debugMode, 0)
+    Set @message = ''
+    Set @debugMode = IsNull(@debugMode, 0)
 
     ---------------------------------------------------
     -- Bail if no candidates found
     ---------------------------------------------------
     --
-    if IsNull(@job, 0) = 0
-        goto Done
+    If IsNull(@job, 0) = 0
+        Goto Done
 
     Set @AssignNewJobNumber = IsNull(@AssignNewJobNumber, 0)
 
@@ -59,19 +59,19 @@ AS
     -- Bail if job already exists in main tables
     ---------------------------------------------------
     --
-    if exists (select * from T_Tasks where Job = @job)
-    begin
+    If exists (select * from T_Tasks where Job = @job)
+    Begin
         If @debugMode <> 0
             Print 'Already exists in T_Tasks; aborting'
 
-        GOTO Done
-    end
+        Goto Done
+    End
 
     ---------------------------------------------------
     -- Get job status from most recent completed historic job
     ---------------------------------------------------
     --
-    declare @dateStamp datetime
+    Declare @dateStamp datetime
     --
     -- find most recent successful historic job
     SELECT @dateStamp = MAX(Saved)
@@ -80,11 +80,11 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
-        set @message = 'Error '
-        goto Done
-    end
+    If @myError <> 0
+    Begin
+        Set @message = 'Error '
+        Goto Done
+    End
 
     If @dateStamp Is Null
     Begin
@@ -111,9 +111,9 @@ AS
     -- Start transaction
     ---------------------------------------------------
     --
-    declare @transName varchar(64)
-    set @transName = 'copy_history_to_task'
-    begin transaction @transName
+    Declare @transName varchar(64)
+    Set @transName = 'copy_history_to_task'
+    Begin transaction @transName
 
     Declare @NewJob int = @Job
     Declare @JobDateDescription varchar(64) = 'job ' + Cast(@job as varchar(12)) + ' and date ' + convert(varchar(24), @dateStamp, 121)
@@ -121,7 +121,7 @@ AS
     If @AssignNewJobNumber = 0
     Begin
 
-        set identity_insert dbo.T_Tasks ON
+        Set identity_insert dbo.T_Tasks ON
 
         If @debugMode <> 0
             Print 'Insert into T_Tasks from T_Tasks_History for ' + @JobDateDescription
@@ -138,21 +138,21 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             rollback transaction @transName
-            set @message = 'Error inserting into T_Tasks for ' + @JobDateDescription
-            goto Done
-        end
+            Set @message = 'Error inserting into T_Tasks for ' + @JobDateDescription
+            Goto Done
+        End
 
-        set identity_insert dbo.T_Tasks OFF
+        Set identity_insert dbo.T_Tasks OFF
 
         If @myRowCount = 0
         Begin
-            set @message = 'No rows were added to T_Tasks from T_Tasks_History for ' + @JobDateDescription
+            Set @message = 'No rows were added to T_Tasks from T_Tasks_History for ' + @JobDateDescription
             print @message
             rollback transaction @transName
-            goto Done
+            Goto Done
         End
 
 
@@ -175,19 +175,19 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount, @NewJob = Scope_Identity()
         --
-        if @myError <> 0
-        begin
+        If @myError <> 0
+        Begin
             rollback transaction @transName
-            set @message = 'Error '
-            goto Done
-        end
+            Set @message = 'Error '
+            Goto Done
+        End
 
         If @NewJob is null
         Begin
             rollback transaction @transName
-            set @message = 'Error: Scope_Identity() returned null for ' + @JobDateDescription
-            goto Done
-        end
+            Set @message = 'Error: Scope_Identity() returned null for ' + @JobDateDescription
+            Goto Done
+        End
 
         Print 'Cloned job ' + Cast(@job as varchar(12)) + ' to create job ' + Convert(varchar(12), @NewJob)
     End
@@ -235,12 +235,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
      --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
     If @debugMode <> 0
         Print 'Inserted ' + Cast(@myRowCount as varchar(12)) + ' steps into T_Task_Steps for ' + @JobDateDescription
@@ -274,12 +274,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
      --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
     If @debugMode <> 0
         Print 'Inserted ' + Cast(@myRowCount as varchar(12)) + ' row into T_Task_Parameters for ' + @JobDateDescription
@@ -301,12 +301,12 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
-    if @myError <> 0
-    begin
+    If @myError <> 0
+    Begin
         rollback transaction @transName
-        set @message = 'Error '
-        goto Done
-    end
+        Set @message = 'Error '
+        Goto Done
+    End
 
     -- Check whether this job has entries in T_Task_Step_Dependencies_History
     --
@@ -455,10 +455,10 @@ AS
     ---------------------------------------------------
     --
 Done:
-    if @myError <> 0
+    If @myError <> 0
         print @message
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[copy_history_to_task] TO [DDL_Viewer] AS [dbo]

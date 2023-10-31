@@ -81,11 +81,11 @@ AS
     --
     SELECT @myError = @@Error, @myRowCount = @@RowCount
 
-    IF @myRowCount = 0
-    BEGIN
+    If @myRowCount = 0
+    Begin
         Set @message = 'Error, Dataset not found: ' + @Dataset
         Set @myError = 50000
-        GOTO Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -105,7 +105,7 @@ AS
     Begin
         Set @message = 'Error, Dataset is already associated with Request ' + Convert(varchar(12), @RequestID)
         Set @myError = 50001
-        GOTO Done
+        Goto Done
     End
 
 
@@ -123,13 +123,13 @@ AS
     Begin
         -- Create the request
 
-        declare @requestName varchar(128)
+        Declare @requestName varchar(128)
         Set @requestName = 'AutoReq_' + @Dataset
 
         Declare @workPackage varchar(50) = 'none'
         EXEC get_wp_for_eus_proposal @eusProposalID, @workPackage OUTPUT
 
-        DECLARE @result int
+        Declare @result int
 
         EXEC @result = dbo.add_update_requested_run
                                 @requestName = @requestName,
@@ -161,10 +161,10 @@ AS
                 Set @message = 'Error creating requested run'
 
             Set @myError = @result
-            if @myError = 0
+            If @myError = 0
                 Set @myError = 50003
 
-            GOTO Done
+            Goto Done
         End
         Else
         Begin
@@ -190,7 +190,7 @@ Done:
     If @myError <> 0
         print @message
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_missing_requested_run] TO [DDL_Viewer] AS [dbo]

@@ -22,25 +22,23 @@ CREATE PROCEDURE [dbo].[update_synonyms_to_use_beta]
     @message varchar(128)='' output
 )
 AS
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
     -- Populate a temorary table with the requests to process
     ---------------------------------------------------
 
-    DECLARE @ThisDB varchar(64) = Db_Name()
+    Declare @ThisDB varchar(64) = Db_Name()
 
-    IF @ThisDB <> 'DMS5_Beta'
-    BEGIN
-        set @message = 'This stored procedure can only be run from the DMS5_Beta database'
+    If @ThisDB <> 'DMS5_Beta'
+    Begin
+        Set @message = 'This stored procedure can only be run from the DMS5_Beta database'
         print @message
-        GOTO Done
-    END
+        Goto Done
+    End
 
     ---------------------------------------------------
     -- Drop existing DMS_Data_Package synonyms
@@ -64,11 +62,10 @@ AS
     CREATE SYNONYM [dbo].[S_V_Data_Package_Export] FOR [DMS_Data_Package_Beta].[dbo].[V_Data_Package_Export]
     CREATE SYNONYM [dbo].[S_V_OSM_Package_Export] FOR [DMS_Data_Package_Beta].[dbo].[T_OSM_Package]
 
-    set @message = 'Updated synonyms to use database DMS_Data_Package_Beta'
+    Set @message = 'Updated synonyms to use database DMS_Data_Package_Beta'
 
 Done:
-
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_synonyms_to_use_beta] TO [DDL_Viewer] AS [dbo]

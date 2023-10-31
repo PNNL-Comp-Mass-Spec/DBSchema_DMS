@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[set_step_task_complete]
 **
 **  Desc:
 **      Mark job step as complete
-**      Also updates CPU and Memory info tracked by T_Machines
+**      Also updates CPU and memory info tracked by T_Machines
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -553,13 +553,13 @@ AS
             SET Target_Step = @newTargetStep
             WHERE Job = @job AND Step = @nextStep
 
-            set @message = 'Updated job step dependencies for job ' + Cast(@job as varchar(9)) + ' since step ' + Cast(@step as varchar(9)) + ' has been skipped'
-            exec post_log_entry 'Normal', @message, 'set_step_task_complete'
+            Set @message = 'Updated job step dependencies for job ' + Cast(@job as varchar(9)) + ' since step ' + Cast(@step as varchar(9)) + ' has been skipped'
+            Exec post_log_entry 'Normal', @message, 'set_step_task_complete'
         End
 
     End
 
-    IF Exists (SELECT * FROM @stepToolsToSkip)
+    If Exists (SELECT * FROM @stepToolsToSkip)
     Begin
         -- Skip specific waiting step tools for this job
         --
@@ -603,7 +603,7 @@ CommitTran:
     --
 Done:
     Set @returnCode = Cast(@myError As varchar(64))
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[set_step_task_complete] TO [DDL_Viewer] AS [dbo]

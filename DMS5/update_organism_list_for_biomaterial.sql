@@ -26,12 +26,12 @@ CREATE PROCEDURE [dbo].[update_organism_list_for_biomaterial]
     @message varchar(512)='' output
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @biomaterialID int = 0
     Declare @entryID int
@@ -65,19 +65,19 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message= 'Error trying to resolve biomaterial ID (cell culture ID'
+        Set @message= 'Error trying to resolve biomaterial ID (cell culture ID'
         Goto Done
     End
 
     If IsNull(@biomaterialID, 0) = 0
     Begin
-        set @message = 'Cannot update organisms for biomaterial: "' + @biomaterialName + '" does not exist'
+        Set @message = 'Cannot update organisms for biomaterial: "' + @biomaterialName + '" does not exist'
         Goto Done
     End
 
     If @organismList Is Null
     Begin
-        set @message= 'Cannot update biomaterial "' + @biomaterialName + '": organism list cannot be null'
+        Set @message= 'Cannot update biomaterial "' + @biomaterialName + '": organism list cannot be null'
         Goto Done
     End
 
@@ -97,7 +97,7 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        GOTO Done
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -122,7 +122,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing the comma-separated list of organism names'
+        Set @message = 'Error parsing the comma-separated list of organism names'
         Goto Done
     End
 
@@ -140,7 +140,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error resolving organism ID'
+        Set @message = 'Error resolving organism ID'
         Goto Done
     End
 
@@ -201,14 +201,14 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error checking for unresolved organism ID'
+        Set @message = 'Error checking for unresolved organism ID'
         Goto Done
     End
     --
     If @list <> ''
     Begin
-        set @message = 'Could not resolve the following organism names: ' + @list
-        set @myError = 51000
+        Set @message = 'Could not resolve the following organism names: ' + @list
+        Set @myError = 51000
         Goto Done
     End
 
@@ -229,7 +229,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating the biomaterial to organism mapping'
+        Set @message = 'Error updating the biomaterial to organism mapping'
         Goto Done
     End
 
@@ -253,7 +253,7 @@ Done:
     Set @usageMessage = 'Biomaterial: ' + @biomaterialName
     Exec post_usage_log_entry 'update_organism_list_for_biomaterial', @usageMessage
 
-    RETURN @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_organism_list_for_biomaterial] TO [DDL_Viewer] AS [dbo]

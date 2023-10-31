@@ -38,12 +38,12 @@ CREATE PROCEDURE [dbo].[update_research_team_for_campaign]
     @message varchar(512) output
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @entryID int
     Declare @continue tinyint
@@ -79,8 +79,8 @@ AS
         If @campaignName = ''
         Begin
             Set @myerror = 51002
-            set @message = 'Campaign name was not specified; cannot create a new research team'
-            GOTO Done
+            Set @message = 'Campaign name was not specified; cannot create a new research team'
+            Goto Done
         End
 
         INSERT INTO T_Research_Team (
@@ -97,11 +97,11 @@ AS
         --
         If @myError <> 0
         Begin
-            set @message = 'Error creating new research team'
-            GOTO Done
+            Set @message = 'Error creating new research team'
+            Goto Done
         End
         --
-        SET @researchTeamID = SCOPE_IDENTITY()
+        Set @researchTeamID = SCOPE_IDENTITY()
     End
     Else
     Begin
@@ -113,17 +113,17 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
         Begin
-            set @message = 'Error updating collaborators'
-            GOTO Done
+            Set @message = 'Error updating collaborators'
+            Goto Done
         End
     End
 
     If @researchTeamID = 0
     Begin
-        set @message = 'Research team ID was not valid'
-        GOTO Done
+        Set @message = 'Research team ID was not valid'
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -150,8 +150,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error populating temporary membership table for Project Mgr'
-        GOTO Done
+        Set @message = 'Error populating temporary membership table for Project Mgr'
+        Goto Done
     End
     --
     INSERT INTO #Tmp_TeamMembers ( Username, [Role] )
@@ -162,8 +162,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error populating temporary membership table for PI'
-        GOTO Done
+        Set @message = 'Error populating temporary membership table for PI'
+        Goto Done
     End
     --
     INSERT INTO #Tmp_TeamMembers ( Username, [Role] )
@@ -174,8 +174,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error populating temporary membership table for Technical Lead'
-        GOTO Done
+        Set @message = 'Error populating temporary membership table for Technical Lead'
+        Goto Done
     End
     --
     INSERT INTO #Tmp_TeamMembers ( Username, [Role] )
@@ -186,8 +186,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error populating temporary membership table for Sample Preparation'
-        GOTO Done
+        Set @message = 'Error populating temporary membership table for Sample Preparation'
+        Goto Done
     End
     --
     INSERT INTO #Tmp_TeamMembers ( Username, [Role] )
@@ -198,8 +198,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error populating temporary membership table for Dataset Acquisition'
-        GOTO Done
+        Set @message = 'Error populating temporary membership table for Dataset Acquisition'
+        Goto Done
     End
     --
     INSERT INTO #Tmp_TeamMembers ( Username, [Role] )
@@ -210,8 +210,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error populating temporary membership table for Informatics'
-        GOTO Done
+        Set @message = 'Error populating temporary membership table for Informatics'
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -228,13 +228,12 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error resolving user ID'
-        GOTO Done
+        Set @message = 'Error resolving user ID'
+        Goto Done
     End
 
     UPDATE #Tmp_TeamMembers
-    SET
-        Role_ID = T_Research_Team_Roles.ID
+    SET Role_ID = T_Research_Team_Roles.ID
     FROM
         #Tmp_TeamMembers
         INNER JOIN dbo.T_Research_Team_Roles ON T_Research_Team_Roles.Role = #Tmp_TeamMembers.Role
@@ -248,8 +247,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error resolving role ID'
-        GOTO Done
+        Set @message = 'Error resolving role ID'
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -295,7 +294,7 @@ AS
     -- Error if any username or role did not resolve to ID
     ---------------------------------------------------
     --
-    DECLARE @list VARCHAR(512) = ''
+    Declare @list VARCHAR(512) = ''
     --
     SELECT @list = @list + CASE
                                WHEN @list = '' THEN ''
@@ -308,18 +307,18 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error checking for unresolved user ID'
-        GOTO Done
+        Set @message = 'Error checking for unresolved user ID'
+        Goto Done
     End
     --
     If @list <> ''
     Begin
-        set @message = 'Could not resolve following usernames (or last names) to user ID: ' + @list
-        set @myError = 51000
-        GOTO Done
+        Set @message = 'Could not resolve following usernames (or last names) to user ID: ' + @list
+        Set @myError = 51000
+        Goto Done
     End
 
-    SET @list = ''
+    Set @list = ''
     --
     SELECT @list = @list + CASE
                                WHEN @list = '' THEN ''
@@ -333,15 +332,15 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error checking for unresolved role ID'
-        GOTO Done
+        Set @message = 'Error checking for unresolved role ID'
+        Goto Done
     End
     --
     If @list <> ''
     Begin
-        set @message = 'Unknown role names: ' + @list
-        set @myError = 51001
-        GOTO Done
+        Set @message = 'Unknown role names: ' + @list
+        Set @myError = 51001
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -356,8 +355,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error removing existing team membershipe'
-        GOTO Done
+        Set @message = 'Error removing existing team membershipe'
+        Goto Done
     End
 
      ---------------------------------------------------
@@ -376,8 +375,8 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error adding new membership'
-        return @myError
+        Set @message = 'Error adding new membership'
+        Return @myError
     End
 
 Done:
@@ -390,7 +389,7 @@ Done:
     Set @usageMessage = 'Campaign: ' + @campaignName
     Exec post_usage_log_entry 'update_research_team_for_campaign', @usageMessage
 
-    RETURN @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_research_team_for_campaign] TO [DDL_Viewer] AS [dbo]

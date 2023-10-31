@@ -120,7 +120,7 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Failed to create temporary parameter table'
-        goto DONE
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -147,7 +147,7 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error populating temporary parameter table'
-        goto DONE
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -161,7 +161,7 @@ AS
 
         -- The 'parse_only' mode stops after #TPAR has been populated using the XML
         -- Use mode 'check_add' to also call add_update_dataset to validate the metadata
-        goto DONE
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -358,7 +358,7 @@ AS
         print 'RunFinish: ' + @runFinish
         print 'DatasetCreatorUsername: ' + @datasetCreatorUsername
 
-        goto DONE
+        Goto Done
     End
 
     ---------------------------------------------------
@@ -456,16 +456,15 @@ AS
         End
 
         UPDATE T_Requested_Run
-        SET
-            RDS_Run_Start = @runStartDate,
+        SET RDS_Run_Start = @runStartDate,
             RDS_Run_Finish = @runFinishDate
-        WHERE (ID = @requestID)
+        WHERE ID = @requestID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myError <> 0
         Begin
-            set @message = 'Error trying to update run times'
+            Set @message = 'Error trying to update run times'
             RAISERROR (@message, 10, 1)
             Return 51033
         End
