@@ -18,12 +18,12 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **  Auth:   grk
 **  Date:   02/13/2003
 **          01/10/2002
-**          12/10/2003 grk - added wellplate, internal standards, and LC column stuff
-**          01/11/2005 grk - added bad dataset stuff
-**          02/23/2006 grk - added LC cart tracking stuff and EUS stuff
-**          01/12/2007 grk - added verification mode
-**          02/16/2007 grk - added validation of dataset name (Ticket #390)
-**          04/30/2007 grk - added better name validation (Ticket #450)
+**          12/10/2003 grk - Added wellplate, internal standards, and LC column stuff
+**          01/11/2005 grk - Added bad dataset stuff
+**          02/23/2006 grk - Added LC cart tracking stuff and EUS stuff
+**          01/12/2007 grk - Added verification mode
+**          02/16/2007 grk - Added validation of dataset name (Ticket #390)
+**          04/30/2007 grk - Added better name validation (Ticket #450)
 **          07/26/2007 mem - Now checking dataset type (@msType) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #502)
 **          09/06/2007 grk - Removed @specialInstructions (http://prismtrac.pnl.gov/trac/ticket/522)
 **          10/08/2007 jds - Added support for new mode 'add_trigger'.  Validation was taken from other stored procs from the 'add' mode
@@ -36,11 +36,11 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          05/23/2008 mem - Now calling schedule_predefined_analysis_jobs if the dataset rating is changed from -5 to 5 and no jobs exist yet for this dataset (Ticket #675)
 **          04/08/2009 jds - Added support for the additional parameters @secSep and @MRMAttachment to the add_update_requested_run stored procedure (Ticket #727)
 **          09/16/2009 mem - Now checking dataset type (@msType) against the Instrument_Allowed_Dataset_Type table (Ticket #748)
-**          01/14/2010 grk - assign storage path on creation of dataset
-**          02/28/2010 grk - added add-auto mode for requested run
-**          03/02/2010 grk - added status field to requested run
+**          01/14/2010 grk - Assign storage path on creation of dataset
+**          02/28/2010 grk - Added add-auto mode for requested run
+**          03/02/2010 grk - Added status field to requested run
 **          05/05/2010 mem - Now calling auto_resolve_name_to_username to check if @operatorUsername contains a person's real name rather than their username
-**          07/27/2010 grk - try-catch for error handling
+**          07/27/2010 grk - Try-catch for error handling
 **          08/26/2010 mem - Now passing @callingUser to schedule_predefined_analysis_jobs
 **          08/27/2010 mem - Now calling validate_instrument_group_and_dataset_type to validate the instrument type for the selected instrument's instrument group
 **          09/01/2010 mem - Now passing @SkipTransactionRollback to add_update_requested_run
@@ -146,7 +146,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
     @eusUsersList varchar(1024) = '',
     @requestID int = 0,                         -- Only valid if @mode is 'add', 'check_add', or 'add_dataset_create_task'; ignored if @mode is 'update' or 'check_update'
     @workPackage varchar(50) = 'none',          -- Only valid if @mode is 'add', 'check_add', or 'add_dataset_create_task'
-    @mode varchar(32) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_dataset_create_task'
+    @mode varchar(32) = 'add',                  -- Can be 'add', 'update', 'bad', 'check_update', 'check_add', 'add_dataset_create_task' (deprecated: 'add_trigger')
     @message varchar(1024) output,
     @callingUser varchar(128) = '',
     @aggregationJobDataset tinyint = 0,         -- Set to 1 when creating an in-silico dataset to associate with an aggregation job
