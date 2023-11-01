@@ -107,6 +107,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
 **          10/02/2023 mem - Use @requestID when calling update_cached_requested_run_eus_users
+**          10/31/2023 mem - Raise an error if the instrument group is invalid
 **
 *****************************************************/
 (
@@ -495,10 +496,19 @@ AS
 
     If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroup)
     Begin
-        -- Try to update instrument group using T_Instrument_Name
-        SELECT @instrumentGroup = IN_Group
+        Declare @matchedInstrumentGroup varchar(64) = ''
+
+        -- See if _instrumentGroup is actually an instrument name
+        SELECT @matchedInstrumentGroup = IN_Group
         FROM T_Instrument_Name
         WHERE IN_Name = @instrumentGroup
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount > 0
+            Set @instrumentGroup = @matchedInstrumentGroup
+        Else
+            RAISERROR ('Could not find entry in database for instrument group "%s"', 11, 99, @instrumentGroup)
     End
 
     ---------------------------------------------------
@@ -555,7 +565,7 @@ AS
             RAISERROR ('Error trying to look up separation type ID', 11, 98)
         --
         If @sepID = 0
-            RAISERROR ('Separation group not recognized', 11, 99)
+            RAISERROR ('Could not find entry in database for separation group "%s"', 11, 99, @separationGroup)
 
         If IsNull(@matchedSeparationGroup, '') <> ''
         Begin
