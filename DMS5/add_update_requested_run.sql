@@ -108,6 +108,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **          09/07/2023 mem - Update warning messages
 **          10/02/2023 mem - Use @requestID when calling update_cached_requested_run_eus_users
 **          10/31/2023 mem - Raise an error if the instrument group is invalid
+**                         - Fix bug validating the requested run status when renaming a requested run
 **
 *****************************************************/
 (
@@ -295,7 +296,7 @@ AS
 
             If @oldReqName <> @requestName
             Begin
-                If @status <> 'Active'
+                If @oldStatus <> 'Active'
                     RAISERROR ('Requested run is not active; cannot rename: "%s"', 11, 7, @oldReqName)
 
                 If Exists (Select * from T_Requested_Run Where RDS_Name = @requestName)
