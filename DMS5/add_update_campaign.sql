@@ -46,6 +46,7 @@ CREATE PROCEDURE [dbo].[add_update_campaign]
 **          02/13/2023 bcg - Rename parameters to progmgrUsername and piUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          11/01/2023 mem - Remove unreachable code when validating campaign name
 **
 *****************************************************/
 (
@@ -212,16 +213,14 @@ AS
     --
     If @mode = 'add'
     Begin
-        Declare @badCh varchar(128)
-        Set @badCh = dbo.validate_chars(@campaignName, '')
+        Declare @badCh varchar(128) = dbo.validate_chars(@campaignName, '')
+
+        -- Campaign names can have spaces, so remove '[space]' from @badCh if present
         Set @badCh = REPLACE(@badCh, '[space]', '')
 
         If @badCh <> ''
         Begin
-            If @badCh = '[space]'
-                RAISERROR ('Campaign name may not contain spaces', 11, 8)
-            Else
-                RAISERROR ('Campaign name may not contain the character(s) "%s"', 11, 9, @badCh)
+            RAISERROR ('Campaign name may not contain the character(s) "%s"', 11, 9, @badCh)
         End
     End
 
@@ -504,7 +503,7 @@ AS
 
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_campaign] TO [DDL_Viewer] AS [dbo]
