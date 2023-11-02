@@ -257,6 +257,7 @@ AS
     Declare @resultsDirectoryName varchar(128)
     Declare @datasetID int
     Declare @done tinyint
+    Declare @scriptXML2 xml
     Declare @instrumentName varchar(256)
 
     SELECT @JobCountToProcess = COUNT(*)
@@ -316,12 +317,16 @@ AS
             WHERE Script = @scriptName
 
             -- add additional scripts, if specified
-            if @extensionScriptNameList <> ''
-            begin
-                Declare @scriptXML2 xml
-                SELECT @scriptXML2 = Contents FROM T_Scripts WHERE Script = @extensionScriptNameList -- FUTURE: process as list
-                set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
-            end
+            If @extensionScriptNameList <> ''
+            Begin
+                Set @scriptXML2 = ''
+
+                SELECT @scriptXML2 = Contents
+                FROM T_Scripts
+                WHERE Script = @extensionScriptNameList -- FUTURE: process as list
+
+                Set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
+            End
 
             -- get parameters for job (and also store in #Job_Parameters)
             -- Parameters are returned in @paramsXML
