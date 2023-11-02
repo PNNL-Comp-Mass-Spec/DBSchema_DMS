@@ -132,7 +132,8 @@ AS
         [Processor] varchar(128) NULL,
         Special_Instructions varchar(128) NULL,
         Holdoff_Interval_Minutes smallint NOT NULL,
-        Retry_Count smallint NOT NULL
+        Retry_Count smallint NOT NULL,
+        Next_Try [datetime] NULL default GetDate()
     )
 
     CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step)
@@ -368,6 +369,15 @@ AS
             -- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
             --  copying to the main database tables
             exec @myError = finish_task_creation @job, @message output
+
+            If @scriptName = 'LCDatasetCapture'
+            Begin
+                -- Set a default delayed start for LCDatasetCapture steps - we want to give DatasetArchive a chance to run before we start
+                -- This can just be bulk-applied to all steps for this job
+                UPDATE #Job_Steps
+                SET Next_Try = DATEADD(minute, 30, GetDate())
+                WHERE Job = @job
+            End
 
             Set @JobsProcessed = @JobsProcessed + 1
         end --<b>

@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[move_tasks_to_main_tables]
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
 **          04/01/2023 mem - Rename procedures and functions
+**          11/01/2023 bcg - Update Next_Try in T_Task_Steps when adding rows from #Job_Steps
 **
 *****************************************************/
 (
@@ -102,7 +103,8 @@ AS
         Output_Folder_Name,
         Processor,
         Holdoff_Interval_Minutes,
-        Retry_Count
+        Retry_Count,
+        Next_Try
     )
     SELECT
         Job,
@@ -115,7 +117,8 @@ AS
         Output_Directory_Name,
         Processor,
         Holdoff_Interval_Minutes,
-        Retry_Count
+        Retry_Count,
+        Next_Try
      FROM #Job_Steps
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
