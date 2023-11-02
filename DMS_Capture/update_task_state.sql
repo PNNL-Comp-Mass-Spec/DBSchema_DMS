@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[update_task_state]
 /****************************************************
 **
@@ -60,6 +61,7 @@ CREATE PROCEDURE [dbo].[update_task_state]
 **          04/01/2023 mem - Rename procedures and functions
 **          06/13/2023 mem - No longer call update_dms_prep_state
 **          06/17/2023 mem - Update if statement to remove conditions that are always true
+**          11/01/2023 bcg - If all task steps for a task have state 'skipped' then set the task state to 'Skipped'
 **
 *****************************************************/
 (
@@ -167,6 +169,7 @@ AS
           J.Storage_Server,
           CASE
             WHEN JS_Stats.Failed > 0 THEN 5                     -- New job state: Failed
+            WHEN JS_Stats.Skipped = Total THEN 15               -- New job state: Skipped
             WHEN JS_Stats.FinishedOrSkipped = Total THEN 3      -- New job state: Complete
             WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2   -- New job state: In Progress
             Else J.State
@@ -192,7 +195,11 @@ AS
                 SUM(CASE
                     WHEN JS.State IN (3, 5, 13) THEN 1
                     Else 0
-                    End) AS FinishedOrSkipped
+                    End) AS FinishedOrSkipped,
+                SUM(CASE
+                    WHEN JS.State IN (3, 13) THEN 1
+                    Else 0
+                    End) AS Skipped
             FROM T_Task_Steps JS
                  INNER JOIN T_Tasks J
                    ON JS.Job = J.Job
@@ -426,7 +433,7 @@ AS
                         End,
                     Finish =
                         CASE
-                        WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax                 -- Job state is 3=Complete or 5=Failed
+                        WHEN @newJobStateInBroker IN (3, 5, 15) THEN @FinishMax                 -- Job state is 3=Complete, 5=Failed, 15=Skipped
                         Else Finish
                         End
                 WHERE Job = @job
