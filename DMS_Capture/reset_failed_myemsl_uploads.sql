@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[reset_failed_myemsl_uploads]
 /****************************************************
 **
@@ -25,6 +26,7 @@ CREATE PROCEDURE [dbo].[reset_failed_myemsl_uploads]
 **          02/02/2023 bcg - Changed from V_Job_Steps to V_Task_Steps
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          11/02/2023 bcg - Reset steps with message 'pacifica/ingest/tasks.py'
 **
 *****************************************************/
 (
@@ -82,7 +84,8 @@ AS
                Completion_Message LIKE '%Internal Server Error%' OR
                Completion_Message LIKE '%Connection aborted%BadStatusLine%' OR
                Completion_Message LIKE '%Connection aborted%Broken pipe%' OR
-               Completion_Message LIKE '%ingest/backend/tasks.py%') AND
+               Completion_Message LIKE '%ingest/backend/tasks.py%' OR
+               Completion_Message LIKE '%pacifica/ingest/tasks.py%') AND
               Job_State = 5 AND
               Finish < DateAdd(minute, -@resetHoldoffMinutes, GetDate())
         GROUP BY Job, Dataset_ID, Output_Folder, Input_Folder
