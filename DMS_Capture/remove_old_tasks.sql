@@ -6,8 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[remove_old_tasks]
 /****************************************************
 **
-**  Delete jobs past their expiration date
-**  from the main tables in the database
+**  Delete old capture task jobs by removing from T_Tasks, T_Task_Steps, etc.
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -22,6 +21,7 @@ CREATE PROCEDURE [dbo].[remove_old_tasks]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
+**          11/02/2023 mem - Also remove capture task jobs with state 15 = Skipped
 **
 *****************************************************/
 (
@@ -37,10 +37,10 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    Declare @saveTime datetime = getdate()
+    Declare @saveTime datetime = GetDate()
 
     ---------------------------------------------------
-    -- Create table to track the list of affected jobs
+    -- Create table to track the list of affected capture task jobs
     ---------------------------------------------------
     --
     CREATE TABLE #SJL (
@@ -63,10 +63,14 @@ AS
     ---------------------------------------------------
 
     If IsNull(@intervalDaysForSuccess, -1) < 0
+    Begin
         Set @intervalDaysForSuccess = 0
+    End
 
-    If isNull(@intervalDaysForFail, -1) < 0
+    If IsNull(@intervalDaysForFail, -1) < 0
+    Begin
         Set @intervalDaysForFail = 0
+    End
 
     Set @infoOnly = IsNull(@infoOnly, 0)
     Set @message = ''
@@ -74,26 +78,25 @@ AS
     ---------------------------------------------------
     -- Make sure the job Start and Finish values are up-to-date
     ---------------------------------------------------
-    --
+
     Exec synchronize_task_stats_with_task_steps @infoOnly=0
 
     ---------------------------------------------------
-    -- Add old successful jobs to be removed to list
+    -- Add old successful capture task jobs to be removed to list
     ---------------------------------------------------
-    --
+
     If @intervalDaysForSuccess > 0
-    Begin -- <a>
-        Declare @cutoffDateTimeForSuccess datetime
-        Set @cutoffDateTimeForSuccess = dateadd(hour, -1 * @intervalDaysForSuccess * 24, getdate())
+    Begin
+        Declare @cutoffDateTimeForSuccess datetime = DateAdd(hour, -1 * @intervalDaysForSuccess * 24, GetDate())
 
         INSERT INTO #SJL (Job, State)
         SELECT Job, State
         FROM T_Tasks
-        WHERE State IN (3, 4, 101) And    -- Complete, Inactive, or Ignore
+        WHERE State IN (3, 4, 15, 101) And    -- Complete, Inactive, Skipped, or Ignore
               IsNull(Finish, Start) < @cutoffDateTimeForSuccess
-         --
+        --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-         --
+
         If @myError <> 0
         Begin
             Set @message = 'Error looking for successful jobs to remove'
@@ -116,35 +119,34 @@ AS
                 Print 'Successful jobs have been confirmed to all have successful (or skipped) steps'
         End
 
-    End -- </a>
+    End
 
     ---------------------------------------------------
-    -- Add old failed jobs to be removed to list
+    -- Add old failed capture task jobs to be removed to list
     ---------------------------------------------------
-    --
+
     If @intervalDaysForFail > 0
-    Begin -- <b>
-        Declare @cutoffDateTimeForFail datetime
-        Set @cutoffDateTimeForFail = dateadd(day, -1 * @intervalDaysForFail, getdate())
+    Begin
+        Declare @cutoffDateTimeForFail datetime = DateAdd(day, -1 * @intervalDaysForFail, GetDate())
 
         INSERT INTO #SJL (Job, State)
         SELECT Job,
                State
         FROM T_Tasks
-        WHERE State In (5, 14) AND            -- Failed
+        WHERE State In (5, 14) AND            -- 'Failed' or 'Failed, Ignore Job Step States'
               IsNull(Finish, Start) < @cutoffDateTimeForFail
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @message = 'Error looking for successful jobs to remove'
             Goto Done
         End
-    End -- </b>
+    End
 
     ---------------------------------------------------
-    -- Make sure the jobs to be deleted exist
+    -- Make sure the capture task jobs to be deleted exist
     -- in T_Tasks_History and T_Task_Steps_History
     ---------------------------------------------------
 
@@ -155,11 +157,11 @@ AS
          LEFT OUTER JOIN T_Tasks_History JH
            ON #SJL.Job = JH.Job
     WHERE JH.Job IS NULL
-     --
+    --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     If Exists (Select * from #TmpJobsNotInHistory)
-    Begin -- <c>
+    Begin
         Declare @JobToAdd int = 0
         Declare @State int
         Declare @SaveTimeOverride datetime
@@ -192,7 +194,7 @@ AS
                     exec copy_task_to_history @JobToAdd, @State, @message output, @OverrideSaveTime=1, @SaveTimeOverride=@SaveTimeOverride
             End
         End
-    End -- </c>
+    End
 
     ---------------------------------------------------
     -- Do actual deletion
@@ -213,7 +215,7 @@ AS
     ---------------------------------------------------
     --
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[remove_old_tasks] TO [DDL_Viewer] AS [dbo]
