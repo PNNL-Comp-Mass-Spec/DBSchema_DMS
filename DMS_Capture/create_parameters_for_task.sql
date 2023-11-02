@@ -3,15 +3,14 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[create_parameters_for_task]
 /****************************************************
 **
 **  Desc:
 **      Get parameters for given job into XML format
+**
 **      Make entries in temporary table:
 **          #Job_Parameters
-**      Update #Job
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -45,8 +44,8 @@ AS
     set @message = ''
 
     ---------------------------------------------------
-    -- get job parameters from main database
-    -- Note that the calling procedure must have already created temporary table #Jobs
+    -- Get job parameters from main database
+    -- Note that the calling procedure must have already created temporary table #Jobs, which is used by get_task_param_table
     ---------------------------------------------------
     --
     declare @Job_Parameters table (

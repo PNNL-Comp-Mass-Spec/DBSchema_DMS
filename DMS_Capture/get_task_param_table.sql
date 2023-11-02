@@ -313,7 +313,7 @@ AS
     FROM @paramTab
     ORDER BY [Section], [Name]
 
-    RETURN @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_task_param_table] TO [DDL_Viewer] AS [dbo]
