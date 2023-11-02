@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[make_new_automatic_tasks]
 /****************************************************
 **
@@ -20,6 +21,8 @@ CREATE PROCEDURE [dbo].[make_new_automatic_tasks]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
+**          11/01/2023 bcg - Set a Results_Folder_Name for automatic ArchiveUpdate tasks after LCDatasetCapture
+**                         - Also exclude existing ArchiveUpdate tasks that do not match the automatic job tasks
 **
 *****************************************************/
 (
@@ -41,12 +44,18 @@ AS
             ( Script,
               Dataset,
               Dataset_ID,
-              Comment
+              Comment,
+              Results_Folder_Name
             )
     SELECT AJ.Script_For_New_Job AS Script,
            J.Dataset,
            J.Dataset_ID,
-           'Created from Job ' + CONVERT(varchar(12), J.Job) AS [Comment]
+           'Created from Job ' + CONVERT(varchar(12), J.Job) AS [Comment],
+           CASE
+               WHEN AJ.Script_For_Completed_Job = 'LCDatasetCapture' AND AJ.Script_For_New_Job = 'ArchiveUpdate'
+                   THEN 'LC'
+               ELSE NULL
+           END AS Results_Folder
     FROM T_Tasks AS J
          INNER JOIN T_Automatic_Jobs AJ
            ON J.Script = AJ.Script_For_Completed_Job AND
@@ -55,7 +64,10 @@ AS
           NOT EXISTS ( SELECT *
                        FROM dbo.T_Tasks
                        WHERE Script = Script_For_New_Job AND
-                             Dataset = J.Dataset )
+                             Dataset = J.Dataset AND 
+                             ( AJ.Script_For_Completed_Job <> 'LCDatasetCapture' OR 
+                               AJ.Script_For_New_Job <> 'ArchiveUpdate' OR 
+                               Results_Folder_Name = 'LC' ))
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[make_new_automatic_tasks] TO [DDL_Viewer] AS [dbo]
