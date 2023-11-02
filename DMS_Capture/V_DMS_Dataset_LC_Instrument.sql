@@ -22,7 +22,7 @@ FROM S_DMS_T_Dataset AS DS
        ON RR.RDS_Cart_ID = LCC.ID
      LEFT OUTER JOIN S_DMS_T_Instrument_Name AS TIN 
        ON LCC.Cart_Name = TIN.IN_name
-     INNER JOIN S_DMS_T_Storage_Path AS TSP
+     LEFT OUTER JOIN S_DMS_T_Storage_Path AS TSP
        ON TIN.IN_source_path_ID = TSP.SP_path_ID
 
 GO
