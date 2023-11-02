@@ -45,7 +45,8 @@ AS
               Dataset,
               Dataset_ID,
               Comment,
-              Results_Folder_Name
+              Results_Folder_Name,
+              Priority
             )
     SELECT AJ.Script_For_New_Job AS Script,
            J.Dataset,
@@ -55,7 +56,12 @@ AS
                WHEN AJ.Script_For_Completed_Job = 'LCDatasetCapture' AND AJ.Script_For_New_Job = 'ArchiveUpdate'
                    THEN 'LC'
                ELSE NULL
-           END AS Results_Folder
+           END AS Results_Folder,
+           CASE
+               WHEN AJ.Script_For_Completed_Job = 'LCDatasetCapture' OR AJ.Script_For_New_Job = 'LCDatasetCapture'
+                   THEN 5
+               ELSE 4
+           END AS Priority
     FROM T_Tasks AS J
          INNER JOIN T_Automatic_Jobs AJ
            ON J.Script = AJ.Script_For_Completed_Job AND
