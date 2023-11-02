@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[move_tasks_to_main_tables]
 /****************************************************
 **
 **  Desc:
-**      Move contents of temporary tables:
+**      Copy contents of temporary tables:
 **        #Jobs
 **        #Job_Steps
 **        #Job_Step_Dependencies
@@ -36,20 +36,19 @@ CREATE PROCEDURE [dbo].[move_tasks_to_main_tables]
     @debugMode tinyint = 0
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError Int = 0
     Declare @myRowCount Int = 0
 
-    set @message = ''
-    set @DebugMode = IsNull(@DebugMode, 0)
+    Set @message = ''
+    Set @DebugMode = IsNull(@DebugMode, 0)
 
     ---------------------------------------------------
     -- set up transaction parameters
     ---------------------------------------------------
     --
-    Declare @transName varchar(32)
-    set @transName = 'move_tasks_to_main_tables'
+    Declare @transName varchar(32) = 'move_tasks_to_main_tables'
 
     ---------------------------------------------------
     -- populate actual tables from accumulated entries
@@ -62,13 +61,13 @@ AS
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobStepDependencies') Drop table T_Tmp_NewJobStepDependencies
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobParameters') Drop table T_Tmp_NewJobParameters
 
-        select * INTO T_Tmp_NewJobs from #Jobs
-        select * INTO T_Tmp_NewJobSteps from #Job_Steps
-        select * INTO T_Tmp_NewJobStepDependencies from #Job_Step_Dependencies
-        select * INTO T_Tmp_NewJobParameters from #Job_Parameters
+        SELECT * INTO T_Tmp_NewJobs FROM #Jobs
+        SELECT * INTO T_Tmp_NewJobSteps FROM #Job_Steps
+        SELECT * INTO T_Tmp_NewJobStepDependencies FROM #Job_Step_Dependencies
+        SELECT * INTO T_Tmp_NewJobParameters FROM #Job_Parameters
     End
 
-    begin transaction @transName
+    Begin transaction @transName
 
     UPDATE T_Tasks
     SET [State] = #Jobs.[State],
@@ -84,13 +83,13 @@ AS
 
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-        rollback transaction @transName
-        set @message = 'Error'
+
+    If @myError <> 0
+    Begin
+        Rollback transaction @transName
+        Set @message = 'Error'
         goto Done
-    end
+    End
 
     INSERT INTO T_Task_Steps (
         Job,
@@ -119,16 +118,16 @@ AS
         Holdoff_Interval_Minutes,
         Retry_Count,
         Next_Try
-     FROM #Job_Steps
+    FROM #Job_Steps
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-        rollback transaction @transName
-        set @message = 'Error'
+
+    If @myError <> 0
+    Begin
+        Rollback transaction @transName
+        Set @message = 'Error'
         goto Done
-    end
+    End
 
     INSERT INTO T_Task_Step_Dependencies (
         Job,
@@ -145,16 +144,16 @@ AS
         Condition_Test,
         Test_Value,
         Enable_Only
-     FROM #Job_Step_Dependencies
+    FROM #Job_Step_Dependencies
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-        rollback transaction @transName
-        set @message = 'Error'
+
+    If @myError <> 0
+    Begin
+        Rollback transaction @transName
+        Set @message = 'Error'
         goto Done
-    end
+    End
 
     INSERT INTO T_Task_Parameters (
         Job,
@@ -166,22 +165,22 @@ AS
     FROM #Job_Parameters
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-        rollback transaction @transName
-        set @message = 'Error'
-        goto Done
-    end
 
-    commit transaction @transName
+    If @myError <> 0
+    Begin
+        Rollback transaction @transName
+        Set @message = 'Error'
+        goto Done
+    End
+
+    Commit transaction @transName
 
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
     --
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[move_tasks_to_main_tables] TO [DDL_Viewer] AS [dbo]

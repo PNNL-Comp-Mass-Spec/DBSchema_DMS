@@ -8,9 +8,9 @@ CREATE PROCEDURE [dbo].[create_task_steps]
 /****************************************************
 **
 **  Desc:
-**      Make entries in job steps table and job step
-**      dependency table for each newly added job
-**      according to definition of script for that job
+**      Make entries in the capture task job steps table and the
+**      job step dependency table for each newly added capture task job,
+**      as defined by the script for that job
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -43,7 +43,7 @@ CREATE PROCEDURE [dbo].[create_task_steps]
     @infoOnly tinyint = 0
 )
 AS
-    set nocount on
+    Set nocount on
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
@@ -161,14 +161,14 @@ AS
     -- into temp table
     ---------------------------------------------------
     --
-    if @mode = 'CreateFromImportedJobs'
+    If @mode = 'CreateFromImportedJobs'
     Begin
         If @MaxJobsToProcess > 0
             Set @MaxJobsToAdd = @MaxJobsToProcess
         Else
             Set @MaxJobsToAdd = 1000000
 
-        if @DebugMode = 0 OR (@DebugMode <> 0 And @existingJob = 0)
+        If @DebugMode = 0 Or (@DebugMode <> 0 And @existingJob = 0)
         Begin
             INSERT INTO #Jobs(
                 Job,
@@ -205,11 +205,11 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
-            if @myError <> 0
-            begin
-                set @message = 'Error trying to get jobs for processing'
+            If @myError <> 0
+            Begin
+                Set @message = 'Error trying to get jobs for processing'
                 goto Done
-            end
+            End
         End
 
         If @DebugMode <> 0 And @existingJob <> 0
@@ -239,11 +239,11 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount = 0
-            begin
-                set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Tasks; unable to continue debugging'
-                set @myError = 50000
+            Begin
+                Set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Tasks; unable to continue debugging'
+                Set @myError = 50000
                 goto Done
-            end
+            End
         End
     End
 
@@ -264,56 +264,53 @@ AS
     --
     Set @JobCountToProcess = IsNull(@JobCountToProcess, 0)
 
-    set @done = 0
-    set @prevJob = 0
+    Set @done = 0
+    Set @prevJob = 0
     Set @JobsProcessed = 0
     Set @LastLogTime = GetDate()
-    --
-    while @done = 0
-    begin --<a>
+
+    While @done = 0
+    Begin
         ---------------------------------------------------
-        -- get next unprocessed job and
+        -- Get next unprocessed job and
         -- build it into the temporary tables
         ---------------------------------------------------
         --
-        set @job = 0
-        --
-        SELECT TOP 1
-            @job = Job,
-            @scriptName = Script,
-            @datasetID = Dataset_ID,
-            @resultsDirectoryName = ISNULL(Results_Directory_Name, '')
-        FROM
-            #Jobs
+        Set @job = 0
+
+        SELECT TOP 1 @job = Job,
+                     @scriptName = Script,
+                     @datasetID = Dataset_ID,
+                     @resultsDirectoryName = ISNULL(Results_Directory_Name, '')
+        FROM #Jobs
         WHERE Job > @prevJob
         ORDER BY Job
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
-            set @message = 'Error trying to get next unitiated job'
+
+        If @myError <> 0
+        Begin
+            Set @message = 'Error trying to get next unitiated job'
             goto Done
-        end
+        End
 
         ---------------------------------------------------
-        -- if no job was found, we are done
+        -- If no job was found, we are done
         -- otherwise, process the job
         ---------------------------------------------------
         --
-        if @job = 0
-            set @done = 1
-        else
-        begin --<b>
-            -- set up to get next job on next pass
-            set @prevJob = @job
+        If @job = 0
+            Set @done = 1
+        Else
+        Begin
+            -- Set up to get next job on next pass
+            Set @prevJob = @job
 
             Declare @paramsXML xml
             Declare @scriptXML xml
-            Declare @tag varchar(8)
-            set @tag = 'unk'
+            Declare @tag varchar(8) = 'unk'
 
-            -- get contents of script and tag for results Directory name
+            -- Get contents of script and tag for results Directory name
             SELECT @scriptXML = Contents, @tag = Results_Tag
             FROM T_Scripts
             WHERE Script = @scriptName
@@ -328,7 +325,7 @@ AS
 
             -- get parameters for job (and also store in #Job_Parameters)
             -- Parameters are returned in @paramsXML
-            exec @myError = create_parameters_for_task @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
+            Exec @myError = create_parameters_for_task @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
 
             -- If the script is LCDatasetCapture and the instrument name is not set, then set the task state to 'Skipped', add a comment, and don't create task steps.
             If @scriptName = 'LCDatasetCapture'
@@ -355,20 +352,20 @@ AS
                 End
             End
 
-            -- create the basic job structure (steps and dependencies)
+            -- Create the basic job structure (steps and dependencies)
             -- Details are stored in #Job_Steps and #Job_Step_Dependencies
-            exec @myError = create_steps_for_task @job, @scriptXML, @resultsDirectoryName, @message output
+            Exec @myError = create_steps_for_task @job, @scriptXML, @resultsDirectoryName, @message output
 
-            if @DebugMode <> 0
-            begin
+            If @DebugMode <> 0
+            Begin
                 SELECT @StepCount = COUNT(*) FROM #Job_Steps
                 SELECT * FROM #Job_Steps
                 SELECT * FROM #Job_Step_Dependencies
-            end
+            End
 
             -- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
-            --  copying to the main database tables
-            exec @myError = finish_task_creation @job, @message output
+            -- copying to the main database tables
+            Exec @myError = finish_task_creation @job, @message output
 
             If @scriptName = 'LCDatasetCapture'
             Begin
@@ -380,35 +377,36 @@ AS
             End
 
             Set @JobsProcessed = @JobsProcessed + 1
-        end --<b>
+        End
 
+NoSteps:
         If DateDiff(second, @LastLogTime, GetDate()) >= @LoopingUpdateInterval
         Begin
             -- Make sure @LoggingEnabled is 1
             Set @LoggingEnabled = 1
 
             Set @StatusMessage = '... Creating job steps: ' + Convert(varchar(12), @JobsProcessed) + ' / ' + Convert(varchar(12), @JobCountToProcess)
-            exec post_log_entry 'Progress', @StatusMessage, 'create_task_steps'
+            Exec post_log_entry 'Progress', @StatusMessage, 'create_task_steps'
             Set @LastLogTime = GetDate()
         End
 
-    end --<a>
+    End
 
     ---------------------------------------------------
     -- We've got new jobs in temp tables - what to do?
     ---------------------------------------------------
-    --
-    if @infoOnly = 0
+
+    If @infoOnly = 0
     Begin
-        if @mode = 'CreateFromImportedJobs'
-        begin
-            -- Copies data from the following temp tables to actual database tables:
+        If @mode = 'CreateFromImportedJobs'
+        Begin
+            -- Copy data from the following temp tables into actual database tables:
             --     #Jobs
             --     #Job_Steps
             --     #Job_Step_Dependencies
             --     #Job_Parameters
             exec move_tasks_to_main_tables @message output, @DebugMode
-        end
+        End
 
     End
 
@@ -416,7 +414,7 @@ AS
     Begin
         Set @LoggingEnabled = 1
         Set @StatusMessage = 'create_task_steps complete'
-        exec post_log_entry 'Progress', @StatusMessage, 'create_task_steps'
+        Exec post_log_entry 'Progress', @StatusMessage, 'create_task_steps'
     End
 
     ---------------------------------------------------
@@ -427,13 +425,13 @@ Done:
     If @LoggingEnabled = 1 Or DateDiff(second, @StartTime, GetDate()) >= @LogIntervalThreshold
     Begin
         Set @StatusMessage = 'Exiting'
-        exec post_log_entry 'Progress', @StatusMessage, 'create_task_steps'
+        Exec post_log_entry 'Progress', @StatusMessage, 'create_task_steps'
     End
 
     If @DebugMode <> 0
         SELECT * FROM #Jobs
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[create_task_steps] TO [DDL_Viewer] AS [dbo]
