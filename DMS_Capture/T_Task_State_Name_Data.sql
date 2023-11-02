@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Task_State_Name] ******/
-/****** RowCount: 17 ******/
+/****** RowCount: 18 ******/
 /****** Columns: ID, Name ******/
 INSERT INTO [T_Task_State_Name] VALUES (0,'(none)')
 INSERT INTO [T_Task_State_Name] VALUES (1,'New')
@@ -15,6 +15,7 @@ INSERT INTO [T_Task_State_Name] VALUES (10,'Restore Required')
 INSERT INTO [T_Task_State_Name] VALUES (11,'Restore In Progress')
 INSERT INTO [T_Task_State_Name] VALUES (12,'Restore Failed')
 INSERT INTO [T_Task_State_Name] VALUES (14,'Failed, Ignore Job Step States')
+INSERT INTO [T_Task_State_Name] VALUES (15,'Skipped')
 INSERT INTO [T_Task_State_Name] VALUES (20,'Resuming')
 INSERT INTO [T_Task_State_Name] VALUES (100,'Hold')
 INSERT INTO [T_Task_State_Name] VALUES (101,'Ignore')

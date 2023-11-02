@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[create_task_steps]
 /****************************************************
 **
@@ -26,6 +27,7 @@ CREATE PROCEDURE [dbo].[create_task_steps]
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary tables
 **          04/01/2023 mem - Rename procedures and functions
+**          11/01/2023 bcg - Add special handling for script 'LCDatasetCapture' to skip step creation when the target dataset does not have an LC instrument defined
 **
 *****************************************************/
 (
@@ -254,6 +256,7 @@ AS
     Declare @resultsDirectoryName varchar(128)
     Declare @datasetID int
     Declare @done tinyint
+    Declare @instrumentName varchar(256)
 
     SELECT @JobCountToProcess = COUNT(*)
     FROM #Jobs
@@ -323,8 +326,33 @@ AS
             end
 
             -- get parameters for job (and also store in #Job_Parameters)
-            -- Parameters are returned in @paramsXML (though @paramsXML is not used by this procedure)
+            -- Parameters are returned in @paramsXML
             exec @myError = create_parameters_for_task @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
+
+            -- If the script is LCDatasetCapture and the instrument name is not set, then set the task state to 'Skipped', add a comment, and don't create task steps.
+            If @scriptName = 'LCDatasetCapture'
+            Begin
+                Set @instrumentName = ''
+
+                SELECT @instrumentName = x.i.value('@Value', 'nvarchar(256)')
+                FROM @paramsXML.nodes('./Param') AS x(i)
+                WHERE x.i.value('@Section', 'nvarchar(256)') = 'JobParameters'
+                  AND x.i.value('@Name', 'nvarchar(256)') = 'Instrument_Name'
+
+                If LTrim(RTrim(Coalesce(@instrumentName, ''))) = ''
+                Begin
+                    UPDATE T_Tasks
+                    SET State = 15, -- Skipped
+                        Comment = 'No instrument name found matching LC cart name'
+                    WHERE Job = @job
+
+                    UPDATE #Jobs
+                    SET State = 15
+                    WHERE Job = @job
+
+                    goto NoSteps
+                End
+            End
 
             -- create the basic job structure (steps and dependencies)
             -- Details are stored in #Job_Steps and #Job_Step_Dependencies
