@@ -70,7 +70,7 @@ AS
     Begin transaction @transName
 
     UPDATE T_Tasks
-    SET [State] = #Jobs.[State],
+    SET State = #Jobs.State,
         Results_Folder_Name = #Jobs.Results_Directory_Name,
         Storage_Server = #Jobs.Storage_Server,
         Instrument = #Jobs.Instrument,
@@ -161,7 +161,7 @@ AS
     )
     SELECT
         Job,
-        [Parameters]
+        Parameters
     FROM #Job_Parameters
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount

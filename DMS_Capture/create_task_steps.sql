@@ -102,18 +102,18 @@ AS
     -- job step dependencies, and job parameters for
     -- jobs being created
     ---------------------------------------------------
-    --
+
     CREATE TABLE #Jobs (
-        [Job] int NOT NULL,
-        [Priority] int NULL,
-        [Script] varchar(64) NULL,
-        [State] int NOT NULL,
-        [Dataset] varchar(128) NULL,
-        [Dataset_ID] int NULL,
-        [Results_Directory_Name] varchar(128) NULL,
+        Job int NOT NULL,
+        Priority int NULL,
+        Script varchar(64) NULL,
+        State int NOT NULL,
+        Dataset varchar(128) NULL,
+        Dataset_ID int NULL,
+        Results_Directory_Name varchar(128) NULL,
         Storage_Server varchar(64) NULL,
         Instrument varchar(24) NULL,
-        Instrument_Class VARCHAR(32),
+        Instrument_Class varchar(32),
         Max_Simultaneous_Captures int NULL,
         Capture_Subdirectory varchar(255) NULL
     )
@@ -121,39 +121,39 @@ AS
     CREATE INDEX #IX_Jobs_Job ON #Jobs (Job)
 
     CREATE TABLE #Job_Steps (
-        [Job] int NOT NULL,
-        [Step] int NOT NULL,
-        [Tool] varchar(64) NOT NULL,
-        [CPU_Load] [smallint] NULL,
-        [Dependencies] tinyint NULL ,
-        [Filter_Version] smallint NULL,
-        [Signature] int NULL,
-        [State] tinyint NULL ,
-        [Input_Directory_Name] varchar(128) NULL,
-        [Output_Directory_Name] varchar(128) NULL,
-        [Processor] varchar(128) NULL,
+        Job int NOT NULL,
+        Step int NOT NULL,
+        Tool varchar(64) NOT NULL,
+        CPU_Load smallint NULL,
+        Dependencies tinyint NULL ,
+        Filter_Version smallint NULL,
+        Signature int NULL,
+        State tinyint NULL ,
+        Input_Directory_Name varchar(128) NULL,
+        Output_Directory_Name varchar(128) NULL,
+        Processor varchar(128) NULL,
         Special_Instructions varchar(128) NULL,
         Holdoff_Interval_Minutes smallint NOT NULL,
         Retry_Count smallint NOT NULL,
-        Next_Try [datetime] NULL default GetDate()
+        Next_Try datetime NULL default GetDate()
     )
 
     CREATE INDEX #IX_Job_Steps_Job_Step ON #Job_Steps (Job, Step)
 
     CREATE TABLE #Job_Step_Dependencies (
-        [Job] int NOT NULL,
-        [Step] int NOT NULL,
-        [Target_Step] int NOT NULL,
-        [Condition_Test] varchar(50) NULL,
-        [Test_Value] varchar(256) NULL,
-        [Enable_Only] tinyint NULL
+        Job int NOT NULL,
+        Step int NOT NULL,
+        Target_Step int NOT NULL,
+        Condition_Test varchar(50) NULL,
+        Test_Value varchar(256) NULL,
+        Enable_Only tinyint NULL
     )
 
     CREATE INDEX #IX_Job_Step_Dependencies_Job_Step ON #Job_Step_Dependencies (Job, Step)
 
     CREATE TABLE #Job_Parameters (
-        [Job] int NOT NULL,
-        [Parameters] xml NULL
+        Job int NOT NULL,
+        Parameters xml NULL
     )
 
     CREATE INDEX #IX_Job_Parameters_Job ON #Job_Parameters (Job)
@@ -187,23 +187,22 @@ AS
                 Capture_Subdirectory
             )
             SELECT TOP ( @MaxJobsToAdd )
-                TJ.Job,
-                TJ.Priority,
-                TJ.Script,
-                TJ.State,
-                TJ.Dataset,
-                TJ.Dataset_ID,
-                TJ.Results_Folder_Name As Results_Directory_Name,
-                VDD.Storage_Server_Name,
-                VDD.Instrument_Name,
-                VDD.Instrument_Class,
-                VDD.Max_Simultaneous_Captures,
-                VDD.Capture_Subfolder As Capture_Subdirectory
-            FROM
-                T_Tasks TJ
-                INNER JOIN V_DMS_Get_Dataset_Definition AS VDD ON TJ.Dataset_ID = VDD.Dataset_ID
-            WHERE
-                TJ.State = 0
+                   TJ.Job,
+                   TJ.Priority,
+                   TJ.Script,
+                   TJ.State,
+                   TJ.Dataset,
+                   TJ.Dataset_ID,
+                   TJ.Results_Folder_Name As Results_Directory_Name,
+                   VDD.Storage_Server_Name,
+                   VDD.Instrument_Name,
+                   VDD.Instrument_Class,
+                   VDD.Max_Simultaneous_Captures,
+                   VDD.Capture_Subfolder As Capture_Subdirectory
+            FROM T_Tasks TJ
+                 INNER JOIN V_DMS_Get_Dataset_Definition AS VDD
+                   ON TJ.Dataset_ID = VDD.Dataset_ID
+            WHERE TJ.State = 0
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
             --
