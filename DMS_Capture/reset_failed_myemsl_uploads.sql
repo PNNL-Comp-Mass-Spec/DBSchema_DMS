@@ -3,12 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[reset_failed_myemsl_uploads]
 /****************************************************
 **
-**  Desc:   Looks for failed Dataset Archive or Archive Update jobs with
-**          known error messages. Reset the job to try again if @infoOnly = 0
+**  Desc:
+**      Looks for failed Dataset Archive or Archive Update tasks with known error messages
+**      Resets the capture tasks to try again if @infoOnly = 0
 **
 **  Auth:   mem
 **  Date:   08/01/2016 mem - Initial version
@@ -71,7 +71,7 @@ AS
         )
 
         -----------------------------------------------------------
-        -- Look for failed jobs
+        -- Look for failed capture task jobs
         -----------------------------------------------------------
 
         INSERT INTO #Tmp_FailedJobs( Job, Dataset_ID, Subfolder, [Error_Message], SkipReset )
@@ -117,7 +117,7 @@ AS
         End
 
         -----------------------------------------------------------
-        -- Flag any jobs that have failed twice for the same subfolder
+        -- Flag any capture task jobs that have failed twice for the same subfolder
         -- pushing the same number of files each time
         -----------------------------------------------------------
 
@@ -185,7 +185,7 @@ AS
         End -- </a>
 
         -----------------------------------------------------------
-        -- Flag any jobs that have a DatasetArchive or ArchiveUpdate step in state 7 (Holding)
+        -- Flag any capture task jobs that have a DatasetArchive or ArchiveUpdate step in state 7 (Holding)
         -----------------------------------------------------------
 
         UPDATE #Tmp_FailedJobs
@@ -201,7 +201,7 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         -----------------------------------------------------------
-        -- Possibly limit the number of jobs to reset
+        -- Possibly limit the number of capture task jobs to reset
         -----------------------------------------------------------
         --
 
@@ -231,10 +231,10 @@ AS
 
         End
 
-        If Exists (Select * From #Tmp_FailedJobs Where SkipReset = 0)
+        If Exists (SELECT * FROM #Tmp_FailedJobs WHERE SkipReset = 0)
         Begin
             -----------------------------------------------------------
-            -- Construct a comma-separated list of jobs then call retry_myemsl_upload
+            -- Construct a comma-separated list of capture task jobs then call retry_myemsl_upload
             -----------------------------------------------------------
             --
             Declare @JobList varchar(max) = null
@@ -249,10 +249,10 @@ AS
             exec @myError = retry_myemsl_upload @Jobs = @JobList, @infoOnly = @infoOnly, @message = @message
 
             -----------------------------------------------------------
-            -- Post a log entry if any jobs were reset
+            -- Post a log entry if any capture task jobs were reset
             -- Posting as an error so that it shows up in the daily error log
             -----------------------------------------------------------
-            --
+
             If @infoOnly = 0
             Begin
                 Declare @jobCount int
@@ -277,7 +277,7 @@ AS
 
         If @infoOnly <> 0
         Begin
-            -- Preview the jobs in #Tmp_FailedJobs
+            -- Preview the capture task jobs in #Tmp_FailedJobs
             SELECT *
             FROM #Tmp_FailedJobs
             ORDER BY Job, Subfolder
@@ -295,8 +295,7 @@ AS
     END CATCH
 
 Done:
-
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[reset_failed_myemsl_uploads] TO [DDL_Viewer] AS [dbo]
