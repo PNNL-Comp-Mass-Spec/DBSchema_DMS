@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[create_task_steps]
 /****************************************************
 **
@@ -98,9 +97,8 @@ AS
     End
 
     ---------------------------------------------------
-    -- create temporary tables to accumulate job steps
-    -- job step dependencies, and job parameters for
-    -- jobs being created
+    -- Create temporary tables to accumulate capture task job steps,
+    -- job step dependencies, and job parameters
     ---------------------------------------------------
 
     CREATE TABLE #Jobs (
@@ -159,10 +157,9 @@ AS
     CREATE INDEX #IX_Job_Parameters_Job ON #Job_Parameters (Job)
 
     ---------------------------------------------------
-    -- Get jobs that need to be processed
-    -- into temp table
+    -- Get capture task jobs that need to be processed
     ---------------------------------------------------
-    --
+
     If @mode = 'CreateFromImportedJobs'
     Begin
         If @MaxJobsToProcess > 0
@@ -208,40 +205,37 @@ AS
             --
             If @myError <> 0
             Begin
-                Set @message = 'Error trying to get jobs for processing'
+                Set @message = 'Error trying to get capture task jobs for processing'
                 goto Done
             End
         End
 
         If @DebugMode <> 0 And @existingJob <> 0
         Begin
-           INSERT INTO #Jobs
-          ( Job,
-            Priority,
-            Script,
-            State,
-            Dataset,
-            Dataset_ID,
-            Results_Directory_Name
-          )
-          SELECT
-            Job,
-            Priority,
-            Script,
-            State,
-            Dataset,
-            Dataset_ID,
-            NULL
-          FROM
-            T_Tasks
-          WHERE
-            Job = @existingJob
+            INSERT INTO #Jobs(
+                Job,
+                Priority,
+                Script,
+                State,
+                Dataset,
+                Dataset_ID,
+                Results_Directory_Name
+            )
+            SELECT Job,
+                   Priority,
+                   Script,
+                   State,
+                   Dataset,
+                   Dataset_ID,
+                   NULL
+            FROM T_Tasks
+            WHERE Job = @existingJob
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount = 0
             Begin
-                Set @message = 'Job ' + Convert(varchar(12), @existingJob) + ' not found in T_Tasks; unable to continue debugging'
+                Set @message = 'Capture task job ' + Convert(varchar(12), @existingJob) + ' not found in T_Tasks; unable to continue debugging'
                 Set @myError = 50000
                 goto Done
             End
@@ -249,9 +243,9 @@ AS
     End
 
     ---------------------------------------------------
-    -- loop through jobs and process them into temp tables
+    -- Loop through capture task jobs and process them into temp tables
     ---------------------------------------------------
-    --
+
     Declare @job int
     Declare @prevJob int
     Declare @scriptName varchar(64)
@@ -274,8 +268,7 @@ AS
     While @done = 0
     Begin
         ---------------------------------------------------
-        -- Get next unprocessed job and
-        -- build it into the temporary tables
+        -- Get next unprocessed capture task job
         ---------------------------------------------------
         --
         Set @job = 0
@@ -297,27 +290,27 @@ AS
         End
 
         ---------------------------------------------------
-        -- If no job was found, we are done
-        -- otherwise, process the job
+        -- If no capture task job was found, we are done
+        -- Otherwise, process the job
         ---------------------------------------------------
-        --
+
         If @job = 0
             Set @done = 1
         Else
         Begin
-            -- Set up to get next job on next pass
+            -- Set up to get next capture task job on next pass
             Set @prevJob = @job
 
             Declare @paramsXML xml
             Declare @scriptXML xml
             Declare @tag varchar(8) = 'unk'
 
-            -- Get contents of script and tag for results Directory name
+            -- Get contents of script and tag for results directory name
             SELECT @scriptXML = Contents, @tag = Results_Tag
             FROM T_Scripts
             WHERE Script = @scriptName
 
-            -- add additional scripts, if specified
+            -- Add additional script if extending an existing job
             If @extensionScriptNameList <> ''
             Begin
                 Set @scriptXML2 = ''
@@ -329,11 +322,11 @@ AS
                 Set @scriptXML = convert(varchar(2048), @scriptXML) + convert(varchar(2048), @scriptXML2)
             End
 
-            -- get parameters for job (and also store in #Job_Parameters)
+            -- Get parameters for the capture task job (and also store in #Job_Parameters)
             -- Parameters are returned in @paramsXML
             Exec @myError = create_parameters_for_task @job, @datasetID, @scriptName, @paramsXML output, @message output, @DebugMode = @DebugMode
 
-            -- If the script is LCDatasetCapture and the instrument name is not set, then set the task state to 'Skipped', add a comment, and don't create task steps.
+            -- If the script is 'LCDatasetCapture' and the instrument name is not defined, set the task state to 'Skipped', add a comment, and don't create steps for the task
             If @scriptName = 'LCDatasetCapture'
             Begin
                 Set @instrumentName = ''
@@ -361,8 +354,9 @@ AS
                 End
             End
 
-            -- Create the basic job structure (steps and dependencies)
+            -- Create the basic capture task job structure (steps and dependencies)
             -- Details are stored in #Job_Steps and #Job_Step_Dependencies
+
             Exec @myError = create_steps_for_task @job, @scriptXML, @resultsDirectoryName, @message output
 
             If @DebugMode <> 0
@@ -372,14 +366,14 @@ AS
                 SELECT * FROM #Job_Step_Dependencies
             End
 
-            -- Perform a mixed bag of operations on the jobs in the temporary tables to finalize them before
+            -- Perform a mixed bag of operations on the capture task jobs in the temporary tables to finalize them before
             -- copying to the main database tables
             Exec @myError = finish_task_creation @job, @message output
 
             If @scriptName = 'LCDatasetCapture'
             Begin
-                -- Set a default delayed start for LCDatasetCapture steps - we want to give DatasetArchive a chance to run before we start
-                -- This can just be bulk-applied to all steps for this job
+                -- Set a default delayed start for LCDatasetCapture steps; we want to give the 'DatasetArchive' task a chance to run before the 'LCDatasetCapture' task starts
+                -- This can just be bulk-applied to all steps for this capture task job
                 UPDATE #Job_Steps
                 SET Next_Try = DATEADD(minute, 30, GetDate())
                 WHERE Job = @job
@@ -402,7 +396,7 @@ NoSteps:
     End
 
     ---------------------------------------------------
-    -- We've got new jobs in temp tables - what to do?
+    -- We've got new capture task jobs in temp tables - what to do?
     ---------------------------------------------------
 
     If @infoOnly = 0
@@ -438,7 +432,9 @@ Done:
     End
 
     If @DebugMode <> 0
+    Begin
         SELECT * FROM #Jobs
+    End
 
     Return @myError
 

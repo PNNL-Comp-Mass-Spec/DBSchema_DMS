@@ -50,12 +50,10 @@ AS
     --
     Declare @transName varchar(32) = 'move_tasks_to_main_tables'
 
-    ---------------------------------------------------
-    -- populate actual tables from accumulated entries
-    ---------------------------------------------------
-
     If @DebugMode <> 0
     Begin
+        -- Store the contents of the temporary tables in persistent tables
+        --
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobs') Drop table T_Tmp_NewJobs
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobSteps') Drop table T_Tmp_NewJobSteps
         If Exists (Select * from sys.tables where Name = 'T_Tmp_NewJobStepDependencies') Drop table T_Tmp_NewJobStepDependencies
@@ -66,6 +64,10 @@ AS
         SELECT * INTO T_Tmp_NewJobStepDependencies FROM #Job_Step_Dependencies
         SELECT * INTO T_Tmp_NewJobParameters FROM #Job_Parameters
     End
+
+    ---------------------------------------------------
+    -- Populate actual tables from accumulated entries
+    ---------------------------------------------------
 
     Begin transaction @transName
 
