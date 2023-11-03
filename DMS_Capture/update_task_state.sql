@@ -155,52 +155,45 @@ AS
         -- Look at the state of steps for active or failed capture task jobs
         -- and determine what the new state of each capture task job should be
         SELECT
-          J.Job,
-          J.Dataset_ID,
-          J.State as OldState,
-          J.Results_Folder_Name,
-          J.Storage_Server,
-          CASE
-            WHEN JS_Stats.Failed > 0 THEN 5                     -- New job state: Failed
-            WHEN JS_Stats.Skipped = Total THEN 15               -- New job state: Skipped
-            WHEN JS_Stats.FinishedOrSkipped = Total THEN 3      -- New job state: Complete
-            WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2   -- New job state: In Progress
-            Else J.State
-          End AS NewState,
-          J.Dataset,
-          J.Script
+          T.Job,
+          T.Dataset_ID,
+          T.State As OldState,
+          T.Results_Folder_Name,
+          T.Storage_Server,
+          CASE WHEN JS_Stats.Failed > 0 THEN 5                     -- New capture task job state: Failed
+               WHEN JS_Stats.Skipped = Total THEN 15               -- New capture task job state: Skipped
+               WHEN JS_Stats.FinishedOrSkipped = Total THEN 3      -- New capture task job state: Complete
+               WHEN JS_Stats.StartedFinishedOrSkipped > 0 THEN 2   -- New capture task job state: In Progress
+               ELSE T.State
+          END AS NewState,
+          T.Dataset,
+          T.Script
         FROM
-          (
-            -- Count the number of steps for each job
-            -- that are in the busy, finished, or failed states
-            -- (for jobs that are in new, in progress, or resuming state)
+          ( -- Count the number of steps for each capture task job that are in specific states
+            -- (for capture task jobs with state new, in progress, failed, or resuming)
             SELECT
-                JS.Job,
-                COUNT(*) AS Total,
-                SUM(CASE
-                    WHEN JS.State IN (3, 4, 5, 13) THEN 1
-                    Else 0
-                    End) AS StartedFinishedOrSkipped,
-                SUM(CASE
-                    WHEN JS.State IN (6) THEN 1
-                    Else 0
-                    End) AS Failed,
-                SUM(CASE
-                    WHEN JS.State IN (3, 5, 13) THEN 1
-                    Else 0
-                    End) AS FinishedOrSkipped,
-                SUM(CASE
-                    WHEN JS.State IN (3, 13) THEN 1
-                    Else 0
-                    End) AS Skipped
-            FROM T_Task_Steps JS
-                 INNER JOIN T_Tasks J
-                   ON JS.Job = J.Job
-            WHERE (J.State IN (1,2,5,20))    -- Current job state: New, in progress, failed, or resuming
-            GROUP BY JS.Job, J.State
+                TS.Job,
+                COUNT(TS.step) AS Total,
+                SUM(CASE WHEN TS.State IN (3, 4, 5, 13) THEN 1       -- Step state is 3=Skipped, 4=Running, 5=Completed, or 13=Inactive
+                         ELSE 0
+                    END) AS StartedFinishedOrSkipped,
+                SUM(CASE WHEN TS.State IN (6) THEN 1                 -- Step state is 6=Failed
+                         ELSE 0
+                    END) AS Failed,
+                SUM(CASE WHEN TS.State IN (3, 5, 13) THEN 1          -- Step state is 3=Skipped, 5=Completed, or 13=Inactive
+                         ELSE 0
+                    END) AS FinishedOrSkipped,
+                SUM(CASE WHEN TS.State IN (3, 13) THEN 1             -- Step state is 3=Skipped or 13=Inactive
+                         ELSE 0
+                    END) AS Skipped
+            FROM T_Task_Steps TS
+                 INNER JOIN T_Tasks T
+                   ON TS.Job = T.Job
+            WHERE (T.State IN (1, 2, 5, 20))    -- Current capture task job state: 1=New, 2=In Progress, 5=Failed, or 20=Resuming
+            GROUP BY TS.Job, T.State
            ) AS JS_Stats
-           INNER JOIN T_Tasks AS J
-             ON JS_Stats.Job = J.Job
+           INNER JOIN T_Tasks AS T
+             ON JS_Stats.Job = T.Job
     ) UpdateQ
     WHERE UpdateQ.OldState <> UpdateQ.NewState
     --
@@ -223,25 +216,25 @@ AS
         Script,
         Storage_Server
     )
-    SELECT J.Job,
-           J.State As OldState,
-           J.State As NewState,
-           J.Results_Folder_Name,
-           J.Dataset,
-           J.Dataset_ID,
-           J.Script,
-           J.Storage_Server
-    FROM T_Tasks J
+    SELECT T.Job,
+           T.State As OldState,
+           T.State As NewState,
+           T.Results_Folder_Name,
+           T.Dataset,
+           T.Dataset_ID,
+           T.Script,
+           T.Storage_Server
+    FROM T_Tasks T
          INNER JOIN V_DMS_Dataset_Archive_Status DAS
-           ON J.Dataset_ID = DAS.Dataset_ID
+           ON T.Dataset_ID = DAS.Dataset_ID
          LEFT OUTER JOIN #Tmp_ChangedJobs TargetTable
-           ON J.Job = TargetTable.Job
+           ON T.Job = TargetTable.Job
     WHERE TargetTable.Job Is Null AND
-          ( (J.Script = 'DatasetArchive' AND J.State = 2 AND DAS.Archive_State_ID = 6) OR
-            (J.Script = 'ArchiveUpdate'  AND J.State = 2 AND DAS.Archive_Update_State_ID = 5) )
-     --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
+          ( (T.Script = 'DatasetArchive' AND T.State = 2 AND DAS.Archive_State_ID = 6) OR
+            (T.Script = 'ArchiveUpdate'  AND T.State = 2 AND DAS.Archive_Update_State_ID = 5) )
     --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
     Set @JobCountToProcess = @JobCountToProcess + @myRowCount
 
     ---------------------------------------------------
