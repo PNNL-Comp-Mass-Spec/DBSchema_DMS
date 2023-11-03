@@ -29,13 +29,14 @@ CREATE PROCEDURE [dbo].[create_task_steps]
 **          04/01/2023 mem - Rename procedures and functions
 **          11/01/2023 bcg - Add special handling for script 'LCDatasetCapture' to skip step creation when the target dataset does not have an LC instrument defined
 **          11/02/2023 bcg - Delete job parameters from #Job_Parameters when skipping a capture task job
+**          11/02/2023 mem - Remove unused modes 'ExtendExistingJob' and 'UpdateExistingJob'
 **
 *****************************************************/
 (
     @message varchar(512) output,
-    @debugMode tinyint = 0,                             -- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
-    @mode varchar(32) = 'CreateFromImportedJobs',       -- Modes: CreateFromImportedJobs, ExtendExistingJob, UpdateExistingJob
-    @existingJob int = 0,                               -- Used if @mode = 'ExtendExistingJob' or @mode = 'UpdateExistingJob'; also used if @DebugMode <> 1
+    @debugMode tinyint = 0,                             -- When setting this to 1, you can optionally specify a capture task job using @existingJob to view the steps that would be created for that job
+    @mode varchar(32) = 'CreateFromImportedJobs',       -- Modes: CreateFromImportedJobs
+    @existingJob int = 0,                               -- Only used if @debugMode <> 0
     @extensionScriptNameList varchar(512) = '',
     @maxJobsToProcess int = 0,
     @logIntervalThreshold int = 15,         -- If this procedure runs longer than this threshold, then status messages will be posted to the log
@@ -72,7 +73,7 @@ AS
     Set @mode = IsNull(@mode, '')
     Set @MaxJobsToProcess = IsNull(@MaxJobsToProcess, 0)
 
-    If @mode Not In ('CreateFromImportedJobs', 'ExtendExistingJob', 'UpdateExistingJob')
+    If Not @mode In ('CreateFromImportedJobs')
     Begin
         Set @message = 'Unknown mode: ' + @Mode
         Set @myError = 50001
