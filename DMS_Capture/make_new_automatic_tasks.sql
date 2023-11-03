@@ -60,14 +60,14 @@ AS
          INNER JOIN T_Automatic_Jobs AJ
            ON T.Script = AJ.Script_For_Completed_Job AND
               AJ.Enabled = 1
-    WHERE (J.State = 3) AND
-          NOT EXISTS ( SELECT *
-                       FROM dbo.T_Tasks
-                       WHERE Script = Script_For_New_Job AND
-                             Dataset = J.Dataset AND 
-                             ( AJ.Script_For_Completed_Job <> 'LCDatasetCapture' OR 
-                               AJ.Script_For_New_Job <> 'ArchiveUpdate' OR 
-                               Results_Folder_Name = 'LC' ))
+    WHERE T.State = 3 AND
+          NOT EXISTS ( SELECT CompareQ.job
+                       FROM dbo.T_Tasks CompareQ
+                       WHERE CompareQ.Script = AJ.Script_For_New_Job AND
+                             CompareQ.Dataset = T.Dataset AND
+                             ( NOT (AJ.Script_For_Completed_Job = 'LCDatasetCapture' AND AJ.Script_For_New_Job = 'ArchiveUpdate')
+                               OR CompareQ.Results_Folder_Name = 'LC' )
+                     );
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[make_new_automatic_tasks] TO [DDL_Viewer] AS [dbo]
