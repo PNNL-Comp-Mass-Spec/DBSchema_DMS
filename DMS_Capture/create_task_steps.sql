@@ -28,6 +28,7 @@ CREATE PROCEDURE [dbo].[create_task_steps]
 **          03/07/2023 mem - Rename columns in temporary tables
 **          04/01/2023 mem - Rename procedures and functions
 **          11/01/2023 bcg - Add special handling for script 'LCDatasetCapture' to skip step creation when the target dataset does not have an LC instrument defined
+**          11/02/2023 bcg - Delete job parameters from #Job_Parameters when skipping a capture task job
 **
 *****************************************************/
 (
@@ -351,6 +352,9 @@ AS
 
                     UPDATE #Jobs
                     SET State = 15
+                    WHERE Job = @job
+
+                    DELETE FROM #Job_Parameters
                     WHERE Job = @job
 
                     goto NoSteps
