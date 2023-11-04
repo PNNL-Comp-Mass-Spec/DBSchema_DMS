@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Data_Type_Name] ******/
-/****** RowCount: 18 ******/
+/****** RowCount: 19 ******/
 SET IDENTITY_INSERT [T_Instrument_Data_Type_Name] ON
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (1,'dot_raw_files',0,'.Raw',null)
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (2,'dot_wiff_files',0,'.Wiff',null)
@@ -19,4 +19,5 @@ INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name,
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (17,'illumina_folder',1,'',null)
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (18,'dot_qgd_files',0,'.qgd',null)
 INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (19,'bruker_tof_tdf',1,'.tdf','.D directory with a .tdf file and a .tdf_bin file')
+INSERT INTO [T_Instrument_Data_Type_Name] (Raw_Data_Type_ID, Raw_Data_Type_Name, Is_Folder, Required_File_Extension, Comment) VALUES (20,'lcmsnet_lcmethod',0,'.lcmethod','Method XML file from LCMSNet with runtime timestamps included')
 SET IDENTITY_INSERT [T_Instrument_Data_Type_Name] OFF

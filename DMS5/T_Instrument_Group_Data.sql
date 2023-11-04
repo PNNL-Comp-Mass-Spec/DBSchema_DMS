@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Group] ******/
-/****** RowCount: 57 ******/
+/****** RowCount: 59 ******/
 /****** Columns: IN_Group, Usage, Comment, Active, Default_Dataset_Type, Allocation_Tag, Sample_Prep_Visible, Requested_Run_Visible, Target_Instrument_Group ******/
 INSERT INTO [T_Instrument_Group] VALUES ('11T','Research','',0,1,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('21T','Research','',1,1,'FT',1,1,null)
@@ -28,6 +28,7 @@ INSERT INTO [T_Instrument_Group] VALUES ('GC-QExactive','Metabolomics',null,1,41
 INSERT INTO [T_Instrument_Group] VALUES ('GC-TSQ','Metabolomics','',0,9,'GC',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Illumina','Genomic Sequencing',null,0,33,'SEQ',1,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('IMS','Ion-mobility LC-IMS-MS','',1,6,'IMS',1,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('LCMSNet_LC','LCMSNet LCs with no available LC pump data file','If there is a Thermo pump on the LC controlled with SII for Xcalibur, use Thermo_SII_LC instead',1,31,'None',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('LCQ','Low res MS/MS','',0,2,null,0,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('LTQ','Low res MS/MS','',1,2,'LTQ',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('LTQ-ETD','Low res MS/MS ETD','',0,2,'LTQ',0,0,null)
@@ -56,5 +57,6 @@ INSERT INTO [T_Instrument_Group] VALUES ('TSQ','MRM','',1,9,'QQQ',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('TSQ_Frac','Requested runs with LC-MicroHpH, LC-MicroSCX, LC-NanoHpH, etc.','',1,9,'QQQ',0,1,'TSQ')
 INSERT INTO [T_Instrument_Group] VALUES ('VelosOrbi','LC-HMS with MS/MS; optionally ETD','',1,3,'ORB',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('VelosPro','Ion trap instrument with CID, HCD, PQD, or ETD; No orbitrap','',0,2,'LTQ',0,1,null)
+INSERT INTO [T_Instrument_Group] VALUES ('Waters_Acquity_LC','Waters Acquity LC instruments controlled using MassLynx','',1,31,'None',0,0,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Waters_IMS','Waters Synapt IMS','',1,6,'IMS',1,1,null)
 INSERT INTO [T_Instrument_Group] VALUES ('Waters_TOF','Research','',1,1,'TOF',0,1,null)
