@@ -174,7 +174,7 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ---------------------------------------------------
-    -- Use  alternate values when the script is 'LCDatasetCapture'
+    -- Use alternate values when the script is 'LCDatasetCapture'
     ---------------------------------------------------
 
     If @ScriptName = 'LCDatasetCapture'
@@ -197,7 +197,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- Instrument class params from DMS5.T_Instrument_Class
+    -- Instrument class parameters from DMS5.T_Instrument_Class
     --
     -- This includes all of the DatasetQC parameters, typically including:
     --
@@ -253,8 +253,8 @@ AS
     VALUES (NULL, 'JobParameters', 'PerformCalibration', @PerformCalibrationText)
 
     ---------------------------------------------------
-    -- Lookup the Analysis Transfer directory (e.g. \\proto-6\DMS3_Xfer)
-    -- This directory is used to store metadata.txt files for dataset archive and archive update jobs
+    -- Lookup the transfer directory (e.g. \\proto-6\DMS3_Xfer)
+    -- This directory is used to store metadata.txt files for dataset archive and archive update tasks
     -- Those files are used by the ArchiveVerify tool to confirm that files were successfully imported into MyEMSL
     ---------------------------------------------------
     --
@@ -302,7 +302,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- output the table of parameters
+    -- Output the table of parameters
     ---------------------------------------------------
 
     SELECT @job AS Job,
