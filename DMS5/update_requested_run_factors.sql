@@ -73,6 +73,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_factors]
 **                         - Rename temp table
 **          01/25/2023 mem - Block factors named 'Run_Order'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          11/03/2023 mem - Capitalize factor names based on historic usage
 **
 *****************************************************/
 (
@@ -127,7 +128,7 @@ AS
     CREATE TABLE #Tmp_FactorInfo (
         Entry_ID int Identity(1,1),
         Identifier varchar(128) null,   -- Could be RequestID or DatasetName
-        Factor varchar(128) null,
+        Factor varchar(128) null,       -- Factor name
         Value varchar(128) null,
         DatasetID INT null,             -- DatasetID; not always present
         RequestID INT null,
@@ -169,36 +170,38 @@ AS
     -- Populate temp table with new parameters
     -----------------------------------------------------------
     --
-    INSERT INTO #Tmp_FactorInfo
-        (Identifier, Factor, Value, DatasetID, UpdateSkipCode)
-    SELECT
-        LTrim(RTrim(xmlNode.value('@i', 'nvarchar(256)'))) As Identifier,
-        LTrim(RTrim(xmlNode.value('@f', 'nvarchar(256)'))) As Factor,
-        LTrim(RTrim(xmlNode.value('@v', 'nvarchar(256)'))) As Value,
-        LTrim(RTrim(xmlNode.value('@d', 'nvarchar(256)'))) As DatasetID,        -- Only sometimes present
-        0 AS UpdateSkipCode
+    INSERT INTO #Tmp_FactorInfo (Identifier, Factor, Value, DatasetID, UpdateSkipCode)
+    SELECT LTrim(RTrim(xmlNode.value('@i', 'nvarchar(256)'))) As Identifier,
+           LTrim(RTrim(xmlNode.value('@f', 'nvarchar(256)'))) As Factor,
+           LTrim(RTrim(xmlNode.value('@v', 'nvarchar(256)'))) As Value,
+           LTrim(RTrim(xmlNode.value('@d', 'nvarchar(256)'))) As DatasetID,        -- Only sometimes present
+           0 AS UpdateSkipCode
     FROM @xml.nodes('//r') AS R(xmlNode)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
     Begin
-        set @message = 'Error trying to convert list'
-        return 51009
+        Set @message = 'Error trying to convert list'
+        Return 51009
     End
 
     -----------------------------------------------------------
-    -- If table contains DatasetID values, then auto-populate the Identifier column with RequestIDs
+    -- If table contains DatasetID values, auto-populate the Identifier column with RequestIDs
     -----------------------------------------------------------
 
     If Exists (SELECT * FROM #Tmp_FactorInfo WHERE Not DatasetID IS NULL)
     Begin -- <a>
         If Exists (SELECT * FROM #Tmp_FactorInfo WHERE DatasetID IS NULL)
         Begin
-            set @message = 'Encountered a mix of XML tag attributes; if using the "d" attribute for DatasetID, then all entries must have "d" defined'
+            Set @message = 'Encountered a mix of XML tag attributes; if using the "d" attribute for DatasetID, then all entries must have "d" defined'
+
             If @infoOnly <> 0
+            Begin
                 SELECT * FROM #Tmp_FactorInfo
-            return 51016
+            End
+
+            Return 51016
         End
 
         UPDATE #Tmp_FactorInfo
@@ -215,24 +218,27 @@ AS
 
         If Exists (SELECT * FROM #Tmp_FactorInfo WHERE Identifier IS NULL)
         Begin
-            set @message = 'Unable to resolve DatasetID to RequestID for one or more entries (DatasetID not found in Requested Run table)'
+            Set @message = 'Unable to resolve DatasetID to RequestID for one or more entries (DatasetID not found in Requested Run table)'
 
             -- Construct a list of DatasetIDs that are not present in T_Requested_Run
             Set @Msg2 = ''
-            Select @Msg2 = @Msg2 + #Tmp_FactorInfo.DatasetID + ', '
+
+            SELECT @Msg2 = @Msg2 + #Tmp_FactorInfo.DatasetID + ', '
             FROM #Tmp_FactorInfo
             WHERE Identifier Is Null
 
             If IsNull(@Msg2, '') <> ''
             Begin
                 -- Append @Msg2 to @message
-                set @message = @message + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
+                Set @message = @message + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
             End
 
             If @infoOnly <> 0
+            Begin
                 SELECT * FROM #Tmp_FactorInfo
+            End
 
-            return 51017
+            Return 51017
         End
 
     End -- </a>
@@ -243,10 +249,14 @@ AS
 
     If Not @IDType IN ('RequestID', 'DatasetID', 'Job', 'Dataset')
     Begin
-        set @message = 'Identifier type "' + @IDTypeOriginal + '" was not recognized in the header row; should be Request, RequestID, DatasetID, Job, or Dataset (i.e. Dataset Name)'
+        Set @message = 'Identifier type "' + @IDTypeOriginal + '" was not recognized in the header row; should be Request, RequestID, DatasetID, Job, or Dataset (i.e. Dataset Name)'
+
         If @infoOnly <> 0
+        Begin
             SELECT * FROM #Tmp_FactorInfo
-        return 51018
+        End
+
+        Return 51018
     End
 
     -----------------------------------------------------------
@@ -264,10 +274,14 @@ AS
         If IsNull(@Msg2, '') <> ''
         Begin
             -- One or more entries is non-numeric
-            set @message = 'Identifier keys must all be integers when Identifier column contains ' + @IDTypeOriginal + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
+            Set @message = 'Identifier keys must all be integers when Identifier column contains ' + @IDTypeOriginal + '; error with: ' + Substring(@Msg2, 1, Len(@Msg2)-1)
+
             If @infoOnly <> 0
+            Begin
                 SELECT * FROM #Tmp_FactorInfo
-            return 51019
+            End
+
+            Return 51019
         End
     End
 
@@ -346,23 +360,24 @@ AS
         Set @message = @message + '; treating the Identifier column as ' + @IDType
 
         If @infoOnly <> 0
+        Begin
             SELECT * FROM #Tmp_FactorInfo
+        End
 
-        return 51020
+        Return 51020
     End
 
     -----------------------------------------------------------
     -- Validate factor names
     -----------------------------------------------------------
-    --
+
     DECLARE @badFactorNames VARCHAR(8000) = ''
-    --
+
     SELECT
         @badFactorNames = @badFactorNames +
-            CASE
-            WHEN PATINDEX('%[^0-9A-Za-z_.]%', Factor) > 0
-            THEN CASE WHEN @badFactorNames = '' THEN Factor ELSE ', ' + Factor END
-            ELSE ''
+            CASE WHEN PATINDEX('%[^0-9A-Za-z_.]%', Factor) > 0
+                 THEN CASE WHEN @badFactorNames = '' THEN Factor ELSE ', ' + Factor END
+                 ELSE ''
             END
     FROM ( SELECT DISTINCT Factor
            FROM #Tmp_FactorInfo
@@ -372,27 +387,29 @@ AS
     If @badFactorNames <> ''
     Begin
         If Len(@badFactorNames) < 256
-            set @message = 'Unacceptable characters in factor names "' + @badFactorNames + '"'
+            Set @message = 'Unacceptable characters in factor names "' + @badFactorNames + '"'
         Else
-            set @message = 'Unacceptable characters in factor names "' + LEFT(@badFactorNames, 256) + '..."'
+            Set @message = 'Unacceptable characters in factor names "' + LEFT(@badFactorNames, 256) + '..."'
 
         If @infoOnly <> 0
+        Begin
             SELECT * FROM #Tmp_FactorInfo
+        End
 
-        return 51027
+        Return 51027
     End
 
     -----------------------------------------------------------
     -- Auto-delete data that cannot be a factor
     -- These column names could be present if the user
-    -- saved the results of a list report (or of https://dms2.pnl.gov/requested_run_factors/param )
+    -- saved the results of a list report (or of https://dms2.pnl.gov/requested_run_factors/param)
     -- to a text file, then edited the data in Excel, then included the extra columns when copying from Excel
     --
     -- Name is not a valid factor name since it is used to label the Requested Run Name column at https://dms2.pnl.gov/requested_run_factors/param
     -----------------------------------------------------------
 
     UPDATE #Tmp_FactorInfo
-    Set UpdateSkipCode = 2
+    SET UpdateSkipCode = 2
     WHERE Factor IN ('Batch_ID', 'BatchID', 'Experiment', 'Dataset', 'Status', 'Request', 'Name')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -406,8 +423,9 @@ AS
 
     -----------------------------------------------------------
     -- Make sure factor name is not in blacklist
+    --
     -- Note that Javascript code behind http://dms2.pnl.gov/requested_run_factors/param and https://dms2.pnl.gov/requested_run_batch_blocking/grid
-    --  should auto-remove factors "Block" and "Run_Order" if it is present
+    -- should auto-remove factors "Block" and "Run_Order" if it is present
     -----------------------------------------------------------
     --
     Set @badFactorNames = ''
@@ -419,21 +437,23 @@ AS
          ) LookupQ
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @badFactorNames <> ''
     Begin
         -- Remove the trailing comma
         Set @badFactorNames = Substring(@badFactorNames, 1, Len(@badFactorNames)-1)
 
         If @myRowCount = 1
-            set @message = 'Invalid factor name: ' + @badFactorNames
+            Set @message = 'Invalid factor name: ' + @badFactorNames
         Else
-            set @message = 'Invalid factor names: ' + @badFactorNames
+            Set @message = 'Invalid factor names: ' + @badFactorNames
 
         If @infoOnly <> 0
+        Begin
             SELECT * FROM #Tmp_FactorInfo
+        End
 
-        return 51015
+        Return 51015
     End
 
     -----------------------------------------------------------
@@ -445,11 +465,98 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
+    -----------------------------------------------------------
+    -- Capitalize factor names based on historic usage
+    --
+    -- Although factor case does not matter, some of the WHERE clauses
+    -- are shown as lowercase based on observed inconsistencies in case
+    -----------------------------------------------------------
+
+    UPDATE #Tmp_FactorInfo SET Factor = 'AbbrName'                     WHERE Factor = 'AbbrName';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Age'                          WHERE Factor = 'Age';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Alias'                        WHERE Factor = 'Alias';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Analysis'                     WHERE Factor = 'analysis';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Batch'                        WHERE Factor = 'Batch';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Batch_Order_Number'           WHERE Factor = 'Batch_Order_Number';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Biol_Rep'                     WHERE Factor = 'Biol_rep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Biological_Rep'               WHERE Factor = 'biological_rep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'BioRep'                       WHERE Factor = 'Biorep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'BioRepID'                     WHERE Factor = 'BioRepID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Bound'                        WHERE Factor = 'bound';
+    UPDATE #Tmp_FactorInfo SET Factor = 'BoxNumber'                    WHERE Factor = 'BoxNumber';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Cart'                         WHERE Factor = 'Cart';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Cell_Line'                    WHERE Factor = 'cell_line';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Cohort'                       WHERE Factor = 'cohort';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Column'                       WHERE Factor = 'column';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Condition'                    WHERE Factor = 'Condition';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Created'                      WHERE Factor = 'Created';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Culture'                      WHERE Factor = 'culture'
+    UPDATE #Tmp_FactorInfo SET Factor = 'DatasetID'                    WHERE Factor = 'DatasetID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Date'                         WHERE Factor = 'Date';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Day'                          WHERE Factor = 'Day';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Depletion_Column_ID'          WHERE Factor = 'Depletion_Column_ID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Fraction'                     WHERE Factor = 'fraction';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Fraction'                     WHERE Factor = 'Freaction';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Gender'                       WHERE Factor = 'Gender';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Group'                        WHERE Factor = 'Group';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Growth'                       WHERE Factor = 'Growth';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Growth_Condition'             WHERE Factor = 'Growth_condition';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Institute'                    WHERE Factor = 'Institute';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Instrument'                   WHERE Factor = 'Instrument';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Job'                          WHERE Factor = 'Job';
+    UPDATE #Tmp_FactorInfo SET Factor = 'LC_Column'                    WHERE Factor = 'LC_Column';
+    UPDATE #Tmp_FactorInfo SET Factor = 'LCColumnName'                 WHERE Factor = 'LCColumnName';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Location'                     WHERE Factor = 'Location';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Organism'                     WHERE Factor = 'organism';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Patient'                      WHERE Factor = 'Patient';
+    UPDATE #Tmp_FactorInfo SET Factor = 'PatientID'                    WHERE Factor = 'PatientID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Plate'                        WHERE Factor = 'Plate';
+    UPDATE #Tmp_FactorInfo SET Factor = 'PlateNumber'                  WHERE Factor = 'PlateNumber';
+    UPDATE #Tmp_FactorInfo SET Factor = 'PlateWell'                    WHERE Factor = 'PlateWell';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Pool'                         WHERE Factor = 'Pool';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Post_Depletion_Concentration' WHERE Factor = 'Post_Depletion_Concentration';
+    UPDATE #Tmp_FactorInfo SET Factor = 'PrepType'                     WHERE Factor = 'PrepType';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Probe'                        WHERE Factor = 'Probe';
+    UPDATE #Tmp_FactorInfo SET Factor = 'ProcessRep'                   WHERE Factor = 'ProcessRep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Protocol'                     WHERE Factor = 'Protocol';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Rep'                          WHERE Factor = 'Rep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Replicate'                    WHERE Factor = 'replicate';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Replicates'                   WHERE Factor = 'Replicates';
+    UPDATE #Tmp_FactorInfo SET Factor = 'RepRun'                       WHERE Factor = 'RepRun';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Run_Batch'                    WHERE Factor = 'Run_Batch';
+    UPDATE #Tmp_FactorInfo SET Factor = 'RunDate'                      WHERE Factor = 'RunDate';
+    UPDATE #Tmp_FactorInfo SET Factor = 'RunGroup'                     WHERE Factor = 'RunGroup';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Sample'                       WHERE Factor = 'Sample';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Sample_ID'                    WHERE Factor = 'Sample_ID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Sample_Number'                WHERE Factor = 'Sample_number';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Sample_Type'                  WHERE Factor = 'sample_type';
+    UPDATE #Tmp_FactorInfo SET Factor = 'SampleName'                   WHERE Factor = 'SampleName';
+    UPDATE #Tmp_FactorInfo SET Factor = 'SampleType'                   WHERE Factor = 'Sampletype';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Site'                         WHERE Factor = 'Site';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Species'                      WHERE Factor = 'Species';
+    UPDATE #Tmp_FactorInfo SET Factor = 'StatGrp'                      WHERE Factor = 'StatGrp';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Strain'                       WHERE Factor = 'strain';
+    UPDATE #Tmp_FactorInfo SET Factor = 'StudyID'                      WHERE Factor = 'StudyID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'SubjectGroup'                 WHERE Factor = 'SubjectGroup';
+    UPDATE #Tmp_FactorInfo SET Factor = 'SubjectID'                    WHERE Factor = 'SubjectID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Tech_Rep'                     WHERE Factor = 'Tech_rep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'TechRep'                      WHERE Factor = 'Techrep';
+    UPDATE #Tmp_FactorInfo SET Factor = 'TechRepID'                    WHERE Factor = 'TechRepID';
+    UPDATE #Tmp_FactorInfo SET Factor = 'TechReplicate'                WHERE Factor = 'TechReplicate';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Temperature'                  WHERE Factor = 'temperature';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Test'                         WHERE Factor = 'test';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Time'                         WHERE Factor = 'time';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Time_Desc'                    WHERE Factor = 'Time_Desc';
+    UPDATE #Tmp_FactorInfo SET Factor = 'TimePoint'                    WHERE Factor = 'Timepoint';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Tissue'                       WHERE Factor = 'Tissue';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Treatment'                    WHERE Factor = 'treatment';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Weight'                       WHERE Factor = 'Weight';
+    UPDATE #Tmp_FactorInfo SET Factor = 'Well'                         WHERE Factor = 'Well';
 
     -----------------------------------------------------------
     -- Check for invalid Request IDs in the factors table
     -----------------------------------------------------------
-    --
+
     DECLARE @InvalidRequestIDs VARCHAR(8000) = ''
     --
     SELECT @InvalidRequestIDs = @InvalidRequestIDs + Convert(varchar(12), RequestID) + ', '
@@ -464,17 +571,21 @@ AS
         -- Remove the trailing comma
         Set @InvalidRequestIDs = Substring(@InvalidRequestIDs, 1, Len(@InvalidRequestIDs)-1)
 
-        set @message =  'Invalid Requested Run IDs: ' + @InvalidRequestIDs
+        Set @message =  'Invalid Requested Run IDs: ' + @InvalidRequestIDs
+
         If @infoOnly <> 0
+        Begin
             SELECT * FROM #Tmp_FactorInfo
-        return 51013
+        End
+
+        Return 51013
     End
 
 
     -----------------------------------------------------------
     -- Flag values that are unchanged
     -----------------------------------------------------------
-    --
+
     UPDATE #Tmp_FactorInfo
     SET UpdateSkipCode = 1
     WHERE UpdateSkipCode = 0 AND
@@ -499,7 +610,7 @@ AS
         -----------------------------------------------------------
         -- Remove blank values from factors table
         -----------------------------------------------------------
-        --
+
         DELETE FROM T_Factor
         WHERE T_Factor.Type = 'Run_Request' AND
               EXISTS ( SELECT *
@@ -513,14 +624,14 @@ AS
         --
         If @myError <> 0
         Begin
-            set @message = 'Error removing blank values from factors table'
-            return 51001
+            Set @message = 'Error removing blank values from factors table'
+            Return 51001
         End
 
         -----------------------------------------------------------
         -- Update existing items in factors tables
         -----------------------------------------------------------
-        --
+
         UPDATE T_Factor
         SET Value = #Tmp_FactorInfo.Value,
             Last_Updated = GetDate()
@@ -536,14 +647,14 @@ AS
         --
         If @myError <> 0
         Begin
-            set @message = 'Error updating changed values in factors table'
-            return 51002
+            Set @message = 'Error updating changed values in factors table'
+            Return 51002
         End
 
         -----------------------------------------------------------
         -- Add new factors
         -----------------------------------------------------------
-        --
+
         INSERT INTO dbo.T_Factor( [Type],
                                   TargetID,
                                   Name,
@@ -567,14 +678,14 @@ AS
         --
         If @myError <> 0
         Begin
-            set @message = 'Error adding new factors to factors table'
-            return 51003
+            Set @message = 'Error adding new factors to factors table'
+            Return 51003
         End
 
         -----------------------------------------------------------
         -- Convert changed items to XML for logging
         -----------------------------------------------------------
-        --
+
         DECLARE @changeSummary varchar(max) = ''
         --
         SELECT @changeSummary = @changeSummary + '<r i="' + CONVERT(varchar(12), RequestID) + '" f="' + Factor + '" v="' + Value + '" />'
@@ -584,13 +695,11 @@ AS
         -----------------------------------------------------------
         -- Log changes
         -----------------------------------------------------------
-        --
+
         If @changeSummary <> ''
         Begin
-            INSERT INTO T_Factor_Log
-                (changed_by, changes)
-            VALUES
-                (@callingUser, @changeSummary)
+            INSERT INTO T_Factor_Log (changed_by, changes)
+            VALUES (@callingUser, @changeSummary)
         End
 
     End -- </CommitChanges>
@@ -600,10 +709,10 @@ AS
     ---------------------------------------------------
 
     Declare @UsageMessage varchar(512) = ''
-    Set @UsageMessage = ''
+
     Exec post_usage_log_entry 'update_requested_run_factors', @UsageMessage
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_requested_run_factors] TO [DDL_Viewer] AS [dbo]
