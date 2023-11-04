@@ -35,7 +35,7 @@ CREATE PROCEDURE [dbo].[update_task_state]
 **          05/04/2010 grk - Bypass DMS if dataset ID = 0
 **          05/08/2010 grk - Update DMS sample prep if dataset ID = 0
 **          05/05/2011 mem - Now updating capture task job state from Failed to Complete if all task steps are now complete and at least one of the task steps finished later than the Finish time in T_Tasks
-**          11/14/2011 mem - Now using >= instead of > when looking for jobs to change from Failed to Complete because all job steps are now complete or skipped
+**          11/14/2011 mem - Now using >= instead of > when looking for capture task jobs to change from Failed to Complete because all job steps are now complete or skipped
 **          01/16/2012 mem - Added overflow checks when using DateDiff to compute @ProcessingTimeMinutes
 **          11/05/2014 mem - Now looking for failed capture task jobs that should be changed to state 2 in T_Tasks
 **          11/11/2014 mem - Now looking for capture task jobs that are in progress, yet T_Dataset_Archive in DMS5 lists the archive or archive update operation as failed
@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[update_task_state]
 **          06/13/2023 mem - No longer call update_dms_prep_state
 **          06/17/2023 mem - Update if statement to remove conditions that are always true
 **          11/01/2023 bcg - If all steps for a capture task job have state 'skipped', set the task state to 'Skipped'
+**          11/04/2023 mem - When @infoOnly > 0, update Finish_New for capture task jobs with state 15 (Skipped)
 **
 *****************************************************/
 (
@@ -261,9 +262,9 @@ AS
            Storage_Server
     FROM T_Tasks
     WHERE State = 5 AND
-          (Job IN ( SELECT Job FROM T_Task_Steps WHERE State IN (2, 3, 4, 5, 13))) AND
-          (NOT Job IN (SELECT Job FROM T_Task_Steps WHERE State = 6)) AND
-          (NOT Job In (SELECT Job FROM #Tmp_ChangedJobs))
+          Job IN ( SELECT Job FROM T_Task_Steps WHERE State IN (2, 3, 4, 5, 13)) AND
+          NOT Job IN (SELECT Job FROM T_Task_Steps WHERE State = 6) AND
+          NOT Job In (SELECT Job FROM #Tmp_ChangedJobs)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -386,10 +387,12 @@ AS
             If @infoOnly > 0
             Begin
                 UPDATE #Tmp_ChangedJobs
-                SET Start_New =  CASE WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())  -- Job state is 2 or higher
+                SET Start_New =  CASE WHEN @newJobStateInBroker >= 2            -- Capture task job state is 2 or higher
+                                      THEN IsNull(@StartMin, GetDate())
                                       ELSE Src.Start
                                  END,
-                    Finish_New = CASE WHEN @newJobStateInBroker IN (3, 5) THEN @FinishMax               -- Job state is 3=Complete or 5=Failed
+                    Finish_New = CASE WHEN @newJobStateInBroker IN (3, 5, 15)   -- Capture task job state is 3=Complete, 5=Failed, or 15=Skipped
+                                      THEN @FinishMax
                                       ELSE Src.Finish
                                  END
                 FROM #Tmp_ChangedJobs Target
@@ -407,12 +410,13 @@ AS
                 ---------------------------------------------------
 
                 UPDATE T_Tasks
-                Set
-                    State =  @newJobStateInBroker,
-                    Start =  CASE WHEN @newJobStateInBroker >= 2 THEN IsNull(@StartMin, GetDate())  -- Capture task job state is 2 or higher
+                SET State =  @newJobStateInBroker,
+                    Start =  CASE WHEN @newJobStateInBroker >= 2            -- Capture task job state is 2 or higher
+                                  THEN IsNull(@StartMin, GetDate())
                                   ELSE Start
                              END,
-                    Finish = CASE WHEN @newJobStateInBroker IN (3, 5, 15) THEN @FinishMax           -- Capture task job state is 3=Complete, 5=Failed, or 15=Skipped
+                    Finish = CASE WHEN @newJobStateInBroker IN (3, 5, 15)   -- Capture task job state is 3=Complete, 5=Failed, or 15=Skipped
+                                  THEN @FinishMax
                                   ELSE Finish
                              END
                 WHERE Job =  @job
