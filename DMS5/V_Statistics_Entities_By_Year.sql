@@ -3,13 +3,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Statistics_Entities_By_Year]
 AS
 SELECT PivotData.YEAR AS year,
        IsNull([New_Research_Campaigns], 0) AS new_research_campaigns,
        IsNull([New_Organisms], 0) AS new_organisms,
-       IsNull([Prepared_samples], 0) AS prepared_samples,
+       IsNull([Prepared_Samples], 0) AS prepared_samples,
        IsNull([Requested_instrument_runs], 0) AS requested_instrument_runs,
        IsNull([Datasets], 0) AS datasets,
        IsNull([Analysis_Jobs], 0) AS analysis_jobs,
@@ -17,7 +16,7 @@ SELECT PivotData.YEAR AS year,
        IsNull([Analysis_Job_Step_Tool_Started], 0) AS analysis_job_step_tool_started,
        IsNull([Capture_Task_Step_Tool_Started], 0) AS capture_task_step_tool_started
 FROM (SELECT YEAR(AJ_start) AS Year,
-             'Analysis Jobs' AS Item,
+             'Analysis_Jobs' AS Item,
              COUNT(*) AS Items
       FROM T_Analysis_Job INNER JOIN
            T_Analysis_Tool
@@ -34,44 +33,44 @@ FROM (SELECT YEAR(AJ_start) AS Year,
       GROUP BY YEAR(DS_created)
       UNION
       SELECT YEAR(EX_created) AS Year,
-             'Prepared samples' AS Item,
+             'Prepared_Samples' AS Item,
              COUNT(*) AS Items
       FROM T_Experiments
       GROUP BY YEAR(EX_created)
       UNION
       SELECT YEAR(RDS_created) AS Year,
-             'Requested instrument runs' AS Item,
+             'Requested_instrument_runs' AS Item,
              COUNT(*) AS Items
       FROM T_Requested_Run
       GROUP BY YEAR(RDS_created)
       UNION
       SELECT YEAR(OG_created) AS Year,
-             'New Organisms' AS Item,
+             'New_Organisms' AS Item,
              COUNT(*) AS Items
       FROM T_Organisms
       GROUP BY YEAR(OG_created)
       UNION
       SELECT YEAR(CM_Created) AS Year,
-             'New Research Campaigns' AS Item,
+             'New_Research_Campaigns' AS Item,
              COUNT(*) AS Items
       FROM T_Campaign
       GROUP BY YEAR(CM_Created)
       UNION
       SELECT YEAR(Created) AS Year,
-             'Data Packages' AS Item,
+             'Data_Packages' AS Item,
              COUNT(*) AS Items
       FROM DMS_Data_Package.dbo.T_Data_Package
       GROUP BY YEAR(Created)
       UNION
       SELECT YEAR(Start) AS Year,
-             'Analysis Job Step Tool Started' AS Item,
+             'Analysis_Job_Step_Tool_Started' AS Item,
              COUNT(*) AS Items
       FROM DMS_Pipeline.dbo.T_Job_Steps_History
       WHERE (NOT (Start IS NULL))
       GROUP BY YEAR(Start)
       UNION
       SELECT YEAR(Start) AS Year,
-             'Capture Task Step Tool Started' AS Item,
+             'Capture_Task_Step_Tool_Started' AS Item,
              COUNT(*) AS Items
       FROM DMS_Capture.dbo.T_Task_Steps_History
       WHERE (NOT (Start IS NULL))
@@ -81,7 +80,7 @@ FROM (SELECT YEAR(AJ_start) AS Year,
              FOR Item
              IN ( [Analysis_Jobs],
                   [Datasets],
-                  [Prepared_samples],
+                  [Prepared_Samples],
                   [Requested_instrument_runs],
                   [New_Organisms],
                   [New_Research_Campaigns],
