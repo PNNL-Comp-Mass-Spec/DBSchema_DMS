@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 232 ******/
+/****** RowCount: 236 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -232,4 +232,8 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Bilbo',230,'Waters_Acquity_LC',458
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Smeagol',231,'Waters_Acquity_LC',4582,2,'secfso',null,'EMSL 1314','Waters nanoAcquity LC','11/3/2023 10:18:01 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Brandi',232,'Waters_Acquity_LC',4583,2,'secfso',null,'EMSL 1444','Waters Acquity H-Class LC','11/3/2023 10:18:37 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Roxanne',233,'Waters_Acquity_LC',4584,2,'secfso',null,'EMSL 1142','Waters Acquity H-Class LC','11/3/2023 10:18:56 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Aragorn',234,'Waters_Acquity_LC',2,2,'secfso',null,'EMSL 1142','Waters nanoAcquity LC','11/3/2023 1:15:38 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Aragorn',234,'Waters_Acquity_LC',4585,2,'secfso',null,'EMSL 1142','Waters nanoAcquity LC','11/3/2023 1:15:38 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Trillium',235,'LCMSNet_LC',4586,2,'secfso',null,'EMSL 1142','LCMSNet LC with a VICI M60 infusion pump','11/6/2023 11:13:36 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Alder',236,'LCMSNet_LC',4587,2,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump','11/6/2023 11:15:20 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Fir',237,'LCMSNet_LC',4588,2,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump','11/6/2023 11:15:33 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Magnolia',238,'LCMSNet_LC',2,2,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump','11/6/2023 11:15:48 AM')
