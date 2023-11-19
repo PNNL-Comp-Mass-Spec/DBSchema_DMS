@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[add_update_material_container]
 **          07/02/2021 mem - Require that the researcher is a valid DMS user
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/23/2023 mem - Use a Like clause to prevent updating Staging containers
+**          11/18/2023 mem - Remove procedure argument @barcode and add @campaignName
 **
 *****************************************************/
 (
@@ -31,7 +32,7 @@ CREATE PROCEDURE [dbo].[add_update_material_container]
     @type varchar(32),              -- Box, Bag, or Wellplate
     @location varchar(24),
     @comment varchar(1024),
-    @barcode varchar(32),
+    @campaignName varchar(64),
     @researcher varchar(128),       -- Supports 'Zink, Erika M (D3P704)' or simply 'D3P704'
     @mode varchar(12) = 'add',      -- 'Add', 'update', or 'preview'
     @message varchar(512) output,
@@ -46,6 +47,7 @@ AS
     Set @message = ''
 
     Declare @Status varchar(32) = 'Active'
+    Declare @campaignID int
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -67,7 +69,7 @@ AS
     Set @type = LTrim(RTrim(IsNull(@type, 'Box')))
     Set @location = LTrim(RTrim(IsNull(@location, '')))
     Set @comment = LTrim(RTrim(IsNull(@comment, '')))
-    Set @barcode = LTrim(RTrim(IsNull(@barcode, '')))
+    Set @campaignName = LTrim(RTrim(IsNull(@campaignName, '')))
     Set @researcher = LTrim(RTrim(IsNull(@researcher, '')))
     Set @mode = IsNull(@mode, '')
 
@@ -123,7 +125,7 @@ AS
     If @type = 'na'
     Begin
         Set @message = 'Containers of type "na" cannot be updated via the website; contact a DMS admin'
-        Return 51006
+        Return 51005
     End
 
     ---------------------------------------------------
@@ -137,7 +139,7 @@ AS
     If @researcher In ('', 'na', 'none')
     Begin
         Set @message = 'Researcher must be a valid DMS user'
-        Return 51011
+        Return 51006
     End
 
     exec auto_resolve_name_to_username @researcher, @matchCount output, @researcherUsername output, @userID output
@@ -162,7 +164,30 @@ AS
         Else
             Set @message = @message + '; ' + @researcher + ' is an ambiguous match to multiple people'
 
-        Return 51011
+        Return 51007
+    End
+
+    ---------------------------------------------------
+    -- Resolve campaign name to ID
+    ---------------------------------------------------
+
+    If @campaignName = ''
+    Begin
+        Set @campaignID = null
+    End
+    Else
+    Begin
+        SELECT @campaignID = Campaign_ID
+        FROM T_Campaign
+        WHERE Campaign_Num = @campaignName
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Unrecognized campaign name: ' + @campaignName
+            Return 51004
+        End
     End
 
     ---------------------------------------------------
@@ -193,13 +218,13 @@ AS
     If @mode = 'add' and @containerID <> 0
     Begin
         Set @message = 'Cannot add container with same name as existing container: ' + @container
-        Return 51010
+        Return 51009
     End
 
     If @mode In ('update', 'preview') and @containerID = 0
     Begin
         Set @message = 'No entry could be found in database for updating ' + @container
-        Return 51012
+        Return 51010
     End
 
     ---------------------------------------------------
@@ -220,13 +245,13 @@ AS
     If @myError <> 0
     Begin
         Set @message = 'Error resolving location ID for location ' + @location
-        Return 51014
+        Return 51011
     End
 
     If @locationID = 0
     Begin
         Set @message = 'Invalid location: ' + @location + ' (for container ' + @container + ')'
-        Return 51016
+        Return 51012
     End
 
     ---------------------------------------------------
@@ -285,11 +310,11 @@ AS
         INSERT INTO T_Material_Containers( Tag,
                                            [Type],
                                            [Comment],
-                                           Barcode,
+                                           Campaign_ID,
                                            Location_ID,
                                            [Status],
                                            Researcher )
-        VALUES(@container, @type, @comment, @barcode, @locationID, @Status, @researcher)
+        VALUES(@container, @type, @comment, @campaignID, @locationID, @Status, @researcher)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -322,7 +347,7 @@ AS
         UPDATE T_Material_Containers
         SET [Type] = @type,
             [Comment] = @comment,
-            Barcode = @barcode,
+            Campaign_ID = @campaignID,
             Location_ID = @locationID,
             [Status] = @Status,
             Researcher = @researcher

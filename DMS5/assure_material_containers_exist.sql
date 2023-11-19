@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 **    @containerList        Input / Output: Comma separated list of locations and containers (can be a mix of both)
 **    @comment              Comment
 **    @type                 Container type: 'Box', 'Bag', or 'Wellplate'
+**    @campaignName         Campaign name
 **    @researcher           Researcher name; supports 'Zink, Erika M (D3P704)' or simply 'D3P704'
 **    @mode                 Typically 'add' or 'create'
 **                          However, if @mode is 'verify_only', will populate a temporary table with items in @containerList, then will exit the procedure without making any changes
@@ -22,21 +23,21 @@ CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**          04/27/2010 grk - initial release
-**          09/23/2011 grk - accomodate researcher field in add_update_material_container
+**          04/27/2010 grk - Initial release
+**          09/23/2011 grk - Accomodate researcher field in add_update_material_container
 **          02/23/2016 mem - Add set XACT_ABORT on
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/04/2023 mem - Use TOP 1 when retrieving the next item to process
+**          11/19/2023 mem - Add procedure argument @campaignName
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2010, Battelle Memorial Institute
 *****************************************************/
 (
     @containerList varchar(1024) OUTPUT,
     @comment varchar(1024),
     @type varchar(32) = 'Box',
-    @researcher VARCHAR(128),
+    @campaignName varchar(64),
+    @researcher varchar(128),
     @mode varchar(12) = 'verify_only', -- or 'create'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -49,124 +50,130 @@ AS
 
     set @message = ''
 
-    DECLARE @msg VARCHAR(512)
-    set @msg = ''
+    Declare @msg varchar(512) = ''
 
-    BEGIN TRY
+    Begin Try
 
-    ---------------------------------------------------
-    -- get container list items into temp table
-    ---------------------------------------------------
-    --
-    CREATE TABLE #TL (
-        Container VARCHAR(64) NULL,
-        Item VARCHAR(256),
-        IsContainer TINYINT null,
-        IsLocation TINYINT null
-    )
-    --
-    INSERT INTO #TL (Item, IsContainer, IsLocation)
-    SELECT Item, 0, 0 FROM dbo.make_table_from_list(@ContainerList)
-
-    ---------------------------------------------------
-    -- Mark list items as either container or location
-    ---------------------------------------------------
-    --
-    UPDATE #TL
-    SET IsContainer = 1,
-        Container = Item
-    FROM #TL
-         INNER JOIN T_Material_Containers
-           ON Item = Tag
-
-    UPDATE #TL
-    SET IsLocation = 1
-    FROM #TL
-         INNER JOIN T_Material_Locations
-           ON Item = Tag
-
---SELECT CONVERT(VARCHAR(10), IsContainer) AS C, CONVERT(VARCHAR(10), IsLocation) AS L, CONVERT(VARCHAR(32), Item) AS Item, Container FROM #TL
-
-    ---------------------------------------------------
-    -- Quick check of list
-    ---------------------------------------------------
-    --
-    DECLARE @s VARCHAR(MAX)
-    SET @s = ''
-    SELECT @s = @s + CASE WHEN @s <> '' THEN ', ' ELSE '' END + Item  FROM #TL WHERE IsLocation = 0 AND IsContainer = 0
-    --
-    IF @s <> ''
-    BEGIN
-        RAISERROR('Item(s) "%s" is/are not containers or locations', 11, 14, @s)
-    END
-
-    IF @mode = 'verify_only'
-        RETURN @myError
-
-    ---------------------------------------------------
-    -- make new containers for locations
-    ---------------------------------------------------
-    --
-    DECLARE @item VARCHAR(64)
-    DECLARE @Container varchar(128)
-    --
-    DECLARE @done tinyint = 0
-
-    WHILE @done = 0
-    BEGIN
-        SELECT TOP 1 @item = Item
-        FROM #TL
-        WHERE IsLocation > 0
+        ---------------------------------------------------
+        -- Get container list items into temp table
+        ---------------------------------------------------
         --
-        SELECT @myError = @@error, @myRowCount = @@rowcount
+        CREATE TABLE #TL (
+            Container varchar(64) NULL,
+            Item varchar(256),
+            IsContainer TINYINT null,
+            IsLocation TINYINT null
+        )
+        --
+        INSERT INTO #TL (Item, IsContainer, IsLocation)
+        SELECT Item, 0, 0 FROM dbo.make_table_from_list(@ContainerList)
 
-        If @myRowCount = 0
+        ---------------------------------------------------
+        -- Mark list items as either container or location
+        ---------------------------------------------------
+        --
+        UPDATE #TL
+        SET IsContainer = 1,
+            Container = Item
+        FROM #TL
+             INNER JOIN T_Material_Containers
+               ON Item = Tag
+
+        UPDATE #TL
+        SET IsLocation = 1
+        FROM #TL
+             INNER JOIN T_Material_Locations
+               ON Item = Tag
+
+
+        ---------------------------------------------------
+        -- Quick check of list
+        ---------------------------------------------------
+
+        Declare @s varchar(MAX) = ''
+
+        SELECT @s = @s + CASE WHEN @s <> ''
+                              THEN ', '
+                              ELSE ''
+                         END + Item
+        FROM #TL
+        WHERE IsLocation = 0 AND IsContainer = 0
+
+        If @s <> ''
         Begin
-            Set @done = 1
+            RAISERROR('Item(s) "%s" is/are not containers or locations', 11, 14, @s)
         End
-        Else
+
+        If @mode = 'verify_only'
+            RETURN @myError
+
+        ---------------------------------------------------
+        -- Make new containers for locations
+        ---------------------------------------------------
+        --
+        Declare @item varchar(64)
+        Declare @Container varchar(128)
+        --
+        Declare @done tinyint = 0
+
+        While @done = 0
         Begin
-            /**/
-            SET @Container = '(generate name)'
-            EXEC @myError = add_update_material_container
-                                @Container = @container output,
-                                @Type = @Type,
-                                @Location = @item,
-                                @Comment = @Comment,
-                                @Barcode = '',
-                                @Researcher = @Researcher,
-                                @mode = 'add',
-                                @message = @msg output,
-                                @callingUser = @callingUser
+            SELECT TOP 1 @item = Item
+            FROM #TL
+            WHERE IsLocation > 0
             --
-            IF @myError <> 0
-                RAISERROR('add_update_material_container: %s', 11, 21, @msg)
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+            Begin
+                Set @done = 1
+            End
+            Else
+            Begin
+
+                Set @Container = '(generate name)'
+                Exec @myError = add_update_material_container
+                                    @container = @container output,
+                                    @type = @Type,
+                                    @location = @item,
+                                    @comment = @Comment,
+                                    @campaignName = @campaignName,
+                                    @researcher = @Researcher,
+                                    @mode = 'add',
+                                    @message = @msg output,
+                                    @callingUser = @callingUser
+                --
+                If @myError <> 0
+                    RAISERROR('add_update_material_container: %s', 11, 21, @msg)
 
 
-            UPDATE #TL
-            SET Container = @Container, IsContainer = 1, IsLocation = 0
-            WHERE Item = @item
+                UPDATE #TL
+                SET Container = @Container, IsContainer = 1, IsLocation = 0
+                WHERE Item = @item
+            End
         End
-    END
 
-    ---------------------------------------------------
-    -- Make consolidated list of containers
-    ---------------------------------------------------
-    --
-    SET @s = ''
-    SELECT @s = @s + CASE WHEN @s <> '' THEN ', ' ELSE '' END  + Container  FROM #TL WHERE NOT Container IS NULL
-    SET @ContainerList = @s
+        ---------------------------------------------------
+        -- Make consolidated list of containers
+        ---------------------------------------------------
+        --
+        Set @s = ''
 
-    END TRY
-    BEGIN CATCH
-        EXEC format_error_message @message output, @myError output
+        SELECT @s = @s + CASE WHEN @s <> ''
+                              THEN ', '
+                              ELSE ''
+                         END + Container
+        FROM #TL
+        WHERE NOT Container IS NULL
 
-        -- rollback any open transactions
---      IF (XACT_STATE()) <> 0
---          ROLLBACK TRANSACTION;
+        Set @ContainerList = @s
+
+    End Try
+    Begin Catch
+        Exec format_error_message @message output, @myError output
 
         Exec post_log_entry 'Error', @message, 'assure_material_containers_exist'
-    END CATCH
+    END Catch
 
     Return @myError
 

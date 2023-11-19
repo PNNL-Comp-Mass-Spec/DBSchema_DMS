@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[move_material_container]
 **          12/20/2018 mem - Include container name in warnings
 **          03/02/2022 mem - Compare current container location to @newLocation before validating @oldLocation
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          11/19/2023 mem - Pass campaign name to add_update_material_container instead of barcode
 **
 *****************************************************/
 (
@@ -95,19 +96,21 @@ AS
     Declare @curLocation varchar(24) = ''
     Declare @containerType varchar(32) = ''
     Declare @containerComment varchar(1024)
-    Declare @barcode varchar(32)
+    Declare @campaign varchar(64)
     Declare @researcher varchar(128)
     Declare @mode varchar(24)
-    --
+
     SELECT @containerID = MC.ID,
            @curLocation = ML.Tag,
            @containerType = MC.[Type],
            @containerComment = MC.Comment,
-           @barcode = MC.Barcode,
+           @campaign = C.Campaign_Num,
            @researcher = MC.Researcher
     FROM T_Material_Containers AS MC
          INNER JOIN T_Material_Locations AS ML
            ON MC.Location_ID = ML.ID
+         LEFT OUTER JOIN T_Campaign AS C
+           ON MC.Campaign_ID = C.Campaign_ID
     WHERE MC.Tag = @container
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -154,15 +157,16 @@ AS
         Set @mode = 'Update'
     End
 
-    Exec @myError = add_update_material_container @container = @container
-                                              ,@type = @containerType
-                                              ,@location = @newLocation
-                                              ,@comment = @containerComment
-                                              ,@barcode = @barcode
-                                              ,@researcher = @researcher
-                                              ,@mode = @mode
-                                              ,@message = @message output
-                                              ,@callingUser = @callingUser
+    Exec @myError = add_update_material_container
+                            @container = @container,
+                            @type = @containerType,
+                            @location = @newLocation,
+                            @comment = @containerComment,
+                            @campaignName = @campaign,
+                            @researcher = @researcher,
+                            @mode = @mode,
+                            @message = @message output,
+                            @callingUser = @callingUser
 
     If @myError <> 0
     Begin
@@ -178,6 +182,6 @@ AS
         Select @message As Comment
     End
 
-    return @myError
+    Return @myError
 
 GO
