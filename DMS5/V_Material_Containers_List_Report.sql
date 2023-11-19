@@ -14,7 +14,8 @@ SELECT container,
        status,
        'New Biomaterial' AS action,
        created,
-       dbo.get_material_container_campaign_list(id, Items) AS campaigns,
+       -- Deprecated: dbo.get_material_container_campaign_list(id, Items) AS campaigns,
+       campaign,
        researcher,
        id
 FROM ( SELECT MC.Tag AS Container,
@@ -25,12 +26,15 @@ FROM ( SELECT MC.Tag AS Container,
               MC.Status,
               -- Unused: MC.Barcode,
               MC.Created,
+              C.Campaign_Num AS campaign,
               MC.ID AS id,
               MC.Researcher,
               TFA.FileCount
        FROM T_Material_Containers AS MC
             INNER JOIN T_Material_Locations AS ML
               ON MC.Location_ID = ML.ID
+            LEFT OUTER JOIN T_Campaign C
+              ON MC.Campaign_ID = C.Campaign_ID
             LEFT OUTER JOIN (SELECT CC_Container_ID AS Container_ID,
                                     CC_ID AS Material_ID
                              FROM T_Cell_Culture
@@ -56,8 +60,8 @@ FROM ( SELECT MC.Tag AS Container,
                               GROUP BY Entity_ID
                              ) AS TFA
               ON TFA.Entity_ID = MC.Tag
-       GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, MC.Created, MC.Status,
-                MC.ID, MC.Researcher, TFA.FileCount
+       GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, MC.Created, C.Campaign_Num,
+                MC.Status, MC.ID, MC.Researcher, TFA.FileCount
      ) AS ContainerQ
 
 GO

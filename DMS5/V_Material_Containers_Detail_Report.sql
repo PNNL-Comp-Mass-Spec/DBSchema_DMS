@@ -11,8 +11,8 @@ SELECT container,
        items,
        comment,
        freezer,
-       dbo.get_material_container_campaign_list(Container_ID, Items) AS campaigns,
-       barcode,
+       -- Deprecated: dbo.get_material_container_campaign_list(Container_ID, Items) AS campaigns,
+       campaign,
        created,
        status,
        researcher,
@@ -23,13 +23,15 @@ FROM ( SELECT MC.Tag AS Container,
               COUNT(ContentsQ.Material_ID) AS Items,
               MC.Comment,
               ML.Freezer_Tag AS Freezer,
-              MC.Barcode,
+              C.Campaign_Num AS campaign,
               MC.Created,
               MC.Status,
               MC.Researcher,
               TFA.Files,
               MC.ID AS Container_ID
        FROM T_Material_Containers MC
+            LEFT OUTER JOIN T_Campaign C
+              ON MC.Campaign_ID = C.Campaign_ID
             LEFT OUTER JOIN (SELECT CC_Container_ID AS Container_ID,
                                     CC_ID AS Material_ID
                              FROM T_Cell_Culture
@@ -61,7 +63,7 @@ FROM ( SELECT MC.Tag AS Container,
               ON TFA.Entity_ID = MC.Tag
             INNER JOIN T_Material_Locations ML
               ON MC.Location_ID = ML.ID
-       GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, MC.Barcode, MC.Created, MC.Status,
+       GROUP BY MC.Tag, MC.Type, ML.Tag, MC.Comment, C.Campaign_Num, MC.Created, MC.Status,
                 MC.Researcher, ML.Freezer_Tag, TFA.Files, MC.ID
      ) ContainerQ
 

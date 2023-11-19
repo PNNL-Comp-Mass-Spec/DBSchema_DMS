@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Material_Containers](
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RFID_Hex_ID]  AS (case when [Tag] like 'MC-%' then left(concat(CONVERT([varchar](24),CONVERT([varbinary],[Tag]),(2)),'000000000000000000000000'),(24)) else left(concat(CONVERT([varchar](24),CONVERT([varbinary],'MC-000000'),(2)),'000000000000000000000000'),(24)) end) PERSISTED,
 	[Location_ID] [int] NOT NULL,
+	[Campaign_ID] [int] NULL,
 	[Created] [datetime] NOT NULL,
 	[Status] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Researcher] [varchar](129) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -66,6 +67,11 @@ GO
 ALTER TABLE [dbo].[T_Material_Containers] ADD  CONSTRAINT [DF_T_Material_Containers_Created]  DEFAULT (getdate()) FOR [Created]
 GO
 ALTER TABLE [dbo].[T_Material_Containers] ADD  CONSTRAINT [DF_T_Material_Containers_Status]  DEFAULT ('Active') FOR [Status]
+GO
+ALTER TABLE [dbo].[T_Material_Containers]  WITH CHECK ADD  CONSTRAINT [FK_T_Material_Containers_T_Campaign] FOREIGN KEY([Campaign_ID])
+REFERENCES [dbo].[T_Campaign] ([Campaign_ID])
+GO
+ALTER TABLE [dbo].[T_Material_Containers] CHECK CONSTRAINT [FK_T_Material_Containers_T_Campaign]
 GO
 ALTER TABLE [dbo].[T_Material_Containers]  WITH CHECK ADD  CONSTRAINT [FK_T_Material_Containers_T_Material_Locations] FOREIGN KEY([Location_ID])
 REFERENCES [dbo].[T_Material_Locations] ([ID])
