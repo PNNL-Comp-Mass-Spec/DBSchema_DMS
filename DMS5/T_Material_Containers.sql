@@ -8,7 +8,7 @@ CREATE TABLE [dbo].[T_Material_Containers](
 	[Tag] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Comment] [varchar](1024) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Barcode] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[RFID_Hex_ID]  AS (case when [Tag] like 'MC-%' then left(concat(CONVERT([varchar](24),CONVERT([varbinary],[Tag]),(2)),'000000000000000000000000'),(24)) else left(concat(CONVERT([varchar](24),CONVERT([varbinary],'MC-000000'),(2)),'000000000000000000000000'),(24)) end) PERSISTED,
 	[Location_ID] [int] NOT NULL,
 	[Created] [datetime] NOT NULL,
 	[Status] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
