@@ -7,12 +7,16 @@ CREATE FUNCTION [dbo].[get_material_container_campaign_list]
 /****************************************************
 **
 **  Desc:
-**      Builds delimited list of campaigns represented
-**      by items in the given container
+**      Builds delimited list of campaigns represented by items in the given container
 **
-**  Return value: delimited list
+**      This function was previously used by views V_Material_Containers_List_Report and V_Material_Containers_Detail_Report
+**      but is no longer used, since column Campaign_ID was added to table T_Material_Containers in November 2023
 **
-**  Parameters:
+**  Return value: comma-separated list
+**
+**  Arguments:
+**    @containerID  Container ID
+**    @count        Number of items in the container; if 0, return an empty string without querying any tables, otherwise, if null or non-zero query the database
 **
 **  Auth:   grk
 **  Date:   08/24/2010 grk
