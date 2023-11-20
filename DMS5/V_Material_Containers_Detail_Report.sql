@@ -14,6 +14,7 @@ SELECT container,
        -- Deprecated: dbo.get_material_container_campaign_list(Container_ID, Items) AS campaigns,
        campaign,
        created,
+       container_id as id,
        status,
        researcher,
        files
