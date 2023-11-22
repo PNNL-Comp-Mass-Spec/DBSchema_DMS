@@ -7,8 +7,8 @@ CREATE PROCEDURE [dbo].[add_update_sample_submission]
 /****************************************************
 **
 **  Desc:
-**    Adds new or edits existing item in T_Sample_Submission
-*
+**      Adds new or edits existing item in T_Sample_Submission
+**
 **  Auth:   grk
 **  Date:   04/23/2010
 **          04/30/2010 grk - Added call to CallSendMessage
@@ -25,13 +25,14 @@ CREATE PROCEDURE [dbo].[add_update_sample_submission]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
 **          11/19/2023 mem - Send campaign name to assure_material_containers_exist
+**          11/21/2023 mem - If @containerList is 'na', assure that it is lowercase
 **
 *****************************************************/
 (
-    @id int OUTPUT,
+    @id int output,
     @campaign varchar(64),
     @receivedBy varchar(64),
-    @containerList varchar(1024) OUTPUT,
+    @containerList varchar(1024) output,
     @newContainerComment varchar(1024),
     @description varchar(4096),
     @mode varchar(12) = 'add', -- or 'update'
@@ -127,7 +128,7 @@ AS
 
             SELECT @tmp = ID
             FROM  T_Sample_Submission
-            WHERE (ID = @ID)
+            WHERE ID = @ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -175,7 +176,9 @@ AS
 
             SELECT @ID = ID
             FROM T_Sample_Submission
-            WHERE Campaign_ID = @CampaignID AND Received_By_User_ID = @ReceivedByUserID AND Description = @Description
+            WHERE Campaign_ID = @CampaignID AND
+                  Received_By_User_ID = @ReceivedByUserID AND
+                  Description = @Description
 
             If @ID > 0
                 RAISERROR('New sample submission is duplicate of existing sample submission, ID %d; both have identical Campaign, Received By User, and Description', 11, 23, @ID)
@@ -260,7 +263,7 @@ AS
                 Received_By_User_ID = @ReceivedByUserID,
                 Container_List = @ContainerList,
                 Description = @Description
-            WHERE (ID = @ID)
+            WHERE ID = @ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
