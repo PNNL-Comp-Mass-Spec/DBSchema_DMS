@@ -22,3 +22,8 @@ GRANT VIEW DEFINITION ON [dbo].[T_LC_Cart_Config_History] TO [DDL_Viewer] AS [db
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Config_History] ADD  CONSTRAINT [DF_T_LC_Cart_Config_History_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO
+ALTER TABLE [dbo].[T_LC_Cart_Config_History]  WITH CHECK ADD  CONSTRAINT [fk_t_lc_cart_config_history_t_lc_cart] FOREIGN KEY([Cart])
+REFERENCES [dbo].[T_LC_Cart] ([Cart_Name])
+GO
+ALTER TABLE [dbo].[T_LC_Cart_Config_History] CHECK CONSTRAINT [fk_t_lc_cart_config_history_t_lc_cart]
+GO
