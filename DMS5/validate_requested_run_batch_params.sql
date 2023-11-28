@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
 **          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          06/16/2023 mem - Validate instrument group name
+**          11/27/2023 mem - Select a single column when using If Exists ()
 **
 *****************************************************/
 (
@@ -79,7 +80,7 @@ AS
         -- Set the instrument group to @requestedInstrumentGroup for now
         Set @instrumentGroupToUse = @requestedInstrumentGroup
 
-        If NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @instrumentGroupToUse)
+        If NOT EXISTS (SELECT IN_Group FROM T_Instrument_Group WHERE IN_Group = @instrumentGroupToUse)
         Begin
             -- Try to update instrument group using T_Instrument_Name
             SELECT @instrumentGroupToUse = IN_Group
@@ -87,7 +88,7 @@ AS
             WHERE IN_Name = @requestedInstrumentGroup
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            
+
             If @myRowCount = 0
             Begin
                 Set @message = 'Invalid Instrument Group: ' + @requestedInstrumentGroup
@@ -102,7 +103,7 @@ AS
         --
         If @requestedBatchPriority = 'High' AND ISNULL(@justificationHighPriority, '') = ''
         Begin
-            Set @message = 'Justification must be entered If high priority is being requested'
+            Set @message = 'Justification must be entered if high priority is being requested'
             Set @myError = 50003
             Return @myError
         End
@@ -113,7 +114,7 @@ AS
 
         If @mode In ('add', 'PreviewAdd')
         Begin
-            If Exists (SELECT * FROM T_Requested_Run_Batches WHERE Batch = @name)
+            If Exists (SELECT batch FROM T_Requested_Run_Batches WHERE Batch = @name)
             Begin
                 Set @message = 'Cannot add batch: "' + @name + '" already exists in database'
                 Set @myError = 50004
@@ -210,7 +211,7 @@ AS
             Set @batchGroupOrder = Null
         End
 
-        If @batchGroupID > 0 And Not Exists (Select * From T_Requested_Run_Batch_Group Where Batch_Group_ID = @batchGroupID)
+        If @batchGroupID > 0 And Not Exists (Select Batch_Group_ID From T_Requested_Run_Batch_Group Where Batch_Group_ID = @batchGroupID)
         Begin
             Set @message = 'Requested run batch group does not exist: ' + Cast(@batchGroupID As varchar(12))
             Set @myError = 50010
