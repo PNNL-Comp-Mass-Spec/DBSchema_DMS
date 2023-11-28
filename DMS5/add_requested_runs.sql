@@ -3,6 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[add_requested_runs]
 /****************************************************
 **
@@ -55,6 +56,7 @@ CREATE PROCEDURE [dbo].[add_requested_runs]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
 **          09/07/2023 mem - Update warning messages
+**          11/27/2023 mem - Do not log errors from validate_requested_run_batch_params() if @myError is between 50000 and 50050
 **
 *****************************************************/
 (
@@ -161,9 +163,6 @@ AS
     If @myError <> 0
         return @myError
 
-    -- Validation checks are complete; now enable @logErrors
-    Set @logErrors = 1
-
     ---------------------------------------------------
     -- Validate the work package
     -- This validation also occurs in add_update_requested_run but we want to validate it now before we enter the while loop
@@ -180,10 +179,15 @@ AS
 
         If @myError <> 0
         Begin
-            Set @logErrors = 0
             RAISERROR ('validate_wp: %s', 11, 1, @msg)
         End
     End
+
+    ---------------------------------------------------
+    -- Validation checks are complete; now enable @logErrors
+    ---------------------------------------------------
+
+    Set @logErrors = 1
 
     ---------------------------------------------------
     -- Resolve staging location name to location ID
@@ -284,6 +288,12 @@ AS
 
         If @myError > 0
         Begin
+            -- Do not log errors to t_log_entries when @myError is between 50000 and 50050, but do raise an error so the user sees the message
+            If @myError Between 50000 and 50050
+            Begin
+                Set @logErrors = 0
+            End
+
             RAISERROR (@message, 11, 1)
         End
     End
@@ -474,8 +484,7 @@ AS
         End
     END CATCH
 
-    return @myError
-
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_runs] TO [DDL_Viewer] AS [dbo]
