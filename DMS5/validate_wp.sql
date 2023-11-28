@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[validate_wp]
 **  Date:   06/05/2013 mem - Initial Version
 **          09/15/2020 mem - Use 'https://dms2.pnl.gov/' instead of http://
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          11/27/2023 mem - Return a value between 50030 and 50035 when validation fails
 **
 *****************************************************/
 (
@@ -33,7 +34,7 @@ AS
     If IsNull(@WorkPackage, '') = ''
     Begin
         set @message = 'Work package cannot be blank'
-        Set @myError = 130
+        Set @myError = 50030
     End
 
     If @myError = 0 And @allowNoneWP > 0 And @WorkPackage = 'none'
@@ -47,17 +48,17 @@ AS
         If @myError = 0 And @WorkPackage IN ('none', 'na', 'n/a', '(none)')
         Begin
             set @message = 'A valid work package must be provided; see https://dms2.pnl.gov/helper_charge_code/report'
-            Set @myError = 131
+            Set @myError = 50031
         End
 
         If @myError = 0 And Not Exists (SELECT * FROM T_Charge_Code Where Charge_Code = @WorkPackage)
         Begin
             set @message = 'Could not find entry in database for Work Package "' + @WorkPackage + '"; see https://dms2.pnl.gov/helper_charge_code/report'
-            Set @myError = 132
+            Set @myError = 50032
         End
     End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_wp] TO [DDL_Viewer] AS [dbo]
