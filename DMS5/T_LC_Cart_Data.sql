@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 107 ******/
+/****** RowCount: 108 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (1,'unknown',1,'Not a valid cart',null)
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used','3/10/2006 10:34:00 AM')
@@ -103,9 +103,10 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (130,'Birch',2,'Thermo/Dionex pump (800 bar) with Loading Pump .  Long armed pal. LCMSnet controlled','10/4/2022 2:11:00 PM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (131,'Crater',2,'Thermo Vanquish Flex with two column compartments and a quaternary pump.','10/20/2022 10:08:00 AM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (132,'Olympic',2,'Thermo Vanquish Flex with two column compartments and a quaternary pump.','10/21/2022 2:30:00 PM')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (133,'Teton',2,'Thermo Vanquish Neo system, no column compartment','10/21/2022 2:32:00 PM')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (134,'Lisa',2,'Thermo Vanquish Neo system, no column compartment','4/24/2023 11:42:00 AM')
-INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (135,'Bart',2,'Thermo Vanquish Neo system, no column compartment','4/24/2023 11:42:00 AM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (133,'Teton',2,'Thermo Vanquish Neo system','10/21/2022 2:32:00 PM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (134,'Lisa',2,'Thermo Vanquish Neo system','4/24/2023 11:42:00 AM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (135,'Bart',2,'Thermo Vanquish Neo system','4/24/2023 11:42:00 AM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (136,'Maple',2,'Thermo/Dionex pump (800 bar) with Loading Pump. Long armed pal. LCMSnet controlled. EMSL owned.','8/23/2023 1:27:00 PM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (137,'Holly',2,'Thermo/Dionex pump (800 bar) with Loading Pump. Long armed pal. LCMSnet controlled. EMSL owned.','8/23/2023 1:27:00 PM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (138,'Homer',2,'Thermo Vanquish Neo system','12/1/2023 4:45:00 PM')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

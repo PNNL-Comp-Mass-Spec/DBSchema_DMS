@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 236 ******/
+/****** RowCount: 238 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -236,4 +236,6 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Aragorn',234,'Waters_Acquity_LC',4
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Trillium',235,'LCMSNet_LC',4586,4627,'secfso',null,'EMSL 1142','LCMSNet LC with a VICI M60 infusion pump. Used for LCDatasetCapture tasks.  The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','11/6/2023 11:13:36 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Alder',236,'LCMSNet_LC',4587,4628,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump. Used for LCDatasetCapture tasks.  The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','11/6/2023 11:15:20 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Fir',237,'LCMSNet_LC',4588,4629,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump. Used for LCDatasetCapture tasks.  The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','11/6/2023 11:15:33 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Magnolia',238,'LCMSNet_LC',4589,2,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump. Used for LCDatasetCapture tasks.  The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','11/6/2023 11:15:48 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Magnolia',238,'LCMSNet_LC',4589,4630,'secfso',null,'EMSL 1621','LCMSNet LC with a Shimadzu LC40D infusion pump. Used for LCDatasetCapture tasks.  The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','11/6/2023 11:15:48 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris04',239,'LTQ_FT',4631,2,'secfso',null,'BSF 1229','Exploris 480','11/28/2023 3:37:15 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Homer',240,'Thermo_SII_LC',2,2,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','12/1/2023 4:47:28 PM')
