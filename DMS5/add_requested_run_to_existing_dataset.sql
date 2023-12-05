@@ -10,9 +10,9 @@ CREATE PROCEDURE [dbo].[add_requested_run_to_existing_dataset]
 **          the given dataset if there is not currently one
 **
 **          The requested run will be named one of the following:
-**          'AutoReq_DatasetName'
-**          'AutoReq2_DatasetName'
-**          'AutoReq3_DatasetName'
+**            'AutoReq_DatasetName'
+**            'AutoReq2_DatasetName'
+**            'AutoReq3_DatasetName'
 **
 **
 **          Note that this procedure is similar to add_missing_requested_run,
@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[add_requested_run_to_existing_dataset]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
 **          03/02/2023 mem - Use renamed table names
+**          12/04/2023 mem - Set @addUpdateMode to 'check_add' when @mode is 'preview'
 **
 *****************************************************/
 (
@@ -253,7 +254,7 @@ AS
 
     If @mode = 'preview'
     Begin
-        Set @addUpdateMode = 'check-add'
+        Set @addUpdateMode = 'check_add'
 
         Print 'Request_Name: ' + @requestName
         Print 'Experiment: ' + @experimentName
@@ -357,8 +358,7 @@ AS
         End
     End CATCH
 
-    return @myError
-
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_run_to_existing_dataset] TO [DDL_Viewer] AS [dbo]
