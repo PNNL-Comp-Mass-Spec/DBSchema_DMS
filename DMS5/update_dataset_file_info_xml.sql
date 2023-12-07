@@ -7,6 +7,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 /****************************************************
 **
 **  Desc:   Updates the information for the dataset specified by @datasetID
+**
 **          If @datasetID is 0, will use the dataset name defined in @datasetInfoXML
 **          If @datasetID is non-zero, will validate that the Dataset Name in the XML corresponds
 **          to the dataset ID specified by @datasetID
@@ -90,6 +91,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **          03/23/2023 mem - Add support for datasets with multiple instrument files with the same name (e.g. 20220105_JL_kpmp_3504 with ser files in eight .d directories)
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **          04/24/2023 mem - Store DIA scan count values
+**          12/06/2023 mem - Log an error if a scan type is not present in T_Dataset_ScanType_Glossary
 **
 *****************************************************/
 (
@@ -119,7 +121,6 @@ AS
     Declare @optimalSeparationType varchar(64) = ''
 
     Declare @msg varchar(1024)
-    Declare @datasetIdText varchar(12) = Cast(@datasetID as varchar(12))
     Declare @duplicateDatasetInfoSuffix varchar(512)
 
     ---------------------------------------------------
@@ -188,10 +189,12 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @datasetID = IsNull(@datasetID, 0)
-    Set @message = ''
-    Set @infoOnly = IsNull(@infoOnly, 0)
-    Set @validateDatasetType = IsNull(@validateDatasetType, 1)
+    Set @datasetID           = Coalesce(@datasetID, 0)
+    Set @message             = ''
+    Set @infoOnly            = Coalesce(@infoOnly, 0)
+    Set @validateDatasetType = Coalesce(@validateDatasetType, 1)
+
+    Declare @datasetIdText varchar(12) = Cast(@datasetID as varchar(12))
 
     ---------------------------------------------------
     -- Examine the XML to determine the dataset name and update or validate @datasetID
@@ -199,10 +202,10 @@ AS
     --
     Exec get_dataset_details_from_dataset_info_xml
         @datasetInfoXML,
-        @datasetID = @datasetID Output,
+        @datasetID   = @datasetID Output,
         @datasetName = @datasetName Output,
-        @message = @message Output,
-        @returnCode = @myError Output
+        @message     = @message Output,
+        @returnCode  = @myError Output
 
     If @myError <> 0
     Begin
@@ -237,33 +240,33 @@ AS
         CentroidScanCount_MS,
         CentroidScanCount_MSn
     )
-    SELECT  @datasetID AS DatasetID,
-            @datasetName AS Dataset,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCount)[1]', 'int') AS ScanCount,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMS)[1]', 'int') AS ScanCountMS,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountDIA)[1]', 'int') AS Scan_Count_DIA,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MS)[1]', 'real') AS TIC_Max_MS,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MSn)[1]', 'real') AS TIC_Max_MSn,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MS)[1]', 'real') AS BPI_Max_MS,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MSn)[1]', 'real') AS BPI_Max_MSn,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MS)[1]', 'real') AS TIC_Median_MS,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MSn)[1]', 'real') AS TIC_Median_MSn,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MS)[1]', 'real') AS BPI_Median_MS,
-            @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MSn)[1]', 'real') AS BPI_Median_MSn,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS1)[1]', 'int') AS ProfileScanCountMS1,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS2)[1]', 'int') AS ProfileScanCountMS2,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS1)[1]', 'int') AS CentroidScanCountMS1,
-            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2
+    SELECT @datasetID AS DatasetID,
+           @datasetName AS Dataset,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCount)[1]', 'int') AS ScanCount,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMS)[1]', 'int') AS ScanCountMS,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountMSn)[1]', 'int') AS ScanCountMSn,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ScanCountDIA)[1]', 'int') AS Scan_Count_DIA,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/Elution_Time_Max)[1]', 'real') AS Elution_Time_Max,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/AcqTimeMinutes)[1]', 'real') AS AcqTimeMinutes,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/FileSizeBytes)[1]', 'bigint') AS FileSizeBytes,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MS)[1]', 'real') AS TIC_Max_MS,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Max_MSn)[1]', 'real') AS TIC_Max_MSn,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MS)[1]', 'real') AS BPI_Max_MS,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Max_MSn)[1]', 'real') AS BPI_Max_MSn,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MS)[1]', 'real') AS TIC_Median_MS,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/TIC_Median_MSn)[1]', 'real') AS TIC_Median_MSn,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MS)[1]', 'real') AS BPI_Median_MS,
+           @datasetInfoXML.value('(/DatasetInfo/TICInfo/BPI_Median_MSn)[1]', 'real') AS BPI_Median_MSn,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS1)[1]', 'int') AS ProfileScanCountMS1,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS2)[1]', 'int') AS ProfileScanCountMS2,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS1)[1]', 'int') AS CentroidScanCountMS1,
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
-        set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error extracting data from @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -327,7 +330,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing ScanType nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error parsing ScanType nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -346,7 +349,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -354,9 +357,9 @@ AS
     -- Update FileSizeRank in #Tmp_InstrumentFilesTable
     ---------------------------------------------------
 
-    Update #Tmp_InstrumentFilesTable
-    Set FileSizeRank = RankQ.FileSizeRank
-    From #Tmp_InstrumentFilesTable Inner Join (
+    UPDATE #Tmp_InstrumentFilesTable
+    SET FileSizeRank = RankQ.FileSizeRank
+    FROM #Tmp_InstrumentFilesTable Inner Join (
         SELECT Entry_ID, Row_Number() Over (Order By InstFileSize Desc) As FileSizeRank
         FROM #Tmp_InstrumentFilesTable
         ) As RankQ On #Tmp_InstrumentFilesTable.Entry_ID = RankQ.Entry_ID
@@ -375,7 +378,7 @@ AS
 
     If @myRowCount > 1
     Begin
-        set @msg = 'Unrecognized file hash type: ' + @unrecognizedHashType + '; all rows in T_Dataset_File are assumed to be SHA1. ' +
+        Set @msg = 'Unrecognized file hash type: ' + @unrecognizedHashType + '; all rows in T_Dataset_File are assumed to be SHA1. ' +
                    'Will add the file info anyway, but this hashtype could be problematic elsewhere'
 
         Exec post_log_entry 'Error', @msg, 'update_dataset_file_info_xml'
@@ -409,7 +412,7 @@ AS
         --
         If @myError <> 0
         Begin
-            set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+            Set @message = 'Error looking for matching instrument files in T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
             Goto Done
         End
 
@@ -465,7 +468,7 @@ AS
                                               Cast(@duplicateDatasetID As varchar(12)) + '; see table T_Dataset_Files'
 
             Set @msg = 'Allowing duplicate dataset to be added since Allow_Duplicates is 1: ' +
-                       'DatasetID ' + Cast(@datasetIdText As varchar(12)) + @duplicateDatasetInfoSuffix
+                       'DatasetID ' + @datasetIdText + @duplicateDatasetInfoSuffix
 
             Exec post_log_entry 'Warning', @msg, 'update_dataset_file_info_xml'
         End
@@ -594,7 +597,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -604,7 +607,7 @@ AS
     --
     MERGE T_Dataset_Info AS target
     USING
-        (Select Dataset_ID, ScanCountMS, ScanCountMSn, 
+        (Select Dataset_ID, ScanCountMS, ScanCountMSn,
                 Scan_Count_DIA, Elution_Time_Max,
                 TIC_Max_MS, TIC_Max_MSn,
                 BPI_Max_MS, BPI_Max_MSn,
@@ -613,7 +616,7 @@ AS
                 ProfileScanCount_MS, ProfileScanCount_MSn,
                 CentroidScanCount_MS, CentroidScanCount_MSn
          FROM @DSInfoTable
-        ) AS Source (Dataset_ID, ScanCountMS, ScanCountMSn, 
+        ) AS Source (Dataset_ID, ScanCountMS, ScanCountMSn,
                      Scan_Count_DIA, Elution_Time_Max,
                      TIC_Max_MS, TIC_Max_MSn,
                      BPI_Max_MS, BPI_Max_MSn,
@@ -624,10 +627,10 @@ AS
     ON (target.Dataset_ID = Source.Dataset_ID)
     WHEN Matched
         THEN UPDATE
-            Set ScanCountMS = Source.ScanCountMS,
+            SET ScanCountMS = Source.ScanCountMS,
                 ScanCountMSn = Source.ScanCountMSn,
                 Scan_Count_DIA = Source.Scan_Count_DIA,
-                Elution_Time_Max = Source.Elution_Time_Max,                
+                Elution_Time_Max = Source.Elution_Time_Max,
                 TIC_Max_MS = Source.TIC_Max_MS,
                 TIC_Max_MSn = Source.TIC_Max_MSn,
                 BPI_Max_MS = Source.BPI_Max_MS,
@@ -642,7 +645,7 @@ AS
                 CentroidScanCount_MSn = Source.CentroidScanCount_MSn,
                 Last_Affected = GetDate()
     WHEN Not Matched THEN
-        INSERT (Dataset_ID, ScanCountMS, ScanCountMSn, 
+        INSERT (Dataset_ID, ScanCountMS, ScanCountMSn,
                 Scan_Count_DIA, Elution_Time_Max,
                 TIC_Max_MS, TIC_Max_MSn,
                 BPI_Max_MS, BPI_Max_MSn,
@@ -651,7 +654,7 @@ AS
                 ProfileScanCount_MS, ProfileScanCount_MSn,
                 CentroidScanCount_MS, CentroidScanCount_MSn,
                 Last_Affected )
-        VALUES (Source.Dataset_ID, Source.ScanCountMS, Source.ScanCountMSn, 
+        VALUES (Source.Dataset_ID, Source.ScanCountMS, Source.ScanCountMSn,
                 Source.Scan_Count_DIA,Source.Elution_Time_Max,
                 Source.TIC_Max_MS, Source.TIC_Max_MSn,
                 Source.BPI_Max_MS, Source.BPI_Max_MSn,
@@ -666,7 +669,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -691,7 +694,7 @@ AS
     --
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
@@ -709,6 +712,28 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     -----------------------------------------------
+    -- Look for new scan types not present in T_Dataset_ScanType_Glossary
+    -----------------------------------------------
+
+    DECLARE @missingScanTypes varchar(256) = null
+
+    SELECT @missingScanTypes = CASE WHEN @missingScanTypes Is Null THEN T.ScanType ELSE @missingScanTypes + ', ' + T.ScanType END
+    FROM T_Dataset_ScanTypes T 
+         LEFT OUTER JOIN T_Dataset_ScanType_Glossary G
+           ON G.ScanType = T.ScanType
+    WHERE Dataset_ID = @datasetID AND G.ScanType Is Null
+
+    If Coalesce(@missingScanTypes, '') <> ''
+    Begin
+        If @missingScanTypes Like '%,%'
+            Set @msg = 'Scan types "' + @missingScanTypes + '" need to be added to table T_Dataset_ScanType_Glossary'
+        Else
+            Set @msg = 'Scan type "' + @missingScanTypes + '" needs to be added to table T_Dataset_ScanType_Glossary'
+
+        exec post_log_entry 'Error', @msg, 'update_dataset_file_info_xml', @duplicateEntryHoldoffHours = 1;
+    End
+
+    -----------------------------------------------
     -- Add/Update T_Dataset_Files using a Merge statement
     -----------------------------------------------
     --
@@ -720,7 +745,7 @@ AS
     ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath And Target.File_Size_Rank = Source.FileSizeRank)
     WHEN Matched
         THEN UPDATE
-            Set File_Size_Bytes = Source.InstFileSize,
+            SET File_Size_Bytes = Source.InstFileSize,
                 File_Hash = Source.InstFileHash,
                 File_Size_Rank = Source.FileSizeRank,
                 Deleted = 0
@@ -731,10 +756,10 @@ AS
     ;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
-        set @message = 'Error updating T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Set @message = 'Error updating T_Dataset_Files for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
         Goto Done
     End
 
