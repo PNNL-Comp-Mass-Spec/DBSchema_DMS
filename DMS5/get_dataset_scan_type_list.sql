@@ -14,6 +14,7 @@ CREATE FUNCTION [dbo].[get_dataset_scan_type_list]
 **  Date:   05/13/2010
 **          06/13/2022 mem - Convert from a table-valued function to a scalar-valued function
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          12/06/2023 mem - Also sort by scan type, in case the scan type is not defined in t_dataset_scan_type_glossary
 **
 *****************************************************/
 (
@@ -33,7 +34,7 @@ BEGIN
             WHERE Dataset_ID = @DatasetID
         ) LookupQ LEFT OUTER JOIN T_Dataset_ScanType_Glossary G
         ON LookupQ.ScanType = G.ScanType
-    ORDER BY G.SortKey
+    ORDER BY G.SortKey, LookupQ.ScanType
 
     RETURN @list
 END
