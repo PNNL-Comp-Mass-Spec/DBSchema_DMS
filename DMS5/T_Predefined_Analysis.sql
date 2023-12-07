@@ -8,17 +8,19 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 	[AD_level] [int] NOT NULL,
 	[AD_sequence] [int] NULL,
 	[AD_instrumentClassCriteria] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_instrumentNameCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_instrumentExclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_campaignNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_campaignExclCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_experimentNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_experimentExclCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AD_instrumentNameCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AD_instrumentExclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_expCommentCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_organismNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_datasetNameCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_datasetExclCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_datasetTypeCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[AD_expCommentCriteria] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_scanTypeCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AD_scanTypeExclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_labellingInclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_labellingExclCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[AD_separationTypeCriteria] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
@@ -50,6 +52,10 @@ CREATE TABLE [dbo].[T_Predefined_Analysis](
 GO
 GRANT VIEW DEFINITION ON [dbo].[T_Predefined_Analysis] TO [DDL_Viewer] AS [dbo]
 GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrument_Name]  DEFAULT ('') FOR [AD_instrumentNameCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrumentExclCriteria]  DEFAULT ('') FOR [AD_instrumentExclCriteria]
+GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaign_Name]  DEFAULT ('') FOR [AD_campaignNameCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_campaignExclCriteria]  DEFAULT ('') FOR [AD_campaignExclCriteria]
@@ -58,9 +64,7 @@ ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analy
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_experimentExclCriteria]  DEFAULT ('') FOR [AD_experimentExclCriteria]
 GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrument_Name]  DEFAULT ('') FOR [AD_instrumentNameCriteria]
-GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_instrumentExclCriteria]  DEFAULT ('') FOR [AD_instrumentExclCriteria]
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_expCommentCriteria]  DEFAULT ('') FOR [AD_expCommentCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_organism_Name]  DEFAULT ('') FOR [AD_organismNameCriteria]
 GO
@@ -70,7 +74,9 @@ ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analy
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_datasetTypeCriteria]  DEFAULT ('') FOR [AD_datasetTypeCriteria]
 GO
-ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_expCommentCriteria]  DEFAULT ('') FOR [AD_expCommentCriteria]
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_scanTypeCriteria]  DEFAULT ('') FOR [AD_scanTypeCriteria]
+GO
+ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_scanTypeExclCriteria]  DEFAULT ('') FOR [AD_scanTypeExclCriteria]
 GO
 ALTER TABLE [dbo].[T_Predefined_Analysis] ADD  CONSTRAINT [DF_T_Predefined_Analysis_AD_criteriaLabellingInclusion]  DEFAULT ('') FOR [AD_labellingInclCriteria]
 GO
@@ -126,40 +132,45 @@ AS
 	If @@RowCount = 0
 		Return
 
-	If Update(AD_level) OR 
-		Update(AD_sequence) OR 
-		Update(AD_instrumentClassCriteria) OR 
-		Update(AD_campaignNameCriteria) OR 
-		Update(AD_campaignExclCriteria) OR 
-		Update(AD_experimentNameCriteria) OR 
-		Update(AD_experimentExclCriteria) OR 
-		Update(AD_instrumentNameCriteria) OR 
-		Update(AD_organismNameCriteria) OR 
-		Update(AD_datasetNameCriteria) OR 
-		Update(AD_datasetExclCriteria) OR 
-		Update(AD_datasetTypeCriteria) OR 
-		Update(AD_expCommentCriteria) OR 
-		Update(AD_labellingInclCriteria) OR 
-		Update(AD_labellingExclCriteria) OR 
-		Update(AD_separationTypeCriteria) OR 
-		Update(AD_analysisToolName) OR 
-		Update(AD_parmFileName) OR 
-		Update(AD_settingsFileName) OR 
-		Update(AD_organism_ID) OR 
-		Update(AD_organismDBName) OR 
-		Update(AD_proteinCollectionList) OR 
-		Update(AD_proteinOptionsList) OR 
-		Update(AD_priority) OR 
-		Update(AD_enabled) OR 
-		Update(AD_description) OR 
-		Update(AD_created) OR 
-		Update(AD_creator) OR 
-		Update(AD_nextLevel) OR 
-		Update(Trigger_Before_Disposition)
+	If Update(AD_level) OR
+		Update(AD_sequence) OR
+		Update(AD_instrumentClassCriteria) OR
+		Update(AD_instrumentNameCriteria) OR
+		Update(AD_instrumentExclCriteria) OR
+		Update(AD_campaignNameCriteria) OR
+		Update(AD_campaignExclCriteria) OR
+		Update(AD_experimentNameCriteria) OR
+		Update(AD_experimentExclCriteria) OR
+		Update(AD_expCommentCriteria) OR
+		Update(AD_organismNameCriteria) OR
+		Update(AD_datasetNameCriteria) OR
+		Update(AD_datasetExclCriteria) OR
+		Update(AD_datasetTypeCriteria) OR
+		Update(AD_scanTypeCriteria) OR
+		Update(AD_scanTypeExclCriteria) OR
+		Update(AD_labellingInclCriteria) OR
+		Update(AD_labellingExclCriteria) OR
+		Update(AD_separationTypeCriteria) OR
+		Update(AD_scanCountMinCriteria) OR
+		Update(AD_scanCountMaxCriteria) OR
+		Update(AD_analysisToolName) OR
+		Update(AD_parmFileName) OR
+		Update(AD_settingsFileName) OR
+		Update(AD_organism_ID) OR
+		Update(AD_organismDBName) OR
+		Update(AD_proteinCollectionList) OR
+		Update(AD_proteinOptionsList) OR
+		Update(AD_priority) OR
+		Update(AD_specialProcessing) OR
+		Update(AD_enabled) OR
+		Update(AD_description) OR
+		Update(AD_nextLevel) OR
+		Update(Trigger_Before_Disposition) OR
+        Update(Propagation_Mode) 
 	Begin
 		UPDATE T_Predefined_Analysis
 		SET Last_Affected = GetDate()
-		FROM T_Predefined_Analysis PA INNER JOIN 
+		FROM T_Predefined_Analysis PA INNER JOIN
 			 inserted ON PA.AD_ID = inserted.AD_ID
 	End
 

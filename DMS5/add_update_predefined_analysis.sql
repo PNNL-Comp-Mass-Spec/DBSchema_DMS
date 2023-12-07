@@ -10,8 +10,6 @@ CREATE PROCEDURE [dbo].[add_update_predefined_analysis]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
-**
 **  Auth:   grk
 **  Date:   06/21/2005 grk - superseded AddUpdateDefaultAnalysis
 **          03/28/2006 grk - added protein collection fields
@@ -27,9 +25,9 @@ CREATE PROCEDURE [dbo].[add_update_predefined_analysis]
 **          08/28/2010 mem - Now using T_Instrument_Group_Allowed_DS_Type to determine allowed dataset types for matching instruments
 **                         - Added try-catch for error handling
 **          11/12/2010 mem - Now using T_Analysis_Tool_Allowed_Instrument_Class to lookup the allowed instrument class names for a given analysis tool
-**          02/09/2011 mem - Added parameter @TriggerBeforeDisposition
+**          02/09/2011 mem - Added parameter @triggerBeforeDisposition
 **          02/16/2011 mem - Added parameter @PropagationMode
-**          05/02/2012 mem - Added parameter @SpecialProcessing
+**          05/02/2012 mem - Added parameter @specialProcessing
 **          09/25/2012 mem - Expanded @organismNameCriteria and @organismName to varchar(128)
 **          04/18/2013 mem - Expanded @description to varchar(512)
 **          11/02/2015 mem - Population of #TmpMatchingInstruments now considers the DatasetType criterion
@@ -45,21 +43,32 @@ CREATE PROCEDURE [dbo].[add_update_predefined_analysis]
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          12/06/2023 mem - Add support for scan type criteria
 **
 *****************************************************/
 (
     @level int,
     @sequence varchar(12),
+    @nextLevel varchar(12),
+    @triggerBeforeDisposition tinyint,
+    @propagationMode varchar(24),
     @instrumentClassCriteria varchar(32),
-    @campaignNameCriteria varchar(128),
-    @experimentNameCriteria varchar(128),
     @instrumentNameCriteria varchar(64),
     @instrumentExclCriteria varchar(64),
+    @campaignNameCriteria varchar(128),
+    @campaignExclCriteria varchar(128),
+    @experimentNameCriteria varchar(128),
+    @experimentExclCriteria varchar(128),
+    @experimentCommentCriteria varchar(128),
     @organismNameCriteria varchar(128),
     @datasetNameCriteria varchar(128),
-    @experimentCommentCriteria varchar(128),
+    @datasetExclCriteria varchar(128),
+    @datasetTypeCriteria varchar(64),
+    @scanTypeCriteria varchar(64),
+    @scanTypeExclCriteria varchar(64),
     @labellingInclCriteria varchar(64),
     @labellingExclCriteria varchar(64),
+    @separationTypeCriteria varchar(64)='',
     @analysisToolName varchar(64),
     @paramFileName varchar(255),
     @settingsFileName varchar(255),
@@ -70,48 +79,42 @@ CREATE PROCEDURE [dbo].[add_update_predefined_analysis]
     @priority int,
     @enabled tinyint,
     @description varchar(512),
+    @specialProcessing varchar(512),
     @creator varchar(50),
-    @nextLevel varchar(12),
     @id int output,
     @mode varchar(12) = 'add', -- or 'update'
-    @message varchar(512) output,
-    @separationTypeCriteria varchar(64)='',
-    @campaignExclCriteria varchar(128)='',
-    @experimentExclCriteria varchar(128)='',
-    @datasetExclCriteria varchar(128)='',
-    @datasetTypeCriteria varchar(64)='',
-    @triggerBeforeDisposition tinyint = 0,
-    @propagationMode varchar(24)='Export',
-    @specialProcessing varchar(512)=''
+    @message varchar(512) output
 )
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @allowedDatasetTypes varchar(255)
-    declare @AllowedDSTypesForTool varchar(1024)
-    declare @AllowedInstClassesForTool varchar(1024)
+    Declare @allowedDatasetTypes varchar(255)
+    Declare @AllowedDSTypesForTool varchar(1024)
+    Declare @AllowedInstClassesForTool varchar(1024)
 
-    declare @UniqueID int
-    declare @continue int
-    declare @MatchCount int
-    declare @instrumentName varchar(128)
-    declare @InstrumentID int
-    declare @instrumentClass varchar(128)
-    declare @analysisToolID int
+    Declare @UniqueID int
+    Declare @continue int
+    Declare @MatchCount int
+    Declare @instrumentName varchar(128)
+    Declare @InstrumentID int
+    Declare @instrumentClass varchar(128)
+    Declare @analysisToolID int
 
-    declare @msg varchar(512) = ''
+    Declare @msg varchar(512) = ''
 
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
     ---------------------------------------------------
 
     Declare @authorized tinyint = 0
+
     Exec @authorized = verify_sp_authorized 'add_update_predefined_analysis', @raiseError = 1
+
     If @authorized = 0
     Begin
         THROW 51000, 'Access denied', 1;
@@ -123,35 +126,42 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    if LEN(IsNull(@analysisToolName,'')) < 1
-    begin
-        set @myError = 51033
+    Set @analysisToolName = LTrim(RTrim(Coalesce(@analysisToolName, '')))
+    Set @paramFileName    = LTrim(RTrim(Coalesce(@paramFileName   , '')))
+    Set @settingsFileName = LTrim(RTrim(Coalesce(@settingsFileName, '')))
+    Set @organismName     = LTrim(RTrim(Coalesce(@organismName    , '')))
+    Set @organismDBName   = LTrim(RTrim(Coalesce(@organismDBName  , '')))
+
+
+    If LEN(@analysisToolName) < 1
+    Begin
+        Set @myError = 51033
         RAISERROR ('Analysis tool name must be specified', 11, 1)
-    end
+    End
 
-    if LEN(IsNull(@paramFileName,'')) < 1
-    begin
-        set @myError = 51033
+    If LEN(@paramFileName) < 1
+    Begin
+        Set @myError = 51033
         RAISERROR ('Parameter file name must be specified', 11, 1)
-    end
+    End
 
-    if LEN(IsNull(@settingsFileName,'')) < 1
-    begin
-        set @myError = 51033
+    If LEN(@settingsFileName) < 1
+    Begin
+        Set @myError = 51033
         RAISERROR ('Settings file name must be specified', 11, 1)
-    end
+    End
 
-    if LEN(IsNull(@organismName,'')) < 1
-    begin
-        set @myError = 51033
+    If LEN(@organismName) < 1
+    Begin
+        Set @myError = 51033
         RAISERROR ('Organism name must be specified; use "(default)" to auto-assign at job creation', 11, 1)
-    end
+    End
 
-    if LEN(IsNull(@organismDBName,'')) < 1
-    begin
-        set @myError = 51033
+    If LEN(@organismDBName) < 1
+    Begin
+        Set @myError = 51033
         RAISERROR ('Organism DB name must be specified', 11, 1)
-    end
+    End
 
     If @myError <> 0
         return @myError
@@ -159,52 +169,70 @@ AS
     ---------------------------------------------------
     -- Update any null filter criteria
     ---------------------------------------------------
-    Set @instrumentClassCriteria    = LTrim(RTrim(IsNull(@instrumentClassCriteria  , '')))
-    Set @campaignNameCriteria       = LTrim(RTrim(IsNull(@campaignNameCriteria     , '')))
-    Set @experimentNameCriteria     = LTrim(RTrim(IsNull(@experimentNameCriteria   , '')))
-    Set @instrumentNameCriteria     = LTrim(RTrim(IsNull(@instrumentNameCriteria   , '')))
-    Set @instrumentExclCriteria     = LTrim(RTrim(IsNull(@instrumentExclCriteria   , '')))
-    Set @organismNameCriteria       = LTrim(RTrim(IsNull(@organismNameCriteria     , '')))
-    Set @datasetNameCriteria        = LTrim(RTrim(IsNull(@datasetNameCriteria      , '')))
-    Set @experimentCommentCriteria  = LTrim(RTrim(IsNull(@experimentCommentCriteria, '')))
-    Set @labellingInclCriteria      = LTrim(RTrim(IsNull(@labellingInclCriteria    , '')))
-    Set @labellingExclCriteria      = LTrim(RTrim(IsNull(@labellingExclCriteria    , '')))
-    Set @separationTypeCriteria     = LTrim(RTrim(IsNull(@separationTypeCriteria   , '')))
-    Set @campaignExclCriteria       = LTrim(RTrim(IsNull(@campaignExclCriteria     , '')))
-    Set @experimentExclCriteria     = LTrim(RTrim(IsNull(@experimentExclCriteria   , '')))
-    Set @datasetExclCriteria        = LTrim(RTrim(IsNull(@datasetExclCriteria      , '')))
-    Set @datasetTypeCriteria        = LTrim(RTrim(IsNull(@datasetTypeCriteria      , '')))
-    Set @SpecialProcessing          = LTrim(RTrim(IsNull(@SpecialProcessing        , '')))
+
+    Set @triggerBeforeDisposition   = Coalesce(@triggerBeforeDisposition, 0)
+    Set @priority                   = Coalesce(@priority, 3);
+    Set @enabled                    = Coalesce(@enabled, 1);
+
+    Set @instrumentClassCriteria    = LTrim(RTrim(Coalesce(@instrumentClassCriteria  , '')))
+    Set @instrumentNameCriteria     = LTrim(RTrim(Coalesce(@instrumentNameCriteria   , '')))
+    Set @instrumentExclCriteria     = LTrim(RTrim(Coalesce(@instrumentExclCriteria   , '')))
+    Set @campaignNameCriteria       = LTrim(RTrim(Coalesce(@campaignNameCriteria     , '')))
+    Set @campaignExclCriteria       = LTrim(RTrim(Coalesce(@campaignExclCriteria     , '')))
+    Set @experimentNameCriteria     = LTrim(RTrim(Coalesce(@experimentNameCriteria   , '')))
+    Set @experimentExclCriteria     = LTrim(RTrim(Coalesce(@experimentExclCriteria   , '')))
+    Set @experimentCommentCriteria  = LTrim(RTrim(Coalesce(@experimentCommentCriteria, '')))
+    Set @datasetNameCriteria        = LTrim(RTrim(Coalesce(@datasetNameCriteria      , '')))
+    Set @datasetExclCriteria        = LTrim(RTrim(Coalesce(@datasetExclCriteria      , '')))
+    Set @datasetTypeCriteria        = LTrim(RTrim(Coalesce(@datasetTypeCriteria      , '')))
+    Set @scanTypeCriteria           = LTrim(RTrim(Coalesce(@scanTypeCriteria         , '')))
+    Set @scanTypeExclCriteria       = LTrim(RTrim(Coalesce(@scanTypeExclCriteria     , '')))
+    Set @labellingInclCriteria      = LTrim(RTrim(Coalesce(@labellingInclCriteria    , '')))
+    Set @labellingExclCriteria      = LTrim(RTrim(Coalesce(@labellingExclCriteria    , '')))
+    Set @separationTypeCriteria     = LTrim(RTrim(Coalesce(@separationTypeCriteria   , '')))
+    Set @organismName               = LTrim(RTrim(Coalesce(@organismName             , '')))
+    Set @protCollNameList           = LTrim(RTrim(Coalesce(@protCollNameList         , '')))
+    Set @protCollOptionsList        = LTrim(RTrim(Coalesce(@protCollOptionsList      , '')))
+    Set @description                = LTrim(RTrim(Coalesce(@description              , '')))
+    Set @specialProcessing          = LTrim(RTrim(Coalesce(@specialProcessing        , '')))
 
     ---------------------------------------------------
     -- Resolve propagation mode
     ---------------------------------------------------
-    declare @propMode tinyint
-    set @propMode = CASE IsNull(@PropagationMode, '')
-                        WHEN 'Export' THEN 0
-                        WHEN 'No Export' THEN 1
-                        ELSE 0
-                    END
+    Declare @propMode tinyint = CASE Coalesce(@PropagationMode, '')
+                                    WHEN 'Export' THEN 0
+                                    WHEN 'No Export' THEN 1
+                                    ELSE 0
+                                END
 
     ---------------------------------------------------
-    -- Validate @sequence and @nextLevel
+    -- Validate @level, @sequence, and @nextLevel
     ---------------------------------------------------
 
-    declare @seqVal int
-    declare @nextLevelVal int
+    If @level Is Null
+    Begin
+        Set @msg = 'Level cannot be null'
+        RAISERROR (@msg, 11, 2)
+    End
 
-    if @sequence <> ''
-    set @seqVal = convert(int, @sequence)
+    Declare @seqVal int
+    Declare @nextLevelVal int
 
-    if @nextLevel <> ''
-    begin
-    set @nextLevelVal = convert(int, @nextLevel)
-    if @nextLevelVal <= @level
-        begin
-            set @msg = 'Next level must be greater than current level'
+    If LTrim(RTrim(Coalesce(@sequence, ''))) <> ''
+    Begin
+        Set @seqVal = convert(int, @sequence)
+    End
+
+    If LTrim(RTrim(Coalesce(@nextLevel, ''))) <> ''
+    Begin
+        Set @nextLevelVal = convert(int, @nextLevel)
+
+        If @nextLevelVal <= @level
+        Begin
+            Set @msg = 'Next level must be greater than current level'
             RAISERROR (@msg, 11, 2)
-        end
-    end
+        End
+    End
 
     --------------------------------------------------
     -- Validate the analysis tool name
@@ -224,8 +252,7 @@ AS
 
     ---------------------------------------------------
     -- If @instrumentClassCriteria or @instrumentNameCriteria or @instrumentExclCriteria are defined,
-    -- determine the associated Dataset Types and make sure they are
-    -- valid for @analysisToolName
+    -- determine the associated Dataset Types and make sure they are valid for @analysisToolName
     ---------------------------------------------------
 
     If Len(@instrumentClassCriteria) > 0 Or Len(@instrumentNameCriteria) > 0 Or Len(@instrumentExclCriteria) > 0
@@ -286,10 +313,10 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
         If @myRowCount = 0
-        Begin -- <b1>
-            set @msg = 'Did not match any instruments using the instrument name and class criteria; update not allowed'
+        Begin
+            Set @msg = 'Did not match any instruments using the instrument name, instrument class, and dataset type criteria; update not allowed'
             RAISERROR (@msg, 11, 6)
-        End -- </b1>
+        End
 
 
         ---------------------------------------------------
@@ -341,8 +368,8 @@ AS
                     SELECT @AllowedDSTypesForTool = AllowedDatasetTypes
                     FROM dbo.get_analysis_tool_allowed_dataset_type_list(@analysisToolID)
 
-                    set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @allowedDatasetTypes + '"'
-                    set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these dataset types "' + @AllowedDSTypesForTool + '"'
+                    Set @msg = 'Criteria matched instrument "' + @instrumentName + '" with allowed dataset types of "' + @allowedDatasetTypes + '"'
+                    Set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these dataset types "' + @AllowedDSTypesForTool + '"'
                     RAISERROR (@msg, 11, 7)
                 End     -- </d1>
 
@@ -362,8 +389,8 @@ AS
                     SELECT @AllowedInstClassesForTool = AllowedInstrumentClasses
                     FROM dbo.get_analysis_tool_allowed_inst_class_list (@analysisToolID)
 
-                    set @msg = 'Criteria matched instrument "' + @instrumentName + '" which is Instrument Class "' + @instrumentClass + '"'
-                    set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these instrument classes "' + @AllowedInstClassesForTool + '"'
+                    Set @msg = 'Criteria matched instrument "' + @instrumentName + '" which is Instrument Class "' + @instrumentClass + '"'
+                    Set @msg = @msg + '; however, analysis tool ' + @analysisToolName + ' allows these instrument classes "' + @AllowedInstClassesForTool + '"'
                     RAISERROR (@msg, 11, 8)
                 End     -- </d2>
 
@@ -377,13 +404,15 @@ AS
     -- Resolve organism ID
     ---------------------------------------------------
 
-    declare @organismID int
-    execute @organismID = get_organism_id @organismName
-    if @organismID = 0
-    begin
-        set @msg = 'Could not find entry in database for organismName "' + @organismName + '"'
+    Declare @organismID int
+
+    exec @organismID = get_organism_id @organismName
+
+    If @organismID = 0
+    Begin
+        Set @msg = 'Could not find entry in database for organismName "' + @organismName + '"'
         RAISERROR (@msg, 11, 9)
-    end
+    End
 
     ---------------------------------------------------
     -- Validate the parameter file name
@@ -393,7 +422,7 @@ AS
     Begin
         If Not Exists (SELECT * FROM T_Param_Files WHERE Param_File_Name = @paramFileName)
         Begin
-            set @msg = 'Could not find entry in database for parameter file "' + @paramFileName + '"'
+            Set @msg = 'Could not find entry in database for parameter file "' + @paramFileName + '"'
             RAISERROR (@msg, 11, 10)
         End
     End
@@ -406,7 +435,7 @@ AS
     Begin
         If Not Exists (SELECT * FROM T_Settings_Files WHERE File_Name = @settingsFileName)
         Begin
-            set @msg = 'Could not find entry in database for settings file "' + @settingsFileName + '"'
+            Set @msg = 'Could not find entry in database for settings file "' + @settingsFileName + '"'
             RAISERROR (@msg, 11, 10)
         End
     End
@@ -415,11 +444,8 @@ AS
     -- Check protein parameters
     ---------------------------------------------------
 
-    Declare @result int
-    Declare @ownerUsername varchar(64)
-
-    set @result = 0
-    Set @ownerUsername = ''
+    Declare @result int = 0
+    Declare @ownerUsername varchar(64) = ''
 
     exec @result = validate_protein_collection_params
                     @analysisToolName,
@@ -431,9 +457,9 @@ AS
                     @message output,
                     @debugMode=0
 
-    if @result <> 0
+    If @result <> 0
     Begin
-        set @msg = @message
+        Set @msg = @message
         RAISERROR (@msg, 11, 11)
     End
 
@@ -444,7 +470,7 @@ AS
 
     Declare @userID int
 
-    execute @userID = get_user_id @creator
+    exec @userID = get_user_id @creator
 
     If @userID > 0
     Begin
@@ -477,47 +503,51 @@ AS
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
 
-    if @mode = 'update'
-    begin
-    -- cannot update a non-existent entry
-    --
-    declare @tmp int
-    set @tmp = 0
-    --
-    SELECT @tmp = AD_ID
-    FROM  T_Predefined_Analysis
-    WHERE (AD_ID = @ID)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0 OR @tmp = 0
-    begin
-        set @msg = 'No entry could be found in database for update'
-        RAISERROR (@msg, 11, 12)
-    end
+    If @mode = 'update'
+    Begin
+        -- Cannot update a non-existent entry
+        --
+        Declare @tmp int = 0
 
-    end
+        SELECT @tmp = AD_ID
+        FROM  T_Predefined_Analysis
+        WHERE (AD_ID = @ID)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myError <> 0 OR @tmp = 0
+        Begin
+            Set @msg = 'No entry could be found in database for update'
+            RAISERROR (@msg, 11, 12)
+        End
+
+    End
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
-    if @Mode = 'add'
-    begin
+    If @Mode = 'add'
+    Begin
 
         INSERT INTO T_Predefined_Analysis (
             AD_level,
             AD_sequence,
+            AD_nextLevel,
+            Trigger_Before_Disposition,
+            Propagation_Mode,
             AD_instrumentClassCriteria,
+            AD_instrumentNameCriteria,
+            AD_instrumentExclCriteria,
             AD_campaignNameCriteria,
             AD_campaignExclCriteria,
             AD_experimentNameCriteria,
             AD_experimentExclCriteria,
-            AD_instrumentNameCriteria,
-            AD_instrumentExclCriteria,
+            AD_expCommentCriteria,
             AD_organismNameCriteria,
             AD_datasetNameCriteria,
             AD_datasetExclCriteria,
             AD_datasetTypeCriteria,
-            AD_expCommentCriteria,
+            AD_scanTypeCriteria,
+            AD_scanTypeExclCriteria,
             AD_labellingInclCriteria,
             AD_labellingExclCriteria,
             AD_separationTypeCriteria,
@@ -529,29 +559,31 @@ AS
             AD_proteinCollectionList,
             AD_proteinOptionsList,
             AD_priority,
-            AD_specialProcessing,
             AD_enabled,
             AD_description,
+            AD_specialProcessing,
             AD_creator,
-            AD_nextLevel,
-            Trigger_Before_Disposition,
-            Propagation_Mode,
             Last_Affected
         ) VALUES (
             @level,
             @seqVal,
+            @nextLevelVal,
+            @triggerBeforeDisposition,
+            @propMode,
             @instrumentClassCriteria,
+            @instrumentNameCriteria,
+            @instrumentExclCriteria,
             @campaignNameCriteria,
             @campaignExclCriteria,
             @experimentNameCriteria,
             @experimentExclCriteria,
-            @instrumentNameCriteria,
-            @instrumentExclCriteria,
+            @experimentCommentCriteria,
             @organismNameCriteria,
             @datasetNameCriteria,
             @datasetExclCriteria,
             @datasetTypeCriteria,
-            @experimentCommentCriteria,
+            @scanTypeCriteria,
+            @scanTypeExclCriteria,
             @labellingInclCriteria,
             @labellingExclCriteria,
             @separationTypeCriteria,
@@ -563,83 +595,82 @@ AS
             @protCollNameList,
             @protCollOptionsList,
             @priority,
-            @SpecialProcessing,
             @enabled,
             @description,
+            @specialProcessing,
             @creator,
-            @nextLevelVal,
-            IsNull(@TriggerBeforeDisposition, 0),
-            @propMode,
             GetDate()
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-        set @msg = 'Insert operation failed'
+        If @myError <> 0
+        Begin
+        Set @msg = 'Insert operation failed'
             RAISERROR (@msg, 11, 13)
-        end
+        End
 
         -- return ID of newly created entry
         --
-        set @ID = SCOPE_IDENTITY()
+        Set @ID = SCOPE_IDENTITY()
 
-    end -- add mode
+    End -- add mode
 
     ---------------------------------------------------
     -- action for update mode
     ---------------------------------------------------
     --
-    if @Mode = 'update'
-    begin
-        set @myError = 0
+    If @Mode = 'update'
+    Begin
+        Set @myError = 0
         --
         UPDATE T_Predefined_Analysis
         SET
-            AD_level = @level,
-            AD_sequence = @seqVal,
+            AD_level                   = @level,
+            AD_sequence                = @seqVal,
+            AD_nextLevel               = @nextLevelVal,
+            Trigger_Before_Disposition = @triggerBeforeDisposition,
+            Propagation_Mode           = @propMode,
             AD_instrumentClassCriteria = @instrumentClassCriteria,
-            AD_campaignNameCriteria = @campaignNameCriteria,
-            AD_campaignExclCriteria = @campaignExclCriteria,
-            AD_experimentNameCriteria = @experimentNameCriteria,
-            AD_experimentExclCriteria = @experimentExclCriteria,
-            AD_instrumentNameCriteria = @instrumentNameCriteria,
-            AD_instrumentExclCriteria = @instrumentExclCriteria,
-            AD_organismNameCriteria = @organismNameCriteria,
-            AD_datasetNameCriteria = @datasetNameCriteria,
-            AD_datasetExclCriteria = @datasetExclCriteria,
-            AD_datasetTypeCriteria = @datasetTypeCriteria,
-            AD_expCommentCriteria = @experimentCommentCriteria,
-            AD_labellingInclCriteria = @labellingInclCriteria,
-            AD_labellingExclCriteria = @labellingExclCriteria,
-            AD_separationTypeCriteria = @separationTypeCriteria,
-            AD_analysisToolName = @analysisToolName,
-            AD_parmFileName = @paramFileName,
-            AD_settingsFileName = @settingsFileName,
-            AD_organism_ID = @organismID,
-            AD_organismDBName = @organismDBName,
-            AD_proteinCollectionList = @protCollNameList,
-            AD_proteinOptionsList = @protCollOptionsList,
-            AD_priority = @priority,
-            AD_specialProcessing = @SpecialProcessing,
-            AD_enabled = @enabled,
-            AD_description = @description,
-            AD_creator = @creator,
-            AD_nextLevel = @nextLevelVal,
-            Trigger_Before_Disposition = IsNull(@TriggerBeforeDisposition, 0),
-            Propagation_Mode = @propMode,
-            Last_Affected = GetDate()
-        WHERE (AD_ID = @ID)
+            AD_instrumentNameCriteria  = @instrumentNameCriteria,
+            AD_instrumentExclCriteria  = @instrumentExclCriteria,
+            AD_campaignNameCriteria    = @campaignNameCriteria,
+            AD_campaignExclCriteria    = @campaignExclCriteria,
+            AD_experimentNameCriteria  = @experimentNameCriteria,
+            AD_experimentExclCriteria  = @experimentExclCriteria,
+            AD_expCommentCriteria      = @experimentCommentCriteria,
+            AD_organismNameCriteria    = @organismNameCriteria,
+            AD_datasetNameCriteria     = @datasetNameCriteria,
+            AD_datasetExclCriteria     = @datasetExclCriteria,
+            AD_datasetTypeCriteria     = @datasetTypeCriteria,
+            AD_scanTypeCriteria        = @scanTypeCriteria,
+            AD_scanTypeExclCriteria    = @scanTypeExclCriteria,
+            AD_labellingInclCriteria   = @labellingInclCriteria,
+            AD_labellingExclCriteria   = @labellingExclCriteria,
+            AD_separationTypeCriteria  = @separationTypeCriteria,
+            AD_analysisToolName        = @analysisToolName,
+            AD_parmFileName            = @paramFileName,
+            AD_settingsFileName        = @settingsFileName,
+            AD_organism_ID             = @organismID,
+            AD_organismDBName          = @organismDBName,
+            AD_proteinCollectionList   = @protCollNameList,
+            AD_proteinOptionsList      = @protCollOptionsList,
+            AD_priority                = @priority,
+            AD_enabled                 = @enabled,
+            AD_description             = @description,
+            AD_specialProcessing       = @specialProcessing,
+            AD_creator                 = @creator,
+            Last_Affected              = GetDate()
+        WHERE AD_ID = @ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
-        if @myError <> 0
-        begin
-            set @msg = 'Update operation failed: "' + @ID + '"'
+
+        If @myError <> 0
+        Begin
+            Set @msg = 'Update operation failed: "' + @ID + '"'
             RAISERROR (@msg, 11, 14)
-        end
-    end -- update mode
+        End
+    End -- update mode
 
     END TRY
     BEGIN CATCH
@@ -652,7 +683,7 @@ AS
         Exec post_log_entry 'Error', @message, 'add_update_predefined_analysis'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_predefined_analysis] TO [DDL_Viewer] AS [dbo]
