@@ -7,13 +7,12 @@ CREATE PROCEDURE [dbo].[evaluate_predefined_analysis_rules]
 /****************************************************
 **
 **  Desc:
-**      Evaluate predefined analysis rules for given
-**      dataset and generate the specifed ouput type
+**      Evaluate predefined analysis rules for given dataset and generate the specifed output type
 **
 **      When @outputType is 'Export Jobs', the calling procedure must create table #JX
 **
 **      CREATE TABLE #JX (
-**          predefine_id int
+**          predefine_id int,
 **          dataset varchar(128),
 **          priority varchar(8),
 **          analysisToolName varchar(64),
@@ -78,16 +77,17 @@ CREATE PROCEDURE [dbo].[evaluate_predefined_analysis_rules]
 **                         - Remove periods from output columns for mode 'Show Rules' (and change to lowercase)
 **                         - Rename columns in temporary table #JX, and add column predefine_id
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          12/07/2023 mem - Add support for scan type inclusion or exclusion
 **
 *****************************************************/
 (
     @datasetName varchar(128),
-    @outputType varchar(12) = 'Show Rules',  -- 'Show Rules', 'Show Jobs', 'Export Jobs'
+    @outputType varchar(12) = 'Show Rules',         -- 'Show Rules', 'Show Jobs', 'Export Jobs'
     @message varchar(512) = '' output,
     @raiseErrorMessages tinyint = 1,
     @excludeDatasetsNotReleased tinyint = 1,        -- When non-zero, excludes datasets with a rating of -5 (by default we exclude datasets with a rating < 2 and <> -10)
-    @createJobsForUnreviewedDatasets tinyint = 1,    -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
-    @analysisToolNameFilter varchar(128) = ''        -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
+    @createJobsForUnreviewedDatasets tinyint = 1,   -- When non-zero, will create jobs for datasets with a rating of -10 using predefines with Trigger_Before_Disposition = 1
+    @analysisToolNameFilter varchar(128) = ''       -- If not blank, then only considers predefines that match the given tool name (can contain wildcards)
 )
 AS
     Set nocount on
@@ -134,6 +134,7 @@ AS
     Declare @ExperimentLabelling varchar(128)
     Declare @Dataset varchar(128)
     Declare @DatasetType varchar(128)
+    Declare @ScanTypes varchar(128)
     Declare @SeparationType varchar(64)
     Declare @Organism varchar(128)
     Declare @InstrumentName varchar(128)
@@ -152,6 +153,7 @@ AS
         @ExperimentLabelling = Experiment_Labelling,
         @Dataset = Dataset,
         @DatasetType = Dataset_Type,
+        @ScanTypes = Scan_Types,
         @SeparationType = Separation_Type,
         @Organism = Organism,
         @InstrumentName = Instrument,
@@ -234,34 +236,36 @@ AS
         AD_level int NOT NULL,
         AD_sequence int NULL,
         AD_instrumentClassCriteria varchar (32) NOT NULL,
-        AD_campaignNameCriteria varchar (128) NOT NULL,
-        AD_campaignExclCriteria varchar (128) NOT NULL,
-        AD_experimentNameCriteria varchar (128) NOT NULL,
-        AD_experimentExclCriteria varchar (128) NOT NULL,
-        AD_instrumentNameCriteria varchar (64) NOT NULL,
-        AD_instrumentExclCriteria varchar (64) NOT NULL,
-        AD_organismNameCriteria varchar (128) NOT NULL,
-        AD_datasetNameCriteria varchar (128) NOT NULL,
-        AD_datasetExclCriteria varchar (128) NOT NULL,
-        AD_datasetTypeCriteria varchar (64) NOT NULL,
-        AD_expCommentCriteria varchar (128) NOT NULL,
-        AD_labellingInclCriteria varchar (64) NOT NULL,
-        AD_labellingExclCriteria varchar (64) NOT NULL,
-        AD_separationTypeCriteria varchar (64) NOT NULL,
-        AD_scanCountMin int NOT NULL,
-        AD_scanCountMax int NOT NULL,
-        AD_analysisToolName varchar (64) NOT NULL,
-        AD_paramFileName varchar (255) NOT NULL,
-        AD_settingsFileName varchar (255) NULL,
-        AD_organismName varchar (128) NOT NULL,
-        AD_organismDBName varchar (128) NOT NULL,
-        AD_proteinCollectionList varchar(4000),
-        AD_proteinOptionsList varchar(256),
-        AD_priority int NOT NULL,
-        AD_nextLevel int NULL,
+        AD_campaignNameCriteria    varchar (128) NOT NULL,
+        AD_campaignExclCriteria    varchar (128) NOT NULL,
+        AD_experimentNameCriteria  varchar (128) NOT NULL,
+        AD_experimentExclCriteria  varchar (128) NOT NULL,
+        AD_expCommentCriteria      varchar (128) NOT NULL,
+        AD_instrumentNameCriteria  varchar (64) NOT NULL,
+        AD_instrumentExclCriteria  varchar (64) NOT NULL,
+        AD_organismNameCriteria    varchar (128) NOT NULL,
+        AD_datasetNameCriteria     varchar (128) NOT NULL,
+        AD_datasetExclCriteria     varchar (128) NOT NULL,
+        AD_datasetTypeCriteria     varchar (64) NOT NULL,
+        AD_scanTypeCriteria        varchar (64) NOT NULL,
+        AD_scanTypeExclCriteria    varchar (64) NOT NULL,
+        AD_labellingInclCriteria   varchar (64) NOT NULL,
+        AD_labellingExclCriteria   varchar (64) NOT NULL,
+        AD_separationTypeCriteria  varchar (64) NOT NULL,
+        AD_scanCountMin            int NOT NULL,
+        AD_scanCountMax            int NOT NULL,
+        AD_analysisToolName        varchar (64) NOT NULL,
+        AD_paramFileName           varchar (255) NOT NULL,
+        AD_settingsFileName        varchar (255) NULL,
+        AD_organismName            varchar (128) NOT NULL,
+        AD_organismDBName          varchar (128) NOT NULL,
+        AD_proteinCollectionList   varchar(4000),
+        AD_proteinOptionsList      varchar(256),
+        AD_priority                int NOT NULL,
+        AD_nextLevel               int NULL,
         Trigger_Before_Disposition tinyint NOT NULL,
-        Propagation_Mode tinyint NOT NULL,
-        Special_Processing varchar(512) NULL,
+        Propagation_Mode           tinyint NOT NULL,
+        Special_Processing         varchar(512) NULL,
         AD_ID int  NOT NULL
     )
     --
@@ -295,11 +299,13 @@ AS
             [Campaign Exclusion] varchar(128),
             [Experiment Crit.] varchar(128) NULL,
             [Experiment Exclusion] varchar(128),
+            [Exp. Comment Crit.] varchar(128) NULL,
             [Organism Crit.] varchar(128) NULL,
             [Dataset Crit.] varchar(128) NULL,
             [Dataset Exclusion] varchar(128),
-            [Dataset Type] varchar(128),
-            [Exp. Comment Crit.] varchar(128),
+            [Dataset Type] varchar(128) NULL,
+            [Scan Type Crit.] varchar(64) NULL,
+            [Scan Type Exclusion] varchar(64) NULL,
             [Labelling Incl.] varchar(64) NULL,
             [Labelling Excl.] varchar(64) NULL,
             [Separation Type Crit.] varchar(64) NULL,
@@ -331,13 +337,15 @@ AS
         AD_campaignExclCriteria,
         AD_experimentNameCriteria,
         AD_experimentExclCriteria,
+        AD_expCommentCriteria,
         AD_instrumentNameCriteria,
         AD_instrumentExclCriteria,
         AD_organismNameCriteria,
         AD_datasetNameCriteria,
         AD_datasetExclCriteria,
         AD_datasetTypeCriteria,
-        AD_expCommentCriteria,
+        AD_scanTypeCriteria,
+        AD_scanTypeExclCriteria,
         AD_labellingInclCriteria,
         AD_labellingExclCriteria,
         AD_separationTypeCriteria,
@@ -365,13 +373,15 @@ AS
         PA.AD_campaignExclCriteria,
         PA.AD_experimentNameCriteria,
         PA.AD_experimentExclCriteria,
+        PA.AD_expCommentCriteria,
         PA.AD_instrumentNameCriteria,
         PA.AD_instrumentExclCriteria,
         PA.AD_organismNameCriteria,
         PA.AD_datasetNameCriteria,
         PA.AD_datasetExclCriteria,
         PA.AD_datasetTypeCriteria,
-        PA.AD_expCommentCriteria,
+        PA.AD_scanTypeCriteria,
+        PA.AD_scanTypeExclCriteria,
         PA.AD_labellingInclCriteria,
         PA.AD_labellingExclCriteria,
         PA.AD_separationTypeCriteria,
@@ -393,21 +403,23 @@ AS
     FROM T_Predefined_Analysis PA INNER JOIN
          T_Organisms Org ON PA.AD_organism_ID = Org.Organism_ID
     WHERE (PA.AD_enabled > 0)
-        AND ((@InstrumentClass LIKE PA.AD_instrumentClassCriteria) OR (PA.AD_instrumentClassCriteria = ''))
-        AND ((@InstrumentName LIKE PA.AD_instrumentNameCriteria) OR (PA.AD_instrumentNameCriteria = ''))
-        AND (NOT (@InstrumentName LIKE PA.AD_instrumentExclCriteria) OR (PA.AD_instrumentExclCriteria = ''))
-        AND ((@Campaign LIKE PA.AD_campaignNameCriteria) OR (PA.AD_campaignNameCriteria = ''))
-        AND ((@Experiment LIKE PA.AD_experimentNameCriteria) OR (PA.AD_experimentNameCriteria = ''))
-        AND ((@Dataset LIKE PA.AD_datasetNameCriteria) OR (PA.AD_datasetNameCriteria = ''))
-        AND ((@DatasetType LIKE PA.AD_datasetTypeCriteria) OR (PA.AD_datasetTypeCriteria = ''))
-        AND ((@ExperimentComment LIKE PA.AD_expCommentCriteria) OR (PA.AD_expCommentCriteria = ''))
-        AND ((@ExperimentLabelling LIKE PA.AD_labellingInclCriteria) OR (PA.AD_labellingInclCriteria = ''))
-        AND (NOT (@ExperimentLabelling LIKE PA.AD_labellingExclCriteria) OR (PA.AD_labellingExclCriteria = ''))
-        AND ((@SeparationType LIKE PA.AD_separationTypeCriteria) OR (PA.AD_separationTypeCriteria = ''))
-        AND (NOT (@Campaign LIKE PA.AD_campaignExclCriteria) OR (PA.AD_campaignExclCriteria = ''))
-        AND (NOT (@Experiment LIKE PA.AD_experimentExclCriteria) OR (PA.AD_experimentExclCriteria = ''))
-        AND (NOT (@Dataset LIKE PA.AD_datasetExclCriteria) OR (PA.AD_datasetExclCriteria = ''))
-        AND ((@Organism LIKE PA.AD_organismNameCriteria) OR (PA.AD_organismNameCriteria = ''))
+        AND ((@InstrumentClass         LIKE PA.AD_instrumentClassCriteria) OR (PA.AD_instrumentClassCriteria = ''))
+        AND ((@InstrumentName          LIKE PA.AD_instrumentNameCriteria)  OR (PA.AD_instrumentNameCriteria = ''))
+        AND (NOT (@InstrumentName      LIKE PA.AD_instrumentExclCriteria)  OR (PA.AD_instrumentExclCriteria = ''))
+        AND ((@Campaign                LIKE PA.AD_campaignNameCriteria)    OR (PA.AD_campaignNameCriteria = ''))
+        AND ((@Experiment              LIKE PA.AD_experimentNameCriteria)  OR (PA.AD_experimentNameCriteria = ''))
+        AND ((@Dataset                 LIKE PA.AD_datasetNameCriteria)     OR (PA.AD_datasetNameCriteria = ''))
+        AND ((@DatasetType             LIKE PA.AD_datasetTypeCriteria)     OR (PA.AD_datasetTypeCriteria = ''))
+        AND ((@ScanTypes               LIKE PA.AD_scanTypeCriteria)        OR (PA.AD_scanTypeCriteria = ''))
+        AND (NOT (@ScanTypes           LIKE PA.AD_scanTypeExclCriteria)    OR (PA.AD_scanTypeExclCriteria = ''))
+        AND ((@ExperimentComment       LIKE PA.AD_expCommentCriteria)      OR (PA.AD_expCommentCriteria = ''))
+        AND ((@ExperimentLabelling     LIKE PA.AD_labellingInclCriteria)   OR (PA.AD_labellingInclCriteria = ''))
+        AND (NOT (@ExperimentLabelling LIKE PA.AD_labellingExclCriteria)   OR (PA.AD_labellingExclCriteria = ''))
+        AND ((@SeparationType          LIKE PA.AD_separationTypeCriteria)  OR (PA.AD_separationTypeCriteria = ''))
+        AND (NOT (@Campaign            LIKE PA.AD_campaignExclCriteria)    OR (PA.AD_campaignExclCriteria = ''))
+        AND (NOT (@Experiment          LIKE PA.AD_experimentExclCriteria)  OR (PA.AD_experimentExclCriteria = ''))
+        AND (NOT (@Dataset             LIKE PA.AD_datasetExclCriteria)     OR (PA.AD_datasetExclCriteria = ''))
+        AND ((@Organism                LIKE PA.AD_organismNameCriteria)    OR (PA.AD_organismNameCriteria = ''))
         AND (
               -- Note that we always create jobs for predefines with Trigger_Before_Disposition = 1
               -- Procedure schedule_predefined_analysis_jobs will typically be called with @PreventDuplicateJobs = 1 so duplicate jobs will not get created after a dataset is reviewed
@@ -453,7 +465,9 @@ AS
             [Campaign Crit.], [Campaign Exclusion],
             [Experiment Crit.], [Experiment Exclusion],
             [Organism Crit.],
-            [Dataset Crit.], [Dataset Exclusion], [Dataset Type],
+            [Dataset Crit.], [Dataset Exclusion],
+            [Dataset Type],
+            [Scan Type Crit.], [Scan Type Exclusion],
             [Exp. Comment Crit.],
             [Labelling Incl.], [Labelling Excl.],
             [Separation Type Crit.],
@@ -463,7 +477,7 @@ AS
             [Prot. Coll.], [Prot. Opts.],
             [Special Proc.],
             Priority, [Processor Group])
-        SELECT    AD_level, AD_sequence, AD_ID, AD_nextLevel,
+        SELECT  AD_level, AD_sequence, AD_ID, AD_nextLevel,
                 CASE WHEN Trigger_Before_Disposition = 1
                      THEN 'Before Disposition'
                      ELSE 'Normal'
@@ -478,7 +492,9 @@ AS
                 AD_campaignNameCriteria, AD_campaignExclCriteria,
                 AD_experimentNameCriteria, AD_experimentExclCriteria,
                 AD_organismNameCriteria,
-                AD_datasetNameCriteria, AD_datasetExclCriteria, AD_datasetTypeCriteria,
+                AD_datasetNameCriteria, AD_datasetExclCriteria,
+                AD_datasetTypeCriteria,
+                AD_scanTypeCriteria, AD_scanTypeExclCriteria,
                 AD_expCommentCriteria,
                 AD_labellingInclCriteria, AD_labellingExclCriteria,
                 AD_separationTypeCriteria,
@@ -502,12 +518,11 @@ AS
     ---------------------------------------------------
     -- Get current number of jobs for dataset
     ---------------------------------------------------
-    Declare @numJobs int
-    Set @numJobs = 0
+    Declare @numJobs int = 0
     --
     SELECT @numJobs = COUNT(*)
     FROM T_Analysis_Job
-    WHERE (AJ_datasetID = @ID)
+    WHERE AJ_datasetID = @ID
 
     ---------------------------------------------------
     -- Get list of jobs to create
@@ -887,6 +902,8 @@ AS
                [Dataset Crit.] AS dataset_criteria,
                [Dataset Exclusion] AS dataset_exclusion,
                [Dataset Type] AS dataset_type,
+               [Scan Type Crit.] AS scan_type_criteria,
+               [Scan Type Exclusion] AS scan_type_exclusion,
                [Exp. Comment Crit.] AS exp_comment_criteria,
                [Labelling Incl.] AS labelling_inclusion,
                [Labelling Excl.] AS labelling_exclusion,

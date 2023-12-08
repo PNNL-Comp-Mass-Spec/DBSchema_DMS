@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Predefined_Analysis_Dataset_Info]
 AS
 SELECT C.Campaign_Num AS Campaign,
@@ -19,6 +18,7 @@ SELECT C.Campaign_Num AS Campaign,
        DS.DS_rating AS Rating,
        DRN.DRN_name AS Rating_Name,
        DSTypeName.DST_Name AS Dataset_Type,
+       dbo.get_dataset_scan_type_list(DS.Dataset_ID) AS Scan_Types,
        SepType.SS_name AS Separation_Type,
        ISNULL(DS.Acq_Time_Start, DS.DS_created) AS DS_Date,
        DS.Scan_Count

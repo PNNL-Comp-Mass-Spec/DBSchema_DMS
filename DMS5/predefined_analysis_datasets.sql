@@ -10,7 +10,7 @@ CREATE PROCEDURE [dbo].[predefined_analysis_datasets]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Parameters:
+**  Example usage:
 **
 **  Auth:   grk
 **  Date:   06/22/2005
@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[predefined_analysis_datasets]
 **          06/30/2022 mem - Rename parameter file argument
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/25/2023 bcg - Update output table column names to lower-case
+**          12/07/2023 mem - Add support for scan type inclusion or exclusion
 **
 *****************************************************/
 (
@@ -36,32 +37,35 @@ CREATE PROCEDURE [dbo].[predefined_analysis_datasets]
     @populateTempTable tinyint = 0      -- When 1, then populates table T_Tmp_PredefinedAnalysisDatasets with the results
 )
 AS
-    set nocount on
+    Set nocount on
 
-    Declare @myError int
-    set @myError = 0
-
-    Declare @myRowCount int
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @instrumentClassCriteria varchar(1024)
-    Declare @campaignNameCriteria varchar(1024)
-    Declare @experimentNameCriteria varchar(1024)
-
     Declare @instrumentNameCriteria varchar(1024)
     Declare @instrumentExclCriteria varchar(1024)
 
+    Declare @campaignNameCriteria varchar(1024)
+    Declare @campaignExclCriteria varchar(128)
+
+    Declare @experimentNameCriteria varchar(1024)
+    Declare @experimentExclCriteria varchar(128)
+    Declare @experimentCommentCriteria varchar(1024)
     Declare @organismNameCriteria varchar(1024)
+
+    Declare @datasetNameCriteria varchar(1024)
+    Declare @datasetExclCriteria varchar(128)
+    Declare @datasetTypeCriteria varchar(64)
+    Declare @scanTypeCriteria varchar(64)
+    Declare @scanTypeExclCriteria varchar(64)
+
     Declare @labellingInclCriteria varchar(1024)
     Declare @labellingExclCriteria varchar(1024)
-    Declare @datasetNameCriteria varchar(1024)
-    Declare @datasetTypeCriteria varchar(64)
-    Declare @experimentCommentCriteria varchar(1024)
-
     Declare @separationTypeCriteria varchar(64)
-    Declare @campaignExclCriteria varchar(128)
-    Declare @experimentExclCriteria varchar(128)
-    Declare @datasetExclCriteria varchar(128)
+
+    Declare @scanCountMin int
+    Declare @scanCountMax int
 
     Declare @analysisToolName varchar(64)
     Declare @paramFileName varchar(255)
@@ -89,47 +93,54 @@ AS
             Drop Table T_Tmp_PredefinedAnalysisDatasets
     End
 
-
     SELECT
-        @instrumentClassCriteria = AD_instrumentClassCriteria,
-        @campaignNameCriteria = AD_campaignNameCriteria,
-        @experimentNameCriteria = AD_experimentNameCriteria,
-        @instrumentNameCriteria = AD_instrumentNameCriteria,
-        @instrumentExclCriteria = AD_instrumentExclCriteria,
-        @organismNameCriteria = AD_organismNameCriteria,
-        @labellingInclCriteria = AD_labellingInclCriteria,
-        @labellingExclCriteria = AD_labellingExclCriteria,
-        @datasetNameCriteria = AD_datasetNameCriteria,
-        @datasetTypeCriteria = AD_datasetTypeCriteria,
-        @experimentCommentCriteria = AD_expCommentCriteria,
-        @separationTypeCriteria = AD_separationTypeCriteria,
-        @campaignExclCriteria = AD_campaignExclCriteria,
-        @experimentExclCriteria = AD_experimentExclCriteria,
-        @datasetExclCriteria = AD_datasetExclCriteria,
-        @analysisToolName = AD_analysisToolName,
-        @paramFileName = AD_parmFileName,
-        @settingsFileName = AD_settingsFileName,
-        @proteinCollectionList = AD_proteinCollectionList,
-        @organismDBName = AD_organismDBName
+        @instrumentClassCriteria   = Coalesce(AD_instrumentClassCriteria, ''),
+        @instrumentNameCriteria    = Coalesce(AD_instrumentNameCriteria,  ''),
+        @instrumentExclCriteria    = Coalesce(AD_instrumentExclCriteria,  ''),
+        @campaignNameCriteria      = Coalesce(AD_campaignNameCriteria,    ''),
+        @campaignExclCriteria      = Coalesce(AD_campaignExclCriteria,    ''),
+        @experimentNameCriteria    = Coalesce(AD_experimentNameCriteria,  ''),
+        @experimentExclCriteria    = Coalesce(AD_experimentExclCriteria,  ''),
+        @experimentCommentCriteria = Coalesce(AD_expCommentCriteria,      ''),
+        @organismNameCriteria      = Coalesce(AD_organismNameCriteria,    ''),
+        @datasetNameCriteria       = Coalesce(AD_datasetNameCriteria,     ''),
+        @datasetExclCriteria       = Coalesce(AD_datasetExclCriteria,     ''),
+        @datasetTypeCriteria       = Coalesce(AD_datasetTypeCriteria,     ''),
+        @scanTypeCriteria          = Coalesce(AD_scanTypeCriteria,        ''),
+        @scanTypeExclCriteria      = Coalesce(AD_scanTypeExclCriteria,    ''),
+        @labellingInclCriteria     = Coalesce(AD_labellingInclCriteria,   ''),
+        @labellingExclCriteria     = Coalesce(AD_labellingExclCriteria,   ''),
+        @separationTypeCriteria    = Coalesce(AD_separationTypeCriteria,  ''),
+        @scanCountMin              = Coalesce(AD_scanCountMinCriteria,     0),
+        @scanCountMax              = Coalesce(AD_scanCountMaxCriteria,     0),
+        @analysisToolName          = Coalesce(AD_analysisToolName,        ''),
+        @paramFileName             = Coalesce(AD_parmFileName,            ''),
+        @settingsFileName          = Coalesce(AD_settingsFileName,        ''),
+        @proteinCollectionList     = Coalesce(AD_proteinCollectionList,   ''),
+        @organismDBName            = Coalesce(AD_organismDBName,          '')
     FROM T_Predefined_Analysis
-    WHERE (AD_ID = @ruleID )
+    WHERE AD_ID = @ruleID
 
 /*
-    print 'InstrumentClass: ' + @instrumentClassCriteria
-    print 'CampaignName: ' + @campaignNameCriteria
-    print 'Experiment: ' + @experimentNameCriteria
-    print 'InstrumentName: ' + @instrumentNameCriteria
-    print 'InstrumentExcl: ' + @instrumentExclCriteria
-    print 'OrganismName: ' + @organismNameCriteria
-    print 'LabellingIncl: ' + @labellingInclCriteria
-    print 'LabellingExcl: ' + @labellingExclCriteria
-    print 'DatasetName: ' + @datasetNameCriteria
-    print 'DatasetType: ' + @datasetTypeCriteria
-    print 'ExperimentComment: ' + @experimentCommentCriteria
-    print 'SeparationType: ' + @separationTypeCriteria
-    print 'CampaignExcl: ' + @campaignExclCriteria
-    print 'ExperimentExcl: ' + @experimentExclCriteria
-    print 'DatasetExcl: ' + @datasetExclCriteria
+    Print 'InstrumentClass:   ' + @instrumentClassCriteria;
+    Print 'InstrumentName:    ' + @instrumentNameCriteria;
+    Print 'InstrumentExcl:    ' + @instrumentExclCriteria;
+    Print 'CampaignName:      ' + @campaignNameCriteria;
+    Print 'CampaignExcl:      ' + @campaignExclCriteria;
+    Print 'Experiment:        ' + @experimentNameCriteria;
+    Print 'ExperimentExcl:    ' + @experimentExclCriteria;
+    Print 'ExperimentComment: ' + @experimentCommentCriteria;
+    Print 'OrganismName:      ' + @organismNameCriteria;
+    Print 'DatasetName:       ' + @datasetNameCriteria;
+    Print 'DatasetExcl:       ' + @datasetExclCriteria;
+    Print 'DatasetType:       ' + @datasetTypeCriteria;
+    Print 'ScanTypeIncl:      ' + @scanTypeCriteria
+    Print 'ScanTypeExcl:      ' + @scanTypeExclCriteria
+    Print 'LabellingIncl:     ' + @labellingInclCriteria;
+    Print 'LabellingExcl:     ' + @labellingExclCriteria;
+    Print 'SeparationType:    ' + @separationTypeCriteria;
+    Print 'ScanCountMin:      ' + @scanCountMin;
+    Print 'ScanCountMax:      ' + @scanCountMax;
 */
 
     Set @S = ''
@@ -148,8 +159,35 @@ AS
     If @campaignNameCriteria <> ''
         Set @SqlWhere = @SqlWhere + ' AND (Campaign LIKE ''' + @campaignNameCriteria + ''')'
 
+    If @campaignExclCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (NOT Campaign LIKE ''' + @campaignExclCriteria + ''')'
+
     If @experimentNameCriteria <> ''
         Set @SqlWhere = @SqlWhere + ' AND (Experiment LIKE ''' + @experimentNameCriteria + ''')'
+
+    If @experimentExclCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (NOT Experiment LIKE ''' + @experimentExclCriteria + ''')'
+
+    If @experimentCommentCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (Experiment_Comment LIKE ''' + @experimentCommentCriteria + ''')'
+
+    If @organismNameCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (Organism LIKE ''' + @organismNameCriteria + ''')'
+
+    If @datasetNameCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (Dataset LIKE ''' + @datasetNameCriteria + ''')'
+
+    If @datasetExclCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (NOT Dataset LIKE ''' + @datasetExclCriteria + ''')'
+
+    If @datasetTypeCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (Dataset_Type LIKE ''' + @datasetTypeCriteria + ''')'
+
+    If @scanTypeCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (Scan_Types LIKE ''' + @scanTypeCriteria + ''')'
+
+    If @scanTypeExclCriteria <> ''
+        Set @SqlWhere = @SqlWhere + ' AND (NOT Scan_Types LIKE ''' + @scanTypeExclCriteria + ''')'
 
     If @labellingInclCriteria <> ''
         Set @SqlWhere = @SqlWhere + ' AND (Experiment_Labelling LIKE ''' + @labellingInclCriteria + ''')'
@@ -160,42 +198,23 @@ AS
     If @separationTypeCriteria <> ''
         Set @SqlWhere = @SqlWhere + ' AND (Separation_Type LIKE ''' + @separationTypeCriteria + ''')'
 
-    If @campaignExclCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (NOT Campaign LIKE ''' + @campaignExclCriteria + ''')'
-
-    If @experimentExclCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (NOT Experiment LIKE ''' + @experimentExclCriteria + ''')'
-
-    If @datasetExclCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (NOT Dataset LIKE ''' + @datasetExclCriteria + ''')'
-
-    If @organismNameCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (Organism LIKE ''' + @organismNameCriteria + ''')'
-
-    If @datasetNameCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (Dataset LIKE ''' + @datasetNameCriteria + ''')'
-
-    If @datasetTypeCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (Dataset_Type LIKE ''' + @datasetTypeCriteria + ''')'
-
-    If @experimentCommentCriteria <> ''
-        Set @SqlWhere = @SqlWhere + ' AND (Experiment_Comment LIKE ''' + @experimentCommentCriteria + ''')'
-
+    If @scanCountMin > 0 Or @scanCountMax > 0
+        Set @SqlWhere = @SqlWhere + ' AND (Scan_Count BETWEEN ' + Cast(@scanCountMin AS varchar(12)) + ' AND ' + Cast(@scanCountMax AS varchar(12)) + ')'
 
     If @InfoOnly = 0
     Begin
         Set @S = @S + ' SELECT Dataset AS dataset, ID AS id,'
         Set @S = @S +        ' InstrumentClass AS instrument_class, Instrument AS instrument,'
         Set @S = @S +        ' Campaign AS campaign, Experiment AS experiment, Organism AS organism,'
-        Set @S = @S +        ' Experiment_Labelling As exp_labelling, Experiment_Comment As exp_comment,'
-        Set @S = @S +        ' Dataset_Comment As ds_comment, Dataset_Type As ds_type,'
-        Set @S = @S +        ' Rating As ds_rating, Rating_Name AS rating,'
-        Set @S = @S +        ' Separation_Type As sep_type,'
-        Set @S = @S +        ' ''' + @analysisToolName + ''' AS tool,'
-        Set @S = @S +        ' ''' + @paramFileName + ''' AS parameter_file,'
-        Set @S = @S +        ' ''' + @settingsFileName + ''' AS settings_file,'
+        Set @S = @S +        ' Experiment_Labelling AS exp_labelling, Experiment_Comment AS exp_comment,'
+        Set @S = @S +        ' Dataset_Comment AS ds_comment, Dataset_Type AS ds_type, Scan_Types AS scan_types,'
+        Set @S = @S +        ' Rating AS ds_rating, Rating_Name AS rating,'
+        Set @S = @S +        ' Separation_Type AS sep_type, scan_count,'
+        Set @S = @S +        ' ''' + @analysisToolName +      ''' AS tool,'
+        Set @S = @S +        ' ''' + @paramFileName +         ''' AS parameter_file,'
+        Set @S = @S +        ' ''' + @settingsFileName +      ''' AS settings_file,'
         Set @S = @S +        ' ''' + @proteinCollectionList + ''' AS protein_collections,'
-        Set @S = @S +        ' ''' + @organismDBName + ''' AS legacy_fasta'
+        Set @S = @S +        ' ''' + @organismDBName +        ''' AS legacy_fasta'
         If @PopulateTempTable <> 0
             Set @S = @S + ' INTO T_Tmp_PredefinedAnalysisDatasets'
         Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'
@@ -217,6 +236,7 @@ AS
 
         Set @S = @S +          ' ''' + @experimentNameCriteria +    ''' AS ExperimentNameCriteria,'
         Set @S = @S +          ' ''' + @experimentExclCriteria +    ''' AS ExperimentExclCriteria,'
+        Set @S = @S +          ' ''' + @experimentCommentCriteria + ''' AS ExpCommentCriteria,'
 
         Set @S = @S +          ' ''' + @organismNameCriteria +      ''' AS OrganismNameCriteria,'
 
@@ -224,10 +244,15 @@ AS
         Set @S = @S +          ' ''' + @datasetExclCriteria +       ''' AS DatasetExclCriteria,'
         Set @S = @S +          ' ''' + @datasetTypeCriteria +       ''' AS DatasetTypeCriteria,'
 
-        Set @S = @S +          ' ''' + @experimentCommentCriteria + ''' AS ExpCommentCriteria,'
+        Set @S = @S +          ' ''' + @scanTypeCriteria +          ''' AS ScanTypeCriteria,'
+        Set @S = @S +          ' ''' + @scanTypeExclCriteria +      ''' AS ScanTypeExclCriteria,'
+
         Set @S = @S +          ' ''' + @labellingInclCriteria +     ''' AS LabellingInclCriteria,'
         Set @S = @S +          ' ''' + @labellingExclCriteria +     ''' AS LabellingExclCriteria,'
-        Set @S = @S +          ' ''' + @separationTypeCriteria +    ''' AS SeparationTypeCriteria'
+        Set @S = @S +          ' ''' + @separationTypeCriteria +    ''' AS SeparationTypeCriteria,'
+
+        Set @S = @S +          ' ' + Cast(@scanCountMin As varchar(12)) +  ' AS ScanCountMin,'
+        Set @S = @S +          ' ' + Cast(@scanCountMax As varchar(12)) +  ' AS ScanCountMax'
 
         Set @S = @S + ' FROM V_Predefined_Analysis_Dataset_Info'
         Set @S = @S + ' ' + @SqlWhere
@@ -252,7 +277,7 @@ AS
     -- Exit
     ---------------------------------------------------
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_datasets] TO [DDL_Viewer] AS [dbo]
