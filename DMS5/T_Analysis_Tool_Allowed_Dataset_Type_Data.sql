@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool_Allowed_Dataset_Type] ******/
-/****** RowCount: 1370 ******/
+/****** RowCount: 1384 ******/
 /****** Columns: Analysis_Tool_ID, Dataset_Type, Comment ******/
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (1,'HMS-CID/ETD-HMSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (1,'HMS-CID/ETD-MSn','')
@@ -999,5 +999,5 @@ INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-HMSn','Must b
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-PQD-CID/ETD-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-PQD-ETD-MSn','')
-INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'MALDI-HMS','')
-INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'MS-CID/ETD-MSn','')
+INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'IMS-HMS','')
+INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'IMS-HMS-HMSn','')

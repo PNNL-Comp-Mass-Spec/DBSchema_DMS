@@ -18,10 +18,10 @@ CREATE PROCEDURE [dbo].[evaluate_predefined_analysis_rules]
 **          analysisToolName varchar(64),
 **          paramFileName varchar(255),
 **          settingsFileName varchar(128),
-**          organismDBName varchar(128),
 **          organismName varchar(128),
 **          proteinCollectionList varchar(4000),
 **          proteinOptionsList varchar(256),
+**          organismDBName varchar(128),
 **          ownerUsername varchar(128),
 **          comment varchar(128),
 **          associatedProcessorGroup varchar(64),
@@ -78,6 +78,7 @@ CREATE PROCEDURE [dbo].[evaluate_predefined_analysis_rules]
 **                         - Rename columns in temporary table #JX, and add column predefine_id
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          12/07/2023 mem - Add support for scan type inclusion or exclusion
+**          12/08/2023 mem - Store or show standalone FASTA files (organism DBs) after protein collections
 **
 *****************************************************/
 (
@@ -258,9 +259,9 @@ AS
         AD_paramFileName           varchar (255) NOT NULL,
         AD_settingsFileName        varchar (255) NULL,
         AD_organismName            varchar (128) NOT NULL,
-        AD_organismDBName          varchar (128) NOT NULL,
         AD_proteinCollectionList   varchar(4000),
         AD_proteinOptionsList      varchar(256),
+        AD_organismDBName          varchar (128) NOT NULL,
         AD_priority                int NOT NULL,
         AD_nextLevel               int NULL,
         Trigger_Before_Disposition tinyint NOT NULL,
@@ -355,9 +356,9 @@ AS
         AD_paramFileName,
         AD_settingsFileName,
         AD_organismName,
-        AD_organismDBName,
         AD_proteinCollectionList,
         AD_proteinOptionsList,
+        AD_organismDBName,
         AD_priority,
         AD_nextLevel,
         Trigger_Before_Disposition,
@@ -391,9 +392,9 @@ AS
         PA.AD_parmFileName,
         PA.AD_settingsFileName,
         Org.OG_Name,
-        PA.AD_organismDBName,
         PA.AD_proteinCollectionList,
         PA.AD_proteinOptionsList,
+        PA.AD_organismDBName,
         PA.AD_priority,
         PA.AD_nextLevel,
         PA.Trigger_Before_Disposition,
@@ -407,18 +408,18 @@ AS
         AND ((@InstrumentName          LIKE PA.AD_instrumentNameCriteria)  OR (PA.AD_instrumentNameCriteria = ''))
         AND (NOT (@InstrumentName      LIKE PA.AD_instrumentExclCriteria)  OR (PA.AD_instrumentExclCriteria = ''))
         AND ((@Campaign                LIKE PA.AD_campaignNameCriteria)    OR (PA.AD_campaignNameCriteria = ''))
+        AND (NOT (@Campaign            LIKE PA.AD_campaignExclCriteria)    OR (PA.AD_campaignExclCriteria = ''))
         AND ((@Experiment              LIKE PA.AD_experimentNameCriteria)  OR (PA.AD_experimentNameCriteria = ''))
+        AND (NOT (@Experiment          LIKE PA.AD_experimentExclCriteria)  OR (PA.AD_experimentExclCriteria = ''))
+        AND ((@ExperimentComment       LIKE PA.AD_expCommentCriteria)      OR (PA.AD_expCommentCriteria = ''))
         AND ((@Dataset                 LIKE PA.AD_datasetNameCriteria)     OR (PA.AD_datasetNameCriteria = ''))
+        AND (NOT (@Dataset             LIKE PA.AD_datasetExclCriteria)     OR (PA.AD_datasetExclCriteria = ''))
         AND ((@DatasetType             LIKE PA.AD_datasetTypeCriteria)     OR (PA.AD_datasetTypeCriteria = ''))
         AND ((@ScanTypes               LIKE PA.AD_scanTypeCriteria)        OR (PA.AD_scanTypeCriteria = ''))
         AND (NOT (@ScanTypes           LIKE PA.AD_scanTypeExclCriteria)    OR (PA.AD_scanTypeExclCriteria = ''))
-        AND ((@ExperimentComment       LIKE PA.AD_expCommentCriteria)      OR (PA.AD_expCommentCriteria = ''))
         AND ((@ExperimentLabelling     LIKE PA.AD_labellingInclCriteria)   OR (PA.AD_labellingInclCriteria = ''))
         AND (NOT (@ExperimentLabelling LIKE PA.AD_labellingExclCriteria)   OR (PA.AD_labellingExclCriteria = ''))
         AND ((@SeparationType          LIKE PA.AD_separationTypeCriteria)  OR (PA.AD_separationTypeCriteria = ''))
-        AND (NOT (@Campaign            LIKE PA.AD_campaignExclCriteria)    OR (PA.AD_campaignExclCriteria = ''))
-        AND (NOT (@Experiment          LIKE PA.AD_experimentExclCriteria)  OR (PA.AD_experimentExclCriteria = ''))
-        AND (NOT (@Dataset             LIKE PA.AD_datasetExclCriteria)     OR (PA.AD_datasetExclCriteria = ''))
         AND ((@Organism                LIKE PA.AD_organismNameCriteria)    OR (PA.AD_organismNameCriteria = ''))
         AND (
               -- Note that we always create jobs for predefines with Trigger_Before_Disposition = 1
@@ -473,8 +474,9 @@ AS
             [Separation Type Crit.],
             [ScanCount Min], [ScanCount Max],
             [Param File], [Settings File],
-            Organism, [Organism DB],
+            Organism,
             [Prot. Coll.], [Prot. Opts.],
+            [Organism DB],
             [Special Proc.],
             Priority, [Processor Group])
         SELECT  AD_level, AD_sequence, AD_ID, AD_nextLevel,
@@ -500,8 +502,9 @@ AS
                 AD_separationTypeCriteria,
                 AD_scanCountMin, AD_scanCountMax,
                 AD_paramFileName, AD_settingsFileName,
-                AD_organismName, AD_organismDBName,
+                AD_organismName,
                 AD_proteinCollectionList, AD_proteinOptionsList,
+                AD_organismDBName,
                 Special_Processing,
                 AD_priority, '' AS [Processor Group]
         FROM #AD
@@ -529,7 +532,7 @@ AS
     ---------------------------------------------------
 
     ---------------------------------------------------
-    -- temporary table to hold created jobs
+    -- Temporary table to hold created jobs
     ---------------------------------------------------
 
     CREATE TABLE #JB (
@@ -538,10 +541,10 @@ AS
         analysisToolName varchar(64),
         paramFileName varchar(255),
         settingsFileName varchar(128),
-        organismDBName varchar(128),
         organismName varchar(128),
         proteinCollectionList varchar(4000),
         proteinOptionsList varchar(256),
+        organismDBName varchar(128),
         ownerUsername varchar(128),
         comment varchar(128),
         associatedProcessorGroup varchar(64),
@@ -560,10 +563,11 @@ AS
     End
 
     ---------------------------------------------------
-    -- cycle through all rules in the holding table
+    -- Cycle through all rules in the holding table
     -- in evaluation order applying precedence rules
     -- and creating jobs as appropriate
     ---------------------------------------------------
+
     Declare @level int
     Declare @sequence int
     Declare @RuleNextLevel int
@@ -571,7 +575,7 @@ AS
     Declare @priority int
     Declare @paramFileName varchar(255)
     Declare @settingsFileName varchar(255)
-    Declare @organismDBName varchar(128)
+
     Declare @proteinCollectionList varchar(4000)
     Declare @proteinOptionsList varchar(256)
 
@@ -579,6 +583,8 @@ AS
 
     Declare @analysisToolName varchar(64)
     Declare @organismName varchar(128)
+    Declare @organismDBName varchar(128)
+
     Declare @comment varchar(128)
     Declare @associatedProcessorGroup varchar(64)
     Declare @predefineRuleID int
@@ -618,9 +624,9 @@ AS
             @paramFileName = AD_paramFileName,
             @settingsFileName = AD_settingsFileName,
             @organismName = AD_organismName,
-            @organismDBName = AD_organismDBName,
             @proteinCollectionList = AD_proteinCollectionList,
             @proteinOptionsList = AD_proteinOptionsList,
+            @organismDBName = AD_organismDBName,
             @priority = AD_priority,
             @RuleNextLevel = AD_nextLevel,
             @associatedProcessorGroup = '',
@@ -812,10 +818,10 @@ AS
                     analysisToolName,
                     paramFileName,
                     settingsFileName,
-                    organismDBName,
                     organismName,
                     proteinCollectionList,
                     proteinOptionsList,
+                    organismDBName,
                     ownerUsername,
                     comment,
                     associatedProcessorGroup,
@@ -829,10 +835,10 @@ AS
                     @analysisToolName,
                     @paramFileName,
                     @settingsFileName,
-                    @organismDBName,
                     @organismName,
                     @proteinCollectionListValidated,
                     @proteinOptionsList,
+                    @organismDBName,
                     @ownerUsername,
                     @comment,
                     @associatedProcessorGroup,
@@ -968,10 +974,10 @@ AS
             analysisToolName,
             paramFileName,
             settingsFileName,
-            organismDBName,
             organismName,
             proteinCollectionList,
             proteinOptionsList,
+            organismDBName,
             ownerUsername,
             comment,
             associatedProcessorGroup,
@@ -986,10 +992,10 @@ AS
             analysisToolName,
             paramFileName,
             settingsFileName,
-            organismDBName,
             organismName,
             proteinCollectionList,
             proteinOptionsList,
+            organismDBName,
             ownerUsername,
             comment,
             associatedProcessorGroup,
@@ -1003,7 +1009,7 @@ AS
     -- Exit
     ---------------------------------------------------
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[evaluate_predefined_analysis_rules] TO [DDL_Viewer] AS [dbo]
