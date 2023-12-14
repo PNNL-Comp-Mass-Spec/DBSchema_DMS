@@ -6,10 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[add_missing_predefined_jobs]
 /****************************************************
 **
-**  Desc:   Looks for Datasets that don't have predefined analysis jobs
-**          but possibly should.  Calls schedule_predefined_analysis_jobs for each.
-**          This procedure is intended to be run once per day to add missing jobs
-**          for datasets created within the last 30 days (but more than 12 hours ago).
+**  Desc:   Looks for datasets that don't have predefined analysis jobs but possibly should; calls schedule_predefined_analysis_jobs for each
+**          This procedure is intended to be run once per day to add missing jobs for datasets created within the last 30 days (but more than 12 hours ago)
 **
 **  Auth:   mem
 **  Date:   05/23/2008 mem - Ticket #675
@@ -32,6 +30,7 @@ CREATE PROCEDURE [dbo].[add_missing_predefined_jobs]
 **          11/28/2022 mem - Always log an error if schedule_predefined_analysis_jobs has a non-zero return code
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          12/13/2023 mem - Call procedure create_pending_predefined_analysis_tasks to create jobs
 **
 *****************************************************/
 (
@@ -430,54 +429,76 @@ AS
                     Begin
                         Set @currentLocation = 'Calling schedule_predefined_analysis_jobs for ' + @datasetName
 
-                        Exec evaluate_predefined_analysis_rules @datasetName, @previewOutputType, @message = @message output, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @analysisToolNameFilter=@analysisToolNameFilter
+                        Exec evaluate_predefined_analysis_rules 
+                                @datasetName, 
+                                @previewOutputType, 
+                                @message = @message output, 
+                                @excludeDatasetsNotReleased = @excludeDatasetsNotReleased, 
+                                @analysisToolNameFilter = @analysisToolNameFilter
                     End
 
 
                     Set @currentLocation = 'Calling schedule_predefined_analysis_jobs for ' + @datasetName
                     Set @startDate = GetDate()
 
-                    Exec @myError = schedule_predefined_analysis_jobs @datasetName, @analysisToolNameFilter=@analysisToolNameFilter, @excludeDatasetsNotReleased=@excludeDatasetsNotReleased, @infoOnly=@infoOnly
+                    Exec @myError = schedule_predefined_analysis_jobs 
+                            @datasetName, 
+                            @analysisToolNameFilter = @analysisToolNameFilter, 
+                            @excludeDatasetsNotReleased = @excludeDatasetsNotReleased, 
+                            @infoOnly = @infoOnly
 
                     If @myError = 0 And @infoOnly = 0
                     Begin -- <e1>
-                        -- See if jobs were actually added by querying T_Analysis_Job
 
-                        Set @jobCountAdded = 0
+                        -- If the dataset has a row with state "New" in T_Predefined_Analysis_Scheduling_Queue,
+                        -- use create_pending_predefined_analysis_tasks to process the predefine rules and possibly create jobs
 
-                        SELECT @jobCountAdded = COUNT(*)
-                        FROM T_Analysis_Job
-                        WHERE AJ_DatasetID = @datasetID AND
-                                AJ_Created >= @startDate
-                        --
-                        SELECT @myError = @@error, @myRowCount = @@rowcount
+                        If Exists (SELECT item FROM t_predefined_analysis_scheduling_queue WHERE dataset_id = @datasetID And State = 'New')
+                        Begin
 
-                        If @jobCountAdded > 0
-                        Begin -- <f>
-                            UPDATE T_Analysis_Job
-                            SET AJ_Comment = IsNull(AJ_Comment, '') + ' (missed predefine)'
+                            EXEC create_pending_predefined_analysis_tasks
+                                    @maxDatasetsToProcess = 0,
+                                    @datasetID            = @datasetID,
+                                    @infoOnly             = 0
+
+                            -- See if jobs were actually added by querying T_Analysis_Job
+
+                            Set @jobCountAdded = 0
+
+                            SELECT @jobCountAdded = COUNT(*)
+                            FROM T_Analysis_Job
                             WHERE AJ_DatasetID = @datasetID AND
                                     AJ_Created >= @startDate
                             --
                             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                            If @myRowCount <> @jobCountAdded
-                            Begin
-                                Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job(s) for dataset ' + @datasetName + ', but updated the comment for ' + convert(varchar(12), @myRowCount) + ' job(s); mismatch is unexpected'
-                                Exec post_log_entry 'Error', @message, 'add_missing_predefined_jobs'
+                            If @jobCountAdded > 0
+                            Begin -- <f>
+                                UPDATE T_Analysis_Job
+                                SET AJ_Comment = IsNull(AJ_Comment, '') + ' (missed predefine)'
+                                WHERE AJ_DatasetID = @datasetID AND
+                                        AJ_Created >= @startDate
+                                --
+                                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                                If @myRowCount <> @jobCountAdded
+                                Begin
+                                    Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job(s) for dataset ' + @datasetName + ', but updated the comment for ' + convert(varchar(12), @myRowCount) + ' job(s); mismatch is unexpected'
+                                    Exec post_log_entry 'Error', @message, 'add_missing_predefined_jobs'
+                                End
+
+                                Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job'
+                                If @jobCountAdded <> 1
+                                Begin
+                                    Set @message = @message + 's'
+                                End
+
+                                Set @message = @message + ' for dataset ' + @datasetName
+
+                                Exec post_log_entry 'Warning', @message, 'add_missing_predefined_jobs'
+
+                                Set @datasetsWithNewJobs = @datasetsWithNewJobs + 1
                             End
-
-                            Set @message = 'Added ' + Convert(varchar(12), @jobCountAdded) + ' missing predefined analysis job'
-                            If @jobCountAdded <> 1
-                            Begin
-                                Set @message = @message + 's'
-                            End
-
-                            Set @message = @message + ' for dataset ' + @datasetName
-
-                            Exec post_log_entry 'Warning', @message, 'add_missing_predefined_jobs'
-
-                            Set @datasetsWithNewJobs = @datasetsWithNewJobs + 1
                         End
                     End -- </e1>
                     Else
