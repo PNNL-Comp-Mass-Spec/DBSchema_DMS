@@ -11,11 +11,16 @@ CREATE PROCEDURE [dbo].[create_pending_predefined_analysis_tasks]
 **
 **      Should be called periodically by a SQL Server Agent job
 **
+**  Arguments:
+**    @maxDatasetsToProcess     Set to a positive number to limit the number of affected datasets
+**    @datasetID                When non-zero, only create jobs for the given dataset ID
+**    @infoOnly                 When 1, preview jobs that would be created
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
-**  Date:   08/26/2010 grk - initial release
-**          08/26/2010 mem - Added @MaxDatasetsToProcess and @InfoOnly
+**  Date:   08/26/2010 grk - Initial release
+**          08/26/2010 mem - Add arguments @maxDatasetsToProcess and @infoOnly
 **                         - Now passing @PreventDuplicateJobs to create_predefined_analysis_jobs
 **          03/27/2013 mem - Now obtaining Dataset name from T_Dataset
 **          07/21/2016 mem - Fix logic error examining @myError
@@ -23,21 +28,23 @@ CREATE PROCEDURE [dbo].[create_pending_predefined_analysis_tasks]
 **          03/25/2020 mem - Append a row to T_Predefined_Analysis_Scheduling_Queue_History for each dataset processed
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          12/13/2023 mem - Add @datasetID, which can be used to process a single dataset
 **
 *****************************************************/
 (
     @maxDatasetsToProcess int = 0,            -- Set to a positive number to limit the number of affected datasets
+    @datasetID int = 0,
     @infoOnly tinyint = 0
 )
 AS
     Set nocount on
 
-    Declare @myError INT = 0
-    Declare @myRowCount INT = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Declare @message varchar(max) = ''
 
-    Declare @datasetID int
+    Declare @currentDatasetID int
     Declare @datasetName varchar(128)
     Declare @datasetRatingID smallint
     Declare @datasetStateId int
@@ -55,8 +62,9 @@ AS
     -- Validate the inputs
     ---------------------------------------------------
 
-    Set @MaxDatasetsToProcess = IsNull(@MaxDatasetsToProcess, 0)
-    Set @InfoOnly = IsNull(@InfoOnly, 0)
+    Set @maxDatasetsToProcess = IsNull(@maxDatasetsToProcess, 0)
+    Set @datasetID = IsNull(@datasetID, 0)
+    Set @infoOnly = IsNull(@infoOnly, 0)
 
     ---------------------------------------------------
     -- Process "New" entries in T_Predefined_Analysis_Scheduling_Queue
@@ -72,7 +80,7 @@ AS
         Set @datasetStateId = 0
 
         SELECT TOP 1 @currentItemID = SQ.Item,
-                     @datasetID = SQ.Dataset_ID,
+                     @currentDatasetID = SQ.Dataset_ID,
                      @datasetName = DS.Dataset_Num,
                      @datasetRatingID = DS.DS_Rating,
                      @datasetStateId = DS.DS_state_ID,
@@ -84,7 +92,8 @@ AS
              INNER JOIN T_Dataset DS
                ON SQ.Dataset_ID = DS.Dataset_ID
         WHERE SQ.State = 'New' AND
-              SQ.Item > @currentItemID
+              SQ.Item > @currentItemID AND
+              (@datasetID = 0 OR SQ.Dataset_ID = @datasetID)
         ORDER BY SQ.Item ASC
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -95,7 +104,7 @@ AS
         End
         Else
         Begin
-            If @InfoOnly <> 0
+            If @infoOnly <> 0
             Begin
                 PRINT 'Process Item ' + Convert(varchar(12), @currentItemID) + ': ' + @datasetName
             End
@@ -121,13 +130,13 @@ AS
                                                 @AnalysisToolNameFilter,
                                                 @ExcludeDatasetsNotReleased,
                                                 @PreventDuplicateJobs,
-                                                @InfoOnly,
+                                                @infoOnly,
                                                 @message output,
                                                 @JobsCreated output
 
             End
 
-            If @InfoOnly = 0
+            If @infoOnly = 0
             Begin
                 UPDATE dbo.T_Predefined_Analysis_Scheduling_Queue
                 SET Message = @message,
@@ -143,20 +152,20 @@ AS
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                INSERT INTO T_Predefined_Analysis_Scheduling_Queue_History( Dataset_ID, DS_Rating, Jobs_Created )
-                VALUES(@datasetID, @datasetRatingID, ISNULL(@JobsCreated, 0))
+                INSERT INTO T_Predefined_Analysis_Scheduling_Queue_History ( Dataset_ID, DS_Rating, Jobs_Created )
+                VALUES (@currentDatasetID, @datasetRatingID, ISNULL(@JobsCreated, 0))
             END
 
             Set @DatasetsProcessed = @DatasetsProcessed + 1
         End
 
-        If @MaxDatasetsToProcess > 0 And @DatasetsProcessed >= @MaxDatasetsToProcess
+        If @maxDatasetsToProcess > 0 And @DatasetsProcessed >= @maxDatasetsToProcess
         Begin
             Set @done = 1
         End
     End
 
-    If @InfoOnly <> 0
+    If @infoOnly <> 0
     Begin
         If @DatasetsProcessed = 0
             Set @message = 'No candidates were found in T_Predefined_Analysis_Scheduling_Queue'
@@ -170,7 +179,7 @@ AS
         Print @message
     End
 
-    REturn 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[create_pending_predefined_analysis_tasks] TO [DDL_Viewer] AS [dbo]
