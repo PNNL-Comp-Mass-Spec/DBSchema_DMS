@@ -7,15 +7,16 @@ CREATE FUNCTION [dbo].[append_to_text]
 /****************************************************
 **
 **  Desc:   Appends a new string to an existing string, using the specified delimiter
+**
 **          Use @addDuplicateText = 0 to prevent duplicate text from being added
 **          Use @addDuplicateText = 1 to allow duplicate text to be added
 **
-**  Returns the updated comment
+**  Returns the combined strings
 **
 **  Auth:   mem
 **  Date:   05/12/2010 mem - Initial version
 **          06/12/2018 mem - Add parameter @maxLength
-***         08/20/2022 mem - Do not append the delimiter if already present at the end of the base text
+**          08/20/2022 mem - Do not append the delimiter if already present at the end of the base text
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **
 *****************************************************/
