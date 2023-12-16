@@ -40,6 +40,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
 **          02/16/2023 mem - Add @batchGroupID and @batchGroupOrder
 **                         - Rename @requestedInstrument to @requestedInstrumentGroup
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          12/15/2023 mem - Fix bug that sent the wrong value to @requestedBatchPriority when calling validate_requested_run_batch_params
 **
 *****************************************************/
 (
@@ -97,7 +98,7 @@ AS
             @name = @name,
             @description = @description,
             @ownerUsername = @ownerUsername,
-            @requestedBatchPriority = @requestedCompletionDate,
+            @requestedBatchPriority = @requestedBatchPriority,
             @requestedCompletionDate = @requestedCompletionDate,
             @justificationHighPriority = @justificationHighPriority,
             @requestedInstrumentGroup = @requestedInstrumentGroup,
