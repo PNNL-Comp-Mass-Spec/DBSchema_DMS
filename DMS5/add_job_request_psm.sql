@@ -7,10 +7,10 @@ CREATE PROCEDURE [dbo].[add_job_request_psm]
 /****************************************************
 **
 **  Desc:
-**  Create a job from simplified interface
+**      Used by the MS/MS job wizard to create a new analysis job request
+**      https://dms2.pnl.gov/analysis_job_request_psm/create
 **
 **  Return values: 0: success, otherwise, error code
-**
 **
 **  Auth:   grk
 **  Date:   11/14/2012 grk - Initial release
@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[add_job_request_psm]
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/23/2018 mem - Use a non-zero return code when @mode is 'preview'
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          12/12/2023 mem - Remove procedure argument @organismName since unused
 **
 *****************************************************/
 (
@@ -30,7 +31,6 @@ CREATE PROCEDURE [dbo].[add_job_request_psm]
     @datasets varchar(max) output,
     @comment varchar(512),
     @ownerUsername varchar(64),
-    @organismName varchar(128),
     @protCollNameList varchar(4000),
     @protCollOptionsList varchar(256),
     @toolName varchar(64),
