@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Analysis_Tool_Allowed_Dataset_Type] ******/
-/****** RowCount: 1384 ******/
+/****** RowCount: 1387 ******/
 /****** Columns: Analysis_Tool_ID, Dataset_Type, Comment ******/
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (1,'HMS-CID/ETD-HMSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (1,'HMS-CID/ETD-MSn','')
@@ -782,6 +782,9 @@ INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'HMS-HMSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'HMS-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'HMS-PQD-CID/ETD-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'HMS-PQD-ETD-MSn','')
+INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'IMS-HMS','')
+INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'IMS-HMS-HMSn','')
+INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'IMS-HMS-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'MRM','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'MS','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (41,'MS-CID/ETD-MSn','')
@@ -998,6 +1001,3 @@ INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-HCD-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-HMSn','Must be centroided HMSn spectra')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-MSn','')
 INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-PQD-CID/ETD-MSn','')
-INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'HMS-PQD-ETD-MSn','')
-INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'IMS-HMS','')
-INSERT INTO [T_Analysis_Tool_Allowed_Dataset_Type] VALUES (68,'IMS-HMS-HMSn','')
