@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 /****************************************************
 **
@@ -22,6 +21,7 @@ CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 **                         - When @fullRefresh is 0, use "last updated" times to limit the batch IDs to update
 **                         - Fix long-running merge queries by using temp tables to store stats
 **                         - Post a log entry if the runtime exceeds 30 seconds
+**          01/02/2024 mem - Fix column name bug when joining V_Requested_Run_Queue_Times to T_Requested_Run
 **
 *****************************************************/
 (
@@ -238,7 +238,7 @@ AS
                                 INNER JOIN #Tmp_BatchIDs
                                   ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
                                 INNER JOIN V_Requested_Run_Queue_Times AS QT
-                                  ON QT.requested_run_id = RR.RDS_BatchID
+                                  ON QT.requested_run_id = RR.ID
                                 INNER JOIN T_Dataset DS
                                   ON RR.DatasetID = DS.dataset_id
                                 INNER JOIN T_Instrument_Name InstName
@@ -398,6 +398,5 @@ AS
     End
 
     Return @myError
-
 
 GO
