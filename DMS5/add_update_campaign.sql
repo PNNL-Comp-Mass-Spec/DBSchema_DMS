@@ -18,7 +18,7 @@ CREATE PROCEDURE [dbo].[add_update_campaign]
 **          02/05/2010 grk - Split team member field
 **          02/07/2010 grk - Added validation for campaign name
 **          02/07/2010 mem - No longer validating @progmgrUsername or @piUsername in this procedure since this is now handled by update_research_team_for_campaign
-**          03/17/2010 grk - DataReleaseRestrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
+**          03/17/2010 grk - Data release restrictions (Ticket http://prismtrac.pnl.gov/trac/ticket/758)
 **          04/21/2010 grk - try-catch for error handling
 **          10/27/2011 mem - Added parameter @fractionEMSLFunded
 **          12/01/2011 mem - Updated @fractionEMSLFunded to be a required value
@@ -43,10 +43,11 @@ CREATE PROCEDURE [dbo].[add_update_campaign]
 **          09/29/2021 mem - Assure that EUS Usage Type is 'USER_ONSITE' if associated with a Resource Owner proposal
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          05/16/2022 mem - Fix potential arithmetic overflow error when parsing @fractionEMSLFunded
-**          02/13/2023 bcg - Rename parameters to progmgrUsername and piUsername
+**          02/13/2023 bcg - Rename parameters to @progmgrUsername and @piUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
 **          11/01/2023 mem - Remove unreachable code when validating campaign name
+**          01/04/2024 mem - Rename parameter to @dataReleaseRestriction and use new data release restriction column name in T_Campaign
 **
 *****************************************************/
 (
@@ -67,7 +68,7 @@ CREATE PROCEDURE [dbo].[add_update_campaign]
     @eusProposalList varchar(256),
     @organisms varchar(256),
     @experimentPrefixes varchar(256),
-    @dataReleaseRestrictions varchar(128),
+    @dataReleaseRestriction varchar(128),
     @fractionEMSLFunded varchar(24) = '0',  -- Value between 0 and 1
     @eusUsageType varchar(50) = 'USER_ONSITE',
     @mode varchar(12) = 'add', -- or 'update'
@@ -157,18 +158,18 @@ AS
     -- Resolve data release restriction name to ID
     ---------------------------------------------------
     --
-    Declare @dataReleaseRestrictionsID int = -1
+    Declare @dataReleaseRestrictionID int = -1
     --
-    SELECT @dataReleaseRestrictionsID = ID
+    SELECT @dataReleaseRestrictionID = ID
     FROM T_Data_Release_Restrictions
-    WHERE Name = @dataReleaseRestrictions
+    WHERE Name = @dataReleaseRestriction
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
     If @myError <> 0
         RAISERROR ('Error resolving data release restriction', 11, 6)
     --
-    If @dataReleaseRestrictionsID < 0
+    If @dataReleaseRestrictionID < 0
         RAISERROR ('Could not resolve data release restriction; please select a valid entry from the list', 11, 7)
 
     ---------------------------------------------------
@@ -354,7 +355,7 @@ AS
             CM_Experiment_Prefixes,
             CM_created,
             CM_Research_Team,
-            CM_Data_Release_Restrictions,
+            CM_Data_Release_Restriction,
             CM_Fraction_EMSL_Funded,
             CM_EUS_Usage_Type
         ) VALUES (
@@ -370,7 +371,7 @@ AS
             @experimentPrefixes,
             GETDATE(),
             @researchTeamID,
-            @dataReleaseRestrictionsID,
+            @dataReleaseRestrictionID,
             @fractionEMSLFundedToStore,
             @eusUsageTypeID
         )
@@ -412,7 +413,7 @@ AS
         Begin
             Exec alter_event_log_entry_user 1, @campaignID, @stateID, @callingUser
             Exec alter_event_log_entry_user 9, @campaignID, @percentEMSLFunded, @callingUser
-            Exec alter_event_log_entry_user 10, @campaignID, @dataReleaseRestrictionsID, @callingUser
+            Exec alter_event_log_entry_user 10, @campaignID, @dataReleaseRestrictionID, @callingUser
         End
 
     End -- add mode
@@ -442,7 +443,7 @@ AS
             CM_EUS_Proposal_List = @eusProposalList,
             CM_Organisms = @organisms,
             CM_Experiment_Prefixes = @experimentPrefixes,
-            CM_Data_Release_Restrictions = @dataReleaseRestrictionsID,
+            CM_Data_Release_Restriction = @dataReleaseRestrictionID,
             CM_Fraction_EMSL_Funded = @fractionEMSLFundedToStore,
             CM_EUS_Usage_Type = @eusUsageTypeID
         WHERE Campaign_Num = @campaignName
@@ -482,7 +483,7 @@ AS
         If Len(@callingUser) > 0
         Begin
             Exec alter_event_log_entry_user 9, @campaignID, @percentEMSLFunded, @callingUser
-            Exec alter_event_log_entry_user 10, @campaignID, @dataReleaseRestrictionsID, @callingUser
+            Exec alter_event_log_entry_user 10, @campaignID, @dataReleaseRestrictionID, @callingUser
         End
     End -- update mode
 
