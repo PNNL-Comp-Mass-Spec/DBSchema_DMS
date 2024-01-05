@@ -355,7 +355,7 @@ AS
     --
     If @myError <> 0
     Begin
-        Set @message = 'Error removing existing team membershipe'
+        Set @message = 'Error removing existing team membership'
         Goto Done
     End
 

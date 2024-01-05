@@ -453,7 +453,7 @@ AS
             RAISERROR ('Update operation failed: "%s"', 11, 14, @campaignName)
 
         ---------------------------------------------------
-        -- Update research team membershipe
+        -- Update research team membership
         ---------------------------------------------------
         --
         EXEC @myError = update_research_team_for_campaign

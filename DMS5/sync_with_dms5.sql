@@ -33,6 +33,7 @@ CREATE PROCEDURE [dbo].[sync_with_dms5]
 **          03/02/2023 mem - Use renamed table names
 **          10/10/2023 mem - Remove column Sample_Submission_Item_Count from T_Sample_Prep_Request
 **          01/04/2024 mem - Use new data release restriction column name in T_Campaign
+**                         - Remove column Barcode from T_Material_Containers
 **
 *****************************************************/
 (
@@ -2100,23 +2101,20 @@ AS
                 t.[Status] <> s.[Status] OR
                 Coalesce( NULLIF(t.[Comment], s.[Comment]),
                         NULLIF(s.[Comment], t.[Comment])) IS NOT NULL OR
-                Coalesce( NULLIF(t.[Barcode], s.[Barcode]),
-                        NULLIF(s.[Barcode], t.[Barcode])) IS NOT NULL OR
                 Coalesce( NULLIF(t.[Researcher], s.[Researcher]),
                         NULLIF(s.[Researcher], t.[Researcher])) IS NOT NULL
                 )
             THEN UPDATE SET
-              [Tag] = s.[Tag],
+                [Tag] = s.[Tag],
                 [Type] = s.[Type],
                 [Comment] = s.[Comment],
-                [Barcode] = s.[Barcode],
                 [Location_ID] = s.[Location_ID],
                 [Created] = s.[Created],
                 [Status] = s.[Status],
                 [Researcher] = s.[Researcher]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([ID], [Tag], [Type], [Comment], [Barcode], [Location_ID], [Created], [Status], [Researcher])
-                VALUES(s.[ID], s.[Tag], s.[Type], s.[Comment], s.[Barcode], s.[Location_ID], s.[Created], s.[Status], s.[Researcher])
+                INSERT([ID], [Tag], [Type], [Comment],[Location_ID], [Created], [Status], [Researcher])
+                VALUES(s.[ID], s.[Tag], s.[Type], s.[Comment], s.[Location_ID], s.[Created], s.[Status], s.[Researcher])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                    Cast(Inserted.[ID] as varchar(12)),
@@ -4296,9 +4294,7 @@ AS
 
     End -- </Jobs>
 
-
 Done:
-
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
