@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[update_research_team_for_campaign]
 **          02/17/2022 mem - Update error message and convert tabs to spaces
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          01/04/2024 mem - Remove duplicate update query
 **
 *****************************************************/
 (
@@ -134,7 +135,7 @@ AS
         Username VARCHAR(24),
         [Role] VARCHAR(128),
         Role_ID INT null,
-        [USER_ID] INT null,
+        [User_ID] INT null,
         EntryID int Identity(1,1)
     )
 
@@ -217,7 +218,7 @@ AS
     ---------------------------------------------------
     -- Resolve user username and role to respective IDs
     ---------------------------------------------------
-    --
+
     UPDATE #Tmp_TeamMembers
     SET [User_ID] = dbo.T_Users.ID
     FROM #Tmp_TeamMembers
@@ -225,7 +226,7 @@ AS
            ON #Tmp_TeamMembers.Username = dbo.T_Users.U_PRN
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error resolving user ID'
@@ -234,17 +235,12 @@ AS
 
     UPDATE #Tmp_TeamMembers
     SET Role_ID = T_Research_Team_Roles.ID
-    FROM
-        #Tmp_TeamMembers
-        INNER JOIN dbo.T_Research_Team_Roles ON T_Research_Team_Roles.Role = #Tmp_TeamMembers.Role
-    --
-    UPDATE #Tmp_TeamMembers
-    SET Role_ID = T_Research_Team_Roles.ID
     FROM #Tmp_TeamMembers
-         INNER JOIN dbo.T_Research_Team_Roles
-           ON T_Research_Team_Roles.ROLE = #Tmp_TeamMembers.ROLE
-    SELECT @myError = @@error, @myRowCount = @@rowcount
+        INNER JOIN dbo.T_Research_Team_Roles
+          ON T_Research_Team_Roles.Role = #Tmp_TeamMembers.Role
     --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
     If @myError <> 0
     Begin
         Set @message = 'Error resolving role ID'
@@ -264,7 +260,7 @@ AS
         SELECT TOP 1 @entryID = EntryID,
                      @unknownUsername = Username
         FROM #Tmp_TeamMembers
-        WHERE EntryID > @entryID AND [USER_ID] IS NULL
+        WHERE EntryID > @entryID AND [User_ID] IS NULL
         ORDER BY EntryID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -301,7 +297,7 @@ AS
                                ELSE ', '
                            END + Username
     FROM #Tmp_TeamMembers
-    WHERE [USER_ID] IS NULL
+    WHERE [User_ID] IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
