@@ -32,6 +32,7 @@ CREATE PROCEDURE [dbo].[sync_with_dms5]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
 **          10/10/2023 mem - Remove column Sample_Submission_Item_Count from T_Sample_Prep_Request
+**          01/04/2024 mem - Use new data release restriction column name in T_Campaign
 **
 *****************************************************/
 (
@@ -90,7 +91,7 @@ AS
 
     Set @message = ''
 
-    Create Table #Tmp_SummaryOfChanges (
+    CREATE TABLE #Tmp_SummaryOfChanges (
         TableName varchar(128),
         UpdateAction varchar(20),
         InsertedKey varchar(128),
@@ -1158,7 +1159,7 @@ AS
                 t.[CM_Project_Num] <> s.[CM_Project_Num] OR
                 t.[CM_created] <> s.[CM_created] OR
                 t.[CM_State] <> s.[CM_State] OR
-                t.[CM_Data_Release_Restrictions] <> s.[CM_Data_Release_Restrictions] OR
+                t.[CM_Data_Release_Restriction] <> s.[CM_Data_Release_Restriction] OR
                 Coalesce( NULLIF(t.[CM_Proj_Mgr_PRN], s.[CM_Proj_Mgr_PRN]),
                         NULLIF(s.[CM_Proj_Mgr_PRN], t.[CM_Proj_Mgr_PRN])) IS NOT NULL OR
                 Coalesce( NULLIF(t.[CM_PI_PRN], s.[CM_PI_PRN]),
@@ -1203,11 +1204,11 @@ AS
                 [CM_Organisms] = s.[CM_Organisms],
                 [CM_Experiment_Prefixes] = s.[CM_Experiment_Prefixes],
                 [CM_Research_Team] = s.[CM_Research_Team],
-                [CM_Data_Release_Restrictions] = s.[CM_Data_Release_Restrictions],
+                [CM_Data_Release_Restriction] = s.[CM_Data_Release_Restriction],
                 [CM_Fraction_EMSL_Funded] = s.[CM_Fraction_EMSL_Funded]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([Campaign_Num], [CM_Project_Num], [CM_Proj_Mgr_PRN], [CM_PI_PRN], [CM_comment], [CM_created], [Campaign_ID], [CM_Technical_Lead], [CM_State], [CM_Description], [CM_External_Links], [CM_Team_Members], [CM_EPR_List], [CM_EUS_Proposal_List], [CM_Organisms], [CM_Experiment_Prefixes], [CM_Research_Team], [CM_Data_Release_Restrictions], [CM_Fraction_EMSL_Funded])
-                VALUES(s.[Campaign_Num], s.[CM_Project_Num], s.[CM_Proj_Mgr_PRN], s.[CM_PI_PRN], s.[CM_comment], s.[CM_created], s.[Campaign_ID], s.[CM_Technical_Lead], s.[CM_State], s.[CM_Description], s.[CM_External_Links], s.[CM_Team_Members], s.[CM_EPR_List], s.[CM_EUS_Proposal_List], s.[CM_Organisms], s.[CM_Experiment_Prefixes], s.[CM_Research_Team], s.[CM_Data_Release_Restrictions], s.[CM_Fraction_EMSL_Funded])
+                INSERT([Campaign_Num], [CM_Project_Num], [CM_Proj_Mgr_PRN], [CM_PI_PRN], [CM_comment], [CM_created], [Campaign_ID], [CM_Technical_Lead], [CM_State], [CM_Description], [CM_External_Links], [CM_Team_Members], [CM_EPR_List], [CM_EUS_Proposal_List], [CM_Organisms], [CM_Experiment_Prefixes], [CM_Research_Team], [CM_Data_Release_Restriction], [CM_Fraction_EMSL_Funded])
+                VALUES(s.[Campaign_Num], s.[CM_Project_Num], s.[CM_Proj_Mgr_PRN], s.[CM_PI_PRN], s.[CM_comment], s.[CM_created], s.[Campaign_ID], s.[CM_Technical_Lead], s.[CM_State], s.[CM_Description], s.[CM_External_Links], s.[CM_Team_Members], s.[CM_EPR_List], s.[CM_EUS_Proposal_List], s.[CM_Organisms], s.[CM_Experiment_Prefixes], s.[CM_Research_Team], s.[CM_Data_Release_Restriction], s.[CM_Fraction_EMSL_Funded])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                 Cast(Inserted.[Campaign_ID] as varchar(12)),

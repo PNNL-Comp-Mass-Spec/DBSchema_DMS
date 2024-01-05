@@ -21,7 +21,7 @@ CREATE TABLE [dbo].[T_Campaign](
 	[CM_Organisms] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CM_Experiment_Prefixes] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[CM_Research_Team] [int] NULL,
-	[CM_Data_Release_Restrictions] [int] NOT NULL,
+	[CM_Data_Release_Restriction] [int] NOT NULL,
 	[CM_Fraction_EMSL_Funded] [decimal](3, 2) NOT NULL,
 	[CM_EUS_Usage_Type] [smallint] NOT NULL,
  CONSTRAINT [PK_T_Campaign] PRIMARY KEY CLUSTERED 
@@ -56,16 +56,16 @@ ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_created]  DEFAU
 GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_State]  DEFAULT ('Active') FOR [CM_State]
 GO
-ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restrictions]  DEFAULT ((0)) FOR [CM_Data_Release_Restrictions]
+ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Data_Release_Restriction]  DEFAULT ((0)) FOR [CM_Data_Release_Restriction]
 GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_Fraction_EMSL_Funded]  DEFAULT ((0)) FOR [CM_Fraction_EMSL_Funded]
 GO
 ALTER TABLE [dbo].[T_Campaign] ADD  CONSTRAINT [DF_T_Campaign_CM_EUS_Usage_Type]  DEFAULT ((1)) FOR [CM_EUS_Usage_Type]
 GO
-ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions] FOREIGN KEY([CM_Data_Release_Restrictions])
+ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_Data_Release_Restriction] FOREIGN KEY([CM_Data_Release_Restriction])
 REFERENCES [dbo].[T_Data_Release_Restrictions] ([ID])
 GO
-ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Data_Release_Restrictions]
+ALTER TABLE [dbo].[T_Campaign] CHECK CONSTRAINT [FK_T_Campaign_T_Data_Release_Restriction]
 GO
 ALTER TABLE [dbo].[T_Campaign]  WITH CHECK ADD  CONSTRAINT [FK_T_Campaign_T_EUS_UsageType] FOREIGN KEY([CM_EUS_Usage_Type])
 REFERENCES [dbo].[T_EUS_UsageType] ([ID])
@@ -128,7 +128,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_i_Campaign] on [dbo].[T_Campaign]
+CREATE TRIGGER [dbo].[trig_i_Campaign] on [dbo].[T_Campaign]
 For Insert
 /****************************************************
 **
@@ -138,7 +138,8 @@ For Insert
 **	Auth:	mem
 **	Date:	10/02/2007 mem - Initial version (Ticket #543)
 **			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
-**			12/01/2011 mem - Now updating T_Event_Log if CM_Fraction_EMSL_Funded > 0 or CM_Data_Release_Restrictions > 0
+**			12/01/2011 mem - Now updating T_Event_Log if CM_Fraction_EMSL_Funded > 0 or CM_Data_Release_Restriction > 0
+**          01/04/2024 mem - Use new data release restriction column name in T_Campaign
 **    
 *****************************************************/
 AS
@@ -159,10 +160,11 @@ AS
 	ORDER BY inserted.Campaign_ID
 	
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-	SELECT 10, inserted.Campaign_ID, inserted.CM_Data_Release_Restrictions, 0, GetDate()
+	SELECT 10, inserted.Campaign_ID, inserted.CM_Data_Release_Restriction, 0, GetDate()
 	FROM inserted
-	WHERE inserted.CM_Data_Release_Restrictions > 0
+	WHERE inserted.CM_Data_Release_Restriction > 0
 	ORDER BY inserted.Campaign_ID
+
 
 GO
 ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_i_Campaign]
@@ -172,7 +174,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_u_Campaign] on [dbo].[T_Campaign]
+CREATE TRIGGER [dbo].[trig_u_Campaign] on [dbo].[T_Campaign]
 For Update
 /****************************************************
 **
@@ -183,8 +185,9 @@ For Update
 **
 **	Auth:	mem
 **	Date:	07/19/2010 mem - Initial version
-**			12/01/2011 mem - Now updating T_Event_Log if CM_Fraction_EMSL_Funded or CM_Data_Release_Restrictions changes
+**			12/01/2011 mem - Now updating T_Event_Log if CM_Fraction_EMSL_Funded or CM_Data_Release_Restriction changes
 **			03/23/2012 mem - Now updating T_File_Attachment
+**          01/04/2024 mem - Use new data release restriction column name in T_Campaign
 **    
 *****************************************************/
 AS
@@ -222,12 +225,13 @@ AS
 	
 	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
 	SELECT 10, inserted.Campaign_ID, 
-	       inserted.CM_Data_Release_Restrictions, 
-	       deleted.CM_Data_Release_Restrictions, 
+	       inserted.CM_Data_Release_Restriction, 
+	       deleted.CM_Data_Release_Restriction, 
 	       GetDate()
 	FROM deleted INNER JOIN inserted ON deleted.Campaign_ID = inserted.Campaign_ID
-	WHERE ISNULL(inserted.CM_Data_Release_Restrictions, -1) <> ISNULL(deleted.CM_Data_Release_Restrictions, -2)
+	WHERE ISNULL(inserted.CM_Data_Release_Restriction, -1) <> ISNULL(deleted.CM_Data_Release_Restriction, -2)
 	ORDER BY inserted.Campaign_ID
+
 
 GO
 ALTER TABLE [dbo].[T_Campaign] ENABLE TRIGGER [trig_u_Campaign]

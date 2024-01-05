@@ -8,7 +8,7 @@ AS
 SELECT C.Campaign_Num AS campaign,
        C.CM_Project_Num AS project,
        C.CM_State AS state,
-       RR.Name AS data_release_restrictions,
+       DRR.Name AS data_release_restriction,
        C.CM_Description AS description,
        C.CM_comment AS comment,
        dbo.get_research_team_membership_list(C.CM_Research_Team) AS team_members,
@@ -40,8 +40,8 @@ SELECT C.Campaign_Num AS campaign,
 	   CT.Data_Package_Count AS data_packages,
        dbo.get_campaign_work_package_list(C.Campaign_Num) AS work_packages
 FROM T_Campaign AS C
-     INNER JOIN T_Data_Release_Restrictions RR
-       ON C.CM_Data_Release_Restrictions = RR.ID
+     INNER JOIN T_Data_Release_Restrictions DRR
+       ON C.CM_Data_Release_Restriction = DRR.ID
      INNER JOIN T_EUS_UsageType EUT
        ON C.CM_EUS_Usage_Type = EUT.ID
      LEFT OUTER JOIN T_Research_Team AS RT

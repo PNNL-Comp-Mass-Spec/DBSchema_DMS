@@ -24,10 +24,10 @@ SELECT C.Campaign_Num AS campaign,
        EUT.Name As eus_usage_type,
        C.CM_Organisms AS organisms,
        C.CM_Experiment_Prefixes AS experiment_prefixes,
-       T_Data_Release_Restrictions.Name AS data_release_restrictions
+       DRR.Name AS data_release_restriction
 FROM T_Campaign C
-     INNER JOIN T_Data_Release_Restrictions
-       ON C.CM_Data_Release_Restrictions = T_Data_Release_Restrictions.ID
+     INNER JOIN T_Data_Release_Restrictions DRR
+       ON C.CM_Data_Release_Restriction = DRR.ID
      INNER JOIN T_EUS_UsageType EUT
        ON C.CM_EUS_Usage_Type = EUT.ID
      LEFT OUTER JOIN T_Research_Team
