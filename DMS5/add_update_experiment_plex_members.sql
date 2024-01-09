@@ -6,14 +6,17 @@ GO
 CREATE PROCEDURE [dbo].[add_update_experiment_plex_members]
 /****************************************************
 **
-**  Desc:   Adds new or updates existing rows in T_Experiment_Plex_Members
-**          Can either provide data via @plexMembers or via channel-specific parameters
+**  Desc:
+**      Add new or update existing experiment plex members in T_Experiment_Plex_Members
+**      Can either provide data via @plexMembers or via channel-specific parameters
 **
-**          @plexMembers is a table listing Experiment ID values by channel or by tag
-**          Supported header names: Channel, Tag, Tag_Name, Exp_ID, Experiment, Channel_Type, Comment
+**      @plexMembers is a table listing Experiment ID values by channel or by tag
+**      Delimiters in the table are newline characters and commas, though columns can also be separated by tabs
 **
-**          If the header row is missing from the table, will attempt to auto-determine the channel
-**          The first two columns are required; Channel Type and Comment are optional
+**      Supported header names: Channel, Tag, Tag_Name, Exp_ID, Experiment, Channel_Type, Comment
+**
+**      If the header row is missing from the table, will attempt to auto-determine the channel
+**      The first two columns (Channel and Exp_ID) are required; Channel Type and Comment are optional
 **
 ** Example 1:
 **     Channel, Exp_ID, Channel Type, Comment
@@ -28,7 +31,6 @@ CREATE PROCEDURE [dbo].[add_update_experiment_plex_members]
 **     9, 212464, Normal,
 **     10, 212465, Normal,
 **     11, 212466, Reference, This is a pooled reference
-**
 **
 ** Example 2:
 **     Tag, Exp_ID, Channel Type, Comment
@@ -72,6 +74,7 @@ CREATE PROCEDURE [dbo].[add_update_experiment_plex_members]
 **          04/18/2022 mem - Update to support TMT 18 by adding channels 17 and 18
 **          04/20/2022 mem - Fix typo in variable names
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          01/08/2024 mem - Replace tab characters in @plexMembers with commas
 **
 *****************************************************/
 (
@@ -280,7 +283,6 @@ AS
 
     If Len(@plexMembers) > 0
     Begin -- <ParsePlexMembers>
-        -- Split @plexMembers on newline characters
 
         Create Table #TmpRowData (Entry_ID int, [Value] varchar(2048))
 
@@ -303,6 +305,14 @@ AS
         Declare @channelTypeId int
         Declare @channelTypeName varchar(32)
         Declare @plexMemberComment varchar(512)
+
+        If CharIndex(char(9), @plexMembers) > 0
+        Begin
+            -- Replace tab characters with commas
+            Set @plexMembers = Replace(@plexMembers, char(9), ', ');
+        End;
+
+        -- Split @plexMembers on newline characters, which are char(10)
 
         INSERT INTO #TmpRowData( Entry_ID, [Value])
         SELECT EntryID, [Value]
@@ -1005,7 +1015,7 @@ AS
 
     End CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_plex_members] TO [DDL_Viewer] AS [dbo]
