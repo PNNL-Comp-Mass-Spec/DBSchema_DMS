@@ -6,13 +6,14 @@ GO
 CREATE PROCEDURE [dbo].[add_update_eus_proposals]
 /****************************************************
 **
-**  Desc: Adds new or updates existing EUS Proposals in database
+**  Desc:
+**      Adds new or updates existing EUS Proposals in database
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   jds
 **  Date:   08/15/2006
-**          11/16/2006 grk - fix problem with get_eus_prop_id not able to return varchar (ticket #332)
+**          11/16/2006 grk - Fix problem with get_eus_prop_id not able to return varchar (ticket #332)
 **          04/01/2011 mem - Now updating State_ID in T_EUS_Proposal_Users
 **          10/13/2015 mem - Added @EUSProposalType
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
@@ -23,6 +24,7 @@ CREATE PROCEDURE [dbo].[add_update_eus_proposals]
 **                         - Fix merge query bug
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          01/08/2024 mem - Update column last_affected
 **
 *****************************************************/
 (
@@ -116,7 +118,7 @@ AS
     WHERE Proposal_ID = @EUSPropID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @msg = 'Error trying to look for entry in table'
@@ -181,17 +183,16 @@ AS
             @EUSProposalType,
             @autoSupersedeProposalID
         )
-
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @msg = 'Insert operation failed: "' + @EUSPropTitle + '"'
             RAISERROR (@msg, 11, 10)
         End
 
-    End -- add mode
+    End
 
     ---------------------------------------------------
     -- Action for update mode
@@ -199,44 +200,42 @@ AS
     --
     If @Mode = 'update'
     Begin
-        Set @myError = 0
-        --
         UPDATE T_EUS_Proposals
-        SET
-            [Title] = @EUSPropTitle,
+        SET [Title] = @EUSPropTitle,
             State_ID = @EUSPropStateID,
             Import_Date = @EUSPropImpDate,
             Proposal_Type = @EUSProposalType,
-            Proposal_ID_AutoSupersede = @autoSupersedeProposalID
+            Proposal_ID_AutoSupersede = @autoSupersedeProposalID,
+            Last_Affected = GetDate()
         WHERE Proposal_ID = @EUSPropID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @msg = 'Update operation failed: "' + @EUSPropTitle + '"'
             RAISERROR (@msg, 11, 11)
         End
-    End -- update mode
+    End
 
     ---------------------------------------------------
     -- Associate users in @eusUsersList with the proposal
     -- by updating information in table T_EUS_Proposal_Users
     ---------------------------------------------------
 
-    CREATE TABLE #tempEUSUsers (
-            PERSON_ID int
+    CREATE TABLE #TmpEUSUsers (
+            Person_ID int
            )
 
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error creating temporary user table'
         RAISERROR (@msg, 11, 12)
     End
 
-    INSERT INTO #tempEUSUsers (Person_ID)
+    INSERT INTO #TmpEUSUsers (Person_ID)
     SELECT EUS_Person_ID
     FROM ( SELECT CAST(Item AS int) AS EUS_Person_ID
            FROM make_table_from_list ( @eusUsersList )
@@ -245,7 +244,7 @@ AS
            ON SourceQ.EUS_Person_ID = T_EUS_Users.Person_ID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error trying to add user to temporary user table'
@@ -269,7 +268,7 @@ AS
         (  SELECT @EUSPropID AS Proposal_ID,
                   Person_ID,
                   'Y' AS Of_DMS_Interest
-            FROM #tempEUSUsers
+            FROM #TmpEUSUsers
         ) AS Source (Proposal_ID, Person_ID, Of_DMS_Interest)
     ON (target.Proposal_ID = source.Proposal_ID AND
         target.Person_ID = source.Person_ID)
@@ -281,13 +280,13 @@ AS
         INSERT (Proposal_ID, Person_ID, Of_DMS_Interest, State_ID, Last_Affected)
         VALUES (source.Proposal_ID, source.PERSON_ID, source.Of_DMS_Interest, @ProposalUserStateID, GetDate())
     WHEN NOT MATCHED BY SOURCE AND target.Proposal_ID = @EUSPropID And IsNull(State_ID, 0) NOT IN (4) THEN
-        -- User/proposal mapping is defined in T_EUS_Proposal_Users but not in #tempEUSUsers
+        -- User/proposal mapping is defined in T_EUS_Proposal_Users but not in #TmpEUSUsers
         -- Change state to 5="No longer associated with proposal"
         UPDATE SET State_ID=5, Last_Affected = GetDate()
     ;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error trying to add associations between users and proposal'
@@ -306,9 +305,9 @@ AS
         Begin
             Exec post_log_entry 'Error', @message, 'add_update_eus_proposals'
         End
-    END Catch
+    END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_eus_proposals] TO [DDL_Viewer] AS [dbo]
