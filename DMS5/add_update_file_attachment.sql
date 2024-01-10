@@ -28,6 +28,8 @@ CREATE PROCEDURE [dbo].[add_update_file_attachment]
 **          06/11/2021 mem - Store integers in Entity_ID_Value
 **          03/27/2022 mem - Assure that Active is 1 when updating an existing file attachment
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          01/09/2023 mem - Rename file size argument to @fileSizeKB
+**                         - Also update the username column when mode is 'update'
 **
 *****************************************************/
 (
@@ -36,7 +38,7 @@ CREATE PROCEDURE [dbo].[add_update_file_attachment]
     @description varchar(1024),
     @entityType varchar(64),            -- Page family name: campaign, experiment, sample_prep_request, lc_cart_configuration, etc.
     @entityID varchar(256),             -- Must be data type varchar since Experiment, Campaign, Cell Culture, and Material Container file attachments are tracked via Experiment Name, Campaign Name, etc.
-    @fileSizeBytes varchar(12),         -- This file size is actually in KB
+    @fileSizeKB varchar(12),            -- File size, in kilobytes
     @archiveFolderPath varchar(256),    -- This path is constructed when File_attachment.php or Experiment_File_attachment.php calls function get_file_attachment_path in this database
     @fileMimeType varchar(256),
     @mode varchar(12) = 'add',          -- 'add' or 'update'
@@ -63,6 +65,11 @@ AS
     End;
 
     Begin TRY
+
+    If LTrim(RTrim(Coalesce(@callingUser, ''))) = ''
+    Begin
+        Set @callingUser = SUSER_NAME()
+    End
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
@@ -133,7 +140,7 @@ AS
                  Else Try_Cast(@entityID As Int)
             End,
             @callingUser,
-            @fileSizeBytes,
+            @fileSizeKB,
             @archiveFolderPath,
             @fileMimeType,
             1
@@ -167,7 +174,8 @@ AS
                      Then Null
                      Else Try_Cast(@entityID As Int)
                 End,
-            File_Size_Bytes = @fileSizeBytes,
+            Owner_PRN = @callingUser,
+            File_Size_Bytes = @fileSizeKB,
             Last_Affected = GETDATE(),
             Archive_Folder_Path = @archiveFolderPath,
             File_Mime_Type = @fileMimeType,
