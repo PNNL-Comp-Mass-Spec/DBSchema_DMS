@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_Dataset_Export]
 AS
 -- MyEMSL uses this view
@@ -16,7 +15,7 @@ SELECT RR.ID AS Request_ID,
        RR.RDS_BatchID AS Batch,
        RR.RDS_instrument_group AS Requested_Inst_Group,
        RR.RDS_WorkPackage AS Work_Package,
-       U.U_Name AS Requestor,
+       U.U_Name AS Requester,
        C.Campaign_Num AS Campaign,
        E.Experiment_Num AS Experiment,
        DS.Dataset_Num AS Dataset,
@@ -32,7 +31,8 @@ SELECT RR.ID AS Request_ID,
        EUT.Name AS EUS_Usage,
        RR.RDS_EUS_Proposal_ID,
        EPT.Abbreviation AS EUS_Proposal_Type,
-       RR.Updated As Updated
+       RR.Updated As Updated,
+       U.U_Name AS Requestor        -- Legacy name
 FROM T_Requested_Run AS RR
      INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
