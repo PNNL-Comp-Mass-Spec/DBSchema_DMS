@@ -6,11 +6,10 @@ GO
 CREATE PROCEDURE [dbo].[set_external_dataset_purge_priority]
 /****************************************************
 **
-**  Desc: Sets the purge priority to 2 for datasets acquired on external instruments
+**  Desc: 
+**      Sets the purge priority to 2 for datasets acquired on external instruments
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   mem
 **  Date:   04/09/2014
@@ -23,10 +22,8 @@ CREATE PROCEDURE [dbo].[set_external_dataset_purge_priority]
 AS
     set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     Set @infoOnly = IsNull(@infoOnly, 0)
 
@@ -39,7 +36,7 @@ AS
 
     ---------------------------------------------------
     -- Update the purge priority for datasets acquired on offsite instruments
-    -- However, bump up the PurgeHoldOff date by 45 day to skip newer datasetes
+    -- However, bump up the PurgeHoldOff date by 45 day to skip newer datasets
     ---------------------------------------------------
     --
 
