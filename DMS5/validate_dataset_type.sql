@@ -35,6 +35,7 @@ CREATE PROCEDURE [dbo].[validate_dataset_type]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
 **          06/12/2023 mem - Sum actual scan counts, not simply 0 or 1
+**          01/10/2024 mem - Add support for DIA datasets
 **
 *****************************************************/
 (
@@ -77,8 +78,9 @@ AS
     Declare @actualCountAnyMSn int
     Declare @actualCountAnyHMSn int
 
+    Declare @actualCountDIA int
     Declare @actualCountMRM int
-     Declare @actualCountPQD int
+    Declare @actualCountPQD int
 
     Declare @newDSTypeID int
 
@@ -103,7 +105,7 @@ AS
     FROM T_Dataset DS
          LEFT OUTER JOIN T_Dataset_Type_Name DST
            ON DS.DS_type_ID = DST.DST_Type_ID
-    WHERE (DS.Dataset_ID = @datasetID)
+    WHERE DS.Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -131,9 +133,9 @@ AS
     -----------------------------------------------------------
 
     SELECT
-           @actualCountMS      = SUM(CASE WHEN ScanType = 'MS'     Then ScanCount Else 0 End),
-           @actualCountHMS     = SUM(CASE WHEN ScanType = 'HMS'    Then ScanCount Else 0 End),
-           @actualCountGCMS    = SUM(CASE WHEN ScanType = 'GC-MS'  Then ScanCount Else 0 End),
+           @actualCountMS      = SUM(CASE WHEN ScanType = 'MS'    Then ScanCount Else 0 End),
+           @actualCountHMS     = SUM(CASE WHEN ScanType = 'HMS'   Then ScanCount Else 0 End),
+           @actualCountGCMS    = SUM(CASE WHEN ScanType = 'GC-MS' Then ScanCount Else 0 End),
 
            @actualCountAnyMSn  = SUM(CASE WHEN ScanType LIKE '%-MSn'    OR ScanType = 'MSn'   Then ScanCount Else 0 End),
            @actualCountAnyHMSn = SUM(CASE WHEN ScanType LIKE '%-HMSn'   OR ScanType = 'HMSn'  Then ScanCount Else 0 End),
@@ -152,14 +154,15 @@ AS
            @actualCountEThcDMSn  = SUM(CASE WHEN ScanType LIKE '%EThcD-MSn'  Then ScanCount Else 0 End),
            @actualCountEThcDHMSn = SUM(CASE WHEN ScanType LIKE '%EThcD-HMSn' Then ScanCount Else 0 End),
 
-           @actualCountMRM = SUM(CASE WHEN ScanType LIKE '%SRM' or ScanType LIKE '%MRM' OR ScanType LIKE 'Q[1-3]MS' Then ScanCount Else 0 End),
+           @actualCountDIA = SUM(CASE WHEN ScanType LIKE 'DIA%' Then ScanCount Else 0 End),
+           @actualCountMRM = SUM(CASE WHEN ScanType LIKE '%SRM' OR ScanType LIKE '%MRM' OR ScanType LIKE 'Q[1-3]MS' Then ScanCount Else 0 End),
            @actualCountPQD = SUM(CASE WHEN ScanType LIKE '%PQD%' Then ScanCount Else 0 End)
 
     FROM T_Dataset_ScanTypes
     WHERE Dataset_ID = @datasetID
     GROUP BY Dataset_ID
 
-    If @InfoOnly <> 0
+    If @infoOnly <> 0
     Begin
        SELECT @actualCountMS AS ActualCountMS,
               @actualCountHMS AS ActualCountHMS,
@@ -177,7 +180,8 @@ AS
               @actualCountEThcDMSn AS ActualCountEThcDMSn,
               @actualCountEThcDHMSn AS ActualCountEThcDHMSn,
               @actualCountMRM AS ActualCountMRM,
-              @actualCountPQD AS ActualCountPQD
+              @actualCountPQD AS ActualCountPQD,
+              @actualCountDIA AS ActualCountDIA
 
     End
 
@@ -204,7 +208,7 @@ AS
         Goto FixDSType
     End
 
-    If Exists (Select * FROM T_Dataset_ScanTypes WHERE Dataset_ID = @datasetID And ScanFilter = 'IMS')
+    If Exists (SELECT * FROM T_Dataset_ScanTypes WHERE Dataset_ID = @datasetID And ScanFilter = 'IMS')
     Begin
         Set @hasIMS = 1
     End
@@ -228,7 +232,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because @actualCountHMS > 0 AND Not (@currentDatasetType LIKE ''HMS%'' Or @currentDatasetType LIKE ''%-HMS'')'
         End
         Else
@@ -251,7 +255,7 @@ AS
             If Not @currentDatasetType LIKE 'IMS%'
             Begin
                 Set @autoDefineDSType = 1
-                If @InfoOnly = 1
+                If @infoOnly = 1
                     Print 'Set @autoDefineDSType=1 because (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCDHMSn + @actualCountETciDHMSn + @actualCountEThcDHMSn) > 0 AND Not @currentDatasetType LIKE ''%-HMSn%'''
 
             End
@@ -274,7 +278,7 @@ AS
             If Not @currentDatasetType LIKE 'IMS%'
             Begin
                 Set @autoDefineDSType = 1
-                If @InfoOnly = 1
+                If @infoOnly = 1
                     Print 'Set @autoDefineDSType=1 because (@actualCountCIDMSn + @actualCountETDMSn + @actualCountHCDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) > 0 AND Not @currentDatasetType LIKE ''%-MSn%'''
 
             End
@@ -291,7 +295,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because (@actualCountETDMSn + @actualCountETDHMSn) > 0 AND Not @currentDatasetType LIKE ''%ETD%'''
         End
         Else
@@ -306,7 +310,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because @actualCountHCDMSn + @actualCountHCDHMSn > 0 AND Not @currentDatasetType LIKE ''%HCD%'''
         End
         Else
@@ -321,7 +325,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because @actualCountPQD > 0 AND Not @currentDatasetType LIKE ''%PQD%'''
         End
         Else
@@ -337,7 +341,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because @actualCountHCDMSn + @actualCountHCDHMSn = 0 AND @currentDatasetType LIKE ''%HCD%'''
         End
         Else
@@ -354,7 +358,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because (@actualCountETDMSn + @actualCountETDHMSn) = 0 AND @currentDatasetType LIKE ''%ETD%'''
         End
         Else
@@ -377,7 +381,7 @@ AS
             If Not @currentDatasetType LIKE 'IMS%'
             Begin
                 Set @autoDefineDSType = 1
-                If @InfoOnly = 1
+                If @infoOnly = 1
                     Print 'Set @autoDefineDSType=1 because @actualCountAnyMSn > 0 AND Not @currentDatasetType LIKE ''%-MSn%'''
             End
             Else
@@ -393,7 +397,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because (@actualCountCIDHMSn + @actualCountETDHMSn + @actualCountHCDHMSn + @actualCountETciDHMSn + @actualCountEThcDHMSn) = 0 AND @currentDatasetType LIKE ''%-HMSn%'''
         End
         Else
@@ -410,7 +414,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because (@actualCountCIDMSn + @actualCountETDMSn + @actualCountHCDMSn + @actualCountETciDMSn + @actualCountEThcDMSn) = 0 AND @currentDatasetType LIKE ''%-MSn%'''
         End
         Else
@@ -427,7 +431,7 @@ AS
         If Not @currentDatasetType LIKE 'IMS%'
         Begin
             Set @autoDefineDSType = 1
-            If @InfoOnly = 1
+            If @infoOnly = 1
                 Print 'Set @autoDefineDSType=1 because @actualCountHMS = 0 AND (@currentDatasetType LIKE ''HMS%'' Or @currentDatasetType LIKE ''%-HMS'')'
         End
         Else
@@ -450,7 +454,7 @@ AS
             If Not @currentDatasetType LIKE 'IMS%'
             Begin
                 Set @autoDefineDSType = 1
-                If @InfoOnly = 1
+                If @infoOnly = 1
                     Print 'Set @autoDefineDSType=1 because @actualCountAnyHMSn > 0 AND Not @currentDatasetType LIKE ''%-HMSn%'''
             End
             Else
@@ -480,7 +484,8 @@ AutoDefineDSType:
             -- GC-MS
         -- In addition, if HCD scans are present, -HCD will be in the middle
         -- Furthermore, if ETD scans are present, -ETD or -CID/ETD will be in the middle
-        -- And finally, if ETciD or EThcD scans are present, -ETciD or -EThcD will be in the middle
+        -- If ETciD or EThcD scans are present, -ETciD or -EThcD will be in the middle
+        -- Finally, if DIA scans are present, the dataset type will start with DIA-
 
         If @actualCountHMS > 0
             Set @datasetTypeAutoGen = 'HMS'
@@ -608,13 +613,18 @@ AutoDefineDSType:
             Begin
                 Set @datasetTypeAutoGen = 'HMS-MSn'
             End
+
+            If @actualCountDIA > 0
+            Begin
+                Set @datasetTypeAutoGen = 'DIA-' + @datasetTypeAutoGen
+            End
         End
     End
 
     If @datasetTypeAutoGen <> '' AND @autoDefineOnAllMismatches <> 0
     Begin
         Set @autoDefineDSType = 1
-        If @InfoOnly = 1
+        If @infoOnly = 1
             Print 'Set @autoDefineDSType=1 because @datasetTypeAutoGen <> '''' (it is ' + @datasetTypeAutoGen + ') AND @autoDefineOnAllMismatches <> 0'
     End
 
@@ -656,7 +666,7 @@ FixDSType:
 
         SELECT @newDSTypeID = DST_Type_ID
         FROM T_Dataset_Type_Name
-        WHERE (DST_name = @newDatasetType)
+        WHERE DST_name = @newDatasetType
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -692,11 +702,19 @@ FixDSType:
         Else
         Begin
             Set @message = 'Unrecognized dataset type based on actual scan types; need to auto-switch from ' + @currentDatasetType + ' to ' + @newDatasetType
+
+            If @infoOnly = 0
+            Begin
+                Declare @logMessage varchar(1024)
+                Set @logMessage = @message + ' for dataset ID ' + Cast(@datasetID as varchar(12)) + ' (' + @dataset + ')'
+
+                Exec post_log_entry 'Error', @logMessage, 'validate_dataset_type'
+            End
         End
     End
 
 Done:
-    If @InfoOnly <> 0
+    If @infoOnly <> 0
     Begin
         If Len(@message) = 0
         Begin
@@ -707,7 +725,7 @@ Done:
         SELECT @message as Message, @dataset As Dataset
     End
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_dataset_type] TO [DDL_Viewer] AS [dbo]
