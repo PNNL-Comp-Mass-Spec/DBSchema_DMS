@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Find_Scheduled_Run_History]
 AS
 SELECT RR.ID AS Request_ID,
@@ -14,7 +13,7 @@ SELECT RR.ID AS Request_ID,
        DS.DS_created,
        RR.RDS_WorkPackage AS Work_Package,
        dbo.T_Campaign.Campaign_Num AS Campaign,
-       RR.RDS_Requestor_PRN AS Requestor,
+       RR.RDS_Requestor_PRN AS Requester,
        RR.RDS_instrument_group AS Instrument,
        DTN.DST_Name AS Run_Type,
        RR.RDS_comment AS [Comment],
