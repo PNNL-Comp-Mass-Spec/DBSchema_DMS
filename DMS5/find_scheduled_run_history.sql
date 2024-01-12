@@ -7,8 +7,7 @@ CREATE PROCEDURE [dbo].[find_scheduled_run_history]
 /****************************************************
 **
 **  Desc:
-**      Returns result set of Scheduled Run History
-**      satisfying the search parameters
+**      Returns result set of Scheduled Run History satisfying the search parameters
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -18,9 +17,9 @@ CREATE PROCEDURE [dbo].[find_scheduled_run_history]
 **  Date:   05/15/2006
 **          12/20/2006 mem - Now querying V_Find_Scheduled_Run_History using dynamic SQL (Ticket #349)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          01/12/2024 mem - Use renamed column Requester in V_Find_Scheduled_Run_History
+**                         - Rename argument to @requester
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
     @requestID varchar(20) = '',
@@ -33,7 +32,7 @@ CREATE PROCEDURE [dbo].[find_scheduled_run_history]
     @dscreated_Before varchar(20) = '',
     @workPackage varchar(50) = '',
     @campaign varchar(50) = '',
-    @requestor varchar(50) = '',
+    @requester varchar(50) = '',
     @instrument varchar(128) = '',
     @runType varchar(50) = '',
     @comment varchar(244) = '',
@@ -44,73 +43,34 @@ CREATE PROCEDURE [dbo].[find_scheduled_run_history]
 AS
     set nocount on
 
-    declare @myError int
-    set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @myRowCount int
-    set @myRowCount = 0
+    Set @message = ''
 
-    set @message = ''
-
-    declare @S varchar(4000)
-    declare @W varchar(3800)
-
-    ---------------------------------------------------
-    -- Validate input fields
-    ---------------------------------------------------
-
-    -- future: this could get more complicated
+    Declare @S varchar(4000)
+    Declare @W varchar(3800)
 
     ---------------------------------------------------
     -- Convert input fields
     ---------------------------------------------------
 
-    DECLARE @iRequest_ID int
-    SET @iRequest_ID = CONVERT(int, @RequestID)
-    --
-    DECLARE @iRequest_Name varchar(128)
-    SET @iRequest_Name = '%' + @RequestName + '%'
-    --
-    DECLARE @iReq_Created_after datetime
-    DECLARE @iReq_Created_before datetime
-    SET @iReq_Created_after = CONVERT(datetime, @ReqCreated_After)
-    SET @iReq_Created_before = CONVERT(datetime, @ReqCreated_Before)
-    --
-    DECLARE @iExperiment varchar(50)
-    SET @iExperiment = '%' + @Experiment + '%'
-    --
-    DECLARE @iDataset varchar(128)
-    SET @iDataset = '%' + @Dataset + '%'
-    --
-    DECLARE @iDS_created_after datetime
-    DECLARE @iDS_created_before datetime
-    SET @iDS_created_after = CONVERT(datetime, @DScreated_After)
-    SET @iDS_created_before = CONVERT(datetime, @DScreated_Before)
-    --
-    DECLARE @iWork_Package varchar(50)
-    SET @iWork_Package = '%' + @WorkPackage + '%'
-    --
-    DECLARE @iCampaign varchar(50)
-    SET @iCampaign = '%' + @Campaign + '%'
-    --
-    DECLARE @iRequestor varchar(50)
-    SET @iRequestor = '%' + @Requestor + '%'
-    --
-    DECLARE @iInstrument varchar(128)
-    SET @iInstrument = '%' + @Instrument + '%'
-    --
-    DECLARE @iRun_Type varchar(50)
-    SET @iRun_Type = '%' + @RunType + '%'
-    --
-    DECLARE @iComment varchar(244)
-    SET @iComment = '%' + @Comment + '%'
-    --
-    DECLARE @iBatch int
-    SET @iBatch = CONVERT(int, @Batch)
-    --
-    DECLARE @iBlocking_Factor varchar(50)
-    SET @iBlocking_Factor = '%' + @BlockingFactor + '%'
-    --
+    Declare @iRequest_ID int              = CONVERT(int, @RequestID)
+    Declare @iRequest_Name varchar(128)   = '%' + @RequestName + '%'
+    Declare @iReq_Created_after datetime  = CONVERT(datetime, @ReqCreated_After)
+    Declare @iReq_Created_before datetime = CONVERT(datetime, @ReqCreated_Before)
+    Declare @iExperiment varchar(50)      = '%' + @Experiment + '%'
+    Declare @iDataset varchar(128)        = '%' + @Dataset + '%'
+    Declare @iDS_created_after datetime   = CONVERT(datetime, @DScreated_After)
+    Declare @iDS_created_before datetime  = CONVERT(datetime, @DScreated_Before)
+    Declare @iWork_Package varchar(50)    = '%' + @WorkPackage + '%'
+    Declare @iCampaign varchar(50)        = '%' + @Campaign + '%'
+    Declare @iRequester varchar(50)       = '%' + @Requester + '%'
+    Declare @iInstrument varchar(128)     = '%' + @Instrument + '%'
+    Declare @iRun_Type varchar(50)        = '%' + @RunType + '%'
+    Declare @iComment varchar(244)        = '%' + @Comment + '%'
+    Declare @iBatch int                   = CONVERT(int, @Batch)
+    Declare @iBlocking_Factor varchar(50) = '%' + @BlockingFactor + '%'
 
     ---------------------------------------------------
     -- Construct the query
@@ -122,7 +82,6 @@ AS
         Set @W = @W + ' AND ([Request_ID] = ' + Convert(varchar(19), @iRequest_ID) + ' )'
     If Len(@RequestName) > 0
         Set @W = @W + ' AND ([Request_Name] LIKE ''' + @iRequest_Name + ''' )'
-
     If Len(@ReqCreated_After) > 0
         Set @W = @W + ' AND ([Req_Created] >= ''' + Convert(varchar(32), @iReq_Created_after, 121) + ''' )'
     If Len(@ReqCreated_Before) > 0
@@ -135,13 +94,12 @@ AS
         Set @W = @W + ' AND ([DS_created] >= ''' + Convert(varchar(32), @iDS_created_after, 121) + ''' )'
     If Len(@DScreated_Before) > 0
         Set @W = @W + ' AND ([DS_created] < ''' + Convert(varchar(32), @iDS_created_before, 121) + ''' )'
-
     If Len(@WorkPackage) > 0
         Set @W = @W + ' AND ([Work_Package] LIKE ''' + @iWork_Package + ''' )'
     If Len(@Campaign) > 0
         Set @W = @W + ' AND ([Campaign] LIKE ''' + @iCampaign + ''' )'
-    If Len(@Requestor) > 0
-        Set @W = @W + ' AND ([Requestor] LIKE ''' + @iRequestor + ''' )'
+    If Len(@Requester) > 0
+        Set @W = @W + ' AND ([Requester] LIKE ''' + @iRequester + ''' )'
     If Len(@Instrument) > 0
         Set @W = @W + ' AND ([Instrument] LIKE ''' + @iInstrument + ''' )'
     If Len(@RunType) > 0
@@ -175,7 +133,7 @@ AS
         return 51007
     end
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_scheduled_run_history] TO [DDL_Viewer] AS [dbo]
