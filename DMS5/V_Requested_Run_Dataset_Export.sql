@@ -31,8 +31,7 @@ SELECT RR.ID AS Request_ID,
        EUT.Name AS EUS_Usage,
        RR.RDS_EUS_Proposal_ID,
        EPT.Abbreviation AS EUS_Proposal_Type,
-       RR.Updated As Updated,
-       U.U_Name AS Requestor        -- Legacy name
+       RR.Updated As Updated
 FROM T_Requested_Run AS RR
      INNER JOIN T_Dataset_Type_Name AS DTN
        ON DTN.DST_Type_ID = RR.RDS_type_ID
