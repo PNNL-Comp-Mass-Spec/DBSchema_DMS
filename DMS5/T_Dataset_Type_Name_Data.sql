@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Dataset_Type_Name] ******/
-/****** RowCount: 55 ******/
+/****** RowCount: 56 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
 INSERT INTO [T_Dataset_Type_Name] VALUES (52,'1D-C','NMR analysis',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (51,'1D-H','NMR analysis',1)
@@ -7,6 +7,7 @@ INSERT INTO [T_Dataset_Type_Name] VALUES (53,'2D','NMR analysis',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (35,'Chip_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (27,'DataFiles','DMS Pipeline Data or Data Packages',0)
+INSERT INTO [T_Dataset_Type_Name] VALUES (55,'DIA-HMS-HCD-HMSn','High res MS with DIA HCD HMSn',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (41,'EI-HMS','GC EI coupled with high res MS',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (39,'GC','GC with FID, ECD, TCD, etc. (no MS)',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (18,'GC-MS','Full scan GC-MS (but not GC QExactive, which is EI-HMS)',1)
