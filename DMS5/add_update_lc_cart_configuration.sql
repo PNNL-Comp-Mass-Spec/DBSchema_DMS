@@ -6,11 +6,10 @@ GO
 CREATE PROCEDURE [dbo].[add_update_lc_cart_configuration]
 /****************************************************
 **
-**  Desc: Adds new or edits existing T_LC_Cart_Configuration entry
+**  Desc:
+**      Adds new or edits existing T_LC_Cart_Configuration entry
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   mem
 **  Date:   02/02/2017 mem - Initial release
@@ -24,9 +23,8 @@ CREATE PROCEDURE [dbo].[add_update_lc_cart_configuration]
 **          09/17/2018 mem - Update cart config name error message
 **          03/03/2021 mem - Update admin-required message
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          01/12/2024 mem - Update warning message shown when trying to update a cart config entry that is already associated with datasets
 **
-** Pacific Northwest National Laboratory, Richland, WA
-** Copyright 2005, Battelle Memorial Institute
 *****************************************************/
 (
     @id int,
@@ -295,8 +293,16 @@ AS
                 Return 0
             End
 
-            Set @message = 'LC cart config ID ' + Cast(@ID as varchar(9)) + ' is associated with ' + @datasetDescription +
-                           ', most recently ' + @datasetName + '; contact a DMS admin to update the configuration (using special state Override)'
+            If @datasetCount = 1
+            Begin
+                Set @message = 'LC cart config ID ' + Cast(@ID as varchar(9)) + ' is associated with dataset ' + @datasetName + '; ' +
+                               'contact a DMS admin to update the configuration (using special state Override)'
+            End
+            Else
+            Begin
+                Set @message = 'LC cart config ID ' + Cast(@ID as varchar(9)) + ' is associated with ' + @datasetDescription + ', most recently ' + @datasetName +
+                               '; contact a DMS admin to update the configuration (using special state Override)'
+            End
 
             RAISERROR (@message, 10, 1)
             Return 51010
