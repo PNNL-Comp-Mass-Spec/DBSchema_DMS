@@ -6,27 +6,29 @@ GO
 CREATE PROCEDURE [dbo].[add_update_lc_column]
 /****************************************************
 **
-**  Desc: Adds a new entry to LC Column table
+**  Desc: 
+**      Adds/updates an LC Column
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
 **  Date:   12/09/2003
-**          08/19/2010 grk - try-catch for error handling
+**          08/19/2010 grk - Use try-catch for error handling
 **          02/23/2016 mem - Add Set XACT_ABORT on
 **          07/20/2016 mem - Fix error message entity name
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
 **          05/19/2017 mem - Use @logErrors to toggle logging errors caught by the try/catch block
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
-**          11/30/2018 mem - Make @columnNumber an output parameter
+**          11/30/2018 mem - Make @columnName an output parameter
 **          03/21/2022 mem - Fix typo in comment and update capitalization of keywords
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          01/14/2024 mem - Rename argument to @columnName
 **
 *****************************************************/
 (
-    @columnNumber varchar(128) output,        -- Input/output: Aka column name
+    @columnName varchar(128) output,        -- Input/output: column name
     @packingMfg varchar(64),
     @packingType varchar(64),
     @particleSize varchar(64),
@@ -68,7 +70,7 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    If LEN(IsNull(@columnNumber, '')) < 1
+    If Len(IsNull(@columnName, '')) < 1
     Begin
         Set @myError = 51110
         RAISERROR ('Column name must be specified', 11, 1)
@@ -82,7 +84,7 @@ AS
     --
     SELECT @columnID = ID
     FROM T_LC_Column
-    WHERE (SC_Column_Number = @columnNumber)
+    WHERE SC_Column_Number = @columnName
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -156,7 +158,7 @@ AS
             SC_Comment,
             SC_Created
         ) VALUES (
-            @columnNumber,
+            @columnName,
             @packingMfg,
             @packingType,
             @particleSize,
@@ -177,8 +179,7 @@ AS
             Set @msg = 'Insert operation failed'
             RAISERROR (@msg, 11, 8)
         End
-    End -- add mode
-
+    End
     ---------------------------------------------------
     -- Action for update mode
     ---------------------------------------------------
@@ -189,7 +190,7 @@ AS
         --
         UPDATE T_LC_Column
         Set
-            SC_Column_Number = @columnNumber,
+            SC_Column_Number = @columnName,
             SC_Packing_Mfg = @packingMfg,
             SC_Packing_Type = @packingType,
             SC_Particle_size = @particleSize,
@@ -209,7 +210,7 @@ AS
             Set @msg = 'Update operation failed'
             RAISERROR (@msg, 11, 9)
         End
-    End -- update mode
+    End
 
     END TRY
     BEGIN CATCH
