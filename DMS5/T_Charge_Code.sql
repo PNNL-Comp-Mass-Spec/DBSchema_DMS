@@ -5,8 +5,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Charge_Code](
 	[Charge_Code] [varchar](6) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Resp_PRN] [varchar](5) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Resp_HID] [varchar](7) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Resp_PRN] [varchar](20) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Resp_HID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[WBS_Title] [varchar](60) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Charge_Code_Title] [varchar](30) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[SubAccount] [varchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -18,8 +18,8 @@ CREATE TABLE [dbo].[T_Charge_Code](
 	[Inactive_Date_Most_Recent] [datetime] NULL,
 	[Deactivated] [varchar](1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Auth_Amt] [numeric](12, 0) NOT NULL,
-	[Auth_PRN] [varchar](5) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Auth_HID] [varchar](7) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auth_PRN] [varchar](20) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Auth_HID] [varchar](10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Auto_Defined] [tinyint] NOT NULL,
 	[Charge_Code_State] [smallint] NOT NULL,
 	[Last_Affected] [datetime] NOT NULL,
@@ -85,7 +85,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE Trigger [dbo].[trig_u_Charge_Code] on [dbo].[T_Charge_Code]
 For Update
 /****************************************************

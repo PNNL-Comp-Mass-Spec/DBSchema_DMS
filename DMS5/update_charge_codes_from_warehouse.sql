@@ -15,20 +15,21 @@ CREATE PROCEDURE [dbo].[update_charge_codes_from_warehouse]
 **
 **  Return values: 0: success, otherwise, error code
 **
-**  Auth:     mem
-**  Date:     06/04/2013 mem - Initial version
-**            06/05/2013 mem - Now calling auto_add_charge_code_users
-**            06/06/2013 mem - Now caching column DEACT_SW, which is "Y" when the charge code is Deactivated (can also be "R"; don't know what that means)
-**            12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
-**                           - Now populating Activation_State when inserting new rows via the merge
-**            08/13/2015 mem - Added field @ExplicitChargeCodeList
-**            02/23/2016 mem - Add set XACT_ABORT on
-**            03/17/2017 mem - Pass this procedure's name to parse_delimited_list
-**            07/11/2017 mem - Use computed column HID_Number in T_Users
-**            02/08/2022 mem - Change tabs to spaces and update comments
-**            07/21/2022 mem - Also examine SubAccount_Inactive_Date when considering changing Charge_Code_State from 0 to 1 for work packages that are no longer Deactivated
-**                           - When @infoOnly is >= 2, only show new or updated work packages
+**  Auth:   mem
+**  Date:   06/04/2013 mem - Initial version
+**          06/05/2013 mem - Now calling auto_add_charge_code_users
+**          06/06/2013 mem - Now caching column DEACT_SW, which is "Y" when the charge code is Deactivated (can also be "R"; don't know what that means)
+**          12/03/2013 mem - Now changing Charge_Code_State to 0 for Deactivated work packages
+**                         - Now populating Activation_State when inserting new rows via the merge
+**          08/13/2015 mem - Added field @ExplicitChargeCodeList
+**          02/23/2016 mem - Add set XACT_ABORT on
+**          03/17/2017 mem - Pass this procedure's name to parse_delimited_list
+**          07/11/2017 mem - Use computed column HID_Number in T_Users
+**          02/08/2022 mem - Change tabs to spaces and update comments
+**          07/21/2022 mem - Also examine SubAccount_Inactive_Date when considering changing Charge_Code_State from 0 to 1 for work packages that are no longer Deactivated
+**                         - When @infoOnly is >= 2, only show new or updated work packages
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          01/16/2024 mem - Expand username fields in the temporary table from varchar(5) to varchar(20)
 **
 *****************************************************/
 (
@@ -40,14 +41,13 @@ CREATE PROCEDURE [dbo].[update_charge_codes_from_warehouse]
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int = 0
-    declare @myRowCount int = 0
-    declare @MergeUpdateCount int = 0
-    declare @MergeInsertCount int = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
+    Declare @MergeUpdateCount int = 0
+    Declare @MergeInsertCount int = 0
 
-    declare @CallingProcName varchar(128)
-    declare @CurrentLocation varchar(128)
-    Set @CurrentLocation = 'Start'
+    Declare @CallingProcName varchar(128)
+    Declare @CurrentLocation varchar(128) = 'Start'
 
     ----------------------------------------------------------
     -- Validate the inputs
@@ -104,8 +104,8 @@ AS
         --
         CREATE TABLE #Tmp_ChargeCode(
             Charge_Code varchar(6) NOT NULL,
-            Resp_Username varchar(5) NULL,
-            Resp_HID varchar(7) NULL,
+            Resp_Username varchar(20) NULL,
+            Resp_HID varchar(10) NULL,
             WBS_Title varchar(60) NULL,
             Charge_Code_Title varchar(30) NULL,
             SubAccount varchar(8) NULL,
@@ -116,8 +116,8 @@ AS
             SubAccount_Inactive_Date datetime NULL,
             Deactivated varchar(1) NOT NULL,
             Auth_Amt numeric(12, 0) NOT NULL,
-            Auth_Username varchar(5) NULL,
-            Auth_HID varchar(7) NULL,
+            Auth_Username varchar(20) NULL,
+            Auth_HID varchar(10) NULL,
             Update_Status varchar(64) NULL
         )
 
@@ -125,8 +125,11 @@ AS
 
         ----------------------------------------------------------
         -- Obtain charge code info
-        ----------------------------------------------------------
         --
+        -- Note that as of January 2024, in the source view, fields RESP_PAY_NO and AUTH_PAY_NO are null for people whose username is over 5 characters long (as has been standard for several years now)
+        -- The Hanford ID (HID) values are defined, but the username is null
+        ----------------------------------------------------------
+
         Set @CurrentLocation = 'Query opwhse'
 
         If Exists (Select * from #Tmp_WPsExplicit)
@@ -246,7 +249,7 @@ AS
             --
             -- Logic below updates Charge_Code_State based on Deactivated, Setup_Date, Usage_SamplePrep, and Usage_RequestedRun
             ----------------------------------------------------------
-            --
+
             Set @CurrentLocation = 'Merge data'
 
             MERGE T_Charge_Code AS Target
@@ -330,7 +333,7 @@ AS
             ----------------------------------------------------------
             -- Update usage columns
             ----------------------------------------------------------
-            --
+
             Set @CurrentLocation = 'Update usage columns'
 
             exec update_charge_code_usage @infoonly=0
@@ -339,7 +342,7 @@ AS
             -- Update Inactive_Date_Most_Recent
             -- based on Inactive_Date and SubAccount_Inactive_Date
             ----------------------------------------------------------
-            --
+
             Set @CurrentLocation = 'Update Inactive_Date_Most_Recent using Inactive_Date and SubAccount_Inactive_Date'
 
             UPDATE T_Charge_Code
@@ -369,7 +372,7 @@ AS
             -- Update Inactive_Date_Most_Recent
             -- based on Deactivated
             ----------------------------------------------------------
-            --
+
             Set @CurrentLocation = 'Update Inactive_Date_Most_Recent using Deactivated'
 
             UPDATE T_Charge_Code
@@ -378,9 +381,8 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
             -- Set the state to 0 for deactivated work packages
-            --
+
             UPDATE T_Charge_Code
             SET Charge_Code_State = 0
             WHERE Charge_Code_State <> 0 AND
@@ -388,11 +390,10 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
             -- Look for work packages that have a state of 0 but are no longer deactivated
             -- If created within the last 2 years, or if Inactive_Date_Most_Recent is within the last two years,
             -- change their state back to 1 (Interest Unknown)
-            --
+
             UPDATE T_Charge_Code
             SET Charge_Code_State = 1
             WHERE Charge_Code_State = 0 AND
@@ -421,7 +422,7 @@ AS
             ----------------------------------------------------------
             -- Find WPs used within the last 3 years
             ----------------------------------------------------------
-            --
+
             INSERT INTO #Tmp_WPsInUseLast3Years ( Charge_Code, Most_Recent_Usage)
             SELECT Charge_Code, Max(Most_Recent_Usage)
             FROM ( SELECT A.Charge_Code,
@@ -450,12 +451,11 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
             ----------------------------------------------------------
             -- Auto-mark Inactive charge codes that have usage counts of 0 and became inactive at least 6 months ago
             -- Note that DMS updates Inactive_Date_Most_Recent from Null to a valid date when it finds that a charge_code has been deactivated
             ----------------------------------------------------------
-            --
+
             UPDATE T_Charge_Code
             SET Charge_Code_State = 0
             WHERE Charge_Code_State IN (1, 2) AND
@@ -469,7 +469,7 @@ AS
             -- Auto-mark Inactive charge codes that became inactive at least 12 months ago
             -- and haven't had any recent sample prep request or requested run usage
             ----------------------------------------------------------
-            --
+
             UPDATE T_Charge_Code
             SET Charge_Code_State = 0
             WHERE Charge_Code_State IN (1, 2) AND
@@ -485,7 +485,7 @@ AS
             -- and haven't had any sample prep request or requested run usage within the last 3 years
             -- The goal is to hide charge codes that are still listed as active in the warehouse, yet have not been used in DMS for 3 years
             ----------------------------------------------------------
-            --
+
             UPDATE T_Charge_Code
             SET Charge_Code_State = 0
             WHERE Charge_Code_State IN (1, 2) AND
@@ -500,7 +500,7 @@ AS
             -- Add new users as DMS_Guest users
             -- We only add users associated with charge codes that have been used in DMS
             ----------------------------------------------------------
-            --
+
             exec @myError = auto_add_charge_code_users @infoOnly = 0
 
         End
@@ -509,7 +509,7 @@ AS
             ----------------------------------------------------------
             -- Preview the updates
             ----------------------------------------------------------
-            --
+
             UPDATE #Tmp_ChargeCode
             SET Update_Status =
                     CASE WHEN target.Deactivated = 'Y' And source.Deactivated = 'N' THEN 'Re-activated Existing WP'
