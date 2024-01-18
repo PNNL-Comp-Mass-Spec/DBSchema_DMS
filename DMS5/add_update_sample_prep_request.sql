@@ -102,6 +102,7 @@ CREATE PROCEDURE [dbo].[add_update_sample_prep_request]
 **          02/13/2023 bcg - Rename parameter to requesterUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          01/17/2024 mem - Verify that @requestName is not an empty string
 **
 *****************************************************/
 (
@@ -209,8 +210,11 @@ AS
     If IsNull(@blockAndRandomizeRuns, '') NOT IN ('Yes', 'No')
         RAISERROR ('Block And Randomize Runs must be Yes or No', 11, 116)
 
-    If Len(IsNull(@reason, '')) < 1
+    If Len(LTrim(RTrim(IsNull(@reason, '')))) < 1
         RAISERROR ('The reason field is required', 11, 116)
+
+    If Len(LTrim(RTrim(IsNull(@requestName, '')))) < 1
+        RAISERROR ('The prep request must have a name', 11, 116)
 
     If dbo.has_whitespace_chars(@requestName, 1) > 0
     Begin
@@ -808,7 +812,7 @@ AS
 
     End Catch
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_sample_prep_request] TO [DDL_Viewer] AS [dbo]
