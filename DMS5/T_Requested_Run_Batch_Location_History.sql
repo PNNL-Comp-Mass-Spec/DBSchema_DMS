@@ -27,8 +27,3 @@ REFERENCES [dbo].[T_Material_Locations] ([ID])
 GO
 ALTER TABLE [dbo].[T_Requested_Run_Batch_Location_History] CHECK CONSTRAINT [FK_T_Requested_Run_Batch_Location_History_T_Material_Locations]
 GO
-ALTER TABLE [dbo].[T_Requested_Run_Batch_Location_History]  WITH CHECK ADD  CONSTRAINT [FK_T_Requested_Run_Batch_Location_History_T_Requested_Run_Batches] FOREIGN KEY([batch_id])
-REFERENCES [dbo].[T_Requested_Run_Batches] ([ID])
-GO
-ALTER TABLE [dbo].[T_Requested_Run_Batch_Location_History] CHECK CONSTRAINT [FK_T_Requested_Run_Batch_Location_History_T_Requested_Run_Batches]
-GO
