@@ -6,6 +6,8 @@ GO
 CREATE TABLE [dbo].[T_Cached_Requested_Run_Batch_Stats](
 	[Batch_ID] [int] NOT NULL,
 	[Requests] [int] NULL,
+	[Instrument_Group_First] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Instrument_Group_Last] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Separation_Group_First] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Separation_Group_Last] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Active_Requests] [int] NULL,

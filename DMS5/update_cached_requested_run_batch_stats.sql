@@ -23,6 +23,7 @@ CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 **                         - Post a log entry if the runtime exceeds 30 seconds
 **          01/02/2024 mem - Fix column name bug when joining V_Requested_Run_Queue_Times to T_Requested_Run
 **          01/19/2024 mem - Fix bug that failed to populate column separation_group_last when adding a new batch to T_Cached_Requested_Run_Batch_Stats
+**                           Populate columns Instrument_Group_First and Instrument_Group_Last
 **
 *****************************************************/
 (
@@ -127,6 +128,8 @@ AS
     USING (
             SELECT BatchQ.batch_id,
                    StatsQ.oldest_request_created,
+                   StatsQ.instrument_group_first,
+                   StatsQ.instrument_group_last,
                    StatsQ.separation_group_first,
                    StatsQ.separation_group_last,
                    ActiveStatsQ.active_requests,
@@ -143,6 +146,8 @@ AS
                  LEFT OUTER JOIN
                  ( SELECT RR.RDS_BatchID AS batch_id,
                           MIN(RR.RDS_created) AS oldest_request_created,
+                          MIN(RR.RDS_Instrument_Group) AS instrument_group_first,
+                          MAX(RR.RDS_Instrument_Group) AS instrument_group_last,
                           MIN(RR.RDS_Sec_Sep) AS separation_group_first,
                           MAX(RR.RDS_Sec_Sep) AS separation_group_last
                    FROM T_Requested_Run RR
@@ -165,6 +170,10 @@ AS
           ) AS s
     ON ( t.batch_id = s.batch_id )
     WHEN MATCHED And (
+            ISNULL( NULLIF(t.instrument_group_first, s.instrument_group_first),
+                    NULLIF(s.instrument_group_first, t.instrument_group_first)) IS NOT NULL Or
+            ISNULL( NULLIF(t.instrument_group_last, s.instrument_group_last),
+                    NULLIF(s.instrument_group_last, t.instrument_group_last)) IS NOT NULL Or
             ISNULL( NULLIF(t.separation_group_first, s.separation_group_first),
                     NULLIF(s.separation_group_first, t.separation_group_first)) IS NOT NULL Or
             ISNULL( NULLIF(t.separation_group_last, s.separation_group_last),
@@ -183,6 +192,8 @@ AS
                     NULLIF(s.days_in_queue, t.days_in_queue)) IS NOT NULL
           ) THEN
      UPDATE SET
+            instrument_group_first = s.instrument_group_first,
+            instrument_group_last  = s.instrument_group_last,
             separation_group_first = s.separation_group_first,
             separation_group_last  = s.separation_group_last,
             active_requests        = s.active_requests,
@@ -193,10 +204,18 @@ AS
             days_in_queue          = s.days_in_queue,
             last_affected          = CURRENT_TIMESTAMP
     WHEN NOT MATCHED THEN
-        INSERT ( batch_id, separation_group_first, separation_group_last, active_requests, first_active_request, last_active_request,
-                 oldest_active_request_created, oldest_request_created, days_in_queue, last_affected )
-        VALUES ( s.batch_id, s.separation_group_first, s.separation_group_last, s.active_requests, s.first_active_request, s.last_active_request,
-                 s.oldest_active_request_created, s.oldest_request_created, s.days_in_queue, CURRENT_TIMESTAMP )
+        INSERT ( batch_id,
+                 instrument_group_first, instrument_group_last,
+                 separation_group_first, separation_group_last,
+                 active_requests, first_active_request, last_active_request,
+                 oldest_active_request_created, oldest_request_created,
+                 days_in_queue, last_affected )
+        VALUES ( s.batch_id,
+                 s.instrument_group_first, s.instrument_group_last,
+                 s.separation_group_first, s.separation_group_last,
+                 s.active_requests, s.first_active_request, s.last_active_request,
+                 s.oldest_active_request_created, s.oldest_request_created,
+                 s.days_in_queue, CURRENT_TIMESTAMP )
     ;
 
     Commit Transaction;
