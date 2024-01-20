@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[do_requested_run_batch_operation]
 **          02/10/2023 mem - Call update_cached_requested_run_batch_stats
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/31/2023 mem - When deleting a batch, archive it in T_Deleted_Requested_Run_Batch
+**          01/19/2024 mem - Remove reference to deprecated column Requested_Instrument when copying data from T_Requested_Run_Batches to T_Deleted_Requested_Run_Batch
 **
 *****************************************************/
 (
@@ -61,7 +62,7 @@ AS
 
     Declare @batchExists int = 0
     Declare @lock varchar(12)
-    
+
     SELECT @lock = Locked
     FROM T_Requested_Run_Batches
     WHERE ID = @batchID
@@ -179,14 +180,14 @@ AS
         End
         Else
         Begin
-            INSERT INTO T_Deleted_Requested_Run_Batch (Batch_ID, Batch, Description, Owner_User_ID, Created, Locked, 
-                                                       Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
-                                                       Requested_Completion_Date, Justification_for_High_Priority, Comment, 
-                                                       Requested_Instrument_Group, Batch_Group_ID, Batch_Group_Order)
-            SELECT ID, Batch, Description, Owner, Created, Locked, 
-                   Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority, 
-                   Requested_Completion_Date, Justification_for_High_Priority, Comment, 
-                   Requested_Instrument, Batch_Group_ID, Batch_Group_Order
+            INSERT INTO T_Deleted_Requested_Run_Batch (Batch_ID, Batch, Description, Owner_User_ID, Created, Locked,
+                                                       Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority,
+                                                       Requested_Completion_Date, Justification_for_High_Priority, Comment,
+                                                       Batch_Group_ID, Batch_Group_Order)
+            SELECT ID, Batch, Description, Owner, Created, Locked,
+                   Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority,
+                   Requested_Completion_Date, Justification_for_High_Priority, Comment,
+                   Batch_Group_ID, Batch_Group_Order
             FROM T_Requested_Run_Batches
             WHERE ID = @batchID
             --
@@ -206,7 +207,6 @@ AS
             return 0
         End
     End
-
 
     ---------------------------------------------------
     -- Grant High Priority
@@ -228,7 +228,6 @@ AS
         End
         return 0
     End
-
 
     ---------------------------------------------------
     -- Deny High Priority
@@ -268,7 +267,8 @@ AS
 
     Set @message = 'Mode "' + @mode +  '" was unrecognized'
     RAISERROR (@message, 10, 1)
-    return 51222
+
+    Return 51222
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[do_requested_run_batch_operation] TO [DDL_Viewer] AS [dbo]

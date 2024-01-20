@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[undelete_requested_run]
 **  Date:   03/30/2023 mem - Initial version
 **          03/31/2023 mem - Restore requested run batches and batch groups if the requested run refers to a deleted batch or batch group
 **          10/18/2023 mem - Add support for a deleted requested run referencing a non-existent dataset
+**          01/19/2024 mem - Remove reference to deprecated column Requested_Instrument when copying data from T_Deleted_Requested_Run_Batch to T_Requested_Run_Batches
 **
 *****************************************************/
 (
@@ -206,12 +207,15 @@ AS
                ID, Batch, Description, Owner, Created, Locked,
                Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority,
                Requested_Completion_Date, Justification_for_High_Priority, Comment,
-               Requested_Instrument, Batch_Group_ID, Batch_Group_Order
+               -- Deprecated in January 2024
+               -- Requested_Instrument, 
+               Batch_Group_ID, Batch_Group_Order
             )
         SELECT Batch_ID, Batch, Description, Owner_User_ID, Created, Locked,
                Last_Ordered, Requested_Batch_Priority, Actual_Batch_Priority,
                Requested_Completion_Date, Justification_for_High_Priority, Comment,
-               Requested_Instrument_Group, Batch_Group_ID, Batch_Group_Order
+               -- Requested_Instrument_Group, 
+               Batch_Group_ID, Batch_Group_Order
         FROM T_Deleted_Requested_Run_Batch
         WHERE Entry_ID = @deletedBatchEntryID
 
@@ -283,8 +287,8 @@ AS
     ---------------------------------------------------
     -- Complete
     ---------------------------------------------------
-    --
+
 Done:
-    return @myError
+    Return @myError
 
 GO
