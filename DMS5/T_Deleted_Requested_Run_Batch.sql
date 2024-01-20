@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[T_Deleted_Requested_Run_Batch](
 	[Requested_Completion_Date] [smalldatetime] NULL,
 	[Justification_for_High_Priority] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](512) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Requested_Instrument_Group] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Requested_Instrument_Group] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Batch_Group_ID] [int] NULL,
 	[Batch_Group_Order] [int] NULL,
  CONSTRAINT [PK_T_Deleted_Requested_Run_Batch] PRIMARY KEY CLUSTERED 
