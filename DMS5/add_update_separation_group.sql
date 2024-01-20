@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[add_update_separation_group]
 **          08/01/2017 mem - Use THROW if not authorized
 **          03/15/2021 mem - Add @fractionCount
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          01/17/2024 mem - Verify that @separationGroup is not an empty string
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -55,12 +56,16 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
+    Set @separationGroup = LTrim(RTrim(IsNull(@separationGroup, '')))
     Set @comment = IsNull(@comment, '')
     Set @active = IsNull(@active, 0)
     Set @samplePrepVisible = IsNull(@samplePrepVisible, 0)
     Set @fractionCount = IsNull(@fractionCount, 0)
 
     Set @message = ''
+
+    If @separationGroup = ''
+        RAISERROR ('Separation group name must be specified', 11, 16)
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
@@ -136,7 +141,7 @@ AS
         Exec post_log_entry 'Error', @message, 'add_update_separation_group'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_separation_group] TO [DDL_Viewer] AS [dbo]
