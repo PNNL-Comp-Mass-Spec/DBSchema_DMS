@@ -6,7 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
 /****************************************************
 **
-**  Desc: Adds new or edits existing requested run batch
+**  Desc:
+**      Adds new or edits existing requested run batch
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -41,6 +42,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
 **                         - Rename @requestedInstrument to @requestedInstrumentGroup
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          12/15/2023 mem - Fix bug that sent the wrong value to @requestedBatchPriority when calling validate_requested_run_batch_params
+**          01/19/2024 mem - Remove @requestedInstrumentGroup since we no longer track instrument group at the batch level
 **
 *****************************************************/
 (
@@ -52,7 +54,8 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
-    @requestedInstrumentGroup varchar(64),          -- Will typically contain an instrument group, not an instrument name
+    -- Deprecated in January 2024
+    -- @requestedInstrumentGroup varchar(64),          -- Will typically contain an instrument group, not an instrument name
     @comment varchar(512),
     @batchGroupID int = Null,
     @batchGroupOrder Int = Null,
@@ -101,12 +104,14 @@ AS
             @requestedBatchPriority = @requestedBatchPriority,
             @requestedCompletionDate = @requestedCompletionDate,
             @justificationHighPriority = @justificationHighPriority,
-            @requestedInstrumentGroup = @requestedInstrumentGroup,
+            -- Deprecated in January 2024
+            -- @requestedInstrumentGroup = @requestedInstrumentGroup,
             @comment = @comment,
             @batchGroupID = @batchGroupID output,
             @batchGroupOrder = @batchGroupOrder output,
             @mode = @mode,
-            @instrumentGroupToUse = @instrumentGroupToUse output,
+            -- Deprecated in January 2024
+            -- @instrumentGroupToUse = @instrumentGroupToUse output,
             @userID = @userID Output,
             @message = @message output;
 
@@ -276,7 +281,7 @@ AS
             Actual_Batch_Priority,
             Requested_Completion_Date,
             Justification_for_High_Priority,
-            Requested_Instrument,
+            -- Requested_Instrument,
             Comment,
             Batch_Group_ID,
             Batch_Group_Order
@@ -289,7 +294,8 @@ AS
             'Normal',
             @requestedCompletionDate,
             @justificationHighPriority,
-            @instrumentGroupToUse,
+            -- Deprecated in January 2024
+            -- @instrumentGroupToUse,
             @comment,
             @batchGroupID,
             @batchGroupOrder
@@ -357,7 +363,8 @@ AS
             Requested_Batch_Priority = @requestedBatchPriority,
             Requested_Completion_Date = @requestedCompletionDate,
             Justification_for_High_Priority = @justificationHighPriority,
-            Requested_Instrument = @instrumentGroupToUse,
+            -- Deprecated in January 2024
+            -- Requested_Instrument = @instrumentGroupToUse,
             Comment = @comment,
             Batch_Group_ID = @batchGroupID,
             Batch_Group_Order = @batchGroupOrder

@@ -6,7 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
 /****************************************************
 **
-**  Desc: Validates values for creating/updating a requested run batch
+**  Desc: 
+**      Validates values for creating/updating a requested run batch
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +20,7 @@ CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          06/16/2023 mem - Validate instrument group name
 **          11/27/2023 mem - Select a single column when using If Exists ()
+**          01/19/2024 mem - Remove @requestedInstrumentGroup and @instrumentGroupToUse since we no longer track instrument group at the batch level
 **
 *****************************************************/
 (
@@ -29,12 +31,14 @@ CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
     @requestedBatchPriority varchar(24),
     @requestedCompletionDate varchar(32),
     @justificationHighPriority varchar(512),
-    @requestedInstrumentGroup varchar(64),      -- Will typically contain an instrument group, not an instrument name
+    -- Deprecated in January 2024
+    -- @requestedInstrumentGroup varchar(64),      -- Will typically contain an instrument group, not an instrument name
     @comment varchar(512),
     @batchGroupID int = Null output,
     @batchGroupOrder Int = Null output,
     @mode varchar(12) = 'add',                  -- 'add' or 'update' or 'PreviewAdd'
-    @instrumentGroupToUse varchar(64) output,   -- Output: Actual instrument group
+    -- Deprecated in January 2024
+    -- @instrumentGroupToUse varchar(64) output,   -- Output: Actual instrument group
     @userID int output,                         -- Output: user_id for @ownerUsername
     @message varchar(512) = '' output
 )
@@ -71,30 +75,7 @@ AS
             End
         End
 
-        ---------------------------------------------------
-        -- Determine the Instrument Group
-        ---------------------------------------------------
-
-        Set @requestedInstrumentGroup = LTrim(RTrim(Coalesce(@requestedInstrumentGroup, '')))
-
-        -- Set the instrument group to @requestedInstrumentGroup for now
-        Set @instrumentGroupToUse = @requestedInstrumentGroup
-
-        If NOT EXISTS (SELECT IN_Group FROM T_Instrument_Group WHERE IN_Group = @instrumentGroupToUse)
         Begin
-            -- Try to update instrument group using T_Instrument_Name
-            SELECT @instrumentGroupToUse = IN_Group
-            FROM T_Instrument_Name
-            WHERE IN_Name = @requestedInstrumentGroup
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
-
-            If @myRowCount = 0
-            Begin
-                Set @message = 'Invalid Instrument Group: ' + @requestedInstrumentGroup
-                Set @myError = 50002
-                Return @myError
-            End
         End
 
         ---------------------------------------------------
