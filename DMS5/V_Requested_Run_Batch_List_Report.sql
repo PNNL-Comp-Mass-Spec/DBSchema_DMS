@@ -21,7 +21,7 @@ SELECT RRB.id,
                END
             ELSE ''
        END AS instrument,
-       RRB.Requested_Instrument AS inst_group,
+       RBS.instrument_group_first AS inst_group,
        RRB.description,
        T_Users.U_Name AS owner,
        RRB.created,

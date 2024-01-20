@@ -18,7 +18,10 @@ SELECT RRB.id,
        RRB.Requested_Completion_Date AS requested_completion_date,
        RRB.Justification_for_High_Priority AS justification_for_high_priority,
        dbo.get_batch_dataset_instrument_list(RRB.ID) AS instrument_used,
-       RRB.Requested_Instrument AS instrument_group,
+       CASE WHEN RBS.instrument_group_first = RBS.instrument_group_last
+            THEN RBS.instrument_group_first
+            ELSE RBS.instrument_group_first + ' - ' + RBS.instrument_group_last
+       END AS instrument_group,
        RRB.comment,
        CASE WHEN RBS.separation_group_first = RBS.separation_group_last
             THEN RBS.separation_group_first
