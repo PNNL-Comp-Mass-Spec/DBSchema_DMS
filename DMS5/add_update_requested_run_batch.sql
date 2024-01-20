@@ -92,7 +92,6 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    Declare @instrumentGroupToUse varchar(64)
     Declare @userID int = 0
     Set @id = IsNull(@id, 0)
 
