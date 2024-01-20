@@ -20,6 +20,7 @@ CREATE TABLE [dbo].[T_Deleted_Requested_Run_Batch](
 	[Requested_Instrument_Group] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Batch_Group_ID] [int] NULL,
 	[Batch_Group_Order] [int] NULL,
+	[Deleted] [datetime] NULL,
  CONSTRAINT [PK_T_Deleted_Requested_Run_Batch] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
@@ -53,4 +54,6 @@ CREATE NONCLUSTERED INDEX [IX_T_Deleted_Requested_Run_Batch_Batch_Group_ID] ON [
 (
 	[Batch_Group_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[T_Deleted_Requested_Run_Batch] ADD  DEFAULT (getdate()) FOR [Deleted]
 GO
