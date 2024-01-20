@@ -22,7 +22,10 @@ SELECT RRB.id,
                END
             ELSE ''
        END AS instrument,
-       RRB.Requested_Instrument AS inst_group,
+       CASE WHEN Active_Req_Runs.InstrumentGroupFirst = Active_Req_Runs.InstrumentGroupLast
+            THEN Active_Req_Runs.InstrumentGroupFirst
+            ELSE Active_Req_Runs.InstrumentGroupFirst + ' - ' + Active_Req_Runs.InstrumentGroupLast
+       END AS inst_group,
        RRB.description,
        T_Users.U_Name AS owner,
        RRB.created,
@@ -34,9 +37,9 @@ SELECT RRB.id,
        SPQ.days_in_prep_queue,
        RRB.justification_for_high_priority,
        RRB.comment,
-       CASE WHEN Active_Req_Runs.SeparationGroupFirst = Active_Req_Runs.separationgrouplast
-            THEN Active_Req_Runs.separationgroupfirst
-            ELSE Active_Req_Runs.SeparationGroupFirst + ' - ' + Active_Req_Runs.separationgrouplast
+       CASE WHEN Active_Req_Runs.SeparationGroupFirst = Active_Req_Runs.SeparationGroupLast
+            THEN Active_Req_Runs.SeparationGroupFirst
+            ELSE Active_Req_Runs.SeparationGroupFirst + ' - ' + Active_Req_Runs.SeparationGroupLast
        END AS separation_group,
        CASE
            WHEN Active_Req_Runs.Requests IS NULL THEN 0    -- No active requested runs for this batch
@@ -59,6 +62,8 @@ FROM T_Requested_Run_Batches AS RRB
      INNER JOIN T_Users
        ON RRB.Owner = T_Users.ID
      LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
+                              MIN(RDS_instrument_group) AS InstrumentGroupFirst,
+                              MAX(RDS_instrument_group) AS InstrumentGroupLast,
                               MIN(RDS_Sec_Sep) AS SeparationGroupFirst,
                               MAX(RDS_Sec_Sep) AS SeparationGroupLast,
                               COUNT(*) AS requests,
