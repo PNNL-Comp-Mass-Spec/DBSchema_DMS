@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 **                         - Fix long-running merge queries by using temp tables to store stats
 **                         - Post a log entry if the runtime exceeds 30 seconds
 **          01/02/2024 mem - Fix column name bug when joining V_Requested_Run_Queue_Times to T_Requested_Run
+**          01/19/2024 mem - Fix bug that failed to populate column separation_group_last when adding a new batch to T_Cached_Requested_Run_Batch_Stats
 **
 *****************************************************/
 (
@@ -192,9 +193,9 @@ AS
             days_in_queue          = s.days_in_queue,
             last_affected          = CURRENT_TIMESTAMP
     WHEN NOT MATCHED THEN
-        INSERT ( batch_id, separation_group_first, active_requests, first_active_request, last_active_request,
+        INSERT ( batch_id, separation_group_first, separation_group_last, active_requests, first_active_request, last_active_request,
                  oldest_active_request_created, oldest_request_created, days_in_queue, last_affected )
-        VALUES ( s.batch_id, s.separation_group_first, s.active_requests, s.first_active_request, s.last_active_request,
+        VALUES ( s.batch_id, s.separation_group_first, s.separation_group_last, s.active_requests, s.first_active_request, s.last_active_request,
                  s.oldest_active_request_created, s.oldest_request_created, s.days_in_queue, CURRENT_TIMESTAMP )
     ;
 
