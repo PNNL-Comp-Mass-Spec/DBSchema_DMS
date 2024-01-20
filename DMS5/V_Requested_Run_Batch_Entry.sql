@@ -13,7 +13,8 @@ SELECT RRB.id,
        RRB.Requested_Batch_Priority AS requested_batch_priority,
        RRB.Requested_Completion_Date AS requested_completion_date,
        RRB.Justification_for_High_Priority AS justification_high_priority,
-       RRB.Requested_Instrument AS requested_instrument_group,
+       -- Deprecated in January 2024
+       -- RRB.Requested_Instrument AS requested_instrument_group,
        RRB.comment,
        RRB.Batch_Group_id AS batch_group,
        RRB.Batch_Group_Order AS batch_group_order

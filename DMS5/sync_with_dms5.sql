@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[sync_with_dms5]
 **          10/10/2023 mem - Remove column Sample_Submission_Item_Count from T_Sample_Prep_Request
 **          01/04/2024 mem - Use new data release restriction column name in T_Campaign
 **                         - Remove column Barcode from T_Material_Containers
+**          01/19/2024 mem - Remove reference to deprecated column Requested_Instrument in T_Requested_Run_Batches
 **
 *****************************************************/
 (
@@ -3567,7 +3568,8 @@ AS
                 t.[Batch] <> s.[Batch] OR
                 t.[Created] <> s.[Created] OR
                 t.[Locked] <> s.[Locked] OR
-                t.[Requested_Instrument] <> s.[Requested_Instrument] OR
+                -- Deprecated in January 2024
+                -- t.[Requested_Instrument] <> s.[Requested_Instrument] OR
                 Coalesce( NULLIF(t.[Description], s.[Description]),
                         NULLIF(s.[Description], t.[Description])) IS NOT NULL OR
                 Coalesce( NULLIF(t.[Owner], s.[Owner]),
@@ -3594,13 +3596,14 @@ AS
                 [Last_Ordered] = s.[Last_Ordered],
                 [Requested_Batch_Priority] = s.[Requested_Batch_Priority],
                 [Actual_Batch_Priority] = s.[Actual_Batch_Priority],
-               [Requested_Completion_Date] = s.[Requested_Completion_Date],
+                [Requested_Completion_Date] = s.[Requested_Completion_Date],
                 [Justification_for_High_Priority] = s.[Justification_for_High_Priority],
-                [Comment] = s.[Comment],
-                [Requested_Instrument] = s.[Requested_Instrument]
+                [Comment] = s.[Comment]
+                -- Deprecated in January 2024
+                -- [Requested_Instrument] = s.[Requested_Instrument]
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT([ID], [Batch], [Description], [Owner], [Created], [Locked], [Last_Ordered], [Requested_Batch_Priority], [Actual_Batch_Priority], [Requested_Completion_Date], [Justification_for_High_Priority], [Comment], [Requested_Instrument])
-                VALUES(s.[ID], s.[Batch], s.[Description], s.[Owner], s.[Created], s.[Locked], s.[Last_Ordered], s.[Requested_Batch_Priority], s.[Actual_Batch_Priority], s.[Requested_Completion_Date], s.[Justification_for_High_Priority], s.[Comment], s.[Requested_Instrument])
+                INSERT([ID], [Batch], [Description], [Owner], [Created], [Locked], [Last_Ordered], [Requested_Batch_Priority], [Actual_Batch_Priority], [Requested_Completion_Date], [Justification_for_High_Priority], [Comment]) --, [Requested_Instrument]
+                VALUES(s.[ID], s.[Batch], s.[Description], s.[Owner], s.[Created], s.[Locked], s.[Last_Ordered], s.[Requested_Batch_Priority], s.[Actual_Batch_Priority], s.[Requested_Completion_Date], s.[Justification_for_High_Priority], s.[Comment])
             WHEN NOT MATCHED BY SOURCE And @DeleteExtras <> 0 THEN DELETE
             OUTPUT @tableName, $action,
                    Cast(Inserted.[ID] as varchar(12)),
