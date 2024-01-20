@@ -21,6 +21,7 @@ CREATE PROCEDURE [dbo].[validate_requested_run_batch_params]
 **          06/16/2023 mem - Validate instrument group name
 **          11/27/2023 mem - Select a single column when using If Exists ()
 **          01/19/2024 mem - Remove @requestedInstrumentGroup and @instrumentGroupToUse since we no longer track instrument group at the batch level
+**                         - Validate @requestedBatchPriority
 **
 *****************************************************/
 (
@@ -75,7 +76,11 @@ AS
             End
         End
 
+        If Not Coalesce(@requestedBatchPriority, '') In ('Normal', 'High')
         Begin
+            Set @message = 'Requested batch priority should be Normal or High'
+            Set @myError = 50002
+            Return @myError
         End
 
         ---------------------------------------------------
