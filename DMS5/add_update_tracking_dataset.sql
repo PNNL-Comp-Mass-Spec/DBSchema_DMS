@@ -6,7 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[add_update_tracking_dataset]
 /****************************************************
 **
-**  Desc:   Adds new or edits existing tracking dataset
+**  Desc:
+**      Adds new or edits existing tracking dataset
 **
 **  Auth:   grk
 **  Date:   07/03/2012
@@ -31,6 +32,7 @@ CREATE PROCEDURE [dbo].[add_update_tracking_dataset]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/27/2023 mem - Use new argument name, @requestName
 **          09/07/2023 mem - Update warning messages
+**          01/20/2024 mem - Prevent changing an existing tracking dataset's instrument
 **
 *****************************************************/
 (
@@ -238,6 +240,14 @@ AS
             Set @msg = 'Cannot add dataset ' + @datasetName + ' since already in database'
             RAISERROR (@msg, 11, 5)
         End
+    End
+
+    If @mode In ('update', 'check_update')
+    Begin
+        -- Leave the instrument name as-is when updating a tracking entry
+        SELECT @instrumentName = IN_name
+        FROM t_instrument_name
+        WHERE instrument_id = @curDSInstID;
     End
 
     ---------------------------------------------------
@@ -494,7 +504,6 @@ AS
         UPDATE T_Dataset
         SET     DS_Oper_PRN = @operatorUsername,
                 DS_comment = @comment,
-                DS_instrument_name_ID = @instrumentID,
                 DS_type_ID = @datasetTypeID,
                 DS_folder_name = @folderName,
                 Exp_ID = @experimentID,
@@ -613,8 +622,7 @@ AS
         Exec post_log_entry 'Error', @message, 'add_update_tracking_dataset'
     END CATCH
 
-    return @myError
-
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_tracking_dataset] TO [DDL_Viewer] AS [dbo]
