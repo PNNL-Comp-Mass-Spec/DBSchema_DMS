@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE PROCEDURE [dbo].[add_requested_runs]
 /****************************************************
 **
@@ -57,6 +56,7 @@ CREATE PROCEDURE [dbo].[add_requested_runs]
 **          02/27/2023 mem - Use new argument name, @requestName
 **          09/07/2023 mem - Update warning messages
 **          11/27/2023 mem - Do not log errors from validate_requested_run_batch_params() if @myError is between 50000 and 50050
+**          01/22/2024 mem - Remove deprecated instrument group arguments when calling validate_requested_run_batch_params() and add_update_requested_run_batch()
 **
 *****************************************************/
 (
@@ -262,7 +262,6 @@ AS
     Declare @wellplateName varchar(64) = '(lookup)'
     Declare @wellNumber varchar(24) = '(lookup)'
 
-    Declare @instrumentGroupToUse varchar(64)
     Declare @userID int
 
     If Len(@batchName) > 0
@@ -279,10 +278,12 @@ AS
                 @requestedBatchPriority = @batchPriority,
                 @requestedCompletionDate = @batchCompletionDate,
                 @justificationHighPriority = @batchPriorityJustification,
-                @requestedInstrumentGroup = @instrumentGroup,              -- Will typically contain an instrument group, not an instrument name
+                -- Deprecated in January 2024
+                -- @requestedInstrumentGroup = @instrumentGroup,              -- Will typically contain an instrument group, not an instrument name
                 @comment = @batchComment,
                 @mode = @mode,
-                @instrumentGroupToUse = @instrumentGroupToUse output,
+                -- Deprecated in January 2024
+                -- @instrumentGroupToUse = @instrumentGroupToUse output,
                 @userID = @userID output,
                 @message = @message output
 
@@ -296,10 +297,6 @@ AS
 
             RAISERROR (@message, 11, 1)
         End
-    End
-    Else
-    Begin
-        Set @instrumentGroupToUse = @instrumentGroup
     End
 
     ---------------------------------------------------
@@ -364,7 +361,7 @@ AS
                                     @requestName = @requestName,
                                     @experimentName = @experimentName,
                                     @requesterUsername = @operatorUsername,
-                                    @instrumentName = @instrumentGroupToUse,
+                                    @instrumentName = @instrumentGroup,
                                     @workPackage = @workPackage,
                                     @msType = @msType,
                                     @instrumentSettings = @instrumentSettings,
@@ -419,7 +416,7 @@ AS
         Set @message = 'Would create ' + cast(@count as varchar(12)) + ' requested runs (' + @requestNameFirst + ' to ' + @requestNameLast + ')'
 
         If @resolvedInstrumentInfo = ''
-            Set @message = @message + ' with instrument group ' + @instrumentGroupToUse + ', run type ' + @msType + ', and separation group ' + @separationGroup
+            Set @message = @message + ' with instrument group ' + @instrumentGroup + ', run type ' + @msType + ', and separation group ' + @separationGroup
         Else
             Set @message = @message + ' with ' + @resolvedInstrumentInfo
     End
@@ -449,7 +446,8 @@ AS
                                            ,@requestedBatchPriority = @batchPriority
                                            ,@requestedCompletionDate = @batchCompletionDate
                                            ,@justificationHighPriority = @batchPriorityJustification
-                                           ,@requestedInstrumentGroup = @instrumentGroupToUse
+                                           -- Deprecated in January 2024
+                                           -- ,@requestedInstrumentGroup = @instrumentGroupToUse
                                            ,@comment = @batchComment
                                            ,@mode = @mode
                                            ,@message = @msg output
