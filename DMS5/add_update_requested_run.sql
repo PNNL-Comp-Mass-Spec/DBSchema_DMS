@@ -111,6 +111,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **                         - Fix bug validating the requested run status when renaming a requested run
 **          01/22/2024 mem - If the requested run is active and not associated with a batch, do not allow it to be added to a batch that has active requested runs whose instrument group differs from this request's instrument group
 **                         - If the requested run is active and is associated with a batch, do not allow the instrument group to be changed if the batch has other active requests with a different instrument group than this request's instrument group
+**          01/23/2024 mem - Use a different instrument group warning message if the instrument group is unchanged, but the associated batch already has a mix of instrument groups
 **
 *****************************************************/
 (
@@ -838,9 +839,16 @@ AS
                 WHERE ID = @requestID
 
                 If @currentBatch > 0 And @currentBatch <> @batch
-                    Set @message = 'Changing the batch from ' + Cast(@currentBatch as varchar(12)) + ' to ' + Cast(@batch as varchar(12)) + 
+                Begin
+                    Set @message = 'Changing the batch from ' + Cast(@currentBatch as varchar(12)) + ' to ' + Cast(@batch as varchar(12)) +
                                    ' is not allowed since that would result in a mix of instrument groups for batch ' + Cast(@batch as varchar(12)) + ' (which corresponds to ' + @instrumentGroups + ');' +
                                    ' either update the instrument group for all active requests in the batch using https://dms2.pnl.gov/requested_run_admin/report or create a new batch for this requested run'
+                End
+                Else If @currentInstrumentGroup = @instrumentGroup
+                Begin
+                    Set @message = 'Batch ' + Cast(@batch as varchar(12)) + ' has a mix of instrument groups (' + @instrumentGroups + '); this requested run cannot be updated until the active requested runs in the batch have the same instrument group.' +
+                                   ' Either update the instrument group for all active requests in the batch using https://dms2.pnl.gov/requested_run_admin/report or create a new batch for this requested run'
+                End
                 Else
                 Begin
                     Set @message = 'Changing the instrument group from ' + @currentInstrumentGroup + ' to ' + @instrumentGroup + ' would result in a mix of instrument groups for batch ' + Cast(@batch AS varchar(12)) + ' (which corresponds to ' + @instrumentGroups + ');' +
@@ -849,7 +857,7 @@ AS
             End
             Else
             Begin
-                Set @message = 'Cannot add the new requested run to batch ' + Cast(@batch AS varchar(12)) + 
+                Set @message = 'Cannot add the new requested run to batch ' + Cast(@batch AS varchar(12)) +
                                ' since the new requested run has instrument group ' + @instrumentGroup +
                                ' but the existing active requested runs in the batch have instrument group ' + @instrumentGroups + ';' +
                                ' a requested run batch cannot have a mix of instrument groups'
