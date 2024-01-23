@@ -109,6 +109,8 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **          10/02/2023 mem - Use @requestID when calling update_cached_requested_run_eus_users
 **          10/31/2023 mem - Raise an error if the instrument group is invalid
 **                         - Fix bug validating the requested run status when renaming a requested run
+**          01/22/2024 mem - If the requested run is active and not associated with a batch, do not allow it to be added to a batch that has active requested runs whose instrument group differs from this request's instrument group
+**                         - If the requested run is active and is associated with a batch, do not allow the instrument group to be changed if the batch has other active requests with a different instrument group than this request's instrument group
 **
 *****************************************************/
 (
@@ -134,7 +136,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
     @message varchar(1024) output,
     @secSep varchar(64) = 'LC-Formic_100min',   -- Separation group
     @mrmAttachment varchar(128),
-    @status VARCHAR(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
+    @status varchar(24) = 'Active',             -- 'Active', 'Inactive', 'Completed'
     @skipTransactionRollback tinyint = 0,       -- This is set to 1 when stored procedure add_update_dataset calls this stored procedure
     @autoPopulateUserListIfBlank tinyint = 0,   -- When 1, will auto-populate @eusUsersList if it is empty and @eusUsageType is 'USER', 'USER_ONSITE', or 'USER_REMOTE'
     @callingUser varchar(128) = '',
@@ -246,6 +248,7 @@ AS
     ---------------------------------------------------
 
     Declare @badCh varchar(128) = dbo.validate_chars(@requestName, '')
+
     If @badCh <> ''
     Begin
         If @badCh = '[space]'
@@ -285,7 +288,8 @@ AS
             SELECT @oldReqName = RDS_Name,
                    @requestID = ID,
                    @oldEusProposalID = RDS_EUS_Proposal_ID,
-                   @oldStatus = RDS_Status
+                   @oldStatus = RDS_Status,
+                   @currentBatch = RDS_BatchID
             FROM T_Requested_Run
             WHERE ID = @requestIDForUpdate
             --
@@ -312,7 +316,8 @@ AS
             SELECT @oldReqName = RDS_Name,
                    @requestID = ID,
                    @oldEusProposalID = RDS_EUS_Proposal_ID,
-                   @oldStatus = RDS_Status
+                   @oldStatus = RDS_Status,
+                   @currentBatch = RDS_BatchID
             FROM T_Requested_Run
             WHERE RDS_Name = @requestName AND
                   RDS_Status = @status
@@ -335,7 +340,8 @@ AS
         SELECT @oldReqName = RDS_Name,
                @requestID = ID,
                @oldEusProposalID = RDS_EUS_Proposal_ID,
-               @oldStatus = RDS_Status
+               @oldStatus = RDS_Status,
+               @currentBatch = RDS_BatchID
         FROM T_Requested_Run
         WHERE RDS_Name = @requestName
         --
@@ -363,7 +369,6 @@ AS
         Else
             RAISERROR ('Cannot update: Requested Run "%s" is not in the database; cannot update', 11, 4, @requestName)
     End
-
 
     ---------------------------------------------------
     -- Confirm that the new status value is valid
@@ -731,14 +736,14 @@ AS
     -- Validate the batch ID
     ---------------------------------------------------
 
-    If Not Exists (Select * FROM T_Requested_Run_Batches Where ID = @batch)
+    If Not Exists (Select ID FROM T_Requested_Run_Batches Where ID = @batch)
     Begin
         If @mode Like '%update%'
             Set @mode = 'update'
         Else
             Set @mode = 'add'
 
-        RAISERROR ('Cannot %s: Batch ID "%d" is not in the database', 11, 4, @mode, @batch)
+        RAISERROR ('Cannot %s: batch ID "%d" does not exist', 11, 4, @mode, @batch)
     End
 
     ---------------------------------------------------
@@ -794,6 +799,70 @@ AS
     End
 
     Set @resolvedInstrumentInfo = 'instrument group ' + @instrumentGroup + ', run type ' + @msType + ', and separation group ' + @separationGroup
+
+    If @batch > 0 And @status = 'Active'
+    Begin
+        ---------------------------------------------------
+        -- Verify that the instrument group is compatible with the new or existing batch for this requested run
+        ---------------------------------------------------
+
+        Declare @instrumentGroupCount int
+
+        SELECT @instrumentGroupCount = COUNT(DISTINCT InstGroup)
+        FROM (SELECT DISTINCT RR.RDS_instrument_group AS InstGroup
+              FROM T_Requested_Run RR
+              WHERE RR.RDS_BatchID = @batch AND
+                    RR.RDS_Status = 'Active'
+              UNION
+              SELECT @instrumentGroup AS InstGroup
+             ) UnionQ
+
+        If @instrumentGroupCount > 1
+        Begin
+            Declare @instrumentGroups varchar(512) = Null
+
+            SELECT @instrumentGroups = Coalesce(@instrumentGroups + ', ', '') + InstGroup
+            FROM ( SELECT DISTINCT RR.RDS_instrument_group AS InstGroup
+                   FROM T_Requested_Run RR
+                   WHERE RR.RDS_BatchID = @batch AND
+                         RR.RDS_Status = 'Active'
+                 ) DistinctQ
+
+            If @mode Like '%update%'
+            Begin
+                Declare @currentInstrumentGroup varchar(128)
+
+                SELECT @currentInstrumentGroup = RDS_instrument_group,
+                       @currentBatch = RDS_BatchID
+                FROM T_Requested_Run
+                WHERE ID = @requestID
+
+                If @currentBatch > 0 And @currentBatch <> @batch
+                    Set @message = 'Changing the batch from ' + Cast(@currentBatch as varchar(12)) + ' to ' + Cast(@batch as varchar(12)) + 
+                                   ' is not allowed since that would result in a mix of instrument groups for batch ' + Cast(@batch as varchar(12)) + ' (which corresponds to ' + @instrumentGroups + ');' +
+                                   ' either update the instrument group for all active requests in the batch using https://dms2.pnl.gov/requested_run_admin/report or create a new batch for this requested run'
+                Else
+                Begin
+                    Set @message = 'Changing the instrument group from ' + @currentInstrumentGroup + ' to ' + @instrumentGroup + ' would result in a mix of instrument groups for batch ' + Cast(@batch AS varchar(12)) + ' (which corresponds to ' + @instrumentGroups + ');' +
+                                   ' either update the instrument group for all active requests in the batch using https://dms2.pnl.gov/requested_run_admin/report or create a new batch for this requested run'
+                End
+            End
+            Else
+            Begin
+                Set @message = 'Cannot add the new requested run to batch ' + Cast(@batch AS varchar(12)) + 
+                               ' since the new requested run has instrument group ' + @instrumentGroup +
+                               ' but the existing active requested runs in the batch have instrument group ' + @instrumentGroups + ';' +
+                               ' a requested run batch cannot have a mix of instrument groups'
+            End
+
+            If @mode Like '%update%'
+                Set @mode = 'update'
+            Else
+                Set @mode = 'add'
+
+            RAISERROR ('Cannot %s: %s', 11, 4, @mode, @message)
+        End
+    End
 
     -- Validation checks are complete; now enable @logErrors
     Set @logErrors = 1
@@ -936,10 +1005,6 @@ AS
     --
     If @mode = 'update'
     Begin -- <update>
-
-        SELECT @currentBatch = RDS_BatchID
-        FROM T_Requested_Run
-        WHERE ID = @requestID
 
         Begin transaction @transName
 
