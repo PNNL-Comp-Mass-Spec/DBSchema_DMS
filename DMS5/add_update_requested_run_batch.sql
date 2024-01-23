@@ -44,6 +44,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
 **          12/15/2023 mem - Fix bug that sent the wrong value to @requestedBatchPriority when calling validate_requested_run_batch_params
 **          01/19/2024 mem - Remove @requestedInstrumentGroup since we no longer track instrument group at the batch level
 **          01/22/2024 mem - Require that requested runs all have the same instrument group
+**                         - If any of the requested runs are already a member of another batch, call update_cached_requested_run_batch_stats for the old batch ID(s)
 **
 *****************************************************/
 (
@@ -295,6 +296,21 @@ AS
     End
 
     ---------------------------------------------------
+    -- Look for requested runs that are already associated with a different requested run batch
+    ---------------------------------------------------
+
+    CREATE TABLE #Tmp_OldBatchIDs (
+        Batch_ID int Not Null
+    )
+
+    INSERT INTO #Tmp_OldBatchIDs (Batch_ID)
+    SELECT DISTINCT RR.RDS_BatchID
+    FROM T_Requested_Run RR
+         INNER JOIN #Tmp_RequestedRuns TmpRuns
+           ON TmpRuns.Request_ID = RR.ID
+    WHERE NOT RR.RDS_BatchID IN (0, @id)
+
+    ---------------------------------------------------
     -- Action for preview mode
     ---------------------------------------------------
     --
@@ -534,6 +550,27 @@ AS
     If @id > 0
     Begin
         Exec update_cached_requested_run_batch_stats @id
+    End
+
+    If Exists (SELECT * FROM #Tmp_OldBatchIDs)
+    Begin
+        Declare @continue tinyint = 1
+        Declare @currentID int = 0
+
+        While @continue > 0
+        Begin
+            SELECT TOP 1 @currentID = Batch_ID
+            FROM #Tmp_OldBatchIDs
+            WHERE Batch_ID > @currentID
+            ORDER BY Batch_ID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+                Set @continue = 0
+            Else
+                Exec update_cached_requested_run_batch_stats @currentID
+        End
     End
 
     END TRY
