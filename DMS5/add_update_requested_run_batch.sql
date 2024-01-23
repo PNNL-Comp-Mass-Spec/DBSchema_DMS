@@ -43,6 +43,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run_batch]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          12/15/2023 mem - Fix bug that sent the wrong value to @requestedBatchPriority when calling validate_requested_run_batch_params
 **          01/19/2024 mem - Remove @requestedInstrumentGroup since we no longer track instrument group at the batch level
+**          01/22/2024 mem - Require that requested runs all have the same instrument group
 **
 *****************************************************/
 (
@@ -127,7 +128,7 @@ AS
 
     If Len(IsNull(@requestedCompletionDate, '')) = 0
     Begin
-        Set @requestedCompletionDate = null
+        Set @requestedCompletionDate = Null
     End
 
     Set @logErrors = 1
@@ -142,7 +143,7 @@ AS
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Failed to create temporary table for requests'
@@ -162,7 +163,7 @@ AS
     FROM dbo.parse_delimited_list(@requestedRunList, ',', 'add_update_requested_run_batch')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Failed to populate temporary table for requests'
@@ -180,7 +181,7 @@ AS
     UPDATE #Tmp_RequestedRuns
     SET Request_ID = try_cast(RequestIDText as int)
 
-    If Exists (Select * FROM #Tmp_RequestedRuns WHERE Request_ID Is Null)
+    If Exists (SELECT * FROM #Tmp_RequestedRuns WHERE Request_ID Is Null)
     Begin
         Declare @firstInvalid varchar(128)
 
@@ -192,7 +193,7 @@ AS
         Set @message = 'Requested runs must be integers, not names; first invalid item: ' + IsNull(@firstInvalid, '')
 
         If @useRaiseError > 0
-            RAISERROR (@message, 11, 30)
+            RAISERROR (@message, 11, 24)
         Else
             Return 50004
     End
@@ -200,13 +201,14 @@ AS
     ---------------------------------------------------
     -- Check status of prospective member requests
     ---------------------------------------------------
-    Declare @count int
+
+    Declare @countInvalid int
 
     -- Do all requests in list actually exist?
     --
-    Set @count = 0
-    --
-    SELECT @count = count(*)
+    Set @countInvalid = 0
+
+    SELECT @countInvalid = COUNT(*)
     FROM #Tmp_RequestedRuns
     WHERE NOT (Request_ID IN
     (
@@ -215,21 +217,21 @@ AS
     )
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Failed trying to check existence of requests in list'
 
         If @useRaiseError > 0
-            RAISERROR (@message, 11, 24)
+            RAISERROR (@message, 11, 25)
         Else
             Return 50005
     End
 
-    If @count <> 0
+    If @countInvalid <> 0
     Begin
 
-        Declare @invalidIDs varchar(64) = null
+        Declare @invalidIDs varchar(64) = Null
 
         SELECT @invalidIDs = Coalesce(@invalidIDs + ', ', '') + RequestIDText
         FROM #Tmp_RequestedRuns
@@ -243,9 +245,53 @@ AS
         Set @message = 'Requested run list contains requests that do not exist: ' + @invalidIDs
 
         If @useRaiseError > 0
-            RAISERROR (@message, 11, 25)
+            RAISERROR (@message, 11, 26)
         Else
             Return 50006
+    End
+
+    ---------------------------------------------------
+    -- Determine the instrument group(s) associated with the requested runs
+    -- If updating a batch, only consider active requested runs
+    ---------------------------------------------------
+
+    Declare @instrumentGroupCount int
+
+    SELECT @instrumentGroupCount = COUNT(DISTINCT RR.RDS_instrument_group)
+    FROM T_Requested_Run RR
+         INNER JOIN #Tmp_RequestedRuns TmpRuns
+           ON TmpRuns.Request_ID = RR.ID
+    WHERE (RR.RDS_Status = 'Active' And @mode Like '%update%') Or @mode Like 'add%'
+
+    If @instrumentGroupCount > 1
+    Begin
+        Declare @instrumentGroups varchar(512) = Null
+
+        SELECT @instrumentGroups = Coalesce(@instrumentGroups + ', ', '') + InstGroup
+        FROM ( SELECT DISTINCT RR.RDS_instrument_group AS InstGroup
+               FROM T_Requested_Run RR
+                    INNER JOIN #Tmp_RequestedRuns TmpRuns
+                      ON TmpRuns.Request_ID = RR.ID
+               WHERE (RR.RDS_Status = 'Active' And @mode Like '%update%') Or @mode Like 'add%'
+             ) GroupQ
+
+        Set @logErrors = 0
+
+        If @mode Like '%update%'
+            Set @message = 'Active requested runs'
+        Else
+            Set @message = 'Requested runs'
+
+        Set @message = @message +
+                       ' in a batch must have the same instrument group; the selected ' +
+                       CASE WHEN @mode Like '%update%' THEN 'active ' ELSE ' ' END +
+                       'requested runs are associated with multiple instrument groups (' + @instrumentGroups + '). ' +
+                       'Update the instrument groups for the requested runs, or create multiple batches'
+
+        If @useRaiseError > 0
+            RAISERROR (@message, 11, 27)
+        Else
+            Return 50007
     End
 
     ---------------------------------------------------
@@ -254,7 +300,12 @@ AS
     --
     If @mode = 'PreviewAdd'
     Begin
-        Set @message = 'Would create batch "' + @name + '" with ' + Cast(@count As Varchar(12)) + ' requested runs'
+        DECLARE @countValid int = 0
+
+        SELECT @countValid = COUNT(*)
+        FROM #Tmp_RequestedRuns;
+
+        Set @message = 'Would create batch "' + @name + '" with ' + Cast(@countValid As Varchar(12)) + ' requested runs'
         Return 0
     End
 
@@ -301,15 +352,15 @@ AS
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @message = 'Insert operation failed while adding new batch'
 
             If @useRaiseError > 0
-                RAISERROR (@message, 11, 26)
+                RAISERROR (@message, 11, 28)
             Else
-                Return 50007
+                Return 50008
         End
 
         -- Return ID of newly created entry
@@ -376,9 +427,9 @@ AS
             Set @message = 'Update operation failed, Batch ' + Cast(@id As Varchar(12))
 
             If @useRaiseError > 0
-                RAISERROR (@message, 11, 27)
+                RAISERROR (@message, 11, 29)
             Else
-                Return 50008
+                Return 50009
         End
     End -- update mode
 
@@ -400,15 +451,15 @@ AS
                               FROM #Tmp_RequestedRuns )
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
-            --
+
             If @myError <> 0
             Begin
                 Set @message = 'Failed trying to remove batch reference from existing requests'
 
                 If @useRaiseError > 0
-                    RAISERROR (@message, 11, 28)
+                    RAISERROR (@message, 11, 30)
                 Else
-                    Return 50009
+                    Return 50010
             End
         End
 
@@ -421,15 +472,15 @@ AS
               IsNull(RDS_BatchID, 0) <> @id
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         If @myError <> 0
         Begin
             Set @message = 'Failed trying to add batch reference to requests'
 
             If @useRaiseError > 0
-                RAISERROR (@message, 11, 29)
+                RAISERROR (@message, 11, 31)
             Else
-                Return 50010
+                Return 50011
         End
     End
 
