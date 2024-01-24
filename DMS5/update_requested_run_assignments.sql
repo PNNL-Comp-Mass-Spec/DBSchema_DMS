@@ -53,6 +53,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
 **          01/23/2024 mem - When updating the instrument group, block the update if it would result in a mix of instrument groups for any of the batches associated with the requested runs
+**                         - Require that the instrument group of assigned instruments matches the instrument group for the requested run(s)
 **
 *****************************************************/
 (
@@ -304,6 +305,8 @@ AS
 
         If @mode IN ('assignedInstrument')
         Begin
+            -- Note that only active requested runs can have an instrument assigned to them
+
             If @newValue = ''
             Begin
                 -- Unassign the instrument
@@ -344,6 +347,41 @@ AS
                     RAISERROR (@message, 11, 7)
                 End
 
+                ---------------------------------------------------
+                -- Look for any requested runs with an instrument group
+                -- that does not match the instrument group of the assigned instrument
+                ---------------------------------------------------
+
+                Set @requestIDs = Null
+
+                SELECT @requestIDs = Coalesce(@requestIDs + ', ', '') + Cast(RR.ID As varchar(12))
+                FROM T_Requested_Run RR
+                     INNER JOIN #Tmp_RequestIDs
+                       ON #Tmp_RequestIDs.RequestID = RR.ID
+                WHERE RR.RDS_Status = 'Active' AND
+                      RR.RDS_Instrument_Group <> @newInstrumentGroup
+
+                If Coalesce(@requestIDs, '') <> ''
+                Begin
+                    If Len(@requestIDs) > 100
+                    Begin
+                        Set @requestIDs = RTrim(Left(@requestIDs, 100))
+
+                        If @requestIDs Like '%,'
+                            Set @requestIDs = RTrim(Left(@requestIDs, Len(@requestIDs) - 1))
+
+                        Set @requestIDs = @requestIDs + ' ...'
+                    End
+
+                    Set @requestedRunDesc = 'requested run' + CASE WHEN @requestIDs LIKE '%,%' THEN 's' ELSE '' END
+
+                    Set @message = 'Cannot assign instrument ' + @newValue + ' to ' + @requestedRunDesc + ' ' + @requestIDs +
+                                   ' because its instrument group (' + @newInstrumentGroup + ') differs from the instrument group currently assigned to the ' + @requestedRunDesc
+
+                    Set @logErrors = 0
+                    Set @returnCode = 'U5108'
+                    RAISERROR (@message, 11, 8)
+                End
             End
         End
 
@@ -380,12 +418,11 @@ AS
             If @myRowCount = 0
             Begin
                 Set @logErrors = 0
-                Set @returnCode = 'U5108'
-                RAISERROR ('Could not find entry in database for separation group "%s"', 11, 8, @newValue)
+                Set @returnCode = 'U5109'
+                RAISERROR ('Could not find entry in database for separation group "%s"', 11, 9, @newValue)
             End
 
         End
-
 
         If @mode IN ('datasetType')
         Begin
@@ -412,8 +449,8 @@ AS
             If @myRowCount = 0
             Begin
                 Set @logErrors = 0
-                Set @returnCode = 'U5109'
-                RAISERROR ('Could not find entry in database for dataset type "%s"', 11, 9, @newValue)
+                Set @returnCode = 'U5110'
+                RAISERROR ('Could not find entry in database for dataset type "%s"', 11, 10, @newValue)
             End
 
         End
@@ -574,9 +611,9 @@ AS
                         End
 
                         Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @requestID) + ': ' + @message
-                        Set @returnCode = 'U5110'
+                        Set @returnCode = 'U5111'
 
-                        RAISERROR (@msg, 11, 10)
+                        RAISERROR (@msg, 11, 11)
 
                     End -- </d>
 
@@ -628,7 +665,7 @@ AS
     If @returnCode <> ''
     Begin
         -- Call RAISERROR so that the web page will show the error message
-        RAISERROR (@message, 11, 11)
+        RAISERROR (@message, 11, 12)
     End
 
     Return 0
