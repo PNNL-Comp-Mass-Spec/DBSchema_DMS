@@ -846,7 +846,7 @@ AS
                 End
                 Else If @currentInstrumentGroup = @instrumentGroup
                 Begin
-                    Set @message = 'Batch ' + Cast(@batch as varchar(12)) + ' has a mix of instrument groups (' + @instrumentGroups + '); this requested run cannot be updated until the active requested runs in the batch have the same instrument group.' +
+                    Set @message = 'Batch ' + Cast(@batch as varchar(12)) + ' has a mix of instrument groups (' + @instrumentGroups + '); this requested run cannot be updated until the active requested runs in the batch all have the same instrument group.' +
                                    ' Either update the instrument group for all active requests in the batch using https://dms2.pnl.gov/requested_run_admin/report or create a new batch for this requested run'
                 End
                 Else
