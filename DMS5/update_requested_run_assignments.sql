@@ -22,7 +22,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 **
 **  Auth:   grk
 **  Date:   01/26/2003
-**          12/11/2003 grk - removed LCMS cart modes
+**          12/11/2003 grk - Removed LCMS cart modes
 **          07/27/2007 mem - When @mode = 'instrument, then checking dataset type (@datasetTypeName) against Allowed_Dataset_Types in T_Instrument_Class (Ticket #503)
 **                         - Added output parameter @message to report the number of items updated
 **          09/16/2009 mem - Now checking dataset type (@datasetTypeName) using Instrument_Allowed_Dataset_Type table (Ticket #748)
@@ -52,6 +52,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 **          01/15/2023 mem - Fix variable usage typo
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/02/2023 mem - Use renamed table names
+**          01/23/2024 mem - When updating the instrument group, block the update if it would result in a mix of instrument groups for any of the batches associated with the requested runs
 **
 *****************************************************/
 (
@@ -79,6 +80,13 @@ AS
 
     Declare @newDatasetType varchar(64) = ''
     Declare @newDatasetTypeID int = 0
+
+    Declare @batch int
+    Declare @instrumentGroupCount int
+
+    Declare @instrumentGroups varchar(512)
+    Declare @requestIDs varchar(512)
+    Declare @requestedRunDesc varchar(24)
 
     Declare @requestCount int = 0
     Declare @returnCode varchar(64) = ''
@@ -146,7 +154,7 @@ AS
         Set @logErrors = 1
 
         If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType')
-        Begin -- <a>
+        Begin -- <InstGroup>
 
             ---------------------------------------------------
             -- Validate the instrument group
@@ -158,7 +166,7 @@ AS
             -- Set the instrument group to @newValue for now
             Set @newInstrumentGroup = @newValue
 
-            IF NOT EXISTS (SELECT * FROM T_Instrument_Group WHERE IN_Group = @newInstrumentGroup)
+            IF NOT EXISTS (SELECT IN_Group FROM T_Instrument_Group WHERE IN_Group = @newInstrumentGroup)
             Begin
                 -- Try to update instrument group using T_Instrument_Name
                 SELECT @newInstrumentGroup = IN_Group
@@ -200,8 +208,99 @@ AS
                 End
 
             End
-        End -- </a>
 
+            ---------------------------------------------------
+            -- Make sure that the instrument group change will not result in a mix of instrument groups for active requested runs that are associated with a batch
+            ---------------------------------------------------
+
+            CREATE TABLE #Tmp_BatchIDs (
+                Batch_ID int
+            )
+
+            INSERT INTO #Tmp_BatchIDs (Batch_ID)
+            SELECT DISTINCT RR.RDS_BatchID
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON #Tmp_RequestIDs.RequestID = RR.ID
+            WHERE RR.RDS_BatchID > 0
+            ORDER BY RR.RDS_BatchID
+
+            Set @batch = 0
+            Set @continue = 1
+
+            While @continue = 1
+            Begin -- <a>
+                SELECT TOP 1 @batch = Batch_ID
+                FROM #Tmp_BatchIDs
+                WHERE Batch_ID > @batch
+                ORDER BY Batch_ID
+                --
+                SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                If @myRowCount = 0
+                    Set @continue = 0
+                Else
+                Begin
+
+                    SELECT @instrumentGroupCount = COUNT(DISTINCT InstGroup)
+                    FROM (SELECT DISTINCT RR.RDS_Instrument_Group AS InstGroup
+                          FROM T_Requested_Run RR
+                               LEFT OUTER JOIN #Tmp_RequestIDs
+                                 ON #Tmp_RequestIDs.RequestID = RR.ID
+                          WHERE RR.RDS_BatchID = @batch AND
+                                RR.RDS_Status = 'Active' AND
+                                #Tmp_RequestIDs.RequestID Is Null
+                          UNION
+                          SELECT @newInstrumentGroup As InstGroup
+                         ) UnionQ
+
+                    If @instrumentGroupCount > 1
+                    Begin
+                        Set @instrumentGroups = Null
+
+                        SELECT @instrumentGroups = Coalesce(@instrumentGroups + ', ', '') + InstGroup
+                        FROM ( SELECT DISTINCT RR.RDS_Instrument_Group AS InstGroup
+                               FROM T_Requested_Run RR
+                                    LEFT OUTER JOIN #Tmp_RequestIDs
+                                      ON #Tmp_RequestIDs.RequestID = RR.ID
+                               WHERE RR.RDS_BatchID = @batch AND
+                                     RR.RDS_Status = 'Active' AND
+                                     #Tmp_RequestIDs.RequestID Is Null
+                             ) DistinctQ
+
+                        Set @requestIDs = Null
+
+                        SELECT @requestIDs = Coalesce(@requestIDs + ', ', '') + Cast(RR.ID As varchar(12))
+                        FROM T_Requested_Run RR
+                             INNER JOIN #Tmp_RequestIDs
+                               ON #Tmp_RequestIDs.RequestID = RR.ID
+                        WHERE RR.RDS_BatchID = @batch AND
+                              RR.RDS_Status = 'Active'
+
+                        If Len(@requestIDs) > 100
+                        Begin
+                            Set @requestIDs = RTrim(Left(@requestIDs, 100))
+
+                            If @requestIDs Like '%,'
+                                Set @requestIDs = RTrim(Left(@requestIDs, Len(@requestIDs) - 1))
+
+                            Set @requestIDs = @requestIDs + ' ...'
+                        End
+
+                        Set @requestedRunDesc = 'requested run' + CASE WHEN @requestIDs LIKE '%,%' THEN 's' ELSE '' END
+
+                        Set @message = 'Cannot set the instrument group to ' + @newInstrumentGroup + ' for ' + @requestedRunDesc +
+                                       ' ' + @requestIDs + ' since that would result in a mix of instrument groups for batch ' + Cast(@batch AS varchar(12)) +
+                                       ' (which corresponds to ' + @instrumentGroups + ');' +
+                                       ' either update the instrument group for all active requests in the batch or create a new batch for the ' + @requestedRunDesc
+
+                        Set @logErrors = 0
+                        Set @returnCode = 'U5105'
+                        RAISERROR (@message, 11, 5)
+                    End
+                End
+            End -- </a>
+        End -- </InstGroup>
 
         If @mode IN ('assignedInstrument')
         Begin
@@ -226,8 +325,8 @@ AS
                 If @myRowCount = 0
                 Begin
                     Set @logErrors = 0
-                    Set @returnCode = 'U5104'
-                    RAISERROR ('Could not find entry in database for instrument "%s"', 11, 3, @newValue)
+                    Set @returnCode = 'U5106'
+                    RAISERROR ('Could not find entry in database for instrument "%s"', 11, 6, @newValue)
                 End
 
                 Set @newQueueState = 2
@@ -242,7 +341,7 @@ AS
                 If @returnCode <> ''
                 Begin
                     Set @logErrors = 0
-                    RAISERROR (@message, 11, 4)
+                    RAISERROR (@message, 11, 7)
                 End
 
             End
@@ -281,8 +380,8 @@ AS
             If @myRowCount = 0
             Begin
                 Set @logErrors = 0
-                Set @returnCode = 'U5105'
-                RAISERROR ('Could not find entry in database for separation group "%s"', 11, 3, @newValue)
+                Set @returnCode = 'U5108'
+                RAISERROR ('Could not find entry in database for separation group "%s"', 11, 8, @newValue)
             End
 
         End
@@ -313,8 +412,8 @@ AS
             If @myRowCount = 0
             Begin
                 Set @logErrors = 0
-                Set @returnCode = 'U5106'
-                RAISERROR ('Could not find entry in database for dataset type "%s"', 11, 3, @newValue)
+                Set @returnCode = 'U5109'
+                RAISERROR ('Could not find entry in database for dataset type "%s"', 11, 9, @newValue)
             End
 
         End
@@ -325,7 +424,7 @@ AS
 
         If @mode = 'priority'
         Begin
-            -- get priority numerical value
+            -- Get priority numerical value
             --
             Declare @pri int
             Set @pri = cast(@newValue as int)
@@ -333,10 +432,11 @@ AS
             -- If priority is being set to non-zero, clear note field also
             --
             UPDATE T_Requested_Run
-            SET    RDS_priority = @pri,
+            SET RDS_priority = @pri,
                 RDS_note = CASE WHEN @pri > 0 THEN '' ELSE RDS_note END
-            FROM T_Requested_Run RR INNER JOIN
-                 #Tmp_RequestIDs ON RR.ID = #Tmp_RequestIDs.RequestID
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON RR.ID = #Tmp_RequestIDs.RequestID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -350,9 +450,10 @@ AS
         Begin
 
             UPDATE T_Requested_Run
-            SET    RDS_instrument_group = @newInstrumentGroup
-            FROM T_Requested_Run RR INNER JOIN
-                 #Tmp_RequestIDs ON RR.ID = #Tmp_RequestIDs.RequestID
+            SET RDS_instrument_group = @newInstrumentGroup
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON RR.ID = #Tmp_RequestIDs.RequestID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -365,12 +466,13 @@ AS
         If @mode IN ('assignedInstrument')
         Begin
             UPDATE T_Requested_Run
-            SET    Queue_Instrument_ID = CASE WHEN @newQueueState > 1 THEN @newAssignedInstrumentID ELSE Queue_Instrument_ID END,
+            SET Queue_Instrument_ID = CASE WHEN @newQueueState > 1 THEN @newAssignedInstrumentID ELSE Queue_Instrument_ID END,
                 Queue_State = @newQueueState,
                 Queue_Date = CASE WHEN @newQueueState > 1 THEN GetDate() ELSE Queue_Date End,
                 RDS_instrument_group =  CASE WHEN @newQueueState > 1 THEN @newInstrumentGroup ELSE RDS_instrument_group END
-            FROM T_Requested_Run RR INNER JOIN
-                 #Tmp_RequestIDs ON RR.ID = #Tmp_RequestIDs.RequestID
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON RR.ID = #Tmp_RequestIDs.RequestID
             WHERE RR.RDS_Status = 'Active'
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -402,9 +504,10 @@ AS
         Begin
 
             UPDATE T_Requested_Run
-            SET    RDS_Sec_Sep = @newSeparationGroup
-            FROM T_Requested_Run RR INNER JOIN
-                 #Tmp_RequestIDs ON RR.ID = #Tmp_RequestIDs.RequestID
+            SET RDS_Sec_Sep = @newSeparationGroup
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON RR.ID = #Tmp_RequestIDs.RequestID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -418,9 +521,10 @@ AS
         Begin
 
             UPDATE T_Requested_Run
-            SET    RDS_type_ID = @newDatasetTypeID
-            FROM T_Requested_Run RR INNER JOIN
-                 #Tmp_RequestIDs ON RR.ID = #Tmp_RequestIDs.RequestID
+            SET RDS_type_ID = @newDatasetTypeID
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON RR.ID = #Tmp_RequestIDs.RequestID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -431,7 +535,8 @@ AS
 
         -------------------------------------------------
         If @mode = 'delete'
-        Begin -- <a>
+        Begin -- <Delete>
+
             -- Step through the entries in #Tmp_RequestIDs and delete each
             SELECT @requestID = Min(RequestID)-1
             FROM #Tmp_RequestIDs
@@ -439,6 +544,7 @@ AS
             Declare @countDeleted int = 0
 
             Set @continue = 1
+
             While @continue = 1
             Begin -- <b>
                 SELECT TOP 1 @requestID = RequestID
@@ -468,11 +574,11 @@ AS
                         End
 
                         Set @msg = 'Error deleting Request ID ' + Convert(varchar(12), @requestID) + ': ' + @message
-                        Set @returnCode = 'U5107'
+                        Set @returnCode = 'U5110'
 
-                        RAISERROR (@msg, 11, 5)
+                        RAISERROR (@msg, 11, 10)
 
-                    End    -- </d>
+                    End -- </d>
 
                     Set @countDeleted = @countDeleted + 1
                 End -- </c>
@@ -483,7 +589,7 @@ AS
             If @countDeleted > 1
                 Set @message = @message + 's'
 
-        End -- </a>
+        End -- </Delete>
 
     END TRY
     BEGIN CATCH
@@ -522,10 +628,10 @@ AS
     If @returnCode <> ''
     Begin
         -- Call RAISERROR so that the web page will show the error message
-        RAISERROR (@message, 11, 6)
+        RAISERROR (@message, 11, 11)
     End
 
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_requested_run_assignments] TO [DDL_Viewer] AS [dbo]
