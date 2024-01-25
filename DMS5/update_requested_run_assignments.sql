@@ -54,6 +54,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 **          03/02/2023 mem - Use renamed table names
 **          01/23/2024 mem - When updating the instrument group, block the update if it would result in a mix of instrument groups for any of the batches associated with the requested runs
 **                         - Require that the instrument group of assigned instruments matches the instrument group for the requested run(s)
+**          01/24/2024 mem - If the assigned instrument conflicts with the instrument group, allow the update if updating every actived requested run in a batch
 **
 *****************************************************/
 (
@@ -77,11 +78,13 @@ AS
     Declare @newSeparationGroup varchar(64) = ''
 
     Declare @newAssignedInstrumentID int = 0;
+    Declare @instGroupForNewAssignedInstrument varchar(64) = ''
     Declare @newQueueState int = 0
 
     Declare @newDatasetType varchar(64) = ''
     Declare @newDatasetTypeID int = 0
 
+    Declare @continue tinyint
     Declare @batch int
     Declare @instrumentGroupCount int
 
@@ -90,8 +93,9 @@ AS
     Declare @requestedRunDesc varchar(24)
 
     Declare @requestCount int = 0
-    Declare @returnCode varchar(64) = ''
 
+
+    Declare @returnCode varchar(64) = ''
     Declare @logErrors tinyint = 0
 
     Set @message = ''
@@ -131,7 +135,7 @@ AS
         )
 
         INSERT INTO #Tmp_RequestIDs (RequestID)
-        SELECT Convert(int, Item)
+        SELECT DISTINCT Convert(int, Item)
         FROM make_table_from_list(@reqRunIDList)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -153,6 +157,25 @@ AS
 
         -- Initial validation checks are complete; now enable @logErrors
         Set @logErrors = 1
+
+        If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument')
+        Begin
+            ---------------------------------------------------
+            -- Store the batch IDs in a temporary table
+            ---------------------------------------------------
+
+            CREATE TABLE #Tmp_BatchIDs (
+                Batch_ID int
+            )
+
+            INSERT INTO #Tmp_BatchIDs (Batch_ID)
+            SELECT DISTINCT RR.RDS_BatchID
+            FROM T_Requested_Run RR
+                 INNER JOIN #Tmp_RequestIDs
+                   ON #Tmp_RequestIDs.RequestID = RR.ID
+            WHERE RR.RDS_BatchID > 0
+            ORDER BY RR.RDS_BatchID
+        End
 
         If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType')
         Begin -- <InstGroup>
@@ -213,18 +236,6 @@ AS
             ---------------------------------------------------
             -- Make sure that the instrument group change will not result in a mix of instrument groups for active requested runs that are associated with a batch
             ---------------------------------------------------
-
-            CREATE TABLE #Tmp_BatchIDs (
-                Batch_ID int
-            )
-
-            INSERT INTO #Tmp_BatchIDs (Batch_ID)
-            SELECT DISTINCT RR.RDS_BatchID
-            FROM T_Requested_Run RR
-                 INNER JOIN #Tmp_RequestIDs
-                   ON #Tmp_RequestIDs.RequestID = RR.ID
-            WHERE RR.RDS_BatchID > 0
-            ORDER BY RR.RDS_BatchID
 
             Set @batch = 0
             Set @continue = 1
@@ -319,7 +330,7 @@ AS
                 ---------------------------------------------------
                 --
                 SELECT @newAssignedInstrumentID = Instrument_ID,
-                       @newInstrumentGroup = IN_Group
+                       @instGroupForNewAssignedInstrument = IN_Group
                 FROM T_Instrument_Name
                 WHERE IN_Name = @newValue
                 --
@@ -336,10 +347,10 @@ AS
 
                 ---------------------------------------------------
                 -- Make sure the dataset type defined for each of the requested runs
-                -- is appropriate for instrument group @newInstrumentGroup
+                -- is appropriate for the instrument group
                 ---------------------------------------------------
 
-                Exec validate_instrument_group_for_requested_runs @reqRunIDList, @newInstrumentGroup, @message = @message output, @returnCode = @returnCode output
+                Exec validate_instrument_group_for_requested_runs @reqRunIDList, @instGroupForNewAssignedInstrument, @message = @message output, @returnCode = @returnCode output
 
                 If @returnCode <> ''
                 Begin
@@ -359,28 +370,77 @@ AS
                      INNER JOIN #Tmp_RequestIDs
                        ON #Tmp_RequestIDs.RequestID = RR.ID
                 WHERE RR.RDS_Status = 'Active' AND
-                      RR.RDS_Instrument_Group <> @newInstrumentGroup
+                      RR.RDS_Instrument_Group <> @instGroupForNewAssignedInstrument
 
                 If Coalesce(@requestIDs, '') <> ''
                 Begin
-                    If Len(@requestIDs) > 100
-                    Begin
-                        Set @requestIDs = RTrim(Left(@requestIDs, 100))
+                    -- Conflict found between the new instrument's instrument group and the instrument group defined for one or more active requested runs
+                    -- Check whether we are updating all of the active requested runs for each batch
 
-                        If @requestIDs Like '%,'
-                            Set @requestIDs = RTrim(Left(@requestIDs, Len(@requestIDs) - 1))
+                    Declare @activeRequestCountForBatch int
+                    Declare @activeRequestCountForUpdate int
 
-                        Set @requestIDs = @requestIDs + ' ...'
+                    Declare @batchCountToAllow int = 0
+                    Declare @batchCount int = 0
+
+                    SELECT @batchCount = COUNT(*)
+                    FROM #Tmp_BatchIDs
+
+                    Set @batch = 0
+                    Set @continue = 1
+
+                    While @continue = 1
+                    Begin -- <a>
+                        SELECT TOP 1 @batch = Batch_ID
+                        FROM #Tmp_BatchIDs
+                        WHERE Batch_ID > @batch
+                        ORDER BY Batch_ID
+                        --
+                        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                        If @myRowCount = 0
+                            Set @continue = 0
+                        Else
+                        Begin
+                            SELECT @activeRequestCountForBatch = COUNT(*)
+                            FROM T_Requested_Run RR
+                            WHERE RR.RDS_BatchID = @batch AND
+                                  RR.RDS_Status = 'Active'
+
+                            SELECT @activeRequestCountForUpdate = COUNT(*)
+                            FROM T_Requested_Run RR
+                                 INNER JOIN #Tmp_RequestIDs
+                                   ON #Tmp_RequestIDs.RequestID = RR.ID
+                            WHERE RR.RDS_BatchID = @batch AND
+                                  RR.RDS_Status = 'Active'
+
+                            If @activeRequestCountForBatch = @activeRequestCountForUpdate
+                                Set @batchCountToAllow = @batchCountToAllow + 1
+
+                        End
                     End
 
-                    Set @requestedRunDesc = 'requested run' + CASE WHEN @requestIDs LIKE '%,%' THEN 's' ELSE '' END
+                    If @batchCountToAllow <> @batchCount
+                    Begin
+                        If Len(@requestIDs) > 100
+                        Begin
+                            Set @requestIDs = RTrim(Left(@requestIDs, 100))
 
-                    Set @message = 'Cannot assign instrument ' + @newValue + ' to ' + @requestedRunDesc + ' ' + @requestIDs +
-                                   ' because its instrument group (' + @newInstrumentGroup + ') differs from the instrument group currently assigned to the ' + @requestedRunDesc
+                            If @requestIDs Like '%,'
+                                Set @requestIDs = RTrim(Left(@requestIDs, Len(@requestIDs) - 1))
 
-                    Set @logErrors = 0
-                    Set @returnCode = 'U5108'
-                    RAISERROR (@message, 11, 8)
+                            Set @requestIDs = @requestIDs + ' ...'
+                        End
+
+                        Set @requestedRunDesc = 'requested run' + CASE WHEN @requestIDs LIKE '%,%' THEN 's' ELSE '' END
+
+                        Set @message = 'Cannot assign instrument ' + @newValue + ' to ' + @requestedRunDesc + ' ' + @requestIDs +
+                                       ' because its instrument group (' + @instGroupForNewAssignedInstrument + ') differs from the instrument group currently assigned to the ' + @requestedRunDesc
+
+                        Set @logErrors = 0
+                        Set @returnCode = 'U5108'
+                        RAISERROR (@message, 11, 8)
+                    End
                 End
             End
         End
@@ -482,7 +542,6 @@ AS
                 Set @message = @message + 's'
         End
 
-        -------------------------------------------------
         If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType')
         Begin
 
@@ -499,14 +558,13 @@ AS
                 Set @message = @message + 's'
         End
 
-        ------------------------------------------------
         If @mode IN ('assignedInstrument')
         Begin
             UPDATE T_Requested_Run
             SET Queue_Instrument_ID = CASE WHEN @newQueueState > 1 THEN @newAssignedInstrumentID ELSE Queue_Instrument_ID END,
                 Queue_State = @newQueueState,
                 Queue_Date = CASE WHEN @newQueueState > 1 THEN GetDate() ELSE Queue_Date End,
-                RDS_instrument_group =  CASE WHEN @newQueueState > 1 THEN @newInstrumentGroup ELSE RDS_instrument_group END
+                RDS_instrument_group =  CASE WHEN @newQueueState > 1 THEN @instGroupForNewAssignedInstrument ELSE RDS_instrument_group END
             FROM T_Requested_Run RR
                  INNER JOIN #Tmp_RequestIDs
                    ON RR.ID = #Tmp_RequestIDs.RequestID
@@ -536,7 +594,6 @@ AS
             End
         End
 
-        -------------------------------------------------
         If @mode IN ('separationGroup')
         Begin
 
@@ -553,7 +610,6 @@ AS
                 Set @message = @message + 's'
         End
 
-        -------------------------------------------------
         If @mode = 'datasetType'
         Begin
 
@@ -570,7 +626,6 @@ AS
                 Set @message = @message + 's'
         End
 
-        -------------------------------------------------
         If @mode = 'delete'
         Begin -- <Delete>
 
