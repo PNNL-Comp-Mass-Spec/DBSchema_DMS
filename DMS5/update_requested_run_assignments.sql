@@ -54,7 +54,8 @@ CREATE PROCEDURE [dbo].[update_requested_run_assignments]
 **          03/02/2023 mem - Use renamed table names
 **          01/23/2024 mem - When updating the instrument group, block the update if it would result in a mix of instrument groups for any of the batches associated with the requested runs
 **                         - Require that the instrument group of assigned instruments matches the instrument group for the requested run(s)
-**          01/24/2024 mem - If the assigned instrument conflicts with the instrument group, allow the update if updating every actived requested run in a batch
+**          01/24/2024 mem - If the assigned instrument conflicts with the instrument group, allow the update if updating every active requested run in a batch
+**                         - For certain modes, call update_cached_requested_run_batch_stats for the batches associated with the updated requested runs
 **
 *****************************************************/
 (
@@ -84,7 +85,6 @@ AS
     Declare @newDatasetType varchar(64) = ''
     Declare @newDatasetTypeID int = 0
 
-    Declare @continue tinyint
     Declare @batch int
     Declare @instrumentGroupCount int
 
@@ -158,7 +158,7 @@ AS
         -- Initial validation checks are complete; now enable @logErrors
         Set @logErrors = 1
 
-        If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument')
+        If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument', 'separationGroup')
         Begin
             ---------------------------------------------------
             -- Store the batch IDs in a temporary table
@@ -624,6 +624,34 @@ AS
             Set @message = 'Changed the dataset type to ' + @newDatasetType + ' for ' + Convert(varchar(12), @myRowCount) + ' requested run'
             If @myRowcount > 1
                 Set @message = @message + 's'
+        End
+
+        If @mode IN ('instrumentGroup', 'instrumentGroupIgnoreType', 'assignedInstrument', 'separationGroup')
+        Begin
+            ---------------------------------------------------
+            -- Update stats in T_Cached_Requested_Run_Batch_Stats
+            ---------------------------------------------------
+
+            If Exists (SELECT * FROM #Tmp_BatchIDs)
+            Begin
+                Set @batch = 0
+                Set @continue = 1
+
+                While @continue > 0
+                Begin
+                    SELECT TOP 1 @batch = Batch_ID
+                    FROM #Tmp_BatchIDs
+                    WHERE Batch_ID > @batch
+                    ORDER BY Batch_ID
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                    If @myRowCount = 0
+                        Set @continue = 0
+                    Else
+                        Exec update_cached_requested_run_batch_stats @batch
+                End
+            End
         End
 
         If @mode = 'delete'
