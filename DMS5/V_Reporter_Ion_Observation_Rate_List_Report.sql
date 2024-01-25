@@ -3,18 +3,21 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Reporter_Ion_Observation_Rate_List_Report]
 AS
-SELECT RIOR.job,
-       RIOR.dataset_id,
+SELECT RIOR.dataset_id,
        DS.Dataset_Num As dataset,
        RIOR.reporter_ion,
-       DFP.Dataset_URL + '/' + J.AJ_resultsFolderName + '/' + DS.dataset_num
-       + '_RepIonObsRateHighAbundance.png' AS observation_rate_link,
-       DFP.Dataset_URL + '/' + J.AJ_resultsFolderName + '/' + DS.dataset_num
-       + '_RepIonStatsHighAbundance.png' AS intensity_stats_link,
+       DFP.Dataset_URL + '/' + J.AJ_resultsFolderName + '/' + DS.dataset_num + '_RepIonObsRateHighAbundance.png' AS observation_rate_link,
+       DFP.Dataset_URL + '/' + J.AJ_resultsFolderName + '/' + DS.dataset_num + '_RepIonStatsHighAbundance.png' AS intensity_stats_link,
        Inst.IN_name AS instrument,
+       DS.Acq_Length_Minutes AS acq_length,
+       ISNULL(DS.acq_time_start, RR.RDS_Run_Start) AS acq_start,
+       ISNULL(DS.acq_time_end, RR.RDS_Run_Finish) AS acq_end,
+       RR.ID AS request,
+       RR.RDS_BatchID AS batch,
+       RIOR.job,
+       J.AJ_parmFileName AS param_file,
        RIOR.channel1,
        RIOR.channel2,
        RIOR.channel3,
@@ -47,7 +50,6 @@ SELECT RIOR.job,
        RIOR.Channel14_Median_Intensity AS channel14_intensity,
        RIOR.Channel15_Median_Intensity AS channel15_intensity,
        RIOR.Channel16_Median_Intensity AS channel16_intensity,
-       J.AJ_parmFileName AS param_file,
        RIOR.entered
 FROM T_Reporter_Ion_Observation_Rates RIOR
      INNER JOIN T_Analysis_Job J
@@ -56,9 +58,10 @@ FROM T_Reporter_Ion_Observation_Rates RIOR
        ON J.AJ_datasetID = DFP.Dataset_ID
      INNER JOIN T_Dataset DS
        ON J.AJ_datasetID = DS.Dataset_ID
-       INNER JOIN T_Instrument_Name Inst
+     INNER JOIN T_Instrument_Name Inst
        ON  DS.DS_instrument_name_ID = Inst.Instrument_ID
-
+     LEFT OUTER JOIN T_Requested_Run AS RR
+       ON DS.Dataset_ID = RR.DatasetID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Reporter_Ion_Observation_Rate_List_Report] TO [DDL_Viewer] AS [dbo]
