@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[validate_dataset_type]
 **          03/02/2023 mem - Use renamed table names
 **          06/12/2023 mem - Sum actual scan counts, not simply 0 or 1
 **          01/10/2024 mem - Add support for DIA datasets
+**          01/30/2024 mem - Auto-switch from HMS-CID-HMSn to HMS-HMSn
 **
 *****************************************************/
 (
@@ -612,6 +613,11 @@ AutoDefineDSType:
             If @datasetTypeAutoGen = 'HMS-CID-MSn'
             Begin
                 Set @datasetTypeAutoGen = 'HMS-MSn'
+            End
+
+            If @datasetTypeAutoGen = 'HMS-CID-HMSn'
+            Begin
+                Set @datasetTypeAutoGen = 'HMS-HMSn'
             End
 
             If @actualCountDIA > 0
