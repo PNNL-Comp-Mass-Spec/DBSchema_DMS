@@ -19,6 +19,7 @@ CREATE PROCEDURE [dbo].[do_biomaterial_operation]
 **          10/13/2022 mem - Fix misspelled words
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/25/2023 mem - Rename variables and update messages
+**          02/04/2024 mem - Delete the biomaterial from T_Biomaterial_Organisms before deleting from T_Cell_Culture
 **
 *****************************************************/
 (
@@ -104,11 +105,14 @@ AS
         -- Delete the biomaterial
         ---------------------------------------------------
 
+        DELETE FROM T_Biomaterial_Organisms
+        WHERE Biomaterial_ID = @biomaterialID
+
         DELETE FROM T_Cell_Culture
         WHERE CC_ID = @biomaterialID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
-        --
+
         if @myError <> 0
         begin
             RAISERROR ('Could not delete biomaterial "%s"',
@@ -132,10 +136,10 @@ AS
     -- Mode was unrecognized
     ---------------------------------------------------
 
-    set @message = 'Mode "' + @mode +  '" was unrecognized'
+    Set @message = 'Mode "' + @mode +  '" was unrecognized'
     RAISERROR (@message, 10, 1)
-    return 51222
 
+    Return 51222
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[do_biomaterial_operation] TO [DDL_Viewer] AS [dbo]
