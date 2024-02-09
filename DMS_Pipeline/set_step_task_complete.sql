@@ -58,6 +58,7 @@ CREATE PROCEDURE [dbo].[set_step_task_complete]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps
 **          03/29/2023 mem - Add support for completion codes 27 and 28 (SKIPPED_DIA_NN_SPEC_LIB and WAITING_FOR_DIA_NN_SPEC_LIB)
+**          02/08/2024 mem - If @completionCode is 20 and the step tool is DiaNN, set the job step as complete, but skip the subsequent data extraction step
 **
 *****************************************************/
 (
@@ -252,7 +253,7 @@ AS
 
             -- Note that Formularity and NOMSI jobs that report completion code 20 are handled in auto_fix_failed_jobs
 
-            If @stepTool IN ('Decon2LS_V2')
+            If @stepTool = 'Decon2LS_V2'
             Begin
                 -- Treat "No_data" results for DeconTools as a completed job step but skip the next step if it is LCMSFeatureFinder
                 Set @stepState = 5 -- Complete
@@ -263,7 +264,7 @@ AS
                 Exec post_log_entry 'Error', @message, 'set_step_task_complete'
             End
 
-            If @stepTool IN ('DataExtractor')
+            If @stepTool = 'DataExtractor'
             Begin
                 -- Treat "No_data" results for the DataExtractor as a completed job step but skip later job steps that match certain tools
                 Set @stepState = 5 -- Complete
@@ -271,6 +272,17 @@ AS
                 INSERT INTO @stepToolsToSkip(Tool) VALUES ('MSGF'),('IDPicker'),('MSAlign_Quant')
 
                 Set @message = 'Warning, ' + @jobStepDescription + ' has an empty synopsis file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
+                Exec post_log_entry 'Error', @message, 'set_step_task_complete'
+            End
+
+            If @stepTool = 'DiaNN'
+            Begin
+                -- Treat "No_data" results for DiaNN as a completed job step but skip the DataExtractor job step
+                Set @stepState = 5 -- Complete
+
+                INSERT INTO @stepToolsToSkip(Tool) VALUES ('DataExtractor')
+
+                Set @message = 'Warning, ' + @jobStepDescription + ' has an empty report.tsv file (no results above threshold); either it is a bad dataset or analysis parameters are incorrect'
                 Exec post_log_entry 'Error', @message, 'set_step_task_complete'
             End
         End
