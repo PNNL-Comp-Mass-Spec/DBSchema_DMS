@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 241 ******/
+/****** RowCount: 242 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -105,7 +105,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AMOLF_VOrbiETD01',102,'LTQ_FT',123
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('QExact01',103,'LTQ_FT',1232,2859,'secfso',null,'EMSL 1526','Q-Exactive 1','12/7/2012 2:32:20 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TIMS_Maxis',104,'IMS_Agilent_TOF_UIMF',1268,2860,'secfso',null,'EMSL 1142','TIMS coupled with Maxis','1/29/2013 5:54:56 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('TSQ_4',105,'Triple_Quad',1274,4667,'secfso',null,'EMSL 1521','Thermo TSQ Vantage, MS:1001510','3/13/2013 5:35:14 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('21T_Agilent',106,'LTQ_FT',1859,4668,'secfso',null,'EMSL 1621','21T Agilent magnet. Coupled to a Velos Pro and thus instrument data is stored as .raw files','5/23/2013 4:00:25 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('21T_Agilent',106,'LTQ_FT',1859,4668,'secfso',null,'EMSL 1621','21T Agilent magnet. Coupled to a Velos Pro and thus instrument data is stored as .raw files; for MassIVE, use LTQ Orbitrap Velos Pro, MS:1003096','5/23/2013 4:00:25 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgTOF05',107,'Agilent_TOF_V2',1346,2,'secfso',null,'EMSL 1430','TOF portion of IMS04_AgTOF05','7/22/2013 10:41:59 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS07_AgTOF06',108,'IMS_Agilent_TOF_UIMF',1348,1540,'secfso',null,'EMSL 1430','Deactivated 4/7/2014 since AgTOF06 is now on SLIM03','8/1/2013 4:14:31 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS08_AgQTOF05',109,'IMS_Agilent_TOF_DotD',1353,4669,'secfso',null,'EMSL 1521','First generation IMS from Agilent; PT27418 for AgQTOF05','8/21/2013 5:35:26 PM')
@@ -135,7 +135,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GCMS01',132,'Agilent_Ion_Trap'
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GCMS02',133,'Agilent_Ion_Trap',1756,2,'secfso',null,'BSF 1229','GC-MS','7/6/2015 4:24:34 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GCMS03',134,'Agilent_Ion_Trap',1757,2,'secfso',null,'BSF 1229','GC-MS','7/6/2015 4:24:45 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Agilent_GC_01',135,'Agilent_Ion_Trap',1758,2,'secfso',null,'EMSL 1142','GC with TCD','7/7/2015 4:52:47 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('GCQE01',136,'GC_QExactive',1889,4673,'secfso',null,'EMSL 1401','GC QExactive: Thermo Trace 1310 GC with a QExactive detector','10/20/2015 2:37:03 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('GCQE01',136,'GC_QExactive',1889,4673,'secfso',null,'EMSL 1401','GC QExactive: Thermo Trace 1310 GC with a QExactive detector; for MassIVE use Q Exactive GC Orbitrap, MS:1003395','10/20/2015 2:37:03 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('NU_QExactive',137,'LTQ_FT',1892,1893,'fso',null,'Northwestern University - Kelleher lab','For instrument data shared under the CPTAC project','11/5/2015 11:00:55 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Lumos01',138,'LTQ_FT',1901,4643,'secfso',null,'EMSL 1526','Orbitrap Fusion Lumos, MS:1002732','12/15/2015 4:13:14 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BSF_GC02',139,'Agilent_Ion_Trap',1991,2,'secfso',null,'BSF 1215','GC with FID','1/27/2016 11:33:06 AM')
@@ -241,4 +241,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris04',239,'LTQ_FT',4631,4636
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Homer',240,'Thermo_SII_LC',4632,4724,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','12/1/2023 4:47:28 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('PrepHPLC8',241,'PrepHPLC',4646,2,'secfso',null,'BSF 2240','Thermo Vanquish Flex Autosampler/Fraction Collector, controlled with Chromeleon software','1/2/2024 11:41:48 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris05',242,'LTQ_FT',4657,4662,'secfso',null,'BSF 1229','Katrina''s PPI (Predictive Phenomics Initiative) instrument','1/9/2024 2:29:09 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Marge',243,'Thermo_SII_LC',2,2,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','1/16/2024 10:04:23 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Marge',243,'Thermo_SII_LC',4725,2,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Purchased with Exploris05, Katrina''s PPI (Predictive Phenomics Initiative)','1/16/2024 10:04:23 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Astral',244,'LTQ_FT',4726,4727,'fso',null,'Offsite','Thermo TOF/Orbitrap tribrid','2/5/2024 11:21:14 AM')
