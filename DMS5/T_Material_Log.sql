@@ -5,7 +5,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[T_Material_Log](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
-	[Date] [datetime] NOT NULL,
+	[Entered] [datetime] NOT NULL,
 	[Type] [varchar](32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Item] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Initial_State] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -32,11 +32,11 @@ SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
 
 GO
-/****** Object:  Index [IX_T_Material_Log_Item_Type_Date] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Material_Log_Item_Type_Date] ON [dbo].[T_Material_Log]
+/****** Object:  Index [IX_T_Material_Log_Item_Type_Entered] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Material_Log_Item_Type_Entered] ON [dbo].[T_Material_Log]
 (
 	[Item_Type] ASC,
-	[Date] ASC
+	[Entered] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
 SET ARITHABORT ON
@@ -48,12 +48,12 @@ SET ANSI_WARNINGS ON
 SET NUMERIC_ROUNDABORT OFF
 
 GO
-/****** Object:  Index [IX_T_Material_Log_Type_Name_Cached_Date] ******/
-CREATE NONCLUSTERED INDEX [IX_T_Material_Log_Type_Name_Cached_Date] ON [dbo].[T_Material_Log]
+/****** Object:  Index [IX_T_Material_Log_Type_Name_Cached_Entered] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Material_Log_Type_Name_Cached_Entered] ON [dbo].[T_Material_Log]
 (
 	[Type_Name_Cached] ASC,
-	[Date] ASC
+	[Entered] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[T_Material_Log] ADD  CONSTRAINT [DF_T_Material_Log_Date]  DEFAULT (getdate()) FOR [Date]
+ALTER TABLE [dbo].[T_Material_Log] ADD  CONSTRAINT [DF_T_Material_Log_Entered]  DEFAULT (getdate()) FOR [Entered]
 GO

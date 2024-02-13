@@ -3,11 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Material_Log_List_Report]
 AS
 SELECT ML.id,
-       ML.date,
+       ML.entered AS date,
        ML.Type_Name_Cached AS type,
        ML.item,
        ML.Initial_State AS initial,
@@ -21,7 +20,6 @@ FROM dbo.T_Material_Log ML
        ON ML.User_PRN = U.U_PRN
      LEFT OUTER JOIN dbo.T_Material_Containers TMC
        ON ML.Item = TMC.Tag
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Material_Log_List_Report] TO [DDL_Viewer] AS [dbo]
