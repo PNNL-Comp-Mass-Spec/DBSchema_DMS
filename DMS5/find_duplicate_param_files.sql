@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[find_duplicate_param_files]
 **                         - Updated default value for @ParamFileTypeList
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/28/2023 mem - Use renamed parameter file type, 'MSGFPlus'
+**          02/13/2024 mem - Prevent appending duplicate rows to #Tmp_SimilarParamFiles
 **
 *****************************************************/
 (
@@ -644,26 +645,38 @@ AS
 
                 -----------------------------------------
                 -- Any Param_File_ID values that are in #Tmp_ParamEntryDuplicates and #Tmp_MassModDuplicates are duplicates
-                -- Add their IDs to #Tmp_SimilarParamFiles
+                -- Add their IDs to #Tmp_SimilarParamFiles, provided the existing combo does not yet already exist
                 -----------------------------------------
 
                 INSERT INTO #Tmp_SimilarParamFiles(Param_File_ID_Master, Param_File_ID_Dup)
                 SELECT @ParamFileID, PED.Param_File_ID
                 FROM #Tmp_ParamEntryDuplicates PED INNER JOIN
                      #Tmp_MassModDuplicates MMD ON PED.Param_File_ID = MMD.Param_File_ID
-
+                WHERE NOT EXISTS
+                      ( SELECT 1
+                        FROM #Tmp_SimilarParamFiles SPF
+                        WHERE SPF.Param_File_ID_Master = PED.Param_File_ID AND
+                              SPF.Param_File_ID_Dup = @ParamFileID
+                      );
 
             End -- </c3>
             Else
             Begin
                 -----------------------------------------
                 -- Any Param_File_ID values that are in #Tmp_MassModDuplicates are duplicates
-                -- Add their IDs to #Tmp_SimilarParamFiles
+                -- Add their IDs to #Tmp_SimilarParamFiles, provided the existing combo does not yet already exist
                 -----------------------------------------
 
                 INSERT INTO #Tmp_SimilarParamFiles(Param_File_ID_Master, Param_File_ID_Dup)
                 SELECT @ParamFileID, MMD.Param_File_ID
                 FROM #Tmp_MassModDuplicates MMD
+                WHERE NOT EXISTS
+                      ( SELECT 1
+                        FROM #Tmp_SimilarParamFiles SPF
+                        WHERE SPF.Param_File_ID_Master = MMD.Param_File_ID AND
+                              SPF.Param_File_ID_Dup = @ParamFileID
+                      );
+
             End
 
         End -- </b>
@@ -717,15 +730,11 @@ AS
          INNER JOIN #Tmp_SimilarParamFiles SPF
            ON SPF.Param_File_ID_Dup = PE.Param_File_ID
 
-
-
 Done:
     If Len(@message) > 0
         SELECT @message As Message
 
-    --
     Return @myError
-
 
 GO
 GRANT EXECUTE ON [dbo].[find_duplicate_param_files] TO [D3L243] AS [dbo]
