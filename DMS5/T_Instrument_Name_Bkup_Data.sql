@@ -187,7 +187,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Agilent_QTOF',185,'Agilen
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P',186,'BrukerFT_BAF',4149,4680,'secfso',null,'EMSL 1621','Bruker 12T FTICR with spectrometer from the 15T magnet (the 15T magnet was de-energized in spring 2022 due to magnet helium fill problems and helium shortage)','4/21/2022 3:05:49 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_P_Imaging',187,'BrukerMALDI_Imaging_V2',4149,4647,'secfso',null,'EMSL 1621','Bruker 12T FTICR with MALDI imaging capability (mass spectrometer was previously used with the 15T magnet)','4/21/2022 3:08:42 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_IMS_AgQTOF',188,'IMS_Agilent_TOF_DotD',4152,2,'fso',null,'Offsite','IMS .d datasets acquired offsite','5/20/2022 9:15:09 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgTOF10',189,'Agilent_TOF_V2',4294,4366,'secfso',null,'EMSL 1422','G6230BA TOF purchased by instrument development group','10/21/2022 2:27:28 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgTOF10',189,'Agilent_TOF_V2',4294,4728,'secfso',null,'EMSL 1422','G6230BA TOF purchased by instrument development group','10/21/2022 2:27:28 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('15T_FTICR_I',190,'BrukerFT_BAF',4295,4681,'secfso',null,'EMSL 1621','Bruker Solarix 15T with an infinity cell','11/2/2022 11:33:18 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('IMS12-AgQTOF09',191,'IMS_Agilent_TOF_DotD',4399,4682,'secfso',null,'EMSL 1430','Agilent 6560C IM-QTOF; warranty replacement for IMS11_AgQTOF08','3/2/2023 2:43:27 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Ascend01',192,'LTQ_FT',4440,4683,'secfso',null,'BSF 1229','Purchased by Leidos','4/18/2023 12:19:15 PM')

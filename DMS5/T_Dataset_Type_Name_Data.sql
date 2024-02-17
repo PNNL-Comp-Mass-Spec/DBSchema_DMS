@@ -1,10 +1,11 @@
 /****** Object:  Table [T_Dataset_Type_Name] ******/
-/****** RowCount: 56 ******/
+/****** RowCount: 57 ******/
 /****** Columns: DST_Type_ID, DST_name, DST_Description, DST_Active ******/
-INSERT INTO [T_Dataset_Type_Name] VALUES (52,'1D-C','NMR analysis',1)
-INSERT INTO [T_Dataset_Type_Name] VALUES (51,'1D-H','NMR analysis',1)
-INSERT INTO [T_Dataset_Type_Name] VALUES (53,'2D','NMR analysis',1)
+INSERT INTO [T_Dataset_Type_Name] VALUES (52,'1D-C','NMR analysis',0)
+INSERT INTO [T_Dataset_Type_Name] VALUES (51,'1D-H','NMR analysis',0)
+INSERT INTO [T_Dataset_Type_Name] VALUES (53,'2D','NMR analysis',0)
 INSERT INTO [T_Dataset_Type_Name] VALUES (32,'C60-SIMS-HMS','C60 SIMS HMS',1)
+INSERT INTO [T_Dataset_Type_Name] VALUES (56,'CAD','Charged aerosol detector',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (35,'Chip_Seq','DNA Sequencing Reads',1)
 INSERT INTO [T_Dataset_Type_Name] VALUES (27,'DataFiles','DMS Pipeline Data or Data Packages',0)
 INSERT INTO [T_Dataset_Type_Name] VALUES (55,'DIA-HMS-HCD-HMSn','High res MS with DIA HCD HMSn',1)
