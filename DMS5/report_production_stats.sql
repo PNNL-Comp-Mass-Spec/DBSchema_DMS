@@ -59,7 +59,7 @@ CREATE PROCEDURE [dbo].[report_production_stats]
     @endDate varchar(24),
     @productionOnly tinyint = 1,                -- When 0 then shows all instruments; otherwise limits the report to production instruments only
     @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
-    @eusUsageFilterList varchar(2000) = '',     -- Comma separate list of EUS usage types, from table T_EUS_UsageType: CAP_DEV, MAINTENANCE, BROKEN, USER_ONSITE, USER_REMOTE, RESOURCE_OWNER
+    @eusUsageFilterList varchar(2000) = '',     -- Comma separated list of EUS usage types, from table T_EUS_UsageType: CAP_DEV, MAINTENANCE, BROKEN, USER_ONSITE, USER_REMOTE, RESOURCE_OWNER
     @instrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed)
     @includeProposalType tinyint = 0,           -- When 1, summarize by proposal type
     @message varchar(256) = '' Output,

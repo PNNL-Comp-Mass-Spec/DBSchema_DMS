@@ -18,7 +18,7 @@ CREATE PROCEDURE [dbo].[report_tissue_usage_stats]
     @startDate varchar(24),                     -- If @instrumentFilterList is empty, filter on experiment creation date.  If @instrumentFilterList is not empty, filter on dataset date
     @endDate varchar(24),
     @campaignIDFilterList varchar(2000) = '',   -- Comma separated list of campaign IDs
-    @organismIDFilterList varchar(2000) = '',   -- Comma separate list of organism IDs
+    @organismIDFilterList varchar(2000) = '',   -- Comma separated list of organism IDs
     @instrumentFilterList varchar(2000) = '',   -- Comma separated list of instrument names (% and * wild cards are allowed); if empty, dataset stats are not returned
     @message varchar(256) = '' output
 )
