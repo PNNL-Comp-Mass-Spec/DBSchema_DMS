@@ -55,6 +55,7 @@ ALTER TABLE [dbo].[T_LC_Column] CHECK CONSTRAINT [FK_T_LC_Column_T_LC_Column_Sta
 GO
 ALTER TABLE [dbo].[T_LC_Column]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Column_T_Users] FOREIGN KEY([SC_Operator_PRN])
 REFERENCES [dbo].[T_Users] ([U_PRN])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_LC_Column] CHECK CONSTRAINT [FK_T_LC_Column_T_Users]
 GO

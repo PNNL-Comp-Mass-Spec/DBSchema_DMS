@@ -77,15 +77,11 @@ REFERENCES [dbo].[T_LC_Cart] ([ID])
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Configuration] CHECK CONSTRAINT [FK_T_LC_Cart_Configuration_T_LC_Cart]
 GO
-ALTER TABLE [dbo].[T_LC_Cart_Configuration]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Configuration_T_Users_EnteredBy] FOREIGN KEY([Entered_By])
+ALTER TABLE [dbo].[T_LC_Cart_Configuration]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Configuration_T_Users_Entered_By] FOREIGN KEY([Entered_By])
 REFERENCES [dbo].[T_Users] ([U_PRN])
+ON UPDATE CASCADE
 GO
-ALTER TABLE [dbo].[T_LC_Cart_Configuration] CHECK CONSTRAINT [FK_T_LC_Cart_Configuration_T_Users_EnteredBy]
-GO
-ALTER TABLE [dbo].[T_LC_Cart_Configuration]  WITH CHECK ADD  CONSTRAINT [FK_T_LC_Cart_Configuration_T_Users_UpdatedBy] FOREIGN KEY([Updated_By])
-REFERENCES [dbo].[T_Users] ([U_PRN])
-GO
-ALTER TABLE [dbo].[T_LC_Cart_Configuration] CHECK CONSTRAINT [FK_T_LC_Cart_Configuration_T_Users_UpdatedBy]
+ALTER TABLE [dbo].[T_LC_Cart_Configuration] CHECK CONSTRAINT [FK_T_LC_Cart_Configuration_T_Users_Entered_By]
 GO
 ALTER TABLE [dbo].[T_LC_Cart_Configuration]  WITH CHECK ADD  CONSTRAINT [CK_T_LC_Cart_Configuration_State] CHECK  (([Cart_Config_State]='Invalid' OR [Cart_Config_State]='Inactive' OR [Cart_Config_State]='Active'))
 GO
