@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[rename_user]
 **          08/01/2017 mem - Use THROW if not authorized
 **          08/06/2018 mem - Rename Operator PRN column to RDS_Requestor_PRN
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/19/2024 mem - Update the Updated_By column in T_LC_Cart_Configuration
 **
 *****************************************************/
 (
@@ -36,9 +37,9 @@ AS
     Declare @authorized tinyint = 0
     Exec @authorized = verify_sp_authorized 'rename_user', @raiseError = 1
     If @authorized = 0
-    Begin
+    Begin;
         THROW 51000, 'Access denied', 1;
-    End
+    End;
 
     --------------------------------------------
     -- Validate the inputs
@@ -154,6 +155,15 @@ AS
             SET RDS_Requestor_PRN = @NewUserName
             WHERE RDS_Requestor_PRN = @OldUserName
 
+            -- Note that the Entered_By column in T_LC_Cart_Configuration will be auto-updated via a foreign key constraint that has ON UPDATE CASCADE
+
+            -- In contrast, the Updated_By column does not have a foreign key constraint, 
+            -- since SQL Server does support multiple foreign key constraints to a given table when one of the constraints has ON UPDATE CASCADE
+
+            UPDATE T_LC_Cart_Configuration
+            SET Updated_By = @NewUserName
+            WHERE Updated_By = @OldUserName
+
             UPDATE DMS_Data_Package.dbo.T_Data_Package
             SET Owner = @NewUserName
             WHERE Owner = @OldUserName
@@ -172,7 +182,7 @@ Done:
     If @message <> ''
         print @message
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[rename_user] TO [DDL_Viewer] AS [dbo]
