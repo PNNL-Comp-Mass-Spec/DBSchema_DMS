@@ -7,8 +7,10 @@ CREATE PROCEDURE [dbo].[predefined_analysis_jobs_proc]
 /****************************************************
 **
 **  Desc:
-**     Evaluate predefined analysis rules for given dataset
-**     Return a table listing the jobs that would be created
+**      Evaluate predefined analysis rules for given dataset
+**      Return a table listing the jobs that would be created
+**
+**      Used by web page https://dms2.pnl.gov/predefined_analysis_jobs_preview/param
 **
 **  Auth:   mem
 **  Date:   11/08/2022 mem - Initial version

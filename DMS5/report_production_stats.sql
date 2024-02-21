@@ -6,9 +6,11 @@ GO
 CREATE PROCEDURE [dbo].[report_production_stats]
 /****************************************************
 **
-**  Desc:   Generates dataset statistics for production instruments
+**  Desc:
+**      Generates dataset statistics for production instruments
 **
-**  Return values: 0: success, otherwise, error code
+**      Used by web page https://dms2.pnl.gov/production_instrument_stats/param
+**      when it calls report_production_stats_proc
 **
 **  Auth:   grk
 **  Date:   02/25/2005

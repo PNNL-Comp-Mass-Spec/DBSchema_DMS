@@ -7,8 +7,10 @@ CREATE PROCEDURE [dbo].[predefined_analysis_rules_proc]
 /****************************************************
 **
 **  Desc:
-**     Get the predefined analysis rules for given dataset
-**     Return a table listing the rules that would be evaluated
+**      Get the predefined analysis rules for given dataset
+**      Return a table listing the rules that would be evaluated
+**
+**      Used by web page https://dms2.pnl.gov/predefined_analysis_rules_preview/param
 **
 **  Auth:   mem
 **  Date:   11/08/2022 mem - Initial version

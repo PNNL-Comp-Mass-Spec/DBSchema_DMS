@@ -9,6 +9,10 @@ CREATE PROCEDURE [dbo].[evaluate_predefined_analysis_rules]
 **  Desc:
 **      Evaluate predefined analysis rules for given dataset and generate the specifed output type
 **
+**      Used by web page https://dms2.pnl.gov/predefined_analysis_jobs_preview/param  when it calls this procedure with @outputType = 'Show Jobs'
+**      Used by web page https://dms2.pnl.gov/predefined_analysis_rules_preview/param when it calls this procedure with @outputType = 'Show Rules'
+**      Used by web page https://dms2.pnl.gov/predefined_analysis_preview_mds/param   when it calls this procedure with @outputType = 'Export Jobs'
+**
 **      When @outputType is 'Export Jobs', the calling procedure must create table #JX
 **
 **      CREATE TABLE #JX (

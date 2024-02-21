@@ -6,7 +6,11 @@ GO
 CREATE PROCEDURE [dbo].[report_tissue_usage_stats]
 /****************************************************
 **
-**  Desc:   Generates tissue usage statistics for experiments
+**  Desc:
+**      Generates tissue usage statistics for experiments
+**
+**      Used by web page https://dms2.pnl.gov/tissue_stats/param
+**      when it calls report_tissue_usage_stats_proc
 **
 **  Auth:   mem
 **  Date:   07/23/2019 mem - Initial version

@@ -7,10 +7,11 @@ CREATE PROCEDURE [dbo].[find_matching_datasets_for_job_request]
 /****************************************************
 **
 **  Desc:
-**      Return list of datasets for given job request
-**      showing how many jobs exist for each that
-**      match the parameters of the request
+**      Return list of datasets for given job request showing how many jobs exist for each that match the parameters of the request
 **      (regardless of whether or not job is linked to request)
+**
+**      Used by web page https://dms2.pnl.gov/helper_aj_request_datasets_ckbx/param
+**      when it calls find_matching_datasets_for_job_request_proc
 **
 **  Return values: 0: success, otherwise, error code
 **

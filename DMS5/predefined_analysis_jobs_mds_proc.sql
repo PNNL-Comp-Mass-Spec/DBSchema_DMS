@@ -10,7 +10,7 @@ CREATE PROCEDURE [dbo].[predefined_analysis_jobs_mds_proc]
 **      Evaluate predefined analysis rules for given list of datasets
 **      Return a table of the jobs that would be created
 **
-**  Return values: 0: success, otherwise, error code
+**      Used by web page https://dms2.pnl.gov/predefined_analysis_preview_mds/param
 **
 **  Auth:   grk
 **  Date:   06/23/2005
@@ -169,7 +169,7 @@ AS
     -- Exit
     ---------------------------------------------------
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_jobs_mds_proc] TO [DDL_Viewer] AS [dbo]
