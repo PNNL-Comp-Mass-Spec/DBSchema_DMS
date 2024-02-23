@@ -1,9 +1,9 @@
-/****** Object:  StoredProcedure [dbo].[create_analysis_job_from_request_list] ******/
+/****** Object:  StoredProcedure [dbo].[create_analysis_jobs_from_request_list] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[create_analysis_job_from_request_list]
+CREATE PROCEDURE [dbo].[create_analysis_jobs_from_request_list]
 /****************************************************
 **
 **  Desc:
@@ -282,9 +282,9 @@ ReportResults:
     Return @myError
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[create_analysis_job_from_request_list] TO [DDL_Viewer] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_analysis_jobs_from_request_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[create_analysis_job_from_request_list] TO [DMS_Analysis] AS [dbo]
+GRANT EXECUTE ON [dbo].[create_analysis_jobs_from_request_list] TO [DMS_Analysis] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[create_analysis_job_from_request_list] TO [Limited_Table_Write] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[create_analysis_jobs_from_request_list] TO [Limited_Table_Write] AS [dbo]
 GO
