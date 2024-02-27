@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[update_dataset_instrument]
 **          03/04/2023 mem - Use new synonym names and T_Task tables
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **          08/02/2023 mem - Add call to update_cached_dataset_instruments
+**          02/27/2024 mem - Call update_cached_dataset_folder_paths
 **
 *****************************************************/
 (
@@ -199,10 +200,10 @@ AS
     Declare @instrumentUpdateTran Varchar(32) = 'Instrument update'
     Begin Tran @instrumentUpdateTran
 
-    Update T_Dataset
-    Set DS_instrument_name_ID = @instrumentIdNew,
+    UPDATE T_Dataset
+    SET DS_instrument_name_ID = @instrumentIdNew,
         DS_storage_path_ID = @storagePathIdNew
-    Where Dataset_ID = @datasetId
+    WHERE Dataset_ID = @datasetId
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
     --
@@ -216,11 +217,11 @@ AS
     If @deleteCaptureJob = 0
     Begin
 
-        Update DMS_Capture.dbo.T_Tasks
-        Set Storage_Server = @storageServerNew,
+        UPDATE DMS_Capture.dbo.T_Tasks
+        SET Storage_Server = @storageServerNew,
             Instrument = @instrumentNameNew,
             Instrument_Class = @instrumentClassNew
-        Where Job = @captureJob And Dataset_ID = @datasetId
+        WHERE Job = @captureJob And Dataset_ID = @datasetId
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -235,8 +236,8 @@ AS
     End
     Else
     Begin
-        Delete DMS_Capture.dbo.T_Tasks
-        Where Job = @captureJob And Dataset_ID = @datasetId
+        DELETE DMS_Capture.dbo.T_Tasks
+        WHERE Job = @captureJob And Dataset_ID = @datasetId
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -247,9 +248,9 @@ AS
             Goto Done
         End
 
-        Update T_Dataset
-        Set DS_state_ID = 1
-        Where Dataset_ID = @datasetId
+        UPDATE T_Dataset
+        SET DS_state_ID = 1
+        WHERE Dataset_ID = @datasetId
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -260,6 +261,12 @@ AS
             Goto Done
         End
     End
+
+    UPDATE T_Cached_Dataset_Folder_Paths
+    SET UpdateRequired = 1
+    WHERE Dataset_ID = @datasetId
+
+    Exec update_cached_dataset_folder_paths 0
 
     Set @message = 'Changed instrument from ' + @instrumentNameOld + ' to ' + @instrumentNameNew + ' ' +
                    'for dataset ' + @datasetName + ', Dataset_ID ' + Cast(@datasetId As Varchar(12)) + '; ' +
