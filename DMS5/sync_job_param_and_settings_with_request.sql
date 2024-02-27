@@ -21,11 +21,12 @@ CREATE PROCEDURE [dbo].[sync_job_param_and_settings_with_request]
 **  Date:   04/17/2014 mem - Initial version
 **          07/29/2022 mem - No longer filter out null parameter file or settings file names since neither column allows null values
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          02/25/2024 mem - If @recentRequestDays is non-zero and no requests were created within the given days, double the value and look again for job requests
 **
 *****************************************************/
 (
-    @requestMinimum int = 0,                    -- Minimum request ID to examine (ignored if @recentRequestDays is positive)
-    @recentRequestDays int = 14,                -- Process requests created within the most recent x days; 0 to use @requestMinimum
+    @requestMinimum int = 0,                -- Minimum request ID to examine (ignored if @recentRequestDays is positive)
+    @recentRequestDays int = 14,            -- Process requests created within the most recent x days; 0 to use @requestMinimum
     @infoOnly tinyint = 0,
     @message varchar(255) = '' output
 )
@@ -41,9 +42,9 @@ AS
     -- Validate the inputs
     -----------------------------------------------------------
 
-    Set @requestMinimum = Coalesce(@requestMinimum, 0)
+    Set @requestMinimum    = Coalesce(@requestMinimum, 0)
     Set @recentRequestDays = Coalesce(@recentRequestDays, 14)
-    Set @infoOnly = Coalesce(@infoOnly, 0)
+    Set @infoOnly          = Coalesce(@infoOnly, 0)
     Set @message = ''
 
     If @requestMinimum < 1 And @recentRequestDays < 1
@@ -51,10 +52,26 @@ AS
 
     If @recentRequestDays > 0
     Begin
-        SELECT @requestMinimum = Min(AJR_requestID)
-        FROM T_Analysis_Job_Request
-        WHERE AJR_created >= DATEADD(day, -@recentRequestDays, GETDATE()) AND
-              AJR_requestID > 1
+        Set @requestMinimum = null
+
+        While @requestMinimum Is Null
+        Begin
+            SELECT @requestMinimum = Min(AJR_requestID)
+            FROM T_Analysis_Job_Request
+            WHERE AJR_created >= DATEADD(day, -@recentRequestDays, GETDATE()) AND
+                  AJR_requestID > 1
+
+            If @requestMinimum Is Null
+            Begin
+                -- Did not find any job requests
+                -- Double @recentRequestDays if it is less than 7305 (20 years)
+
+                If @recentRequestDays >= 7305
+                    Set @requestMinimum = 2
+                Else
+                    Set @recentRequestDays = @recentRequestDays * 2
+            End
+        End
 
         Set @requestMinimum = Coalesce(@requestMinimum, 2)
     End
@@ -192,9 +209,6 @@ AS
 
 Done:
 
-    ---------------------------------------------------
-    -- Exit
-    ---------------------------------------------------
     Return @myError
 
 GO
