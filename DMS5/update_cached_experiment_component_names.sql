@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[update_cached_experiment_component_names]
 **
 **  Desc:   Updates T_Cached_Experiment_Components,
 **          which tracks the semicolon separated list of
-**          biomaterial names and reference compound names for each exeriment
+**          biomaterial names and reference compound names for each experiment
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -329,6 +329,6 @@ AS
     End -- </AllExperiments>
 
 Done:
-    return @myError
+    Return @myError
 
 GO
