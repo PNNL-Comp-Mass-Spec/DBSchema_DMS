@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[update_campaign_tracking]
 **          08/30/2018 mem - Use merge instead of truncate
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          08/17/2023 mem - Use renamed column Data_Pkg_ID in S_V_Data_Package_Experiments_Export
+**          02/29/2024 mem - Fix bug that updated T_Campaign_Tracking instead of #Tmp_CampaignStats when counting data packages
 **
 *****************************************************/
 AS
@@ -236,16 +237,16 @@ AS
     -- Update Data Package counts
     ----------------------------------------------------------
     --
-    UPDATE T_Campaign_Tracking
+    UPDATE #Tmp_CampaignStats
     SET Data_Package_Count = S.cnt
-    FROM T_Campaign_Tracking
+    FROM #Tmp_CampaignStats
          INNER JOIN ( SELECT E.EX_campaign_ID ID,
                              Count(DISTINCT Data_Pkg_ID) AS cnt
                       FROM S_V_Data_Package_Experiments_Export DPE
                            INNER JOIN T_Experiments E
                              ON E.Exp_ID = DPE.Experiment_ID
                       GROUP BY E.EX_campaign_ID ) AS S
-           ON S.ID = T_Campaign_Tracking.C_ID
+           ON S.ID = #Tmp_CampaignStats.Campaign_ID
 
 
     ----------------------------------------------------------
