@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[update_experiment_name_for_qc_datasets]
 /****************************************************
 **
-**  Desc:   Assures that the dataset name associated with QC datasets matches the dataset name
+**  Desc:   Assures that the experiment name associated with QC datasets matches the dataset name
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -133,13 +133,13 @@ AS
     If Not Exists (Select * From #Tmp_DatasetsToUpdate)
     Begin
         Print 'No candidate datasets were found'
-        Goto Done
+        Return 0
     End
 
     If @infoOnly = 0 And Not Exists (Select * From #Tmp_DatasetsToUpdate Where Ambiguous = 0)
     Begin
         Print 'Candidate datasets were found, but they are all ambiguous; see them with @infoOnly=1'
-        Goto Done
+        Return 0
     End
 
     If @infoOnly <> 0
@@ -198,13 +198,6 @@ AS
         Exec post_log_entry 'Normal', @msg, 'update_experiment_name_for_qc_datasets'
 
     End
-
-Done:
-    ---------------------------------------------------
-    -- Done
-    ---------------------------------------------------
-    --
-
-    return 0
+        
 
 GO
