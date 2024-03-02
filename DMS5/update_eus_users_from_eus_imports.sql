@@ -23,6 +23,8 @@ CREATE PROCEDURE [dbo].[update_eus_users_from_eus_imports]
 **          05/12/2021 mem - Use new NEXUS-based views
 **                         - Add option to update EUS Users for Inactive proposals
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/01/2024 mem - Only change state_id to 3 in T_EUS_Proposal_Users if state_id is not 2, 3, 4, or 5 (previously not 2 or 4)
+**                         - This change was made to avoid state_id changing from 5 to 3, then from 3 back to 5 every time this procedure is called
 **
 *****************************************************/
 (
@@ -187,7 +189,7 @@ AS
         WHEN NOT MATCHED THEN
             INSERT (Proposal_ID, Person_ID, Of_DMS_Interest, State_ID, Last_Affected)
             VALUES (Source.Proposal_ID, Source.PERSON_ID, Source.Of_DMS_Interest, 1, GetDate())
-        WHEN NOT MATCHED BY SOURCE AND IsNull(State_ID, 0) NOT IN (2,4)
+        WHEN NOT MATCHED BY SOURCE AND IsNull(State_ID, 0) NOT IN (2, 3, 4, 5)
             -- User/proposal mapping is defined in T_EUS_Proposal_Users but not in V_NEXUS_Import_Proposal_Participants
             -- Flag entry to indicate we need to possibly update the state for this row to 5 (checked later in the procedure)
             THEN UPDATE SET State_ID = 3, Last_Affected = GetDate()
