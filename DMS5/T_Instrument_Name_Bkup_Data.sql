@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 242 ******/
+/****** RowCount: 244 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -67,7 +67,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('FHCRC_Orb1',64,'LTQ_FT',1142,276,'
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('12T_FTICR_B',65,'BrukerFT_BAF',1397,4111,'secfso',null,'EMSL 1621','12T FTICR with updated workstation; set to inactive in May 2022 when the 15T instrument (with MALDI and paracell analyzer) was moved to the 12T magnet due to 15T magnet problems and helium rationing; see 12T_FTICR_P & 12T_FTICR_P_Imaging','7/9/2010 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('BrukerTOF_01',66,'BrukerMALDI_Spot',295,1091,'secfso',null,'EMSL 1621','Bruker Ultraflextreme MALDI TOFTOF','8/2/2010 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_LTQ',67,'Finnigan_Ion_Trap',2539,2538,'fso',null,'Offsite','LTQ data acquired outside PNNL','8/16/2010 12:00:00 AM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Orbitrap',68,'LTQ_FT',1141,4503,'fso',null,'Offsite','Orbitrap data acquired outside PNNL','8/31/2010 4:55:06 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Orbitrap',68,'LTQ_FT',1141,4730,'fso',null,'Offsite','Orbitrap data acquired outside PNNL','8/31/2010 4:55:06 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('15T_FTICR',69,'BrukerFT_BAF',2710,4134,'secfso',null,'EMSL 1621','Bruker Solarix 15T with dual ESI\MALDI source; taken offline in May 2022 due to helium shortage','9/27/2010 11:48:52 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('AgQTOF04',70,'Agilent_TOF_V2',288,1025,'fso',null,'EMSL 1430','Agilent QTOF','11/4/2010 3:01:20 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('9T_FTICR_Imaging',71,'BrukerMALDI_Imaging',297,1165,'secfso',null,'EMSL 1629','Bruker 9T FTICR with MALDI Imaging datasets','11/14/2010 8:20:51 PM')
@@ -241,5 +241,7 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris04',239,'LTQ_FT',4631,4636
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Homer',240,'Thermo_SII_LC',4632,4724,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets.','12/1/2023 4:47:28 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('PrepHPLC8',241,'PrepHPLC',4646,2,'secfso',null,'BSF 2240','Thermo Vanquish Flex Autosampler/Fraction Collector, controlled with Chromeleon software','1/2/2024 11:41:48 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris05',242,'LTQ_FT',4657,4662,'secfso',null,'BSF 1229','Katrina''s PPI (Predictive Phenomics Initiative) instrument','1/9/2024 2:29:09 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Marge',243,'Thermo_SII_LC',4725,2,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Purchased with Exploris05, Katrina''s PPI (Predictive Phenomics Initiative)','1/16/2024 10:04:23 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Marge',243,'Thermo_SII_LC',4725,4729,'secfso',null,'BSF 1229','Vanquish Neo LC (binary pump, autosampler, and column compartment). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Purchased with Exploris05, Katrina''s PPI (Predictive Phenomics Initiative)','1/16/2024 10:04:23 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('External_Astral',244,'LTQ_FT',4726,4727,'fso',null,'Offsite','Thermo TOF/Orbitrap tribrid','2/5/2024 11:21:14 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Ned',245,'Thermo_SII_LC',4732,2,'secfso',null,'EMSL 1526','Vanquish Neo LC (binary pump and autosampler). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Purchased with Exploris06, EMSL owned','3/1/2024 10:58:45 AM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Exploris06',246,'LTQ_FT',4733,2,'secfso',null,'EMSL 1526','Exploris 480 purchased by EMSL','3/1/2024 11:00:40 AM')
