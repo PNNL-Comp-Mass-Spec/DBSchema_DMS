@@ -7,12 +7,9 @@ CREATE PROCEDURE [dbo].[add_update_instrument_usage_report]
 /****************************************************
 **
 **  Desc:
-**    Adds new or edits existing item in
-**    T_EMSL_Instrument_Usage_Report
+**      Adds new or edits existing item in T_EMSL_Instrument_Usage_Report
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   grk
 **  Date:   03/27/2012
@@ -26,6 +23,7 @@ CREATE PROCEDURE [dbo].[add_update_instrument_usage_report]
 **          04/17/2020 mem - Use Dataset_ID instead of ID
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          03/02/2024 mem - Trim leading and trailing whitespace from input parameters
 **
 ** Pacific Northwest National Laboratory, Richland, WA
 ** Copyright 2009, Battelle Memorial Institute
@@ -74,8 +72,8 @@ AS
     -- Validate input fields
     ---------------------------------------------------
 
-    Set @mode = IsNull(@mode, '')
-    Set @Usage = IsNull(@Usage, '')
+    Set @mode  = LTrim(RTrim(IsNull(@mode, '')))
+    Set @Usage = LTrim(RTrim(IsNull(@Usage, '')))
 
     Declare @usageTypeID tinyint = 0
 
@@ -94,15 +92,26 @@ AS
     -- Assure that @Operator is either an integer or null
     Set @Operator = Try_Convert(int, @Operator)
 
+    -- Trim leading and trailing whitespace from input parameters
+    Set @Proposal = LTrim(RTrim(@Proposal))
+    Set @Operator = LTrim(RTrim(@Operator))
+    Set @Comment  = LTrim(RTrim(@Comment))
+
     -- Assure that @comment does not contain LF or CR
     Set @Comment = Replace(Replace(@Comment, Char(10), ' '), Char(13), ' ')
+
+    -- If @users is not null, trim whitespace
+    If Not @Users Is Null
+    Begin
+        Set @Users = LTrim(RTrim(@Users))
+    End
 
     ---------------------------------------------------
     -- Is entry already in database? (only applies to updates)
     ---------------------------------------------------
 
-    if @mode = 'update'
-    begin
+    If @mode = 'update'
+    Begin
         -- cannot update a non-existent entry
         --
         Declare @tmp int = 0
@@ -113,25 +122,25 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0 OR @tmp = 0
+        If @myError <> 0 OR @tmp = 0
             RAISERROR ('No entry could be found in database for update', 11, 16)
-    end
+    End
 
     ---------------------------------------------------
     -- action for add mode
     ---------------------------------------------------
 
-    if @mode = 'add'
-    begin
+    If @mode = 'add'
+    Begin
         RAISERROR ('"Add" mode not supported', 11, 7)
-    end -- add mode
+    End
 
     ---------------------------------------------------
     -- action for update mode
     ---------------------------------------------------
-    --
-    if @mode = 'update'
-    begin
+
+    If @mode = 'update'
+    Begin
         Set @myError = 0
         --
         UPDATE T_EMSL_Instrument_Usage_Report
@@ -145,10 +154,10 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
+        If @myError <> 0
             RAISERROR ('Update operation failed: "%d"', 11, 4, @Seq)
 
-    end -- update mode
+    End
 
     ---------------------------------------------------
     ---------------------------------------------------
@@ -157,12 +166,13 @@ AS
         EXEC format_error_message @message output, @myError output
 
         -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         Exec post_log_entry 'Error', @message, 'add_update_instrument_usage_report'
     END CATCH
-    return @myError
+
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_instrument_usage_report] TO [DDL_Viewer] AS [dbo]

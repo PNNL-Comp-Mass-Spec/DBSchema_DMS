@@ -6,7 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[update_instrument_usage_report]
 /****************************************************
 **
-**  Desc:  Update requested EMSL instument usage table from input XML list
+**  Desc:
+**      Update requested EMSL instument usage table from input XML list
 **
 **  @factorList will look like this
 **
@@ -37,6 +38,7 @@ CREATE PROCEDURE [dbo].[update_instrument_usage_report]
 **          07/15/2022 mem - Instrument operator ID is now tracked as an actual integer
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          03/02/2024 mem - Trim leading and trailing whitespace from Field and Value text parsed from the XML
 **
 *****************************************************/
 (
@@ -80,7 +82,7 @@ AS
     End;
 
     ---------------------------------------------------
-     -- validate inputs
+    -- Validate inputs
     ---------------------------------------------------
 
     If IsNull(@callingUser, '') = ''
@@ -105,6 +107,7 @@ AS
     End
 
     Set @operation = Ltrim(Rtrim(IsNull(@operation, '')))
+
     If Len(@operation) = 0
     Begin
         RAISERROR ('Operation must be specified', 11, 4)
@@ -124,7 +127,7 @@ AS
     End
 
     Declare @monthValue int = Try_Cast(@month As int)
-    Declare @yearValue int = Try_Cast(@year As int)
+    Declare @yearValue int  = Try_Cast(@year As int)
 
     If @monthValue Is Null
     Begin
@@ -150,13 +153,13 @@ AS
     BEGIN TRY
 
         ---------------------------------------------------
-        -- get boundary dates
+        -- Define boundary dates
         ---------------------------------------------------
-        Set @startOfMonth = @month + '/1/' + @year                  -- Beginning of the month that we are updating
-        Set @startOfNextMonth = DATEADD(MONTH, 1, @startOfMonth)    -- Beginning of the next month after @startOfMonth
-        Set @endOfMonth = DATEADD(MINUTE, -1, @startOfNextMonth)    -- End of the month that we are editing
-        Set @lockDateReload = DATEADD(DAY, 60, @startOfNextMonth)   -- Date threshold, afterwhich users can no longer reload this month's data
-        Set @lockDateUpdate = DATEADD(DAY, 365, @startOfNextMonth)  -- Date threshold, afterwhich users can no longer update this month's data
+        Set @startOfMonth     = @month + '/1/' + @year                  -- Beginning of the month that we are updating
+        Set @startOfNextMonth = DATEADD(MONTH, 1, @startOfMonth)        -- Beginning of the next month after @startOfMonth
+        Set @endOfMonth       = DATEADD(MINUTE, -1, @startOfNextMonth)  -- End of the month that we are editing
+        Set @lockDateReload   = DATEADD(DAY, 60, @startOfNextMonth)     -- Date threshold, afterwhich users can no longer reload this month's data
+        Set @lockDateUpdate   = DATEADD(DAY, 365, @startOfNextMonth)    -- Date threshold, afterwhich users can no longer update this month's data
 
         If @operation In ('update') And GETDATE() > @lockDateUpdate
             RAISERROR ('Changes are not allowed to instrument usage data over 365 days old', 11, 13)
@@ -165,14 +168,14 @@ AS
             RAISERROR ('Instrument usage data over 60 days old cannot be reloaded or refreshed', 11, 13)
 
         -----------------------------------------------------------
-        -- foundational actions for various operations
+        -- Foundational actions for various operations
         -----------------------------------------------------------
 
         IF @operation in ('update')
         BEGIN --<a>
 
             -----------------------------------------------------------
-            -- temp table to hold update items
+            -- Temp table to hold update items
             -----------------------------------------------------------
             --
             CREATE TABLE #TMP (
@@ -182,15 +185,14 @@ AS
             )
 
             -----------------------------------------------------------
-            -- populate temp table with new parameters
+            -- Populate temp table with new parameters
             -----------------------------------------------------------
             --
-            INSERT INTO #TMP
-                (Identifier, Field, Value)
+            INSERT INTO #TMP (Identifier, Field, Value)
             SELECT
                 xmlNode.value('@i', 'int') Identifier,
-                xmlNode.value('@f', 'nvarchar(256)') Field,
-                xmlNode.value('@v', 'nvarchar(256)') Value
+                LTrim(RTrim(xmlNode.value('@f', 'nvarchar(256)'))) Field,
+                LTrim(RTrim(xmlNode.value('@v', 'nvarchar(256)'))) Value
             FROM @xml.nodes('//r') AS R(xmlNode)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -199,7 +201,7 @@ AS
                 RAISERROR ('Error trying to convert list', 11, 1)
 
             -----------------------------------------------------------
-            -- make sure changed fields are allowed
+            -- Make sure changed fields are allowed
             -----------------------------------------------------------
 
             Declare @badFields varchar(4096) = ''
@@ -216,12 +218,11 @@ AS
         IF @operation in ('reload', 'refresh')
         BEGIN --<b>
             -----------------------------------------------------------
-            -- validation
+            -- Validation
             -----------------------------------------------------------
 
             IF @operation = 'reload' AND ISNULL(@instrument, '') = ''
                 RAISERROR ('An instrument must be specified for the reload operation', 11, 10)
-
 
             IF ISNULL(@year, '') = '' OR ISNULL(@month, '') = ''
                 RAISERROR ('A year and month must be specified for this operation', 11, 11)
@@ -345,11 +346,12 @@ AS
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
 
-        -- rollback any open transactions
+        -- Rollback any open transactions
         IF (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
     END CATCH
-    return @myError
+
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_instrument_usage_report] TO [DDL_Viewer] AS [dbo]
