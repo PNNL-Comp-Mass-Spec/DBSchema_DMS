@@ -17,6 +17,11 @@ CREATE PROCEDURE [dbo].[update_instrument_usage_report]
 **      <r i="2058" f="Proposal" v="..." />
 **      <r i="1941" f="Proposal" v="..." />
 **
+**      In the XML:
+**        "i" specifies the sequence ID in table t_emsl_instrument_usage_report
+**        "f" is the field to update: 'Proposal', 'Operator', 'Comment', 'Users', or 'Usage' (operator is EUS user ID of the instrument operator)
+**        "v" is the value to store
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   grk
@@ -39,6 +44,7 @@ CREATE PROCEDURE [dbo].[update_instrument_usage_report]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
 **          03/02/2024 mem - Trim leading and trailing whitespace from Field and Value text parsed from the XML
+**                         - Allow @year and @month to be undefined if @operation is 'update'
 **
 *****************************************************/
 (
@@ -116,14 +122,32 @@ AS
     Set @month = Ltrim(Rtrim(IsNull(@month, '')))
     Set @year  = Ltrim(Rtrim(IsNull(@year, '')))
 
-    If Len(@month) = 0
+    If @operation = 'update'
     Begin
-        RAISERROR ('Month must be specified', 11, 4)
-    End
+        -- @month and @year are effectively ignored when @operation is 'update'
+        -- However, make sure that they are defined so that @startOfMonth can be initialized (even though it also is not used when @operation is 'update')
 
-    If Len(@year) = 0
+        If Len(@month) = 0
+        Begin
+            Set @month = Cast(month(current_timestamp) As varchar(12))
+        End
+
+        If Len(@year) = 0
+        Begin
+            Set @year = Cast(year(current_timestamp) As varchar(12))
+        End
+    End
+    Else
     Begin
-        RAISERROR ('Year must be specified', 11, 4)
+        If Len(@month) = 0
+        Begin
+            RAISERROR ('Month must be specified', 11, 4)
+        End
+
+        If Len(@year) = 0
+        Begin
+            RAISERROR ('Year must be specified', 11, 4)
+        End
     End
 
     Declare @monthValue int = Try_Cast(@month As int)
@@ -134,7 +158,7 @@ AS
         RAISERROR ('Month must be an integer, not: "%s"', 11, 4, @month)
     End
 
-    If Len(@year) = 0
+    If @yearValue Is Null
     Begin
         RAISERROR ('Year must be an integer, not: "%s"', 11, 4, @year)
     End
@@ -155,6 +179,7 @@ AS
         ---------------------------------------------------
         -- Define boundary dates
         ---------------------------------------------------
+
         Set @startOfMonth     = @month + '/1/' + @year                  -- Beginning of the month that we are updating
         Set @startOfNextMonth = DATEADD(MONTH, 1, @startOfMonth)        -- Beginning of the next month after @startOfMonth
         Set @endOfMonth       = DATEADD(MINUTE, -1, @startOfNextMonth)  -- End of the month that we are editing
@@ -171,8 +196,8 @@ AS
         -- Foundational actions for various operations
         -----------------------------------------------------------
 
-        IF @operation in ('update')
-        BEGIN --<a>
+        If @operation in ('update')
+        Begin --<a>
 
             -----------------------------------------------------------
             -- Temp table to hold update items
@@ -210,25 +235,25 @@ AS
             FROM #TMP
             WHERE NOT Field IN ('Proposal', 'Operator', 'Comment', 'Users', 'Usage')
             --
-            IF @badFields <> ''
+            If @badFields <> ''
                 RAISERROR ('The following field(s) are not editable: %s', 11, 27, @badFields)
 
-        END --<a>
+        End --<a>
 
-        IF @operation in ('reload', 'refresh')
-        BEGIN --<b>
+        If @operation in ('reload', 'refresh')
+        Begin--<b>
             -----------------------------------------------------------
             -- Validation
             -----------------------------------------------------------
 
-            IF @operation = 'reload' AND ISNULL(@instrument, '') = ''
+            If @operation = 'reload' AND ISNULL(@instrument, '') = ''
                 RAISERROR ('An instrument must be specified for the reload operation', 11, 10)
 
-            IF ISNULL(@year, '') = '' OR ISNULL(@month, '') = ''
+            If ISNULL(@year, '') = '' OR ISNULL(@month, '') = ''
                 RAISERROR ('A year and month must be specified for this operation', 11, 11)
 
-            IF ISNULL(@instrument, '') = ''
-            BEGIN
+            If ISNULL(@instrument, '') = ''
+            Begin
                 ---------------------------------------------------
                 -- Get list of EMSL instruments
                 ---------------------------------------------------
@@ -241,12 +266,12 @@ AS
                 SELECT [Name]
                 FROM V_Instrument_Tracked
                 WHERE ISNULL(EUS_Primary_Instrument, '') = 'Y'
-            END
+            End
 
-        END --<b>
+        End --<b>
 
-        IF @operation = 'update'
-        BEGIN
+        If @operation = 'update'
+        Begin
             UPDATE T_EMSL_Instrument_Usage_Report
             SET Comment = #TMP.Value
             FROM T_EMSL_Instrument_Usage_Report
@@ -281,16 +306,15 @@ AS
             WHERE Field = 'Usage'
 
             UPDATE T_EMSL_Instrument_Usage_Report
-            SET
-                Updated = GETDATE(),
+            SET Updated = GETDATE(),
                 UpdatedBy = @callingUser
             FROM T_EMSL_Instrument_Usage_Report
             INNER JOIN #TMP ON Seq = Identifier
 
-        END
+        End
 
-        IF @operation = 'reload'
-        BEGIN
+        If @operation = 'reload'
+        Begin
             UPDATE T_EMSL_Instrument_Usage_Report
             SET
                 Usage_Type = Null,
@@ -298,31 +322,31 @@ AS
                 Users = '',
                 Operator = Null,
                 Comment = ''
-            WHERE @year = [Year] AND
-                  @month = [Month] AND
+            WHERE [Year] = @year AND
+                  [Month] = @month AND
                   (@instrument = '' OR DMS_Inst_ID = @instrumentID)
 
             EXEC update_dataset_interval @instrument, @startOfMonth, @endOfMonth, @message output
 
             Set @operation = 'refresh'
-        END
+        End
 
-        IF @operation = 'refresh'
-        BEGIN
-            IF Len(ISNULL(@instrument, '')) > 0
-            BEGIN
+        If @operation = 'refresh'
+        Begin
+            If Len(ISNULL(@instrument, '')) > 0
+            Begin
                 EXEC @myError = update_emsl_instrument_usage_report @instrument, 0, @endOfMonth, @msg output
-                IF(@myError <> 0)
+                If(@myError <> 0)
                     RAISERROR (@msg, 11, 6)
-            END
+            End
             ELSE
-            BEGIN --<m>
+            Begin --<m>
                 Declare @inst varchar(64)
                 Declare @index int = 0
                 Declare @done TINYINT = 0
 
                 WHILE @done = 0
-                BEGIN --<x>
+                Begin --<x>
                     Set @inst = NULL
                     SELECT TOP 1 @inst = Instrument
                     FROM #Tmp_Instruments
@@ -330,24 +354,24 @@ AS
 
                     Set @index = @index + 1
 
-                    IF @inst IS NULL
-                    BEGIN
+                    If @inst IS NULL
+                    Begin
                         Set @done = 1
-                    END
+                    End
                     ELSE
-                    BEGIN --<y>
+                    Begin --<y>
                         EXEC update_emsl_instrument_usage_report @inst, 0, @endOfMonth, @msg output
-                    END  --<y>
-                END --<x>
-            END --<m>
-        END
+                    End  --<y>
+                End --<x>
+            End --<m>
+        End
 
     END TRY
     BEGIN CATCH
         EXEC format_error_message @message output, @myError output
 
         -- Rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
     END CATCH
 
