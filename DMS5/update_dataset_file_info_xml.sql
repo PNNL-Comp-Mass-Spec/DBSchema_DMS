@@ -6,11 +6,11 @@ GO
 CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 /****************************************************
 **
-**  Desc:   Updates the information for the dataset specified by @datasetID
+**  Desc:
+**      Update the information for the dataset specified by @datasetID
 **
-**          If @datasetID is 0, will use the dataset name defined in @datasetInfoXML
-**          If @datasetID is non-zero, will validate that the Dataset Name in the XML corresponds
-**          to the dataset ID specified by @datasetID
+**      If @datasetID is 0, will use the dataset name defined in @datasetInfoXML
+**      If @datasetID is non-zero, will validate that the Dataset Name in the XML corresponds to the dataset ID specified by @datasetID
 **
 **      Typical XML file contents:
 **
@@ -58,6 +58,21 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **        </TICInfo>
 **      </DatasetInfo>
 **
+**      Bruker datasets that have file chromatography-data.sqlite in the .D directory will also have an EICInfo section
+**
+**      <DatasetInfo>
+**        <EICInfo>
+**          <EICStats Mz="311.17" MaxIntensity="1.2514E+08" MedianIntensity="1.2514E+08" />
+**          <EICStats Mz="239.02" MaxIntensity="3.2411E+08" MedianIntensity="3.2411E+08" />
+**          <EICStats Mz="339.11" MaxIntensity="1.1627E+09" MedianIntensity="1.1627E+09" />
+**          <EICStats Mz="381.12" MaxIntensity="1.253E+09" MedianIntensity="1.253E+09" />
+**          <EICStats Mz="465.14" MaxIntensity="6.0586E+08" MedianIntensity="6.0586E+08" />
+**          <EICStats Mz="589.12" MaxIntensity="1.5189E+08" MedianIntensity="1.5189E+08" />
+**          <EICStats Mz="687.12" MaxIntensity="6.4075E+07" MedianIntensity="6.4075E+07" />
+**          <EICStats Mz="811.10" MaxIntensity="0" MedianIntensity="0" />
+**        </EICInfo>
+**      </DatasetInfo>
+**
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   mem
@@ -92,6 +107,7 @@ CREATE PROCEDURE [dbo].[update_dataset_file_info_xml]
 **          04/01/2023 mem - Use new DMS_Capture procedures and function names
 **          04/24/2023 mem - Store DIA scan count values
 **          12/06/2023 mem - Log an error if a scan type is not present in T_Dataset_ScanType_Glossary
+**          03/07/2024 mem - Add support for Extracted Ion Chromatogram (EIC) data
 **
 *****************************************************/
 (
@@ -170,13 +186,13 @@ AS
         ScanFilter varchar(256) NULL
     )
 
-    CREATE TABLE #Tmp_InstrumentFilesTable (
-        Entry_ID Int Identity(1,1) Not Null,
+    CREATE TABLE #Tmp_InstrumentFiles (
+        Entry_ID Int Identity(1,1) NOT NULL,
         InstFilePath varchar(512) NOT NULL,     -- Relative file path of the instrument file
         InstFileHash varchar(64) NULL,
         InstFileHashType varchar(32) NULL,      -- Should always be SHA1
-        InstFileSize bigint Null,
-        FileSizeRank Smallint Null              -- File size rank, across all instrument files for this dataset
+        InstFileSize bigint NULL,
+        FileSizeRank Smallint NULL              -- File size rank, across all instrument files for this dataset
     )
 
     Declare @DuplicateDatasetsTable Table (
@@ -184,6 +200,12 @@ AS
         MatchingFileCount int NOT NULL,
         Allow_Duplicates tinyint NOT NULL
     )
+
+    CREATE TABLE #Tmp_EIC_Values (
+        Mz float NOT NULL,          -- Double precision float
+        MaxIntensity real NULL,     -- Restricted to -1E+37 to 1E+37 since stored as float4 (aka real)
+        MedianIntensity real NULL
+    );
 
     ---------------------------------------------------
     -- Validate the inputs
@@ -199,7 +221,7 @@ AS
     ---------------------------------------------------
     -- Examine the XML to determine the dataset name and update or validate @datasetID
     ---------------------------------------------------
-    --
+
     Exec get_dataset_details_from_dataset_info_xml
         @datasetInfoXML,
         @datasetID   = @datasetID Output,
@@ -216,7 +238,7 @@ AS
     -- Parse the contents of @datasetInfoXML to populate @DSInfoTable
     -- Skip the StartTime and EndTime values for now since they might have invalid dates
     ---------------------------------------------------
-    --
+
     INSERT INTO @DSInfoTable (
         Dataset_ID,
         Dataset_Name,
@@ -260,7 +282,7 @@ AS
            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS1)[1]', 'int') AS ProfileScanCountMS1,
            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/ProfileScanCountMS2)[1]', 'int') AS ProfileScanCountMS2,
            @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS1)[1]', 'int') AS CentroidScanCountMS1,
-           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2
+           @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/CentroidScanCountMS2)[1]', 'int') AS CentroidScanCountMS2;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -273,7 +295,7 @@ AS
     ---------------------------------------------------
     -- Make sure Dataset_ID is up-to-date in @DSInfoTable
     ---------------------------------------------------
-    --
+
     UPDATE @DSInfoTable
     SET Dataset_ID = @datasetID
 
@@ -281,7 +303,7 @@ AS
     -- Parse out the start and End times
     -- Initially extract as strings in case they're out of range for the datetime date type
     ---------------------------------------------------
-    --
+
     SELECT @startTime = @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/StartTime)[1]', 'varchar(32)'),
            @endTime = @datasetInfoXML.value('(/DatasetInfo/AcquisitionInfo/EndTime)[1]', 'varchar(32)')
 
@@ -316,7 +338,7 @@ AS
     -- Extract out the ScanType information
     -- There could be multiple scan types defined in the XML
     ---------------------------------------------------
-    --
+
     INSERT INTO @ScanTypesTable (ScanType, ScanCount, ScanFilter)
     SELECT ScanType, ScanCount, ScanFilter
     FROM ( SELECT xmlNode.value('.', 'varchar(64)') AS ScanType,
@@ -327,7 +349,7 @@ AS
     WHERE Not ScanType IS NULL
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error parsing ScanType nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
@@ -335,10 +357,10 @@ AS
     End
 
     ---------------------------------------------------
-    -- Now extract out the instrument files
+    -- Extract out the instrument files
     ---------------------------------------------------
-    --
-    INSERT INTO #Tmp_InstrumentFilesTable ( InstFilePath, InstFileHash, InstFileHashType, InstFileSize)
+
+    INSERT INTO #Tmp_InstrumentFiles (InstFilePath, InstFileHash, InstFileHashType, InstFileSize)
     SELECT instFiles.InstrumentFile.value('(.)[1]','varchar(512)') As InstFilePath,
            instFiles.InstrumentFile.value('(./@Hash)[1]','varchar(64)') As InstFileHash,
            instFiles.InstrumentFile.value('(./@HashType)[1]','varchar(32)') As InstFileHashType,
@@ -346,7 +368,7 @@ AS
     FROM @datasetInfoXML.nodes('/DatasetInfo/AcquisitionInfo/InstrumentFiles/InstrumentFile') As instFiles(InstrumentFile)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error parsing InstrumentFile nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
@@ -354,24 +376,24 @@ AS
     End
 
     ---------------------------------------------------
-    -- Update FileSizeRank in #Tmp_InstrumentFilesTable
+    -- Update FileSizeRank in #Tmp_InstrumentFiles
     ---------------------------------------------------
 
-    UPDATE #Tmp_InstrumentFilesTable
+    UPDATE #Tmp_InstrumentFiles
     SET FileSizeRank = RankQ.FileSizeRank
-    FROM #Tmp_InstrumentFilesTable Inner Join (
+    FROM #Tmp_InstrumentFiles Inner Join (
         SELECT Entry_ID, Row_Number() Over (Order By InstFileSize Desc) As FileSizeRank
-        FROM #Tmp_InstrumentFilesTable
-        ) As RankQ On #Tmp_InstrumentFilesTable.Entry_ID = RankQ.Entry_ID
+        FROM #Tmp_InstrumentFiles
+        ) As RankQ On #Tmp_InstrumentFiles.Entry_ID = RankQ.Entry_ID
 
     ---------------------------------------------------
     -- Validate the hash type
     ---------------------------------------------------
-    --
+
     Declare @unrecognizedHashType varchar(32) = ''
 
     SELECT @unrecognizedHashType = InstFileHashType
-    FROM #Tmp_InstrumentFilesTable
+    FROM #Tmp_InstrumentFiles
     WHERE Not InstFileHashType In ('SHA1')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -392,7 +414,7 @@ AS
     Declare @instrumentFileCount int = 0
 
     SELECT @instrumentFileCount = Count(*)
-    FROM #Tmp_InstrumentFilesTable
+    FROM #Tmp_InstrumentFiles
 
     If @instrumentFileCount > 0
     Begin
@@ -403,7 +425,7 @@ AS
                Count(*) AS MatchingFiles,
                0 As Allow_Duplicates
         FROM T_Dataset_Files DSFiles
-             INNER JOIN #Tmp_InstrumentFilesTable NewDSFiles
+             INNER JOIN #Tmp_InstrumentFiles NewDSFiles
                ON DSFiles.File_Hash = NewDSFiles.InstFileHash
         WHERE DSFiles.Dataset_ID <> @datasetID And DSFiles.Deleted = 0 And DSFiles.File_Size_Bytes > 0
         GROUP BY DSFiles.Dataset_ID
@@ -474,6 +496,24 @@ AS
         End
     End
 
+    ---------------------------------------------------
+    -- Extract out the extracted ion chromatogram data (if present)
+    ---------------------------------------------------
+
+    INSERT INTO #Tmp_EIC_Values (Mz, MaxIntensity, MedianIntensity)
+    SELECT eicInfo.EIC_Stats.value('(./@Mz)[1]','float') As Mz,
+           eicInfo.EIC_Stats.value('(./@MaxIntensity)[1]','real') As MaxIntensity,
+           eicInfo.EIC_Stats.value('(./@MedianIntensity)[1]','real') As MedianIntensity
+    FROM @datasetInfoXML.nodes('/DatasetInfo/EICInfo/EICStats') As eicInfo(EIC_Stats)
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Error parsing EICStats nodes in @datasetInfoXML for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Goto Done
+    End
+
     -----------------------------------------------
     -- Possibly update the separation type for the dataset
     -----------------------------------------------
@@ -484,8 +524,8 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    Select @acqLengthMinutes = AcqTimeMinutes
-    From @DSInfoTable
+    SELECT @acqLengthMinutes = AcqTimeMinutes
+    FROM @DSInfoTable
 
     If @acqLengthMinutes > 1 AND ISNULL(@separationType, '') <> ''
     Begin
@@ -521,7 +561,10 @@ AS
         FROM @ScanTypesTable
 
         SELECT *
-        FROM #Tmp_InstrumentFilesTable
+        FROM #Tmp_InstrumentFiles
+
+        SELECT *
+        FROM #Tmp_EIC_Values
 
         Exec update_dataset_device_info_xml @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=1, @skipValidation=1
 
@@ -594,7 +637,7 @@ AS
           NewInfo.Dataset_Name = DS.Dataset_Num
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error updating T_Dataset for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
@@ -602,9 +645,9 @@ AS
     End
 
     -----------------------------------------------
-    -- Add/Update T_Dataset_Info using a MERGE statement
+    -- Add/Update T_Dataset_Info using a merge statement
     -----------------------------------------------
-    --
+
     MERGE T_Dataset_Info AS target
     USING
         (Select Dataset_ID, ScanCountMS, ScanCountMSn,
@@ -666,7 +709,7 @@ AS
     ;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error updating T_Dataset_Info for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
@@ -679,7 +722,7 @@ AS
     --  of the same scan type but different ScanFilter values
     -- Instead, delete existing rows then add new ones
     -----------------------------------------------
-    --
+
     DELETE FROM T_Dataset_ScanTypes
     WHERE Dataset_ID = @datasetID
     --
@@ -691,7 +734,7 @@ AS
     ORDER BY Dataset_ID, ScanType
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @message = 'Error updating T_Dataset_ScanTypes for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
@@ -701,7 +744,7 @@ AS
     -----------------------------------------------
     -- Update the Scan_Types field in T_Dataset_Info for this dataset
     -----------------------------------------------
-    --
+
     UPDATE T_Dataset_Info
     SET Scan_Types = dbo.get_dataset_scan_type_list(@datasetID)
     FROM T_Dataset DS
@@ -718,7 +761,7 @@ AS
     DECLARE @missingScanTypes varchar(256) = null
 
     SELECT @missingScanTypes = CASE WHEN @missingScanTypes Is Null THEN T.ScanType ELSE @missingScanTypes + ', ' + T.ScanType END
-    FROM T_Dataset_ScanTypes T 
+    FROM T_Dataset_ScanTypes T
          LEFT OUTER JOIN T_Dataset_ScanType_Glossary G
            ON G.ScanType = T.ScanType
     WHERE Dataset_ID = @datasetID AND G.ScanType Is Null
@@ -734,13 +777,13 @@ AS
     End
 
     -----------------------------------------------
-    -- Add/Update T_Dataset_Files using a Merge statement
+    -- Add/Update T_Dataset_Files using a merge statement
     -----------------------------------------------
-    --
+
     MERGE T_Dataset_Files As target
     USING
         (SELECT @datasetID, InstFilePath, InstFileSize, InstFileHash, FileSizeRank
-         FROM #Tmp_InstrumentFilesTable
+         FROM #Tmp_InstrumentFiles
         ) AS Source (Dataset_ID, InstFilePath, InstFileSize, InstFileHash, FileSizeRank)
     ON (target.Dataset_ID = Source.Dataset_ID And Target.File_Path = Source.InstFilePath And Target.File_Size_Rank = Source.FileSizeRank)
     WHEN Matched
@@ -764,10 +807,10 @@ AS
     End
 
     -- Look for extra files that need to be deleted
-    --
+
     DELETE T_Dataset_Files
     FROM T_Dataset_Files Target
-         LEFT OUTER JOIN #Tmp_InstrumentFilesTable Source
+         LEFT OUTER JOIN #Tmp_InstrumentFiles Source
            ON Target.Dataset_ID = @datasetID AND
               Target.File_Path = Source.InstFilePath And
               Target.File_Size_Rank = Source.FileSizeRank
@@ -778,9 +821,40 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     -----------------------------------------------
+    -- Add/Update T_Dataset_QC_Ions using a merge statement
+    -- There should not be duplicate m/z values in the XML, but the following uses a Group By query just in case
+    -----------------------------------------------
+
+    MERGE T_Dataset_QC_Ions As target
+    USING
+        (SELECT @datasetID, Mz, Max(MaxIntensity), Max(MedianIntensity)
+         FROM #Tmp_EIC_Values
+         GROUP BY Mz
+        ) AS Source (Dataset_ID, Mz, MaxIntensity, MedianIntensity)
+    ON (target.Dataset_ID = Source.Dataset_ID And
+        Target.Mz = Source.Mz)
+    WHEN Matched
+        THEN UPDATE
+            SET Max_Intensity = Source.MaxIntensity,
+                Median_Intensity = Source.MedianIntensity
+    WHEN Not Matched THEN
+        INSERT (Dataset_ID, Mz, Max_Intensity, Median_Intensity)
+        VALUES (Source.Dataset_ID, Source.Mz, Source.MaxIntensity, Source.MedianIntensity)
+    WHEN NOT Matched By Source AND target.Dataset_ID = @datasetID THEN DELETE
+    ;
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Error updating T_Dataset_QC_Ions for DatasetID ' + @datasetIdText + ' in SP update_dataset_file_info_xml'
+        Goto Done
+    End
+
+    -----------------------------------------------
     -- Possibly validate the dataset type defined for this dataset
     -----------------------------------------------
-    --
+
     If @validateDatasetType <> 0
     Begin
         exec dbo.validate_dataset_type @datasetID, @message=@message output, @infoonly=@infoOnly
@@ -789,14 +863,13 @@ AS
     -----------------------------------------------
     -- Add/update T_Dataset_Device_Map
     -----------------------------------------------
-    --
+
     Exec update_dataset_device_info_xml @datasetID=@datasetID, @datasetInfoXML=@datasetInfoXML, @infoOnly=0, @skipValidation=1
 
     Set @message = 'Dataset info update successful'
 
 Done:
-
-    -- Note: ignore error code 53600; a log message has already been made
+    -- Note: ignore error code 53600; a message has already been logged
     If @myError Not In (0, 53600)
     Begin
         If @message = ''
