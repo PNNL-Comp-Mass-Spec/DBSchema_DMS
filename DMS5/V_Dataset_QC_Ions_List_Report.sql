@@ -5,10 +5,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE VIEW [dbo].[V_Dataset_QC_Ions_List_Report]
 AS
-SELECT DQI.Dataset_ID AS dataset_id, 
+SELECT DQI.Dataset_ID AS dataset_id,
        DS.Dataset_num AS dataset,
-       DQI.Mz AS mz, 
-       DQI.Max_Intensity AS max_intensity, 
+       DQI.Mz AS mz,
+       DQI.Max_Intensity AS max_intensity,
        DQI.Median_Intensity AS median_intensity,
        E.Experiment_Num AS experiment,
        C.Campaign_Num AS campaign,
@@ -17,20 +17,23 @@ SELECT DQI.Dataset_ID AS dataset_id,
        DS.DS_comment AS comment,
        DSN.DSS_name AS state,
        DS.acq_length_minutes AS acq_length,
-       DTN.DST_name AS dataset_type
+       DTN.DST_name AS dataset_type,
+       DL.QC_Link AS qc_link
 FROM T_Dataset_QC_Ions DQI
      INNER JOIN T_Dataset DS
        ON DQI.Dataset_ID = DS.Dataset_ID
-     INNER JOIN T_Experiments E 
+     INNER JOIN T_Experiments E
        ON DS.exp_id = E.exp_id
-     INNER JOIN T_Campaign C 
+     INNER JOIN T_Campaign C
        ON E.EX_campaign_ID = C.campaign_id
-     INNER JOIN T_Instrument_Name instname 
+     INNER JOIN T_Instrument_Name instname
        ON DS.DS_instrument_name_ID = instname.instrument_id
-     INNER JOIN T_Dataset_State_Name DSN 
+     INNER JOIN T_Dataset_State_Name DSN
        ON DS.DS_state_ID = DSN.dataset_state_id
-     INNER JOIN T_Dataset_Type_Name DTN 
+     INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = dtn.DST_Type_ID
+     LEFT OUTER JOIN T_Cached_Dataset_Links AS DL
+       ON DS.Dataset_ID = DL.Dataset_ID
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_QC_Ions_List_Report] TO [DDL_Viewer] AS [dbo]
