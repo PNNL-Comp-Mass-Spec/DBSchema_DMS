@@ -1,5 +1,5 @@
 /****** Object:  Table [T_MaxQuant_Mods] ******/
-/****** RowCount: 589 ******/
+/****** RowCount: 592 ******/
 SET IDENTITY_INSERT [T_MaxQuant_Mods] ON
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (1,'Acetyl (K)','notCterm',1120,'C(2) H(2) O',0)
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (2,'Acetyl (Protein N-term)','proteinNterm',1120,'C(2) H(2) O',0)
@@ -590,4 +590,7 @@ INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (587,'Arg10 (C-term)','anyCterm',1165,'Cx(6) Nx(4) C(-6) N(-4)',0)
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (588,'Lys8 (C-term)','anyCterm',1164,'Cx(6) Nx(2) C(-6) N(-2)',0)
 INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (589,'Phospho (R)','anywhere',1010,'H O(3) P',0)
+INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (590,'iTRAQ8plex (K)','anywhere',1237,'H(24) C(7) Cx(7) N(3) Nx O(3)',0)
+INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (591,'iTRAQ8plex (Peptide N-term)','anyNterm',1237,'H(24) C(7) Cx(7) N(3) Nx O(3)',0)
+INSERT INTO [T_MaxQuant_Mods] (Mod_ID, Mod_Title, Mod_Position, Mass_Correction_ID, Composition, Isobaric_Mod_Ion_Number) VALUES (592,'iTRAQ8plex (STY)','anywhere',1237,'H(24) C(7) Cx(7) N(3) Nx O(3)',0)
 SET IDENTITY_INSERT [T_MaxQuant_Mods] OFF
