@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 421 ******/
+/****** RowCount: 427 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -422,4 +422,10 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1419,'OHSU_mac_Prep3_Plate2','OHSU_mac Digested Peptides Prep 3 (Nov 2023) - Plate 2','12/6/2023 2:20:34 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1420,'OHSU_mac_Prep3_Plate3','OHSU_mac Digested Peptides Prep 3 (Nov 2023) - Plate 3','12/6/2023 2:20:41 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1421,'OHSU_mac_Prep4_Plate','OHSU_mac Digested Peptides Prep 4 (Feb 2024)','2/14/2024 2:38:38 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1422,'A2CPS_Plate15','A2CPS Digested Peptides - Plate 15','4/4/2024 1:40:06 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1423,'A2CPS_Plate16','A2CPS Digested Peptides - Plate 16','4/4/2024 1:40:15 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1424,'A2CPS_Plate17','A2CPS Digested Peptides - Plate 17','4/4/2024 1:40:22 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1425,'A2CPS_Plate18','A2CPS Digested Peptides - Plate 18','4/4/2024 1:40:30 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1426,'A2CPS_Plate19','A2CPS Digested Peptides - Plate 19','4/4/2024 1:40:37 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1427,'A2CPS_Plate20','A2CPS Digested Peptides - Plate 20','4/4/2024 1:40:47 PM')
 SET IDENTITY_INSERT [T_Wellplates] OFF

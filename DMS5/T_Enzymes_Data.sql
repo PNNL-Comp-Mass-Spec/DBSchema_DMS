@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Enzymes] ******/
-/****** RowCount: 23 ******/
+/****** RowCount: 24 ******/
 SET IDENTITY_INSERT [T_Enzymes] ON
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (0,'na','Not a real value','na','na','na','na','na',0,null,'',null)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (1,'No_Enzyme','no digestive enzyme was used','na','na','na','na','na',0,0,'HumanContam',null)
@@ -24,4 +24,5 @@ INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, 
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (28,'Trypsin_plus_Chymotrypsin','Trypsin and Chymotrypsin','KRFWYL-','na','KRFWYL-','na','Standard',1,null,'Tryp_Pig_Bov',null)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (29,'Trypsin_plus_GluC','Trypsin and Endoproteinas GluC','KRED-','na','KRED-','na','Standard',1,null,'Tryp_Pig_Bov',null)
 INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (30,'ALP','Alpha-Lytic Protease','TASV','na','TASV','na','Standard',1,null,'HumanContam',null)
+INSERT INTO [T_Enzymes] (Enzyme_ID, Enzyme_Name, Description, P1, P1_Exception, P2, P2_Exception, Cleavage_Method, Cleavage_Offset, Sequest_Enzyme_Index, Protein_Collection_Name, Comment) VALUES (31,'Collagenase_III','Collagenase III','GLI','na','GLI','na','Standard',1,null,'Tryp_Pig_Bov',null)
 SET IDENTITY_INSERT [T_Enzymes] OFF
