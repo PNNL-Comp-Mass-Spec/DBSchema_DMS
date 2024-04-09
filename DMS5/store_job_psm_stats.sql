@@ -14,13 +14,14 @@ CREATE PROCEDURE [dbo].[store_job_psm_stats]
 **
 **  Auth:   mem
 **  Date:   02/21/2012 mem - Initial version
-**          05/08/2012 mem - Added @fdrThreshold, @totalPSMsFDRFilter, @uniquePeptidesFDRFilter, and @uniqueProteinsFDRFilter
-**          01/17/2014 mem - Added @msgfThresholdIsEValue
-**          01/21/2016 mem - Added @percentMSnScansNoPSM and @maximumScanGapAdjacentMSn
-**          09/28/2016 mem - Added three @uniquePhosphopeptide parameters, two @missedCleavageRatio parameters, and @trypticPeptides, @keratinPeptides, and @trypsinPeptides
-**          07/15/2020 mem - Added @dynamicReporterIon, @percentPSMsMissingNTermReporterIon, and @percentPSMsMissingReporterIon
-**          07/15/2020 mem - Added @uniqueAcetylPeptidesFDR
+**          05/08/2012 mem - Add parameters @fdrThreshold, @totalPSMsFDRFilter, @uniquePeptidesFDRFilter, and @uniqueProteinsFDRFilter
+**          01/17/2014 mem - Add parameter @msgfThresholdIsEValue
+**          01/21/2016 mem - Add parameters @percentMSnScansNoPSM and @maximumScanGapAdjacentMSn
+**          09/28/2016 mem - Add three @uniquePhosphopeptide parameters, two @missedCleavageRatio parameters, @trypticPeptides, @keratinPeptides, and @trypsinPeptides
+**          07/15/2020 mem - Add parameters @dynamicReporterIon, @percentPSMsMissingNTermReporterIon, and @percentPSMsMissingReporterIon
+**          07/15/2020 mem - Add parameter @uniqueAcetylPeptidesFDR
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          04/08/2024 mem - Add parameter @uniqueUbiquitinPeptidesFDR
 **
 *****************************************************/
 (
@@ -48,7 +49,8 @@ CREATE PROCEDURE [dbo].[store_job_psm_stats]
     @dynamicReporterIon tinyint = 0,              -- Set to 1 if TMT (or iTRAQ) was a dynamic modification, e.g. MSGFPlus_PartTryp_DynMetOx_TMT_6Plex_Stat_CysAlk_20ppmParTol.txt
     @percentPSMsMissingNTermReporterIon real = 0, -- When @dynamicReporterIon is 1, the percent of PSMs that have an N-terminus without TMT; value between 0 and 100
     @percentPSMsMissingReporterIon real = 0,      -- When @dynamicReporterIon is 1, the percent of PSMs that have an N-terminus or a K without TMT; value between 0 and 100
-    @uniqueAcetylPeptidesFDR int = 0,             -- Number of peptides with any acetylated K; filtered using @fdrThreshold
+    @uniqueAcetylPeptidesFDR int = 0,             -- Number of peptides with an acetylated K; filtered using @fdrThreshold
+    @uniqueUbiquitinPeptidesFDR int = 0,          -- Number of peptides with a ubiquitinated K; filtered using @fdrThreshold
     @message varchar(255) = '' output,
     @infoOnly tinyint = 0
 )
@@ -71,21 +73,22 @@ AS
     Set @percentMSnScansNoPSM = IsNull(@percentMSnScansNoPSM, 0)
     Set @maximumScanGapAdjacentMSn = IsNull(@maximumScanGapAdjacentMSn,0)
 
-    Set @uniquePhosphopeptideCountFDR = IsNull(@uniquePhosphopeptideCountFDR, 0)
-    Set @uniquePhosphopeptidesCTermK = IsNull(@uniquePhosphopeptidesCTermK, 0)
-    Set @uniquePhosphopeptidesCTermR = IsNull(@uniquePhosphopeptidesCTermR, 0)
-    Set @missedCleavageRatio = IsNull(@missedCleavageRatio, 0)
-    Set @missedCleavageRatioPhospho = IsNull(@missedCleavageRatioPhospho, 0)
+    Set @uniquePhosphopeptideCountFDR       = IsNull(@uniquePhosphopeptideCountFDR, 0)
+    Set @uniquePhosphopeptidesCTermK        = IsNull(@uniquePhosphopeptidesCTermK, 0)
+    Set @uniquePhosphopeptidesCTermR        = IsNull(@uniquePhosphopeptidesCTermR, 0)
+    Set @missedCleavageRatio                = IsNull(@missedCleavageRatio, 0)
+    Set @missedCleavageRatioPhospho         = IsNull(@missedCleavageRatioPhospho, 0)
 
-    Set @trypticPeptides = IsNull(@trypticPeptides, 0)
-    Set @keratinPeptides = IsNull(@keratinPeptides, 0)
-    Set @trypsinPeptides = IsNull(@trypsinPeptides, 0)
+    Set @trypticPeptides                    = IsNull(@trypticPeptides, 0)
+    Set @keratinPeptides                    = IsNull(@keratinPeptides, 0)
+    Set @trypsinPeptides                    = IsNull(@trypsinPeptides, 0)
 
-    Set @dynamicReporterIon = IsNull(@dynamicReporterIon, 0)
+    Set @dynamicReporterIon                 = IsNull(@dynamicReporterIon, 0)
     Set @percentPSMsMissingNTermReporterIon = IsNull(@percentPSMsMissingNTermReporterIon, 0)
-    Set @percentPSMsMissingReporterIon = IsNull(@percentPSMsMissingReporterIon, 0)
+    Set @percentPSMsMissingReporterIon      = IsNull(@percentPSMsMissingReporterIon, 0)
 
-    Set @uniqueAcetylPeptidesFDR = IsNull(@uniqueAcetylPeptidesFDR, 0)
+    Set @uniqueAcetylPeptidesFDR            = IsNull(@uniqueAcetylPeptidesFDR, 0)
+    Set @uniqueUbiquitinPeptidesFDR         = IsNull(@uniqueUbiquitinPeptidesFDR, 0)
 
     ---------------------------------------------------
     -- Make sure @job is defined in T_Analysis_Job
@@ -103,31 +106,32 @@ AS
         -- Preview the data, then exit
         -----------------------------------------------
 
-        SELECT @job AS Job,
-               @msgfThreshold AS MSGF_Threshold,
-               @fdrThreshold AS FDR_Threshold,
-               @msgfThresholdIsEValue AS MSGF_Threshold_Is_EValue,
-               @spectraSearched AS Spectra_Searched,
-               @totalPSMs AS Total_PSMs_MSGF,
-               @uniquePeptides AS Unique_Peptides_MSGF,
-               @uniqueProteins AS Unique_Proteins_MSGF,
-               @totalPSMsFDRFilter AS Total_PSMs_FDR,
-               @uniquePeptidesFDRFilter AS Unique_Peptides_FDR,
-               @uniqueProteinsFDRFilter AS Unique_Proteins_FDR,
-               @percentMSnScansNoPSM AS Percent_MSn_Scans_NoPSM,
-               @maximumScanGapAdjacentMSn AS Maximum_ScanGap_Adjacent_MSn,
-               @uniquePhosphopeptideCountFDR AS Phosphopeptides,
-               @uniquePhosphopeptidesCTermK AS CTermK_Phosphopeptides,
-               @uniquePhosphopeptidesCTermR AS CTermR_Phosphopeptides,
-               @missedCleavageRatio AS Missed_Cleavage_Ratio_FDR,
-               @missedCleavageRatioPhospho AS MissedCleavageRatioPhospho,
-               @trypticPeptides AS Tryptic_Peptides,
-               @keratinPeptides AS Keratin_Peptides,
-               @trypsinPeptides AS Trypsin_Peptides,
-               @uniqueAcetylPeptidesFDR as Acetyl_Peptides,
-               @dynamicReporterIon AS Dynamic_Reporter_Ion,
+        SELECT @job                                AS Job,
+               @msgfThreshold                      AS MSGF_Threshold,
+               @fdrThreshold                       AS FDR_Threshold,
+               @msgfThresholdIsEValue              AS MSGF_Threshold_Is_EValue,
+               @spectraSearched                    AS Spectra_Searched,
+               @totalPSMs                          AS Total_PSMs_MSGF,
+               @uniquePeptides                     AS Unique_Peptides_MSGF,
+               @uniqueProteins                     AS Unique_Proteins_MSGF,
+               @totalPSMsFDRFilter                 AS Total_PSMs_FDR,
+               @uniquePeptidesFDRFilter            AS Unique_Peptides_FDR,
+               @uniqueProteinsFDRFilter            AS Unique_Proteins_FDR,
+               @percentMSnScansNoPSM               AS Percent_MSn_Scans_NoPSM,
+               @maximumScanGapAdjacentMSn          AS Maximum_ScanGap_Adjacent_MSn,
+               @uniquePhosphopeptideCountFDR       AS Phosphopeptides,
+               @uniquePhosphopeptidesCTermK        AS CTermK_Phosphopeptides,
+               @uniquePhosphopeptidesCTermR        AS CTermR_Phosphopeptides,
+               @missedCleavageRatio                AS Missed_Cleavage_Ratio_FDR,
+               @missedCleavageRatioPhospho         AS MissedCleavageRatioPhospho,
+               @trypticPeptides                    AS Tryptic_Peptides,
+               @keratinPeptides                    AS Keratin_Peptides,
+               @trypsinPeptides                    AS Trypsin_Peptides,
+               @uniqueAcetylPeptidesFDR            AS Acetyl_Peptides,
+               @uniqueUbiquitinPeptidesFDR         AS Ubiquitin_Peptides,
+               @dynamicReporterIon                 AS Dynamic_Reporter_Ion,
                @percentPSMsMissingNTermReporterIon AS Percent_PSMs_Missing_NTermReporterIon,
-               @percentPSMsMissingReporterIon AS Percent_PSMs_Missing_ReporterIon
+               @percentPSMsMissingReporterIon      AS Percent_PSMs_Missing_ReporterIon
 
         Goto Done
     End
@@ -136,7 +140,7 @@ AS
     -----------------------------------------------
     -- Add/Update T_Analysis_Job_PSM_Stats using a MERGE statement
     -----------------------------------------------
-    --
+
     ;
     MERGE T_Analysis_Job_PSM_Stats AS target
     USING
@@ -158,6 +162,7 @@ AS
                 @keratinPeptides AS Keratin_Peptides_FDR,
                 @trypsinPeptides AS Trypsin_Peptides_FDR,
                 @uniqueAcetylPeptidesFDR AS Acetyl_Peptides_FDR,
+                @uniqueUbiquitinPeptidesFDR AS Ubiquitin_Peptides_FDR,
                 @dynamicReporterIon AS Dynamic_Reporter_Ion,
                 @percentPSMsMissingNTermReporterIon AS Percent_PSMs_Missing_NTermReporterIon,
                 @percentPSMsMissingReporterIon AS Percent_PSMs_Missing_ReporterIon
@@ -165,8 +170,9 @@ AS
                      Total_PSMs_MSGF, Unique_Peptides_MSGF, Unique_Proteins_MSGF,
                      Total_PSMs_FDR, Unique_Peptides_FDR, Unique_Proteins_FDR,
                      Percent_MSn_Scans_NoPSM, Maximum_ScanGap_Adjacent_MSn, Missed_Cleavage_Ratio_FDR,
-                     Tryptic_Peptides_FDR, Keratin_Peptides_FDR, Trypsin_Peptides_FDR, Acetyl_Peptides_FDR,
-                     Dynamic_Reporter_Ion, Percent_PSMs_Missing_NTermReporterIon, Percent_PSMs_Missing_ReporterIon
+                     Tryptic_Peptides_FDR, Keratin_Peptides_FDR, Trypsin_Peptides_FDR,
+                     Acetyl_Peptides_FDR, Ubiquitin_Peptides_FDR, Dynamic_Reporter_Ion,
+                     Percent_PSMs_Missing_NTermReporterIon, Percent_PSMs_Missing_ReporterIon
                     )
         ON (target.Job = Source.Job)
 
@@ -189,6 +195,7 @@ AS
                 Keratin_Peptides_FDR = Source.Keratin_Peptides_FDR,
                 Trypsin_Peptides_FDR = Source.Trypsin_Peptides_FDR,
                 Acetyl_Peptides_FDR = Source.Acetyl_Peptides_FDR,
+                Ubiquitin_Peptides_FDR = Source.Ubiquitin_Peptides_FDR,
                 Dynamic_Reporter_Ion = Source.Dynamic_Reporter_Ion,
                 Percent_PSMs_Missing_NTermReporterIon = Source.Percent_PSMs_Missing_NTermReporterIon,
                 Percent_PSMs_Missing_ReporterIon = Source.Percent_PSMs_Missing_ReporterIon,
@@ -213,6 +220,7 @@ AS
                 Keratin_Peptides_FDR,
                 Trypsin_Peptides_FDR,
                 Acetyl_Peptides_FDR,
+                Ubiquitin_Peptides_FDR,
                 Dynamic_Reporter_Ion,
                 Percent_PSMs_Missing_NTermReporterIon,
                 Percent_PSMs_Missing_ReporterIon,
@@ -236,6 +244,7 @@ AS
                  Source.Keratin_Peptides_FDR,
                  Source.Trypsin_Peptides_FDR,
                  Source.Acetyl_Peptides_FDR,
+                 Source.Ubiquitin_Peptides_FDR,
                  Source.Dynamic_Reporter_Ion,
                  Source.Percent_PSMs_Missing_NTermReporterIon,
                  Source.Percent_PSMs_Missing_ReporterIon,
@@ -331,7 +340,6 @@ Done:
 
     If Len(@message) > 0 AND @infoOnly <> 0
         Print @message
-
 
     Return @myError
 
