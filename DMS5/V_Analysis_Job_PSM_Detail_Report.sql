@@ -26,19 +26,20 @@ SELECT AJ.AJ_jobID AS job,
        PSM.Unique_Proteins_FDR_Filter AS unique_proteins_fdr_filtered,
        PSM.MSGF_Threshold AS msgf_threshold,
        CONVERT(varchar(12), CONVERT(decimal(5,2), PSM.FDR_Threshold * 100)) + '%' AS fdr_threshold,
-	   PSM.Tryptic_Peptides_FDR AS unique_tryptic_peptides,
-	   CAST(PSM.Tryptic_Peptides_FDR / Cast(NullIf(PSM.Unique_Peptides_FDR_Filter, 0) AS float) * 100 AS decimal(9,1)) AS pct_tryptic,
-	   CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS pct_missed_cleavage,
-	   PSM.Keratin_Peptides_FDR AS unique_keratin_peptides,
-	   PSM.Trypsin_Peptides_FDR AS unique_trypsin_peptides,
-	   PSM.Acetyl_Peptides_FDR AS unique_acetyl_peptides,
+       PSM.Tryptic_Peptides_FDR AS unique_tryptic_peptides,
+       CAST(PSM.Tryptic_Peptides_FDR / Cast(NullIf(PSM.Unique_Peptides_FDR_Filter, 0) AS float) * 100 AS decimal(9,1)) AS pct_tryptic,
+       CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS pct_missed_cleavage,
+       PSM.Keratin_Peptides_FDR AS unique_keratin_peptides,
+       PSM.Trypsin_Peptides_FDR AS unique_trypsin_peptides,
+       PSM.Acetyl_Peptides_FDR AS unique_acetyl_peptides,
+       PSM.Ubiquitin_Peptides_FDR AS unique_ubiquitin_peptides,
        Convert(decimal(9,2), PSM.Percent_PSMs_Missing_NTermReporterIon) AS pct_missing_nterm_reporter_ions,
        Convert(decimal(9,2), PSM.Percent_PSMs_Missing_ReporterIon) AS pct_missing_reporter_ions,
        PSM.Last_Affected AS psm_stats_date,
        PhosphoPSM.PhosphoPeptides AS phospho_pep,
        PhosphoPSM.CTermK_Phosphopeptides AS cterm_k_phospho_pep,
        PhosphoPSM.CTermR_Phosphopeptides AS cterm_r_phospho_pep,
-	   CAST(PhosphoPSM.MissedCleavageRatio * 100 AS decimal(9,1)) AS phospho_pct_missed_cleavage,
+       CAST(PhosphoPSM.MissedCleavageRatio * 100 AS decimal(9,1)) AS phospho_pct_missed_cleavage,
        ISNULL(MTSPT.PT_DB_Count, 0) AS mts_pt_db_count,
        ISNULL(MTSMT.MT_DB_Count, 0) AS mts_mt_db_count,
        ISNULL(PMTaskCountQ.PMTasks, 0) AS peak_matching_results,
@@ -105,8 +106,9 @@ FROM dbo.T_Analysis_Job AS AJ
        ON PMTaskCountQ.DMS_Job = AJ.AJ_jobID
      LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats AS PSM
        ON AJ.AJ_JobID = PSM.Job
-	 LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM
-	   ON PSM.Job = PhosphoPSM.Job
+     LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM
+       ON PSM.Job = PhosphoPSM.Job
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_Detail_Report] TO [DDL_Viewer] AS [dbo]

@@ -3,41 +3,41 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Analysis_Job_PSM_List_Report]
 AS
 SELECT AJ.AJ_jobID AS job,
-        AJ.AJ_StateNameCached AS state,
-        AnalysisTool.AJT_toolName AS tool,
-        DS.Dataset_Num AS dataset,
-        InstName.IN_name AS instrument,
-        PSM.spectra_searched,
-        PSM.Total_PSMs AS total_psms_msgf,
-        PSM.Unique_Peptides AS unique_peptides_msgf,
-        PSM.Unique_Proteins AS unique_proteins_msgf,
-        PSM.Total_PSMs_FDR_Filter AS total_psms_fdr,
-        PSM.Unique_Peptides_FDR_Filter AS unique_peptides_fdr,
-        PSM.Unique_Proteins_FDR_Filter AS unique_proteins_fdr,
-        PSM.MSGF_Threshold AS msgf_threshold,
-        Convert(decimal(9,2), PSM.FDR_Threshold * 100.0) AS fdr_threshold_pct,
-		-- CAST(QCM.P_4A * 100 AS decimal(9,1)) AS pct_tryptic,
-	    -- CAST(QCM.P_4B * 100 AS decimal(9,1)) AS pct_missed_clvg,
-	    -- QCM.P_2A AS tryptic_psms,
-	    -- QCM.Keratin_2A AS keratin_psms,
-		-- QCM.Trypsin_2A AS trypsin_psms,
-		PSM.Tryptic_Peptides_FDR AS unique_tryptic_peptides,
-	    CAST(PSM.Tryptic_Peptides_FDR / Cast(NullIf(PSM.unique_peptides_fdr_filter, 0) AS float) * 100 AS decimal(9,1)) AS pct_tryptic,
-		CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS pct_missed_clvg,
-	    PSM.Keratin_Peptides_FDR AS keratin_pep,
-	    PSM.Trypsin_Peptides_FDR AS trypsin_pep,
+       AJ.AJ_StateNameCached AS state,
+       AnalysisTool.AJT_toolName AS tool,
+       DS.Dataset_Num AS dataset,
+       InstName.IN_name AS instrument,
+       PSM.spectra_searched,
+       PSM.Total_PSMs AS total_psms_msgf,
+       PSM.Unique_Peptides AS unique_peptides_msgf,
+       PSM.Unique_Proteins AS unique_proteins_msgf,
+       PSM.Total_PSMs_FDR_Filter AS total_psms_fdr,
+       PSM.Unique_Peptides_FDR_Filter AS unique_peptides_fdr,
+       PSM.Unique_Proteins_FDR_Filter AS unique_proteins_fdr,
+       PSM.MSGF_Threshold AS msgf_threshold,
+       Convert(decimal(9,2), PSM.FDR_Threshold * 100.0) AS fdr_threshold_pct,
+        -- CAST(QCM.P_4A * 100 AS decimal(9,1)) AS pct_tryptic,
+        -- CAST(QCM.P_4B * 100 AS decimal(9,1)) AS pct_missed_clvg,
+        -- QCM.P_2A AS tryptic_psms,
+        -- QCM.Keratin_2A AS keratin_psms,
+        -- QCM.Trypsin_2A AS trypsin_psms,
+        PSM.Tryptic_Peptides_FDR AS unique_tryptic_peptides,
+        CAST(PSM.Tryptic_Peptides_FDR / Cast(NullIf(PSM.unique_peptides_fdr_filter, 0) AS float) * 100 AS decimal(9,1)) AS pct_tryptic,
+        CAST(PSM.Missed_Cleavage_Ratio_FDR * 100 AS decimal(9,1)) AS pct_missed_clvg,
+        PSM.Keratin_Peptides_FDR AS keratin_pep,
+        PSM.Trypsin_Peptides_FDR AS trypsin_pep,
         PSM.Acetyl_Peptides_FDR AS acetyl_pep,
+        PSM.Ubiquitin_Peptides_FDR AS ubiquitin_pep,
         Convert(decimal(9,2), PSM.Percent_PSMs_Missing_NTermReporterIon) AS pct_missing_nterm_rep_ion,
         Convert(decimal(9,2), PSM.Percent_PSMs_Missing_ReporterIon) AS pct_missing_rep_ion,
         PSM.Last_Affected AS psm_stats_date,
-	    PhosphoPSM.PhosphoPeptides AS phospho_pep,
-		PhosphoPSM.CTermK_Phosphopeptides AS cterm_k_phospho_pep,
-		PhosphoPSM.CTermR_Phosphopeptides AS cterm_r_phospho_pep,
-		CAST(PhosphoPSM.MissedCleavageRatio * 100 AS decimal(9,1)) AS phospho_pct_missed_clvg,
+        PhosphoPSM.PhosphoPeptides AS phospho_pep,
+        PhosphoPSM.CTermK_Phosphopeptides AS cterm_k_phospho_pep,
+        PhosphoPSM.CTermR_Phosphopeptides AS cterm_r_phospho_pep,
+        CAST(PhosphoPSM.MissedCleavageRatio * 100 AS decimal(9,1)) AS phospho_pct_missed_clvg,
         C.Campaign_Num AS campaign,
         E.Experiment_Num AS experiment,
         AJ.AJ_parmFileName AS param_file,
@@ -61,7 +61,7 @@ SELECT AJ.AJ_jobID AS job,
         DS.acq_time_start,
         AJ.AJ_StateID AS state_id,
         CAST(AJ.Progress AS DECIMAL(9,2)) AS job_progress,
-	    CAST(AJ.ETA_Minutes AS DECIMAL(18,1)) AS job_eta_minutes
+        CAST(AJ.ETA_Minutes AS DECIMAL(18,1)) AS job_eta_minutes
 FROM dbo.V_Dataset_Archive_Path AS DAP
         RIGHT OUTER JOIN dbo.T_Analysis_Job AS AJ
         INNER JOIN dbo.T_Dataset AS DS ON AJ.AJ_datasetID = DS.Dataset_ID
@@ -73,11 +73,12 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
         INNER JOIN dbo.T_Experiments AS E ON DS.Exp_ID = E.Exp_ID
         INNER JOIN dbo.T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID ON DAP.Dataset_ID = DS.Dataset_ID
         LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats PSM ON AJ.AJ_JobID = PSM.Job
-		LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM ON PSM.Job = PhosphoPSM.Job
+        LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM ON PSM.Job = PhosphoPSM.Job
 WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
                                 FROM T_Analysis_Tool
                                 WHERE AJT_resultType LIKE '%peptide_hit' OR
-								      AJT_resultType = 'Gly_ID')
+                                      AJT_resultType = 'Gly_ID')
+
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [DDL_Viewer] AS [dbo]
