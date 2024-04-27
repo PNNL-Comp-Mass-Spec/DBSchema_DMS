@@ -1,7 +1,13 @@
 /****** Object:  Table [T_Separation_Group] ******/
-/****** RowCount: 66 ******/
+/****** RowCount: 72 ******/
 /****** Columns: Sep_Group, Comment, Active, Sample_Prep_Visible, Fraction_Count ******/
 INSERT INTO [T_Separation_Group] VALUES ('CE','',1,0,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_100_SPD_11min','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_200_SPD_6min','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_30_SPD_44min','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_300_SPD_3min','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_60_SPD_21min','',1,1,0)
+INSERT INTO [T_Separation_Group] VALUES ('Evosep_extended_15_SPD_88min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('Evosep_Whisper_20_SPD_60min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('Evosep_Whisper_40_SPD_30min','',1,1,0)
 INSERT INTO [T_Separation_Group] VALUES ('GC','',1,1,0)
