@@ -22,7 +22,7 @@ SELECT InstName.Instrument_ID AS id,
        InstName.IN_usage AS usage,
        InstName.IN_operations_role AS ops_role,
        TrackingYesNo.Description As track_usage_when_inactive,
-       Case When InstName.IN_status = 'Active' Then ScanSourceYesNo.Description Else 'No (not active)' End AS scan_source,
+       CASE WHEN InstName.IN_status = 'Active' THEN ScanSourceYesNo.Description ELSE 'No (not active)' END AS scan_source,
        InstGroup.Allocation_Tag AS allocation_tag,
        InstName.Percent_EMSL_Owned AS percent_emsl_owned,
        dbo.get_instrument_dataset_type_list(InstName.Instrument_ID) AS allowed_dataset_types,
@@ -37,11 +37,11 @@ SELECT InstName.Instrument_ID AS id,
        EUSMapping.EUS_Display_Name AS eus_display_name,
        EUSMapping.EUS_Instrument_Name AS eus_instrument_name,
        EUSMapping.Local_Instrument_Name AS local_instrument_name,
-       Case When InstTracking.Reporting Like '%E%' Then 'EUS Primary Instrument'
-            When InstTracking.Reporting Like '%P%' Then 'Production operations role'
-            When InstTracking.Reporting Like '%T%' Then 'IN_Tracking flag enabled'
-            Else ''
-       End As usage_tracking_status,
+       CASE WHEN InstTracking.Reporting Like '%E%' THEN 'EUS Primary Instrument (Tracked)'
+            WHEN InstTracking.Reporting Like '%P%' THEN 'Production operations role ' + CASE WHEN InstName.IN_Tracking > 0 THEN '(Tracked since IN_Tracking flag enabled)' ELSE ('(Untracked)') END
+            WHEN InstTracking.Reporting Like '%T%' THEN 'IN_Tracking flag enabled'
+            ELSE 'Not Tracked'
+       END As usage_tracking_status,
        InstName.Default_Purge_Policy AS default_purge_policy,
        InstName.Default_Purge_Priority AS default_purge_priority,
        InstName.Storage_Purge_Holdoff_Months AS storage_purge_holdoff_months
