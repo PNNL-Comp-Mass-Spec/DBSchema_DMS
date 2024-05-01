@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[update_dataset_interval_for_multiple_instruments]
 **                         - Add missing Order By clause
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          07/21/2023 mem - Look for both 'Y' and '1' when examining the eus_primary_instrument flag (aka EMSL_Primary_Instrument)
+**          04/30/2024 mem - Update the message shown when @infoOnly is 1 and update_emsl_instrument_usage_report is not called
 **
 *****************************************************/
 (
@@ -105,11 +106,11 @@ AS
     ---------------------------------------------------
 
     CREATE TABLE #Tmp_Instruments (
-        Entry_ID INT IDENTITY(1,1) NOT NULL,
+        Entry_ID int IDENTITY(1,1) NOT NULL,
         Instrument varchar(65),
-        EMSL_Primary_Instrument CHAR(1),
+        EMSL_Primary_Instrument char(1),
         Tracked tinyint,
-        EUS_Instrument_ID Int Null,
+        EUS_Instrument_ID int Null,
         Use_EUS_ID tinyint Not Null
     )
 
@@ -117,7 +118,7 @@ AS
         Instrument varchar(65)
     )
 
-    Create Table #Tmp_EUS_IDs_Processed (
+    CREATE TABLE #Tmp_EUS_IDs_Processed (
         EUS_Instrument_ID Int Not Null,
     )
 
@@ -281,6 +282,7 @@ AS
                         EXEC update_dataset_interval @instrument, @startDate, @bonm, @message output, @infoOnly=@infoOnly
                     End
 
+                    -- Only call update_emsl_instrument_usage_report if the instrument is an "EUS Primary Instrument" or if T_Instrument_Name has the Tracking flag enabled
                     If @updateEMSLInstrumentUsage <> 0 AND (@emslInstrument IN ('Y', '1') OR @tracked = 1)
                     Begin -- <d>
 
@@ -323,7 +325,11 @@ AS
                     Begin
                         If @infoOnly > 0
                         Begin
-                            Print 'Skip call to update_emsl_instrument_usage_report for Instrument ' + @instrument
+                            If @updateEMSLInstrumentUsage = 0
+                                Print 'Skip call to update_emsl_instrument_usage_report for instrument ' + @instrument + ' (since @updateEMSLInstrumentUsage is 0)'
+                            Else
+                                Print 'Skip call to update_emsl_instrument_usage_report for Instrument ' + @instrument + ' (since it is not an EUS Primary Instrument and the Tracked flag is 0)'
+
                             Print ''
                         End
                     End
