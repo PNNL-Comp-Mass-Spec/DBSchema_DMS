@@ -1,5 +1,5 @@
 /****** Object:  Table [T_User_Operations] ******/
-/****** RowCount: 11 ******/
+/****** RowCount: 12 ******/
 SET IDENTITY_INSERT [T_User_Operations] ON
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (16,'DMS_Sample_Preparation','Permissions for sample prep operations')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (17,'DMS_Instrument_Operation','Permissions for MS instrument operators (including all permissions that DMS_Dataset_Operation has).  Configure instruments, LC_Carts, and LC Columns.  Create and disposition datasets.  Update Requested Runs, including Run Assignment.')
@@ -12,4 +12,5 @@ INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (3
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (34,'DMS_Instrument_Tracking','Permission for instrument usage tracking admin operations, in particular creating placeholder tracking datasets via http://dms2.pnl.gov/tracking_dataset/create')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (35,'DMS_Data_Analysis_Request','Selectable personnel for data analysis requests')
 INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (36,'DMS_Sample_Prep_Request_State','Permission for updating sample prep request states and for updating operations_tasks items (but not listed in the prep request user picklist)')
+INSERT INTO [T_User_Operations] (ID, Operation, Operation_Description) VALUES (37,'DMS_LC_Column_Entry','Permissions to add/update LC columns and Prep LC columns')
 SET IDENTITY_INSERT [T_User_Operations] OFF
