@@ -306,41 +306,47 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_d_Dataset] on [dbo].[T_Dataset]
-For Delete
+CREATE TRIGGER [dbo].[trig_d_Dataset] ON [dbo].[T_Dataset]
+FOR DELETE
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the deleted dataset
+**  Desc:
+**      Makes an entry in T_Event_Log for the deleted dataset
 **
-**	Auth:	grk
-**	Date:	01/01/2003
-**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**			10/02/2007 mem - Updated to append the dataset name to the Entered_By field (Ticket #543)
-**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
-**    
+**  Auth:   grk
+**  Date:   01/01/2003
+**          08/15/2007 mem - Update to use an Insert query (Ticket #519)
+**          10/02/2007 mem - Update to append the dataset name to the Entered_By field (Ticket #543)
+**          10/31/2007 mem - Add Set NoCount statement (Ticket #569)
+**          05/03/2024 mem - Set Update_Required to 1 in T_Cached_Experiment_Stats
+**
 *****************************************************/
 AS
-	Set NoCount On
+    Set NoCount On
 
-	-- Add entries to T_Event_Log for each dataset deleted from T_Dataset
-	INSERT INTO T_Event_Log
-		(
-			Target_Type, 
-			Target_ID, 
-			Target_State, 
-			Prev_Target_State, 
-			Entered,
-			Entered_By
-		)
-	SELECT	4 AS Target_Type, 
-			Dataset_ID AS Target_ID, 
-			0 AS Target_State, 
-			DS_State_ID AS Prev_Target_State, 
-			GETDATE(), 
-			suser_sname() + '; ' + IsNull(deleted.Dataset_Num, '??')
-	FROM deleted
-	ORDER BY Dataset_ID
+    -- Add entries to T_Event_Log for each dataset deleted from T_Dataset
+    INSERT INTO T_Event_Log
+        (
+            Target_Type,
+            Target_ID,
+            Target_State,
+            Prev_Target_State,
+            Entered,
+            Entered_By
+        )
+    SELECT 4 AS Target_Type,
+           Dataset_ID AS Target_ID,
+           0 AS Target_State,
+           DS_State_ID AS Prev_Target_State,
+            GETDATE(),
+            suser_sname() + '; ' + IsNull(deleted.Dataset_Num, '??')
+    FROM deleted
+    ORDER BY Dataset_ID
+
+    -- Set Update_Required to 1 for experiments associated with the deleted dataset(s)
+    UPDATE T_Cached_Experiment_Stats
+    SET Update_Required = 1, Last_Affected = getdate()
+    WHERE Exp_ID IN (SELECT Exp_ID FROM deleted)
 
 GO
 ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_d_Dataset]
@@ -350,50 +356,52 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger [dbo].[trig_i_Dataset] on [dbo].[T_Dataset]
-For Insert
+CREATE TRIGGER [dbo].[trig_i_Dataset] ON [dbo].[T_Dataset]
+FOR INSERT
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the new dataset
+**  Desc:
+**      Makes an entry in T_Event_Log for the new dataset
 **
-**	Auth:	grk
-**	Date:	01/01/2003
-**			08/15/2007 mem - Updated to use an Insert query and to make an entry for DS_Rating (Ticket #519)
-**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
-**			11/22/2013 mem - Now updating DateSortKey
-**    
+**  Auth:   grk
+**  Date:   01/01/2003
+**          08/15/2007 mem - Update to use an Insert query and to make an entry for DS_Rating (Ticket #519)
+**          10/31/2007 mem - Add Set NoCount statement (Ticket #569)
+**          11/22/2013 mem - Update DateSortKey
+**          05/03/2024 mem - Set Update_Required to 1 in T_Cached_Experiment_Stats
+**
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set NoCount On
+    Set NoCount On
 
-	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-	SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, 0, GetDate()
-	FROM inserted
-	ORDER BY inserted.Dataset_ID
+    INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+    SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, 0, GetDate()
+    FROM inserted
+    ORDER BY inserted.Dataset_ID
 
-	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-	SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, 0, GetDate()
-	FROM inserted
-	ORDER BY inserted.Dataset_ID
+    INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+    SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, 0, GetDate()
+    FROM inserted
+    ORDER BY inserted.Dataset_ID
 
-	-- This query must stay sync'd with the Update query in trigger trig_u_Dataset
-	UPDATE T_Dataset
-	SET DateSortKey = CASE
-	                      WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
-	                      ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
-	                  END
-	FROM T_Dataset DS
-	     INNER JOIN inserted
-	       ON DS.Dataset_ID = INSERTED.Dataset_ID
-	     INNER JOIN T_Experiments E
-	       ON DS.Exp_ID = E.Exp_ID
+    -- This query must stay sync'd with the Update query in trigger trig_u_Dataset
+    UPDATE T_Dataset
+    SET DateSortKey = CASE
+                          WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
+                          ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
+                      END
+    FROM T_Dataset DS
+         INNER JOIN inserted
+           ON DS.Dataset_ID = inserted.Dataset_ID
+         INNER JOIN T_Experiments E
+           ON DS.Exp_ID = E.Exp_ID
 
-
+    UPDATE T_Cached_Experiment_Stats
+    SET Update_Required = 1, Last_Affected = getdate()
+    WHERE Exp_ID IN (SELECT Exp_ID FROM inserted)
 
 GO
 ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_i_Dataset]
@@ -403,91 +411,94 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger [dbo].[trig_u_Dataset] on [dbo].[T_Dataset]
-For Update
+CREATE TRIGGER [dbo].[trig_u_Dataset] ON [dbo].[T_Dataset]
+FOR UPDATE
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the updated dataset
+**  Desc:
+**      Makes an entry in T_Event_Log for the updated dataset
 **
-**	Auth:	grk
-**	Date:	01/01/2003
-**			05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
-**			08/15/2007 mem - Updated to use an Insert query and to make an entry if DS_Rating is changed (Ticket #519)
-**			11/01/2007 mem - Updated to make entries in T_Event_Log only if the state actually changes (Ticket #569)
-**			07/19/2010 mem - Now updating T_Entity_Rename_Log if the dataset is renamed
-**			11/15/2013 mem - Now updating T_Cached_Dataset_Folder_Paths
-**			11/22/2013 mem - Now updating DateSortKey
-**			07/25/2017 mem - Now updating T_Cached_Dataset_Links
-**    
+**  Auth:   grk
+**  Date:   01/01/2003
+**          05/16/2007 mem - Update DS_Last_Affected when DS_State_ID changes (Ticket #478)
+**          08/15/2007 mem - Update to use an Insert query and to make an entry if DS_Rating is changed (Ticket #519)
+**          11/01/2007 mem - Update to make entries in T_Event_Log only if the state actually changes (Ticket #569)
+**          07/19/2010 mem - Update T_Entity_Rename_Log if the dataset is renamed
+**          11/15/2013 mem - Update T_Cached_Dataset_Folder_Paths
+**          11/22/2013 mem - Update DateSortKey
+**          07/25/2017 mem - Update T_Cached_Dataset_Links
+**          05/03/2024 mem - Set Update_Required to 1 in T_Cached_Experiment_Stats
+**
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set NoCount On
+    Set NoCount On
 
-	If Update(DS_State_ID)
-	Begin
-		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-		SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, deleted.DS_State_ID, GetDate()
-		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
-		ORDER BY inserted.Dataset_ID
+    If Update(DS_State_ID)
+    Begin
+        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, deleted.DS_State_ID, GetDate()
+        FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+        ORDER BY inserted.Dataset_ID
 
-		UPDATE T_Dataset
-		Set DS_Last_Affected = GetDate()
-		WHERE Dataset_ID IN (SELECT Dataset_ID FROM inserted)
-	End
+        UPDATE T_Dataset
+        Set DS_Last_Affected = GetDate()
+        WHERE Dataset_ID IN (SELECT Dataset_ID FROM inserted)
+    End
 
-	If Update(DS_Rating)
-	Begin
-		INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-		SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, deleted.DS_Rating, GetDate()
-		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
-		WHERE inserted.DS_Rating <> deleted.DS_Rating
-		ORDER BY inserted.Dataset_ID
-	End
+    If Update(DS_Rating)
+    Begin
+        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+        SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, deleted.DS_Rating, GetDate()
+        FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+        WHERE inserted.DS_Rating <> deleted.DS_Rating
+        ORDER BY inserted.Dataset_ID
+    End
 
-	If Update(Dataset_Num)
-	Begin
-		INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
-		SELECT 4, inserted.Dataset_ID, deleted.Dataset_Num, inserted.Dataset_Num, GETDATE()
-		FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
-		ORDER BY inserted.Dataset_ID
-	End
+    If Update(Dataset_Num)
+    Begin
+        INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
+        SELECT 4, inserted.Dataset_ID, deleted.Dataset_Num, inserted.Dataset_Num, GETDATE()
+        FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+        ORDER BY inserted.Dataset_ID
+    End
 
-	If Update(Dataset_Num) OR Update(DS_folder_name)
-	Begin
-		UPDATE T_Cached_Dataset_Folder_Paths
-		SET UpdateRequired = 1
-		FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
-			 inserted ON DFP.Dataset_ID = inserted.Dataset_ID
+    If Update(Dataset_Num) OR Update(DS_folder_name)
+    Begin
+        UPDATE T_Cached_Dataset_Folder_Paths
+        SET UpdateRequired = 1
+        FROM T_Cached_Dataset_Folder_Paths DFP INNER JOIN
+             inserted ON DFP.Dataset_ID = inserted.Dataset_ID
 
-		UPDATE T_Cached_Dataset_Links
-		SET UpdateRequired = 1
-		FROM T_Cached_Dataset_Links DL INNER JOIN
-			 inserted ON DL.Dataset_ID = inserted.Dataset_ID
-			 
-	End
+        UPDATE T_Cached_Dataset_Links
+        SET UpdateRequired = 1
+        FROM T_Cached_Dataset_Links DL INNER JOIN
+             inserted ON DL.Dataset_ID = inserted.Dataset_ID
+    End
 
-	If Update(Acq_Time_Start) Or Update(DS_created)
-	Begin
-		-- This query must stay sync'd with the Update query in trigger trig_i_Dataset
-		UPDATE T_Dataset
-		SET DateSortKey = CASE
-		                      WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
-		                      ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
-		                  END
-		FROM T_Dataset DS
-		     INNER JOIN inserted
-		       ON DS.Dataset_ID = INSERTED.Dataset_ID
-		     INNER JOIN T_Experiments E
-		       ON DS.Exp_ID = E.Exp_ID
-	End
+    If Update(Acq_Time_Start) Or Update(DS_created)
+    Begin
+        -- This query must stay sync'd with the Update query in trigger trig_i_Dataset
+        UPDATE T_Dataset
+        SET DateSortKey = CASE
+                              WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
+                              ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
+                          END
+        FROM T_Dataset DS
+             INNER JOIN inserted
+               ON DS.Dataset_ID = inserted.Dataset_ID
+             INNER JOIN T_Experiments E
+               ON DS.Exp_ID = E.Exp_ID
+    End
 
-
-
+    If Update(Exp_ID)
+    Begin
+        UPDATE T_Cached_Experiment_Stats
+        SET Update_Required = 1, Last_Affected = getdate()
+        WHERE Exp_ID IN (SELECT Exp_ID FROM inserted UNION SELECT Exp_ID FROM deleted)
+    End
 
 GO
 ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_u_Dataset]
@@ -497,41 +508,34 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE TRIGGER [dbo].[trig_ud_T_Dataset]
-ON [dbo].[T_Dataset]
-FOR UPDATE, DELETE AS
+CREATE TRIGGER [dbo].[trig_ud_T_Dataset] ON [dbo].[T_Dataset]
+FOR UPDATE, DELETE
 /****************************************************
 **
-**	Desc: 
-**		Prevents updating or deleting all rows in the table
+**  Desc:
+**      Prevents updating or deleting all rows in the table
 **
-**	Auth:	mem
-**	Date:	02/08/2011
-**			09/11/2015 mem - Added support for the table being empty
+**  Auth:   mem
+**  Date:   02/08/2011
+**          09/11/2015 mem - Add support for the table being empty
 **
 *****************************************************/
+AS
 BEGIN
+    DECLARE @Count int = @@ROWCOUNT;
+    DECLARE @ExistingRows int = 0
 
-    DECLARE @Count int
-    SET @Count = @@ROWCOUNT;
-
-	DECLARE @ExistingRows int=0
-	SELECT @ExistingRows = i.rowcnt
+    SELECT @ExistingRows = i.rowcnt
     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id
     WHERE o.name = 'T_Dataset' AND o.type = 'u' AND i.indid < 2
 
-    IF @Count > 0 AND @ExistingRows > 1 AND @Count >= @ExistingRows
-    BEGIN
-
+    If @Count > 0 AND @ExistingRows > 1 AND @Count >= @ExistingRows
+    Begin
         RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Dataset)',16,1)
         ROLLBACK TRANSACTION
         RETURN;
-
-    END
-
+    End
 END
-
 
 GO
 ALTER TABLE [dbo].[T_Dataset] ENABLE TRIGGER [trig_ud_T_Dataset]
