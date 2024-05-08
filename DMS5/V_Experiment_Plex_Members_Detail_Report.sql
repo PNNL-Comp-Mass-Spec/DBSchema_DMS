@@ -20,9 +20,9 @@ SELECT PlexMembers.Plex_Exp_ID AS exp_id,
        E.EX_created AS plex_exp_created,
 	   BTO.Identifier AS tissue_id,
        dbo.get_experiment_plex_members(PlexMembers.Plex_Exp_ID) AS plex_members,
-       ISNULL(DSCountQ.datasets, 0) AS datasets,
-       DSCountQ.Most_Recent_Dataset AS most_recent_dataset,
-       ISNULL(FC.factor_count, 0) AS factors,
+       ISNULL(CES.dataset_count, 0) AS datasets,
+       CES.Most_Recent_Dataset AS most_recent_dataset,
+       ISNULL(CES.factor_count, 0) AS factors,
        E.Exp_ID AS id,
        MC.Tag AS container,
        ML.Tag AS location,
@@ -43,14 +43,8 @@ FROM T_Experiment_Plex_Members PlexMembers
        ON E.EX_Tissue_ID = BTO.Identifier
  INNER JOIN T_Material_Containers AS MC ON E.EX_Container_ID = MC.ID
         INNER JOIN T_Material_Locations AS ML ON MC.Location_ID = ML.ID
-        LEFT OUTER JOIN ( SELECT COUNT(*) AS Datasets,
-                                    MAX(DS_created) AS Most_Recent_Dataset,
-                                    Exp_ID
-                          FROM T_Dataset
-                          GROUP BY  Exp_ID
-                        ) AS DSCountQ ON DSCountQ.Exp_ID = E.Exp_ID
-        LEFT OUTER JOIN V_Factor_Count_By_Experiment AS FC ON FC.Exp_ID = E.Exp_ID
-Group By PlexMembers.Plex_Exp_ID,
+        LEFT OUTER JOIN T_Cached_Experiment_Stats AS CES ON CES.Exp_ID = E.Exp_ID
+GROUP BY PlexMembers.Plex_Exp_ID,
        E.Experiment_Num,
        U.Name_with_PRN,
        Org.OG_name,
@@ -63,9 +57,9 @@ Group By PlexMembers.Plex_Exp_ID,
        E.EX_Alkylation,
        E.EX_sample_prep_request_ID,
 	   BTO.Identifier,
-       DSCountQ.Datasets,
-       DSCountQ.Most_Recent_Dataset,
-       FC.Factor_Count,
+       CES.Dataset_Count,
+       CES.Most_Recent_Dataset,
+       CES.Factor_Count,
        E.Exp_ID,
        MC.Tag,
        ML.Tag,

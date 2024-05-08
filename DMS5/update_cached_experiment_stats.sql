@@ -259,7 +259,7 @@ AS
             UPDATE T_Cached_Experiment_Stats
             SET Update_Required = 0
             WHERE Update_Required > 0 AND
-                  Exp_ID IN ( SELECT E.Exp_ID FROM #Tmp_ExperimentIDs E)
+                  Exp_ID IN (SELECT E.Exp_ID FROM #Tmp_ExperimentIDs E)
 
             Set @continue = 0
         End

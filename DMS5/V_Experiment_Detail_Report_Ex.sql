@@ -25,9 +25,9 @@ SELECT E.Experiment_Num AS experiment,
         E.EX_sample_prep_request_ID AS request,
 	   BTO.Identifier AS tissue_id,
         dbo.get_experiment_group_list(E.Exp_ID) AS experiment_groups,
-        ISNULL(DSCountQ.datasets, 0) AS datasets,
-        DSCountQ.Most_Recent_Dataset AS most_recent_dataset,
-        ISNULL(FC.factor_count, 0) AS factors,
+        ISNULL(CES.dataset_count, 0) AS datasets,
+        CES.Most_Recent_Dataset AS most_recent_dataset,
+        ISNULL(CES.factor_count, 0) AS factors,
         ISNULL(ExpFileCount.filecount, 0) AS experiment_files,
         ISNULL(ExpGroupFileCount.filecount, 0) AS experiment_group_files,
         E.Exp_ID AS id,
@@ -47,13 +47,7 @@ FROM T_Experiments AS E
         INNER JOIN T_Organisms AS Org ON E.EX_organism_ID = Org.Organism_ID
         INNER JOIN T_Material_Containers AS MC ON E.EX_Container_ID = MC.ID
         INNER JOIN T_Material_Locations AS ML ON MC.Location_ID = ML.ID
-        LEFT OUTER JOIN ( SELECT COUNT(*) AS Datasets,
-                                    MAX(DS_created) AS Most_Recent_Dataset,
-                                    Exp_ID
-                          FROM T_Dataset
-                          GROUP BY  Exp_ID
-                        ) AS DSCountQ ON DSCountQ.Exp_ID = E.Exp_ID
-        LEFT OUTER JOIN V_Factor_Count_By_Experiment AS FC ON FC.Exp_ID = E.Exp_ID
+        LEFT OUTER JOIN T_Cached_Experiment_Stats AS CES ON CES.Exp_ID = E.Exp_ID
         LEFT OUTER JOIN ( SELECT Entity_ID,
                                     COUNT(*) AS FileCount
                           FROM T_File_Attachment
