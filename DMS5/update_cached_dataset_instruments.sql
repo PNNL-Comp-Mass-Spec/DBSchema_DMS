@@ -6,13 +6,13 @@ GO
 CREATE PROCEDURE [dbo].[update_cached_dataset_instruments]
 /****************************************************
 **
-**  Desc:   Updates T_Cached_Dataset_Instruments
-**
-**  Return values: 0: success, otherwise, error code
+**  Desc:
+**      Update instrument name and ID in T_Cached_Dataset_Stats
 **
 **  Auth:   mem
 **  Date:   04/15/2019 mem - Initial version
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/08/2024 mem - Update T_Cached_Dataset_Stats instead of T_Cached_Dataset_Instruments
 **
 *****************************************************/
 (
@@ -38,7 +38,7 @@ AS
 
     If @datasetId > 0 And @infoOnly = 0
     Begin
-        MERGE [dbo].[T_Cached_Dataset_Instruments] AS t
+        MERGE [dbo].[T_Cached_Dataset_Stats] AS t
         USING (SELECT DS.Dataset_ID,
                       DS.DS_instrument_name_ID As Instrument_ID,
                       InstName.IN_name As Instrument
@@ -63,7 +63,7 @@ AS
 
 
     ------------------------------------------------
-    -- Add new datasets to T_Cached_Dataset_Instruments
+    -- Add new datasets to T_Cached_Dataset_Stats
     ------------------------------------------------
     --
     If @processingMode = 0 Or @infoOnly > 0
@@ -78,19 +78,19 @@ AS
             SELECT DS.Dataset_ID,
                    DS.DS_instrument_name_ID,
                    InstName.IN_name,
-                   'Dataset to add to T_Cached_Dataset_Instruments' As Status
+                   'Dataset to add to T_Cached_Dataset_Stats' As Status
             FROM T_Dataset DS
                  INNER JOIN T_Instrument_Name InstName
                    ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                 LEFT OUTER JOIN T_Cached_Dataset_Instruments CachedInst
-                   ON DS.Dataset_ID = CachedInst.Dataset_ID
-            WHERE CachedInst.Dataset_ID IS Null
+                 LEFT OUTER JOIN T_Cached_Dataset_Stats CDS
+                   ON DS.Dataset_ID = CDS.Dataset_ID
+            WHERE CDS.Dataset_ID IS Null
             ORDER BY DS.Dataset_ID
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount = 0
-                Select 'No datasets need to be added to T_Cached_Dataset_Instruments' As Status
+                Select 'No datasets need to be added to T_Cached_Dataset_Stats' As Status
         End
         Else
         Begin
@@ -98,18 +98,18 @@ AS
             -- Add new datasets
             ------------------------------------------------
 
-            INSERT INTO T_Cached_Dataset_Instruments( Dataset_ID,
-                                                      Instrument_ID,
-                                                      Instrument )
+            INSERT INTO T_Cached_Dataset_Stats (Dataset_ID,
+                                                Instrument_ID,
+                                                Instrument)
             SELECT DS.Dataset_ID,
                    DS.DS_instrument_name_ID,
                    InstName.IN_name
             FROM T_Dataset DS
                  INNER JOIN T_Instrument_Name InstName
                    ON DS.DS_instrument_name_ID = InstName.Instrument_ID
-                 LEFT OUTER JOIN T_Cached_Dataset_Instruments CachedInst
-                   ON DS.Dataset_ID = CachedInst.Dataset_ID
-            WHERE CachedInst.Dataset_ID IS NULL
+                 LEFT OUTER JOIN T_Cached_Dataset_Stats CDS
+                   ON DS.Dataset_ID = CDS.Dataset_ID
+            WHERE CDS.Dataset_ID IS NULL
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -134,13 +134,13 @@ AS
                    t.Instrument,
                    s.Instrument AS InstName_New,
                    'Dataset to update in T_Instrument_Name' As Status
-            FROM T_Cached_Dataset_Instruments t
-                 INNER JOIN ( SELECT DS.Dataset_ID,
-                                     DS.DS_instrument_name_ID AS Instrument_ID,
-                                     InstName.IN_name AS Instrument
-                              FROM T_Dataset DS
-                                   INNER JOIN T_Instrument_Name InstName
-                                     ON DS.DS_instrument_name_ID = InstName.Instrument_ID ) s
+            FROM T_Cached_Dataset_Stats t
+                 INNER JOIN (SELECT DS.Dataset_ID,
+                                    DS.DS_instrument_name_ID AS Instrument_ID,
+                                    InstName.IN_name AS Instrument
+                             FROM T_Dataset DS
+                                  INNER JOIN T_Instrument_Name InstName
+                                    ON DS.DS_instrument_name_ID = InstName.Instrument_ID) s
                    ON t.Dataset_ID = s.Dataset_ID
             WHERE t.[Instrument_ID] <> s.[Instrument_ID] OR
                   t.[Instrument] <> s.[Instrument]
@@ -149,7 +149,7 @@ AS
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
             If @myRowCount = 0
-                SELECT 'No data in T_Cached_Dataset_Instruments needs to be updated' As Status
+                SELECT 'No data in T_Cached_Dataset_Stats needs to be updated' As Status
 
         End
         Else
@@ -159,7 +159,7 @@ AS
             -- Update cached info
             ------------------------------------------------
 
-            MERGE [dbo].[T_Cached_Dataset_Instruments] AS t
+            MERGE [dbo].[T_Cached_Dataset_Stats] AS t
             USING (SELECT DS.Dataset_ID,
                           DS.DS_instrument_name_ID As Instrument_ID,
                           InstName.IN_name As Instrument

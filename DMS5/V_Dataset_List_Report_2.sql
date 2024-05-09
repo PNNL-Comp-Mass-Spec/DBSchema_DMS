@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_List_Report_2]
 AS
 SELECT DS.Dataset_ID AS id,
@@ -11,7 +10,7 @@ SELECT DS.Dataset_ID AS id,
        E.Experiment_Num AS experiment,
        C.Campaign_Num AS campaign,
        DSN.DSS_name AS state,
-       DSInst.instrument,
+       CDS.instrument,
        DS.DS_created AS created,
        DS.DS_comment AS comment,
        DSRating.DRN_name AS rating,
@@ -49,8 +48,8 @@ FROM T_Dataset_State_Name DSN
        ON DSN.Dataset_state_ID = DS.DS_state_ID
      INNER JOIN T_Dataset_Type_Name DTN
        ON DS.DS_type_ID = DTN.DST_Type_ID
-     LEFT OUTER JOIN T_Cached_Dataset_Instruments DSInst
-       ON DS.Dataset_ID = DSInst.Dataset_ID
+     LEFT OUTER JOIN T_Cached_Dataset_Stats CDS
+       ON DS.Dataset_ID = CDS.Dataset_ID
      INNER JOIN T_Dataset_Rating_Name DSRating
        ON DS.DS_rating = DSRating.DRN_state_ID
      INNER JOIN T_Experiments E

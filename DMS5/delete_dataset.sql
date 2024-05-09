@@ -36,10 +36,11 @@ CREATE PROCEDURE [dbo].[delete_dataset]
 **          11/16/2018 mem - Delete dataset file info from DMS_Capture.dbo.T_Dataset_Info_XML
 **                           Change the default for @infoOnly to 1
 **                           Rename the first parameter
-**          04/17/2019 mem - Delete rows in T_Cached_Dataset_Instruments
+**          04/17/2019 mem - Delete rows in T_Cached_Dataset_Stats (previously T_Cached_Dataset_Instruments)
 **          11/02/2021 mem - Show the full path to the dataset directory at the console
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
+**          05/08/2024 mem - Delete rows from t_cached_dataset_stats instead of t_cached_dataset_instruments
 **
 *****************************************************/
 (
@@ -315,10 +316,10 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ---------------------------------------------------
-    -- Delete rows in T_Cached_Dataset_Instruments
+    -- Delete rows in T_Cached_Dataset_Stats
     ---------------------------------------------------
     --
-    DELETE T_Cached_Dataset_Instruments
+    DELETE T_Cached_Dataset_Stats
     WHERE Dataset_ID = @datasetID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -405,7 +406,7 @@ AS
     Print 'ToDo: delete ' + @datasetDirectoryPath
 
 Done:
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[delete_dataset] TO [DDL_Viewer] AS [dbo]

@@ -404,7 +404,7 @@ AS
 
         Commit transaction @transName
 
-        -- Update T_Cached_Dataset_Instruments
+        -- Update T_Cached_Dataset_Stats
         Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
         Select @newDataset As Dataset_New, @datasetID As Dataset_ID, @requestID As RequestedRun_ID, 'Duplicated dataset ' + @sourceDataset As Status
@@ -412,12 +412,9 @@ AS
         SELECT *
         FROM V_Dataset_Detail_Report_Ex
         WHERE ID = @datasetID
-
     End
 
 Done:
-
-    return @myError
-
+    Return @myError
 
 GO

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_Detail_Report_Ex]
 AS
 -- Note: this view is intended to be used for retrieving information for a single dataset
@@ -41,8 +40,8 @@ SELECT DS.Dataset_Num AS dataset,
          ELSE DFP.Dataset_URL + MASIC_Directory_Name
        END AS masic_qc_link,
        DL.QC_Metric_Stats AS qc_metric_stats,
-       ISNULL(JobCountQ.jobs, 0) AS jobs,
-       ISNULL(PSMJobsQ.jobs, 0) AS psm_jobs,
+       COALESCE(CDS.job_count, 0) AS jobs,
+       COALESCE(CDS.psm_job_count, 0) AS psm_jobs,
        dbo.get_dataset_pm_task_count(DS.Dataset_ID) AS peak_matching_results,
        dbo.get_dataset_factor_count(DS.Dataset_ID) AS factors,
        dbo.get_dataset_predefine_job_count (DS.Dataset_ID) AS predefines_triggered,
@@ -113,18 +112,8 @@ FROM S_V_BTO_ID_to_Name AS BTO
                      LEFT OUTER JOIN T_EUS_Proposal_Type AS EPT
                        ON EUP.Proposal_Type = EPT.Proposal_Type
        ON DS.Dataset_ID = RR.DatasetID
-     LEFT OUTER JOIN ( SELECT AJ_datasetID AS DatasetID,
-                              COUNT(*) AS Jobs
-                       FROM T_Analysis_Job
-                       GROUP BY AJ_datasetID ) AS JobCountQ
-       ON JobCountQ.DatasetID = DS.Dataset_ID
-     LEFT OUTER JOIN ( SELECT J.AJ_datasetID AS DatasetID,
-                              COUNT(PSMs.Job) AS Jobs
-                       FROM T_Analysis_Job_PSM_Stats AS PSMs
-                            INNER JOIN T_Analysis_Job AS J
-                              ON PSMs.Job = J.AJ_jobID
-                       GROUP BY J.AJ_datasetID ) AS PSMJobsQ
-       ON PSMJobsQ.DatasetID = DS.Dataset_ID
+     LEFT OUTER JOIN t_cached_dataset_stats CDS
+       ON CDS.Dataset_ID = ds.Dataset_ID
      LEFT OUTER JOIN T_Dataset_Archive AS DA
                      INNER JOIN T_MyEMSLState
                        ON DA.MyEMSLState = T_MyEMSLState.MyEMSLState

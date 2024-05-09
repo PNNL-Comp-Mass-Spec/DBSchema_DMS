@@ -277,7 +277,7 @@ AS
 
     Commit Tran @instrumentUpdateTran
 
-    -- Update T_Cached_Dataset_Instruments
+    -- Update T_Cached_Dataset_Stats
     Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
 
     ---------------------------------------------------

@@ -1482,9 +1482,8 @@ AS
             exec post_log_entry 'Debug', @debugMsg, 'add_update_dataset'
         End
 
-        -- Update T_Cached_Dataset_Instruments
+        -- Update T_Cached_Dataset_Stats
         Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
-
     End
 
     ---------------------------------------------------
@@ -1700,9 +1699,8 @@ AS
             End
         End
 
-        -- Update T_Cached_Dataset_Instruments
+        -- Update T_Cached_Dataset_Stats
         Exec dbo.update_cached_dataset_instruments @processingMode=0, @datasetId=@datasetID, @infoOnly=0
-
     End
 
     -- Update @message if @warning is not empty
