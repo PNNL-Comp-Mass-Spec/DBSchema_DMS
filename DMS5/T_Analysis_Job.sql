@@ -286,46 +286,41 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger [dbo].[trig_d_AnalysisJob] on [dbo].[T_Analysis_Job]
-For Delete
+CREATE TRIGGER [dbo].[trig_d_AnalysisJob] ON [dbo].[T_Analysis_Job]
+FOR DELETE
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **		Makes an entry in T_Event_Log for the deleted analysis job
 **
 **	Auth:	grk
 **	Date:	01/01/2003
-**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**			10/02/2007 mem - Updated to append the analysis tool name and 
-**							 dataset name for the deleted job to the Entered_By field (Ticket #543)
-**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
-**			11/25/2013 mem - Now updating DeconTools_Job_for_QC in T_Dataset
-**    
+**			08/15/2007 mem - Update to use an Insert query (Ticket #519)
+**			10/02/2007 mem - Update to append the analysis tool name and dataset name for the deleted job to the Entered_By field (Ticket #543)
+**			10/31/2007 mem - Add Set NoCount statement (Ticket #569)
+**			11/25/2013 mem - Update DeconTools_Job_for_QC in T_Dataset
+**          05/08/2024 mem - Set Update_Required to 1 in T_Cached_Dataset_Stats
+**
 *****************************************************/
 AS
 	Set NoCount On
 
 	-- Add entries to T_Event_Log for each job deleted from T_Analysis_Job
-	INSERT INTO T_Event_Log
-		(
-			Target_Type, 
-			Target_ID, 
-			Target_State, 
-			Prev_Target_State, 
-			Entered,
-			Entered_By
-		)
+	INSERT INTO T_Event_Log (Target_Type,
+	                         Target_ID,
+	                         Target_State,
+	                         Prev_Target_State,
+	                         Entered,
+	                         Entered_By)
 	SELECT 5 AS Target_Type,
 	       deleted.AJ_JobID AS Target_ID,
 	       0 AS Target_State,
 	       deleted.AJ_StateID AS Prev_Target_State,
 	       GETDATE(),
-           suser_sname() + '; ' + ISNULL(AnalysisTool.AJT_toolName, 'Unknown Tool') + ' on '
-                                + ISNULL(DS.Dataset_Num, 'Unknown Dataset')
+	       suser_sname() + '; ' + IsNull(AnalysisTool.AJT_toolName, 'Unknown Tool') + ' on ' + IsNull(DS.Dataset_Num, 'Unknown Dataset')
 	FROM deleted
 	     LEFT OUTER JOIN dbo.T_Dataset DS
-	       ON deleted.AJ_datasetID = DS.Dataset_ID
+	       ON deleted.AJ_DatasetID = DS.Dataset_ID
 	     LEFT OUTER JOIN dbo.T_Analysis_Tool AnalysisTool
 	       ON deleted.AJ_analysisToolID = AnalysisTool.AJT_toolID
 	ORDER BY deleted.AJ_JobID
@@ -333,23 +328,30 @@ AS
 	UPDATE target
 	SET DeconTools_Job_for_QC = Job
 	FROM T_Dataset target
-	     Left OUTER JOIN ( SELECT Dataset_ID,
-	                         J.AJ_JobID AS Job,
-	                         Row_number() OVER ( PARTITION BY J.AJ_datasetID ORDER BY J.AJ_jobID DESC ) AS JobRank
-	                  FROM T_Dataset DS
-	                       LEFT OUTER JOIN T_Analysis_Tool Tool
-	                                       INNER JOIN T_Analysis_Job J
-	                                         ON Tool.AJT_toolID = J.AJ_analysisToolID AND
-	                                            Tool.AJT_toolBasename = 'Decon2LS'
-	                         ON J.AJ_datasetID = DS.Dataset_ID AND
-	                            NOT J.AJ_jobID IN ( SELECT AJ_jobID FROM deleted )
-	                  WHERE DS.Dataset_ID IN ( SELECT AJ_datasetID FROM deleted ) AND
-					        J.AJ_StateID IN (2, 4)
-				    ) SourceQ
-	       ON target.Dataset_ID = SourceQ.Dataset_ID And SourceQ.JobRank = 1
-	WHERE target.Dataset_ID IN ( SELECT AJ_datasetID FROM deleted ) AND
-	      Isnull(target.DeconTools_Job_for_QC, 0) <> Isnull(SourceQ.Job, -1)	
+	     LEFT OUTER JOIN ( SELECT Dataset_ID,
+	                              J.AJ_JobID AS Job,
+	                              Row_number() OVER ( PARTITION BY J.AJ_DatasetID ORDER BY J.AJ_jobID DESC ) AS JobRank
+	                       FROM T_Dataset DS
+	                            LEFT OUTER JOIN T_Analysis_Tool Tool
+	                                            INNER JOIN T_Analysis_Job J
+	                                              ON Tool.AJT_toolID = J.AJ_analysisToolID AND
+	                                                 Tool.AJT_toolBasename = 'Decon2LS'
+	                              ON J.AJ_DatasetID = DS.Dataset_ID AND
+	                                 NOT J.AJ_jobID IN ( SELECT AJ_jobID
+	                                                     FROM deleted )
+	                       WHERE DS.Dataset_ID IN ( SELECT AJ_DatasetID
+	                                                FROM deleted ) AND
+	                             J.AJ_StateID IN (2, 4) ) SourceQ
+	       ON target.Dataset_ID = SourceQ.Dataset_ID AND
+	          SourceQ.JobRank = 1
+	WHERE target.Dataset_ID IN ( SELECT AJ_DatasetID
+	                             FROM deleted ) AND
+	      IsNull(target.DeconTools_Job_for_QC, 0) <> IsNull(SourceQ.Job, - 1)
 
+    -- Set Update_Required to 1 for datasets associated with the deleted job(s)
+    UPDATE T_Cached_Dataset_Stats
+    SET Update_Required = 1, Last_Affected = GetDate()
+    WHERE Dataset_ID IN (SELECT AJ_DatasetID FROM deleted)
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_d_AnalysisJob]
@@ -359,40 +361,55 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE Trigger [dbo].[trig_i_AnalysisJob] on [dbo].[T_Analysis_Job]
-For Insert
+CREATE TRIGGER [dbo].[trig_i_AnalysisJob] ON [dbo].[T_Analysis_Job]
+FOR INSERT
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **		Makes an entry in T_Event_Log for the new analysis job
 **
 **	Auth:	grk
 **	Date:	01/01/2003
-**			08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**			10/31/2007 mem - Added Set NoCount statement (Ticket #569)
-**			12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
-**			04/03/2014 mem - Now updating AJ_ToolNameCached
-**    
+**			08/15/2007 mem - Update to use an Insert query (Ticket #519)
+**			10/31/2007 mem - Add Set NoCount statement (Ticket #569)
+**			12/12/2007 mem - Update AJ_StateNameCached (Ticket #585)
+**			04/03/2014 mem - Update AJ_ToolNameCached
+**          05/08/2024 mem - Set Update_Required to 1 in T_Cached_Dataset_Stats
+**
 *****************************************************/
 AS
 	If @@RowCount = 0
 		Return
 
 	Set NoCount On
-	
-	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-	SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, 0, GetDate()
+
+	INSERT INTO T_Event_Log (Target_Type,
+	                         Target_ID,
+	                         Target_State,
+	                         Prev_Target_State,
+	                         Entered)
+	SELECT 5,
+	       inserted.AJ_jobID,
+	       inserted.AJ_StateID,
+	       0,
+	       GetDate()
 	FROM inserted
 	ORDER BY inserted.AJ_jobID
 
 	UPDATE T_Analysis_Job
 	SET AJ_StateNameCached = IsNull(AJDAS.Job_State, ''),
 	    AJ_ToolNameCached = IsNull(ATool.AJT_toolName, '')
-	FROM T_Analysis_Job AJ INNER JOIN
-		 inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
-		 V_Analysis_Job_and_Dataset_Archive_State AJDAS ON AJ.AJ_jobID = AJDAS.Job INNER JOIN
-		T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
+	FROM T_Analysis_Job AJ
+	     INNER JOIN inserted
+	       ON AJ.AJ_jobID = inserted.AJ_jobID
+	     INNER JOIN V_Analysis_Job_and_Dataset_Archive_State AJDAS
+	       ON AJ.AJ_jobID = AJDAS.Job
+	     INNER JOIN T_Analysis_Tool ATool
+	       ON AJ.AJ_analysisToolID = ATool.AJT_toolID
 
+    UPDATE T_Cached_Dataset_Stats
+    SET Update_Required = 1, Last_Affected = GetDate()
+    WHERE Dataset_ID IN (SELECT AJ_DatasetID FROM inserted)
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_i_AnalysisJob]
@@ -402,19 +419,18 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger [dbo].[trig_iu_AnalysisJob] on [dbo].[T_Analysis_Job]
-For Insert, Update
+CREATE TRIGGER [dbo].[trig_iu_AnalysisJob] ON [dbo].[T_Analysis_Job]
+FOR INSERT, UPDATE
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **		Validates that the settings file name is valid
 **		Note: this procedure does not perform a tool-specific validation; it simply checks for a valid file name
 **
 **	Auth:	mem
-**			01/24/2013 mem - Initial version 
-**			11/25/2013 mem - Now updating DeconTools_Job_for_QC in T_Dataset
-**			12/02/2013 mem - Refactored logic for updating DeconTools_Job_for_QC to use multiple small queries instead of one large Update query
+**			01/24/2013 mem - Initial version
+**			11/25/2013 mem - Update DeconTools_Job_for_QC in T_Dataset
+**			12/02/2013 mem - Refactor logic for updating DeconTools_Job_for_QC to use multiple small queries instead of one large Update query
 **
 *****************************************************/
 AS
@@ -422,18 +438,18 @@ AS
 		Return
 
 	Set NoCount On
-	
+
 	If Update(AJ_settingsFileName)
-	Begin		
+	Begin
 		Declare @InvalidSettingsFile varchar(128) = ''
-		
+
 		SELECT TOP 1 @InvalidSettingsFile = inserted.AJ_settingsFileName
 		FROM inserted
 			 LEFT OUTER JOIN T_Settings_Files SF
 			   ON inserted.AJ_settingsFileName = SF.File_Name
 		WHERE (SF.File_Name IS NULL)
-		
-		If ISNULL(@InvalidSettingsFile, '') <> ''
+
+		If IsNull(@InvalidSettingsFile, '') <> ''
 		Begin
 			Declare @message varchar(256) = 'Invalid settings file: ' + @InvalidSettingsFile + ' (see trigger trig_iu_AnalysisJob)'
 			RAISERROR(@message,16,1)
@@ -446,19 +462,19 @@ AS
 	Begin
 		Declare @BestJobByDataset Table (Dataset_ID int, Job int)
 
-		Insert Into @BestJobByDataset (Dataset_ID, Job)
+		INSERT INTO @BestJobByDataset (Dataset_ID, Job)
 		SELECT SourceQ.Dataset_ID, Job
 		FROM ( SELECT DS.Dataset_ID,
 					  J.AJ_jobID AS Job,
-					  Row_number() OVER ( PARTITION BY J.AJ_datasetID ORDER BY J.AJ_jobID DESC ) AS JobRank
+					  Row_number() OVER ( PARTITION BY J.AJ_DatasetID ORDER BY J.AJ_jobID DESC ) AS JobRank
 			   FROM T_Dataset DS
 					INNER JOIN T_Analysis_Job J
-					  ON J.AJ_datasetID = DS.Dataset_ID
+					  ON J.AJ_DatasetID = DS.Dataset_ID
 					INNER JOIN T_Analysis_Tool Tool
 					  ON Tool.AJT_toolID = J.AJ_analysisToolID AND
 						 Tool.AJT_toolBasename = 'Decon2LS'
-			   WHERE J.AJ_datasetID IN ( SELECT AJ_datasetID FROM inserted ) AND
-					 J.AJ_StateID IN (2, 4) 
+			   WHERE J.AJ_DatasetID IN ( SELECT AJ_DatasetID FROM inserted ) AND
+					 J.AJ_StateID IN (2, 4)
 		     ) SourceQ
 		WHERE SourceQ.JobRank = 1
 
@@ -467,11 +483,8 @@ AS
 		FROM T_Dataset Target
 			 INNER JOIN @BestJobByDataset SourceQ
 			   ON Target.Dataset_ID = SourceQ.Dataset_ID
-		WHERE Isnull(target.DeconTools_Job_for_QC, 0) <> Isnull(SourceQ.Job, -1)
-
+		WHERE IsNull(target.DeconTools_Job_for_QC, 0) <> IsNull(SourceQ.Job, -1)
 	End
-
-
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_iu_AnalysisJob]
@@ -481,45 +494,55 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE Trigger [dbo].[trig_u_AnalysisJob] on [dbo].[T_Analysis_Job]
-For Update
+CREATE TRIGGER [dbo].[trig_u_AnalysisJob] ON [dbo].[T_Analysis_Job]
+FOR UPDATE
 /****************************************************
 **
-**  Desc: 
+**  Desc:
 **      Makes an entry in T_Event_Log for the updated analysis job
-**      Also updates AJ_Last_Affected, AJ_StateNameCached, Progress, ETA_Minutes, and AJ_ToolNameCached
+**      Updates AJ_Last_Affected, AJ_StateNameCached, Progress, ETA_Minutes, and AJ_ToolNameCached in T_Analysis_Job
 **
 **  Auth:   grk
 **   Date:  01/01/2003
-**          05/16/2007 mem - Now updating DS_Last_Affected when DS_State_ID changes (Ticket #478)
-**          08/15/2007 mem - Updated to use an Insert query (Ticket #519)
-**          11/01/2007 mem - Added Set NoCount statement (Ticket #569)
-**          12/12/2007 mem - Now updating AJ_StateNameCached (Ticket #585)
-**          04/03/2014 mem - Now updating AJ_ToolNameCached
-**          09/01/2016 mem - Now updating Progress and ETA_Minutes
+**          05/16/2007 mem - Update DS_Last_Affected when DS_State_ID changes (Ticket #478)
+**          08/15/2007 mem - Update to use an Insert query (Ticket #519)
+**          11/01/2007 mem - Add Set NoCount statement (Ticket #569)
+**          12/12/2007 mem - Update AJ_StateNameCached (Ticket #585)
+**          04/03/2014 mem - Update AJ_ToolNameCached
+**          09/01/2016 mem - Update Progress and ETA_Minutes
 **          10/30/2017 mem - Set progress to 0 for inactive jobs (state 13)
 **                         - Fix StateID bug, switching from 17 to 14
 **          09/13/2018 mem - When Started and Finished are non-null, use the larger of Started and Finished for Last_Affected
-**    
+**          05/08/2024 mem - Set Update_Required to 1 in T_Cached_Dataset_Stats
+**
 *****************************************************/
 AS
     If @@RowCount = 0
         Return
 
     Set NoCount On
-    
+
     If Update(AJ_StateID)
     Begin
-        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-        SELECT 5, inserted.AJ_jobID, inserted.AJ_StateID, deleted.AJ_StateID, GetDate()
-        FROM deleted INNER JOIN inserted ON deleted.AJ_jobID = inserted.AJ_jobID
+        INSERT INTO T_Event_Log (Target_Type,
+                                 Target_ID,
+                                 Target_State,
+                                 Prev_Target_State,
+                                 Entered)
+        SELECT 5,
+               inserted.AJ_jobID,
+               inserted.AJ_StateID,
+               deleted.AJ_StateID,
+               GetDate()
+        FROM deleted
+             INNER JOIN inserted
+               ON deleted.AJ_jobID = inserted.AJ_jobID
         ORDER BY inserted.AJ_jobID
-        
+
         UPDATE T_Analysis_Job
         SET AJ_Last_Affected = CASE WHEN NOT inserted.AJ_finish Is Null AND inserted.AJ_finish >= inserted.AJ_start THEN inserted.AJ_finish
                                     WHEN NOT inserted.AJ_start Is Null  AND inserted.AJ_start >= inserted.AJ_finish THEN inserted.AJ_start
-                                    ELSE GetDate() 
+                                    ELSE GetDate()
                                END,
             AJ_StateNameCached = IsNull(AJDAS.Job_State, ''),
             Progress = CASE
@@ -538,18 +561,24 @@ AS
                ON AJ.AJ_jobID = inserted.AJ_jobID
              INNER JOIN V_Analysis_Job_and_Dataset_Archive_State AJDAS
                ON AJ.AJ_jobID = AJDAS.Job
-        
     End
 
     If Update(AJ_analysisToolID)
     Begin
-        
         UPDATE T_Analysis_Job
         SET AJ_ToolNameCached = IsNull(ATool.AJT_toolName, '')
-        FROM T_Analysis_Job AJ INNER JOIN
-             inserted ON AJ.AJ_jobID = inserted.AJ_jobID INNER JOIN
-             T_Analysis_Tool ATool ON AJ.AJ_analysisToolID = ATool.AJT_toolID
+        FROM T_Analysis_Job AJ
+             INNER JOIN inserted
+               ON AJ.AJ_jobID = inserted.AJ_jobID
+             INNER JOIN T_Analysis_Tool ATool
+               ON AJ.AJ_analysisToolID = ATool.AJT_toolID
+    End
 
+    If Update(AJ_DatasetID)
+    Begin
+        UPDATE T_Cached_Dataset_Stats
+        SET Update_Required = 1, Last_Affected = GetDate()
+        WHERE Dataset_ID IN (SELECT AJ_DatasetID FROM inserted UNION SELECT AJ_DatasetID FROM deleted)
     End
 
 GO
@@ -560,22 +589,19 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE TRIGGER [dbo].[trig_ud_T_Analysis_Job]
-ON [dbo].[T_Analysis_Job]
-FOR UPDATE, DELETE AS
+CREATE TRIGGER [dbo].[trig_ud_T_Analysis_Job] ON [dbo].[T_Analysis_Job]
+FOR UPDATE, DELETE
 /****************************************************
 **
-**	Desc: 
+**	Desc:
 **		Prevents updating or deleting all rows in the table
 **
 **	Auth:	mem
 **	Date:	02/08/2011
-**			09/11/2015 mem - Added support for the table being empty
+**			09/11/2015 mem - Add support for the table being empty
 **
 *****************************************************/
-BEGIN
-
+AS
     DECLARE @Count int
     SET @Count = @@ROWCOUNT;
 
@@ -584,17 +610,12 @@ BEGIN
     FROM dbo.sysobjects o INNER JOIN dbo.sysindexes i ON o.id = i.id
     WHERE o.name = 'T_Analysis_Job' AND o.type = 'u' AND i.indid < 2
 
-    IF @Count > 0 AND @ExistingRows > 1 AND @Count >= @ExistingRows
-    BEGIN
-
+    If @Count > 0 AND @ExistingRows > 1 AND @Count >= @ExistingRows
+    Begin
         RAISERROR('Cannot update or delete all rows. Use a WHERE clause (see trigger trig_ud_T_Analysis_Job)',16,1)
         ROLLBACK TRANSACTION
         RETURN;
-
-    END
-
-END
-
+    End
 
 GO
 ALTER TABLE [dbo].[T_Analysis_Job] ENABLE TRIGGER [trig_ud_T_Analysis_Job]

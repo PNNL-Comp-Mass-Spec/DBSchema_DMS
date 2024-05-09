@@ -325,27 +325,24 @@ AS
     Set NoCount On
 
     -- Add entries to T_Event_Log for each dataset deleted from T_Dataset
-    INSERT INTO T_Event_Log
-        (
-            Target_Type,
-            Target_ID,
-            Target_State,
-            Prev_Target_State,
-            Entered,
-            Entered_By
-        )
+    INSERT INTO T_Event_Log (Target_Type,
+                             Target_ID,
+                             Target_State,
+                             Prev_Target_State,
+                             Entered,
+                             Entered_By)
     SELECT 4 AS Target_Type,
            Dataset_ID AS Target_ID,
            0 AS Target_State,
            DS_State_ID AS Prev_Target_State,
-            GETDATE(),
-            suser_sname() + '; ' + IsNull(deleted.Dataset_Num, '??')
+           GetDate(),
+           suser_sname() + '; ' + IsNull(deleted.Dataset_Num, '??')
     FROM deleted
     ORDER BY Dataset_ID
 
     -- Set Update_Required to 1 for experiments associated with the deleted dataset(s)
     UPDATE T_Cached_Experiment_Stats
-    SET Update_Required = 1, Last_Affected = getdate()
+    SET Update_Required = 1, Last_Affected = GetDate()
     WHERE Exp_ID IN (SELECT Exp_ID FROM deleted)
 
 GO
@@ -377,13 +374,29 @@ AS
 
     Set NoCount On
 
-    INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-    SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, 0, GetDate()
+    INSERT INTO T_Event_Log (Target_Type,
+                             Target_ID,
+                             Target_State,
+                             Prev_Target_State,
+                             Entered)
+    SELECT 4,
+           inserted.Dataset_ID,
+           inserted.DS_State_ID,
+           0,
+           GetDate()
     FROM inserted
     ORDER BY inserted.Dataset_ID
 
-    INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-    SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, 0, GetDate()
+    INSERT INTO T_Event_Log (Target_Type,
+                             Target_ID,
+                             Target_State,
+                             Prev_Target_State,
+                             Entered)
+    SELECT 8,
+           inserted.Dataset_ID,
+           inserted.DS_Rating,
+           0,
+           GetDate()
     FROM inserted
     ORDER BY inserted.Dataset_ID
 
@@ -391,7 +404,7 @@ AS
     UPDATE T_Dataset
     SET DateSortKey = CASE
                           WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
-                          ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
+                          ELSE IsNull(DS.Acq_Time_Start, DS.DS_created)
                       END
     FROM T_Dataset DS
          INNER JOIN inserted
@@ -400,7 +413,7 @@ AS
            ON DS.Exp_ID = E.Exp_ID
 
     UPDATE T_Cached_Experiment_Stats
-    SET Update_Required = 1, Last_Affected = getdate()
+    SET Update_Required = 1, Last_Affected = GetDate()
     WHERE Exp_ID IN (SELECT Exp_ID FROM inserted)
 
 GO
@@ -438,9 +451,19 @@ AS
 
     If Update(DS_State_ID)
     Begin
-        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-        SELECT 4, inserted.Dataset_ID, inserted.DS_State_ID, deleted.DS_State_ID, GetDate()
-        FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+        INSERT INTO T_Event_Log (Target_Type,
+                                 Target_ID,
+                                 Target_State,
+                                 Prev_Target_State,
+                                 Entered)
+        SELECT 4,
+               inserted.Dataset_ID,
+               inserted.DS_State_ID,
+               deleted.DS_State_ID,
+               GetDate()
+        FROM deleted
+             INNER JOIN inserted
+               ON deleted.Dataset_ID = inserted.Dataset_ID
         ORDER BY inserted.Dataset_ID
 
         UPDATE T_Dataset
@@ -450,18 +473,38 @@ AS
 
     If Update(DS_Rating)
     Begin
-        INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-        SELECT 8, inserted.Dataset_ID, inserted.DS_Rating, deleted.DS_Rating, GetDate()
-        FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+        INSERT INTO T_Event_Log (Target_Type,
+                                 Target_ID,
+                                 Target_State,
+                                 Prev_Target_State,
+                                 Entered)
+        SELECT 8,
+               inserted.Dataset_ID,
+               inserted.DS_Rating,
+               deleted.DS_Rating,
+               GetDate()
+        FROM deleted
+             INNER JOIN inserted
+               ON deleted.Dataset_ID = inserted.Dataset_ID
         WHERE inserted.DS_Rating <> deleted.DS_Rating
         ORDER BY inserted.Dataset_ID
     End
 
     If Update(Dataset_Num)
     Begin
-        INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name, Entered)
-        SELECT 4, inserted.Dataset_ID, deleted.Dataset_Num, inserted.Dataset_Num, GETDATE()
-        FROM deleted INNER JOIN inserted ON deleted.Dataset_ID = inserted.Dataset_ID
+        INSERT INTO T_Entity_Rename_Log (Target_Type,
+                                         Target_ID,
+                                         Old_Name,
+                                         New_Name,
+                                         Entered)
+        SELECT 4,
+               inserted.Dataset_ID,
+               deleted.Dataset_Num,
+               inserted.Dataset_Num,
+               GetDate()
+        FROM deleted
+             INNER JOIN inserted
+               ON deleted.Dataset_ID = inserted.Dataset_ID
         ORDER BY inserted.Dataset_ID
     End
 
@@ -484,7 +527,7 @@ AS
         UPDATE T_Dataset
         SET DateSortKey = CASE
                               WHEN E.Experiment_Num = 'Tracking' THEN DS.DS_created
-                              ELSE Isnull(DS.Acq_Time_Start, DS.DS_created)
+                              ELSE IsNull(DS.Acq_Time_Start, DS.DS_created)
                           END
         FROM T_Dataset DS
              INNER JOIN inserted
@@ -496,7 +539,7 @@ AS
     If Update(Exp_ID)
     Begin
         UPDATE T_Cached_Experiment_Stats
-        SET Update_Required = 1, Last_Affected = getdate()
+        SET Update_Required = 1, Last_Affected = GetDate()
         WHERE Exp_ID IN (SELECT Exp_ID FROM inserted UNION SELECT Exp_ID FROM deleted)
     End
 
