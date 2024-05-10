@@ -7,12 +7,13 @@ GO
 CREATE PROCEDURE [dbo].[promote_protein_collection_state]
 /****************************************************
 **
-**  Desc:   Examines protein collections with a state of 1
+**  Desc:
+**      Look for protein collections with a state of 1 in T_Protein_Collections
 **
-**          Looks in MT_Main.dbo.T_DMS_Analysis_Job_Info_Cached
-**          for any analysis jobs that refer to the given
-**          protein collection.  If any are found, the state
-**          for the given protein collection is changed to 3
+**      For each, look for analysis jobs in MT_Main.dbo.T_DMS_Analysis_Job_Info_Cached that use the given protein collection
+**      If any jobs are found, update the protein collection state to 3
+**
+**      If @addNewProteinHeaders is non-zero, call add_new_protein_headers to add new rows to T_Protein_Headers
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -23,6 +24,7 @@ CREATE PROCEDURE [dbo].[promote_protein_collection_state]
 **          09/12/2016 mem - Add parameter @mostRecentMonths
 **          07/27/2022 mem - Adjust case of variable names
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          05/09/2024 mem - Cache protein collection lists in a temporary table, removing the need to re-query T_DMS_Analysis_Job_Info_Cached for each protein collection
 **
 *****************************************************/
 (
@@ -44,11 +46,9 @@ AS
     Declare @nameFilter varchar(256)
     Declare @jobCount int
 
-    Declare @proteinCollectionsUpdated varchar(max)
-    Declare @proteinCollectionCountUpdated int
+    Declare @proteinCollectionsUpdated varchar(max) = ''
+    Declare @proteinCollectionCountUpdated int = 0
 
-    Set @proteinCollectionCountUpdated = 0
-    Set @proteinCollectionsUpdated = ''
 
     Set @message = ''
 
@@ -59,82 +59,112 @@ AS
     Set @addNewProteinHeaders = IsNull(@addNewProteinHeaders, 1)
 
     Set @mostRecentMonths = IsNull(@mostRecentMonths, 12)
+
     If @mostRecentMonths <= 0
         Set @mostRecentMonths = 12
 
-    If @mostRecentMonths > 2000
-        Set @mostRecentMonths = 2000
-
     Set @infoOnly = IsNull(@infoOnly, 0)
 
-    --------------------------------------------------------------
-    -- Loop through the protein collections with a state of 1
-    -- Limit to protein collections created within the last @mostRecentMonths months
-    --------------------------------------------------------------
-    --
-    declare @CallingProcName varchar(128)
-    declare @CurrentLocation varchar(128) = 'Start'
+    Declare @CallingProcName varchar(128)
+    Declare @CurrentLocation varchar(128) = 'Start'
 
     Begin Try
 
-        Set @proteinCollectionID = 0
-        Set @continue = 1
-
-        While @continue = 1
+        If Exists (SELECT Protein_Collection_ID
+                   FROM T_Protein_Collections
+                   WHERE Collection_State_ID = 1 AND
+                         DateCreated >= DATEADD(month, -@mostRecentMonths, GETDATE()))
         Begin
-            Set @CurrentLocation = 'Find the next Protein collection with state 1'
+            --------------------------------------------------------------
+            -- Cache the protein collection lists used by analysis jobs
+            --------------------------------------------------------------
 
-            SELECT TOP 1 @proteinCollectionID = Protein_Collection_ID,
-                         @proteinCollectionName = Collection_Name
-            FROM T_Protein_Collections
-            WHERE Collection_State_ID = 1 AND
-                  Protein_Collection_ID > @proteinCollectionID AND
-                  DateCreated >= DATEADD(month, -@mostRecentMonths, GETDATE())
-            ORDER BY Protein_Collection_ID
-            --
-            SELECT @myError = @@error, @myRowCount = @@rowcount
+            -- This table has an identity column as the primary key since
+            -- SQL Server does not allow a field larger than varchar(900) to be a primary key (or to be indexed)
+            CREATE TABLE #Tmp_Analysis_Job_Protein_Collections (
+                Collection_List_ID int identity(1,1) PRIMARY KEY,
+                Protein_Collection_List varchar(2000) NOT NULL,
+                Jobs int NOT NULL
+            )
 
-            If @myRowCount <> 1
-                Set @continue = 0
-            Else
+            INSERT INTO #Tmp_Analysis_Job_Protein_Collections (Protein_Collection_List, Jobs)
+            SELECT ProteinCollectionList, COUNT(*) AS Jobs
+            FROM MT_Main.dbo.T_DMS_Analysis_Job_Info_Cached
+            WHERE NOT ProteinCollectionList Is Null
+            GROUP BY ProteinCollectionList
+            ORDER BY ProteinCollectionList;
+
+            --------------------------------------------------------------
+            -- Loop through the protein collections with a state of 1
+            -- Limit to protein collections created within the last @mostRecentMonths months
+            --------------------------------------------------------------
+
+            Set @proteinCollectionID = 0
+            Set @continue = 1
+
+            While @continue = 1
             Begin
-                Set @CurrentLocation = 'Look for jobs in V_DMS_Analysis_Job_Info that used ' + @proteinCollectionName
+                Set @CurrentLocation = 'Find the next protein collection with state 1'
 
-                If @infoOnly > 0
-                    Print @CurrentLocation
-
-                Set @nameFilter = '%' + @proteinCollectionName + '%'
-
-                Set @jobCount = 0
-
-                SELECT @jobCount = COUNT(*)
-                FROM MT_Main.dbo.T_DMS_Analysis_Job_Info_Cached
-                WHERE ProteinCollectionList LIKE @nameFilter
+                SELECT TOP 1 @proteinCollectionID = Protein_Collection_ID,
+                                @proteinCollectionName = Collection_Name
+                FROM T_Protein_Collections
+                WHERE Collection_State_ID = 1 AND
+                        Protein_Collection_ID > @proteinCollectionID AND
+                        DateCreated >= DATEADD(month, -@mostRecentMonths, GETDATE())
+                ORDER BY Protein_Collection_ID
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
 
-                If @jobCount > 0
+                If @myRowCount <> 1
+                    Set @continue = 0
+                Else
                 Begin
-                    Set @message = 'Updated state for Protein Collection "' + @proteinCollectionName + '" from 1 to 3 since ' + Convert(varchar(12), @jobCount) + ' jobs are defined in DMS with this protein collection'
+                    Set @CurrentLocation = 'Look for jobs that used ' + @proteinCollectionName
 
-                    If @infoOnly = 0
+                    If @infoOnly > 0
+                        Print @CurrentLocation
+
+                    Set @nameFilter = '%' + @proteinCollectionName + '%'
+
+                    Set @jobCount = 0
+
+                    SELECT @jobCount = SUM(Jobs)
+                    FROM #Tmp_Analysis_Job_Protein_Collections
+                    WHERE Protein_Collection_List LIKE @nameFilter
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                    If @jobCount > 0
                     Begin
-                        Set @CurrentLocation = 'Update state for CollectionID ' + Convert(varchar(12), @proteinCollectionID)
+                        If @infoOnly = 0
+                            Set @message = 'Updated'
+                        Else
+                            Set @message = 'Would update'
 
-                        UPDATE T_Protein_Collections
-                        SET Collection_State_ID = 3
-                        WHERE Protein_Collection_ID = @proteinCollectionID AND Collection_State_ID = 1
+                        Set @message = @message + ' state for Protein Collection "' + @proteinCollectionName + '" from 1 to 3 since ' + Convert(varchar(12), @jobCount) + ' jobs are defined in DMS with this protein collection'
 
-                        Exec post_log_entry 'Normal', @message, 'promote_protein_collection_state'
+                        If @infoOnly = 0
+                        Begin
+                            Set @CurrentLocation = 'Update state for CollectionID ' + Convert(varchar(12), @proteinCollectionID)
+
+                            UPDATE T_Protein_Collections
+                            SET Collection_State_ID = 3
+                            WHERE Protein_Collection_ID = @proteinCollectionID AND Collection_State_ID = 1
+
+                            Exec post_log_entry 'Normal', @message, 'promote_protein_collection_state'
+                        End
+                        Else
+                        Begin
+                            Print @message
+                        End
+
+                        If Len(@proteinCollectionsUpdated) > 0
+                            Set @proteinCollectionsUpdated = @proteinCollectionsUpdated + ', '
+
+                        Set @proteinCollectionsUpdated = @proteinCollectionsUpdated + @proteinCollectionName
+                        Set @proteinCollectionCountUpdated = @proteinCollectionCountUpdated + 1
                     End
-                    Else
-                        Print @message
-
-                    If Len(@proteinCollectionsUpdated) > 0
-                        Set @proteinCollectionsUpdated = @proteinCollectionsUpdated + ', '
-
-                    Set @proteinCollectionsUpdated = @proteinCollectionsUpdated + @proteinCollectionName
-                    Set @proteinCollectionCountUpdated = @proteinCollectionCountUpdated + 1
                 End
             End
         End
