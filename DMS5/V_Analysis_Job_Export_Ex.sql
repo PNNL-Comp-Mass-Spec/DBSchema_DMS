@@ -62,14 +62,12 @@ FROM dbo.T_Analysis_Job AJ
        ON E.EX_postdigest_internal_std_ID = PostDigest_Int_Std.Internal_Std_Mix_ID
      INNER JOIN dbo.T_Organisms Org
        ON E.EX_organism_ID = Org.Organism_ID
-     INNER JOIN dbo.V_Dataset_Archive_Path DSArch
+     LEFT OUTER JOIN dbo.V_Dataset_Archive_Path DSArch
        ON DS.Dataset_ID = DSArch.Dataset_ID
 WHERE (AJ.AJ_StateID = 4) AND
       (DS.DS_rating >= 1 OR 
        -- Include datasets with rating "Rerun (Good Data)"
        DS.DS_rating = -6)
-
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_Export_Ex] TO [DDL_Viewer] AS [dbo]
