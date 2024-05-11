@@ -11,7 +11,7 @@ CREATE TABLE [dbo].[T_Cached_Dataset_Stats](
 	[PSM_Job_Count] [int] NOT NULL,
 	[Update_Required] [tinyint] NOT NULL,
 	[Last_Affected] [smalldatetime] NOT NULL,
- CONSTRAINT [PK_T_Cached_Dataset_Stats] PRIMARY KEY CLUSTERED
+ CONSTRAINT [PK_T_Cached_Dataset_Stats] PRIMARY KEY CLUSTERED 
 (
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
@@ -35,6 +35,7 @@ CREATE NONCLUSTERED INDEX [IX_T_Cached_Dataset_Stats_InstrumentName_DatasetID] O
 	[Dataset_ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Cached_Dataset_Stats_Update_Required] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Cached_Dataset_Stats_Update_Required] ON [dbo].[T_Cached_Dataset_Stats]
 (
 	[Update_Required] ASC
@@ -58,7 +59,7 @@ REFERENCES [dbo].[T_Instrument_Name] ([Instrument_ID])
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Stats] CHECK CONSTRAINT [FK_T_Cached_Dataset_Stats_T_Instrument_Name]
 GO
-
+/****** Object:  Trigger [dbo].[trig_u_T_Cached_Dataset_Stats] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -80,9 +81,10 @@ AS
 
     Set NoCount On
 
-    If Update(Dataset_Count) OR
-       Update(Factor_Count) OR
-       Update(Most_Recent_Dataset)
+    If Update(Job_Count) OR
+       Update(PSM_Job_Count) OR
+       Update(Instrument_ID) OR
+       Update(Instrument)
     Begin
         UPDATE T_Cached_Dataset_Stats
         SET Last_Affected = GetDate()

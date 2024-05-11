@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Wellplates] ******/
-/****** RowCount: 427 ******/
+/****** RowCount: 430 ******/
 SET IDENTITY_INSERT [T_Wellplates] ON
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1000,'na','(no wellplate)','7/24/2009 8:10:02 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1001,'ABS_VP2P106','Created by experiment fraction entry (ABS_VP2P106)','7/30/2009 5:49:07 PM')
@@ -428,4 +428,7 @@ INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALU
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1425,'A2CPS_Plate18','A2CPS Digested Peptides - Plate 18','4/4/2024 1:40:30 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1426,'A2CPS_Plate19','A2CPS Digested Peptides - Plate 19','4/4/2024 1:40:37 PM')
 INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1427,'A2CPS_Plate20','A2CPS Digested Peptides - Plate 20','4/4/2024 1:40:47 PM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1428,'UHICC_EA-AA_Plate-1','UHICC EA-AA Peptides from S-trap Digest Plate 1','5/8/2024 7:29:34 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1429,'UHICC_EA-AA_Plate-2','UHICC EA-AA Peptides from S-trap Digest Plate 2','5/8/2024 7:29:39 AM')
+INSERT INTO [T_Wellplates] (ID, WP_Well_Plate_Num, WP_Description, Created) VALUES (1430,'UHICC_EA-AA_Plate-3','UHICC EA-AA Peptides from S-trap Digest Plate 3','5/8/2024 7:29:44 AM')
 SET IDENTITY_INSERT [T_Wellplates] OFF

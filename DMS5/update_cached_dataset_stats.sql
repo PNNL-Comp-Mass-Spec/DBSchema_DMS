@@ -62,7 +62,7 @@ AS
     Begin
         SELECT @minimumDatasetID = MIN(Dataset_ID)
         FROM (SELECT TOP 10000 Dataset_ID
-              FROM T_Datasets
+              FROM T_Dataset
               ORDER BY Dataset_ID DESC) LookupQ
     End
 
@@ -88,7 +88,7 @@ AS
 
     If @myRowCount > 0
     Begin
-        Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.check_plural(@myRowCount, 'dataset', 'dataset')
+        Set @message = 'Added ' + Convert(varchar(12), @myRowCount) + ' new ' + dbo.check_plural(@myRowCount, 'dataset', 'datasets')
 
         If @showDebug > 0
         Begin
@@ -224,7 +224,7 @@ AS
         Begin
             SELECT @currentBatchDatasetIdStart = Min(Dataset_ID),
                    @currentBatchDatasetIdEnd   = Max(Dataset_ID)
-            FROM Tmp_Dataset_IDs
+            FROM #Tmp_DatasetIDs
 
             If @showDebug > 0
             Begin
@@ -243,21 +243,21 @@ AS
                      JobsQ.Job_Count,
                      PSMJobsQ.PSM_Job_Count
               FROM #Tmp_DatasetIDs DS
-                   LEFT OUTER JOIN (SELECT J.Dataset_ID,
-                                           COUNT(J.Job) AS Job_Count
+                   LEFT OUTER JOIN (SELECT J.AJ_DatasetID,
+                                           COUNT(J.AJ_JobID) AS Job_Count
                                     FROM T_Analysis_Job J
-                                    WHERE J.Dataset_ID BETWEEN @currentBatchDatasetIdStart AND @currentBatchDatasetIdEnd
-                                    GROUP BY J.dataset_id
+                                    WHERE J.AJ_DatasetID BETWEEN @currentBatchDatasetIdStart AND @currentBatchDatasetIdEnd
+                                    GROUP BY J.AJ_DatasetID
                                    ) AS JobsQ
-                     ON JobsQ.Dataset_ID = DS.Dataset_ID
-                   LEFT OUTER JOIN (SELECT J.Dataset_ID,
+                     ON JobsQ.AJ_DatasetID = DS.Dataset_ID
+                   LEFT OUTER JOIN (SELECT J.AJ_DatasetID,
                                            COUNT(PSMs.Job) AS PSM_Job_Count
                                     FROM T_Analysis_Job_PSM_Stats PSMs
-                                         INNER JOIN T_Analysis_Job J ON PSMs.Job = J.Job
-                                    WHERE J.Dataset_ID BETWEEN @currentBatchDatasetIdStart AND @currentBatchDatasetIdEnd
-                                    GROUP BY J.Dataset_ID
+                                         INNER JOIN T_Analysis_Job J ON PSMs.Job = J.AJ_JobID
+                                    WHERE J.AJ_DatasetID BETWEEN @currentBatchDatasetIdStart AND @currentBatchDatasetIdEnd
+                                    GROUP BY J.AJ_DatasetID
                                    ) AS PSMJobsQ
-                     ON PSMJobsQ.Dataset_ID = DS.Dataset_ID
+                     ON PSMJobsQ.AJ_DatasetID = DS.Dataset_ID
               WHERE DS.Dataset_ID BETWEEN @datasetIdStart AND @datasetIdEnd
              ) StatsQ
         WHERE T_Cached_Dataset_Stats.Dataset_ID = StatsQ.Dataset_ID AND
