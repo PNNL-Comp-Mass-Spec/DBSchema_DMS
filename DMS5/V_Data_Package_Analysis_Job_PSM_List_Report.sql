@@ -88,10 +88,9 @@ FROM dbo.S_V_Data_Package_Analysis_Jobs_Export DPJ
        ON AJ.AJ_JobID = PSM.Job
      LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM
        ON PSM.Job = PhosphoPSM.Job
-WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
-                                FROM T_Analysis_Tool
-                                WHERE AJT_resultType LIKE '%peptide_hit' OR
-                                      AJT_resultType = 'Gly_ID' )
+WHERE AJ.AJ_analysisToolID IN (SELECT AJT_toolID
+                               FROM T_Analysis_Tool
+                               WHERE AJT_resultType LIKE '%peptide_hit')
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Package_Analysis_Job_PSM_List_Report] TO [DDL_Viewer] AS [dbo]

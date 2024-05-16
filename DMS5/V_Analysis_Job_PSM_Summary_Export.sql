@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW V_Analysis_Job_PSM_Summary_Export
+CREATE VIEW [dbo].[V_Analysis_Job_PSM_Summary_Export]
 AS
 SELECT AJ.AJ_datasetID AS Dataset_ID,
        Count(*) AS Jobs,
@@ -19,12 +19,10 @@ SELECT AJ.AJ_datasetID AS Dataset_ID,
 FROM dbo.T_Analysis_Job AS AJ
      INNER JOIN dbo.T_Analysis_Job_PSM_Stats PSM
        ON AJ.AJ_JobID = PSM.Job
-WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
-                                FROM T_Analysis_Tool
-                                WHERE AJT_resultType LIKE '%peptide_hit' OR
-                                      AJT_resultType = 'Gly_ID' )
+WHERE AJ.AJ_analysisToolID IN (SELECT AJT_toolID
+                               FROM T_Analysis_Tool
+                               WHERE AJT_resultType LIKE '%peptide_hit')
 GROUP BY AJ.AJ_datasetID
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_Summary_Export] TO [DDL_Viewer] AS [dbo]

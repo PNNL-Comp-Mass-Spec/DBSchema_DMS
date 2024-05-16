@@ -74,11 +74,9 @@ FROM dbo.V_Dataset_Archive_Path AS DAP
         INNER JOIN dbo.T_Campaign AS C ON E.EX_campaign_ID = C.Campaign_ID ON DAP.Dataset_ID = DS.Dataset_ID
         LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats PSM ON AJ.AJ_JobID = PSM.Job
         LEFT OUTER JOIN dbo.T_Analysis_Job_PSM_Stats_Phospho PhosphoPSM ON PSM.Job = PhosphoPSM.Job
-WHERE AJ.AJ_analysisToolID IN ( SELECT AJT_toolID
-                                FROM T_Analysis_Tool
-                                WHERE AJT_resultType LIKE '%peptide_hit' OR
-                                      AJT_resultType = 'Gly_ID')
-
+WHERE AJ.AJ_analysisToolID IN (SELECT AJT_toolID
+                               FROM T_Analysis_Tool
+                               WHERE AJT_resultType LIKE '%peptide_hit')
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Analysis_Job_PSM_List_Report] TO [DDL_Viewer] AS [dbo]
