@@ -12,7 +12,9 @@ CREATE TABLE [dbo].[T_Cached_Dataset_Stats](
 	[Max_Total_PSMs] [int] NOT NULL,
 	[Max_Unique_Peptides] [int] NOT NULL,
 	[Max_Unique_Proteins] [int] NOT NULL,
+	[Max_Total_PSMs_FDR_Filter] [int] NOT NULL,
 	[Max_Unique_Peptides_FDR_Filter] [int] NOT NULL,
+	[Max_Unique_Proteins_FDR_Filter] [int] NOT NULL,
 	[Update_Required] [tinyint] NOT NULL,
 	[Last_Affected] [smalldatetime] NOT NULL,
  CONSTRAINT [PK_T_Cached_Dataset_Stats] PRIMARY KEY CLUSTERED 
@@ -55,7 +57,11 @@ ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Unique_Proteins]  DEFAULT ((0)) FOR [Max_Unique_Proteins]
 GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Total_PSMs_FDR_Filter]  DEFAULT ((0)) FOR [Max_Total_PSMs_FDR_Filter]
+GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Unique_Peptides_FDR_Filter]  DEFAULT ((0)) FOR [Max_Unique_Peptides_FDR_Filter]
+GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Unique_Proteins_FDR_Filter]  DEFAULT ((0)) FOR [Max_Unique_Proteins_FDR_Filter]
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Update_Required]  DEFAULT ((1)) FOR [Update_Required]
 GO
