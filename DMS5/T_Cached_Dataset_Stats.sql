@@ -9,6 +9,10 @@ CREATE TABLE [dbo].[T_Cached_Dataset_Stats](
 	[Instrument] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Job_Count] [int] NOT NULL,
 	[PSM_Job_Count] [int] NOT NULL,
+	[Max_Total_PSMs] [int] NOT NULL,
+	[Max_Unique_Peptides] [int] NOT NULL,
+	[Max_Unique_Proteins] [int] NOT NULL,
+	[Max_Unique_Peptides_FDR_Filter] [int] NOT NULL,
 	[Update_Required] [tinyint] NOT NULL,
 	[Last_Affected] [smalldatetime] NOT NULL,
  CONSTRAINT [PK_T_Cached_Dataset_Stats] PRIMARY KEY CLUSTERED 
@@ -45,7 +49,15 @@ ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_PSM_Job_Count]  DEFAULT ((0)) FOR [PSM_Job_Count]
 GO
-ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Update_Required]  DEFAULT ((0)) FOR [Update_Required]
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Total_PSMs]  DEFAULT ((0)) FOR [Max_Total_PSMs]
+GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Unique_Peptides]  DEFAULT ((0)) FOR [Max_Unique_Peptides]
+GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Unique_Proteins]  DEFAULT ((0)) FOR [Max_Unique_Proteins]
+GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Max_Unique_Peptides_FDR_Filter]  DEFAULT ((0)) FOR [Max_Unique_Peptides_FDR_Filter]
+GO
+ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Update_Required]  DEFAULT ((1)) FOR [Update_Required]
 GO
 ALTER TABLE [dbo].[T_Cached_Dataset_Stats] ADD  CONSTRAINT [DF_T_Cached_Dataset_Stats_Last_affected]  DEFAULT (getdate()) FOR [Last_Affected]
 GO
@@ -73,6 +85,7 @@ FOR UPDATE
 **
 **  Auth:   mem
 **  Date:   05/08/2024 - Initial version
+**          05/15/2024 - Examine newly added columns: Max_Total_PSMs, Max_Unique_Peptides, Max_Unique_Proteins, and Max_Unique_Peptides_FDR_Filter
 **
 *****************************************************/
 AS
@@ -83,6 +96,10 @@ AS
 
     If Update(Job_Count) OR
        Update(PSM_Job_Count) OR
+	   Update(Max_Total_PSMs) OR
+	   Update(Max_Unique_Peptides) OR
+	   Update(Max_Unique_Proteins) OR
+	   Update(Max_Unique_Peptides_FDR_Filter) OR
        Update(Instrument_ID) OR
        Update(Instrument)
     Begin
