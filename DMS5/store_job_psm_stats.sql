@@ -6,11 +6,10 @@ GO
 CREATE PROCEDURE [dbo].[store_job_psm_stats]
 /****************************************************
 **
-**  Desc: Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
+**  Desc:
+**      Updates the PSM stats in T_Analysis_Job_PSM_Stats for the specified analysis job
 **
 **  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
 **
 **  Auth:   mem
 **  Date:   02/21/2012 mem - Initial version
@@ -22,6 +21,7 @@ CREATE PROCEDURE [dbo].[store_job_psm_stats]
 **          07/15/2020 mem - Add parameter @uniqueAcetylPeptidesFDR
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          04/08/2024 mem - Add parameter @uniqueUbiquitinPeptidesFDR
+**          05/16/2024 mem - Update T_Cached_Dataset_Stats for the dataset associated with this job
 **
 *****************************************************/
 (
@@ -94,7 +94,15 @@ AS
     -- Make sure @job is defined in T_Analysis_Job
     ---------------------------------------------------
 
-    IF NOT EXISTS (SELECT * FROM T_Analysis_Job where AJ_jobID = @job)
+    DECLARE @datasetID int = 0
+
+    SELECT @datasetID = AJ_datasetID
+    FROM T_Analysis_Job 
+    WHERE AJ_jobID = @job
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount = 0
     Begin
         Set @message = 'Job not found in T_Analysis_Job: ' + CONVERT(varchar(12), @job)
         return 50000
@@ -324,6 +332,14 @@ AS
     End
 
     Set @message = 'PSM stats storage successful'
+
+    -----------------------------------------------
+    -- Schedule the cached data in T_Cached_Dataset_Stats to get updated
+    -----------------------------------------------
+    --
+    UPDATE T_Cached_Dataset_Stats
+    SET Update_Required = 1
+    WHERE Dataset_ID = @datasetID
 
 Done:
 
