@@ -22,6 +22,7 @@ CREATE TABLE [dbo].[T_Requested_Run](
 	[RDS_internal_standard] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[RDS_WorkPackage] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Cached_WP_Activation_State] [tinyint] NOT NULL,
 	[RDS_BatchID] [int] NOT NULL,
 	[RDS_Blocking_Factor] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[RDS_Block] [int] NULL,
@@ -192,7 +193,19 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Updated] ON [dbo].[T_Requested_Run
 	[Updated] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+SET ANSI_PADDING ON
+
+GO
+/****** Object:  Index [IX_T_Requested_Run_WorkPackage_Include_Request_ID_Cached_WP_Activation_State] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_WorkPackage_Include_Request_ID_Cached_WP_Activation_State] ON [dbo].[T_Requested_Run]
+(
+	[RDS_WorkPackage] ASC
+)
+INCLUDE([ID],[Cached_WP_Activation_State]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_created]  DEFAULT (getdate()) FOR [RDS_created]
+GO
+ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_Cached_WP_Activation_State]  DEFAULT ((0)) FOR [Cached_WP_Activation_State]
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ADD  CONSTRAINT [DF_T_Requested_Run_RDS_BatchID]  DEFAULT ((0)) FOR [RDS_BatchID]
 GO
@@ -293,41 +306,39 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_d_Requested_Run] on [dbo].[T_Requested_Run]
 For Delete
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the deleted Requested Run
+**  Desc:
+**      Makes an entry in T_Event_Log for the deleted Requested Run
 **
-**	Auth:	mem
-**	Date:	12/12/2011 mem - Initial version
-**    
+**  Auth:   mem
+**  Date:   12/12/2011 mem - Initial version
+**
 *****************************************************/
 AS
-	Set NoCount On
+    Set NoCount On
 
-	-- Add entries to T_Event_Log for each Requested Run deleted from T_Requested_Run
-	INSERT INTO T_Event_Log
-		(
-			Target_Type, 
-			Target_ID, 
-			Target_State, 
-			Prev_Target_State, 
-			Entered,
-			Entered_By
-		)
-	SELECT 11 AS Target_Type,
-	       ID AS Target_ID,
-	       0 AS Target_State,
-	       RRS.State_ID AS Prev_Target_State,
-	       GETDATE(),
-	       suser_sname() + '; ' + IsNull(deleted.RDS_Name, '??')
-	FROM deleted
-	     INNER JOIN T_Requested_Run_State_Name RRS
-	       ON deleted.RDS_Status = RRS.State_Name
-	ORDER BY deleted.ID
+    -- Add entries to T_Event_Log for each Requested Run deleted from T_Requested_Run
+    INSERT INTO T_Event_Log (
+            Target_Type,
+            Target_ID,
+            Target_State,
+            Prev_Target_State,
+            Entered,
+            Entered_By
+        )
+    SELECT 11 AS Target_Type,
+           ID AS Target_ID,
+           0 AS Target_State,
+           RRS.State_ID AS Prev_Target_State,
+           GETDATE(),
+           suser_sname() + '; ' + IsNull(deleted.RDS_Name, '??')
+    FROM deleted
+         INNER JOIN T_Requested_Run_State_Name RRS
+           ON deleted.RDS_Status = RRS.State_Name
+    ORDER BY deleted.ID
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_d_Requested_Run]
@@ -337,30 +348,29 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_i_Requested_Run] on [dbo].[T_Requested_Run]
 For Insert
 /****************************************************
 **
-**	Desc: 
-**		Makes an entry in T_Event_Log for the new Requested Run
+**  Desc:
+**      Makes an entry in T_Event_Log for the new Requested Run
 **
-**	Auth:	mem
-**	Date:	12/12/2011 mem - Initial version
-**    
+**  Auth:   mem
+**  Date:   12/12/2011 mem - Initial version
+**
 *****************************************************/
 AS
-	If @@RowCount = 0
-		Return
+    If @@RowCount = 0
+        Return
 
-	Set NoCount On
+    Set NoCount On
 
-	INSERT INTO T_Event_Log	(Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
-	SELECT 11 AS Target_Type, inserted.ID, RRS.State_ID, 0, GetDate()
-	FROM inserted 
+    INSERT INTO T_Event_Log    (Target_Type, Target_ID, Target_State, Prev_Target_State, Entered)
+    SELECT 11 AS Target_Type, inserted.ID, RRS.State_ID, 0, GetDate()
+    FROM inserted
          INNER JOIN T_Requested_Run_State_Name RRS
-		   ON inserted.RDS_Status = RRS.State_Name
-	ORDER BY inserted.ID
+           ON inserted.RDS_Status = RRS.State_Name
+    ORDER BY inserted.ID
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_i_Requested_Run]
@@ -370,12 +380,12 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE TRIGGER [dbo].[trig_u_Requested_Run] on [dbo].[T_Requested_Run]
 After Insert, Update
 /****************************************************
 **
-**  Desc:   Updates various columns for new or updated requested run(s)
+**  Desc:
+**      Updates various columns for new or updated requested run(s)
 **
 **  Auth:   mem
 **  Date:   08/05/2010 mem - Initial version
@@ -486,7 +496,7 @@ AS
             WHERE NOT deleted.DatasetID IS Null AND deleted.DatasetID <> Coalesce(inserted.DatasetID, 0)
             ORDER BY inserted.ID
         End
-                
+
         -- Check for updated Experiment ID
         If Update(Exp_ID)
         Begin
@@ -506,10 +516,9 @@ AS
             ORDER BY inserted.ID
         End
     End
-    
+
     If Update(DatasetID)
     Begin
-
         -- Check whether another requested run already has the new Dataset ID
         INSERT INTO T_Entity_Rename_Log (Target_Type, Target_ID, Old_Name, New_Name)
         SELECT 14 AS Target_Type,
@@ -526,7 +535,6 @@ AS
         ORDER BY inserted.DatasetID, RR.ID
 
     End
-
 
 GO
 ALTER TABLE [dbo].[T_Requested_Run] ENABLE TRIGGER [trig_u_Requested_Run]
