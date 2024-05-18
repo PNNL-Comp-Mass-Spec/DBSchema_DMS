@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[update_charge_codes_from_warehouse]
 **                         - When @infoOnly is >= 2, only show new or updated work packages
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          01/16/2024 mem - Expand username fields in the temporary table from varchar(5) to varchar(20)
+**          05/17/2024 mem - Call procedure update_cached_wp_activation_states
 **
 *****************************************************/
 (
@@ -81,6 +82,7 @@ AS
 
     -- Create a temporary table to keep track of WPs in @ExplicitChargeCodeList
     CREATE TABLE #Tmp_WPsExplicit (
+        Entry_ID int identity(1,1),
         Charge_Code varchar(64)
     )
 
@@ -132,7 +134,7 @@ AS
 
         Set @CurrentLocation = 'Query opwhse'
 
-        If Exists (Select * from #Tmp_WPsExplicit)
+        If Exists (SELECT * FROM #Tmp_WPsExplicit)
         Begin
             INSERT INTO #Tmp_ChargeCode( Charge_Code,
                                          Resp_Username,
@@ -171,11 +173,9 @@ AS
                    ON CC.CHARGE_CD = #Tmp_WPsExplicit.Charge_Code
                  LEFT OUTER JOIN SQLSRVPROD02.opwhse.dbo.VW_PUB_CHARGE_CODE_TRAIL CT
                    ON CC.CHARGE_CD = CT.CHARGE_CD;
-
         End
         Else
         Begin
-
             INSERT INTO #Tmp_ChargeCode( Charge_Code,
                                          Resp_Username,
                                          Resp_HID,
@@ -228,7 +228,6 @@ AS
                     )
                     OR
                     (@updateAll > 0 AND CC.CHARGE_CD IN (SELECT Charge_Code FROM T_Charge_Code));
-
         End
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -495,13 +494,52 @@ AS
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
 
-
             ----------------------------------------------------------
             -- Add new users as DMS_Guest users
             -- We only add users associated with charge codes that have been used in DMS
             ----------------------------------------------------------
 
             exec @myError = auto_add_charge_code_users @infoOnly = 0
+
+            ----------------------------------------------------------
+            -- Make sure that Cached_WP_Activation_State is up-to-date in T_Requested_Run
+            ----------------------------------------------------------
+
+            Declare @msg varchar(512)
+
+            If Exists (SELECT * FROM #Tmp_WPsExplicit)
+            Begin
+                Declare @currentChargeCode varchar(64) = ''
+                Declare @entryID int = -1
+                Declare @continue tinyint = 1
+
+                While @continue > 0
+                Begin
+                    SELECT TOP 1
+                           @currentChargeCode = Charge_Code,
+                           @entryID = Entry_ID
+                    FROM #Tmp_WPsExplicit
+                    WHERE Entry_ID > @entryID
+                    ORDER BY Entry_ID
+                    --
+                    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+                    If @myRowCount = 0
+                    Begin
+                        Set @continue = 0
+                    End
+                    Else
+                    Begin
+                        Print 'Calling update_cached_wp_activation_states for work package ' + @currentChargeCode
+                        EXEC update_cached_wp_activation_states @workPackage = @currentChargeCode, @message = @msg output, @showDebug = 0
+                    End
+                End
+            End
+            Else
+            Begin
+                Print 'Calling update_cached_wp_activation_states to update cached activation states for all requested runs'
+                EXEC update_cached_wp_activation_states @workPackage = '', @message = @msg output, @showDebug = 0
+            End
 
         End
         Else

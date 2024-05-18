@@ -112,6 +112,7 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **          01/22/2024 mem - If the requested run is active and not associated with a batch, do not allow it to be added to a batch that has active requested runs whose instrument group differs from this request's instrument group
 **                         - If the requested run is active and is associated with a batch, do not allow the instrument group to be changed if the batch has other active requests with a different instrument group than this request's instrument group
 **          01/23/2024 mem - Use a different instrument group warning message if the instrument group is unchanged, but the associated batch already has a mix of instrument groups
+**          05/17/2024 mem - Update column Cached_WP_Activation_State
 **
 *****************************************************/
 (
@@ -555,8 +556,10 @@ AS
     SELECT @matchedSeparationGroup = Sep_Group
     FROM T_Separation_Group
     WHERE Sep_Group = @separationGroup
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If IsNull(@matchedSeparationGroup, '') <> ''
+    If @myRowCount > 0
         Set @separationGroup = @matchedSeparationGroup
     Else
     Begin
@@ -784,9 +787,20 @@ AS
 
     -- Make sure the Work Package is capitalized properly
     --
-    SELECT @workPackage = Charge_Code
+    Declare @matchedWorkPackage varchar(64) = ''
+    Declare @workPackageActivationState tinyint
+
+    SELECT @matchedWorkPackage = Charge_Code,
+           @workPackageActivationState = Activation_State
     FROM T_Charge_Code
     WHERE Charge_Code = @workPackage
+    --
+    SELECT @myError = @@error, @myRowCount = @@rowcount
+
+    If @myRowCount > 0
+        Set @workPackage = @matchedWorkPackage
+    Else
+        Set @workPackageActivationState = 0
 
     If @autoPopulateUserListIfBlank = 0
     Begin
@@ -908,6 +922,7 @@ AS
             RDS_priority,
             Exp_ID,
             RDS_WorkPackage,
+            Cached_WP_Activation_State,
             RDS_Well_Plate_Num,
             RDS_Well_Num,
             RDS_internal_standard,
@@ -934,6 +949,7 @@ AS
             @defaultPriority, -- priority
             @experimentID,
             @workPackage,
+            @workPackageActivationState,
             @wellplateName,
             @wellNumber,
             @internalStandard,
@@ -1028,6 +1044,7 @@ AS
             RDS_instrument_setting = @instrumentSettings,
             Exp_ID = @experimentID,
             RDS_WorkPackage = @workPackage,
+            Cached_WP_Activation_State = @workPackageActivationState,
             RDS_Well_Plate_Num = @wellplateName,
             RDS_Well_Num = @wellNumber,
             RDS_internal_standard = @internalStandard,
