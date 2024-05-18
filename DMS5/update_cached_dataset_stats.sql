@@ -19,7 +19,7 @@ CREATE PROCEDURE [dbo].[update_cached_dataset_stats]
 **                      0 to only process new datasets and datasets with Update_Required = 1
 **                      1 to process new datasets, those with Update_Required = 1, and the 10,000 most recent datasets in DMS
 **                      2 to re-process all of the entries in T_Cached_Dataset_Stats (this is the slowest update and will take ~20 seconds)
-**    @showDebug        When true, show debug info
+**    @showDebug        When 1, show debug info
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[update_cached_dataset_stats]
 **  Date:   05/08/2024 mem - Initial version
 **          05/15/2024 mem - Add PSM stat columns: Max_Total_PSMs, Max_Unique_Peptides, Max_Unique_Proteins, and Max_Unique_Peptides_FDR_Filter
 **          05/16/2024 mem - Add PSM stat column Max_Total_PSMs_FDR_Filter and Max_Unique_Proteins_FDR_Filter
+**          05/17/2024 mem - Show an additional message when @showDebug is non-zero
 **
 *****************************************************/
 (
@@ -53,6 +54,7 @@ AS
     Declare @currentBatchDatasetIdEnd int
 
     Declare @continue tinyint
+    Declare @addon varchar(128)
 
     ------------------------------------------------
     -- Validate the inputs
@@ -327,12 +329,16 @@ AS
 
     If @rowCountUpdated > 0
     Begin
-        Set @message = dbo.append_to_text(@message,
-                                          'Updated ' + Convert(varchar(12), @rowCountUpdated) + dbo.check_plural(@rowCountUpdated, ' row', ' rows') + ' in T_Cached_Dataset_Stats',
-                                          0, '; ', 512)
+        Set @addon = 'Updated ' + Convert(varchar(12), @rowCountUpdated) + dbo.check_plural(@rowCountUpdated, ' row', ' rows') + ' in T_Cached_Dataset_Stats'
+
+        If @showDebug > 0
+        Begin
+            Print @addon
+        End
+
+        Set @message = dbo.append_to_text(@message, @addon, 0, '; ', 512)
     End
 
-Done:
     Return @myError
 
 GO
