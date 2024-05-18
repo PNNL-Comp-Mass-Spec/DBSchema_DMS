@@ -331,8 +331,6 @@ AS
         end
     End
 
-    Set @message = 'PSM stats storage successful'
-
     -----------------------------------------------
     -- Schedule the cached data in T_Cached_Dataset_Stats to get updated
     -----------------------------------------------
@@ -340,6 +338,8 @@ AS
     UPDATE T_Cached_Dataset_Stats
     SET Update_Required = 1
     WHERE Dataset_ID = @datasetID
+
+    Set @message = 'PSM stats storage successful'
 
 Done:
 

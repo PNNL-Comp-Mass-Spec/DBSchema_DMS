@@ -77,9 +77,6 @@ AS
             End
             Else
             Begin
-                SELECT @requestedRunCount = COUNT(ID)
-                FROM T_Requested_Run
-
                 Print 'Updating cached work package activation states for requested runs with work package ' + @workPackage
             End
         End
