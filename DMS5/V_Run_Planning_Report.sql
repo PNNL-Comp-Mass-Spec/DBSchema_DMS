@@ -49,7 +49,7 @@ SELECT GroupQ.inst_group,
             THEN 90     -- Request is 60 to 90 days old
             ELSE 120    -- Request is over 90 days old
        END AS days_in_queue_bin,
-       GroupQ.WPActivationState AS wp_activation_state,
+       GroupQ.WP_Activation_State AS wp_activation_state,
        GroupQ.Requested_Batch_Priority AS batch_priority,
        CASE WHEN GroupQ.Fraction_Count > 1 THEN 1
             WHEN GroupQ.FractionBasedRequestCount > 1 THEN 2
@@ -66,7 +66,7 @@ FROM ( SELECT RequestQ.Inst_Group,
               RequestQ.DS_Type,
               RequestQ.Work_Package,
               RequestQ.WP_State,
-              RequestQ.WPActivationState,
+              RequestQ.WP_Activation_State,
               RequestQ.Proposal,
               RequestQ.Proposal_Type,
               RequestQ.Locked,
@@ -95,8 +95,8 @@ FROM ( SELECT RequestQ.Inst_Group,
                     U.U_Name AS Requester,
                     RR.RDS_created AS Request_Created,
                     RR.RDS_WorkPackage AS Work_Package,
-                    Coalesce(CC.Activation_State_Name, '') AS WP_State,
-                    CC.Activation_State AS WPActivationState,
+                    Coalesce(CCA.Activation_State_Name, '') AS WP_State,
+                    RR.Cached_WP_Activation_State AS WP_Activation_State,
                     RR.RDS_EUS_Proposal_ID AS Proposal,
                     EPT.Abbreviation AS Proposal_Type,
                     RRB.Locked,
@@ -140,12 +140,12 @@ FROM ( SELECT RequestQ.Inst_Group,
                      ON RR.RDS_BatchID = RRB.ID
                  INNER JOIN T_Sample_Prep_Request AS SPR
                      ON E.EX_sample_prep_request_ID = SPR.ID
-                 Inner Join T_Separation_Group As SG
+                 INNER JOIN T_Separation_Group As SG
                      On RR.RDS_Sec_Sep = SG.Sep_Group
+                 INNER JOIN T_Charge_Code_Activation_State CCA
+                     ON RR.Cached_WP_Activation_State = CCA.Activation_State
                  LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
                      ON SPR.ID = QT.Request_ID
-                 LEFT OUTER JOIN V_Charge_Code_Status AS CC
-                     ON RR.RDS_WorkPackage = CC.Charge_Code
                  LEFT OUTER JOIN T_EUS_Proposals AS EUP
                      ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
                  LEFT OUTER JOIN T_EUS_Proposal_Type EPT
@@ -163,7 +163,7 @@ FROM ( SELECT RequestQ.Inst_Group,
                Requester,
                Work_Package,
                WP_State,
-               WPActivationState,
+               WP_Activation_State,
                Proposal,
                Proposal_Type,
                Locked,

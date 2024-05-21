@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Requested_Run_List_Report_2]
 AS
 SELECT RR.ID AS request,
@@ -24,7 +23,7 @@ SELECT RR.ID AS request,
        QS.Queue_State_Name AS queue_state,
        ISNULL(AssignedInstrument.in_name, '') AS queued_instrument,
        RR.RDS_WorkPackage AS work_package,
-       ISNULL(CC.activation_state_name, '') AS wp_state,
+       ISNULL(CCA.Activation_State_Name, '') AS wp_state,
        EUT.Name AS usage,
        RR.RDS_EUS_Proposal_ID AS proposal,
        EPT.Abbreviation AS proposal_type,
@@ -54,8 +53,8 @@ SELECT RR.ID AS request,
        END AS days_in_queue_bin,
        CASE
            WHEN RR.RDS_Status = 'Active' AND
-                CC.Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, then return 10 for wp_activation_state
-           ELSE CC.activation_state
+                RR.Cached_WP_Activation_State >= 3 THEN 10    -- If the requested run is active, but the charge code is inactive, return 10 for wp_activation_state
+           ELSE RR.Cached_WP_Activation_State
        END AS wp_activation_state
 FROM T_Requested_Run AS RR
      INNER JOIN T_Dataset_Type_Name AS DTN
@@ -72,6 +71,8 @@ FROM T_Requested_Run AS RR
        ON RR.RDS_Cart_ID = LC.ID
      INNER JOIN T_Requested_Run_Queue_State QS
        ON RR.Queue_State = QS.Queue_State
+     INNER JOIN T_Charge_Code_Activation_State CCA
+       ON RR.Cached_WP_Activation_State = CCA.Activation_State
      LEFT OUTER JOIN T_Dataset AS DS
        ON RR.DatasetID = DS.Dataset_ID
      LEFT OUTER JOIN T_LC_Cart_Configuration AS CartConfig
@@ -82,8 +83,6 @@ FROM T_Requested_Run AS RR
        ON RR.Queue_Instrument_ID = AssignedInstrument.Instrument_ID
      LEFT OUTER JOIN V_Requested_Run_Queue_Times AS QT
        ON RR.ID = QT.Requested_Run_ID
-     LEFT OUTER JOIN V_Charge_Code_Status CC
-       ON RR.RDS_WorkPackage = CC.Charge_Code
      LEFT OUTER JOIN T_EUS_Proposals AS EUP
        ON RR.RDS_EUS_Proposal_ID = EUP.Proposal_ID
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
