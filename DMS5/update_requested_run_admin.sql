@@ -87,17 +87,17 @@ AS
     -----------------------------------------------------------
     -- temp table to hold list of requests
     -----------------------------------------------------------
-    --
-    CREATE TABLE #TMP (
-        Item VARCHAR(128),
-        Status VARCHAR(32) NULL,
-        Origin VARCHAR(32) NULL,
+
+    CREATE TABLE #Tmp_Requests (
+        Item varchar(128),
+        Status varchar(32) NULL,
+        Origin varchar(32) NULL,
         ItemID int NULL
     )
+
     Set @xml = @requestList
-    --
-    INSERT INTO #TMP
-        ( Item )
+
+    INSERT INTO #Tmp_Requests ( Item )
     SELECT
         xmlNode.value('@i', 'nvarchar(256)') Item
     FROM @xml.nodes('//r') AS R(xmlNode)
@@ -112,7 +112,7 @@ AS
 
     If @debugEnabled > 0
     Begin
-        Set @logMessage = Cast(@myRowCount As Varchar(12)) + ' rows inserted into #TMP'
+        Set @logMessage = Cast(@myRowCount As Varchar(12)) + ' rows inserted into #Tmp_Requests'
         exec post_log_entry 'Debug', @logMessage, 'update_requested_run_admin'
     End
 
@@ -120,10 +120,10 @@ AS
     -- Validate the request list
     -----------------------------------------------------------
     --
-     UPDATE #TMP
+     UPDATE #Tmp_Requests
      SET Status = RDS_Status,
          Origin = RDS_Origin
-     FROM #TMP
+     FROM #Tmp_Requests
           INNER JOIN dbo.T_Requested_Run
             ON Item = CONVERT(varchar(12), dbo.T_Requested_Run.ID)
     --
@@ -135,21 +135,21 @@ AS
         Goto DoneNoLog
     End
 
-    If Exists (SELECT * FROM #TMP WHERE Status IS NULL)
+    If Exists (SELECT * FROM #Tmp_Requests WHERE Status IS NULL)
     Begin
         Set @myError = 51012
         Set @message = 'There were invalid request IDs'
         Goto DoneNoLog
     End
 
-    If Exists (SELECT * FROM #TMP WHERE not Status IN ('Active', 'Inactive'))
+    If Exists (SELECT * FROM #Tmp_Requests WHERE not Status IN ('Active', 'Inactive'))
     Begin
         Set @myError = 51013
         Set @message = 'Cannot change requests that are in status other than "Active" or "Inactive"'
         Goto DoneNoLog
     End
 
-    If Exists (SELECT * FROM #TMP WHERE Not Origin In ('user', 'fraction') And @mode <> 'Delete')
+    If Exists (SELECT * FROM #Tmp_Requests WHERE Not Origin In ('user', 'fraction') And @mode <> 'Delete')
     Begin
         Set @myError = 51013
         Set @message = 'Cannot change requests that were not entered by user'
@@ -157,25 +157,25 @@ AS
     End
 
     -----------------------------------------------------------
-    -- Populate column ItemID in #TMP
+    -- Populate column ItemID in #Tmp_Requests
     -----------------------------------------------------------
     --
-    UPDATE #TMP
+    UPDATE #Tmp_Requests
     SET ItemID = Try_Parse(Item as int)
 
     -----------------------------------------------------------
     -- Populate a temporary table with the list of Requested Run IDs to be updated or deleted
     -----------------------------------------------------------
     --
-    CREATE TABLE #TmpIDUpdateList (
+    CREATE TABLE #Tmp_Request_IDs_Update_List (
         TargetID int NOT NULL
     )
 
-    CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #TmpIDUpdateList (TargetID)
+    CREATE UNIQUE CLUSTERED INDEX #IX_TmpIDUpdateList ON #Tmp_Request_IDs_Update_List (TargetID)
 
-    INSERT INTO #TmpIDUpdateList (TargetID)
+    INSERT INTO #Tmp_Request_IDs_Update_List (TargetID)
     SELECT DISTINCT ItemID
-    FROM #TMP
+    FROM #Tmp_Requests
     WHERE Not ItemID Is Null
     ORDER BY ItemID
 
@@ -188,7 +188,7 @@ AS
         UPDATE T_Requested_Run
         SET RDS_Status = @mode
         WHERE ID IN ( SELECT ItemID
-                      FROM #TMP ) AND RDS_Status <> 'Completed'
+                      FROM #Tmp_Requests) AND RDS_Status <> 'Completed'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -204,7 +204,7 @@ AS
         Begin
             -- @callingUser is defined; call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
-            -- This procedure uses #TmpIDUpdateList
+            -- This procedure uses #Tmp_Request_IDs_Update_List
             --
             SELECT @stateID = State_ID
             FROM T_Requested_Run_State_Name
@@ -213,15 +213,15 @@ AS
             Exec alter_event_log_entry_user_multi_id 11, @stateID, @callingUser
         End
 
-        -- Call update_cached_requested_run_eus_users for each entry in #TMP
+        -- Call update_cached_requested_run_eus_users for each entry in #Tmp_Requests
         --
-        Declare @continue tinyint = 1
         Declare @requestId int = -100000
+        Set @continue = 1
 
         While @continue = 1
         Begin
             SELECT TOP 1 @requestId = ItemID
-            FROM #TMP
+            FROM #Tmp_Requests
             WHERE ItemID > @requestId
             ORDER BY ItemID
             --
@@ -249,7 +249,7 @@ AS
     Begin
         DELETE FROM T_Requested_Run
         WHERE ID IN ( SELECT ItemID
-                      FROM #TMP ) AND RDS_Status <> 'Completed'
+                      FROM #Tmp_Requests) AND RDS_Status <> 'Completed'
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -265,7 +265,7 @@ AS
         Begin
             -- @callingUser is defined; call alter_event_log_entry_user_multi_id
             -- to alter the Entered_By field in T_Event_Log
-            -- This procedure uses #TmpIDUpdateList
+            -- This procedure uses #Tmp_Request_IDs_Update_List
             --
             Set @stateID = 0
 
@@ -275,7 +275,7 @@ AS
         -- Remove any cached EUS user lists
         DELETE FROM T_Active_Requested_Run_Cached_EUS_Users
         WHERE Request_ID IN ( SELECT ItemID
-                              FROM #TMP )
+                              FROM #Tmp_Requests)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -292,7 +292,7 @@ AS
         SET Queue_State = 1,
             Queue_Instrument_ID = Null
         WHERE ID IN ( SELECT ItemID
-                      FROM #TMP ) AND
+                      FROM #Tmp_Requests) AND
               RDS_Status <> 'Completed' AND
               (Queue_State = 2 OR Not Queue_Instrument_ID Is NULL)
         --
