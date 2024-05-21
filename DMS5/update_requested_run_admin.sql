@@ -31,10 +31,11 @@ CREATE PROCEDURE [dbo].[update_requested_run_admin]
 **          07/01/2019 mem - Add additional debug logging
 **          10/20/2020 mem - Add mode 'UnassignInstrument'
 **          10/21/2020 mem - Set Queue_Instrument_ID to null when unassigning
-**          10/23/2020 mem - Allow updating 'fraction' based requests
+**          10/23/2020 mem - Allow updating 'fraction' based requested runs
 **          10/13/2021 mem - Now using Try_Parse to convert from text to int, since Try_Convert('') gives 0
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          05/23/2023 mem - Allow deleting requests of type 'auto' or 'fraction'
+**          05/23/2023 mem - Allow deleting requested runs of type 'auto' or 'fraction'
+**          05/20/2024 mem - Call update_cached_requested_run_batch_stats when deleting requested runs
 **
 *****************************************************/
 (
@@ -57,6 +58,7 @@ AS
 
     Declare @UsageMessage varchar(512) = ''
     Declare @stateID int = 0
+    Declare @continue tinyint = 1
 
     ---------------------------------------------------
     -- Verify that the user can execute this procedure from the given client host
@@ -247,6 +249,16 @@ AS
     --
     If @mode = 'Delete'
     Begin
+        CREATE TABLE #Tmp_Batch_IDs (
+            BatchID int NOT NULL
+        )
+
+        INSERT INTO #Tmp_Batch_IDs (BatchID)
+        SELECT RDS_BatchID
+        FROM T_Requested_Run
+        WHERE ID IN ( SELECT ItemID
+                      FROM #Tmp_Requests) AND RDS_Status <> 'Completed'
+
         DELETE FROM T_Requested_Run
         WHERE ID IN ( SELECT ItemID
                       FROM #Tmp_Requests) AND RDS_Status <> 'Completed'
@@ -278,6 +290,30 @@ AS
                               FROM #Tmp_Requests)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        -- Update batches associated with the deleted requested runs
+
+        Declare @BatchID int = -1
+        Set @continue = 1
+
+        While @continue > 0
+        Begin
+            SELECT TOP 1 @BatchID = BatchID
+            FROM #Tmp_Batch_IDs
+            WHERE BatchID > @BatchID
+            ORDER BY BatchID
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount = 0
+            Begin
+                Set @continue = 0
+            End
+            Else
+            Begin
+                Exec update_cached_requested_run_batch_stats @batchID = @BatchID
+            End
+        End
 
         Goto Done
     End
