@@ -78,6 +78,13 @@ CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_BatchID_include_ExpID] ON [dbo].[T
 )
 INCLUDE([Exp_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Requested_Run_Cached_WP_Activation_State_Include_Request_Type_ID] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Cached_WP_Activation_State_Include_Request_Type_ID] ON [dbo].[T_Requested_Run]
+(
+	[Cached_WP_Activation_State] ASC
+)
+INCLUDE([RDS_type_ID]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 /****** Object:  Index [IX_T_Requested_Run_Created] ******/
 CREATE NONCLUSTERED INDEX [IX_T_Requested_Run_Created] ON [dbo].[T_Requested_Run]
 (
