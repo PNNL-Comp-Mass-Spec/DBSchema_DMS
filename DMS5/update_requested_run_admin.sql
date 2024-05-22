@@ -36,6 +36,7 @@ CREATE PROCEDURE [dbo].[update_requested_run_admin]
 **          05/23/2023 mem - Allow deleting requested runs of type 'auto' or 'fraction'
 **          05/20/2024 mem - Call update_cached_requested_run_batch_stats when deleting requested runs
 **          05/21/2024 mem - Avoid calling update_cached_requested_run_batch_stats multiple times for the same batch ID
+**                         - Do not call update_cached_requested_run_batch_stats for Batch ID 0
 **
 *****************************************************/
 (
@@ -312,7 +313,7 @@ AS
             Begin
                 Set @continue = 0
             End
-            Else
+            Else If @batchID > 0
             Begin
                 Exec update_cached_requested_run_batch_stats @batchID = @batchID
             End
