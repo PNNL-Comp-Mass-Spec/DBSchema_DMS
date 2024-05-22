@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_DMS_Dataset_Metadata]
 AS
 SELECT DS.Dataset_Num AS Dataset,
@@ -22,6 +21,8 @@ SELECT DS.Dataset_Num AS Dataset,
        DS.DS_created AS Created,
        DS.Acq_Time_Start,
        DS.Acq_Time_End,
+       RR.RDS_Run_Start AS Request_Run_Start,
+       RR.RDS_Run_Finish AS Request_Run_Finish,
        TSrc.SP_path AS source_Path,
        TSrc.SP_vol_name_server AS source_Vol,
        TSrc.SP_path_ID AS Source_path_ID,
@@ -56,7 +57,7 @@ FROM S_DMS_T_Dataset AS DS
 	   ON DS.DS_Oper_PRN = EUSUser.Username
      LEFT OUTER JOIN S_DMS_V_EUS_Proposal_User_Lookup EUSProposalUser
        ON EUSProposalUser.Proposal_ID = RR.RDS_EUS_Proposal_ID And
-          DS.DS_Oper_PRN = EUSProposalUser.Username And 
+          DS.DS_Oper_PRN = EUSProposalUser.Username And
           EUSProposalUser.Valid_EUS_ID > 0
 
 GO

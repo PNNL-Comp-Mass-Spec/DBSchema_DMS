@@ -50,6 +50,7 @@ CREATE PROCEDURE [dbo].[get_task_param_table]
 **          10/26/2023 bcg - Add @scriptName argument
 **                         - Add parameter modifications for script 'LCDatasetCapture'
 **                         - Store dates in ODBC canonical style: yyyy-MM-dd hh:mm:ss
+**          05/21/2024 mem - Add parameters Request_Run_Start and Request_Run_Finish (which come from T_Requested_Run)
 **
 *****************************************************/
 (
@@ -66,7 +67,7 @@ AS
     ---------------------------------------------------
     -- Table variable to hold job parameters
     ---------------------------------------------------
-    --
+
     Declare @paramTab TABLE
     (
       [Step_Number] varchar(24),
@@ -76,9 +77,9 @@ AS
     )
 
     ---------------------------------------------------
-    -- locally cached params
+    -- locally cached parameters
     ---------------------------------------------------
-    --
+
     Declare
         @dataset varchar(255),
         @storage_server_name varchar(255),
@@ -89,7 +90,6 @@ AS
         @captureMethod varchar(255),
         @sourceVolume varchar(255),
         @sourcePath varchar(255)
-    --
 
     SELECT @dataset = Dataset,
            @storage_server_name = Storage_Server,
@@ -134,7 +134,7 @@ AS
     -- Note that by using Unpivot, any columns from V_DMS_Dataset_Metadata that are null
     -- will not be entered into@paramTab
     ---------------------------------------------------
-    --
+
     INSERT INTO @paramTab
     SELECT NULL AS Step_Number,
            'JobParameters' AS [Section],
@@ -142,25 +142,27 @@ AS
            TP.Value
     FROM
       ( SELECT
-          CONVERT(varchar(2000), Type) AS Dataset_Type,
-          CONVERT(varchar(2000), Directory) AS Directory,
-          CONVERT(varchar(2000), Method) AS Method,
-          CONVERT(varchar(2000), Capture_Exclusion_Window) AS Capture_Exclusion_Window,
-          CONVERT(varchar(2000), Created, 120) AS Created ,
-          CONVERT(varchar(2000), Source_Vol) AS Source_Vol,
-          CONVERT(varchar(2000), Source_Path) AS Source_Path,
-          CONVERT(varchar(2000), Storage_Vol) AS Storage_Vol,
-          CONVERT(varchar(2000), Storage_Path) AS Storage_Path,
-          CONVERT(varchar(2000), Storage_Vol_External) AS Storage_Vol_External,
-          CONVERT(varchar(2000), Archive_Server) AS Archive_Server,
-          CONVERT(varchar(2000), Archive_Path) AS Archive_Path,
+          CONVERT(varchar(2000), Type)                       AS Dataset_Type,
+          CONVERT(varchar(2000), Directory)                  AS Directory,
+          CONVERT(varchar(2000), Method)                     AS Method,
+          CONVERT(varchar(2000), Capture_Exclusion_Window)   AS Capture_Exclusion_Window,
+          CONVERT(varchar(2000), Created, 120)               AS Created ,
+          CONVERT(varchar(2000), Source_Vol)                 AS Source_Vol,
+          CONVERT(varchar(2000), Source_Path)                AS Source_Path,
+          CONVERT(varchar(2000), Storage_Vol)                AS Storage_Vol,
+          CONVERT(varchar(2000), Storage_Path)               AS Storage_Path,
+          CONVERT(varchar(2000), Storage_Vol_External)       AS Storage_Vol_External,
+          CONVERT(varchar(2000), Archive_Server)             AS Archive_Server,
+          CONVERT(varchar(2000), Archive_Path)               AS Archive_Path,
           CONVERT(varchar(2000), Archive_Network_Share_Path) AS Archive_Network_Share_Path,
-          CONVERT(varchar(2000), EUS_Instrument_ID) AS EUS_Instrument_ID,
-          CONVERT(varchar(2000), EUS_Proposal_ID) AS EUS_Proposal_ID,
-          CONVERT(varchar(2000), EUS_Operator_ID) AS EUS_Operator_ID,
-          CONVERT(varchar(2000), Operator_Username) AS Operator_Username,
-          CONVERT(varchar(2000), Acq_Time_Start, 120) AS Acq_Time_Start,
-          CONVERT(varchar(2000), Acq_Time_End, 120) AS Acq_Time_End
+          CONVERT(varchar(2000), EUS_Instrument_ID)          AS EUS_Instrument_ID,
+          CONVERT(varchar(2000), EUS_Proposal_ID)            AS EUS_Proposal_ID,
+          CONVERT(varchar(2000), EUS_Operator_ID)            AS EUS_Operator_ID,
+          CONVERT(varchar(2000), Operator_Username)          AS Operator_Username,
+          CONVERT(varchar(2000), Acq_Time_Start, 120)        AS Acq_Time_Start,
+          CONVERT(varchar(2000), Acq_Time_End, 120)          AS Acq_Time_End,
+          CONVERT(varchar(2000), Request_Run_Start, 120)     AS Request_Run_Start,
+          CONVERT(varchar(2000), Request_Run_Finish, 120)    AS Request_Run_Finish
 
         FROM V_DMS_Dataset_Metadata
         WHERE Dataset_ID = @datasetID
@@ -168,7 +170,7 @@ AS
                                            Source_Vol, Source_Path, Storage_Vol, Storage_Path, Storage_Vol_External,
                                            Archive_Server, Archive_Path, Archive_Network_Share_Path,
                                            EUS_Instrument_ID, EUS_Proposal_ID, EUS_Operator_ID, Operator_Username,
-                                           Acq_Time_Start, Acq_Time_End
+                                           Acq_Time_Start, Acq_Time_End, Request_Run_Start, Request_Run_Finish
                    ) ) as TP
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -212,10 +214,10 @@ AS
     --   LCMS2DOverviewPlotDivisor, default 10
     --
     ---------------------------------------------------
-    --
+
     Declare @paramXML XML
     Declare @rawDataType varchar(32)
-    --
+
     SELECT @rawDataType = raw_data_type,
            @paramXML = Params
     FROM S_DMS_T_Instrument_Class
@@ -257,7 +259,7 @@ AS
     -- This directory is used to store metadata.txt files for dataset archive and archive update tasks
     -- Those files are used by the ArchiveVerify tool to confirm that files were successfully imported into MyEMSL
     ---------------------------------------------------
-    --
+
     Declare @StorageVolExternal varchar(128)
     Declare @TransferDirectoryPath varchar(128)
 
@@ -285,6 +287,7 @@ AS
     ---------------------------------------------------
     -- Add the SHA-1 hash for the first instrument file, if defined
     ---------------------------------------------------
+
     Declare @fileHash Varchar(64) = ''
 
     SELECT @fileHash = file_hash
