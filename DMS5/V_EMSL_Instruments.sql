@@ -9,6 +9,7 @@ SELECT EMSLInst.EUS_Display_Name,
        EMSLInst.EUS_Instrument_Name,
        EMSLInst.EUS_Instrument_ID,
        EMSLInst.Local_Instrument_Name,
+       EMSLInst.Local_Category_Name,
        InstMap.DMS_Instrument_ID,
        DMSInstName.IN_name
 FROM T_Instrument_Name DMSInstName
