@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 140 ******/
+/****** RowCount: 141 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -53,6 +53,7 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_100min',109,'',1,'LC-Na
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_150min',110,'',1,'LC-NanoPot_3hr',0,'10/19/2018 8:56:42 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_1hr',108,'',1,'LC-NanoPot_1hr',0,'9/4/2018 11:36:14 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NanoPot_2hr',118,'',1,'LC-Formic_2hr',1,'10/9/2020 11:17:38 AM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Dionex-NH4OAc_40min',142,'Dionex LC, ammonium acetate, 25 minute separation, 40 minute total',1,'Other',3,'5/24/2024 1:38:09 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Eksigent-Formic',38,'Eksigent nanoflow, formic acid',0,'LC-Eksigent',1,'9/17/2010 4:26:59 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Eksigent-Formic_100min',66,'Eksigent nanoflow, formic acid, 100 minute separation',0,'LC-Eksigent',1,'1/17/2012 8:49:39 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Eksigent-Formic_10hr',46,'Eksigent nanoflow, formic acid, 600 minute (10 hr) separation',0,'LC-Eksigent',1,'11/27/2012 2:48:59 PM')
