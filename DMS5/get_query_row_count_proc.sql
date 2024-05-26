@@ -26,6 +26,7 @@ CREATE PROCEDURE [dbo].[get_query_row_count_proc]
 **
 **  Auth:   mem
 **  Date:   05/22/2024 mem - Initial version
+**          05/25/2024 mem - Increment column Usage in T_Query_Row_Counts
 **
 *****************************************************/
 (
@@ -42,7 +43,8 @@ AS
 
     Declare @queryID int
     Declare @lastRefresh DateTime
-    Declare @refreshIntervalHours numeric(9, 3)
+    Declare @usage int
+    Declare @refreshIntervalHours numeric(9,3)
     Declare @rowCountAgeHours numeric(9,3)
 
     ------------------------------------------------
@@ -70,9 +72,10 @@ AS
     -- Look for a cached row count
     ------------------------------------------------
 
-    SELECT @queryID = Query_ID, 
-           @rowCount = Row_Count, 
-           @lastRefresh = Last_Refresh, 
+    SELECT @queryID = Query_ID,
+           @rowCount = Row_Count,
+           @lastRefresh = Last_Refresh,
+           @usage = Usage,
            @refreshIntervalHours = Refresh_Interval_Hours
     FROM T_Query_Row_Counts
     WHERE Object_Name  = @objectName AND
@@ -86,9 +89,10 @@ AS
 
         If @rowCountAgeHours < @refreshIntervalHours
         Begin
-            -- Use the cached row count value, but first update column last_used
+            -- Use the cached row count value, but first update columns last_used and usage
             UPDATE T_Query_Row_Counts
-            SET Last_Used = GetDate()
+            SET Last_Used = GetDate(),
+                Usage = @usage + 1
             WHERE Query_ID = @queryID;
 
             PRINT 'Using row count obtained ' + Cast(Round(@rowCountAgeHours, 2) AS varchar(20)) + ' hours ago (will refresh after ' +
@@ -101,6 +105,7 @@ AS
     Else
     Begin
         Set @queryID = -1
+        Set @usage = 0
     End
 
     ------------------------------------------------
@@ -111,14 +116,14 @@ AS
 
     If @whereClause = ''
     Begin
-        Set @parameterizedSQL = 
-                   'SELECT @rowCount = COUNT(*) ' + 
+        Set @parameterizedSQL =
+                   'SELECT @rowCount = COUNT(*) ' +
                    'FROM ' + QUOTENAME(@objectName)
     End
     Else
     Begin
-        Set @parameterizedSQL = 
-                   'SELECT @rowCount = COUNT(*) ' + 
+        Set @parameterizedSQL =
+                   'SELECT @rowCount = COUNT(*) ' +
                    'FROM ' + QUOTENAME(@objectName) + ' ' +
                    'WHERE ' +  @whereClause
     End
@@ -131,8 +136,8 @@ AS
 
     If @queryID <= 0
     Begin
-        INSERT INTO T_Query_Row_Counts (Object_Name, Where_Clause, Row_Count)
-        VALUES (@objectName, @whereClause, @rowCount);
+        INSERT INTO T_Query_Row_Counts (Object_Name, Where_Clause, Row_Count, Usage)
+        VALUES (@objectName, @whereClause, @rowCount, 1);
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -141,9 +146,10 @@ AS
 
     UPDATE T_Query_Row_Counts
     SET Row_Count = @rowCount,
-        last_used = GetDate(),
-        last_refresh = GetDate()
-    WHERE query_id = @queryID;
+        Last_Used = GetDate(),
+        Last_Refresh = GetDate(),
+        Usage = @usage + 1
+    WHERE Query_ID = @queryID;
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
