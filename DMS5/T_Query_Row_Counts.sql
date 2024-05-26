@@ -10,6 +10,7 @@ CREATE TABLE [dbo].[T_Query_Row_Counts](
 	[Row_Count] [bigint] NOT NULL,
 	[Last_Used] [datetime] NOT NULL,
 	[Last_Refresh] [datetime] NOT NULL,
+	[Usage] [int] NOT NULL,
 	[Refresh_Interval_Hours] [numeric](9, 3) NOT NULL,
 	[Entered] [datetime] NOT NULL,
  CONSTRAINT [PK_T_Query_Row_Counts] PRIMARY KEY CLUSTERED 
@@ -29,6 +30,12 @@ CREATE NONCLUSTERED INDEX [IX_T_Query_Row_Counts_Object_Name_include_Where_Claus
 )
 INCLUDE([Where_Clause]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
+/****** Object:  Index [IX_T_Query_Row_Counts_Usage] ******/
+CREATE NONCLUSTERED INDEX [IX_T_Query_Row_Counts_Usage] ON [dbo].[T_Query_Row_Counts]
+(
+	[Usage] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
 ALTER TABLE [dbo].[T_Query_Row_Counts] ADD  CONSTRAINT [DF_T_Query_Row_Counts_Where_Clause]  DEFAULT ('') FOR [Where_Clause]
 GO
 ALTER TABLE [dbo].[T_Query_Row_Counts] ADD  CONSTRAINT [DF_T_Query_Row_Counts_Row_Count]  DEFAULT ((0)) FOR [Row_Count]
@@ -36,6 +43,8 @@ GO
 ALTER TABLE [dbo].[T_Query_Row_Counts] ADD  CONSTRAINT [DF_T_Query_Row_Counts_Last_Used]  DEFAULT (getdate()) FOR [Last_Used]
 GO
 ALTER TABLE [dbo].[T_Query_Row_Counts] ADD  CONSTRAINT [DF_T_Query_Row_Counts_Last_Refresh]  DEFAULT (getdate()) FOR [Last_Refresh]
+GO
+ALTER TABLE [dbo].[T_Query_Row_Counts] ADD  CONSTRAINT [DF_T_Query_Row_Counts_Usage]  DEFAULT ((0)) FOR [Usage]
 GO
 ALTER TABLE [dbo].[T_Query_Row_Counts] ADD  CONSTRAINT [DF_T_Query_Row_Counts_Refresh_Interval_Hours]  DEFAULT ((4)) FOR [Refresh_Interval_Hours]
 GO
