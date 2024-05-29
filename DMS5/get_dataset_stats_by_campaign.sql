@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[get_dataset_stats_by_campaign]
 **          03/24/2020 mem - Add parameter @excludeAllQCAndBlank
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          02/25/2023 bcg - Update output table column names to lower-case
+**          05/28/2024 mem - Remove unused @message output parameter
 **
 *****************************************************/
 (
@@ -28,8 +29,7 @@ CREATE PROCEDURE [dbo].[get_dataset_stats_by_campaign]
     @campaignNameFilter varchar(128) = '',
     @campaignNameExclude varchar(128) = '',
     @instrumentBuilding varchar(64) = '',
-    @previewSql tinyint = 0,
-    @message varchar(512) ='' OUTPUT
+    @previewSql tinyint = 0
 )
 AS
     Set NoCount On
@@ -54,12 +54,11 @@ AS
     Set @mostRecentWeeks = IsNull(@mostRecentWeeks, 0)
     Set @includeInstrument = IsNull(@includeInstrument, 0)
     Set @excludeQCAndBlankWithoutWP = IsNull(@excludeQCAndBlankWithoutWP, 1)
-    SET @excludeAllQCAndBlank = IsNull(@excludeAllQCAndBlank, 0)
+    Set @excludeAllQCAndBlank = IsNull(@excludeAllQCAndBlank, 0)
     Set @campaignNameFilter = IsNull(@campaignNameFilter, '')
     Set @campaignNameExclude = IsNull(@campaignNameExclude, '')
     Set @instrumentBuilding = IsNull(@instrumentBuilding, '')
     Set @previewSql = IsNull(@previewSql, 0)
-    Set @message = ''
 
     If @mostRecentWeeks < 1
     Begin
@@ -113,24 +112,23 @@ AS
     -----------------------------------------
     -- Create a temporary table to cache the results
     -----------------------------------------
-    --
-
-    Create Table #Tmp_CampaignDatasetStats (
-        Campaign Varchar(128) Not Null,
-        WorkPackage Varchar(16) Null,
-        FractionEMSLFunded Decimal(3,2) Null,
+    
+    CREATE TABLE #Tmp_CampaignDatasetStats (
+        Campaign varchar(128) Not Null,
+        WorkPackage varchar(16) Null,
+        FractionEMSLFunded decimal(3,2) Null,
         RuntimeHours decimal(9,1) Not Null,
         Datasets int Not Null,
-        Building Varchar(64) Not Null,
-        Instrument Varchar(64) Not Null,
+        Building varchar(64) Not Null,
+        Instrument varchar(64) Not Null,
         RequestMin int Not Null,
-        RequestMax Int Not Null
+        RequestMax int Not Null
     )
 
     -----------------------------------------
     -- Construct the query to retrieve the results
     -----------------------------------------
-    --
+
     Set @sql = ''
     Set @sql = @sql + ' INSERT INTO #Tmp_CampaignDatasetStats (Campaign, WorkPackage, FractionEMSLFunded, RuntimeHours, Datasets, Building, Instrument, RequestMin, RequestMax)'
     Set @sql = @sql + ' SELECT C.Campaign_Num AS Campaign,'
@@ -205,7 +203,7 @@ AS
     -----------------------------------------
     -- Preview or execute the query
     -----------------------------------------
-    --
+
     If @previewSql <> 0
     Begin
         Print @sql
@@ -225,14 +223,14 @@ AS
         -----------------------------------------
         -- Determine the total runtime
         -----------------------------------------
-        --
+
         SELECT @totalRuntimeHours = Sum(RuntimeHours)
         FROM #Tmp_CampaignDatasetStats AS StatsQ
 
         -----------------------------------------
         -- Return the results
         -----------------------------------------
-        --
+
         SELECT Campaign AS campaign,
                WorkPackage AS work_package,
                FractionEMSLFunded * 100 As pct_emsl_funded,
@@ -248,8 +246,7 @@ AS
 
     End
 
-    --
-    return @myError
+    RETURN @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_dataset_stats_by_campaign] TO [DDL_Viewer] AS [dbo]
