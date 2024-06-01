@@ -1,5 +1,5 @@
 /****** Object:  Table [T_LC_Cart] ******/
-/****** RowCount: 112 ******/
+/****** RowCount: 113 ******/
 SET IDENTITY_INSERT [T_LC_Cart] ON
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (1,'unknown',1,'Not a valid cart',null)
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (2,'No_Cart',2,'An ad hoc or non cart based LC apparatus was used','3/10/2006 10:34:00 AM')
@@ -113,4 +113,5 @@ INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (140,'Ned',2,'Thermo Vanquish Neo system - Autosampler and Binary Pump','3/1/2024 2:04:00 PM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (141,'Barney',2,'Thermo Vanquish Neo system - Autosampler and Binary Pump','4/25/2024 9:56:00 AM')
 INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (142,'Moe',2,'Thermo Vanquish Neo system - Autosampler and Binary Pump','4/25/2024 9:56:00 AM')
+INSERT INTO [T_LC_Cart] (ID, Cart_Name, Cart_State_ID, Cart_Description, Created) VALUES (143,'Monty',2,'Thermo Vanquish Neo system - Autosampler and Binary Pump','5/30/2024 9:55:00 AM')
 SET IDENTITY_INSERT [T_LC_Cart] OFF

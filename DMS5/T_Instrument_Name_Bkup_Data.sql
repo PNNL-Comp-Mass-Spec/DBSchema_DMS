@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Instrument_Name_Bkup] ******/
-/****** RowCount: 251 ******/
+/****** RowCount: 252 ******/
 /****** Columns: IN_name, Instrument_ID, IN_class, IN_source_path_ID, IN_storage_path_ID, IN_capture_method, IN_default_CDburn_sched, IN_Room_Number, IN_Description, IN_Created ******/
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C2',1,'Finnigan_Ion_Trap',4,127,'secfso',null,'EMSL 1526','LCQ-C2','3/12/2001 12:00:00 AM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('LCQ_C1',2,'Finnigan_Ion_Trap',6,126,'secfso',null,'EMSL 1326 (not conneted to network)','LCQ-C1','5/15/2000 12:00:00 AM')
@@ -251,4 +251,5 @@ INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Barney',249,'Thermo_SII_LC',4830,4
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Patty',250,'Thermo_SII_LC',4835,2,'secfso',null,'EMSL 1444','Vanquish Neo LC (binary pump and autosampler). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Not EMSL owned','5/21/2024 8:10:05 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Selma',251,'Thermo_SII_LC',4836,2,'secfso',null,'EMSL 1444','Vanquish Neo LC (binary pump and autosampler). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Not EMSL owned','5/21/2024 8:10:14 PM')
 INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Monty',252,'Thermo_SII_LC',4837,2,'secfso',null,'BSF 2235','Vanquish Neo LC (binary pump and autosampler). Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Not EMSL owned','5/21/2024 8:17:11 PM')
-INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Dragonfly',253,'Thermo_SII_LC',2,2,'secfso',null,'BSF 2235','NanoPOTS with Vanquish Neo Binary Pump. Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Not EMSL owned','5/21/2024 8:18:19 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Dragonfly',253,'Thermo_SII_LC',4838,2,'secfso',null,'BSF 2235','NanoPOTS with Vanquish Neo Binary Pump. Used for LCDatasetCapture tasks. The defined auto storage path does not reference an actual server share since this instrument should not be used for datasets. Not EMSL owned','5/21/2024 8:18:19 PM')
+INSERT INTO [T_Instrument_Name_Bkup] VALUES ('Astral01',254,'LTQ_FT',4839,2,'secfso',null,'BSF 2235','Thermo Astral instrument, 50% BSD, 50% NSD','5/28/2024 6:03:42 PM')

@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Secondary_Sep] ******/
-/****** RowCount: 141 ******/
+/****** RowCount: 144 ******/
 /****** Columns: SS_name, SS_ID, SS_comment, SS_active, Sep_Group, SampleType_ID, Created ******/
 INSERT INTO [T_Secondary_Sep] VALUES ('CE',6,'Capillary electrophoresis',1,'CE',0,'1/24/2001 3:50:06 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('CIEF',5,'Capillary electrophoresis',0,'CE',0,'1/24/2001 3:43:06 PM')
@@ -86,8 +86,11 @@ INSERT INTO [T_Secondary_Sep] VALUES ('LC-JCVI-Standard',77,'Datasets acquired a
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-JHU-Standard',62,'Datasets acquired at Johns Hopkins University',0,'Other',0,'6/5/2012 9:52:40 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-KoreaU-Standard',21,'Datasets acquired at Korea University',0,'Other',0,'7/28/2009 6:58:49 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-MIT-Standard',63,'Datasets acquired at Forest White''s lab at MIT',0,'Other',0,'6/5/2012 9:52:46 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_10Min',143,'Neo, formic acid, 10 min separation',1,'LC-Formic_10Min',1,'5/30/2024 10:29:32 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_1hr',127,'Neo, formic acid, 1 hour separation',1,'LC-Formic_1hr',1,'12/20/2022 12:46:10 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_20Min',144,'Neo, formic acid, 20 Min separation',1,'LC-Formic_20Min',1,'5/30/2024 10:30:01 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_2hr',128,'Neo, formic acid, 2 hour separation',1,'LC-Formic_2hr',1,'12/20/2022 12:46:28 PM')
+INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_30min',145,'Neo LC, formic acid, 30 minute separation',1,'LC-Formic_30min',1,'5/30/2024 10:33:58 AM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_3hr',129,'Neo, formic acid, 3 hour separation',1,'LC-Formic_3hr',1,'12/20/2022 12:46:45 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-Neo-Formic_90min',126,'Neo, formic acid, 90 minute separation',1,'LC-Formic_90min',1,'12/20/2022 12:45:52 PM')
 INSERT INTO [T_Secondary_Sep] VALUES ('LC-NU-Standard',94,'Datasets acquired in the Kelleher lab at Northwestern',0,'Other',0,'11/5/2015 11:10:50 AM')
