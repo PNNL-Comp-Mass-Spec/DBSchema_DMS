@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[T_CV_NEWT](
 	[Parent_term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Grandparent_term_name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Grandparent_term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Mnemonic] [varchar](12) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Entered] [smalldatetime] NOT NULL,
  CONSTRAINT [PK_T_CV_NEWT] PRIMARY KEY NONCLUSTERED 
 (
