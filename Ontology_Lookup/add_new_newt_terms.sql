@@ -24,18 +24,22 @@ CREATE PROCEDURE [dbo].[add_new_newt_terms]
 **        Mnemonic
 **
 **  Arguments:
-**    @sourceTable          Source table name
-**    @infoOnly             When true, preview updates
-**    @previewDeleteExtras  When true, preview the rows that would be deleted from t_cv_newt (ignored if _infoOnly is true)
+**    @sourceTable          Source table name; if an empty string, only update the Children column in T_CV_NEWT
+**    @infoOnly             When 1, preview updates (ignored if _sourceTable is an empty string)
+**    @previewDeleteExtras  When 1, preview the rows that would be deleted from t_cv_newt (ignored if @infoOnly is 1)
 **
 **  Example usage:
 **        EXEC add_new_newt_terms @infoOnly = 1;
 **        EXEC add_new_newt_terms @infoOnly = 0, @previewDeleteExtras = 1;
 **        EXEC add_new_newt_terms @infoOnly = 0, @previewDeleteExtras = 0;
 **
+**        -- Update the Children column in T_CV_NEWT
+**        EXEC add_new_newt_terms '';
+**
 **  Auth:   mem
 **  Date:   06/06/2024 mem - Initial Version (based on add_new_envo_terms)
 **          06/07/2024 mem - Change parent and grandparent term ID columns to integers
+**          06/08/2024 mem - Populate column children in T_CV_NEWT
 **
 *****************************************************/
 (
@@ -62,109 +66,123 @@ AS
 
     Declare @S varchar(1500) = ''
     Declare @AddNew nvarchar(3000) = ''
+    Declare @importData tinyint
 
-    If Not Exists (SELECT * FROM sys.tables where [name] = @sourceTable)
+    If @sourceTable = ''
     Begin
-        Select 'Source table not found: ' + @sourceTable AS Message
-        Goto Done
+        Set @importData = 0
+        Set @infoOnly  = 0
+    End
+    Else
+    Begin
+        Set @importData = 1
     End
 
-    ---------------------------------------------------
-    -- Populate a temporary table with the source data
-    -- We do this so we can keep track of which rows match existing entries
-    ---------------------------------------------------
+    If @importData > 0
+    Begin
+        If Not Exists (SELECT * FROM sys.tables where [name] = @sourceTable)
+        Begin
+            Select 'Source table not found: ' + @sourceTable AS Message
+            Goto Done
+        End
 
-    CREATE TABLE #Tmp_SourceData (
-        Entry_ID int identity(1,1),
-        Term_PK varchar(255),
-        Term_Name varchar(255),
-        Identifier int,
-        Is_Leaf tinyint,
-        Rank varchar(64),
-        Parent_term_name varchar(255) NULL,
-        Parent_term_ID int NULL,
-        Grandparent_Term_Name varchar(255) NULL,
-        Grandparent_Term_ID int NULL,
-        Common_Name varchar(128) NULL,
-        Synonym varchar(128) NULL,
-        Mnemonic varchar(16) NULL,
-        MatchesExisting tinyint
-    )
+        ---------------------------------------------------
+        -- Populate a temporary table with the source data
+        -- We do this so we can keep track of which rows match existing entries
+        ---------------------------------------------------
 
-    Set @S = ''
-    Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf, Rank,'
-    Set @S = @S +                               ' Parent_term_name, Parent_term_ID,'
-    Set @S = @S +                               ' Grandparent_Term_Name, Grandparent_Term_ID,'
-    Set @S = @S +                               ' Common_Name, Synonym, Mnemonic, MatchesExisting )'
-    Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf, Coalesce(Rank, ''''),'
-    Set @S = @S + '   Parent_term_name, Parent_term_ID,'
-    Set @S = @S + '   Grandparent_Term_Name, Grandparent_Term_ID,'
-    Set @S = @S + '   Common_Name, Synonym, Mnemonic, 0 AS MatchesExisting'
-    Set @S = @S + ' FROM [' + @sourceTable + ']'
-    Set @S = @S + ' WHERE Parent_term_name <> '''' And Term_PK Like ''%NEWT1'''
+        CREATE TABLE #Tmp_SourceData (
+            Entry_ID int identity(1,1),
+            Term_PK varchar(255),
+            Term_Name varchar(255),
+            Identifier int,
+            Is_Leaf tinyint,
+            Rank varchar(64),
+            Parent_term_name varchar(255) NULL,
+            Parent_term_ID int NULL,
+            Grandparent_Term_Name varchar(255) NULL,
+            Grandparent_Term_ID int NULL,
+            Common_Name varchar(128) NULL,
+            Synonym varchar(128) NULL,
+            Mnemonic varchar(16) NULL,
+            MatchesExisting tinyint
+        )
 
-    Declare @GetSourceData nvarchar(3000) = @S
+        Set @S = ''
+        Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf, Rank,'
+        Set @S = @S +                               ' Parent_term_name, Parent_term_ID,'
+        Set @S = @S +                               ' Grandparent_Term_Name, Grandparent_Term_ID,'
+        Set @S = @S +                               ' Common_Name, Synonym, Mnemonic, MatchesExisting )'
+        Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf, Coalesce(Rank, ''''),'
+        Set @S = @S + '   Parent_term_name, Parent_term_ID,'
+        Set @S = @S + '   Grandparent_Term_Name, Grandparent_Term_ID,'
+        Set @S = @S + '   Common_Name, Synonym, Mnemonic, 0 AS MatchesExisting'
+        Set @S = @S + ' FROM [' + @sourceTable + ']'
+        Set @S = @S + ' WHERE Parent_term_name <> '''' And Term_PK Like ''%NEWT1'''
 
-    EXEC sp_executesql @GetSourceData
+        Declare @GetSourceData nvarchar(3000) = @S
 
-    SELECT @rowsInserted = COUNT(*)
-    FROM #Tmp_SourceData
+        EXEC sp_executesql @GetSourceData
 
-    Set @message = 'Inserted ' + CAST(@rowsInserted as varchar(12)) + ' rows into #Tmp_SourceData, using SQL:'
-    Print @message
+        SELECT @rowsInserted = COUNT(*)
+        FROM #Tmp_SourceData
 
-    Print @S
+        Set @message = 'Inserted ' + CAST(@rowsInserted as varchar(12)) + ' rows into #Tmp_SourceData, using SQL:'
+        Print @message
 
-    ---------------------------------------------------
-    -- Replace empty Grandparent term IDs and names with NULL
-    ---------------------------------------------------
+        Print @S
 
-    UPDATE #Tmp_SourceData
-    SET Grandparent_Term_ID = NULL,
-        Grandparent_Term_Name = NULL
-    WHERE Coalesce(Grandparent_Term_ID, 0) = 0 AND
-          Coalesce(Grandparent_Term_Name, '') = '' AND
-          (NOT Grandparent_Term_ID IS NULL OR NOT Grandparent_Term_Name IS NULL);
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
+        ---------------------------------------------------
+        -- Replace empty Grandparent term IDs and names with NULL
+        ---------------------------------------------------
 
-    Set @message = 'Set grandparent term ID and name to null for ' + CAST(@myRowCount as varchar(12)) + ' rows in #Tmp_SourceData'
-    Print @message
+        UPDATE #Tmp_SourceData
+        SET Grandparent_Term_ID = NULL,
+            Grandparent_Term_Name = NULL
+        WHERE Coalesce(Grandparent_Term_ID, 0) = 0 AND
+              Coalesce(Grandparent_Term_Name, '') = '' AND
+              (NOT Grandparent_Term_ID IS NULL OR NOT Grandparent_Term_Name IS NULL);
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    ---------------------------------------------------
-    -- Change empty strings to nulls in columns common_name, synonym, and mnemonic
-    -- Change nulls to empty strings in the rank column
-    ---------------------------------------------------
+        Set @message = 'Set grandparent term ID and name to null for ' + CAST(@myRowCount as varchar(12)) + ' rows in #Tmp_SourceData'
+        Print @message
 
-    UPDATE #Tmp_SourceData
-    SET Common_Name = CASE WHEN Common_Name = '' THEN NULL ELSE Common_Name END,
-        Synonym     = CASE WHEN Synonym = ''     THEN NULL ELSE Synonym END,
-        Mnemonic    = CASE WHEN Mnemonic = ''    THEN NULL ELSE Mnemonic END,
-        Rank        = COALESCE(Rank, '');
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
+        ---------------------------------------------------
+        -- Change empty strings to nulls in columns common_name, synonym, and mnemonic
+        -- Change nulls to empty strings in the rank column
+        ---------------------------------------------------
 
-    Set @message = 'Set Common_Name, Synonym, and Mnemonic to null for ' + CAST(@myRowCount as varchar(12)) + ' rows in #Tmp_SourceData'
-    Print @message
+        UPDATE #Tmp_SourceData
+        SET Common_Name = CASE WHEN Common_Name = '' THEN NULL ELSE Common_Name END,
+            Synonym     = CASE WHEN Synonym = ''     THEN NULL ELSE Synonym END,
+            Mnemonic    = CASE WHEN Mnemonic = ''    THEN NULL ELSE Mnemonic END,
+            Rank        = COALESCE(Rank, '');
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    ---------------------------------------------------
-    -- Set MatchesExisting to 1 for rows that match an existing row in T_CV_NEWT
-    ---------------------------------------------------
+        Set @message = 'Set Common_Name, Synonym, and Mnemonic to null for ' + CAST(@myRowCount as varchar(12)) + ' rows in #Tmp_SourceData'
+        Print @message
 
-    UPDATE #Tmp_SourceData
-    SET MatchesExisting = 1
-    FROM #Tmp_SourceData s
-         INNER JOIN T_CV_NEWT t
-           ON t.Term_PK = s.Term_PK AND
-              t.Parent_term_ID = s.Parent_term_ID AND
-              Coalesce(t.Grandparent_Term_ID, 0) = Coalesce(s.Grandparent_Term_ID, 0)
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
+        ---------------------------------------------------
+        -- Set MatchesExisting to 1 for rows that match an existing row in T_CV_NEWT
+        ---------------------------------------------------
 
-    Set @message = 'Set MatchesExisting to 1 for ' + CAST(@myRowCount as varchar(12)) + ' rows in #Tmp_SourceData'
-    Print @message
+        UPDATE #Tmp_SourceData
+        SET MatchesExisting = 1
+        FROM #Tmp_SourceData s
+             INNER JOIN T_CV_NEWT t
+               ON t.Term_PK = s.Term_PK AND
+                  t.Parent_term_ID = s.Parent_term_ID AND
+                  Coalesce(t.Grandparent_Term_ID, 0) = Coalesce(s.Grandparent_Term_ID, 0)
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @infoOnly = 0
+        Set @message = 'Set MatchesExisting to 1 for ' + CAST(@myRowCount as varchar(12)) + ' rows in #Tmp_SourceData'
+        Print @message
+    End
+
+    If @importData > 0 And @infoOnly = 0
     Begin -- <a1>
 
         ---------------------------------------------------
@@ -333,7 +351,8 @@ AS
             End -- </c>
         End -- </b>
     End -- </a1>
-    Else
+
+    If @importData > 0 And @infoOnly > 0
     Begin -- <a2>
         ---------------------------------------------------
         -- Preview existing rows that would be updated
@@ -397,6 +416,36 @@ AS
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
     End -- </a2>
+
+    If @infoOnly = 0
+    Begin
+        Print 'Updating Children counts in T_CV_NEWT';
+
+        UPDATE T_CV_NEWT
+        SET Children = SourceQ.Children
+        FROM (SELECT CVN.Parent_Term_ID, COUNT(*) AS Children
+                FROM T_CV_NEWT CVN
+                GROUP BY CVN.Parent_Term_ID
+                ) SourceQ
+        WHERE T_CV_NEWT.Identifier = SourceQ.Parent_Term_ID AND
+              T_CV_NEWT.Children <> SourceQ.Children;
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        Print 'Updated Children count for ' + Cast(@myRowCount AS varchar(12)) + ' rows in T_CV_NEWT'
+
+        -- Change Children to 0 for any entries that no longer have children
+        UPDATE T_CV_NEWT
+        SET Children = 0
+        WHERE T_CV_NEWT.Children > 0 AND
+              NOT EXISTS (SELECT CVN.parent_term_id
+                          FROM T_CV_NEWT CVN
+                          WHERE T_CV_NEWT.identifier = CVN.parent_term_id);
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        Print 'Set Children to 0 for ' + Cast(@myRowCount AS varchar(12)) + ' rows in T_CV_NEWT'
+    End
 
     ---------------------------------------------------
     -- Exit
