@@ -3,7 +3,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE VIEW [dbo].[V_NEWT_Detail_Report]
+CREATE  VIEW [dbo].[V_NEWT_Detail_Report]
 AS
 SELECT N.term_name,
        N.identifier,
@@ -11,6 +11,7 @@ SELECT N.term_name,
        N.parent_term_id AS parent_term_identifier,
        N.grandparent_term_name,
        N.grandparent_term_id AS grandparent_term_identifier,
+       N.children,
        N.is_leaf,
        N.rank,
        N.common_name,
