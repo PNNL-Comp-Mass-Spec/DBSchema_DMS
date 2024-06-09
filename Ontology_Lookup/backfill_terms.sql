@@ -23,6 +23,8 @@ CREATE PROCEDURE [dbo].[backfill_terms]
 **          03/28/2022 mem - Use new table names
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          06/06/2024 mem - Expand columns to varchar(255)
+**          06/08/2024 mem - Remove unused Synonyms column from the temp table
+**                         - Fix bug that used T_CV_BTO instead of #Tmp_SourceData
 **
 *****************************************************/
 (
@@ -67,7 +69,6 @@ AS
         [Term_Name] varchar(255),
         [Identifier] varchar(32),
         [Is_Leaf] [smallint],
-        [Synonyms] varchar(900),            -- Only used if the source is 'T_CV_BTO'
         [Parent_term_name] varchar(255) NULL,
         [Parent_term_ID] varchar(32) NULL,
         [GrandParent_term_name] varchar(255) NULL,
@@ -76,16 +77,10 @@ AS
     )
 
     Set @S = ''
-    Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf,'
-    If @sourceTable = 'T_CV_BTO'
-        Set @S = @S + ' Synonyms,'
-
+    Set @S = @S + ' INSERT INTO #Tmp_SourceData(Term_PK, Term_Name, Identifier, Is_Leaf,'
     Set @S = @S +                               ' Parent_term_name, Parent_term_ID, '
-    Set @S = @S +                               ' GrandParent_term_name, GrandParent_term_ID, MatchesExisting )'
+    Set @S = @S +                               ' GrandParent_term_name, GrandParent_term_ID, MatchesExisting)'
     Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf, '
-    If @sourceTable = 'T_CV_BTO'
-        Set @S = @S + ' Synonyms,'
-
     Set @S = @S + '   Parent_term_name, Parent_term_ID,'
     Set @S = @S + '   GrandParent_term_name, GrandParent_term_ID, 0 AS MatchesExisting'
     Set @S = @S + ' FROM [' + @sourceTable + ']'
@@ -178,7 +173,7 @@ AS
         INSERT INTO #Tmp_RelationshipsToAdd (Child_PK, Parent_PK)
         SELECT DISTINCT SourceTable.Term_PK AS Child_PK,
                         T_Term.term_pk AS Parent_PK
-        FROM T_CV_BTO SourceTable
+        FROM #Tmp_SourceData SourceTable
              INNER JOIN T_Term
                ON SourceTable.Parent_term_ID = T_Term.identifier
              LEFT OUTER JOIN T_Term_Relationship
@@ -239,7 +234,7 @@ AS
                                SourceTable.Term_PK AS Child_PK,
                                SourceTable.Parent_term_ID,
                                T_Term.term_pk AS Parent_PK
-               FROM T_CV_BTO SourceTable
+               FROM #Tmp_SourceData SourceTable
                     INNER JOIN T_Term
                       ON SourceTable.Parent_term_ID = T_Term.identifier
                WHERE (T_Term.ontology_id = @ontologyID) ) ValidRelationships
@@ -316,7 +311,7 @@ AS
                         SourceTable.Term_PK AS Child_PK,
                         SourceTable.Parent_term_ID AS Parent,
                         T_Term.term_pk AS Parent_PK
-        FROM T_CV_BTO SourceTable
+        FROM #Tmp_SourceData SourceTable
              INNER JOIN T_Term
                ON SourceTable.Parent_term_ID = T_Term.identifier
              LEFT OUTER JOIN T_Term_Relationship
