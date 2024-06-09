@@ -22,6 +22,7 @@ CREATE PROCEDURE [dbo].[backfill_terms]
 **  Date:   08/24/2017 mem - Initial Version
 **          03/28/2022 mem - Use new table names
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/06/2024 mem - Expand columns to varchar(255)
 **
 *****************************************************/
 (
@@ -63,13 +64,13 @@ AS
     CREATE TABLE #Tmp_SourceData (
         Entry_ID int identity(1,1),
         [Term_PK] varchar(32),
-        [Term_Name] varchar(128),
+        [Term_Name] varchar(255),
         [Identifier] varchar(32),
         [Is_Leaf] [smallint],
         [Synonyms] varchar(900),            -- Only used if the source is 'T_CV_BTO'
-        [Parent_term_name] varchar(128) NULL,
+        [Parent_term_name] varchar(255) NULL,
         [Parent_term_ID] varchar(32) NULL,
-        [GrandParent_term_name] varchar(128) NULL,
+        [GrandParent_term_name] varchar(255) NULL,
         [GrandParent_term_ID] varchar(32) NULL,
         [MatchesExisting] tinyint
     )
