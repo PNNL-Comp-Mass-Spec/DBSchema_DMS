@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[add_new_terms_default_ontologies]
 **          12/04/2013 mem - Added CL
 **          03/17/2014 mem - Added DOID (disease ontology)
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
-**          06/09/2024 mem - No longer call add_new_terms for NEWT; instead, use function add_new_newt_terms
+**          06/09/2024 mem - No longer call add_new_terms for BTO, MS, or NEWT; instead, use function add_new_newt_terms
 **
 *****************************************************/
 (
