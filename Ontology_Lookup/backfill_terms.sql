@@ -18,6 +18,26 @@ CREATE PROCEDURE [dbo].[backfill_terms]
 **      View V_Term uses tables T_Ontology and T_Term
 **      View V_Term_Lineage uses tables T_Ontology, T_Term, and T_Term_Relationship
 **
+**  Arguments:
+**    @sourceTable                  Source table name, e.g. T_CV_BTO or T_CV_NEWT
+**    @namespace                    Namespace, e.g. 'BrendaTissueOBO', 'MS', 'PSI-MOD', 'ENVO', 'PSI-MI', or 'PSI-MS'
+**                                  For T_CV_NEWT, use an empty string for @namespace
+**    @infoOnly                     When 1, show rows that would be added or updated
+**    @previewRelationshipUpdates   Set to 1 to preview adding/removing relationships; 0 to actually update relationships
+**
+**  Usage:
+**      EXEC backfill_terms
+**          @sourceTable                = 'T_CV_BTO',
+**          @namespace                  = 'BrendaTissueOBO',
+**          @infoOnly                   = 0,
+**          @previewRelationshipUpdates = 1;
+**
+**      EXEC backfill_terms
+**          @sourceTable                = 'T_CV_NEWT',
+**          @namespace                  = '',
+**          @infoOnly                   = 0,
+**          @previewRelationshipUpdates = 1;
+**
 **  Auth:   mem
 **  Date:   08/24/2017 mem - Initial Version
 **          03/28/2022 mem - Use new table names
@@ -51,7 +71,7 @@ AS
     ---------------------------------------------------
     -- Validate the that the source table exists
     ---------------------------------------------------
-    --
+
     If Not Exists (Select * From sys.tables where name = @sourceTable)
     Begin
         SELECT 'Source table not found: ' + @sourceTable
@@ -93,7 +113,7 @@ AS
     ---------------------------------------------------
     -- Set MatchesExisting to 1 for rows that match an existing row in T_Term
     ---------------------------------------------------
-    --
+
     UPDATE #Tmp_SourceData
     SET MatchesExisting = 1
     FROM #Tmp_SourceData S INNER JOIN T_Term T
@@ -104,7 +124,7 @@ AS
     ---------------------------------------------------
     -- Determine the ontology_id
     ---------------------------------------------------
-    --
+
     SELECT TOP 1 @ontologyID = T.ontology_id
     FROM #Tmp_SourceData S
          INNER JOIN T_Term T
@@ -118,7 +138,7 @@ AS
         ---------------------------------------------------
         -- Update existing rows
         ---------------------------------------------------
-        --
+
         MERGE T_Term AS T
         USING (SELECT Term_PK, Term_Name, Identifier, MAX(Is_Leaf) AS Is_Leaf
                FROM #Tmp_SourceData SourceTable
@@ -143,7 +163,7 @@ AS
         ---------------------------------------------------
         -- Add new rows
         ---------------------------------------------------
-        --
+
         INSERT INTO T_Term (term_pk, ontology_id, term_name, identifier, definition, namespace, is_obsolete, is_root_term, is_leaf)
         SELECT Term_PK, @ontologyID, Term_Name, Identifier, '' as Definition, @namespace, 0 as is_obsolete, 0 as i_root_term, Max(Is_Leaf)
         FROM #Tmp_SourceData
@@ -169,7 +189,7 @@ AS
         )
 
         -- Find missing relationships
-        --
+
         INSERT INTO #Tmp_RelationshipsToAdd (Child_PK, Parent_PK)
         SELECT DISTINCT SourceTable.Term_PK AS Child_PK,
                         T_Term.term_pk AS Parent_PK
@@ -184,7 +204,7 @@ AS
         ORDER BY SourceTable.Term_PK, T_Term.term_pk
 
         -- Determine the smallest ID in table T_Term_Relationship
-        --
+
         Declare @autoNumberStartID int = 0
 
         SELECT @autoNumberStartID = MIN(term_relationship_id) - 1
@@ -207,7 +227,7 @@ AS
         Else
         Begin
             -- Add missing relationships
-            --
+
             INSERT INTO T_Term_Relationship( term_relationship_id,
                                            subject_term_pk,
                                            predicate_term_pk,
@@ -227,7 +247,7 @@ AS
         End
 
         -- Find extra relationships
-        --
+
         INSERT INTO #Tmp_RelationshipsToDelete( Relationship_ID )
         SELECT T_Term_Relationship.term_relationship_id
         FROM ( SELECT DISTINCT SourceTable.Identifier,
@@ -268,7 +288,7 @@ AS
         ---------------------------------------------------
         -- Preview existing rows that would be updated
         ---------------------------------------------------
-        --
+
         SELECT 'Existing item to update' as Item_Type,
                T.Term_PK,
                CASE WHEN T.Term_Name = S.Term_Name THEN T.Term_Name ELSE T.Term_Name + ' --> ' + S.Term_Name END Term_Name,
@@ -304,7 +324,7 @@ AS
         ---------------------------------------------------
         -- Preview parents to add
         ---------------------------------------------------
-        --
+
         /*
         SELECT DISTINCT 'Missing parent/child relationship' as Relationship
                         SourceTable.Identifier AS Child,
@@ -324,10 +344,10 @@ AS
     End
 
     ---------------------------------------------------
-    -- exit
+    -- Exit
     ---------------------------------------------------
-    --
+
 Done:
-    return @myError
+    Return @myError
 
 GO
