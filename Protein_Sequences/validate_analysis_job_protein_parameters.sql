@@ -7,12 +7,9 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_protein_parameters]
 /****************************************************
 **
 **  Desc:
-**      Validate the combination of organism DB file
-**      (FASTA) file name, protein collection list,
-**      and protein options list.
+**      Validate the combination of organism DB file (FASTA) file name, protein collection list, and protein options list
 **
-**      The protein collection list and protein options
-**      list should be returned in canonical format.
+**      The protein collection list and protein options list should be returned in canonical format
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -32,6 +29,7 @@ CREATE PROCEDURE [dbo].[validate_analysis_job_protein_parameters]
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/23/2023 mem - Remove underscores from variables
 **          09/07/2023 mem - Update warning messages
+**          06/12/2024 mem - Update warning message
 **
 **  Error Return Codes:
 **      (-50001) = both values cannot be blank or 'na'
@@ -57,19 +55,18 @@ AS
     Declare @myRowCount int = 0
 
     Set @message = ''
-    declare @msg varchar(256)
 
     -- Check for Null values
     Set @organismDBFileName = LTrim(RTrim(ISNULL(@organismDBFileName, '')))
     Set @protCollNameList = LTrim(RTrim(ISNULL(@protCollNameList, '')))
     Set @protCollOptionsList = LTrim(RTrim(ISNULL(@protCollOptionsList, '')))
 
-    declare @legacyNameExists int
-    Set @legacyNameExists = 0
+    Declare @legacyNameExists int = 0
+    Declare @msg varchar(256)
 
-    /****************************************************************
-     ** Validate the input parameters
-     ****************************************************************/
+    ---------------------------------------------------
+    -- Validate the input parameters
+    ---------------------------------------------------
 
     If Len(@organismName) < 1
     Begin
@@ -109,11 +106,11 @@ AS
         return @myError
     End
 
-    /****************************************************************
-     ** Check Validity of Organism Name
-     ****************************************************************/
+    ---------------------------------------------------
+    -- Check Validity of Organism Name
+    ---------------------------------------------------
 
-    DECLARE @organismID int
+    Declare @organismID int
 
     SELECT @organismID = ID
     FROM V_Organism_Picker
@@ -139,12 +136,11 @@ AS
         return @myError
     End
 
+    ---------------------------------------------------
+    -- Check Validity of Legacy FASTA file name
+    ---------------------------------------------------
 
-    /****************************************************************
-     ** Check Validity of Legacy FASTA file name
-     ****************************************************************/
-
-    DECLARE @legacyFileID int
+    Declare @legacyFileID int
 
     If @organismDBFileName <> 'na' AND @protCollNameList = 'na'
     Begin -- <a1>
@@ -176,32 +172,30 @@ AS
         End
     End -- </a1>
 
-
-    /****************************************************************
-     ** Check Validity of Protein Collection Name List
-     ****************************************************************/
+    ---------------------------------------------------
+    -- Check Validity of Protein Collection Name List
+    ---------------------------------------------------
 
     If @protCollNameList <> 'na'
     Begin -- <a2>
 
-        DECLARE @collListTable table(Collection_ID int Identity(1,1), Collection_Name varchar(128))
+        Declare @collListTable table(Collection_ID int Identity(1,1), Collection_Name varchar(128))
 
         INSERT INTO @collListTable (Collection_Name)
         SELECT DISTINCT LTrim(RTrim(Value))
         FROM dbo.parse_delimited_list(@protCollNameList, ',')
 
-        DECLARE @cleanCollNameList varchar(max)
-        Set @cleanCollNameList = ''
+        Declare @cleanCollNameList varchar(max) = ''
 
-        DECLARE @currentCollectionName varchar(128)
-        DECLARE @extensionPosition int
-        DECLARE @currentCollectionID int
+        Declare @currentCollectionName varchar(128)
+        Declare @extensionPosition int
+        Declare @currentCollectionID int
 
-        DECLARE @loopCounter int = 0
-        DECLARE @itemCounter int = 0
+        Declare @loopCounter int = 0
+        Declare @itemCounter int = 0
 
-        declare @isEncrypted tinyint
-        declare @isAuthorized tinyint
+        Declare @isEncrypted tinyint
+        Declare @isAuthorized tinyint
 
         SELECT @loopCounter = COUNT(*)
         FROM @collListTable
@@ -243,7 +237,7 @@ AS
 
             If @myRowCount = 0
             Begin
-                Set @msg = '"' + @currentCollectionName + '" was not found in the Protein Collection List'
+                Set @msg = '"' + @currentCollectionName + '" is not a valid protein collection name'
                 Set @message = @msg
                 RAISERROR (@msg, 10, 1)
                 return -50001
@@ -272,40 +266,37 @@ AS
         End -- </b2>
 
 
-        /****************************************************************
-         ** Copy the data from @cleanCollNameList to @protCollNameList and
-         ** validate the order of the entries
-         ****************************************************************/
-
+        ---------------------------------------------------
+        -- Copy the data from @cleanCollNameList to @protCollNameList and
+        -- validate the order of the entries
+        ---------------------------------------------------
         Set @protCollNameList = @cleanCollNameList
 
         exec standardize_protein_collection_list @protCollNameList = @protCollNameList OUTPUT, @message = @message OUTPUT
 
 
-        /****************************************************************
-         ** Check Validity of Creation Options List
-         ****************************************************************/
+        ---------------------------------------------------
+        -- Check Validity of Creation Options List
+        ---------------------------------------------------
 
-        DECLARE @tmpCommaPosition int = 0
-        DECLARE @tmpStartPosition int = 0
+        Declare @tmpCommaPosition int = 0
+        Declare @tmpStartPosition int = 0
 
-        DECLARE @tmpOptionKeyword varchar(64)
-        DECLARE @tmpOptionKeywordID int
-        DECLARE @tmpOptionValueID int
-        DECLARE @tmpOptionValue varchar(64)
+        Declare @tmpOptionKeyword varchar(64)
+        Declare @tmpOptionKeywordID int
+        Declare @tmpOptionValueID int
+        Declare @tmpOptionValue varchar(64)
 
-        DECLARE @keywordDefaultValue varchar(64)
-        DECLARE @keywordIsReqd tinyint
+        Declare @keywordDefaultValue varchar(64)
+        Declare @keywordIsReqd tinyint
 
-        DECLARE @tmpOptionString varchar(128)
-        DECLARE @tmpOptionTable table(Keyword_ID int, Keyword varchar(64), Value varchar(64))
+        Declare @tmpOptionString varchar(128)
+        Declare @tmpOptionTable table(Keyword_ID int, Keyword varchar(64), Value varchar(64))
 
-        DECLARE @tmpEqualsPosition int
-        DECLARE @cleanOptionString varchar(256)
-        Set @cleanOptionString = ''
+        Declare @tmpEqualsPosition int
+        Declare @cleanOptionString varchar(256) = ''
 
-        DECLARE @protCollOptionsListLength int
-        Set @protCollOptionsListLength = Len(@protCollOptionsList)
+        Declare @protCollOptionsListLength int = Len(@protCollOptionsList)
 
         If @protCollOptionsListLength = 0
         Begin
@@ -385,12 +376,10 @@ AS
 
 
         -- Cruise through collected Keyword/Value Pairs and check for validity
-        Declare @KeywordID int
-        Set @KeywordID = 0
+        Declare @KeywordID int = 0
 
-        Declare @continue tinyint
+        Declare @continue tinyint = 1
 
-        Set @continue = 1
         While @continue = 1
         Begin -- <b4>
             SELECT    TOP 1
@@ -450,7 +439,7 @@ AS
         Set @protCollOptionsList = @cleanOptionString
     End -- </a2>
 
-    return @myError
+    Return @myError
 
 GO
 GRANT EXECUTE ON [dbo].[validate_analysis_job_protein_parameters] TO [DMS_Analysis] AS [dbo]
