@@ -27,6 +27,7 @@ CREATE PROCEDURE [dbo].[get_query_row_count_proc]
 **  Auth:   mem
 **  Date:   05/22/2024 mem - Initial version
 **          05/25/2024 mem - Increment column Usage in T_Query_Row_Counts
+**          06/13/2024 mem - When adding a new row to T_Query_Row_Counts, look for a default refresh interval value in table T_Query_Row_Count_Default_Refresh_Interval
 **
 *****************************************************/
 (
@@ -136,8 +137,21 @@ AS
 
     If @queryID <= 0
     Begin
-        INSERT INTO T_Query_Row_Counts (Object_Name, Where_Clause, Row_Count, Usage)
-        VALUES (@objectName, @whereClause, @rowCount, 1);
+        -- Look for a default refresh interval
+        SELECT @refreshIntervalHours = Refresh_Interval_Hours
+        FROM T_Query_Row_Count_Default_Refresh_Interval
+        WHERE Object_Name = @objectName
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            -- A default is not defined; use 4 hours
+            Set @refreshIntervalHours = 4
+        End
+
+        INSERT INTO T_Query_Row_Counts (Object_Name, Where_Clause, Row_Count, Usage, Refresh_Interval_Hours)
+        VALUES (@objectName, @whereClause, @rowCount, 1, @refreshIntervalHours);
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
