@@ -6,24 +6,26 @@ GO
 CREATE PROCEDURE [dbo].[add_update_archive_path]
 /****************************************************
 **
-**  Desc:   Adds new or updates existing archive paths in database
+**  Desc:
+**      Adds new or updates existing archive paths in database
 **
 **  Return values: 0: success, otherwise, error code
 **
 **  Auth:   jds
 **  Date:   06/24/2004 jds - initial release
-**          12/29/2008 grk - Added @NetworkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
-**          05/11/2011 mem - Expanded @ArchivePath, @ArchiveServer, @NetworkSharePath, and @ArchiveNote to larger varchar() variables
+**          12/29/2008 grk - Added @networkSharePath (http://prismtrac.pnl.gov/trac/ticket/708)
+**          05/11/2011 mem - Expanded @ArchivePath, @ArchiveServer, @networkSharePath, and @archiveNote to larger varchar() variables
 **          06/02/2015 mem - Replaced IDENT_CURRENT with SCOPE_IDENTITY()
 **          06/16/2017 mem - Restrict access using verify_sp_authorized
 **          08/01/2017 mem - Use THROW if not authorized
 **          05/16/2022 mem - Change RAISERROR severity to 11 (required so that the web page shows the error message)
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          09/07/2023 mem - Update warning messages
+**          06/13/2024 mem - Rename parameter to @archivePathID
 **
 *****************************************************/
 (
-    @archiveID varchar(32) output,            -- ID value (as a string)
+    @archivePathID varchar(32) output,            -- ID value (as a string)
     @archivePath varchar(128),
     @archiveServer varchar(64),
     @instrumentName varchar(24),
@@ -69,7 +71,7 @@ AS
         return @myError
 
     set @myError = 0
-    if LEN(@ArchivePath) < 1
+    if LEN(@archivePath) < 1
     begin
         set @myError = 51001
         RAISERROR ('Archive Path must be specified', 11, 51001)
@@ -79,7 +81,7 @@ AS
         return @myError
 
     set @myError = 0
-    if LEN(@ArchiveFunction) < 1
+    if LEN(@archiveFunction) < 1
     begin
         set @myError = 51002
         RAISERROR ('Archive Status must be specified', 10, 51002)
@@ -92,16 +94,15 @@ AS
     -- Is entry already in database?
     ---------------------------------------------------
 
-    declare @ArchiveID1 int
-    set @ArchiveID1 = 0
-    --
-    execute @ArchiveID1 = get_archive_path_id @ArchivePath
+    Declare @archiveIdCheck int = 0
+
+    execute @archiveIdCheck = get_archive_path_id @archivePath
 
     -- cannot create an entry that already exists
     --
-    if @ArchiveID1 <> 0 and @mode = 'add'
+    if @archiveIdCheck <> 0 and @mode = 'add'
     begin
-        set @msg = 'Cannot add: Archive Path "' + @ArchivePath + '" already in database '
+        set @msg = 'Cannot add: Archive Path "' + @archivePath + '" already in database '
         RAISERROR (@msg, 11, 51004)
         return 51004
     end
@@ -128,11 +129,11 @@ AS
     -- leaving no active archive path for current instrument
     --
     declare @tempArchiveID int
-    if @ArchiveFunction <> 'Active'
+    if @archiveFunction <> 'Active'
     begin
         SELECT @tempArchiveID = AP_Path_ID
         FROM T_Archive_Path
-        WHERE AP_Path_ID = @ArchiveID AND AP_Function = 'Active'
+        WHERE AP_Path_ID = @archivePathID AND AP_Function = 'Active'
         if @tempArchiveID <> 0
         begin
             set @msg = 'Cannot change path to non Active for instrument "' + @instrumentName + '"'
@@ -150,7 +151,7 @@ AS
     --
     declare @instrumentIDTemp int
     execute @instrumentIDTemp = get_active_instrument_id @instrumentName
-    if @instrumentIDTemp <> 0 and @ArchiveFunction = 'Active'
+    if @instrumentIDTemp <> 0 and @archiveFunction = 'Active'
     begin
         UPDATE T_Archive_Path
         SET AP_Function = 'Old'
@@ -176,24 +177,24 @@ AS
             Note,
             AP_Function
         ) VALUES (
-            @ArchivePath,
-            @ArchiveServer,
+            @archivePath,
+            @archiveServer,
             @instrumentID,
-            @NetworkSharePath,
-            @ArchiveNote,
-            @ArchiveFunction
+            @networkSharePath,
+            @archiveNote,
+            @archiveFunction
         )
 
         -- return Archive ID of newly created archive
         --
-        set @ArchiveID = SCOPE_IDENTITY()
+        set @archivePathID = SCOPE_IDENTITY()
 
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
-            set @msg = 'Insert operation failed: "' + @ArchivePath + '"'
+            set @msg = 'Insert operation failed: "' + @archivePath + '"'
             RAISERROR (@msg, 11, 51007)
             return 51007
         end
@@ -212,19 +213,19 @@ AS
         --
         UPDATE T_Archive_Path
         SET
-            AP_Archive_Path = @ArchivePath,
-            AP_Server_Name = @ArchiveServer,
+            AP_Archive_Path = @archivePath,
+            AP_Server_Name = @archiveServer,
             AP_Instrument_Name_ID = @instrumentID,
-            AP_network_share_path = @NetworkSharePath,
-            Note = @ArchiveNote,
-            AP_Function = @ArchiveFunction
-        WHERE (AP_Path_ID = @ArchiveID)
+            AP_network_share_path = @networkSharePath,
+            Note = @archiveNote,
+            AP_Function = @archiveFunction
+        WHERE (AP_Path_ID = @archivePathID)
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
         if @myError <> 0
         begin
-            set @msg = 'Update operation failed: "' + @ArchivePath + '"'
+            set @msg = 'Update operation failed: "' + @archivePath + '"'
             RAISERROR (@msg, 11, 51008)
             return 51008
         end
