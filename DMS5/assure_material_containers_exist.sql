@@ -30,6 +30,7 @@ CREATE PROCEDURE [dbo].[assure_material_containers_exist]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          05/04/2023 mem - Use TOP 1 when retrieving the next item to process
 **          11/19/2023 mem - Add procedure argument @campaignName
+**          06/12/2024 mem - Do not mark a container as a location (applicable when a container name matches a location name, e.g. -80_Staging)
 **
 *****************************************************/
 (
@@ -48,7 +49,7 @@ AS
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @message = ''
+    Set @message = ''
 
     Declare @msg varchar(512) = ''
 
@@ -57,21 +58,21 @@ AS
         ---------------------------------------------------
         -- Get container list items into temp table
         ---------------------------------------------------
-        --
+
         CREATE TABLE #TL (
             Container varchar(64) NULL,
             Item varchar(256),
             IsContainer TINYINT null,
             IsLocation TINYINT null
         )
-        --
+
         INSERT INTO #TL (Item, IsContainer, IsLocation)
         SELECT Item, 0, 0 FROM dbo.make_table_from_list(@ContainerList)
 
         ---------------------------------------------------
         -- Mark list items as either container or location
         ---------------------------------------------------
-        --
+
         UPDATE #TL
         SET IsContainer = 1,
             Container = Item
@@ -84,7 +85,7 @@ AS
         FROM #TL
              INNER JOIN T_Material_Locations
                ON Item = Tag
-
+        WHERE IsContainer = 0
 
         ---------------------------------------------------
         -- Quick check of list
@@ -110,10 +111,10 @@ AS
         ---------------------------------------------------
         -- Make new containers for locations
         ---------------------------------------------------
-        --
+
         Declare @item varchar(64)
         Declare @Container varchar(128)
-        --
+
         Declare @done tinyint = 0
 
         While @done = 0
@@ -156,7 +157,7 @@ AS
         ---------------------------------------------------
         -- Make consolidated list of containers
         ---------------------------------------------------
-        --
+
         Set @s = ''
 
         SELECT @s = @s + CASE WHEN @s <> ''
