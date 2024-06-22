@@ -61,31 +61,34 @@ AS
     ---------------------------------------------------
 
     set @myError = 0
-    if LEN(@instrumentName) < 1
-    begin
+
+    If LEN(@instrumentName) < 1
+    Begin
         set @myError = 51000
         RAISERROR ('Instrument Name must be specified', 11, 51000)
-    end
+    End
     --
     if @myError <> 0
         return @myError
 
     set @myError = 0
-    if LEN(@archivePath) < 1
-    begin
+
+    If LEN(@archivePath) < 1
+    Begin
         set @myError = 51001
         RAISERROR ('Archive Path must be specified', 11, 51001)
-    end
+    End
     --
     if @myError <> 0
         return @myError
 
     set @myError = 0
-    if LEN(@archiveFunction) < 1
-    begin
+
+    If LEN(@archiveFunction) < 1
+    Begin
         set @myError = 51002
         RAISERROR ('Archive Status must be specified', 10, 51002)
-    end
+    End
     --
     if @myError <> 0
         return @myError
@@ -100,25 +103,27 @@ AS
 
     -- cannot create an entry that already exists
     --
-    if @archiveIdCheck <> 0 and @mode = 'add'
-    begin
+    If @archiveIdCheck <> 0 and @mode = 'add'
+    Begin
         set @msg = 'Cannot add: Archive Path "' + @archivePath + '" already in database '
         RAISERROR (@msg, 11, 51004)
         return 51004
-    end
+    End
 
     ---------------------------------------------------
     -- Resolve instrument ID
     ---------------------------------------------------
 
     declare @instrumentID int
+
     execute @instrumentID = get_instrument_id @instrumentName
-    if @instrumentID = 0
-    begin
+
+    If @instrumentID = 0
+    Begin
         set @msg = 'Could not find entry in database for instrument "' + @instrumentName + '"'
         RAISERROR (@msg, 11, 51014)
         return 51014
-    end
+    End
 
 
     ---------------------------------------------------
@@ -128,9 +133,10 @@ AS
     -- Check to see if changing existing "Active" to non active
     -- leaving no active archive path for current instrument
     --
-    declare @tempArchiveID int
-    if @archiveFunction <> 'Active'
-    begin
+    Declare @tempArchiveID int
+
+    If @archiveFunction <> 'Active'
+    Begin
         SELECT @tempArchiveID = AP_Path_ID
         FROM T_Archive_Path
         WHERE AP_Path_ID = @archivePathID AND AP_Function = 'Active'
@@ -140,34 +146,35 @@ AS
             RAISERROR (@msg, 11, 51015)
             return 51015
         end
-    end
-
+    End
 
     ---------------------------------------------------
-    -- action for active instrument
+    -- Action for active instrument
     ---------------------------------------------------
     --
     -- check for active instrument to prevent multiple Active paths for an instrument
     --
-    declare @instrumentIDTemp int
+    Declare @instrumentIDTemp int
+
     execute @instrumentIDTemp = get_active_instrument_id @instrumentName
-    if @instrumentIDTemp <> 0 and @archiveFunction = 'Active'
-    begin
+
+    If @instrumentIDTemp <> 0 and @archiveFunction = 'Active'
+    Begin
         UPDATE T_Archive_Path
         SET AP_Function = 'Old'
         WHERE AP_Path_ID in (Select AP_Path_ID FROM T_Instrument_Name
             INNER JOIN T_Archive_Path ON Instrument_ID = AP_Instrument_Name_ID
             and IN_name = @instrumentName and AP_Function = 'Active')
-    end
+    End
 
     ---------------------------------------------------
-    -- action for add mode
+    -- Action for add mode
     ---------------------------------------------------
     --
     -- insert new archive path
     --
-    if @Mode = 'add'
-    begin
+    If @Mode = 'add'
+    Begin
 
         INSERT INTO T_Archive_Path (
             AP_Archive_Path,
@@ -198,16 +205,14 @@ AS
             RAISERROR (@msg, 11, 51007)
             return 51007
         end
-    end -- add mode
-
-
+    End
 
     ---------------------------------------------------
-    -- action for update mode
+    -- Action for update mode
     ---------------------------------------------------
     --
-    if @Mode = 'update'
-    begin
+    If @Mode = 'update'
+    Begin
 
         set @myError = 0
         --
@@ -229,9 +234,9 @@ AS
             RAISERROR (@msg, 11, 51008)
             return 51008
         end
-    end -- update mode
+    End
 
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_archive_path] TO [DDL_Viewer] AS [dbo]
