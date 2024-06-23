@@ -24,6 +24,7 @@ CREATE PROCEDURE [dbo].[add_update_local_task_in_broker]
 **          03/04/2023 mem - Use new T_Task tables
 **                         - Rename procedure to differentiate from DMS_Pipeline
 **          04/01/2023 mem - Rename procedures and functions
+**          06/22/2024 mem - Remove unused argument @resultsFolderName
 **
 *****************************************************/
 (
@@ -32,7 +33,6 @@ CREATE PROCEDURE [dbo].[add_update_local_task_in_broker]
     @priority int,
     @jobParam varchar(8000),
     @comment varchar(512),
-    @resultsFolderName varchar(128) OUTPUT,
     @mode varchar(12) = 'add', -- or 'update' or 'reset'
     @message varchar(512) output,
     @callingUser varchar(128) = ''
@@ -158,7 +158,7 @@ AS
         Exec post_log_entry 'Error', @message, 'add_update_local_task_in_broker'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_local_task_in_broker] TO [DDL_Viewer] AS [dbo]
