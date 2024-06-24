@@ -34,6 +34,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **          03/27/2022 mem - Require that data package ID is non-zero for DiaNN_DataPkg jobs
 **          07/27/2023 mem - Update message sent to get_new_job_id()
+**          06/23/2024 mem - Rename argument to @resultsDirectoryName
 **
 *****************************************************/
 (
@@ -46,7 +47,7 @@ CREATE PROCEDURE [dbo].[make_local_job_in_broker]
     @dataPackageID int,
     @debugMode tinyint = 0,            -- When setting this to 1, you can optionally specify a job using @existingJob to view the steps that would be created for that job
     @job int OUTPUT,
-    @resultsFolderName varchar(128) OUTPUT,
+    @resultsDirectoryName varchar(128) OUTPUT,
     @message varchar(512) output,
     @callingUser varchar(128) = ''
 )
@@ -114,13 +115,13 @@ AS
     ---------------------------------------------------
     -- Script
     ---------------------------------------------------
-    --
+
     Declare @pXML xml
     Declare @scriptXML xml
     Declare @tag varchar(8) = 'unk'
 
     -- Get contents of script and tag for results folder name
-    --
+
     SELECT @scriptXML = Contents, @tag = Results_Tag
     FROM T_Scripts
     WHERE Script = @scriptName
@@ -154,11 +155,11 @@ AS
     ---------------------------------------------------
     -- Obtain new job number (if not debugging)
     ---------------------------------------------------
-    --
+
     If @debugMode = 0
     Begin
-        exec @job = s_get_new_job_id 'Created in t_jobs'
-        --
+        Exec @job = s_get_new_job_id 'Created in t_jobs'
+
         If @job = 0
         Begin
             Set @myError = 50010
@@ -180,15 +181,16 @@ AS
     ---------------------------------------------------
     -- Add job to temp table
     ---------------------------------------------------
-    --
+
     INSERT INTO #Jobs (Job, Priority, Script, State, Dataset, Dataset_ID, Results_Folder_Name)
     VALUES (@job, @priority, @scriptName, 1, @datasetName, @datasetID, NULL)
 
     ---------------------------------------------------
     -- Get results folder name (and store in #Jobs)
     ---------------------------------------------------
-    --
-    exec @myError = create_results_folder_name @job, @tag, @resultsFolderName output, @message output
+
+    Exec @myError = create_results_folder_name @job, @tag, @resultsDirectoryName output, @message output
+
     If @myError <> 0
     Begin
         Set @msg = 'Error returned by create_results_folder_name: ' + Convert(varchar(12), @myError)
@@ -199,8 +201,9 @@ AS
     -- Create the basic job structure (steps and dependencies)
     -- Details are stored in #Job_Steps and #Job_Step_Dependencies
     ---------------------------------------------------
-    --
-    exec @myError = create_steps_for_job @job, @scriptXML, @resultsFolderName, @message output
+
+    Exec @myError = create_steps_for_job @job, @scriptXML, @resultsDirectoryName, @message output
+
     If @myError <> 0
     Begin
         Set @msg = 'Error returned by create_steps_for_job: ' + Convert(varchar(12), @myError)
@@ -212,6 +215,7 @@ AS
     ---------------------------------------------------
     -- Do special needs for local jobs that target other jobs
     ---------------------------------------------------
+
     EXEC adjust_params_for_local_job
         @scriptName ,
         @datasetName ,
@@ -229,8 +233,9 @@ AS
     -- Calculate signatures for steps that require them (and also handle shared results folders)
     -- Details are stored in #Job_Steps
     ---------------------------------------------------
-    --
-    exec @myError = create_signatures_for_job_steps @job, @jobParamXML, @dataPackageID, @message output, @debugMode = @debugMode
+
+    Exec @myError = create_signatures_for_job_steps @job, @jobParamXML, @dataPackageID, @message output, @debugMode = @debugMode
+
     If @myError <> 0
     Begin
         Set @msg = 'Error returned by create_signatures_for_job_steps: ' + Convert(varchar(12), @myError)
@@ -240,14 +245,15 @@ AS
     ---------------------------------------------------
     -- Save job parameters as XML into temp table
     ---------------------------------------------------
+
     -- FUTURE: need to get set of parameters normally provided by get_job_param_table,
-    -- except for the job specifc ones which need to be provided as initial content of @jobParamXML
-    --
+    --         except for the job specifc ones which need to be provided as initial content of @jobParamXML
+
     INSERT INTO #Job_Parameters (Job, Parameters)
     VALUES (@job, @jobParamXML)
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         Set @myError = 50012
@@ -259,8 +265,9 @@ AS
     ---------------------------------------------------
     -- Handle any step cloning
     ---------------------------------------------------
-    --
-    exec @myError = clone_job_step @job, @jobParamXML, @message output
+
+    Exec @myError = clone_job_step @job, @jobParamXML, @message output
+
     If @myError <> 0
     Begin
         Set @msg = 'Error returned by clone_job_step: ' + Convert(varchar(12), @myError)
@@ -270,7 +277,7 @@ AS
     ---------------------------------------------------
     -- Update step dependency count (code taken from SP finish_job_creation)
     ---------------------------------------------------
-    --
+
     UPDATE #Job_Steps
     SET Dependencies = T.dependencies
     FROM #Job_Steps
@@ -283,7 +290,7 @@ AS
     WHERE #Job_Steps.Job = @job
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
+
     If @myError <> 0
     Begin
         set @message = 'Error updating job step dependency count: ' + Convert(varchar(12), @myError)
@@ -296,8 +303,8 @@ AS
 
     If @debugMode = 0
     Begin
-        -- move_jobs_to_main_tables sproc assumes that T_Jobs table entry is already there
-        --
+        -- Procedure move_jobs_to_main_tables sproc assumes that T_Jobs table entry is already there
+
         INSERT INTO T_Jobs( Job,
                             Priority,
                             Script,
@@ -324,7 +331,7 @@ AS
         ---------------------------------------------------
         -- Populate column Transfer_Folder_Path in T_Jobs
         ---------------------------------------------------
-        --
+
         Declare @transferFolderPath varchar(512) = ''
 
         SELECT @transferFolderPath = [Value]
@@ -342,7 +349,7 @@ AS
         -- If a data package is defined, update entries for
         -- OrganismName, LegacyFastaFileName, ProteinOptions, and ProteinCollectionList in T_Job_Parameters
         ---------------------------------------------------
-        --
+
         If @dataPackageID > 0
         Begin
             Exec update_job_param_org_db_info_using_data_pkg @job, @dataPackageID, @deleteIfInvalid=0, @message=@message output, @callingUser=@callingUser
@@ -360,7 +367,6 @@ AS
     ---------------------------------------------------
     -- Exit
     ---------------------------------------------------
-    --
 Done:
 
     If @myError <> 0 and @msg <> ''

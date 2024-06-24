@@ -88,6 +88,7 @@ CREATE PROCEDURE [dbo].[add_analysis_job_group]
 **                         - Remove dash from DiaNN tool name
 **          07/27/2023 mem - Update message sent to get_new_job_id()
 **          09/06/2023 mem - Remove leading space from messages
+**          06/23/2024 mem - Rename variable to @resultsDirectoryName and update call to s_pipeline_add_update_local_job
 **
 *****************************************************/
 (
@@ -602,7 +603,7 @@ AS
             ---------------------------------------------------
             --
             Declare @pipelineJob int = 0
-            Declare @resultsFolderName varchar(128)
+            Declare @resultsDirectoryName varchar(128)
 
             -- Note that the parameters defined here need to stay in sync with the parameters in the SELECT TOP 1 ... FROM #Tmp_SettingsFile_Values_DataPkgJob query below
             --
@@ -684,7 +685,7 @@ AS
                                 @comment = @comment,
                                 @ownerUsername = @ownerUsername,
                                 @dataPackageID = @dataPackageID,
-                                @resultsFolderName = @resultsFolderName output,
+                                @resultsDirectoryName = @resultsDirectoryName output,
                                 @mode = @mode,
                                 @message = @message output,
                                 @callingUser = @callingUser,

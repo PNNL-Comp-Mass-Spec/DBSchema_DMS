@@ -63,6 +63,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          03/22/2023 mem - Rename job parameter to DatasetName
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **          03/25/2023 mem - Force dataset name to 'Aggregation' if using a data package
+**          06/23/2024 mem - Rename argument to @resultsDirectoryName
 **
 *****************************************************/
 (
@@ -74,7 +75,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
     @comment varchar(512),
     @ownerUsername varchar(64),
     @dataPackageID int,
-    @resultsFolderName varchar(128) OUTPUT,
+    @resultsDirectoryName varchar(128) OUTPUT,
     @mode varchar(12) = 'add',          -- or 'update' or 'reset' or 'previewAdd'
     @message varchar(512) output,
     @callingUser varchar(128) = '',
@@ -167,7 +168,7 @@ AS
         -- exec post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
         -- goto done
 
-        exec @myError = verify_job_parameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
+        Exec @myError = verify_job_parameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
 
         If @myError > 0
         Begin
@@ -196,7 +197,7 @@ AS
             ---------------------------------------------------
 
             -- Validate scripts 'Isobaric_Labeling' and 'MAC_iTRAQ'
-            EXEC @result = dbo.validate_data_package_for_mac_job
+            Exec @result = dbo.validate_data_package_for_mac_job
                                     @dataPackageID,
                                     @scriptName,
                                     @tool output,
@@ -260,7 +261,7 @@ AS
                 --   'DataPackagePath'
                 ---------------------------------------------------
 
-                exec add_update_transfer_paths_in_params_using_data_pkg @dataPackageID, @paramsUpdated output, @message output
+                Exec add_update_transfer_paths_in_params_using_data_pkg @dataPackageID, @paramsUpdated output, @message output
 
                 If @paramsUpdated <> 0
                 Begin
@@ -307,7 +308,7 @@ AS
                 If @reset = 'Y'
                 Begin --<reset>
 
-                    exec reset_aggregation_job @job, @InfoOnly=0, @message=@message output
+                    Exec reset_aggregation_job @job, @InfoOnly=0, @message=@message output
 
                 END --<reset>
             End
@@ -335,11 +336,11 @@ AS
                 Print 'JobParamXML: ' + Convert(varchar(max), @jobParamXML)
                 If @debugMode > 1
                 Begin
-                    EXEC post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
+                    Exec post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
                 End
             End
 
-            exec make_local_job_in_broker
+            Exec make_local_job_in_broker
                     @scriptName,
                     @datasetName,
                     @priority,
@@ -349,7 +350,7 @@ AS
                     @dataPackageID,
                     @debugMode,
                     @job OUTPUT,
-                    @resultsFolderName OUTPUT,
+                    @resultsDirectoryName OUTPUT,
                     @message output,
                     @callingUser
 
@@ -392,7 +393,7 @@ AS
     END CATCH
 
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_local_job_in_broker] TO [DDL_Viewer] AS [dbo]
