@@ -64,6 +64,7 @@ CREATE PROCEDURE [dbo].[add_update_local_job_in_broker]
 **          03/24/2023 mem - Capitalize job parameter TransferFolderPath
 **          03/25/2023 mem - Force dataset name to 'Aggregation' if using a data package
 **          06/23/2024 mem - Rename argument to @resultsDirectoryName
+**                        -  Do not update job parameters if @mode is 'update' or 'reset' and @jobParam is null or empty
 **
 *****************************************************/
 (
@@ -158,30 +159,38 @@ AS
         -- Verify parameters
         ---------------------------------------------------
 
-        If @jobParam Is Null
-            RAISERROR('Web page bug: @jobParam is null for job %d', 11, 30, @job)
-
-        If @jobParam = ''
-            RAISERROR('Web page bug: @jobParam is empty for job %d', 11, 30, @job)
-
-        -- Uncomment to log the job parameters to T_Log_Entries
-        -- exec post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
-        -- goto done
-
-        Exec @myError = verify_job_parameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
-
-        If @myError > 0
+        If @mode In ('update', 'reset') And LTrim(RTrim(Coalesce(@jobParam, ''))) = ''
         Begin
-            Set @message = 'Error from verify_job_parameters'
-            If @job > 0
+            -- Job parameters will be empty if updating a job using https://dms2.pnl.gov/pipeline_jobs/edit/2300000
+            Set @jobParam = '';
+        End
+        Else
+        Begin
+            If @jobParam Is Null
+                RAISERROR('Web page bug: @jobParam is null for job %d', 11, 30, @job)
+
+            If @jobParam = ''
+                RAISERROR('Web page bug: @jobParam is empty for job %d', 11, 30, @job)
+
+            -- Uncomment to log the job parameters to T_Log_Entries
+            -- exec post_log_entry 'Debug', @jobParam, 'add_update_local_job_in_broker'
+            -- goto done
+
+            Exec @myError = verify_job_parameters @jobParam output, @scriptName, @dataPackageID, @msg output, @debugMode
+
+            If @myError > 0
             Begin
-                Set @message = @message + ' (Job ' + Cast(@job as varchar(9)) + ')'
+                Set @message = 'Error from verify_job_parameters'
+                If @job > 0
+                Begin
+                    Set @message = @message + ' (Job ' + Cast(@job as varchar(9)) + ')'
+                End
+
+                Set @message = @message + ': ' + @msg
+                print @message
+
+                RAISERROR(@message, 11, @myError)
             End
-
-            Set @message = @message + ': ' + @msg
-            print @message
-
-            RAISERROR(@message, 11, @myError)
         End
 
         If IsNull(@ownerUsername, '') = ''
@@ -214,18 +223,21 @@ AS
         End
 
         ---------------------------------------------------
-        -- update mode
-        -- restricted to certain job states and limited to certain fields
-        -- force reset of job?
+        -- Update mode
+        --
+        -- Restricted to certain job states and limited to certain fields
         ---------------------------------------------------
 
         If @mode = 'update'
-        Begin --<update>
+        Begin
             Declare @updateTran varchar(32) = 'Update PipelineJob'
 
             Begin Tran @updateTran
 
-            Set @jobParamXML = CONVERT(XML, @jobParam)
+            If @mode In ('update', 'reset') And @jobParam = ''
+                Set @jobParamXML = null
+            Else
+                Set @jobParamXML = CONVERT(XML, @jobParam)
 
             -- Update job and params
             --
@@ -235,6 +247,11 @@ AS
                      Owner = @ownerUsername,
                      DataPkgID = Case When @state IN (1, 4, 5) Then @dataPackageID Else DataPkgID End
             WHERE    Job = @job
+
+            If @mode In ('update', 'reset') And @jobParam = ''
+            Begin
+                Return 0
+            End
 
             If @state IN (1, 4, 5) And @dataPackageID > 0
             Begin
@@ -319,14 +336,14 @@ AS
 
             Commit Tran @updateTran
 
-        END --</update>
+        End
 
         ---------------------------------------------------
-        -- add mode
+        -- Add mode
         ---------------------------------------------------
 
         If @mode in ('add', 'previewAdd')
-        Begin --<add>
+        Begin
 
             Set @jobParamXML = CONVERT(XML, @jobParam)
 
@@ -354,7 +371,7 @@ AS
                     @message output,
                     @callingUser
 
-        END --</add>
+        End
 
     END TRY
     Begin CATCH
