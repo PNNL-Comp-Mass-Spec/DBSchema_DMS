@@ -1,10 +1,9 @@
-/****** Object:  View [dbo].[V_Processor_Step_Tools_Detail_Report] ******/
+/****** Object:  View [dbo].[V_Processor_Step_Tools] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
-CREATE VIEW [dbo].[V_Processor_Step_Tools_Detail_Report]
+CREATE VIEW [dbo].[V_Processor_Step_Tools]
 AS
 SELECT LP.processor_name,
        PTGD.tool_name,
@@ -38,6 +37,5 @@ FROM T_Machines AS M
      INNER JOIN T_Step_Tools AS ST
        ON PTGD.Tool_Name = ST.Name
 WHERE M.Enabled > 0
-
 
 GO
