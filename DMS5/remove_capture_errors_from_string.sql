@@ -16,6 +16,7 @@ CREATE FUNCTION [dbo].[remove_capture_errors_from_string]
 **          11/22/2017 mem - Add "Authentication failure: The user name or password is incorrect."
 **          06/23/2022 mem - Bug fix: pass @updatedComment to remove_from_string() instead of @comment
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/26/2024 mem - Add "Exception running tool"
 **
 *****************************************************/
 (
@@ -40,7 +41,8 @@ Begin
            ('Dataset not ready: File size changed'),
            ('Dataset name matched multiple files; must be a .uimf file, .d folder, or folder with a single .uimf file'),
            ('Error running OpenChrom'),
-           ('Authentication failure: The user name or password is incorrect.')
+           ('Authentication failure: The user name or password is incorrect.'),
+           ('Exception running tool')
 
     Declare @commentID int = 0
     Declare @textToFind varchar(2048)
@@ -75,7 +77,6 @@ Begin
             'Dataset data file not found at %')
 
     Return @updatedComment
-
 End
 
 GO
