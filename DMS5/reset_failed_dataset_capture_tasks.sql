@@ -6,11 +6,17 @@ GO
 CREATE PROCEDURE [dbo].[reset_failed_dataset_capture_tasks]
 /****************************************************
 **
-**  Desc:   Looks for dataset entries with state=5 (Capture Failed)
-**          and a comment that indicates that we should be able to automatically
-**          retry capture.  For example:
-**            "Dataset not ready: Exception validating constant folder size"
-**            "Dataset not ready: Exception validating constant file size"
+**  Desc:
+**      Look for dataset entries with state=5 (Capture Failed) and a comment
+**      that indicates it is safe to automatically retry capture, including:
+**         "Exception validating constant"
+**         "File size changed"
+**         "Folder size changed%"
+**         "Error running OpenChrom"
+**         "Authentication failure: The user name or password is incorrect"
+**
+**      Also look for capture task jobs with state=5 and a failed DatasetInfo step, with message
+**         "The process cannot access the file 'chromatography-data.sqlite' because it is being used by another process"
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -20,13 +26,14 @@ CREATE PROCEDURE [dbo].[reset_failed_dataset_capture_tasks]
 **          11/02/2016 mem - Check for Folder size changed and File size changed
 **          01/30/2017 mem - Switch from DateDiff to DateAdd
 **          04/12/2017 mem - Log exceptions to T_Log_Entries
-**          08/08/2017 mem - Call remove_capture_errors_from_string instead of remove_from_string
+**          08/08/2017 mem - Use remove_capture_errors_from_string() instead of remove_from_string()
 **          08/16/2017 mem - Look for failed Openchrom conversion tasks
 **                         - Prevent dataset from being automatically reset more than 4 times
 **          08/16/2017 mem - Look for 'Authentication failure: The user name or password is incorrect'
 **          05/28/2019 mem - Use a holdoff of 15 minutes for authentication errors
 **          08/25/2022 mem - Use new column name in T_Log_Entries
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          06/26/2024 mem - Reset datasets with a DatasetInfo job step with error "The process cannot access the file 'chromatography-data.sqlite' because it is being used by another process."
 **
 *****************************************************/
 (
@@ -39,18 +46,16 @@ CREATE PROCEDURE [dbo].[reset_failed_dataset_capture_tasks]
 AS
     Set XACT_ABORT, nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    Set @myError = 0
-    Set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
     ------------------------------------------------
     -- Validate the inputs
     ------------------------------------------------
 
-    Set @resetHoldoffHours = IsNull(@resetHoldoffHours, 2)
+    Set @resetHoldoffHours  = IsNull(@resetHoldoffHours, 2)
     Set @maxDatasetsToReset = IsNull(@maxDatasetsToReset, 0)
-    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @infoOnly           = IsNull(@infoOnly, 0)
 
     Set @message = ''
     Set @resetCount = 0
@@ -65,26 +70,29 @@ AS
         ------------------------------------------------
         --
         CREATE TABLE #Tmp_Datasets (
-            Dataset_ID int not null,
-            Dataset varchar(128) not null,
-            Reset_Comment varchar(128) not null
+            Dataset_ID int NOT NULL,
+            Dataset varchar(128) NOT NULL,
+            Reset_Comment varchar(128) NOT NULL,
+            Error_Message varchar(512) NOT NULL
         )
 
         ------------------------------------------------
-        -- Populate a temporary table with datasets
-        -- that have Dataset State 5=Capture Failed
+        -- Populate the temporary table with datasets
+        -- that have dataset state 5=Capture Failed
         -- and a comment containing known errors
         ------------------------------------------------
-        --
-        INSERT INTO #Tmp_Datasets( Dataset_ID,
+
+        INSERT INTO #Tmp_Datasets (Dataset_ID,
                                    Dataset,
-                                   Reset_Comment )
+                                   Reset_Comment,
+                                   Error_Message)
         SELECT TOP ( @maxDatasetsToReset )
                Dataset_ID,
                Dataset_Num AS Dataset,
-               '' as Reset_Comment
+               '' AS Reset_Comment,
+               Coalesce(DS_comment, 'Unknown error') AS Error_Message
         FROM T_Dataset
-        WHERE DS_state_ID = 5 AND
+        WHERE DS_state_ID = 5 AND    -- Capture Failed
               (DS_comment LIKE '%Exception validating constant%' OR
                DS_comment LIKE '%File size changed%' OR
                DS_comment LIKE '%Folder size changed%' OR
@@ -94,11 +102,25 @@ AS
         SELECT TOP ( @maxDatasetsToReset )
                Dataset_ID,
                Dataset_Num AS Dataset,
-               '' as Reset_Comment
+               '' AS Reset_Comment,
+               Coalesce(DS_Comment, 'Unknown error') AS Error_Message
         FROM T_Dataset
-        WHERE DS_state_ID = 5 AND
-              (DS_comment Like '%Authentication failure%password is incorrect%') AND
-               DS_Last_Affected < DateAdd(Minute, -15, GetDate())
+        WHERE DS_state_ID = 5 AND          -- Capture Failed
+              DS_comment Like '%Authentication failure%password is incorrect%' AND
+              DS_Last_Affected < DateAdd(Minute, -15, GetDate())
+        UNION
+        SELECT T.dataset_id,
+               T.dataset,
+               '' AS Reset_Comment,
+               Coalesce(TS.Completion_Message, 'Unknown Error') AS Error_Message
+        FROM DMS_Capture.dbo.T_Task_Steps AS TS
+             INNER JOIN DMS_Capture.dbo.T_Tasks AS T
+               ON TS.Job = T.Job
+        WHERE T.State = 5 AND                   -- Capture task job failed
+              TS.State = 6 AND                  -- Job step failed
+              TS.Tool LIKE '%datasetinfo' AND
+              TS.Completion_Message LIKE '%The process cannot access the file %sqlite% used by another process%' AND
+              TS.Finish < DateAdd(Minute, -15, GetDate())
         ORDER BY Dataset_ID
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -137,19 +159,21 @@ AS
                 ------------------------------------------------
                 -- Preview the datasets to reset
                 ------------------------------------------------
-                --
+
                 SELECT DS.Dataset_Num AS Dataset,
-                    DS.Dataset_ID AS Dataset_ID,
+                    DS.Dataset_ID,
                     Inst.IN_name AS Instrument,
                     DS.DS_state_ID AS State,
-                    DS.DS_Last_Affected AS Last_Affected,
-                    DS.DS_comment AS [Comment],
+                    DS.DS_Last_Affected,
+                    Src.Error_Message,
+                    DS.DS_comment AS Current_Comment,
+                    dbo.remove_capture_errors_from_string(DS.DS_comment) AS Updated_Comment,
                     Src.Reset_Comment
                 FROM #Tmp_Datasets Src
                     INNER JOIN T_Dataset DS
-                    ON Src.Dataset_ID = DS.Dataset_ID
+                      ON Src.Dataset_ID = DS.Dataset_ID
                     INNER JOIN T_Instrument_Name Inst
-                    ON DS.DS_instrument_name_ID = Inst.Instrument_ID
+                      ON DS.DS_instrument_name_ID = Inst.Instrument_ID
                 ORDER BY Inst.IN_name, DS.Dataset_Num
                 --
                 SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -162,7 +186,7 @@ AS
                 -- Possibly post log error messages for datasets with a reset comment,
                 -- then remove those datasets from #Tmp_Datasets
                 ------------------------------------------------
-                --
+
                 INSERT INTO T_Log_Entries( posted_by,
                                            Entered,
                                            [Type],
@@ -187,7 +211,7 @@ AS
                 ------------------------------------------------
                 -- Reset the datasets
                 ------------------------------------------------
-                --
+                
                 UPDATE T_Dataset
                 SET DS_state_ID = 1,
                     DS_Comment = dbo.remove_capture_errors_from_string(DS_Comment)
@@ -208,7 +232,6 @@ AS
                     ------------------------------------------------
                     -- Look for log entries in DMS_Capture to auto-update
                     ------------------------------------------------
-                    --
 
                     Declare @DatasetID int = -1
                     Declare @DatasetName varchar(128)
@@ -253,7 +276,7 @@ AS
         Exec post_log_entry 'Error', @message, 'reset_failed_dataset_capture_tasks'
     END CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[reset_failed_dataset_capture_tasks] TO [DDL_Viewer] AS [dbo]
