@@ -7,17 +7,16 @@ CREATE VIEW [dbo].[V_Requested_Run_Batch_Export_RFID]
 AS
 SELECT RRB.ID,
        RRB.Batch As Name,
-	   T_Users.U_Name AS Owner,
-	   RRB.Description,
+       U.U_Name AS Owner,
+       RRB.Description,
        RequestedRunStats.Requests,              -- Total requested runs in batch
        RequestedRunStats.Active_Requests,       -- Active requested runs in batch (no dataset yet)
-	   RBS.Instrument_Group_First AS Inst_Group,
+       RBS.Instrument_Group_First AS Inst_Group,
        RRB.Created As Created,
-	   RFID_Hex_ID As HexID,
-	   RFID_Hex_ID As Hex_ID
+       RFID_Hex_ID As Hex_ID
 FROM T_Requested_Run_Batches AS RRB
-     INNER JOIN T_Users
-       ON RRB.Owner = T_Users.ID
+     INNER JOIN T_Users AS U
+       ON RRB.Owner = U.ID
      LEFT OUTER JOIN ( SELECT RDS_BatchID AS BatchID,
                               COUNT(*) AS Requests,
                               Sum(Case When RDS_Status = 'Active' Then 1 Else 0 End) As Active_Requests
