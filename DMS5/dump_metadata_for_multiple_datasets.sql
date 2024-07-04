@@ -6,121 +6,90 @@ GO
 CREATE PROCEDURE [dbo].[dump_metadata_for_multiple_datasets]
 /****************************************************
 **
-**  Desc: Dump metadata for datasets in given list
+**  Desc:
+**      Dump metadata for datasets in given list
 **
-**  Return values: 0: success, otherwise, error code
-**                    recordset containing keyword-value pairs
-**                    for all metadata items
-**
-**  Parameters:
+**  Returns:
+**      Recordset containing keyword-value pairs for all metadata items
 **
 **  Auth:   grk
 **  Date:   11/01/2006
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/04/2024 mem - Make arguments optional
 **
 *****************************************************/
 (
     @dataset_List varchar(7000),
-    @options varchar(256), -- ignore for now
-    @message varchar(512) output
+    @options varchar(256) = '', -- ignore for now
+    @message varchar(512) = '' output
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int
-    set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @myRowCount int
-    set @myRowCount = 0
-
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
-    -- temporary table to hold list of datasets
+    -- Temporary table to hold list of datasets
     ---------------------------------------------------
 
-    Create Table #dst
-    (
-    mDst varchar(128) Not Null,
+    CREATE TABLE #dst (
+        mDst varchar(128) NOT NULL,
     )
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error trying to create temp table for dataset list'
-      RAISERROR (@message, 10, 1)
-      return  @myError
-    end
 
     ---------------------------------------------------
-    -- load temporary table with list of datasets
+    -- Load temporary table with list of datasets
     ---------------------------------------------------
 
     INSERT INTO #dst (mDst)
     SELECT Item FROM dbo.make_table_from_list(@dataset_List)
 
     ---------------------------------------------------
-    -- temporary table to hold metadata
+    -- Temporary table to hold metadata
     ---------------------------------------------------
 
-    Create Table #metaD
-    (
-    seq int IDENTITY(1,1) NOT NULL,
-    mDst varchar(128) Not Null,
-    mAType varchar(32) Null,
-    mTag varchar(200) Not Null,
-    mVal varchar(512)  Null
+    CREATE TABLE #metaD (
+        seq int IDENTITY(1,1) NOT NULL,
+        mDst varchar(128) NOT NULL,
+        mAType varchar(32) NULL,
+        mTag varchar(200) NOT NULL,
+        mVal varchar(512)  NULL
     )
-    --
-    SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error trying to create temp metadata table'
-      RAISERROR (@message, 10, 1)
-      return  @myError
-    end
 
     ---------------------------------------------------
-    -- load dataset tracking info for datasets
-    -- in given list
+    -- Load dataset tracking info for datasets
     ---------------------------------------------------
 
     exec @myError = load_metadata_for_multiple_datasets @Options, @message output
-    --
-    if @myError <> 0
-    begin
-      RAISERROR (@message, 10, 1)
-      return  @myError
-    end
+
+    If @myError <> 0
+    Begin
+        RAISERROR (@message, 10, 1)
+        Return  @myError
+    End
 
     ---------------------------------------------------
-    -- dump temporary metadata table
+    -- Dump temporary metadata table
     ---------------------------------------------------
 
-    select
-        mDst as [Dataset Name],
-        mAType as [Attribute Type],
-        mTag as [Attribute Name],
-        mVal as [Attribute Value]
-    from #metaD
-    order by mDst, seq
+    SELECT mDst   AS [Dataset Name],
+           mAType AS [Attribute Type],
+           mTag   AS [Attribute Name],
+           mVal   AS [Attribute Value]
+    FROM #metaD
+    ORDER BY mDst, seq
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-      set @message = 'Error trying to query temp metadata table'
-      RAISERROR (@message, 10, 1)
-      return  @myError
-    end
 
- -------------------------------------------------------------------------------------------------------
- -------------------------------------------------------------------------------------------------------
+    If @myError <> 0
+    Begin
+        Set @message = 'Error trying to query temp metadata table'
+        RAISERROR (@message, 10, 1)
+    End
 
-Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_datasets] TO [DDL_Viewer] AS [dbo]
