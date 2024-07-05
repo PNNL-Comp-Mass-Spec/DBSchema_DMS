@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[load_metadata_for_multiple_experiments]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          07/04/2024 mem - Make arguments optional
 **                         - Use new column names
+**          07/05/2024 mem - Use target type 'Biomaterial' when querying V_Aux_Info_Value
 **
 *****************************************************/
 (
@@ -215,7 +216,7 @@ AS
          V_Aux_Info_Value AI ON T.CC_ID = AI.Target_ID INNER JOIN
          T_Experiment_Cell_Cultures ON T.CC_ID = T_Experiment_Cell_Cultures.CC_ID INNER JOIN
          T_Experiments ON T_Experiment_Cell_Cultures.Exp_ID = T_Experiments.Exp_ID
-    WHERE AI.Target = 'Cell Culture' AND
+    WHERE AI.Target = 'Biomaterial' AND
           T_Experiments.Experiment_Num IN (SELECT mExp FROM #exp)
     ORDER BY T_Experiments.Experiment_Num, T.CC_Name
 
