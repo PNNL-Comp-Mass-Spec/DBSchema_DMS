@@ -68,7 +68,7 @@ FROM ( SELECT Name,
               FROM S_V_Protein_Collections_by_Organism
             ) AS CP
      ) AS LookupQ
-     LEFT JOIN dbo.T_Organisms Org
+     LEFT OUTER JOIN dbo.T_Organisms Org
        ON LookupQ.Organism_Name = Org.OG_Name
      LEFT OUTER JOIN T_Protein_Collection_Usage PCU
        ON LookupQ.ID = PCU.Protein_Collection_ID
