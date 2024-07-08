@@ -8,7 +8,7 @@ AS
 SELECT U.PERSON_ID AS id,
        U.NAME_FM AS name,
        SS.Name AS site_status,
-       dbo.get_eus_users_proposal_list(U.PERSON_ID) AS proposals,
+       U.EUS_Proposals AS proposals,
        U.HID AS hanford_id,
        U.Valid As valid_eus_id,
        U.last_affected
