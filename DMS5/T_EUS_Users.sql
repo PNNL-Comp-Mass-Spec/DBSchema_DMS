@@ -12,6 +12,7 @@ CREATE TABLE [dbo].[T_EUS_Users](
 	[Last_Name] [varchar](80) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[First_Name] [varchar](80) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Valid] [tinyint] NOT NULL,
+	[EUS_Proposals] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_EUS_Users] PRIMARY KEY CLUSTERED 
 (
 	[PERSON_ID] ASC

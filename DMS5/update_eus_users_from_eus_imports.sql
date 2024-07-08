@@ -6,8 +6,9 @@ GO
 CREATE PROCEDURE [dbo].[update_eus_users_from_eus_imports]
 /****************************************************
 **
-**  Desc:   Updates associated EUS user associations for
-**          proposals that are currently active in DMS
+**  Desc:
+**      Updates associated EUS user associations for
+**      proposals that are currently active in DMS
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -25,6 +26,7 @@ CREATE PROCEDURE [dbo].[update_eus_users_from_eus_imports]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/01/2024 mem - Only change state_id to 3 in T_EUS_Proposal_Users if state_id is not 2, 3, 4, or 5 (previously not 2 or 4)
 **                         - This change was made to avoid state_id changing from 5 to 3, then from 3 back to 5 every time this procedure is called
+**          07/07/2024 mem - Use get_eus_users_proposal_list() to cache EUS proposals associated with each user
 **
 *****************************************************/
 (
@@ -61,6 +63,7 @@ AS
         CREATE CLUSTERED INDEX #IX_Tmp_UpdateSummary ON #Tmp_UpdateSummary (UpdateAction)
 
         Set @currentLocation = 'Update T_EUS_Users'
+        Print @currentLocation
 
         ---------------------------------------------------
         -- Use a MERGE Statement to synchronize
@@ -149,16 +152,16 @@ AS
 
         Set @currentLocation = 'Update First_Name and Last_Name in T_EUS_Users'
 
-        Update T_EUS_Users
-        Set First_Name = Ltrim(SubString(Name_FM, CharIndex(',', Name_FM) + 1, 128))
-        Where IsNull(First_Name, '') = '' And CharIndex(',', Name_FM) > 1
+        UPDATE T_EUS_Users
+        SET First_Name = Ltrim(SubString(Name_FM, CharIndex(',', Name_FM) + 1, 128))
+        WHERE IsNull(First_Name, '') = '' And CharIndex(',', Name_FM) > 1
 
-        Update T_EUS_Users
-        Set Last_Name = SubString(Name_FM, 1, CharIndex(',', Name_FM) - 1)
-        Where IsNull(Last_Name, '') = '' And CharIndex(',', Name_FM) > 1
-
+        UPDATE T_EUS_Users
+        SET Last_Name = SubString(Name_FM, 1, CharIndex(',', Name_FM) - 1)
+        WHERE IsNull(Last_Name, '') = '' And CharIndex(',', Name_FM) > 1
 
         Set @currentLocation = 'Update T_EUS_Proposal_Users'
+        Print @currentLocation
 
         ---------------------------------------------------
         -- Use a MERGE Statement to synchronize
@@ -218,7 +221,6 @@ AS
         FROM #Tmp_UpdateSummary
         WHERE UpdateAction = 'DELETE'
 
-
         ---------------------------------------------------
         -- Update rows in T_EUS_Proposal_Users where State_ID is 3=Unknown
         -- but the associated proposal has state of 3=Inactive
@@ -233,7 +235,6 @@ AS
               T_EUS_Proposals.State_ID IN (3,4)
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
-
 
         ---------------------------------------------------
         -- Update rows in T_EUS_Proposal_Users that still have State_ID is 3=Unknown
@@ -250,7 +251,6 @@ AS
         --
         SELECT @myRowCount = @@rowcount, @myError = @@error
 
-
         If @mergeUpdateCount > 0 OR @mergeInsertCount > 0 OR @mergeDeleteCount > 0
         Begin
             Set @message = 'Updated T_EUS_Proposal_Users: ' + Convert(varchar(12), @mergeInsertCount) + ' added; ' + Convert(varchar(12), @mergeUpdateCount) + ' updated'
@@ -262,6 +262,26 @@ AS
             Set @message = ''
         End
 
+        ---------------------------------------------------
+        -- Update cached eus_proposals in T_EUS_Users
+        ---------------------------------------------------
+
+        Set @currentLocation = 'Update cached EUS proposals in T_EUS_Users'
+        Print @currentLocation
+
+        MERGE T_EUS_Users AS t
+        USING (SELECT U.person_id,
+                      dbo.get_eus_users_proposal_list(U.person_id) AS Proposals
+               FROM T_EUS_Users U
+              ) AS s
+        ON (t.person_id = s.person_id)
+        WHEN MATCHED AND (
+            ISNULL( NULLIF(t.EUS_Proposals, s.Proposals),
+            NULLIF(s.Proposals, t.EUS_Proposals)) IS NOT NULL
+            )
+        THEN UPDATE SET
+            EUS_Proposals = s.proposals;
+
     End Try
     Begin Catch
         -- Error caught; log the error then abort processing
@@ -271,12 +291,7 @@ AS
         Goto Done
     End Catch
 
-    ---------------------------------------------------
-    -- Done
-    ---------------------------------------------------
-
 Done:
-
     ---------------------------------------------------
     -- Log SP usage
     ---------------------------------------------------
