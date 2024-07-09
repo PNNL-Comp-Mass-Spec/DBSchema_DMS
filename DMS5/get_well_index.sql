@@ -7,8 +7,7 @@ CREATE FUNCTION [dbo].[get_well_index]
 /****************************************************
 **
 **  Desc:
-**  Given 96 well plate well number, return
-**  the index position of the well
+**      Given 96 well plate well number, return the index position of the well
 **
 **  Return values: next well number, or null if none found
 **
@@ -17,6 +16,8 @@ CREATE FUNCTION [dbo].[get_well_index]
 **  Auth:   grk
 **  Date:   07/15/2000
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/09/2024 mem - Return 0 if @wellNumber is an empty string or only a single character
+**                         - Capitalize the first character of @wellNumber
 **
 *****************************************************/
 (
@@ -24,29 +25,34 @@ CREATE FUNCTION [dbo].[get_well_index]
 )
 RETURNS int
 AS
-    BEGIN
-        declare @index int
-        set @index = 0
+BEGIN
+    Set @wellNumber = LTrim(RTrim(Coalesce(@wellNumber, '')));
 
-        declare @wpRow smallint
-        declare @wpRowCharBase smallint
-        set @wpRowCharBase = ASCII('A')
-        --
-        declare @wpCol smallint
-        declare @numCols smallint
-        set @numCols = 12
+    If Len(@wellNumber) < 2
+    Begin
+        RETURN 0;
+    End
 
-        -- get row and col for current well
-        set @wpRow = ASCII(@wellNumber) - @wpRowCharBase
-        set @wpCol = convert(smallint, substring(@wellNumber, 2, 20))
+    Declare @index int = 0
 
-        if @wpRow <= 8 and @wpRow >= 0 and @wpCol <= 12 and @wpCol >= 0
-        begin
-            set @index = (@wpRow * @numCols) + @wpCol
-        end
+    Declare @wpRow smallint
+    Declare @wpRowCharBase smallint = ASCII('A')
 
-        RETURN @index
-    END
+    Declare @wpCol smallint
+    Declare @numCols smallint = 12
+
+    -- Get row and col for current well
+
+    Set @wpRow = ASCII(Upper(Substring(@wellNumber, 1, 1))) - @wpRowCharBase
+    Set @wpCol = Convert(smallint, Substring(@wellNumber, 2, 20))
+
+    If @wpRow <= 8 And @wpRow >= 0 And @wpCol <= 12 And @wpCol >= 0
+    Begin
+        Set @index = (@wpRow * @numCols) + @wpCol
+    End
+
+    RETURN @index
+END
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_well_index] TO [DDL_Viewer] AS [dbo]
