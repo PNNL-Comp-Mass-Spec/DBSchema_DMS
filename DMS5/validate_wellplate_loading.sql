@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[validate_wellplate_loading]
 **          05/16/2022 mem - Show example well numbers
 **          11/25/2022 mem - Rename parameter to @wellplateName
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/09/2024 mem - Use a well index value of 0 if _wellPosition is an empty string
 **
 *****************************************************/
 (
@@ -69,9 +70,11 @@ AS
     Set @wellIndex = 0
 
     -- Check for overflow
-    --
-    If Not @wellNumber is null
+
+    If Not @wellNumber Is Null And @wellNumber <> ''
     Begin
+        -- Note that function get_well_index() returns 0 if _wellPosition is an empty string or is only a single character
+
         Set @wellIndex = dbo.get_well_index(@wellNumber)
 
         If @wellIndex = 0
@@ -91,30 +94,25 @@ AS
     -- Make sure wells are not in current use
     ---------------------------------------------------
 
-    -- don't bother if we are not adding new item
+    -- Don't bother if we are not adding new item
     If @totalCount = 0 Goto Done
-    --
+
     Declare @wells TABLE (
         wellIndex int
     )
 
-    Declare @index int
-    Declare @count smallint
-    Set @count = @totalCount
-    Set @index = @wellIndex
+    Declare @index int = @wellIndex
+    Declare @count smallint = @totalCount
 
-    while @count > 0
+    While @count > 0
     Begin
         insert into @wells (wellIndex) values (@index)
         Set @count = @count - 1
         Set @index = @index + 1
     End
-    --
-    Declare @hits int
-    Declare @wellList VARCHAR(8000)
-    --
-    Set @wellList = ''
-    Set @hits = 0
+
+    Declare @hits int = 0
+    Declare @wellList VARCHAR(8000) = ''
 
     SELECT
         @hits = @hits + 1,
@@ -123,25 +121,22 @@ AS
     WHERE
         EX_wellplate_num = @wellplateName AND
         dbo.get_well_index(EX_well_num) IN (
-            select wellIndex
-            from @wells
+            SELECT wellIndex
+            FROM @wells
         )
 
     If @hits > 0
     Begin
-        Set @wellList = SUBSTRING(@wellList, 0, 256)
+        Set @wellList = Substring(@wellList, 0, 256)
 
         If @hits = 1
-            Set @message = 'Well ' + @wellList + ' on wellplate "' + @wellplateName + '" is currently filled'
-        else
+            Set @message = 'Well '  + @wellList + ' on wellplate "' + @wellplateName + '" is currently filled'
+        Else
             Set @message = 'Wells ' + @wellList + ' on wellplate "' + @wellplateName + '" are currently filled'
 
         Return 51045
     End
 
-    ---------------------------------------------------
-    -- OK
-    ---------------------------------------------------
 Done:
     Return @myError
 
