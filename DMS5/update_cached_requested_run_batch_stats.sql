@@ -13,7 +13,8 @@ CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 **      to display information about the requested runs and datasets associated with a requested run batch
 **
 **  Arguments:
-**    @batchID  Specific requested run batch to update, or 0 to update all active Requested Run Batches
+**    @batchID      Specific requested run batch to update, or 0 to update all active Requested Run Batches
+**    @fullRefresh  When 0, only update batches where T_Requested_Run.Updated is later than T_Cached_Requested_Run_Batch_Stats.last_affected; when non-zero, update all
 **
 **  Auth:   mem
 **  Date:   02/10/2023 mem - Initial Version
@@ -24,6 +25,7 @@ CREATE PROCEDURE [dbo].[update_cached_requested_run_batch_stats]
 **          01/02/2024 mem - Fix column name bug when joining V_Requested_Run_Queue_Times to T_Requested_Run
 **          01/19/2024 mem - Fix bug that failed to populate column separation_group_last when adding a new batch to T_Cached_Requested_Run_Batch_Stats
 **                           Populate columns Instrument_Group_First and Instrument_Group_Last
+**          07/08/2024 mem - When @fullRefresh is non-zero, compute batch stats for 1000 requested runs at a time
 **
 *****************************************************/
 (
@@ -77,7 +79,7 @@ AS
         SELECT RRB.ID, Cast('1970-01-01' As Datetime)
         FROM T_Requested_Run_Batches RRB
              LEFT OUTER JOIN T_Cached_Requested_Run_Batch_Stats RBS
-                ON RBS.batch_id = RRB.ID
+               ON RBS.batch_id = RRB.ID
         WHERE RRB.ID = @batchID AND RBS.batch_id Is Null;
     End
 
@@ -85,36 +87,134 @@ AS
     -- Find batch IDs to update
     ------------------------------------------------
 
-    CREATE TABLE #Tmp_BatchIDs (
-        Batch_ID int not Null
-    );
+    CREATE TABLE #Tmp_Batch_Stats (
+        batch_id int NOT NULL,
+        oldest_request_created datetime NULL,
+        instrument_group_first varchar(128) NULL,
+        instrument_group_last varchar(128) NULL,
+        separation_group_first varchar(64) NULL,
+        separation_group_last varchar(64) NULL,
+        active_requests int NULL,
+        first_active_request int NULL,
+        last_active_request int NULL,
+        oldest_active_request_created datetime NULL,
+        days_in_queue int NULL
+    )
 
-    CREATE UNIQUE INDEX #IX_BatchIDs On #Tmp_BatchIDs (Batch_ID);
+    CREATE UNIQUE INDEX #IX_BatchStats_BatchIDs On #Tmp_Batch_Stats (Batch_ID);
 
     If @batchID > 0
     Begin
-        INSERT INTO #Tmp_BatchIDs (Batch_ID)
+        INSERT INTO #Tmp_Batch_Stats (Batch_ID)
         SELECT Batch_ID
         FROM T_Cached_Requested_Run_Batch_Stats
-        Where Batch_ID = @batchID
+        WHERE Batch_ID = @batchID
     End
     Else
     Begin
         If @fullRefresh > 0
         Begin
-            INSERT INTO #Tmp_BatchIDs (Batch_ID)
+            INSERT INTO #Tmp_Batch_Stats (Batch_ID)
             SELECT Batch_ID
             FROM T_Cached_Requested_Run_Batch_Stats
             WHERE Batch_ID > 0
         End
         Else
         Begin
-            INSERT INTO #Tmp_BatchIDs (Batch_ID)
+            INSERT INTO #Tmp_Batch_Stats (Batch_ID)
             SELECT DISTINCT RBS.Batch_ID
             FROM T_Cached_Requested_Run_Batch_Stats RBS
                  INNER JOIN T_Requested_Run RR
                    ON RBS.Batch_ID = RR.RDS_BatchID
             WHERE RBS.Batch_ID > 0 And RR.Updated > RBS.Last_Affected
+        End
+    End
+
+    ------------------------------------------------
+    -- Update stats in Tmp_Batch_Stats
+    --
+    -- The first query in the following while loop was observed to take 30 seconds to run when updating 10000 requested runs
+    -- Thus, if computing stats for over 1000 requested runs, compute stats for 1000 requested runs at a time
+    ------------------------------------------------
+
+    Declare @startBatchID int
+    Declare @endBatchID int
+    Declare @maxBatchID int = 0
+    Declare @requestedRunCount int = 0
+
+    SELECT @maxBatchID = MAX(Batch_ID)
+    FROM #Tmp_Batch_Stats
+
+    SELECT @requestedRunCount = COUNT(*)
+    FROM #Tmp_Batch_Stats
+
+    If Coalesce(@requestedRunCount, 0) >= 1000
+    Begin
+        Set @startBatchID = 0
+        Set @endBatchID   = 999
+    End
+    Else
+    Begin
+        Set @startBatchID = 0
+        Set @endBatchID   = @maxBatchID
+    End
+
+    While @startBatchID <= @maxBatchID
+    Begin
+        UPDATE #Tmp_Batch_Stats
+        SET oldest_request_created   = StatsQ.oldest_request_created,
+            instrument_group_first   = StatsQ.instrument_group_first,
+            instrument_group_last    = StatsQ.instrument_group_last,
+            separation_group_first   = StatsQ.separation_group_first,
+            separation_group_last    = StatsQ.separation_group_last
+        FROM #Tmp_Batch_Stats BatchQ
+             LEFT OUTER JOIN (SELECT RR.RDS_BatchID AS batch_id,
+                                     MIN(RR.RDS_created) AS oldest_request_created,
+                                     MIN(RR.RDS_Instrument_Group) AS instrument_group_first,
+                                     MAX(RR.RDS_Instrument_Group) AS instrument_group_last,
+                                     MIN(RR.RDS_Sec_Sep) AS separation_group_first,
+                                     MAX(RR.RDS_Sec_Sep) AS separation_group_last
+                             FROM T_Requested_Run RR
+                                  INNER JOIN #Tmp_Batch_Stats
+                                    ON RR.RDS_BatchID = #Tmp_Batch_Stats.Batch_ID
+                             WHERE #Tmp_Batch_Stats.Batch_ID BETWEEN @startBatchID and @endBatchID
+                             GROUP BY RR.RDS_BatchID
+               ) StatsQ ON BatchQ.batch_id = StatsQ.batch_id
+        WHERE BatchQ.Batch_ID BETWEEN @startBatchID and @endBatchID
+
+        UPDATE #Tmp_Batch_Stats
+        SET active_requests                = ActiveStatsQ.active_requests,
+            first_active_request           = ActiveStatsQ.first_active_request,
+            last_active_request            = ActiveStatsQ.last_active_request,
+            oldest_active_request_created  = ActiveStatsQ.oldest_active_request_created,
+            days_in_queue = CASE WHEN ActiveStatsQ.active_requests = 0
+                            THEN dbo.get_requested_run_batch_max_days_in_queue(BatchQ.batch_id)   -- No active requested runs for this batch
+                            ELSE DATEDIFF(DAY, ISNULL(ActiveStatsQ.oldest_active_request_created, BatchQ.oldest_request_created), GETDATE())
+                            END
+        FROM #Tmp_Batch_Stats BatchQ
+             LEFT OUTER JOIN (SELECT RR.RDS_BatchID AS batch_id,
+                                     COUNT(*)            AS active_requests,
+                                     MIN(RR.ID)          AS first_active_request,
+                                     MAX(RR.ID)          AS last_active_request,
+                                     MIN(RR.RDS_created) AS oldest_active_request_created
+                              FROM T_Requested_Run RR
+                                   INNER JOIN #Tmp_Batch_Stats
+                                     ON RR.RDS_BatchID = #Tmp_Batch_Stats.Batch_ID
+                              WHERE #Tmp_Batch_Stats.Batch_ID BETWEEN @startBatchID and @endBatchID AND
+                                    RR.RDS_Status = 'Active'
+                              GROUP BY RR.RDS_BatchID
+               ) ActiveStatsQ ON BatchQ.batch_id = ActiveStatsQ.batch_id
+        WHERE BatchQ.Batch_ID BETWEEN @startBatchID and @endBatchID
+
+        If @requestedRunCount >= 1000
+        Begin
+            Set @startBatchID = @startBatchID + 1000
+            Set @endBatchID   = @endBatchID + 1000
+        End
+        Else
+        Begin
+            Set @startBatchID = @maxBatchID + 1
+            Set @endBatchID   = @maxBatchID + 1
         End
     End
 
@@ -125,48 +225,18 @@ AS
     Begin Transaction;
 
     MERGE INTO T_Cached_Requested_Run_Batch_Stats AS t
-    USING (
-            SELECT BatchQ.batch_id,
-                   StatsQ.oldest_request_created,
-                   StatsQ.instrument_group_first,
-                   StatsQ.instrument_group_last,
-                   StatsQ.separation_group_first,
-                   StatsQ.separation_group_last,
-                   ActiveStatsQ.active_requests,
-                   ActiveStatsQ.first_active_request,
-                   ActiveStatsQ.last_active_request,
-                   ActiveStatsQ.oldest_active_request_created,
-                   CASE WHEN ActiveStatsQ.active_requests = 0
-                        THEN dbo.get_requested_run_batch_max_days_in_queue(StatsQ.batch_id)   -- No active requested runs for this batch
-                        ELSE DATEDIFF(DAY, ISNULL(ActiveStatsQ.oldest_active_request_created, StatsQ.oldest_request_created), GETDATE())
-                   END AS days_in_queue
-            FROM ( SELECT Batch_ID
-                   FROM #Tmp_BatchIDs
-                 ) BatchQ
-                 LEFT OUTER JOIN
-                 ( SELECT RR.RDS_BatchID AS batch_id,
-                          MIN(RR.RDS_created) AS oldest_request_created,
-                          MIN(RR.RDS_Instrument_Group) AS instrument_group_first,
-                          MAX(RR.RDS_Instrument_Group) AS instrument_group_last,
-                          MIN(RR.RDS_Sec_Sep) AS separation_group_first,
-                          MAX(RR.RDS_Sec_Sep) AS separation_group_last
-                   FROM T_Requested_Run RR
-                        INNER JOIN #Tmp_BatchIDs
-                          ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
-                   GROUP BY RR.RDS_BatchID
-                 ) StatsQ ON BatchQ.batch_id = StatsQ.batch_id
-                 LEFT OUTER JOIN
-                 ( SELECT RR.RDS_BatchID AS batch_id,
-                          COUNT(*)            AS active_requests,
-                          MIN(RR.ID)          AS first_active_request,
-                          MAX(RR.ID)          AS last_active_request,
-                          MIN(RR.RDS_created) AS oldest_active_request_created
-                   FROM T_Requested_Run RR
-                        INNER JOIN #Tmp_BatchIDs
-                          ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
-                   WHERE RR.RDS_Status = 'Active'
-                   GROUP BY RR.RDS_BatchID
-                 ) ActiveStatsQ ON BatchQ.batch_id = ActiveStatsQ.batch_id
+    USING ( SELECT BatchQ.batch_id,
+                   BatchQ.oldest_request_created,
+                   BatchQ.instrument_group_first,
+                   BatchQ.instrument_group_last,
+                   BatchQ.separation_group_first,
+                   BatchQ.separation_group_last,
+                   BatchQ.active_requests,
+                   BatchQ.first_active_request,
+                   BatchQ.last_active_request,
+                   BatchQ.oldest_active_request_created,
+                   BatchQ.days_in_queue
+            FROM #Tmp_Batch_Stats BatchQ
           ) AS s
     ON ( t.batch_id = s.batch_id )
     WHEN MATCHED And (
@@ -228,12 +298,12 @@ AS
     ------------------------------------------------
 
     CREATE TABLE #Tmp_RequestedRunStats (
-	    batch_id int NOT NULL,
-	    datasets int NULL,
-	    min_days_in_queue int NULL,
-	    max_days_in_queue int NULL,
-	    instrument_first varchar(24) NULL,
-	    instrument_last varchar(24) NULL
+        batch_id int NOT NULL,
+        datasets int NULL,
+        min_days_in_queue int NULL,
+        max_days_in_queue int NULL,
+        instrument_first varchar(24) NULL,
+        instrument_last varchar(24) NULL
     );
 
     CREATE UNIQUE INDEX #IX_Tmp_RequestedRunStats On #Tmp_RequestedRunStats (batch_id);
@@ -245,25 +315,26 @@ AS
            StatsQ.max_days_in_queue,
            StatsQ.instrument_first,
            StatsQ.instrument_last
-    FROM ( SELECT Batch_ID
-           FROM #Tmp_BatchIDs
+    FROM (SELECT Batch_ID
+          FROM #Tmp_Batch_Stats
          ) BatchQ
-         LEFT OUTER JOIN ( SELECT RR.RDS_BatchID AS Batch_ID,
-                                  Count(*) AS datasets,
-                                  MIN(QT.days_in_queue) AS min_days_in_queue,
-                                  MAX(QT.days_in_queue) AS max_days_in_queue,
-                                  MIN(InstName.IN_name) AS instrument_first,
-                                  MAX(InstName.IN_name) AS instrument_last
-                           FROM T_Requested_Run RR
-                                INNER JOIN #Tmp_BatchIDs
-                                  ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
-                                INNER JOIN V_Requested_Run_Queue_Times AS QT
-                                  ON QT.requested_run_id = RR.ID
-                                INNER JOIN T_Dataset DS
-                                  ON RR.DatasetID = DS.dataset_id
-                                INNER JOIN T_Instrument_Name InstName
-                                  ON DS.DS_instrument_name_ID = InstName.instrument_id
-                           GROUP BY RR.RDS_BatchID ) StatsQ
+         LEFT OUTER JOIN (SELECT RR.RDS_BatchID AS Batch_ID,
+                                 Count(*) AS datasets,
+                                 MIN(QT.days_in_queue) AS min_days_in_queue,
+                                 MAX(QT.days_in_queue) AS max_days_in_queue,
+                                 MIN(InstName.IN_name) AS instrument_first,
+                                 MAX(InstName.IN_name) AS instrument_last
+                          FROM T_Requested_Run RR
+                               INNER JOIN #Tmp_Batch_Stats
+                                 ON RR.RDS_BatchID = #Tmp_Batch_Stats.Batch_ID
+                               INNER JOIN V_Requested_Run_Queue_Times AS QT
+                                 ON QT.requested_run_id = RR.ID
+                               INNER JOIN T_Dataset DS
+                                 ON RR.DatasetID = DS.dataset_id
+                               INNER JOIN T_Instrument_Name InstName
+                                 ON DS.DS_instrument_name_ID = InstName.instrument_id
+                          GROUP BY RR.RDS_BatchID
+                         ) StatsQ
             ON BatchQ.batch_id = StatsQ.batch_id;
 
     Begin Transaction;
@@ -313,11 +384,11 @@ AS
     ------------------------------------------------
 
     CREATE TABLE #Tmp_RequestedRunExperimentStats (
-	    batch_id int NOT NULL,
-	    requests int NULL,
-	    days_in_prep_queue int NULL,
-	    blocked int NULL,
-	    block_missing int NULL
+        batch_id int NOT NULL,
+        requests int NULL,
+        days_in_prep_queue int NULL,
+        blocked int NULL,
+        block_missing int NULL
     );
 
     CREATE UNIQUE INDEX #IX_RequestedRunExperimentStats On #Tmp_RequestedRunExperimentStats (batch_id);
@@ -329,35 +400,34 @@ AS
            StatsQ.blocked,
            StatsQ.block_missing
     FROM ( SELECT Batch_ID
-           FROM #Tmp_BatchIDs
+           FROM #Tmp_Batch_Stats
          ) BatchQ
-         LEFT OUTER JOIN ( SELECT RR.RDS_BatchID AS batch_ID,
-                                  Count(*) AS requests,
-                                  MAX(QT.days_in_queue) AS days_in_prep_queue,
-                                  SUM(CASE
-                                          WHEN ((COALESCE(RR.RDS_Block, 0) > 0) AND
-                                                (COALESCE(RR.RDS_Run_Order, 0) > 0))
+         LEFT OUTER JOIN (SELECT RR.RDS_BatchID AS batch_ID,
+                                 Count(*) AS requests,
+                                 MAX(QT.days_in_queue) AS days_in_prep_queue,
+                                 SUM(CASE WHEN (COALESCE(RR.RDS_Block, 0) > 0 AND
+                                                COALESCE(RR.RDS_Run_Order, 0) > 0)
                                           THEN 1
                                           ELSE 0
-                                      END) AS blocked,
-                                  SUM(CASE
-                                          WHEN ((LOWER(COALESCE(spr.BlockAndRandomizeRuns, '')) = 'yes') AND
-                                                ((COALESCE(RR.RDS_Block, 0) = 0) OR
-                                                 (COALESCE(RR.RDS_Run_Order, 0) = 0)))
-                                          THEN 1
-                                          ELSE 0
-                                      END) AS block_missing
-                           FROM T_Requested_Run RR
-                                INNER JOIN #Tmp_BatchIDs
-                                  ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
-                                INNER JOIN T_Experiments AS E
-                                  ON RR.exp_id = E.exp_id
-                                LEFT OUTER JOIN T_Sample_Prep_Request AS SPR
-                                  ON E.EX_sample_prep_request_ID = SPR.ID AND
-                                     SPR.ID <> 0
-                                LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
-                                  ON SPR.ID = QT.request_id
-                           GROUP BY RR.RDS_BatchID ) StatsQ
+                                     END) AS blocked,
+                                 SUM(CASE WHEN (LOWER(COALESCE(spr.BlockAndRandomizeRuns, '')) = 'yes' AND
+                                                (COALESCE(RR.RDS_Block, 0) = 0 OR
+                                                 COALESCE(RR.RDS_Run_Order, 0) = 0))
+                                         THEN 1
+                                         ELSE 0
+                                     END) AS block_missing
+                          FROM T_Requested_Run RR
+                               INNER JOIN #Tmp_Batch_Stats
+                                 ON RR.RDS_BatchID = #Tmp_Batch_Stats.Batch_ID
+                               INNER JOIN T_Experiments AS E
+                                 ON RR.exp_id = E.exp_id
+                               LEFT OUTER JOIN T_Sample_Prep_Request AS SPR
+                                 ON E.EX_sample_prep_request_ID = SPR.ID AND
+                                    SPR.ID <> 0
+                               LEFT OUTER JOIN V_Sample_Prep_Request_Queue_Times AS QT
+                                 ON SPR.ID = QT.request_id
+                          GROUP BY RR.RDS_BatchID
+                         ) StatsQ
            ON BatchQ.batch_id = StatsQ.batch_id;
 
     Begin Transaction;
