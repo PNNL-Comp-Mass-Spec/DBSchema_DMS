@@ -20,13 +20,13 @@ CREATE PROCEDURE [dbo].[add_new_ms_terms]
 **      [Parent_term_type]
 **      [Parent_term_name]
 **      [Parent_term_ID]
-**      [GrandParent_term_type]
-**      [GrandParent_term_name]
-**      [GrandParent_term_ID]
+**      [Grandparent_term_type]
+**      [Grandparent_term_name]
+**      [Grandparent_term_ID]
 **
 **  Auth:   mem
 **  Date:   06/15/2016 mem - Initial Version
-**          05/16/2018 mem - Add columns Parent_term_type and GrandParent_term_type
+**          05/16/2018 mem - Add columns Parent_term_type and Grandparent_term_type
 **          04/03/2022 mem - Fix incorrect field name bug
 **          04/04/2022 mem - Update the merge query to support Parent_term_type being null
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
@@ -74,19 +74,19 @@ AS
         [Parent_term_type] [varchar](16) NULL,
         [Parent_term_name] [varchar](400) NOT NULL,
         [Parent_term_ID] [varchar](24) NOT NULL,
-        [GrandParent_term_type] [varchar](16) NULL,
-        [GrandParent_term_name] [varchar](255) NULL,
-        [GrandParent_term_ID] [varchar](24) NULL,
+        [Grandparent_term_type] [varchar](16) NULL,
+        [Grandparent_term_name] [varchar](255) NULL,
+        [Grandparent_term_ID] [varchar](24) NULL,
         [MatchesExisting] tinyint
     )
 
     Set @S = ''
     Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf,'
     Set @S = @S +                               ' Parent_term_type, Parent_term_name, Parent_term_ID, '
-    Set @S = @S +                               ' GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID, MatchesExisting )'
+    Set @S = @S +                               ' Grandparent_term_type, Grandparent_term_name, Grandparent_term_ID, MatchesExisting )'
     Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf,'
     Set @S = @S + '        Parent_term_type, Parent_term_name, Parent_term_ID,'
-    Set @S = @S + '        GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID, 0 AS MatchesExisting'
+    Set @S = @S + '        Grandparent_term_type, Grandparent_term_name, Grandparent_term_ID, 0 AS MatchesExisting'
     Set @S = @S + ' FROM [' + @SourceTableName + ']'
     Set @S = @S + ' WHERE Parent_term_name <> '''' AND Definition NOT Like ''Obsolete%'' And Comment Not Like ''Obsolete%'' '
 
@@ -104,12 +104,12 @@ AS
     ---------------------------------------------------
     --
     UPDATE #Tmp_SourceData
-    SET GrandParent_term_type = Null,
-        GrandParent_Term_ID = Null,
-        GrandParent_Term_Name = Null
-    WHERE IsNull(GrandParent_Term_ID, '') = '' AND
-          IsNull(GrandParent_Term_Name, '') = '' AND
-          (GrandParent_Term_ID = '' OR GrandParent_Term_Name = '')
+    SET Grandparent_term_type = Null,
+        Grandparent_Term_ID = Null,
+        Grandparent_Term_Name = Null
+    WHERE IsNull(Grandparent_Term_ID, '') = '' AND
+          IsNull(Grandparent_Term_Name, '') = '' AND
+          (Grandparent_Term_ID = '' OR Grandparent_Term_Name = '')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -123,7 +123,7 @@ AS
     FROM #Tmp_SourceData s INNER JOIN T_CV_MS t
         ON t.Term_PK = s.Term_PK AND
             t.Parent_term_ID = s.Parent_term_ID AND
-            ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
+            ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, '')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -215,12 +215,12 @@ AS
         MERGE T_CV_MS AS t
         USING (SELECT Term_PK, Term_Name, Identifier, Is_Leaf,
                       Parent_term_type, Parent_term_name, Parent_term_ID,
-                      GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID
+                      Grandparent_term_type, Grandparent_term_name, Grandparent_term_ID
                FROM #Tmp_SourceData
                WHERE MatchesExisting = 1) as s
         ON ( t.Term_PK = s.Term_PK AND
              t.Parent_term_ID = s.Parent_term_ID AND
-             ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, ''))
+             ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, ''))
         WHEN MATCHED AND (
             t.[Term_Name] <> s.[Term_Name] OR
             t.[Identifier] <> s.[Identifier] OR
@@ -228,10 +228,10 @@ AS
             ISNULL( NULLIF(t.[Parent_term_type], s.[Parent_term_type]),
                     NULLIF(s.[Parent_term_type], t.[Parent_term_type])) IS NOT NULL OR
             t.[Parent_term_name] <> s.[Parent_term_name] OR
-            ISNULL( NULLIF(t.[GrandParent_term_type], s.[GrandParent_term_type]),
-                    NULLIF(s.[GrandParent_term_type], t.[GrandParent_term_type])) IS NOT NULL OR
-            ISNULL( NULLIF(t.[GrandParent_term_name], s.[GrandParent_term_name]),
-                    NULLIF(s.[GrandParent_term_name], t.[GrandParent_term_name])) IS NOT NULL
+            ISNULL( NULLIF(t.[Grandparent_term_type], s.[Grandparent_term_type]),
+                    NULLIF(s.[Grandparent_term_type], t.[Grandparent_term_type])) IS NOT NULL OR
+            ISNULL( NULLIF(t.[Grandparent_term_name], s.[Grandparent_term_name]),
+                    NULLIF(s.[Grandparent_term_name], t.[Grandparent_term_name])) IS NOT NULL
             )
         THEN UPDATE SET
             [Term_Name] = s.[Term_Name],
@@ -239,9 +239,9 @@ AS
             [Is_Leaf] = s.[Is_Leaf],
             [Parent_term_type] = s.[Parent_term_type],
             [Parent_term_name] = s.[Parent_term_name],
-            [GrandParent_term_ID] = s.[GrandParent_term_ID],
-            [GrandParent_term_type] = s.[GrandParent_term_type],
-            [GrandParent_term_name] = s.[GrandParent_term_name],
+            [Grandparent_term_ID] = s.[Grandparent_term_ID],
+            [Grandparent_term_type] = s.[Grandparent_term_type],
+            [Grandparent_term_name] = s.[Grandparent_term_name],
             [Updated] = GetDate();
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -254,10 +254,10 @@ AS
         --
         INSERT INTO T_CV_MS (Term_PK, Term_Name, Identifier, Is_Leaf,
                              Parent_term_type, Parent_term_name, Parent_term_ID,
-                             GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID)
+                             Grandparent_term_type, Grandparent_term_name, Grandparent_term_ID)
         SELECT Term_PK, Term_Name, Identifier, Is_Leaf,
                Parent_term_type, Parent_term_name, Parent_term_ID,
-               GrandParent_term_type, GrandParent_term_name, GrandParent_term_ID
+               Grandparent_term_type, Grandparent_term_name, Grandparent_term_ID
         FROM #Tmp_SourceData
         WHERE MatchesExisting = 0
         --
@@ -274,7 +274,7 @@ AS
              LEFT OUTER JOIN T_Tmp_PsiMS_2022Apr s
                ON t.Term_PK = s.Term_PK AND
                   t.Parent_term_ID = s.Parent_term_ID AND
-                  ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
+                  ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, '')
         WHERE s.term_pk IS NULL
         */
     End
@@ -319,23 +319,23 @@ AS
                CASE WHEN t.Parent_term_type = s.Parent_term_type THEN t.Parent_term_type ELSE IsNull(t.Parent_term_type, 'NULL') + ' --> ' + IsNull(s.Parent_term_type, 'NULL') END Parent_term_type,
                CASE WHEN t.Parent_term_name = s.Parent_term_name THEN t.Parent_term_name ELSE t.Parent_term_name + ' --> ' + s.Parent_term_name END Parent_term_name,
                t.Parent_term_ID,
-               CASE WHEN t.GrandParent_term_type = s.GrandParent_term_type THEN t.GrandParent_term_type ELSE IsNull(t.GrandParent_term_type, 'NULL') + ' --> ' + IsNull(s.GrandParent_term_type, 'NULL') END GrandParent_term_type,
-               CASE WHEN t.GrandParent_term_name = s.GrandParent_term_name THEN t.GrandParent_term_name ELSE IsNull(t.GrandParent_term_name, 'NULL') + ' --> ' + IsNull(s.GrandParent_term_name, 'NULL') END GrandParent_term_name,
-               t.GrandParent_term_ID,
+               CASE WHEN t.Grandparent_term_type = s.Grandparent_term_type THEN t.Grandparent_term_type ELSE IsNull(t.Grandparent_term_type, 'NULL') + ' --> ' + IsNull(s.Grandparent_term_type, 'NULL') END Grandparent_term_type,
+               CASE WHEN t.Grandparent_term_name = s.Grandparent_term_name THEN t.Grandparent_term_name ELSE IsNull(t.Grandparent_term_name, 'NULL') + ' --> ' + IsNull(s.Grandparent_term_name, 'NULL') END Grandparent_term_name,
+               t.Grandparent_term_ID,
                t.Entered,
                t.Updated
         FROM T_CV_MS AS t
             INNER JOIN #Tmp_SourceData AS s
               ON t.Term_PK = s.Term_PK AND
                  t.Parent_term_ID = s.Parent_term_ID AND
-                 ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
+                 ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, '')
         WHERE MatchesExisting=1 AND
               ( (t.Term_Name <> s.Term_Name) OR
                 (t.Identifier <> s.Identifier) OR
                 (t.Is_Leaf <> s.Is_Leaf) OR
                 (t.Parent_term_name <> s.Parent_term_name) OR
-                (ISNULL(NULLIF(t.GrandParent_term_name, s.GrandParent_term_name),
-                      NULLIF(s.GrandParent_term_name, t.GrandParent_term_name)) IS NOT NULL)
+                (ISNULL(NULLIF(t.Grandparent_term_name, s.Grandparent_term_name),
+                      NULLIF(s.Grandparent_term_name, t.Grandparent_term_name)) IS NOT NULL)
                )
         UNION
         SELECT 'New item to add' as Item_Type,
@@ -347,9 +347,9 @@ AS
                Parent_term_type,
                Parent_term_name,
                Parent_term_ID,
-               GrandParent_term_type,
-               GrandParent_term_name,
-               GrandParent_term_ID,
+               Grandparent_term_type,
+               Grandparent_term_name,
+               Grandparent_term_ID,
                Null AS Entered,
                Null as Updated
         FROM #Tmp_SourceData
@@ -359,12 +359,8 @@ AS
 
     End
 
-    ---------------------------------------------------
-    -- Exit
-    ---------------------------------------------------
-    --
 Done:
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_new_ms_terms] TO [DDL_Viewer] AS [dbo]

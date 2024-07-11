@@ -18,8 +18,8 @@ CREATE PROCEDURE [dbo].[add_new_envo_terms]
 **      [Synonyms]
 **      [Parent_term_name]
 **      [Parent_term_ID]
-**      [GrandParent_term_name]
-**      [GrandParent_term_ID]
+**      [Grandparent_term_name]
+**      [Grandparent_term_ID]
 **
 **  Auth:   mem
 **  Date:   08/24/2017 mem - Initial Version (based on add_new_bto_terms)
@@ -68,18 +68,18 @@ AS
         [Synonyms] varchar(900),
         [Parent_term_name] varchar(128) NULL,
         [Parent_term_ID] varchar(32) NULL,
-        [GrandParent_term_name] varchar(128) NULL,
-        [GrandParent_term_ID] varchar(32) NULL,
+        [Grandparent_term_name] varchar(128) NULL,
+        [Grandparent_term_ID] varchar(32) NULL,
         [MatchesExisting] tinyint
     )
 
     Set @S = ''
     Set @S = @S + ' INSERT INTO #Tmp_SourceData( Term_PK, Term_Name, Identifier, Is_Leaf, Synonyms,'
     Set @S = @S +                               ' Parent_term_name, Parent_term_ID, '
-    Set @S = @S +                               ' GrandParent_term_name, GrandParent_term_ID, MatchesExisting )'
+    Set @S = @S +                               ' Grandparent_term_name, Grandparent_term_ID, MatchesExisting )'
     Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf, Synonyms,'
     Set @S = @S + '   Parent_term_name, Parent_term_ID,'
-    Set @S = @S + '   GrandParent_term_name, GrandParent_term_ID, 0 AS MatchesExisting'
+    Set @S = @S + '   Grandparent_term_name, Grandparent_term_ID, 0 AS MatchesExisting'
     Set @S = @S + ' FROM [' + @sourceTable + ']'
     Set @S = @S + ' WHERE Parent_term_name <> '''' And Term_PK Like ''ENVO%'''
 
@@ -92,11 +92,11 @@ AS
     ---------------------------------------------------
     --
     UPDATE #Tmp_SourceData
-    SET GrandParent_Term_ID = NULL,
-        GrandParent_Term_Name = NULL
-    WHERE IsNull(GrandParent_Term_ID, '') = '' AND
-          IsNull(GrandParent_Term_Name, '') = '' AND
-          (GrandParent_Term_ID = '' OR GrandParent_Term_Name = '')
+    SET Grandparent_Term_ID = NULL,
+        Grandparent_Term_Name = NULL
+    WHERE IsNull(Grandparent_Term_ID, '') = '' AND
+          IsNull(Grandparent_Term_Name, '') = '' AND
+          (Grandparent_Term_ID = '' OR Grandparent_Term_Name = '')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -110,7 +110,7 @@ AS
     FROM #Tmp_SourceData s INNER JOIN T_CV_ENVO t
         ON t.Term_PK = s.Term_PK AND
             t.Parent_term_ID = s.Parent_term_ID AND
-            ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
+            ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, '')
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -124,20 +124,20 @@ AS
         MERGE T_CV_ENVO AS t
         USING (SELECT Term_PK, Term_Name, Identifier, Is_Leaf, Synonyms,
                       Parent_term_name, Parent_term_ID,
-                GrandParent_term_name, GrandParent_term_ID
+                Grandparent_term_name, Grandparent_term_ID
                FROM #Tmp_SourceData
                WHERE MatchesExisting = 1) as s
         ON ( t.Term_PK = s.Term_PK AND
              t.Parent_term_ID = s.Parent_term_ID AND
-             ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, ''))
+             ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, ''))
         WHEN MATCHED AND (
             t.[Term_Name] <> s.[Term_Name] OR
             t.[Identifier] <> s.[Identifier] OR
             t.[Is_Leaf] <> s.[Is_Leaf] OR
             t.[Synonyms] <> s.[Synonyms] OR
             t.[Parent_term_name] <> s.[Parent_term_name] OR
-            ISNULL( NULLIF(t.[GrandParent_term_name], s.[GrandParent_term_name]),
-                    NULLIF(s.[GrandParent_term_name], t.[GrandParent_term_name])) IS NOT NULL
+            ISNULL( NULLIF(t.[Grandparent_term_name], s.[Grandparent_term_name]),
+                    NULLIF(s.[Grandparent_term_name], t.[Grandparent_term_name])) IS NOT NULL
             )
         THEN UPDATE SET
             [Term_Name] = s.[Term_Name],
@@ -145,8 +145,8 @@ AS
             [Is_Leaf] = s.[Is_Leaf],
             [Synonyms] = s.[Synonyms],
             [Parent_term_name] = s.[Parent_term_name],
-            [GrandParent_term_ID] = s.[GrandParent_term_ID],
-            [GrandParent_term_name] = s.[GrandParent_term_name],
+            [Grandparent_term_ID] = s.[Grandparent_term_ID],
+            [Grandparent_term_name] = s.[Grandparent_term_name],
             [Updated] = GetDate();
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -160,10 +160,10 @@ AS
         --
         INSERT INTO T_CV_ENVO (Term_PK, Term_Name, Identifier, Is_Leaf, Synonyms,
                              Parent_term_name, Parent_term_ID,
-                             GrandParent_term_name, GrandParent_term_ID)
+                             Grandparent_term_name, Grandparent_term_ID)
         SELECT Term_PK, Term_Name, Identifier, Is_Leaf, Synonyms,
                Parent_term_name, Parent_term_ID,
-               GrandParent_term_name, GrandParent_term_ID
+               Grandparent_term_name, Grandparent_term_ID
         FROM #Tmp_SourceData
         WHERE MatchesExisting = 0
         --
@@ -318,23 +318,23 @@ AS
                CASE WHEN t.Synonyms = s.Synonyms THEN t.Synonyms ELSE t.Synonyms + ' --> ' + s.Synonyms END Synonyms,
                t.Parent_term_ID,
                CASE WHEN t.Parent_term_name = s.Parent_term_name THEN t.Parent_term_name ELSE t.Parent_term_name + ' --> ' + s.Parent_term_name END Parent_term_name,
-               t.GrandParent_term_ID,
-               CASE WHEN t.GrandParent_term_name = s.GrandParent_term_name THEN t.GrandParent_term_name ELSE IsNull(t.GrandParent_term_name, 'NULL') + ' --> ' + IsNull(s.GrandParent_term_name, 'NULL') END GrandParent_term_name,
+               t.Grandparent_term_ID,
+               CASE WHEN t.Grandparent_term_name = s.Grandparent_term_name THEN t.Grandparent_term_name ELSE IsNull(t.Grandparent_term_name, 'NULL') + ' --> ' + IsNull(s.Grandparent_term_name, 'NULL') END Grandparent_term_name,
                t.Entered,
                t.Updated
         FROM T_CV_ENVO AS t
             INNER JOIN #Tmp_SourceData AS s
               ON t.Term_PK = s.Term_PK AND
                  t.Parent_term_ID = s.Parent_term_ID AND
-                 ISNULL(t.GrandParent_term_ID, '') = ISNULL(s.GrandParent_term_ID, '')
+                 ISNULL(t.Grandparent_term_ID, '') = ISNULL(s.Grandparent_term_ID, '')
         WHERE MatchesExisting=1 AND
               ( (t.Term_Name <> s.Term_Name) OR
                 (t.Identifier <> s.Identifier) OR
                 (t.Is_Leaf <> s.Is_Leaf) OR
                 (t.Synonyms <> s.Synonyms) OR
                 (t.Parent_term_name <> s.Parent_term_name) OR
-                (ISNULL(NULLIF(t.GrandParent_term_name, s.GrandParent_term_name),
-                        NULLIF(s.GrandParent_term_name, t.GrandParent_term_name)) IS NOT NULL)
+                (ISNULL(NULLIF(t.Grandparent_term_name, s.Grandparent_term_name),
+                        NULLIF(s.Grandparent_term_name, t.Grandparent_term_name)) IS NOT NULL)
                )
         UNION
         SELECT 'New item to add' as Item_Type,
@@ -345,8 +345,8 @@ AS
                Synonyms,
                Parent_term_ID,
                Parent_term_name,
-               GrandParent_term_ID,
-             GrandParent_term_name,
+               Grandparent_term_ID,
+             Grandparent_term_name,
                Null AS Entered,
                Null as Updated
         FROM #Tmp_SourceData
@@ -356,11 +356,7 @@ AS
 
     End -- </a2>
 
-    ---------------------------------------------------
-    -- Exit
-    ---------------------------------------------------
-    --
 Done:
-    return @myError
+    Return @myError
 
 GO

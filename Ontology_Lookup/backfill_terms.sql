@@ -91,18 +91,18 @@ AS
         [Is_Leaf] [smallint],
         [Parent_term_name] varchar(255) NULL,
         [Parent_term_ID] varchar(32) NULL,
-        [GrandParent_term_name] varchar(255) NULL,
-        [GrandParent_term_ID] varchar(32) NULL,
+        [Grandparent_term_name] varchar(255) NULL,
+        [Grandparent_term_ID] varchar(32) NULL,
         [MatchesExisting] tinyint
     )
 
     Set @S = ''
     Set @S = @S + ' INSERT INTO #Tmp_SourceData(Term_PK, Term_Name, Identifier, Is_Leaf,'
     Set @S = @S +                               ' Parent_term_name, Parent_term_ID, '
-    Set @S = @S +                               ' GrandParent_term_name, GrandParent_term_ID, MatchesExisting)'
+    Set @S = @S +                               ' Grandparent_term_name, Grandparent_term_ID, MatchesExisting)'
     Set @S = @S + ' SELECT Term_PK, Term_Name, Identifier, Is_Leaf, '
     Set @S = @S + '   Parent_term_name, Parent_term_ID,'
-    Set @S = @S + '   GrandParent_term_name, GrandParent_term_ID, 0 AS MatchesExisting'
+    Set @S = @S + '   Grandparent_term_name, Grandparent_term_ID, 0 AS MatchesExisting'
     Set @S = @S + ' FROM [' + @sourceTable + ']'
     Set @S = @S + ' WHERE Parent_term_name <> '''' '
 
@@ -342,10 +342,6 @@ AS
         ORDER BY SourceTable.Identifier
         */
     End
-
-    ---------------------------------------------------
-    -- Exit
-    ---------------------------------------------------
 
 Done:
     Return @myError
