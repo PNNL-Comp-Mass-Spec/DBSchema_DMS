@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[T_CV_Union_Cached](
 	[Parent_Term_Name] [varchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Parent_Term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Grandparent_Term_Name] [varchar](255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[GrandParent_Term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Grandparent_Term_ID] [varchar](24) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_CV_Union_Cached] PRIMARY KEY CLUSTERED 
 (
 	[Entry_ID] ASC
