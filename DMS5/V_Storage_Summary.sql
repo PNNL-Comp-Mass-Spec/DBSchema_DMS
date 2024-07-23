@@ -3,12 +3,11 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Storage_Summary]
 AS
-SELECT SLP.[Vol Client] AS VolClient,
-       SLP.[Path],
-       SLP.[Vol Server] AS VolServer,
+SELECT SLP.vol_client AS VolClient,
+       SLP.storage_path,
+       SLP.vol_server AS VolServer,
        InstGroup.IN_Group AS InstGroup,
        InstName.IN_name AS Instrument,
        SLP.Datasets,
@@ -21,9 +20,9 @@ FROM T_Instrument_Name InstName
        ON InstName.IN_name = SLP.Instrument
      INNER JOIN dbo.T_Dataset DS
        ON SLP.ID = DS.DS_storage_path_ID
-WHERE (SLP.[Function] <> 'inbox') AND
-      (SLP.Datasets > 0)
-GROUP BY SLP.[Vol Client], InstGroup.IN_Group, SLP.Datasets, SLP.PATH, SLP.[Vol Server], InstName.IN_name
+WHERE SLP.storage_path_function <> 'inbox' AND
+      SLP.Datasets > 0
+GROUP BY SLP.vol_client, InstGroup.IN_Group, SLP.Datasets, SLP.storage_path, SLP.vol_server, InstName.IN_name
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Storage_Summary] TO [DDL_Viewer] AS [dbo]
