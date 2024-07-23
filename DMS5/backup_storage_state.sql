@@ -7,8 +7,7 @@ CREATE PROCEDURE [dbo].[backup_storage_state]
 /****************************************************
 **
 **  Desc:
-**      Copies current contents of storage and
-**      instrument tables into their backup tables
+**      Copy current contents of storage and instrument tables into their backup tables
 **
 **  Return values: 0: failure, otherwise, experiment ID
 **
@@ -20,19 +19,17 @@ CREATE PROCEDURE [dbo].[backup_storage_state]
 **          05/01/2009 mem - Updated description field in T_Storage_Path and T_Storage_Path_Bkup to be named SP_description
 **          08/30/2010 mem - Now copying IN_Created
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/23/2024 mem - Also copy data from columns IN_Group and IN_status
 **
 *****************************************************/
 (
     @message varchar(255) output
 )
 AS
-    declare @myError int
-    set @myError = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @myRowCount int
-    set @myRowCount = 0
-
-    set @message = ''
+    Set @message = ''
 
     ---------------------------------------------------
     -- Clear T_Storage_Path_Bkup
@@ -41,34 +38,44 @@ AS
     DELETE FROM T_Storage_Path_Bkup
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    if @myError <> 0
-    begin
-        set @message = 'Clear storage backup table failed'
-        return 1
-    end
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Clear storage backup table failed'
+        Return @myError
+    End
 
     ---------------------------------------------------
     -- Populate T_Storage_Path_Bkup
     ---------------------------------------------------
 
-    INSERT INTO T_Storage_Path_Bkup
-       (SP_path_ID, SP_path, SP_vol_name_client,
-       SP_vol_name_server, SP_function, SP_instrument_name,
-       SP_code, SP_description)
-    SELECT SP_path_ID, SP_path, SP_vol_name_client,
-       SP_vol_name_server, SP_function, SP_instrument_name,
-       SP_code, SP_description
+    INSERT INTO T_Storage_Path_Bkup (
+       SP_path_ID,
+       SP_path,
+       SP_vol_name_client,
+       SP_vol_name_server,
+       SP_function,
+       SP_instrument_name,
+       SP_code,
+       SP_description
+    )
+    SELECT SP_path_ID,
+           SP_path,
+           SP_vol_name_client,
+           SP_vol_name_server,
+           SP_function,
+           SP_instrument_name,
+           SP_code,
+           SP_description
     FROM T_Storage_Path
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    --
-    if @myError <> 0
-    begin
-        set @message = 'Copy storage backup failed'
-        return 1
-    end
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Copy storage backup failed'
+        Return @myError
+    End
 
     ---------------------------------------------------
     -- Clear T_Instrument_Name_Bkup
@@ -77,45 +84,52 @@ AS
     DELETE FROM T_Instrument_Name_Bkup
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    --
-    if @myError <> 0
-    begin
-        set @message = 'Clear instrument backup table failed'
-        return 1
-    end
+
+    If @myError <> 0
+    Begin
+        Set @message = 'Clear instrument backup table failed'
+        Return @myError
+    End
 
     ---------------------------------------------------
     -- Populate T_Instrument_Name_Bkup
     ---------------------------------------------------
 
-    INSERT INTO [T_Instrument_Name_Bkup]
-       (IN_name, Instrument_ID, IN_class, IN_source_path_ID,
-       IN_storage_path_ID, IN_capture_method,
-       IN_Room_Number,
-       IN_Description,
-       IN_Created)
-    SELECT IN_name,
-           Instrument_ID,
+    INSERT INTO T_Instrument_Name_Bkup (
+        Instrument_ID,
+        IN_name,
+        IN_class,
+        IN_Group,
+        IN_source_path_ID,
+        IN_storage_path_ID,
+        IN_capture_method,
+        IN_status,
+        IN_Room_Number,
+        IN_Description,
+        IN_Created
+    )
+    SELECT Instrument_ID,
+           IN_name,
            IN_class,
+           IN_Group,
            IN_source_path_ID,
            IN_storage_path_ID,
            IN_capture_method,
+           IN_status,
            IN_Room_Number,
            IN_Description,
            IN_Created
     FROM T_Instrument_Name
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
-    --
-    --
-    if @myError <> 0
-    begin
-        set @message = 'Copy instrument backup failed'
-        return 1
-    end
 
-    return @myError
+    If @myError <> 0
+    Begin
+        Set @message = 'Copy instrument backup failed'
+        Return @myError
+    End
+
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[backup_storage_state] TO [DDL_Viewer] AS [dbo]
