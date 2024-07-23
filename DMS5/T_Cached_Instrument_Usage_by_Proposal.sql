@@ -24,6 +24,7 @@ ALTER TABLE [dbo].[T_Cached_Instrument_Usage_by_Proposal] CHECK CONSTRAINT [FK_T
 GO
 ALTER TABLE [dbo].[T_Cached_Instrument_Usage_by_Proposal]  WITH CHECK ADD  CONSTRAINT [FK_T_Cached_Instrument_Usage_by_Proposal_T_Instrument_Group] FOREIGN KEY([IN_Group])
 REFERENCES [dbo].[T_Instrument_Group] ([IN_Group])
+ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[T_Cached_Instrument_Usage_by_Proposal] CHECK CONSTRAINT [FK_T_Cached_Instrument_Usage_by_Proposal_T_Instrument_Group]
 GO
