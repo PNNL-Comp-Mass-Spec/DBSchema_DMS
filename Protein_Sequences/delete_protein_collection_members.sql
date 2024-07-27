@@ -18,6 +18,7 @@ CREATE PROCEDURE [dbo].[delete_protein_collection_members]
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/26/2024 mem - Allow protein collections with state Offline or Proteins_Deleted to have their protein collection member entries deleted (since they already should be deleted)
 **
 *****************************************************/
 (
@@ -65,9 +66,11 @@ AS
     FROM T_Protein_Collection_States
     WHERE Collection_State_ID = @collectionState
 
-    if @collectionState > 2
-    begin
-        set @msg = 'Cannot Delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
+    -- Protein collections with state Unknown, New, Provisional, Offline, or Proteins_Deleted can be updated
+    -- Protein collections with state Production or Retired cannot be deleted
+    If @collectionState IN (3, 4)
+    Begin
+        Set @msg = 'Cannot delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
         RAISERROR (@msg,10, 1)
 
         return 51140
