@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[delete_protein_collection_members]
 **  Auth:   kja
 **  Date:   10/07/2004 kja - Initial version
 **          07/20/2015 mem - Now setting NumProteins and TotalResidues to 0 in T_Protein_Collections
-**          09/14/2015 mem - Added parameter @NumProteinsForReLoad
+**          09/14/2015 mem - Added parameter @numProteinsForReload
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
@@ -23,19 +23,19 @@ CREATE PROCEDURE [dbo].[delete_protein_collection_members]
 (
     @collectionID int,
     @message varchar(512) output,
-    @numProteinsForReLoad int = 0        -- Number of proteins that will be associated with this collection after they are added to the database following this delete
+    @numProteinsForReload int = 0        -- Number of proteins that will be associated with this collection after they are added to the database following this delete
 )
 AS
-    set nocount on
+    Set NoCount On
 
     Declare @myError int = 0
     Declare @myRowCount int = 0
 
-    set @NumProteinsForReLoad = IsNull(@NumProteinsForReLoad, 0)
-    set @message = ''
+    Set @numProteinsForReload = IsNull(@numProteinsForReload, 0)
+    Set @message = ''
 
-    declare @msg varchar(256)
-    declare @result int
+    Declare @msg varchar(256)
+    Declare @result int
 
     ---------------------------------------------------
     -- Check if collection is OK to delete
@@ -43,19 +43,19 @@ AS
 
     If Not Exists (SELECT * FROM T_Protein_Collections WHERE Protein_Collection_ID = @collectionID)
     Begin
-        set @msg = 'Protein collection ID not found: ' + Cast(@collectionID as varchar(12))
+        Set @msg = 'Protein collection ID not found: ' + Cast(@collectionID as varchar(12))
         RAISERROR (@msg, 10, 1)
         return 51140
     End
 
-    declare @collectionState int
+    Declare @collectionState int
 
     SELECT @collectionState = Collection_State_ID
     FROM T_Protein_Collections
     WHERE Protein_Collection_ID = @collectionID
 
-    declare @collectionName varchar(128)
-    declare @stateName varchar(64)
+    Declare @collectionName varchar(128)
+    Declare @stateName varchar(64)
 
     SELECT @collectionName = Collection_Name
     FROM T_Protein_Collections
@@ -71,15 +71,15 @@ AS
         RAISERROR (@msg,10, 1)
 
         return 51140
-    end
+    End
 
     ---------------------------------------------------
     -- Start transaction
     ---------------------------------------------------
 
-    declare @transName varchar(32)
-    set @transName = 'delete_protein_collection_members'
-    begin transaction @transName
+    Declare @transName varchar(32) = 'delete_protein_collection_members'
+
+    Begin transaction @transName
 
     ---------------------------------------------------
     -- delete the proteins for this protein collection
@@ -88,16 +88,16 @@ AS
     DELETE FROM T_Protein_Collection_Members
     WHERE Protein_Collection_ID = @collectionID
 
-    if @@error <> 0
-    begin
+    If @@error <> 0
+    Begin
         rollback transaction @transName
         RAISERROR ('Delete from entries table was unsuccessful for collection',
             10, 1)
         return 51130
-    end
+    End
 
     UPDATE T_Protein_Collections
-    SET NumProteins = @NumProteinsForReLoad,
+    SET NumProteins = @numProteinsForReload,
         NumResidues = 0
     WHERE Protein_Collection_ID = @collectionID
 
