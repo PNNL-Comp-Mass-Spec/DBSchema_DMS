@@ -6,7 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[delete_protein_collection]
 /****************************************************
 **
-**  Desc:
+**  Desc: 
 **      Delete the given protein collection, removing rows from the following tables:
 **        T_Archived_Output_File_Collections_XRef
 **        T_Archived_Output_Files
