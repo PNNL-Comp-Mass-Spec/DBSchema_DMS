@@ -6,8 +6,15 @@ GO
 CREATE PROCEDURE [dbo].[delete_protein_collection]
 /****************************************************
 **
-**  Desc: Deletes the given Protein Collection (use with caution)
-**            Collection_State_ID must be 1 or 2
+**  Desc:
+**      Delete the given protein collection, removing rows from the following tables:
+**        T_Archived_Output_File_Collections_XRef
+**        T_Archived_Output_Files
+**        T_Annotation_Groups
+**        T_Protein_Collection_Members_Cached
+**        T_Protein_Collections
+**
+**      The protein collection must have state 1 or 2 (New or Provisional) in T_Protein_Collections
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +26,7 @@ CREATE PROCEDURE [dbo].[delete_protein_collection]
 **          07/27/2022 mem - Switch from FileName to Collection_Name
 **                         - Rename argument to @collectionID
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/26/2024 mem - Set @numProteinsForReload to 0 when calling delete_protein_collection_members
 **
 *****************************************************/
 (
@@ -81,8 +89,7 @@ AS
         Begin
             Set @msg = 'Cannot Delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
             RAISERROR (@msg, 10, 1)
-
-            return 51140
+            Return 51140
         End
 
         Set @logErrors = 1
@@ -98,13 +105,13 @@ AS
         -- Delete the collection members
         ---------------------------------------------------
 
-        exec @myError = delete_protein_collection_members @collectionID, @message = @message output
+        Exec @myError = delete_protein_collection_members @collectionID, @numProteinsForReload = 0, @message = @message output
 
         If @myError <> 0
         Begin
-            rollback transaction @transName
+            Rollback transaction @transName
             RAISERROR ('Protein collection members deletion was unsuccessful', 10, 1)
-            return 51130
+            Return 51130
         End
 
         -- Look for this collection's Archived_File_ID in T_Archived_Output_File_Collections_XRef
@@ -122,7 +129,9 @@ AS
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
         If @myError <> 0
+        Begin
             RAISERROR ('Error deleting rows from T_Archived_Output_File_Collections_XRef', 11, 1)
+        End
 
         -- Delete the entry from T_Archived_Output_Files if not used in T_Archived_Output_File_Collections_XRef
         If Not Exists (SELECT * FROM T_Archived_Output_File_Collections_XRef where Archived_File_ID = @ArchivedFileID)
@@ -133,7 +142,9 @@ AS
             SELECT @myError = @@Error, @myRowCount = @@RowCount
 
             If @myError <> 0
+            Begin
                 RAISERROR ('Error deleting rows from T_Archived_Output_Files', 11, 1)
+            End
         End
 
         -- Delete the entry from T_Annotation_Groups
@@ -143,7 +154,9 @@ AS
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
         If @myError <> 0
+        Begin
             RAISERROR ('Error deleting rows from T_Annotation_Groups', 11, 1)
+        End
 
         DELETE FROM T_Protein_Collection_Members_Cached
         WHERE Protein_Collection_ID = @collectionID
@@ -151,7 +164,9 @@ AS
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
         If @myError <> 0
+        Begin
             RAISERROR ('Error deleting rows from T_Protein_Collection_Members_Cached', 11, 1)
+        End
 
         -- Delete the entry from T_Protein_Collections
         DELETE FROM T_Protein_Collections
@@ -160,22 +175,24 @@ AS
         SELECT @myError = @@Error, @myRowCount = @@RowCount
 
         If @myError <> 0
+        Begin
             RAISERROR ('Error deleting rows from T_Protein_Collections', 11, 1)
+        End
 
-        commit transaction @transname
+        Commit transaction @transname
 
     End Try
     Begin Catch
-        EXEC format_error_message @message output, @myError output
+        Exec format_error_message @message output, @myError output
 
         -- rollback any open transactions
-        IF (XACT_STATE()) <> 0
+        If (XACT_STATE()) <> 0
             ROLLBACK TRANSACTION;
 
         If @logErrors > 0
         Begin
             Declare @logMessage varchar(1024) = @message + '; Protein Collection ' + Cast(@collectionID As varchar(12))
-            exec post_log_entry 'Error', @logMessage, 'delete_protein_collection'
+            Exec post_log_entry 'Error', @logMessage, 'delete_protein_collection'
         End
 
         Print @message
@@ -185,6 +202,6 @@ AS
     End Catch
 
 Done:
-    return @myError
+    Return @myError
 
 GO
