@@ -6,8 +6,9 @@ GO
 CREATE PROCEDURE [dbo].[delete_protein_collection_members]
 /****************************************************
 **
-**  Desc:    Deletes Protein Collection Member Entries from a given Protein Collection ID
-**            Called by the Organism Database Handler when replacing the proteins for an existing protein collection
+**  Desc:
+**      Delete protein collection member entries for a given Protein Collection ID
+**      Called by the Organism Database Handler when replacing the proteins for an existing protein collection
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -19,6 +20,7 @@ CREATE PROCEDURE [dbo].[delete_protein_collection_members]
 **                         - Rename argument to @collectionID
 **          02/21/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          07/26/2024 mem - Allow protein collections with state Offline or Proteins_Deleted to have their protein collection member entries deleted (since they already should be deleted)
+**                         - Do not update protein and residue counts in T_Protein_Collections if _numProteinsForReload is negative
 **
 *****************************************************/
 (
@@ -46,7 +48,7 @@ AS
     Begin
         Set @msg = 'Protein collection ID not found: ' + Cast(@collectionID as varchar(12))
         RAISERROR (@msg, 10, 1)
-        return 51140
+        Return 51140
     End
 
     Declare @collectionState int
@@ -72,8 +74,7 @@ AS
     Begin
         Set @msg = 'Cannot delete collection "' + @collectionName + '": ' + @stateName + ' collections are protected'
         RAISERROR (@msg,10, 1)
-
-        return 51140
+        Return 51140
     End
 
     ---------------------------------------------------
@@ -85,7 +86,7 @@ AS
     Begin transaction @transName
 
     ---------------------------------------------------
-    -- delete the proteins for this protein collection
+    -- Delete the proteins for this protein collection
     ---------------------------------------------------
 
     DELETE FROM T_Protein_Collection_Members
@@ -93,20 +94,30 @@ AS
 
     If @@error <> 0
     Begin
-        rollback transaction @transName
-        RAISERROR ('Delete from entries table was unsuccessful for collection',
-            10, 1)
-        return 51130
+        Rollback transaction @transName
+        RAISERROR ('Delete from entries table was unsuccessful for collection', 10, 1)
+        Return 51130
     End
 
-    UPDATE T_Protein_Collections
-    SET NumProteins = @numProteinsForReload,
-        NumResidues = 0
-    WHERE Protein_Collection_ID = @collectionID
+    ---------------------------------------------------
+    -- Update the protein and residue counts in t_protein_collections
+    ---------------------------------------------------
 
-    commit transaction @transname
+    If @numProteinsForReload < 0
+    Begin
+        Print 'Skipped update of protein and residue counts in t_protein_collections for protein collection ID ' + Cast(@collectionID As varchar(12)) + ' since @numProteinsForReload negative'
+    End
+    Else
+    Begin
+        UPDATE T_Protein_Collections
+        SET NumProteins = @numProteinsForReload,
+            NumResidues = 0
+        WHERE Protein_Collection_ID = @collectionID
+    End
 
-    return 0
+    Commit transaction @transname
+
+    Return 0
 
 GO
 GRANT EXECUTE ON [dbo].[delete_protein_collection_members] TO [PROTEINSEQS\ProteinSeqs_Upload_Users] AS [dbo]
