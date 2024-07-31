@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[T_Cached_Protein_Collections](
 	[Organism_ID] [int] NOT NULL,
 	[Name] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Description] [varchar](900) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Collection_State_ID] [tinyint] NULL,
 	[State_Name] [varchar](50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Entries] [int] NULL,
 	[Residues] [int] NULL,
