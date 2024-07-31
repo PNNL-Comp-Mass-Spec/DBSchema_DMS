@@ -6,11 +6,8 @@ GO
 CREATE PROCEDURE [dbo].[validate_protein_collection_params]
 /****************************************************
 **
-**  Desc:   Validates the organism DB and/or protein collection options
-**
-**  Return values: 0: success, otherwise, error code
-**
-**  Parameters:
+**  Desc:
+**      Validates the organism DB and/or protein collection options
 **
 **  Auth:   mem
 **  Date:   08/26/2010
@@ -20,6 +17,7 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_params]
 **          07/12/2016 mem - Now using a synonym when calling validate_analysis_job_protein_parameters in the Protein_Sequences database
 **          04/11/2022 mem - Increase warning threshold for length of @protCollNameList to 4000
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          07/30/2024 mem - Call procedure validate_protein_collection_states()
 **
 *****************************************************/
 (
@@ -33,14 +31,12 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_params]
     @debugMode tinyint = 0                      -- If non-zero then will display some debug info
 )
 AS
-    set nocount on
+    Set nocount on
 
-    declare @myError int
-    declare @myRowCount int
-    set @myError = 0
-    set @myRowCount = 0
+    Declare @myError int = 0
+    Declare @myRowCount int = 0
 
-    declare @result int
+    Declare @result int
 
     -----------------------------------------------------------
     -- Validate the inputs
@@ -61,16 +57,15 @@ AS
     Set @protCollOptionsList = dbo.validate_na_parameter(@protCollOptionsList, 1)
 
 
-    if @organismDBName = '' set @organismDBName = 'na'
-    if @protCollNameList = '' set @protCollNameList = 'na'
-    if @protCollOptionsList = '' set @protCollOptionsList = 'na'
+    If @organismDBName = ''      Set @organismDBName = 'na'
+    If @protCollNameList = ''    Set @protCollNameList = 'na'
+    If @protCollOptionsList = '' Set @protCollOptionsList = 'na'
 
     ---------------------------------------------------
     -- Lookup orgDbReqd for the analysis tool
     ---------------------------------------------------
-    --
-    declare @orgDbReqd int
-    set @orgDbReqd = 0
+
+    Declare @orgDbReqd int = 0
 
     If IsNull(@toolName, '') = ''
         Set @orgDbReqd = 1
@@ -83,151 +78,198 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
-        if @myError <> 0
-        begin
-            set @message = 'Error looking up tool parameters'
-            return 51038
-        end
+        If @myError <> 0
+        Begin
+            Set @message = 'Error looking up tool parameters'
+            Return 51038
+        End
 
-        if @myRowCount = 0
-        begin
-            set @message = 'Invalid analysis tool "' + @toolName + '"; not found in T_Analysis_Tool'
-            return 51039
-        end
+        If @myRowCount = 0
+        Begin
+            Set @message = 'Invalid analysis tool "' + @toolName + '"; not found in T_Analysis_Tool'
+            Return 51039
+        End
     End
 
     ---------------------------------------------------
     -- Validate the protein collection info
     ---------------------------------------------------
 
-    if Len(@protCollNameList) > 4000
-    begin
-        set @message = 'Protein collection list is too long; maximum length is 4000 characters'
-        return 53110
-    end
-    --
-    if @orgDbReqd = 0
-    begin
-        if @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
-        begin
-            set @message = 'Protein parameters must all be "na"; you have: Legacy Fasta (OrgDBName) = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
-            return 53093
-        end
-    end
-    else
-    begin
-        If Not @organismDBName In ('', 'na') And Not @protCollNameList In ('', 'na')
+    If Len(@protCollNameList) > 4000
+    Begin
+        Set @message = 'Protein collection list is too long; maximum length is 4000 characters'
+        Return 53110
+    End
+
+    --------------------------------------------------------------
+    -- Populate #Tmp_ProteinCollections with the protein collections in _protCollNameList
+    --------------------------------------------------------------
+
+    CREATE TABLE #Tmp_ProteinCollections (
+        RowNumberID int identity(1,1),
+        Protein_Collection_Name varchar(128) NOT NULL,
+        Collection_State_ID int NOT NULL
+    );
+
+    INSERT INTO #Tmp_ProteinCollections (Protein_Collection_Name, Collection_State_ID)
+    SELECT Value, 0 AS Collection_State_ID
+    FROM dbo.parse_delimited_list(@protCollNameList, ',', 'validate_protein_collection_params');
+
+    --------------------------------------------------------------
+    -- Look for protein collections with state 'Offline' or 'Proteins_Deleted'
+    --------------------------------------------------------------
+
+    Declare @invalidCount int;
+    Declare @offlineCount int;
+
+    Exec @result = validate_protein_collection_states
+                       @invalidCount = @invalidCount output,
+                       @offlineCount = @offlineCount output,
+                       @message      = @message output,
+                       @showDebug    = 0;
+
+
+    If Coalesce(@invalidCount, 0) > 0 Or Coalesce(@offlineCount, 0) > 0
+    Begin
+        If Coalesce(@message, '') = ''
         Begin
-            -- User defined both a Legacy Fasta file and a Protein Collection List
-            -- Auto-change @organismDBName to 'na' if possible
-            If Exists (SELECT * FROM T_Analysis_Job
-                       WHERE AJ_organismDBName = @organismDBName AND
-                             AJ_proteinCollectionList = @protCollNameList AND
-                             AJ_StateID IN (1, 2, 4, 14))
+            If @invalidCount > 0
             Begin
-                -- Existing job found with both this legacy fasta file name and this protein collection list
-                -- Thus, use the protein collection list and clear @organismDBName
-                Set @organismDBName = ''
+                Set @message = 'The protein collection list has ' + Cast(@invalidCount As varchar(12)) + ' invalid protein ' +
+                               dbo.check_plural(@invalidCount, 'collection', 'collections');
+            End
+            Else
+            Begin
+                Set @message = 'The protein collection list has ' + Cast(@offlineCount As varchar(12)) + ' offline protein ' +
+                               dbo.check_plural(@offlineCount, 'collection', 'collections') +
+                               '; contact an admin to restore the proteins'
             End
         End
 
-
-        If Not @organismDBName In ('', 'na')
+        If Coalesce(@result, 0) = 0
         Begin
-            If Not @protCollNameList In ('', 'na')
+            Set @result = 5330;
+        End
+
+        Return @result;
+    End
+
+    If @orgDbReqd = 0
+    Begin
+        If @organismDBName <> 'na' OR @protCollNameList <> 'na' OR @protCollOptionsList <> 'na'
+        Begin
+            Set @message = 'Protein parameters must all be "na"; you have: Legacy Fasta (OrgDBName) = "' + @organismDBName + '", ProteinCollectionList = "' + @protCollNameList + '", ProteinOptionsList = "' + @protCollOptionsList + '"'
+            Return 53093
+        End
+
+        Return 0
+    End
+
+    If Not @organismDBName In ('', 'na') And Not @protCollNameList In ('', 'na')
+    Begin
+        -- User defined both a Legacy Fasta file and a Protein Collection List
+        -- Auto-change @organismDBName to 'na' if possible
+        If Exists (SELECT * FROM T_Analysis_Job
+                   WHERE AJ_organismDBName = @organismDBName AND
+                         AJ_proteinCollectionList = @protCollNameList AND
+                         AJ_StateID IN (1, 2, 4, 14))
+        Begin
+            -- Existing job found with both this legacy fasta file name and this protein collection list
+            -- Thus, use the protein collection list and clear @organismDBName
+            Set @organismDBName = ''
+        End
+    End
+
+    If Not @organismDBName In ('', 'na')
+    Begin
+        If Not @protCollNameList In ('', 'na')
+        Begin
+            Set @message = 'Cannot define both a Legacy Fasta file and a Protein Collection List; one must be "na"'
+            Return 53104
+        End
+
+        If @protCollNameList In ('', 'na') and Not @protCollOptionsList In ('', 'na')
+        Begin
+            Set @protCollOptionsList = 'na'
+        End
+
+        -- Verify that @organismDBName is defined in T_Organism_DB_File and that the organism matches up
+
+        If Not Exists (
+            SELECT *
+            FROM T_Organism_DB_File ODB INNER JOIN
+                 T_Organisms O ON ODB.Organism_ID = O.Organism_ID
+            WHERE ODB.FileName = @organismDBName AND O.OG_name = @organismName And Active > 0 And Valid > 0
+            )
+        Begin
+            -- Match not found; try matching the name but not the organism
+            Declare @OrganismMatch varchar(128) = ''
+
+            SELECT @OrganismMatch = O.OG_name
+            FROM T_Organism_DB_File ODB INNER JOIN
+                 T_Organisms O ON ODB.Organism_ID = O.Organism_ID
+            WHERE (ODB.FileName = @organismDBName) And Active > 0 And Valid > 0
+            --
+            SELECT @myError = @@error, @myRowCount = @@rowcount
+
+            If @myRowCount > 0
             Begin
-                set @message = 'Cannot define both a Legacy Fasta file and a Protein Collection List; one must be "na"'
-                return 53104
+                Set @message = 'Legacy Fasta file "' + @organismDBName + '" is defined for organism ' + @OrganismMatch + '; you specified organism ' + @organismName + '; cannot continue'
+                Return 53120
             End
-
-            If @protCollNameList In ('', 'na') and Not @protCollOptionsList In ('', 'na')
+            Else
             Begin
-                Set @protCollOptionsList = 'na'
-            End
+                -- Match still not found; check if it is disabled
 
-            -- Verify that @organismDBName is defined in T_Organism_DB_File and that the organism matches up
-
-            If Not Exists (
-                SELECT *
-                FROM T_Organism_DB_File ODB INNER JOIN
-                     T_Organisms O ON ODB.Organism_ID = O.Organism_ID
-                WHERE (ODB.FileName = @organismDBName) AND (O.OG_name = @organismName) And Active > 0 And Valid > 0
-                )
-            Begin
-                -- Match not found; try matching the name but not the organism
-                Declare @OrganismMatch varchar(128) = ''
-
-                SELECT @OrganismMatch = O.OG_name
-                FROM T_Organism_DB_File ODB INNER JOIN
-                     T_Organisms O ON ODB.Organism_ID = O.Organism_ID
-                WHERE (ODB.FileName = @organismDBName) And Active > 0 And Valid > 0
-                --
-                SELECT @myError = @@error, @myRowCount = @@rowcount
-                --
-
-                If @myRowCount > 0
+                If Exists (
+                    SELECT *
+                    FROM T_Organism_DB_File ODB INNER JOIN
+                        T_Organisms O ON ODB.Organism_ID = O.Organism_ID
+                    WHERE (ODB.FileName = @organismDBName) And (Active = 0 Or Valid = 0)
+                    )
                 Begin
-                    set @message = 'Legacy Fasta file "' + @organismDBName + '" is defined for organism ' + @OrganismMatch + '; you specified organism ' + @organismName + '; cannot continue'
-                    return 53120
+                    Set @message = 'Legacy Fasta file "' + @organismDBName + '" is disabled and cannot be used (T_Organism_DB_File)'
+                    Return 53121
                 End
                 Else
                 Begin
-                    -- Match still not found; check if it is disabled
-
-                    If Exists (
-                        SELECT *
-                        FROM T_Organism_DB_File ODB INNER JOIN
-                            T_Organisms O ON ODB.Organism_ID = O.Organism_ID
-                        WHERE (ODB.FileName = @organismDBName) And (Active = 0 Or Valid = 0)
-                        )
-                    Begin
-                        set @message = 'Legacy Fasta file "' + @organismDBName + '" is disabled and cannot be used (T_Organism_DB_File)'
-                        return 53121
-                    End
-                    Else
-                    Begin
-                        set @message = 'Legacy Fasta file "' + @organismDBName + '" is not a recognized fasta file'
-                        return 53122
-                    End
-
+                    Set @message = 'Legacy Fasta file "' + @organismDBName + '" is not a recognized fasta file'
+                    Return 53122
                 End
 
             End
-
-
         End
+    End
 
-        if @debugMode <> 0
-        begin
-            Set @message =  'Calling s_validate_analysis_job_protein_parameters: ' +
-                                IsNull(@organismName, '??') + '; ' +
-                                IsNull(@ownerUsername, '??') + '; ' +
-                                IsNull(@organismDBName, '??') + '; ' +
-                                IsNull(@protCollNameList, '??') + '; ' +
-                                IsNull(@protCollOptionsList, '??')
+    If @debugMode <> 0
+    Begin
+        Set @message = 'Calling s_validate_analysis_job_protein_parameters: ' +
+                           IsNull(@organismName, '??') + '; ' +
+                           IsNull(@ownerUsername, '??') + '; ' +
+                           IsNull(@organismDBName, '??') + '; ' +
+                           IsNull(@protCollNameList, '??') + '; ' +
+                           IsNull(@protCollOptionsList, '??')
 
-            Print @message
-            -- exec post_log_entry 'Debug',@message, 'validate_protein_collection_params'
-            Set @message = ''
-        end
+        Print @message
+        -- exec post_log_entry 'Debug',@message, 'validate_protein_collection_params'
+        Set @message = ''
+    End
 
-        -- Call ProteinSeqs.Protein_Sequences.dbo.validate_analysis_job_protein_parameters
-        exec @result = s_validate_analysis_job_protein_parameters
-                            @organismName,
-                            @ownerUsername,
-                            @organismDBName,
-                            @protCollNameList output,
-                            @protCollOptionsList output,
-                            @message output
+    -- Call ProteinSeqs.Protein_Sequences.dbo.validate_analysis_job_protein_parameters
+    Exec @result = s_validate_analysis_job_protein_parameters
+                       @organismName,
+                       @ownerUsername,
+                       @organismDBName,
+                       @protCollNameList output,
+                       @protCollOptionsList output,
+                       @message output
 
+    If @result <> 0
+    Begin
+        Return @result
+    End
 
-        if @result <> 0
-        begin
-            return 53108
-        end
-    end
-
-    return 0
+    Return 0
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[validate_protein_collection_params] TO [DDL_Viewer] AS [dbo]
