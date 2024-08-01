@@ -125,6 +125,7 @@ CREATE PROCEDURE [dbo].[add_update_dataset]
 **          10/24/2023 mem - Use update_cart_parameters to add/update Cart Config ID in T_Requested_Run
 **          10/29/2023 mem - Call add_new_dataset_to_creation_queue instead of create_xml_dataset_trigger_file
 **          10/30/2023 mem - Replace mode 'add_trigger' with 'add_dataset_create_task', expanding @mode to varchar(32)
+**          07/31/2024 mem - Remove the leading semicolon when removing the requested run comment from the dataset comment
 **
 *****************************************************/
 (
@@ -953,15 +954,16 @@ AS
         -- Assure that @reqRunComment doesn't have &quot; or &#34; or &amp;
         Set @reqRunComment = dbo.replace_character_codes(@reqRunComment)
 
-        If LEN(@reqRunComment) > 0 And (@comment = @reqRunComment Or @comment LIKE @reqRunComment + '%')
+        If Len(Coalesce(@reqRunComment, '')) > 0 And (@comment = @reqRunComment Or @comment LIKE @reqRunComment + '%')
         Begin
-            If LEN(@comment) = LEN(@reqRunComment)
+            If Len(@comment) = Len(@reqRunComment)
             Begin
+                Print 'Setting the dataset comment to an empty string since it matches the requested run comment'
                 Set @comment = ''
             End
             Else
             Begin
-                Set @comment = LTrim(Substring(@comment, LEN(@reqRunComment) + 1, LEN(@comment)))
+                Set @comment = LTrim(Substring(@comment, Len(@reqRunComment) + 2, Len(@comment)))
             End
         End
     End
