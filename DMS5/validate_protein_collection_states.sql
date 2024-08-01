@@ -25,6 +25,7 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_states]
 **
 **  Auth:   mem
 **  Date:   07/30/2024 mem - Initial release
+**          08/01/2024 mem - Ignore protein collections named 'na'
 **
 *****************************************************/
 (
@@ -58,7 +59,7 @@ AS
     UPDATE #Tmp_ProteinCollections
     SET Collection_State_ID = PC.collection_state_id
     FROM T_Cached_Protein_Collections PC
-    WHERE #Tmp_ProteinCollections.Protein_Collection_Name = PC.Name AND 
+    WHERE #Tmp_ProteinCollections.Protein_Collection_Name = PC.Name AND
           Not PC.collection_state_id Is Null;
 
     --------------------------------------------------------------
@@ -67,11 +68,11 @@ AS
 
     SELECT @invalidCount = COUNT(*)
     FROM #Tmp_ProteinCollections
-    WHERE Collection_State_ID IN (0, 5);
+    WHERE Collection_State_ID IN (0, 5) AND Not Protein_Collection_Name IN ('na');
 
     SELECT @offlineCount = COUNT(*)
     FROM #Tmp_ProteinCollections
-    WHERE Collection_State_ID IN (6);
+    WHERE Collection_State_ID IN (6) AND Not Protein_Collection_Name IN ('na');
 
     --------------------------------------------------------------
     -- Look for unrecognized protein collections
@@ -81,7 +82,7 @@ AS
 
     SELECT @msg = Coalesce(@msg + ', ' + Protein_Collection_Name, Protein_Collection_Name)
     FROM #Tmp_ProteinCollections
-    WHERE Collection_State_ID = 0
+    WHERE Collection_State_ID = 0 AND Not Protein_Collection_Name IN ('na')
     ORDER BY Protein_Collection_Name;
 
     If @msg <> ''
