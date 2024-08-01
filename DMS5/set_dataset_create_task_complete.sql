@@ -20,6 +20,7 @@ CREATE PROCEDURE [dbo].[set_dataset_create_task_complete]
 **
 **  Auth:   mem
 **          10/25/2023 mem - Initial version
+**          07/31/2024 mem - Set the task state to 1 if @completionCode is -1, since the Data Import Manager uses that completion code when it is run in preview mode
 **
 *****************************************************/
 (
@@ -60,10 +61,10 @@ AS
     ---------------------------------------------------
     -- Get current state of this dataset create task
     ---------------------------------------------------
-    --
+
     Declare @stateID tinyint = 0
     Declare @datasetName varchar(128)
-    
+
     SELECT @stateID = State_ID,
            @datasetName = Dataset
     FROM T_Dataset_Create_Queue
@@ -99,12 +100,15 @@ AS
 
     ---------------------------------------------------
     -- Determine completion state
+    --
+    -- A completion code of -1 means the Data Import Manager was run in preview mode,
+    -- and the dataset creation task needs to be reset to new
     ---------------------------------------------------
 
-    If @completionCode = 0
-        Set @stateID = 3
-    Else
-        Set @stateID = 4
+    Set @stateID = CASE WHEN @completionCode =  0 THEN 3
+                        WHEN @completionCode = -1 THEN 1
+                        ELSE 4
+                   END
 
     ---------------------------------------------------
     -- Start a new transaction
@@ -116,12 +120,18 @@ AS
     ---------------------------------------------------
     -- Update the state, finish time, and completion code
     ---------------------------------------------------
-    --
+
     UPDATE T_Dataset_Create_Queue
     SET State_ID           = @stateID,
         Finish             = GetDate(),
-        Completion_Code    = @completionCode,
-        Completion_Message = @completionMessage
+        Completion_Code    = CASE WHEN @completionCode = -1
+                                  THEN 0
+                                  ELSE @completionCode
+                             END,
+        Completion_Message = CASE WHEN @completionCode = -1
+                                  THEN 'Previewed dataset creation'
+                                  ELSE @completionMessage
+                             END
     WHERE Entry_ID = @entryID
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -137,10 +147,10 @@ AS
     commit transaction @transName
 
     ---------------------------------------------------
-    -- Make an entry in t_log_entries if the completion code is non-zero
+    -- Make an entry in t_log_entries if the completion code is not 0 or -1
     ---------------------------------------------------
 
-    If @completionCode <> 0
+    If Not @completionCode IN (0, -1)
     Begin
         Declare @logMessage varchar(512)
 
