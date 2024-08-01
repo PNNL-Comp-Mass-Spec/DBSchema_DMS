@@ -37,6 +37,7 @@ CREATE PROCEDURE [dbo].[validate_protein_collection_list_for_dataset_table]
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/22/2023 mem - Rename column in temp table
 **          07/30/2024 mem - Call procedure public.validate_protein_collection_states()
+**          08/01/2024 mem - Populate column Collection_State_ID when appending protein collections to #Tmp_ProteinCollections
 **
 *****************************************************/
 (
@@ -148,9 +149,9 @@ AS
             Print @msg
 
         DELETE FROM #Tmp_ProteinCollections
-        WHERE NOT RowNumberID IN ( SELECT Min(RowNumberID) AS IDToKeep
-                                   FROM #Tmp_ProteinCollections
-                                   GROUP BY Protein_Collection_Name )
+        WHERE NOT RowNumberID IN (SELECT Min(RowNumberID) AS IDToKeep
+                                  FROM #Tmp_ProteinCollections
+                                  GROUP BY Protein_Collection_Name)
 
     End
 
@@ -205,30 +206,30 @@ AS
     -- These are typically the contaminant collections like Tryp_Pig_Bov
     --------------------------------------------------------------
 
-    INSERT INTO #Tmp_IntStds( Internal_Std_Mix_ID,
-                              Protein_Collection_Name,
-                              Dataset_Count,
-                              Experiment_Count,
-                              Enzyme_Contaminant_Collection )
+    INSERT INTO #Tmp_IntStds(Internal_Std_Mix_ID,
+                             Protein_Collection_Name,
+                             Dataset_Count,
+                             Experiment_Count,
+                             Enzyme_Contaminant_Collection)
     SELECT DISTINCT Internal_Std_Mix_ID,
                     Protein_Collection_Name,
                     Dataset_Count,
                     Experiment_Count,
                     Enzyme_Contaminant_Collection
-    FROM ( SELECT -1 AS Internal_Std_Mix_ID,
-                  ISNULL(Enz.Protein_Collection_Name, '') AS Protein_Collection_Name,
-                  COUNT(DISTINCT DS.Dataset_Num) AS Dataset_Count,
-                  COUNT(DISTINCT E.Exp_ID) AS Experiment_Count,
-                  1 AS Enzyme_Contaminant_Collection
-            FROM #TmpDatasets
-                INNER JOIN dbo.T_Dataset DS
-                    ON #TmpDatasets.Dataset_Name = DS.Dataset_Num
-                INNER JOIN T_Experiments E
-                    ON DS.Exp_ID = E.Exp_ID
-                INNER JOIN T_Enzymes Enz
-                    ON E.EX_enzyme_ID = Enz.Enzyme_ID
-            GROUP BY ISNULL(Enz.Protein_Collection_Name, '')
-            ) LookupQ
+    FROM (SELECT -1 AS Internal_Std_Mix_ID,
+                 ISNULL(Enz.Protein_Collection_Name, '') AS Protein_Collection_Name,
+                 COUNT(DISTINCT DS.Dataset_Num) AS Dataset_Count,
+                 COUNT(DISTINCT E.Exp_ID) AS Experiment_Count,
+                 1 AS Enzyme_Contaminant_Collection
+          FROM #TmpDatasets
+               INNER JOIN dbo.T_Dataset DS
+                 ON #TmpDatasets.Dataset_Name = DS.Dataset_Num
+               INNER JOIN T_Experiments E
+                 ON DS.Exp_ID = E.Exp_ID
+               INNER JOIN T_Enzymes Enz
+                 ON E.EX_enzyme_ID = Enz.Enzyme_ID
+          GROUP BY ISNULL(Enz.Protein_Collection_Name, '')
+         ) LookupQ
     WHERE Protein_Collection_Name <> ''
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
@@ -255,10 +256,10 @@ AS
         Set @collectionWithContaminants = ''
 
         SELECT @matchCount = COUNT(*),
-            @collectionWithContaminants = Min(PCLocal.Protein_Collection_Name)
+               @collectionWithContaminants = Min(PCLocal.Protein_Collection_Name)
         FROM #Tmp_ProteinCollections PCLocal
-            INNER JOIN S_V_Protein_Collections_by_Organism PCMaster
-            ON PCLocal.Protein_Collection_Name = PCMaster.Collection_Name
+             INNER JOIN S_V_Protein_Collections_by_Organism PCMaster
+               ON PCLocal.Protein_Collection_Name = PCMaster.Collection_Name
         WHERE PCMaster.Includes_Contaminants > 0
 
         If @matchCount > 0
@@ -282,9 +283,9 @@ AS
     -- with the datasets in #TmpDatasets, including their parent experiments
     --------------------------------------------------------------
 
-    INSERT INTO #Tmp_IntStds( Internal_Std_Mix_ID, Protein_Collection_Name,
-                          Dataset_Count, Experiment_Count,
-                          Enzyme_Contaminant_Collection )
+    INSERT INTO #Tmp_IntStds(Internal_Std_Mix_ID, Protein_Collection_Name,
+                             Dataset_Count, Experiment_Count,
+                             Enzyme_Contaminant_Collection)
     SELECT DSIntStd.Internal_Std_Mix_ID,
            ISPM.Protein_Collection_Name,
            COUNT(*) AS Dataset_Count,
@@ -348,12 +349,12 @@ AS
     -- remove 'HumanContam' from #Tmp_IntStds since every protein in 'HumanContam' is also in 'Tryp_Pig_Bov'
     --------------------------------------------------------------
 
-    If EXISTS ( SELECT *
-                FROM #Tmp_ProteinCollections
-                WHERE Protein_Collection_Name = 'Tryp_Pig_Bov' ) AND
-       EXISTS ( SELECT *
-                FROM #Tmp_IntStds
-                WHERE Protein_Collection_Name = 'HumanContam' )
+    If EXISTS (SELECT RowNumberID
+               FROM #Tmp_ProteinCollections
+               WHERE Protein_Collection_Name = 'Tryp_Pig_Bov') AND
+       EXISTS (SELECT Internal_Std_Mix_ID
+               FROM #Tmp_IntStds
+               WHERE Protein_Collection_Name = 'HumanContam')
     Begin
         DELETE FROM #Tmp_IntStds
         WHERE Protein_Collection_Name = 'HumanContam'
@@ -377,10 +378,10 @@ AS
     -- Protein_Collection_Name values in #Tmp_IntStds
     --------------------------------------------------------------
 
-    INSERT INTO #Tmp_ProteinCollectionsToAdd( Protein_Collection_Name,
-                                          Dataset_Count,
-                                          Experiment_Count,
-                                          Enzyme_Contaminant_Collection )
+    INSERT INTO #Tmp_ProteinCollectionsToAdd(Protein_Collection_Name,
+                                             Dataset_Count,
+                                             Experiment_Count,
+                                             Enzyme_Contaminant_Collection)
     SELECT I.Protein_Collection_Name,
            SUM(I.Dataset_Count),
            SUM(I.Experiment_Count),
@@ -419,9 +420,10 @@ AS
         -- Now append them to #Tmp_ProteinCollections
         -- Note that we first append collections that did not come from digestion enzymes
 
-        INSERT INTO #Tmp_ProteinCollections (Protein_Collection_Name, Collection_Appended)
+        INSERT INTO #Tmp_ProteinCollections (Protein_Collection_Name, Collection_Appended, Collection_State_ID)
         SELECT Protein_Collection_Name,
-               1 AS Collection_Appended
+               1 AS Collection_Appended,
+               0 AS Collection_State_ID
         FROM #Tmp_ProteinCollectionsToAdd
         GROUP BY Enzyme_Contaminant_Collection, Protein_Collection_Name
         ORDER BY Enzyme_Contaminant_Collection, Protein_Collection_Name
@@ -511,10 +513,10 @@ AS
             While @continue = 1
             Begin -- <c>
                 SELECT TOP 1 @uniqueID = UniqueID,
-                            @proteinCollectionName = Protein_Collection_Name,
-                            @datasetCount = Dataset_Count,
-                            @experimentCount = Experiment_Count,
-                            @enzymeContaminantCollection = Enzyme_Contaminant_Collection
+                             @proteinCollectionName = Protein_Collection_Name,
+                             @datasetCount = Dataset_Count,
+                             @experimentCount = Experiment_Count,
+                             @enzymeContaminantCollection = Enzyme_Contaminant_Collection
                 FROM #Tmp_ProteinCollectionsToAdd
                 WHERE UniqueID > @uniqueID
                 ORDER BY UniqueID
