@@ -99,17 +99,20 @@ CREATE PROCEDURE [dbo].[request_step_task_xml]
 **          02/16/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/09/2023 mem - Use new column names in T_Job_Steps
 **          03/29/2023 mem - Add support for state 11 (Waiting_For_File)
+**          08/03/2024 mem - Rename @jobNumber argument to @job
+**                         - Rename @infoOnly argument to @infoLevel
+**                         - Rename @stepnumber variable to @step
 **
 *****************************************************/
 (
     @processorName varchar(128),                -- Name of the processor (aka manager) requesting a job
-    @jobNumber int = 0 output,                  -- Job number assigned; 0 if no job available
+    @job int = 0 output,                        -- Job number assigned; 0 if no job available
     @parameters varchar(max) output,            -- job step parameters (in XML)
     @message varchar(512) output,               -- Output message
-    @infoOnly tinyint = 0,                      -- Set to 1 to preview the job that would be returned; if 2, will print debug statements
+    @infoLevel tinyint = 0,                     -- Set to 1 to preview the job that would be returned; if 2, will print debug statements
     @analysisManagerVersion varchar(128) = '',  -- Used to update T_Local_Processors
     @remoteInfo varchar(900) = '',              -- Provided by managers that stage jobs to run remotely; used to assure that we don't stage too many jobs at once and to assure that we only check remote progress using a manager that has the same remote info as a job step
-    @jobCountToPreview int = 10,                -- The number of jobs to preview when @infoOnly >= 1
+    @jobCountToPreview int = 10,                -- The number of jobs to preview when @infoLevel >= 1
     @useBigBangQuery tinyint = 1,               -- Ignored and always set to 1 by this procedure (When non-zero, uses a single, large query to find candidate steps, which can be very expensive if there is a large number of active jobs (i.e. over 10,000 active jobs))
     @throttleByStartTime tinyint = 0,           -- Set to 1 to limit the number of job steps that can start simultaneously on a given storage server (to avoid overloading the disk and network I/O on the server); this is no longer a necessity because copying of large files now uses lock files (effective January 2013)
     @maxStepNumToThrottle int = 10,             -- Only used if @throttleByStartTime is non-zero
@@ -161,10 +164,10 @@ AS
     ---------------------------------------------------
 
     Set @processorName = IsNull(@processorName, '')
-    Set @jobNumber = 0
+    Set @job = 0
     Set @parameters = ''
     Set @message = ''
-    Set @infoOnly = IsNull(@infoOnly, 0)
+    Set @infoLevel = IsNull(@infoLevel, 0)
     Set @analysisManagerVersion = IsNull(@analysisManagerVersion, '')
     Set @remoteInfo = IsNull(@remoteInfo, '')
     Set @jobCountToPreview = IsNull(@jobCountToPreview, 10)
@@ -191,7 +194,7 @@ AS
     --
     Declare @jobNotAvailableErrorCode int = 53000
 
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Starting; make sure this is a valid processor'
 
     ---------------------------------------------------
@@ -245,7 +248,7 @@ AS
     -- (to show when the processor was most recently active)
     ---------------------------------------------------
     --
-    If @infoOnly = 0
+    If @infoLevel = 0
     Begin
         UPDATE T_Local_Processors
         SET Latest_Request = GETDATE(),
@@ -322,7 +325,7 @@ AS
         Goto Done
     End
 
-    If @infoOnly <> 0
+    If @infoLevel <> 0
     Begin -- <PreviewProcessorTools>
 
         ---------------------------------------------------
@@ -421,7 +424,7 @@ AS
 
         If @remoteInfoID > 1
         Begin
-            If @infoOnly <> 0
+            If @infoLevel <> 0
             Begin
                 Print '@remoteInfoID is ' + Cast(@remoteInfoID As varchar(9)) + ' for ' + @remoteInfo
             End
@@ -446,7 +449,7 @@ AS
                 End
             End
 
-            If @infoOnly <> 0
+            If @infoLevel <> 0
             Begin
                 -- Preview RunningRemote tasks on the remote host associated with this manager
                 --
@@ -472,7 +475,7 @@ AS
         End
         Else
         Begin
-            If @infoOnly <> 0
+            If @infoLevel <> 0
             Begin
                 Print 'Could not resolve ' + @remoteInfo + ' to Remote_Info_ID'
             End
@@ -497,13 +500,13 @@ AS
         Memory_Usage_MB int,
         Association_Type tinyint NOT NULL,                -- Valid types are: 1=Exclusive Association, 2=Specific Association, 3=Non-associated, 4=Non-Associated Generic, etc.
         Machine varchar(64),
-        Alternate_Specific_Processor varchar(128),        -- This field is only used if @infoOnly is non-zero and if jobs exist with Association_Type 103
+        Alternate_Specific_Processor varchar(128),        -- This field is only used if @infoLevel is non-zero and if jobs exist with Association_Type 103
         Storage_Server varchar(128),
         Dataset_ID int,
         Next_Try datetime
     )
 
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Populate #Tmp_CandidateJobSteps'
 
     ---------------------------------------------------
@@ -589,7 +592,7 @@ AS
              ) TP
                ON JS.Tool = 'Results_Transfer' AND
                   TP.Machine = IsNull(J.Storage_Server, TP.Machine)        -- Must use IsNull here to handle jobs where the storage server is not defined in T_Jobs
-        WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoOnly > 0)
+        WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoLevel > 0)
         ORDER BY
             Association_Type,
             J.Priority,        -- Job_Priority
@@ -598,7 +601,7 @@ AS
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
-        If @myRowCount = 0 And @infoOnly <> 0
+        If @myRowCount = 0 And @infoLevel <> 0
         Begin
             -- Look for results transfer tasks that need to be handled by another storage server
             --
@@ -661,7 +664,7 @@ AS
                 ) TP
                 ON JS.Tool = 'Results_Transfer' AND
                     TP.Machine <> J.Storage_Server
-               WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoOnly > 0)
+               WHERE JS.State = 2 And (GETDATE() > JS.Next_Try Or @infoLevel > 0)
             ORDER BY
                 Association_Type,
                 J.Priority,        -- Job_Priority
@@ -676,7 +679,7 @@ AS
     -- by processor in order of assignment priority
     ---------------------------------------------------
     --
-    If @useBigBangQuery <> 0 OR @infoOnly <> 0
+    If @useBigBangQuery <> 0 OR @infoLevel <> 0
     Begin -- <UseBigBang>
         -- *********************************************************************************
         -- Big-bang query
@@ -804,7 +807,7 @@ AS
                                 PTGD.Tool_Name <> 'Results_Transfer'        -- Candidate Result_Transfer steps were found above
              ) TP
                ON TP.Tool_Name = JS.Tool
-        WHERE (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
+        WHERE (GETDATE() > JS.Next_Try OR @infoLevel > 0) AND
               J.Priority <= TP.Max_Job_Priority AND
               (JS.State In (2, 11) OR @remoteInfoID > 1 And JS.State = 9) AND
               NOT EXISTS (SELECT * FROM T_Local_Processor_Job_Step_Exclusion WHERE ID = TP.Processor_ID And Step = JS.Step)
@@ -1020,7 +1023,7 @@ AS
                    ON TP.Tool_Name = JS.Tool
             WHERE (TP.CPUs_Available >= CASE WHEN JS.State = 9 Or @remoteInfoID > 1 Then -50 ELSE TP.CPU_Load END) AND
                   J.Priority <= TP.Max_Job_Priority AND
-                  (GETDATE() > JS.Next_Try Or @infoOnly > 0) AND
+                  (GETDATE() > JS.Next_Try OR @infoLevel > 0) AND
                   (JS.State In (2, 11) OR @remoteInfoID > 1 And JS.State = 9) AND
                   TP.Memory_Available >= JS.Memory_Usage_MB AND
                   NOT (Tool = 'Results_Transfer' AND J.Archive_Busy = 1) AND
@@ -1067,7 +1070,7 @@ AS
     -- Check for jobs with Association_Type 101
     ---------------------------------------------------
     --
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Check for jobs with Association_Type 101'
 
     Declare @cpuLoadExceeded int = 0
@@ -1084,7 +1087,7 @@ AS
     --
     If @throttleByStartTime <> 0
     Begin
-        If @infoOnly > 1
+        If @infoLevel > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Check for servers that need to be throttled'
 
         -- The following query counts the number of job steps that recently started,
@@ -1147,7 +1150,7 @@ AS
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
     ---------------------------------------------------
-    -- If @infoOnly = 0, remove candidates with non-viable association types
+    -- If @infoLevel = 0, remove candidates with non-viable association types
     -- otherwise keep everything
     ---------------------------------------------------
     --
@@ -1161,7 +1164,7 @@ AS
     --
     SELECT @myError = @@error, @myRowCount = @@rowcount
 
-    If @infoOnly = 0
+    If @infoLevel = 0
     Begin
         DELETE FROM #Tmp_CandidateJobSteps
         WHERE Association_Type > @AssociationTypeIgnoreThreshold
@@ -1220,7 +1223,7 @@ AS
         Goto Done
     end
 
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Start transaction'
 
     ---------------------------------------------------
@@ -1241,15 +1244,15 @@ AS
     --   Job number
     ---------------------------------------------------
     --
-    Declare @stepNumber int = 0
+    Declare @step int = 0
 
     -- This is set to 1 if the assigned job had state 9 and thus the manager is checking the status of a job step already running remotely
     Declare @jobIsRunningRemote tinyint = 0
 
     SELECT TOP 1
-        @jobNumber =  JS.Job,
-        @stepNumber = JS.Step,
-        @machine = CJS.Machine,
+        @job        = JS.Job,
+        @step       = JS.Step,
+        @machine    = CJS.Machine,
         @jobIsRunningRemote = CASE WHEN JS.State = 9 THEN 1 ELSE 0 END
     FROM
         T_Job_Steps JS WITH (HOLDLOCK) INNER JOIN
@@ -1272,14 +1275,14 @@ AS
     Set @jobIsRunningRemote = IsNull(@jobIsRunningRemote, 0)
 
     ---------------------------------------------------
-    -- If a job step was found (@jobNumber <> 0) and if @infoOnly = 0,
+    -- If a job step was found (@job <> 0) and if @infoLevel = 0,
     --  then update the step state to Running
     ---------------------------------------------------
     --
-    If @jobAssigned = 1 AND @infoOnly = 0
+    If @jobAssigned = 1 AND @infoLevel = 0
     Begin --<e>
         /* Declare @debugMsg varchar(512) =
-            'Assigned job ' + Cast(@jobNumber as varchar(9)) + ', step ' + Cast(@stepNumber as varchar(9)) + '; ' +
+            'Assigned job ' + Cast(@job as varchar(9)) + ', step ' + Cast(@step as varchar(9)) + '; ' +
             'remoteInfoID=' + Cast(@remoteInfoId as varchar(9)) + ', ' +
             'jobIsRunningRemote=' + Cast(@jobIsRunningRemote as varchar(3)) + ', ' +
             'setting Remote_Start to ' +
@@ -1321,8 +1324,8 @@ AS
             Completion_Message = CASE WHEN IsNull(Completion_Code, 0) > 0 THEN '' ELSE Null END,
             Evaluation_Code =    CASE WHEN Evaluation_Code Is Null THEN Null ELSE 0 END,
             Evaluation_Message = CASE WHEN Evaluation_Code Is Null THEN Null ELSE '' END
-        WHERE Job = @jobNumber AND
-              Step = @stepNumber
+        WHERE Job = @job AND
+              Step = @step
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -1338,10 +1341,10 @@ AS
     -- update was successful
     commit transaction @transName
 
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Transaction committed'
 
-    If @jobAssigned = 1 AND @infoOnly = 0 And @remoteInfoID <= 1
+    If @jobAssigned = 1 AND @infoLevel = 0 And @remoteInfoID <= 1
     Begin --<f>
         ---------------------------------------------------
         -- Update CPU loading for this processor's machine
@@ -1353,7 +1356,7 @@ AS
              INNER JOIN ( SELECT LP.Machine,
                                  SUM(CASE
                                          WHEN @jobIsRunningRemote > 0 AND
-                                              JS.Step = @stepNumber THEN 0
+                                              JS.Step = @step THEN 0
                                          WHEN Tools.Uses_All_Cores > 0 AND
                                               JS.Actual_CPU_Load = JS.CPU_Load THEN IsNull(M.Total_CPUs, JS.CPU_Load)
                                          ELSE JS.Actual_CPU_Load
@@ -1382,7 +1385,7 @@ AS
     If @jobAssigned = 1
     Begin
 
-        If @infoOnly = 0 And @jobIsRunningRemote = 0
+        If @infoLevel = 0 And @jobIsRunningRemote = 0
         Begin
             ---------------------------------------------------
             -- Add entry to T_Job_Step_Processing_Log
@@ -1390,12 +1393,12 @@ AS
             ---------------------------------------------------
 
             INSERT INTO T_Job_Step_Processing_Log (Job, Step, Processor, Remote_Info_ID)
-            VALUES (@jobNumber, @stepNumber, @processorName, @remoteInfoID)
+            VALUES (@job, @step, @processorName, @remoteInfoID)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
-        If @infoOnly > 1
+        If @infoLevel > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Call get_job_step_params_xml'
 
         ---------------------------------------------------
@@ -1403,15 +1406,15 @@ AS
         ---------------------------------------------------
         --
         exec @myError = get_job_step_params_xml
-                                @jobNumber,
-                                @stepNumber,
+                                @job,
+                                @step,
                                 @parameters output,
                                 @message output,
-                                @jobIsRunningRemote=@jobIsRunningRemote,
-                                @DebugMode=@infoOnly
+                                @jobIsRunningRemote = @jobIsRunningRemote,
+                                @DebugMode          = @infoLevel
 
-        If @infoOnly <> 0 And Len(@message) = 0
-            Set @message = 'Job ' + Convert(varchar(12), @jobNumber) + ', Step ' + Convert(varchar(12), @stepNumber) + ' would be assigned to ' + @processorName
+        If @infoLevel <> 0 And Len(@message) = 0
+            Set @message = 'Job ' + Convert(varchar(12), @job) + ', Step ' + Convert(varchar(12), @step) + ' would be assigned to ' + @processorName
     End
     Else
     Begin
@@ -1430,9 +1433,9 @@ AS
     -- Dump candidate list if in infoOnly mode
     ---------------------------------------------------
     --
-    If @infoOnly <> 0
+    If @infoLevel <> 0
     Begin
-        If @infoOnly > 1
+        If @infoLevel > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_step_task_xml: Preview results'
 
         -- Preview the next @jobCountToPreview available jobs
