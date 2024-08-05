@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[get_task_step_params_as_table]
 /****************************************************
 **
 **  Desc:
-**      Get job step parameters for given job step
+**      Get capture task job step parameters for given job step
 **
 **      Note: Data comes from table T_Task_Parameters in the DMS_Capture DB, not from DMS5
 **
@@ -19,11 +19,13 @@ CREATE PROCEDURE [dbo].[get_task_step_params_as_table]
 **          02/17/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
 **          03/04/2023 mem - Use new T_Task tables
 **          04/01/2023 mem - Rename procedures and functions
+**          08/04/2024 mem - Rename @job argument to @job
+**                         - Rename @step argument to @step
 **
 *****************************************************/
 (
-    @jobNumber int,
-    @stepNumber int,
+    @job int,
+    @step int,
     @paramName varchar(512) = '',           -- Optional parameter name to filter on (supports wildcards)
     @message varchar(512) = '' output,
     @debugMode tinyint = 0
@@ -52,7 +54,7 @@ AS
     -- Call get_task_step_params to populate the temporary table
     ---------------------------------------------------
 
-    exec @myError = get_task_step_params @jobNumber, @stepNumber, @message output, @DebugMode
+    exec @myError = get_task_step_params @job, @step, @message output, @DebugMode
     if @myError <> 0
         Goto Done
 

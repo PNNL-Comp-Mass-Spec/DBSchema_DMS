@@ -106,8 +106,7 @@ AS
     ---------------------------------------------------
     --
 Done:
-
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_job_step_params_as_table_use_history] TO [DDL_Viewer] AS [dbo]

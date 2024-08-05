@@ -101,7 +101,7 @@ CREATE PROCEDURE [dbo].[request_step_task_xml]
 **          03/29/2023 mem - Add support for state 11 (Waiting_For_File)
 **          08/03/2024 mem - Rename @jobNumber argument to @job
 **                         - Rename @infoOnly argument to @infoLevel
-**                         - Rename @stepnumber variable to @step
+**                         - Rename @stepNumber variable to @step
 **
 *****************************************************/
 (
@@ -1488,7 +1488,7 @@ AS
     --
 Done:
     Set @returnCode = Cast(@myError As varchar(64))
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[request_step_task_xml] TO [DDL_Viewer] AS [dbo]

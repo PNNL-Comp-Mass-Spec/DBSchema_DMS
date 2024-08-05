@@ -7,7 +7,7 @@ CREATE PROCEDURE [dbo].[request_ctm_step_task]
 /****************************************************
 **
 **  Desc:
-**      Looks for capture job step that is appropriate for the given Processor Name.
+**      Looks for capture task job step that is appropriate for the given processor name.
 **      If found, step is assigned to caller
 **
 **      Task assignment will be based on:
@@ -49,13 +49,16 @@ CREATE PROCEDURE [dbo].[request_ctm_step_task]
 **          03/04/2023 mem - Use new T_Task tables
 **          03/07/2023 mem - Rename columns in temporary table
 **          04/01/2023 mem - Rename procedures and functions
+**          08/04/2024 mem - Rename @job argument to @job
+**                         - Rename @infoOnly argument to @infoLevel
+**                         - Rename @stepnumber variable to @step
 **
 *****************************************************/
 (
     @processorName varchar(128),
-    @jobNumber int = 0 OUTPUT,                  -- Job number assigned; 0 if no job available
+    @job int = 0 OUTPUT,                        -- Job number assigned; 0 if no job available
     @message varchar(512) OUTPUT,
-    @infoOnly tinyint = 0,                      -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
+    @infoLevel tinyint = 0,                     -- Set to 1 to preview the job that would be returned; Set to 2 to print debug statements with preview
     @managerVersion varchar(128) = '',
     @jobCountToPreview int = 10,
     @serverPerspectiveEnabled tinyint = 0,      -- The Capture Task Manager does not set the value for this parameter, meaning it is always 0
@@ -91,9 +94,9 @@ AS
     ---------------------------------------------------
 
     Set @processorName = ISNULL(@processorName, '')
-    Set @jobNumber = 0
+    Set @job = 0
     Set @message = ''
-    Set @infoOnly = ISNULL(@infoOnly, 0)
+    Set @infoLevel = ISNULL(@infoLevel, 0)
     Set @ManagerVersion = ISNULL(@ManagerVersion, '')
     Set @JobCountToPreview = ISNULL(@JobCountToPreview, 10)
     Set @serverPerspectiveEnabled = ISNULL(@serverPerspectiveEnabled, 0)
@@ -110,7 +113,7 @@ AS
     --
     Declare @jobNotAvailableErrorCode int = 53000
 
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Starting; make sure this is a valid processor'
 
     ---------------------------------------------------
@@ -143,18 +146,18 @@ AS
 
 
     ---------------------------------------------------
-    -- Show processor name and machine if @infoOnly is non-zero
+    -- Show processor name and machine if @infoLevel is non-zero
     ---------------------------------------------------
     --
-    If @infoOnly <> 0
-        SELECT 'Processor and Machine Info' as Information, @processorName AS Processor, @infoOnly AS InfoOnlyLevel, @Machine as Machine
+    If @infoLevel <> 0
+        SELECT 'Processor and Machine Info' as Information, @processorName AS Processor, @infoLevel AS InfoOnlyLevel, @Machine as Machine
 
     ---------------------------------------------------
     -- Update processor's request timestamp
     -- (to show when the processor was most recently active)
     ---------------------------------------------------
     --
-    If @infoOnly = 0
+    If @infoLevel = 0
     Begin
         UPDATE T_Local_Processors
         Set Latest_Request = GETDATE(),
@@ -222,7 +225,7 @@ AS
         Goto Done
     End
 
-    If @infoOnly > 1
+    If @infoLevel > 1
     Begin
         Select 'Tools enabled for this processor' as Information, *
         FROM #AvailableProcessorTools
@@ -238,7 +241,7 @@ AS
     SELECT @num_tools = COUNT(*)
     FROM #AvailableProcessorTools
     --
-    If @infoOnly = 0 AND @num_tools = 0
+    If @infoLevel = 0 AND @num_tools = 0
     Begin
           Set @message = 'No tools presently available for processor "'+ @processorName +'"'
           Set @myError = @jobNotAvailableErrorCode
@@ -344,14 +347,14 @@ AS
         --   then we do not allow capture tasks to be assigned (to thus avoid drive path problems)
         Set @excludeCaptureTasks = 1
 
-        If @infoOnly > 0
+        If @infoLevel > 0
             Print 'Note: setting @excludeCaptureTasks=1 because this processor does not have any entries in T_Processor_Instrument yet @serverPerspectiveEnabled=1'
     End
 
     If Exists (Select * From #InstrumentProcessor WHERE Assigned_To_This_Processor > 0)
     Begin
         Set @processorLockedToInstrument = 1
-        If @infoOnly > 1
+        If @infoLevel > 1
         Begin
             SELECT 'Instruments locked to this processor' AS Information,
                    @processorName AS Processor,
@@ -421,7 +424,7 @@ AS
     -- in infoOnly mode
     ---------------------------------------------------
     --
-    If @infoOnly = 0 AND @num_candidates = 0
+    If @infoLevel = 0 AND @num_candidates = 0
     Begin
         Set @message = 'No candidates presently available'
         Set @myError = @jobNotAvailableErrorCode
@@ -432,7 +435,7 @@ AS
     -- Try to assign step
     ---------------------------------------------------
 
-    If @infoOnly > 1
+    If @infoLevel > 1
         Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Start transaction'
 
     ---------------------------------------------------
@@ -452,11 +455,11 @@ AS
     --   Job number
     ---------------------------------------------------
     --
-    Declare @stepNumber int = 0
+    Declare @step int = 0
     Declare @stepTool varchar(64)
     --
-    SELECT TOP 1 @jobNumber = TJS.Job,
-                 @stepNumber = TJS.Step,
+    SELECT TOP 1 @job = TJS.Job,
+                 @step = TJS.Step,
                  @stepTool = TJS.Tool
     FROM T_Task_Steps TJS WITH ( HOLDLOCK )
          INNER JOIN #Tmp_CandidateJobSteps CJS
@@ -483,15 +486,15 @@ AS
     -- then update the step state to Running
     ---------------------------------------------------
     --
-    If @jobAssigned = 1 AND @infoOnly = 0
+    If @jobAssigned = 1 AND @infoLevel = 0
     Begin --<e>
         UPDATE T_Task_Steps
         Set State = 4,
             Processor = @processorName,
             Start = GETDATE(),
             Finish = NULL
-        WHERE Job = @jobNumber AND
-              Step = @stepNumber
+        WHERE Job = @job AND
+              Step = @step
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
         --
@@ -520,19 +523,19 @@ AS
     If @jobAssigned = 1
     Begin
 
-        If @infoOnly = 0
+        If @infoLevel = 0
         Begin
             ---------------------------------------------------
             -- Add entry to T_Task_Step_Processing_Log
             ---------------------------------------------------
 
             INSERT INTO T_Task_Step_Processing_Log (Job, Step, Processor)
-            VALUES (@jobNumber, @stepNumber, @processorName)
+            VALUES (@job, @step, @processorName)
             --
             SELECT @myError = @@error, @myRowCount = @@rowcount
         End
 
-        If @infoOnly > 1
+        If @infoLevel > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Call get_task_step_params'
 
         ---------------------------------------------------
@@ -540,10 +543,10 @@ AS
         ---------------------------------------------------
 
         -- Populate #ParamTab with job step parameters
-        EXEC @myError = get_task_step_params @jobNumber, @stepNumber, @message OUTPUT, @DebugMode = @infoOnly
+        EXEC @myError = get_task_step_params @job, @step, @message OUTPUT, @DebugMode = @infoLevel
 
-        If @infoOnly <> 0 AND LEN(@message) = 0
-            Set @message = 'Job ' + CONVERT(varchar(12), @jobNumber) + ', Step '+ CONVERT(varchar(12), @stepNumber) + ' would be assigned to ' + @processorName
+        If @infoLevel <> 0 AND LEN(@message) = 0
+            Set @message = 'Job ' + CONVERT(varchar(12), @job) + ', Step '+ CONVERT(varchar(12), @step) + ' would be assigned to ' + @processorName
     End
     Else
     Begin
@@ -560,9 +563,9 @@ AS
     -- dump candidate list if in infoOnly mode
     ---------------------------------------------------
     --
-    If @infoOnly <> 0
+    If @infoLevel <> 0
     Begin
-        If @infoOnly > 1
+        If @infoLevel > 1
             Print Convert(varchar(32), GetDate(), 21) + ', ' + 'request_ctm_step_task: Preview results'
 
         Declare @machineLockedStepTools varchar(64) = null
@@ -604,9 +607,9 @@ AS
         -- dump candidate list if infoOnly mode is 2 or higher
         ---------------------------------------------------
         --
-        If @infoOnly >= 2
+        If @infoLevel >= 2
         Begin
-            EXEC request_ctm_step_task_explanation @processorName, @processorIsAssigned, @infoOnly, @machine
+            EXEC request_ctm_step_task_explanation @processorName, @processorIsAssigned, @infoLevel, @machine
         End
 
     End
