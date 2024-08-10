@@ -113,13 +113,14 @@ CREATE PROCEDURE [dbo].[add_update_requested_run]
 **                         - If the requested run is active and is associated with a batch, do not allow the instrument group to be changed if the batch has other active requests with a different instrument group than this request's instrument group
 **          01/23/2024 mem - Use a different instrument group warning message if the instrument group is unchanged, but the associated batch already has a mix of instrument groups
 **          05/17/2024 mem - Update column Cached_WP_Activation_State
+**          08/06/2024 mem - Rename argument @instrumentName to @instrumentGroup
 **
 *****************************************************/
 (
     @requestName varchar(128),
     @experimentName varchar(64),
     @requesterUsername varchar(64),
-    @instrumentName varchar(64),                -- Instrument group; could also contain "(lookup)"
+    @instrumentGroup varchar(64),               -- Instrument group; could also contain "(lookup)"
     @workPackage varchar(50),                   -- Work package; could also contain "(lookup)".  May contain 'none' for automatically created requested runs (and those will have @autoPopulateUserListIfBlank=1)
     @msType varchar(20),
     @instrumentSettings varchar(512) = 'na',
@@ -216,8 +217,7 @@ AS
     --
     If IsNull(@requesterUsername, '') = ''
         RAISERROR ('Requester username must be specified', 11, 113)
-    --
-    Declare @instrumentGroup varchar(64) = @instrumentName
+
     If IsNull(@instrumentGroup, '') = ''
         RAISERROR ('Instrument group must be specified', 11, 114)
     --
