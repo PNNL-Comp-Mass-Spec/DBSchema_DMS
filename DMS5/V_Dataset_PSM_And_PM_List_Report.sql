@@ -61,7 +61,7 @@ FROM V_Analysis_Job_PSM_List_Report PSM
        ON PSM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_MTS_PM_Results_List_Report PM
        ON PSM.Dataset_ID = PM.Dataset_ID
-WHERE PSM.State_ID NOT IN (5, 14)
+WHERE PSM.State_ID NOT IN (5, 13, 14)
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PSM_And_PM_List_Report] TO [DDL_Viewer] AS [dbo]

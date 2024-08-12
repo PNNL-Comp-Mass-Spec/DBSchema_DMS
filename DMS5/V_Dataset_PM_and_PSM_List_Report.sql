@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Dataset_PM_and_PSM_List_Report]
 AS
 SELECT
@@ -51,7 +50,7 @@ FROM V_MTS_PM_Results_List_Report PM
      LEFT OUTER JOIN V_Dataset_QC_Metrics QCM
        ON PM.Dataset_ID = QCM.Dataset_ID
      LEFT OUTER JOIN V_Analysis_Job_PSM_List_Report PSM
-       ON PSM.Dataset_ID = PM.Dataset_ID AND PSM.State_ID NOT IN (5, 14)
+       ON PSM.Dataset_ID = PM.Dataset_ID AND PSM.State_ID NOT IN (5, 13, 14)
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Dataset_PM_and_PSM_List_Report] TO [DDL_Viewer] AS [dbo]
