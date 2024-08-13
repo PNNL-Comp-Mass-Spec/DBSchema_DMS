@@ -6,8 +6,7 @@ GO
 CREATE PROCEDURE [dbo].[add_experiment_fractions]
 /****************************************************
 **
-**  Desc:   Creates a group of new experiments in DMS,
-**          linking back to the parent experiment
+**  Desc:   Creates a group of new experiments in DMS, linking back to the parent experiment
 **
 **  Return values: 0: success, otherwise, error code
 **
@@ -53,6 +52,7 @@ CREATE PROCEDURE [dbo].[add_experiment_fractions]
 **          11/18/2022 mem - Rename parameter to @groupName
 **          11/25/2022 mem - Rename parameter to @wellplateName
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          08/13/2024 mem - Add support for @mode 'debug'
 **
 *****************************************************/
 (
@@ -92,7 +92,7 @@ AS
     Declare @fullFractionCount int
     Declare @newExperimentID int
 
-    Declare @msg varchar(512)
+    Declare @msg varchar(1024)
 
     Declare @startingIndex int = 1      -- Initial index for automatic naming of new experiments
     Declare @step int = 1               -- Step interval in index
@@ -168,20 +168,39 @@ AS
         End
     End
 
-    Set @suffix = IsNull(@suffix, '')
-    Set @nameSearch = IsNull(@nameSearch, '')
-    Set @nameReplace = IsNull(@nameReplace, '')
+    Set @suffix           = IsNull(@suffix, '')
+    Set @nameSearch       = IsNull(@nameSearch, '')
+    Set @nameReplace      = IsNull(@nameReplace, '')
+    Set @groupName        = LTrim(RTrim(Coalesce(@groupName, '')))
+    Set @description      = LTrim(RTrim(Coalesce(@description, '')));
+    Set @addUnderscore    = IsNull(@addUnderscore, 'Yes')
 
-    Set @addUnderscore = IsNull(@addUnderscore, 'Yes')
-
-    Set @requestOverride = LTrim(RTrim(IsNull(@requestOverride, 'parent')))
+    Set @requestOverride  = LTrim(RTrim(IsNull(@requestOverride, 'parent')))
     Set @internalStandard = LTrim(RTrim(IsNull(@internalStandard, 'parent')))
     Set @postdigestIntStd = LTrim(RTrim(IsNull(@postdigestIntStd, 'parent')))
-    Set @researcher = LTrim(RTrim(IsNull(@researcher, 'parent')))
+    Set @researcher       = LTrim(RTrim(IsNull(@researcher, 'parent')))
+    Set @wellplateName    = LTrim(RTrim(Coalesce(@wellplateName, '')))
+    Set @wellNumber       = LTrim(RTrim(Coalesce(@wellNumber, '')))
+    Set @container        = LTrim(RTrim(Coalesce(@container, '')))
 
     Set @message = ''
 
     Set @mode = ISNULL(@mode, '')
+
+    If @mode = 'debug'
+    Begin
+        Set @mode = 'preview';
+
+        Set @msg = 'Procedure argument values: @parentExperiment="' + @parentExperiment + '", @groupType="' + @groupType + '", @suffix="' + @suffix + '", @nameSearch="' + @nameSearch + '", ' +
+                   '@nameReplace="' + @nameReplace + '", @groupName="' + @groupName + '", @description="' + @description + '", @totalCount="' + CAST(@totalCount as varchar(8)) + '", ' +
+                   '@addUnderscore="' + @addUnderscore + '", @groupID="' + CAST(@groupID as varchar(8)) + '", @requestOverride="' + @requestOverride + '", @internalStandard="' + @internalStandard + '", ' +
+                   '@postdigestIntStd="' + @postdigestIntStd + '", @researcher="' + @researcher + '", @wellplateName="' + @wellplateName + '", @wellNumber="' + @wellNumber + '", ' +
+                   '@container="' + @container + '", @prepLCRunID="' + Cast(@prepLCRunID as varchar(8)) + '"'
+
+        Print @msg
+
+        Exec Post_Log_Entry 'Debug', @msg, 'add_experiment_fractions'
+    End
 
     If Not @mode in ('add', 'preview')
     Begin
@@ -461,7 +480,7 @@ AS
     Declare @transName varchar(32) = 'Add_Batch_Experiment_Entry'
     Set @logErrors = 1
 
-    Begin transaction @transName
+    Begin Transaction @transName
 
     If @mode LIKE '%preview%'
     Begin
@@ -833,7 +852,7 @@ AS
     -- Commit transaction if there were no errors
     ---------------------------------------------------
 
-    commit transaction @transName
+    Commit Transaction @transName
 
     ---------------------------------------------------
     -- Exit
@@ -852,12 +871,10 @@ AS
         End
     End CATCH
 
-    return @myError
+    Return @myError
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_experiment_fractions] TO [DDL_Viewer] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[add_experiment_fractions] TO [DMS_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[add_experiment_fractions] TO [DMS2_SP_User] AS [dbo]
 GO
