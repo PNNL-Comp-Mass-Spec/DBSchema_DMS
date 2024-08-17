@@ -242,7 +242,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_operations_tasks] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_operations_tasks] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_update_operations_tasks] TO [DMS2_SP_User] AS [dbo]
 GO

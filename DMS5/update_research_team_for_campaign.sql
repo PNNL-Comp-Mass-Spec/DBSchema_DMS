@@ -390,8 +390,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_research_team_for_campaign] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[update_research_team_for_campaign] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[update_research_team_for_campaign] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_research_team_for_campaign] TO [Limited_Table_Write] AS [dbo]

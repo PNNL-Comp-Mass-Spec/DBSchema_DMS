@@ -98,10 +98,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMS_Guest] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[find_existing_jobs_for_request] TO [DMSReader] AS [dbo]

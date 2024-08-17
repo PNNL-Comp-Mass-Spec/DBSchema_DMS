@@ -212,8 +212,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_param_file_crosstab] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[get_param_file_crosstab] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[get_param_file_crosstab] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_param_file_crosstab] TO [Limited_Table_Write] AS [dbo]

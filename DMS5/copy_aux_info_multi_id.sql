@@ -411,7 +411,5 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[copy_aux_info_multi_id] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[copy_aux_info_multi_id] TO [DMS_User] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[copy_aux_info_multi_id] TO [Limited_Table_Write] AS [dbo]
 GO

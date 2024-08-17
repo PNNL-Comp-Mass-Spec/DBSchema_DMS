@@ -120,5 +120,3 @@ GRANT EXECUTE ON [dbo].[get_requested_run_factors_for_export] TO [DMS2_SP_User] 
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_requested_run_factors_for_export] TO [Limited_Table_Write] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[get_requested_run_factors_for_export] TO [RBAC-DMS_User] AS [dbo]
-GO

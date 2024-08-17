@@ -118,8 +118,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run_batch_spreadsheet] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_requested_run_batch_spreadsheet] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_update_requested_run_batch_spreadsheet] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_requested_run_batch_spreadsheet] TO [Limited_Table_Write] AS [dbo]

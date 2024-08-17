@@ -1018,8 +1018,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[evaluate_predefined_analysis_rules] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[evaluate_predefined_analysis_rules] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[evaluate_predefined_analysis_rules] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[evaluate_predefined_analysis_rules] TO [Limited_Table_Write] AS [dbo]

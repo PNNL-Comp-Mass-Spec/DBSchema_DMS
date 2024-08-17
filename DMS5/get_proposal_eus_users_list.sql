@@ -99,7 +99,3 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_proposal_eus_users_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[get_proposal_eus_users_list] TO [DMS_User] AS [dbo]
-GO
-GRANT REFERENCES ON [dbo].[get_proposal_eus_users_list] TO [DMS_User] AS [dbo]
-GO

@@ -232,9 +232,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_analysis_job] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[find_analysis_job] TO [DMS_Guest] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[find_analysis_job] TO [DMS_User] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[find_analysis_job] TO [Limited_Table_Write] AS [dbo]
 GO

@@ -331,8 +331,6 @@ end
 GO
 GRANT VIEW DEFINITION ON [dbo].[copy_aux_info] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[copy_aux_info] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[copy_aux_info] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[copy_aux_info] TO [Limited_Table_Write] AS [dbo]

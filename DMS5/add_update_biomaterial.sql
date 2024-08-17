@@ -496,8 +496,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_biomaterial] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_biomaterial] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_update_biomaterial] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_biomaterial] TO [Limited_Table_Write] AS [dbo]

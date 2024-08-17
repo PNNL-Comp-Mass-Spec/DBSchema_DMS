@@ -89,7 +89,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[do_file_attachment_operation] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[do_file_attachment_operation] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[do_file_attachment_operation] TO [DMS2_SP_User] AS [dbo]
 GO

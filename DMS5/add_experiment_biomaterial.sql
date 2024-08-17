@@ -120,7 +120,5 @@ GRANT VIEW DEFINITION ON [dbo].[add_experiment_biomaterial] TO [DDL_Viewer] AS [
 GO
 GRANT EXECUTE ON [dbo].[add_experiment_biomaterial] TO [DMS_SP_User] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_experiment_biomaterial] TO [DMS_User] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[add_experiment_biomaterial] TO [Limited_Table_Write] AS [dbo]
 GO

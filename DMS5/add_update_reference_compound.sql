@@ -488,8 +488,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_reference_compound] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_reference_compound] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_update_reference_compound] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_reference_compound] TO [Limited_Table_Write] AS [dbo]

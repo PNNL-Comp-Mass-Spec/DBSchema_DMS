@@ -39,8 +39,6 @@ End
 GO
 GRANT VIEW DEFINITION ON [dbo].[replace_character_codes] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[replace_character_codes] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[replace_character_codes] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[replace_character_codes] TO [Limited_Table_Write] AS [dbo]

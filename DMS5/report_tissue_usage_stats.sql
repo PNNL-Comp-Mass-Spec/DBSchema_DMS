@@ -267,8 +267,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[report_tissue_usage_stats] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[report_tissue_usage_stats] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[report_tissue_usage_stats] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[report_tissue_usage_stats] TO [Limited_Table_Write] AS [dbo]

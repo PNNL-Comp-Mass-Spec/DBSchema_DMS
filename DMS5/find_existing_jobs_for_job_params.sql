@@ -215,10 +215,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_job_params] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[find_existing_jobs_for_job_params] TO [DMS_Guest] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[find_existing_jobs_for_job_params] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[find_existing_jobs_for_job_params] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_existing_jobs_for_job_params] TO [Limited_Table_Write] AS [dbo]

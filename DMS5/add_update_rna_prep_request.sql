@@ -449,7 +449,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_rna_prep_request] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_rna_prep_request] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_update_rna_prep_request] TO [DMS2_SP_User] AS [dbo]
 GO

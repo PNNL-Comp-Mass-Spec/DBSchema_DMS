@@ -121,8 +121,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[auto_resolve_name_to_username] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[auto_resolve_name_to_username] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[auto_resolve_name_to_username] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[auto_resolve_name_to_username] TO [Limited_Table_Write] AS [dbo]

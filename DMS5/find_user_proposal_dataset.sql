@@ -123,9 +123,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_user_proposal_dataset] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[find_user_proposal_dataset] TO [DMS_Guest] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[find_user_proposal_dataset] TO [DMS_User] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[find_user_proposal_dataset] TO [Limited_Table_Write] AS [dbo]
 GO

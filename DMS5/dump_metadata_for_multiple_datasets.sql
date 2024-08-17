@@ -94,8 +94,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_datasets] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_datasets] TO [Limited_Table_Write] AS [dbo]

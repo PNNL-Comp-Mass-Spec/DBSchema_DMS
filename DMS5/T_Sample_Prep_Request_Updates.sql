@@ -23,8 +23,6 @@ GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS
 GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS_SP_User] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS_User] AS [dbo]
-GO
 GRANT UPDATE ON [dbo].[T_Sample_Prep_Request_Updates] ([System_Account]) TO [DMS2_SP_User] AS [dbo]
 GO
 /****** Object:  Index [IX_T_Sample_Prep_Request_Updates_EndStateID_BeginStateID_Include_RequestID_DateOfChange] ******/

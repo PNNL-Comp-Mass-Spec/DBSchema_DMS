@@ -44,7 +44,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[get_factor_list] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[get_factor_list] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[get_factor_list] TO [DMS2_SP_User] AS [dbo]
 GO

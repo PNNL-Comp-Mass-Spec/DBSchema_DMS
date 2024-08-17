@@ -1020,8 +1020,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_plex_members] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_update_experiment_plex_members] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_update_experiment_plex_members] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_update_experiment_plex_members] TO [Limited_Table_Write] AS [dbo]

@@ -217,8 +217,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_material_location] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[update_material_location] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[update_material_location] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[update_material_location] TO [Limited_Table_Write] AS [dbo]

@@ -49,8 +49,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[report_production_stats_proc] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[report_production_stats_proc] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[report_production_stats_proc] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[report_production_stats_proc] TO [Limited_Table_Write] AS [dbo]

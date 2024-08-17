@@ -489,8 +489,6 @@ GRANT VIEW DEFINITION ON [dbo].[add_requested_runs] TO [DDL_Viewer] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[add_requested_runs] TO [DMS_Experiment_Entry] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_requested_runs] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_requested_runs] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_runs] TO [Limited_Table_Write] AS [dbo]

@@ -138,9 +138,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_scheduled_run_history] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[find_scheduled_run_history] TO [DMS_Guest] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[find_scheduled_run_history] TO [DMS_User] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[find_scheduled_run_history] TO [Limited_Table_Write] AS [dbo]
 GO

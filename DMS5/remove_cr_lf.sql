@@ -46,8 +46,6 @@ End
 GO
 GRANT VIEW DEFINITION ON [dbo].[remove_cr_lf] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[remove_cr_lf] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[remove_cr_lf] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[remove_cr_lf] TO [Limited_Table_Write] AS [dbo]

@@ -48,8 +48,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_rules_proc] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[predefined_analysis_rules_proc] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[predefined_analysis_rules_proc] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_rules_proc] TO [Limited_Table_Write] AS [dbo]

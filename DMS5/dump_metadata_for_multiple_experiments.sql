@@ -95,8 +95,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_experiments] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_experiments] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[dump_metadata_for_multiple_experiments] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[dump_metadata_for_multiple_experiments] TO [Limited_Table_Write] AS [dbo]

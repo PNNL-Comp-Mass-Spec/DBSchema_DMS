@@ -145,9 +145,5 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[find_experiment] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[find_experiment] TO [DMS_Guest] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[find_experiment] TO [DMS_User] AS [dbo]
-GO
 GRANT VIEW DEFINITION ON [dbo].[find_experiment] TO [Limited_Table_Write] AS [dbo]
 GO

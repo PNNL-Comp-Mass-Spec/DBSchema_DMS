@@ -282,8 +282,6 @@ Done:
 GO
 GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_datasets] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[predefined_analysis_datasets] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[predefined_analysis_datasets] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[predefined_analysis_datasets] TO [Limited_Table_Write] AS [dbo]

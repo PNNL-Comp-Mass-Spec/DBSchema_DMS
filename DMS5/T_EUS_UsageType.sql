@@ -23,8 +23,6 @@ GRANT INSERT ON [dbo].[T_EUS_UsageType] TO [DMS_EUS_Admin] AS [dbo]
 GO
 GRANT SELECT ON [dbo].[T_EUS_UsageType] TO [DMS_EUS_Admin] AS [dbo]
 GO
-GRANT SELECT ON [dbo].[T_EUS_UsageType] TO [DMS_User] AS [dbo]
-GO
 SET ANSI_PADDING ON
 
 GO

@@ -21,8 +21,6 @@ GRANT VIEW DEFINITION ON [dbo].[T_Data_Analysis_Request_Updates] TO [DDL_Viewer]
 GO
 GRANT UPDATE ON [dbo].[T_Data_Analysis_Request_Updates] ([Entered_By]) TO [DMS_SP_User] AS [dbo]
 GO
-GRANT UPDATE ON [dbo].[T_Data_Analysis_Request_Updates] ([Entered_By]) TO [DMS_User] AS [dbo]
-GO
 GRANT UPDATE ON [dbo].[T_Data_Analysis_Request_Updates] ([Entered_By]) TO [DMS2_SP_User] AS [dbo]
 GO
 /****** Object:  Index [IX_T_Data_Analysis_Request_Updates_NewState_OldState_Include_RequestID_DateOfChange] ******/

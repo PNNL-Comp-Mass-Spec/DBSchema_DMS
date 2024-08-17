@@ -922,8 +922,6 @@ AS
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_run_fractions] TO [DDL_Viewer] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[add_requested_run_fractions] TO [DMS_User] AS [dbo]
-GO
 GRANT EXECUTE ON [dbo].[add_requested_run_fractions] TO [DMS2_SP_User] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[add_requested_run_fractions] TO [Limited_Table_Write] AS [dbo]
