@@ -1,8 +1,8 @@
 This is a collection of DDL files that define the database schema used by
-the Data Management System (DMS) component of the Pan-Omics Research 
+the Data Management System (DMS) component of the Proteomics Research 
 Information Storage and Management system (PRISM) at the Pacific Northwest 
 National Laboratory (PNNL).  PRISM incorporates a diverse set of analysis 
-tools and allows a wide range of operations to be incorporated, leveraing 
+tools and allows a wide range of operations to be incorporated, leveraging 
 a state machine that is accessible to independent, distributed computational 
 nodes. The system has scaled well as data volume has increased since 2002, 
 while allowing adaptability for incorporating new and improved data analysis 
@@ -16,7 +16,7 @@ https://pubmed.ncbi.nlm.nih.gov/16470653/
 Written by Matthew Monroe and Gary Kiebel for the Department of Energy (PNNL, Richland, WA)
 
 E-mail: matthew.monroe@pnnl.gov or proteomics@pnnl.gov
-Website: https://github.com/PNNL-Comp-Mass-Spec/ or https://panomics.pnnl.gov/ or https://www.pnnl.gov/integrative-omics
+Website: https://github.com/PNNL-Comp-Mass-Spec/ or https://www.pnnl.gov/integrative-omics
 ------------------------------------------------------------------------------------
 
 Licensed under the Apache License, Version 2.0; you may not use this file except 
