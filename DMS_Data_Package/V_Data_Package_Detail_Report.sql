@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Package_Detail_Report]
 AS
 SELECT DP.id,
@@ -29,11 +28,12 @@ SELECT DP.id,
        DP.analysis_job_item_count AS analysis_job_count,
        CampaignStats.Campaigns AS campaign_count,
        DP.Total_Item_Count AS total_item_count,
+       'data_package_dataset_qc/report/' + CAST(DP.id as varchar(12)) AS dataset_qc_report,
        DP.Wiki_Page_Link AS prism_wiki,
        DP.data_doi,
        DP.manuscript_doi,
-	   DP.EUS_Person_ID AS eus_user_id,
-	   DP.eus_proposal_id
+       DP.EUS_Person_ID AS eus_user_id,
+       DP.eus_proposal_id
 FROM dbo.T_Data_Package AS DP
      INNER JOIN dbo.V_Data_Package_Paths AS DPP
        ON DP.ID = DPP.ID
