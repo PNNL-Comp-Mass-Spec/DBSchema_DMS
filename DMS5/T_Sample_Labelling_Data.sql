@@ -1,5 +1,5 @@
 /****** Object:  Table [T_Sample_Labelling] ******/
-/****** RowCount: 26 ******/
+/****** RowCount: 28 ******/
 /****** Columns: Label, ID, Reporter_Mz_Min, Reporter_Mz_Max ******/
 INSERT INTO [T_Sample_Labelling] VALUES ('Unknown',0,null,null)
 INSERT INTO [T_Sample_Labelling] VALUES ('none',1,null,null)
@@ -27,3 +27,5 @@ INSERT INTO [T_Sample_Labelling] VALUES ('TMT11',22,126.1277,131.1445)
 INSERT INTO [T_Sample_Labelling] VALUES ('TMT16',23,126.1277,134.1483)
 INSERT INTO [T_Sample_Labelling] VALUES ('PCGalNAz',24,204.0872,503.21017)
 INSERT INTO [T_Sample_Labelling] VALUES ('TMT18',25,126.1277,135.152)
+INSERT INTO [T_Sample_Labelling] VALUES ('TMT32',26,126.1277,135.161)
+INSERT INTO [T_Sample_Labelling] VALUES ('TMT35',27,126.1277,135.161)

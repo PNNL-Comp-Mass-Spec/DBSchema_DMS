@@ -32,6 +32,7 @@ CREATE TABLE [dbo].[T_Spectral_Library](
 	[Max_Dynamic_Mods] [tinyint] NOT NULL,
 	[Settings_Hash] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Completion_Code] [int] NULL,
+	[Program_Version] [varchar](128) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
  CONSTRAINT [PK_T_Spectral_Library] PRIMARY KEY CLUSTERED 
 (
 	[Library_ID] ASC
@@ -100,6 +101,8 @@ GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Max_Dynamic_Mods]  DEFAULT ((0)) FOR [Max_Dynamic_Mods]
 GO
 ALTER TABLE [dbo].[T_Spectral_Library] ADD  CONSTRAINT [DF_T_Spectral_Library_Settings_Hash]  DEFAULT ('') FOR [Settings_Hash]
+GO
+ALTER TABLE [dbo].[T_Spectral_Library] ADD  DEFAULT ('') FOR [Program_Version]
 GO
 ALTER TABLE [dbo].[T_Spectral_Library]  WITH CHECK ADD  CONSTRAINT [FK_T_Spectral_Library_T_Spectral_Library_State] FOREIGN KEY([Library_State_ID])
 REFERENCES [dbo].[T_Spectral_Library_State] ([Library_State_ID])
