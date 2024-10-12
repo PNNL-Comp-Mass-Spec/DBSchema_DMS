@@ -362,6 +362,8 @@ AS
     Declare @campaign varchar(128)
     Declare @organism  varchar(128)
     Declare @datasetCount int = 0
+    Declare @datasetCountRequestedRuns int = 0
+    Declare @datasetCountDataPackages int = 0
     Declare @eusProposalID varchar(10)
     Declare @containerID int
 
@@ -424,12 +426,6 @@ AS
     Begin
         Set @representativeBatchID = @containerID
 
-        -- Use all batches for the dataset count
-        SELECT @datasetCount = Count(*)
-        FROM T_Requested_Run RR
-             INNER JOIN #Tmp_BatchIDs
-               ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
-
         SELECT TOP 1 @campaign = Campaign
         FROM ( SELECT C.Campaign_Num AS Campaign,
                       Count(*) AS Experiments
@@ -464,11 +460,7 @@ AS
     End
     Else If @preferredContainer = 'Data Package'
     Begin
-        -- Use all data packages for the dataset count
-        SELECT @datasetCount = Count(DISTINCT DPD.dataset_id)
-        FROM S_V_Data_Package_Datasets_Export DPD
-             INNER JOIN #Tmp_DataPackageIDs
-               ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+        Set @representativeDataPackageID = @containerID
 
         SELECT TOP 1 @campaign = Campaign
         FROM ( SELECT C.Campaign_Num AS Campaign,
@@ -553,6 +545,33 @@ AS
                WHERE EG.Group_ID = @experimentGroupID
                GROUP BY RR.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
+
+    End
+
+    If @preferredContainer IN ('Batch', 'Data Package')
+    Begin
+
+        -- Determine the number of datasets associated with the batch IDs
+        SELECT @datasetCountRequestedRuns = Count(*)
+        FROM T_Requested_Run RR
+             INNER JOIN #Tmp_BatchIDs
+               ON RR.RDS_BatchID = #Tmp_BatchIDs.Batch_ID
+
+        -- Determine the number of datasets associated with the data package IDs
+        SELECT @datasetCountDataPackages = Count(DISTINCT DPD.dataset_id)
+        FROM S_V_Data_Package_Datasets_Export DPD
+             INNER JOIN #Tmp_DataPackageIDs
+               ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+
+        -- Update _datasetCount if _datasetCountRequestedRuns or _datasetCountDataPackages is larger
+        If @datasetCountRequestedRuns > @datasetCount And @datasetCountRequestedRuns > @datasetCountDataPackages
+        Begin
+            Set @datasetCount = @datasetCountRequestedRuns
+        End
+        Else If @datasetCountDataPackages > @datasetCount And @datasetCountDataPackages > @datasetCountRequestedRuns
+        Begin
+            Set @datasetCount = @datasetCountDataPackages
+        End
 
     End
 
@@ -739,7 +758,7 @@ AS
             @campaign,
             @organism,
             @eusProposalID,
-            @DatasetCount
+            @datasetCount
         )
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
