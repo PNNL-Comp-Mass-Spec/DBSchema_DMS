@@ -7,12 +7,11 @@ CREATE PROCEDURE [dbo].[add_update_data_analysis_request]
 /****************************************************
 **
 **  Desc:
-**      Adds new or edits existing Data Analysis Request
+**      Add new or edit an existing data analysis request
 **
-**      The analysis request must be associated with
-**      at least one of the following data containers:
+**      The analysis request must be associated with at least one of the following data containers:
 **        - One or more requested run batches
-**        - Data package
+**        - One or more data packages
 **        - Experiment group
 **
 **  Return values: 0: success, otherwise, error code
@@ -26,6 +25,7 @@ CREATE PROCEDURE [dbo].[add_update_data_analysis_request]
 **          02/13/2023 bcg - Send the correct procedure name to validate_request_users
 **                         - Rename parameter to requesterUsername
 **          02/23/2023 bcg - Rename procedure and parameters to a case-insensitive match to postgres
+**          10/11/2024 mem - Replace parameter @dataPackageID with parameter @dataPackageIDs
 **
 *****************************************************/
 (
@@ -36,7 +36,7 @@ CREATE PROCEDURE [dbo].[add_update_data_analysis_request]
     @analysisSpecifications varchar(2048),
     @comment varchar(2048),
     @batchIDs varchar(1024) = '',           -- Comma separated list of Requested Run Batch IDs
-    @dataPackageID int = null,              -- Data Package ID; can be null
+    @dataPackageIDs varchar(1024) = '',     -- Comma separated list of Data Package IDs
     @experimentGroupID int = null,          -- Experiment Group ID; can be null
     @workPackage varchar(64),
     @requestedPersonnel varchar(256),
@@ -67,6 +67,7 @@ AS
     Declare @logErrors tinyint = 0
 
     Declare @batchDescription varchar(64) = ''
+    Declare @dataPackageDescription varchar(64) = ''
 
     Set @estimatedAnalysisTimeDays = IsNull(@estimatedAnalysisTimeDays, 1)
 
@@ -139,7 +140,7 @@ AS
     End
 
     ---------------------------------------------------
-    -- Resolve Batch IDs, Data Package id, and Experiment Group ID
+    -- Resolve Batch IDs, Data Package IDs, and Experiment Group ID
     -- Require that at least one be valid
     ---------------------------------------------------
 
@@ -147,8 +148,12 @@ AS
         Batch_ID Int Not Null
     )
 
-    Set @batchIDs = Ltrim(Rtrim(IsNull(@batchIDs, '')))
-    Set @dataPackageID = IsNull(@dataPackageID, 0)
+    Create Table #Tmp_DataPackageIDs (
+        Data_Pkg_ID Int Not Null
+    )
+
+    Set @batchIDs          = Ltrim(Rtrim(IsNull(@batchIDs, '')))
+    Set @dataPackageIDs    = Ltrim(Rtrim(IsNull(@dataPackageIDs, '')))
     Set @experimentGroupID = IsNull(@experimentGroupID, 0)
 
     Declare @batchDefined tinyint = 0
@@ -158,9 +163,9 @@ AS
     If Len(@batchIDs) > 0
     Begin
         INSERT INTO #Tmp_BatchIDs( Batch_ID )
-        SELECT VALUE
+        SELECT Value
         FROM dbo.parse_delimited_integer_list ( @batchIDs, ',' )
-        WHERE VALUE <> 0
+        WHERE Value <> 0
         --
         SELECT @myError = @@error, @myRowCount = @@rowcount
 
@@ -187,11 +192,31 @@ AS
         End
     End
 
-    If @dataPackageID > 0
+    If Len(@dataPackageIDs) > 0
     Begin
-        If Not Exists (Select * From S_V_Data_Package_Export WHERE ID = @dataPackageID)
+        INSERT INTO #Tmp_DataPackageIDs( Data_Pkg_ID )
+        SELECT Value
+        FROM dbo.parse_delimited_integer_list ( @dataPackageIDs, ',' )
+        WHERE Value <> 0
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
         Begin
-            RAISERROR('Could not find entry in database for data package ID "%d"', 11, 14, @dataPackageID)
+            If @dataPackageIDs = '0'
+                RAISERROR('Invalid data package ID; must be a positive integer, not zero', 11, 14)
+            Else
+                RAISERROR('Invalid list of data package IDs; integer not found: "%s"', 11, 14, @dataPackageIDs)
+        End
+
+        If @myRowCount = 1
+            Set @dataPackageDescription = 'data package ' + @dataPackageIDs
+        Else
+            Set @dataPackageDescription = 'data packages ' + @dataPackageIDs
+
+        If Not Exists (Select * From S_V_Data_Package_Export WHERE ID In (Select Data_Pkg_ID From #Tmp_DataPackageIDs))
+        Begin
+            RAISERROR('Could not find entry in database for %s', 11, 14, @dataPackageDescription)
         End
         Else
         Begin
@@ -353,20 +378,22 @@ AS
     If @dataPackageDefined > 0
     Begin
         INSERT INTO #Tmp_DatasetCountsByContainerType( ContainerType, ContainerID, SortWeight, DatasetCount )
-        SELECT 'Data Package', @dataPackageID, 1 As SortWeight, Count(DISTINCT D.Dataset_ID) AS DatasetCount
-        FROM S_V_Data_Package_Datasets_Export DataPkgDatasets
-             INNER JOIN T_Dataset D
-               ON DataPkgDatasets.Dataset_ID = D.Dataset_ID
-        WHERE DataPkgDatasets.Data_Package_ID = @dataPackageID
+        SELECT 'Data Package', DPD.data_pkg_id, 1 As SortWeight, Count(DISTINCT DS.Dataset_ID) AS DatasetCount
+        FROM S_V_Data_Package_Datasets_Export DPD
+             INNER JOIN #Tmp_DataPackageIDs
+               ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+             INNER JOIN T_Dataset DS
+               ON DPD.Dataset_ID = DS.Dataset_ID
+        GROUP BY DPD.data_pkg_id
     End
 
     If @experimentGroupDefined > 0
     Begin
         INSERT INTO #Tmp_DatasetCountsByContainerType( ContainerType, ContainerID, SortWeight, DatasetCount )
-        SELECT 'Experiment Group', @experimentGroupID, 3 As SortWeight, Count(DISTINCT D.Dataset_ID) AS DatasetCount
+        SELECT 'Experiment Group', @experimentGroupID, 3 As SortWeight, Count(DISTINCT DS.Dataset_ID) AS DatasetCount
         FROM T_Experiment_Group_Members E
-             INNER JOIN T_Dataset D
-               ON E.Exp_ID = D.Exp_ID
+             INNER JOIN T_Dataset DS
+               ON E.Exp_ID = DS.Exp_ID
         WHERE E.Group_ID = @experimentGroupID
     End
 
@@ -376,7 +403,8 @@ AS
     ---------------------------------------------------
 
     Declare @preferredContainer varchar(24) = ''
-    Declare @representativeBatchID Int = null
+    Declare @representativeBatchID int = null
+    Declare @representativeDataPackageID int = null
 
     SELECT TOP 1 @preferredContainer = ContainerType,
                  @containerID = ContainerID,
@@ -405,75 +433,84 @@ AS
         SELECT TOP 1 @campaign = Campaign
         FROM ( SELECT C.Campaign_Num AS Campaign,
                       Count(*) AS Experiments
-               FROM T_Requested_Run R
+               FROM T_Requested_Run RR
                     INNER JOIN T_Experiments E
-                      ON R.Exp_ID = E.Exp_ID
+                      ON RR.Exp_ID = E.Exp_ID
                     INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
-               WHERE R.RDS_BatchID = @representativeBatchID
+               WHERE RR.RDS_BatchID = @representativeBatchID
                GROUP BY C.Campaign_Num ) StatsQ
         ORDER BY StatsQ.Experiments DESC
 
         SELECT TOP 1 @organism = Organism
         FROM ( SELECT Org.OG_name AS Organism,
                       Count(*) AS Organisms
-               FROM T_Requested_Run R
+               FROM T_Requested_Run RR
                     INNER JOIN T_Experiments E
-                      ON R.Exp_ID = E.Exp_ID
+                      ON RR.Exp_ID = E.Exp_ID
                     INNER JOIN T_Organisms Org
                       ON E.EX_organism_ID = Org.Organism_ID
-               WHERE R.RDS_BatchID = @representativeBatchID
+               WHERE RR.RDS_BatchID = @representativeBatchID
                GROUP BY Org.OG_name ) StatsQ
         ORDER BY StatsQ.Organisms DESC
 
         SELECT TOP 1 @eusProposalID = EUS_Proposal_ID
-        FROM ( SELECT R.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
+        FROM ( SELECT RR.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
                       Count(*) AS Requests
-               FROM T_Requested_Run R
-               WHERE R.RDS_BatchID = @representativeBatchID
-               GROUP BY R.RDS_EUS_Proposal_ID ) StatsQ
+               FROM T_Requested_Run RR
+               WHERE RR.RDS_BatchID = @representativeBatchID
+               GROUP BY RR.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
     End
     Else If @preferredContainer = 'Data Package'
     Begin
+        -- Use all data packages for the dataset count
+        SELECT @datasetCount = Count(DISTINCT DPD.dataset_id)
+        FROM S_V_Data_Package_Datasets_Export DPD
+             INNER JOIN #Tmp_DataPackageIDs
+               ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+
         SELECT TOP 1 @campaign = Campaign
         FROM ( SELECT C.Campaign_Num AS Campaign,
                       Count(*) AS Experiments
-               FROM S_V_Data_Package_Datasets_Export DataPkgDatasets
-                    INNER JOIN T_Dataset D
-                      ON DataPkgDatasets.Dataset_ID = D.Dataset_ID
+               FROM S_V_Data_Package_Datasets_Export DPD
+                    INNER JOIN #Tmp_DataPackageIDs
+                      ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+                    INNER JOIN T_Dataset DS
+                      ON DPD.Dataset_ID = DS.Dataset_ID
                     INNER JOIN T_Experiments E
-                      ON D.Exp_ID = E.Exp_ID
+                      ON DS.Exp_ID = E.Exp_ID
                     INNER JOIN T_Campaign C
                       ON E.EX_campaign_ID = C.Campaign_ID
-               WHERE DataPkgDatasets.Data_Package_ID = @dataPackageID
                GROUP BY C.Campaign_Num ) StatsQ
         ORDER BY StatsQ.Experiments DESC
 
         SELECT TOP 1 @organism = Organism
         FROM ( SELECT Org.OG_name AS Organism,
                       Count(*) AS Organisms
-               FROM S_V_Data_Package_Datasets_Export DataPkgDatasets
-                    INNER JOIN T_Dataset D
-                      ON DataPkgDatasets.Dataset_ID = D.Dataset_ID
+               FROM S_V_Data_Package_Datasets_Export DPD
+                    INNER JOIN #Tmp_DataPackageIDs
+                      ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+                    INNER JOIN T_Dataset DS
+                      ON DPD.Dataset_ID = DS.Dataset_ID
                     INNER JOIN T_Experiments E
-                      ON D.Exp_ID = E.Exp_ID
+                      ON DS.Exp_ID = E.Exp_ID
                     INNER JOIN T_Organisms Org
                       ON E.EX_organism_ID = Org.Organism_ID
-               WHERE DataPkgDatasets.Data_Package_ID = @dataPackageID
                GROUP BY Org.OG_name ) StatsQ
         ORDER BY StatsQ.Organisms DESC
 
         SELECT TOP 1 @eusProposalID = EUS_Proposal_ID
-        FROM ( SELECT R.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
+        FROM ( SELECT RR.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
                       Count(*) AS Requests
-               FROM S_V_Data_Package_Datasets_Export DataPkgDatasets
-                    INNER JOIN T_Dataset D
-                      ON DataPkgDatasets.Dataset_ID = D.Dataset_ID
-                    INNER JOIN T_Requested_Run R
-                      ON D.Dataset_ID = R.DatasetID
-               WHERE DataPkgDatasets.Data_Package_ID = @dataPackageID
-               GROUP BY R.RDS_EUS_Proposal_ID ) StatsQ
+               FROM S_V_Data_Package_Datasets_Export DPD
+                    INNER JOIN #Tmp_DataPackageIDs
+                      ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+                    INNER JOIN T_Dataset DS
+                      ON DPD.Dataset_ID = DS.Dataset_ID
+                    INNER JOIN T_Requested_Run RR
+                      ON DS.Dataset_ID = RR.DatasetID
+               GROUP BY RR.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
 
     End
@@ -504,17 +541,17 @@ AS
         ORDER BY StatsQ.Organisms DESC
 
         SELECT TOP 1 @eusProposalID = EUS_Proposal_ID
-        FROM ( SELECT R.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
+        FROM ( SELECT RR.RDS_EUS_Proposal_ID AS EUS_Proposal_ID,
                       Count(*) AS Requests
                FROM T_Experiment_Group_Members EG
                     INNER JOIN T_Experiments E
                       ON EG.Exp_ID = E.Exp_ID
-                    INNER JOIN T_Dataset D
-                      ON E.Exp_ID = D.Dataset_ID
-                    INNER JOIN T_Requested_Run R
-                      ON D.Dataset_ID = R.DatasetID
+                    INNER JOIN T_Dataset DS
+                      ON E.Exp_ID = DS.Dataset_ID
+                    INNER JOIN T_Requested_Run RR
+                      ON DS.Dataset_ID = RR.DatasetID
                WHERE EG.Group_ID = @experimentGroupID
-               GROUP BY R.RDS_EUS_Proposal_ID ) StatsQ
+               GROUP BY RR.RDS_EUS_Proposal_ID ) StatsQ
         ORDER BY StatsQ.Requests DESC
 
     End
@@ -537,10 +574,36 @@ AS
         If @myRowCount = 0
         Begin
             -- None of the batches has any requested runs
-            --
+            -- This is highly unlikely, but possible
             SELECT TOP 1 @representativeBatchID = Batch_ID
             FROM #Tmp_BatchIDs
             ORDER BY Batch_ID
+        End
+    End
+
+    If @dataPackageDefined > 0 And @representativeDataPackageID Is Null
+    Begin
+        -- Either @preferredContainer is not 'Data Package' or none of the data packages has a dataset
+        --
+        SELECT TOP 1 @representativeDataPackageID = Data_Pkg_ID
+        FROM ( SELECT DPD.data_pkg_id AS data_pkg_id,
+                      COUNT(DPD.dataset_id) AS Datasets
+               FROM S_V_Data_Package_Datasets_Export DPD
+                    INNER JOIN #Tmp_DataPackageIDs
+                      ON DPD.data_pkg_id = #Tmp_DataPackageIDs.Data_Pkg_ID
+               GROUP BY DPD.data_pkg_id ) StatsQ
+        ORDER BY Datasets Desc
+        --
+        SELECT @myError = @@error, @myRowCount = @@rowcount
+
+        If @myRowCount = 0
+        Begin
+            -- None of the data packages has any datasets
+            -- This is unlikely, but possible
+            --
+            SELECT TOP 1 @representativeDataPackageID = Data_Pkg_ID
+            FROM #Tmp_DataPackageIDs
+            ORDER BY Data_Pkg_ID
         End
     End
 
@@ -641,7 +704,7 @@ AS
             Analysis_Specifications,
             Comment,
             Representative_Batch_ID,
-            Data_Package_ID,
+            Representative_Data_Pkg_ID,
             Exp_Group_ID,
             Work_Package,
             Requested_Personnel,
@@ -663,7 +726,7 @@ AS
             @analysisSpecifications,
             @comment,
             Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
-            Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
+            Case When @dataPackageDefined > 0 Then @representativeDataPackageID Else Null End,
             Case When @experimentGroupDefined > 0 Then @experimentGroupID Else Null End,
             @workPackage,
             @requestedPersonnel,
@@ -703,6 +766,13 @@ AS
             SELECT @id, Batch_ID
             FROM #Tmp_BatchIDs
         End
+
+        If @dataPackageDefined > 0
+        Begin
+            INSERT INTO T_Data_Analysis_Request_Data_Package_IDs( Request_ID, Data_Pkg_ID )
+            SELECT @id, Data_Pkg_ID
+            FROM #Tmp_DataPackageIDs
+        End
     End -- Add mode
 
     ---------------------------------------------------
@@ -726,8 +796,8 @@ AS
             Description = @description,
             Analysis_Specifications = @analysisSpecifications,
             Comment = @comment,
-            Representative_Batch_ID = Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
-            Data_Package_ID = Case When @dataPackageDefined > 0 Then @dataPackageID Else Null End,
+            Representative_Batch_ID    = Case When @batchDefined > 0 Then @representativeBatchID Else Null End,
+            Representative_Data_Pkg_ID = Case When @dataPackageDefined > 0 Then @representativeDataPackageID Else Null End,
             Exp_Group_ID = Case When @experimentGroupDefined > 0 Then @experimentGroupID Else Null End,
             Work_Package = @workPackage,
             Requested_Personnel = @requestedPersonnel,
@@ -784,6 +854,21 @@ AS
             WHERE Request_ID = @id;
         End
 
+        If @dataPackageDefined > 0
+        Begin
+            MERGE T_Data_Analysis_Request_Data_Package_IDs AS t
+            USING (SELECT @id As Request_ID, Data_Pkg_ID FROM #Tmp_DataPackageIDs) as s
+            ON ( t.Data_Pkg_ID = s.Data_Pkg_ID AND t.Request_ID = s.Request_ID)
+            WHEN NOT MATCHED BY TARGET THEN
+                INSERT(Request_ID, Data_Pkg_ID)
+                VALUES(s.Request_ID, s.Data_Pkg_ID)
+            WHEN NOT MATCHED BY SOURCE And t.Request_ID = @id THEN Delete;
+        End
+        Else
+        Begin
+            DELETE FROM T_Data_Analysis_Request_Data_Package_IDs
+            WHERE Request_ID = @id;
+        End
     End -- update mode
 
     End Try

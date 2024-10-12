@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[T_Data_Analysis_Request](
 	[Analysis_Specifications] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Comment] [varchar](2048) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Representative_Batch_ID] [int] NULL,
-	[Data_Package_ID] [int] NULL,
+	[Representative_Data_Pkg_ID] [int] NULL,
 	[Exp_Group_ID] [int] NULL,
 	[Work_Package] [varchar](64) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[Requested_Personnel] [varchar](256) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,

@@ -3,7 +3,6 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 CREATE VIEW [dbo].[V_Data_Analysis_Request_List_Report]
 AS
 SELECT R.id,
@@ -21,7 +20,7 @@ SELECT R.id,
        R.Requested_Personnel AS requested_personnel,
        R.Assigned_Personnel AS assigned_personnel,
        R.Representative_Batch_ID As batch,
-       R.Data_Package_ID As data_package,
+       R.Representative_Data_Pkg_ID As data_package,
        R.Exp_Group_ID As exp_group,
        R.campaign,
        R.organism,
@@ -62,7 +61,6 @@ FROM T_Data_Analysis_Request AS R
      LEFT OUTER JOIN T_EUS_Proposal_Type EPT
        ON EUP.Proposal_Type = EPT.Proposal_Type
 WHERE R.State > 0
-
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[V_Data_Analysis_Request_List_Report] TO [DDL_Viewer] AS [dbo]
