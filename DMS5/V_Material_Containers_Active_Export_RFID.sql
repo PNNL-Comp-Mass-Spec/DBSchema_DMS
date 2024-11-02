@@ -7,10 +7,10 @@ CREATE VIEW [dbo].[V_Material_Containers_Active_Export_RFID]
 AS
 SELECT MC.Tag AS container,
        MC.Comment AS comment,
-       CASE 
-         WHEN C.Campaign_Num IS NULL OR C.Campaign_Num = 'NOT SET' THEN
+       CASE
+         WHEN C.Campaign_Num IS NULL OR C.Campaign_Num = 'Not_Set' THEN
            ''
-         ELSE 
+         ELSE
            C.Campaign_Num
        END AS campaign,
        MC.Created AS created,
