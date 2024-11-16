@@ -15,6 +15,7 @@ CREATE TABLE [dbo].[T_Organism_DB_File](
 	[OrgFile_RowVersion] [timestamp] NOT NULL,
 	[File_Size_KB] [real] NULL,
 	[Created] [smalldatetime] NULL,
+	[Is_Decoy] [tinyint] NOT NULL,
  CONSTRAINT [PK_T_Organism_DB_File] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -51,6 +52,8 @@ GO
 ALTER TABLE [dbo].[T_Organism_DB_File] ADD  CONSTRAINT [DF_T_Organism_DB_File_File_Size_KB]  DEFAULT ((0)) FOR [File_Size_KB]
 GO
 ALTER TABLE [dbo].[T_Organism_DB_File] ADD  CONSTRAINT [DF_T_Organism_DB_File_Created]  DEFAULT (getdate()) FOR [Created]
+GO
+ALTER TABLE [dbo].[T_Organism_DB_File] ADD  CONSTRAINT [DF_T_Organism_DB_File_Is_Decoy]  DEFAULT ((0)) FOR [Is_Decoy]
 GO
 ALTER TABLE [dbo].[T_Organism_DB_File]  WITH CHECK ADD  CONSTRAINT [FK_T_Organism_DB_File_T_Organisms] FOREIGN KEY([Organism_ID])
 REFERENCES [dbo].[T_Organisms] ([Organism_ID])
