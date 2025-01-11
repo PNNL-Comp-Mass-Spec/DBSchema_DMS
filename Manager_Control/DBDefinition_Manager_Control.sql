@@ -2,9 +2,9 @@
 CREATE DATABASE [Manager_Control]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 45568KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'ManagerControl', FILENAME = N'J:\SQLServerData\Manager_Control.mdf' , SIZE = 56768KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 443648KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
+( NAME = N'ManagerControl_log', FILENAME = N'K:\SQLServerData\Manager_Control_log.LDF' , SIZE = 1262848KB , MAXSIZE = UNLIMITED, FILEGROWTH = 16384KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -87,6 +87,9 @@ GO
 /****** Object:  User [MTUser] ******/
 CREATE USER [MTUser] FOR LOGIN [mtuser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [NT AUTHORITY\SYSTEM] ******/
+CREATE USER [NT AUTHORITY\SYSTEM] FOR LOGIN [NT AUTHORITY\SYSTEM] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [proteinseqs\ftms] ******/
 CREATE USER [proteinseqs\ftms] FOR LOGIN [PROTEINSEQS\ftms] WITH DEFAULT_SCHEMA=[proteinseqs\ftms]
 GO
@@ -116,6 +119,8 @@ GO
 GRANT CONNECT TO [MTUser] AS [dbo]
 GO
 GRANT SHOWPLAN TO [MTUser] AS [dbo]
+GO
+GRANT CONNECT TO [NT AUTHORITY\SYSTEM] AS [dbo]
 GO
 GRANT CONNECT TO [proteinseqs\ftms] AS [dbo]
 GO
