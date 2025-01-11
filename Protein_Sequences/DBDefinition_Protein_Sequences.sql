@@ -2,9 +2,9 @@
 CREATE DATABASE [Protein_Sequences]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 199726400KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
+( NAME = N'Protein_Sequences_Data', FILENAME = N'J:\SQLServerData\Protein_Sequences.mdf' , SIZE = 199889600KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
  LOG ON 
-( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 116264640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
+( NAME = N'Protein_Sequences_Log', FILENAME = N'K:\SQLServerData\Protein_Sequences_Log.LDF' , SIZE = 12584640KB , MAXSIZE = UNLIMITED, FILEGROWTH = 768000KB )
  COLLATE SQL_Latin1_General_CP1_CI_AS
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -102,6 +102,9 @@ GO
 /****** Object:  User [MTUser] ******/
 CREATE USER [MTUser] FOR LOGIN [mtuser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [NT AUTHORITY\SYSTEM] ******/
+CREATE USER [NT AUTHORITY\SYSTEM] FOR LOGIN [NT AUTHORITY\SYSTEM] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [pnl\d3l243] ******/
 CREATE USER [pnl\d3l243] FOR LOGIN [PNL\D3L243] WITH DEFAULT_SCHEMA=[pnl\d3l243]
 GO
@@ -136,6 +139,8 @@ GO
 GRANT CONNECT TO [MTS_DB_Reader] AS [dbo]
 GO
 GRANT CONNECT TO [MTUser] AS [dbo]
+GO
+GRANT CONNECT TO [NT AUTHORITY\SYSTEM] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\d3l243] AS [dbo]
 GO
