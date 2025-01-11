@@ -90,6 +90,9 @@ GO
 /****** Object:  User [LCMSNetUser] ******/
 CREATE USER [LCMSNetUser] FOR LOGIN [LCMSNetUser] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [NT AUTHORITY\SYSTEM] ******/
+CREATE USER [NT AUTHORITY\SYSTEM] FOR LOGIN [NT AUTHORITY\SYSTEM] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [NWFS_Samba_User] ******/
 CREATE USER [NWFS_Samba_User] FOR LOGIN [nwfs_samba_user] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -167,6 +170,8 @@ GO
 GRANT CONNECT TO [LOC-DMS_Storage_Admin] AS [dbo]
 GO
 GRANT CONNECT TO [LOC-DMS_Web_Run_Scheduler] AS [dbo]
+GO
+GRANT CONNECT TO [NT AUTHORITY\SYSTEM] AS [dbo]
 GO
 GRANT CONNECT TO [NWFS_Samba_User] AS [dbo]
 GO
