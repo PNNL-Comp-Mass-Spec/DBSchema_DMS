@@ -81,6 +81,9 @@ GO
 /****** Object:  User [memadmin] ******/
 CREATE USER [memadmin] FOR LOGIN [PNL\memadmin] WITH DEFAULT_SCHEMA=[dbo]
 GO
+/****** Object:  User [NT AUTHORITY\SYSTEM] ******/
+CREATE USER [NT AUTHORITY\SYSTEM] FOR LOGIN [NT AUTHORITY\SYSTEM] WITH DEFAULT_SCHEMA=[dbo]
+GO
 /****** Object:  User [pnl\d3m578] ******/
 CREATE USER [pnl\d3m578] FOR LOGIN [PNL\D3M578] WITH DEFAULT_SCHEMA=[dbo]
 GO
@@ -110,6 +113,8 @@ GO
 GRANT SHOWPLAN TO [DMSWebUser] AS [dbo]
 GO
 GRANT CONNECT TO [memadmin] AS [dbo]
+GO
+GRANT CONNECT TO [NT AUTHORITY\SYSTEM] AS [dbo]
 GO
 GRANT CONNECT TO [pnl\d3m578] AS [dbo]
 GO
