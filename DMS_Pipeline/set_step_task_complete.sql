@@ -59,6 +59,7 @@ CREATE PROCEDURE [dbo].[set_step_task_complete]
 **          03/09/2023 mem - Use new column names in T_Job_Steps
 **          03/29/2023 mem - Add support for completion codes 27 and 28 (SKIPPED_DIA_NN_SPEC_LIB and WAITING_FOR_DIA_NN_SPEC_LIB)
 **          02/08/2024 mem - If @completionCode is 20 and the step tool is DiaNN, set the job step as complete, but skip the subsequent data extraction step
+**          01/11/2025 mem - Add support for completion code 24 (CLOSEOUT_RESET_JOB_STEP_INSUFFICIENT_MEMORY)
 **
 *****************************************************/
 (
@@ -226,28 +227,29 @@ AS
             Set @completionCodeDescription = 'Skipped MZ_Refinery'
         End
 
-        If @completionCode = 21  -- CLOSEOUT_SKIPPED_MSXML_GEN
+        If @completionCode = 21         -- CLOSEOUT_SKIPPED_MSXML_GEN
         Begin
             Set @stepState = 3 -- skipped
             Set @handleSkippedStep = 1
             Set @completionCodeDescription = 'Skipped MSXml_Gen'
         End
 
-        If @completionCode = 22  -- CLOSEOUT_SKIPPED_MAXQUANT
+        If @completionCode = 22         -- CLOSEOUT_SKIPPED_MAXQUANT
         Begin
             Set @stepState = 3 -- skipped
             Set @handleSkippedStep = 1
             Set @completionCodeDescription = 'Skipped MaxQuant'
         End
 
-        If @completionCode = 23  -- CLOSEOUT_RESET_JOB_STEP
+        If @completionCode = 23 Or      -- CLOSEOUT_RESET_JOB_STEP
+           @completionCode = 24         -- CLOSEOUT_RESET_JOB_STEP_INSUFFICIENT_MEMORY
         Begin
             Set @stepState = 2 -- New
             Set @handleSkippedStep = 0
             Set @completionCodeDescription = 'Insufficient memory or free disk space; retry'
         End
 
-        If @completionCode = 20  -- CLOSEOUT_NO_DATA
+        If @completionCode = 20         -- CLOSEOUT_NO_DATA
         Begin
             Set @completionCodeDescription = 'No Data'
 
